@@ -1,45 +1,45 @@
 {
   "schema_version": 1,
   "scanner": "scripts/localization_inventory.mjs",
-  "entry_count": 3396,
+  "entry_count": 2365,
   "by_surface": {
     "asc_metadata": 5,
     "asc_subscription": 9,
-    "backend": 1276,
+    "backend": 248,
     "email": 29,
     "legal": 1600,
     "notification": 22,
     "pdf": 216,
     "plist": 3,
     "push": 11,
-    "xlsx": 225
+    "xlsx": 222
   },
   "by_priority": {
-    "P0": 3360,
+    "P0": 2329,
     "P1": 36
   },
   "by_owner": {
     "aso": 5,
-    "backend": 1276,
+    "backend": 248,
     "ios": 3,
     "legal": 1600,
     "lifecycle": 62,
     "monetization": 9,
-    "reporting": 441
+    "reporting": 438
   },
   "review_status": {
-    "extracted": 3396
+    "extracted": 2365
   },
   "human_review_state": {
     "language_review": {
-      "not_started": 3396
+      "not_started": 2365
     },
     "safety_review": {
-      "not_required": 2974,
-      "not_started": 422
+      "not_required": 2100,
+      "not_started": 265
     },
     "product_approval": {
-      "not_started": 3396
+      "not_started": 2365
     }
   },
   "unowned_p0_p1_count": 0

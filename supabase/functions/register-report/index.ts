@@ -547,7 +547,7 @@ serve(async (req) => {
   if (existingRequestError) {
     return json(500, {
       error: "report_idempotency_check_failed",
-      message: "Rapor tekrar deneme kontrolü tamamlanamadı.",
+      message: userFacingCopy("reportRetryCheckFailed", body.report_language),
       request_id: requestID,
       support_id: supportID,
     });
@@ -676,7 +676,7 @@ serve(async (req) => {
     return json(quotaCode === "premium_required" ? 403 : 429, {
       error: quotaCode,
       message: quotaCode === "premium_required"
-        ? "Bu rapor Plus veya Pro aboneliği gerektirir."
+        ? userFacingCopy("reportPremiumRequired", body.report_language)
         : quotaCode === "free_risk_analysis_trial_exhausted"
         ? userFacingCopy("reportRiskTrialUsed", body.report_language)
         : userFacingCopy("reportQuotaExceeded", body.report_language),

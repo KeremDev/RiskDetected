@@ -234,22 +234,35 @@ struct ResultView: View {
                     onDeleteFinding: { row in
                         pendingDeleteFindingRow = row
                     },
-                    onPaywall: { section, funnelSessionID in
+                    onPaywall: { request in
                         beginPaywallEntry(
-                            at: paywallEntryPoint(for: section),
-                            section: section,
-                            funnelSessionID: funnelSessionID
+                            at: paywallEntryPoint(for: request.section),
+                            // Eğitim kaynağı ayrı entry point/surface ve
+                            // source_section niteliğiyle izlenir. Canlı
+                            // veritabanındaki eski result_section kısıtına
+                            // takılmaması için bu kolon şimdilik boş bırakılır.
+                            section: request.section == .trainingRecommendations
+                                ? nil
+                                : request.section,
+                            itemID: request.itemID,
+                            attributes: request.attributes,
+                            funnelSessionID: request.funnelSessionID
                         )
                         resultHubPaywallContext = AnalysisResultPaywallContext(
                             analysisID: analysisID,
-                            section: section,
-                            funnelSessionID: funnelSessionID,
+                            section: request.section,
+                            funnelSessionID: request.funnelSessionID,
                             language: analysisOutputLanguage
                         )
                         showPaywall = true
                     },
-                    onCreateReport: { section, ids, format in
-                        createHubReport(section: section, selectedIDs: ids, format: format)
+                    onCreateReport: { section, ids, format, reportKind in
+                        createHubReport(
+                            section: section,
+                            selectedIDs: ids,
+                            format: format,
+                            reportKind: reportKind
+                        )
                     },
                     onEditNotebook: { item, findingText, recommendationText in
                         mutateNotebook(
@@ -264,33 +277,12 @@ struct ResultView: View {
                     }
                 )
                 .zIndex(0)
+            } else if resultHubLoadError != nil {
+                resultHubHeader
+                resultHubErrorState
             } else {
-                header
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 14) {
-                        if showsHistoricalLanguageBadge {
-                            historicalLanguageBadge
-                        }
-                        photoMetaCard
-                        methodSelector
-                        methodologySummary
-                        if findings.isEmpty {
-                            emptyFindingsCard
-                        } else {
-                            findingsSection
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                    .padding(.bottom, findings.isEmpty ? 110 : 16)
-                }
-                .clipped()
-                .zIndex(0)
-
-                if !findings.isEmpty {
-                    stickyReportCTA
-                        .zIndex(1)
-                }
+                resultHubHeader
+                resultHubLoadingState
             }
         }
         .background(Color.rdPaper)
@@ -298,9 +290,13 @@ struct ResultView: View {
             if pdfGeneration.isActive {
                 PDFGenerationOverlay(progress: pdfGeneration.progress)
                     .zIndex(20)
+            } else if isExcelGenerating {
+                ExcelGenerationOverlay(language: analysisOutputLanguage)
+                    .zIndex(20)
             }
         }
         .animation(.easeInOut(duration: 0.22), value: pdfGeneration.isActive)
+        .animation(.easeInOut(duration: 0.22), value: isExcelGenerating)
         .fullScreenCover(item: $selectedFindingDetail) { selection in
             let sourceRow = findingRows.first(where: { $0.id == selection.row.id }) ?? selection.row
             let hubItem = resultHub?
@@ -567,6 +563,102 @@ struct ResultView: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("result.hub.header")
         .zIndex(100)
+    }
+
+    private var resultHubLoadingState: some View {
+        VStack(spacing: 18) {
+            Spacer()
+
+            ProgressView()
+                .controlSize(.large)
+                .tint(Color.rdResultGreen)
+                .accessibilityHidden(true)
+
+            Text(RDLocalization.string(
+                "analysis.result_hub.loading.title",
+                table: .analysis,
+                fallback: "Analiz sonuçları hazırlanıyor",
+                language: analysisOutputLanguage
+            ))
+            .font(RDTypography.font(size: RDFontScale.size(21), weight: .bold, design: .rounded))
+            .foregroundStyle(Color.rdResultPrimaryText)
+            .multilineTextAlignment(.center)
+
+            Text(RDLocalization.string(
+                "analysis.result_hub.loading.message",
+                table: .analysis,
+                fallback: "Risk analizi, uzman görüşleri ve diğer sonuçlar yükleniyor.",
+                language: analysisOutputLanguage
+            ))
+            .font(RDTypography.font(size: RDFontScale.size(14), weight: .medium, design: .rounded))
+            .foregroundStyle(Color.rdResultSecondaryText)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 34)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("result.hub.loading")
+    }
+
+    private var resultHubErrorState: some View {
+        VStack(spacing: 18) {
+            Spacer()
+
+            Image(systemName: "exclamationmark.arrow.triangle.2.circlepath")
+                .font(RDTypography.font(size: RDFontScale.size(42), weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.rdSectionExpertAccent)
+                .accessibilityHidden(true)
+
+            Text(RDLocalization.string(
+                "analysis.result_hub.error.title",
+                table: .analysis,
+                fallback: "Sonuçlar yüklenemedi",
+                language: analysisOutputLanguage
+            ))
+            .font(RDTypography.font(size: RDFontScale.size(22), weight: .bold, design: .rounded))
+            .foregroundStyle(Color.rdResultPrimaryText)
+            .multilineTextAlignment(.center)
+
+            Text(RDLocalization.string(
+                "analysis.result_hub.error.message",
+                table: .analysis,
+                fallback: "Bağlantını kontrol edip yeniden deneyebilirsin.",
+                language: analysisOutputLanguage
+            ))
+            .font(RDTypography.font(size: RDFontScale.size(14), weight: .medium, design: .rounded))
+            .foregroundStyle(Color.rdResultSecondaryText)
+            .multilineTextAlignment(.center)
+
+            Button {
+                Task { await loadResultHubIfNeeded() }
+            } label: {
+                Label(
+                    RDLocalization.string(
+                        "analysis.result_hub.error.retry",
+                        table: .analysis,
+                        fallback: "Tekrar dene",
+                        language: analysisOutputLanguage
+                    ),
+                    systemImage: "arrow.clockwise"
+                )
+                .font(RDTypography.font(size: RDFontScale.size(15), weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdWhite)
+                .padding(.horizontal, 24)
+                .frame(minHeight: 48)
+                .background(Color.rdBlack)
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("result.hub.retry")
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 24)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("result.hub.error")
     }
 
     private var header: some View {
@@ -1080,9 +1172,7 @@ struct ResultView: View {
         case .approvedNotebook:
             return .resultHubApprovedNotebookPromotion
         case .trainingRecommendations:
-            // Eğitim önerileri uzman görüşüyle aynı paket; ayrı bir giriş
-            // noktası açmak paywall ölçümünü bölerdi.
-            return .resultHubExpertAdvicePromotion
+            return .resultHubTrainingPromotion
         }
     }
 
@@ -1290,8 +1380,10 @@ struct ResultView: View {
     private func loadResultHubIfNeeded() async {
         guard let analysisID = currentBundle?.analysis.id else {
             resultHub = nil
+            resultHubLoadError = "analysis_missing"
             return
         }
+        resultHubLoadError = nil
         do {
             async let responseTask = AnalysisResultHubService.shared.load(
                 analysisID: analysisID,
@@ -1299,12 +1391,17 @@ struct ResultView: View {
             )
             async let trialStateTask: Void = refreshFreeRiskAnalysisTrialState()
             let (response, _) = try await (responseTask, trialStateTask)
-            resultHub = response.enabled ? response : nil
-            resultHubLoadError = nil
+            guard response.enabled else {
+                resultHub = nil
+                resultHubLoadError = response.reason ?? "result_hub_unavailable"
+                Self.logger.error("Result hub unavailable analysis=\(analysisID.uuidString, privacy: .private(mask: .hash)) reason=\(response.reason ?? "unknown", privacy: .public)")
+                return
+            }
+            resultHub = response
         } catch {
             resultHub = nil
             resultHubLoadError = error.localizedDescription
-            Self.logger.warning("Result hub fallback analysis=\(analysisID.uuidString, privacy: .private(mask: .hash)) error=\(error.localizedDescription, privacy: .public)")
+            Self.logger.warning("Result hub load failed analysis=\(analysisID.uuidString, privacy: .private(mask: .hash)) error=\(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -1335,7 +1432,8 @@ struct ResultView: View {
     private func createHubReport(
         section: AnalysisResultSectionID,
         selectedIDs: [UUID],
-        format: String
+        format: String,
+        reportKind: AnalysisResultHubReportKind
     ) {
         guard !selectedIDs.isEmpty,
               let hub = resultHub,
@@ -1362,6 +1460,7 @@ struct ResultView: View {
                     language: analysisOutputLanguage,
                     section: section,
                     format: format,
+                    reportKind: reportKind.pdfReportKind ?? .standard,
                     selectedIDs: selectedIDs,
                     requestID: requestID
                 )
@@ -1381,17 +1480,52 @@ struct ResultView: View {
                         supportID: supportID,
                         source: .resultHub
                     )
+                    isExcelGenerating = false
+                    await Task.yield()
                     shareItem = ShareItem(url: url)
                 } else {
                     pdfGeneration.advance(to: 0.28)
-                    let url = try AnalysisResultHubPDFService.shared.generate(
-                        section: section,
-                        items: selectedItems,
-                        analysisTitle: bundle.analysis.title,
-                        method: method,
-                        language: analysisOutputLanguage,
-                        company: selectedReportCompany
-                    )
+                    let storedKind: PDFReportKind
+                    let url: URL
+                    if section == .riskAnalysis,
+                       let legacyKind = reportKind.pdfReportKind {
+                        let company = selectedReportCompany
+                        let options = resolvedReportOptions(
+                            defaultReportOptions(kind: legacyKind),
+                            company: company
+                        )
+                        let reportImages = try await loadReportImages()
+                        let companyLogo = try await loadCompanyLogo(for: company)
+                        let profileLogo = try await loadProfileLogoIfNeeded()
+                        #if DEBUG
+                        let uiTestLogo = Self.uiTestReportLogoIfRequested()
+                        #else
+                        let uiTestLogo: UIImage? = nil
+                        #endif
+                        let selectedFindings = selectedItems.map {
+                            $0.asFindingRow(fallbackAnalysisID: bundle.analysis.id).asFinding
+                        }
+                        let input = PDFReportService.ReportInput(
+                            bundle: bundle,
+                            findings: selectedFindings,
+                            profile: app.profile,
+                            images: reportImages,
+                            companyLogo: reportCompanyLogo ?? companyLogo ?? profileLogo ?? uiTestLogo,
+                            options: options
+                        )
+                        url = try await PDFReportService.shared.generateAsync(input: input)
+                        storedKind = legacyKind
+                    } else {
+                        url = try AnalysisResultHubPDFService.shared.generate(
+                            section: section,
+                            items: selectedItems,
+                            analysisTitle: bundle.analysis.title,
+                            method: method,
+                            language: analysisOutputLanguage,
+                            company: selectedReportCompany
+                        )
+                        storedKind = .standard
+                    }
                     pdfGeneration.advance(to: 0.68)
                     guard let userID = app.auth.session?.user.id else {
                         throw AnalysisService.AnalysisError.notAuthenticated
@@ -1400,7 +1534,7 @@ struct ResultView: View {
                         userID: userID,
                         bundle: bundle,
                         fileURL: url,
-                        kind: section == .riskAnalysis ? .riskAnalysis : .standard,
+                        kind: storedKind,
                         method: method,
                         company: selectedReportCompany,
                         exportIntentID: intent.id,
@@ -1409,6 +1543,7 @@ struct ResultView: View {
                         requestID: requestID.uuidString,
                         supportID: supportID
                     )
+                    markFreeRiskAnalysisTrialUsedIfNeeded(for: storedKind)
                     await pdfGeneration.complete()
                     shareItem = ShareItem(url: url)
                 }
@@ -1419,7 +1554,7 @@ struct ResultView: View {
                     section: section,
                     funnelSessionID: requestID
                 )
-                if section == .riskAnalysis {
+                if reportKind == .riskTable {
                     await refreshFreeRiskAnalysisTrialState()
                 }
             } catch {
@@ -1641,6 +1776,8 @@ struct ResultView: View {
                     supportID: supportID,
                     source: .resultDetail
                 )
+                isExcelGenerating = false
+                await Task.yield()
                 shareItem = ShareItem(url: url)
             } catch {
                 if handleReportQuotaIfNeeded(error) {
@@ -3953,6 +4090,90 @@ struct ResultPhotoThumbnail: View {
 private struct ResultPhotoPreview: Identifiable {
     let id = UUID()
     let image: UIImage
+}
+
+private struct ExcelGenerationOverlay: View {
+    let language: RDLanguage
+
+    @State private var isPulsing = false
+
+    var body: some View {
+        ZStack {
+            Color.rdOnyx.opacity(0.24)
+                .ignoresSafeArea()
+
+            VStack(spacing: 20) {
+                ZStack {
+                    Circle()
+                        .fill(Color.rdGreenSoft)
+                        .frame(width: 92, height: 92)
+                        .scaleEffect(isPulsing ? 1.04 : 0.96)
+
+                    ProgressView()
+                        .controlSize(.large)
+                        .tint(Color.rdGreen)
+                        .scaleEffect(1.25)
+
+                    Image(systemName: "tablecells")
+                        .font(RDTypography.font(size: RDFontScale.size(18), weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                        .offset(y: 27)
+                }
+
+                VStack(spacing: 7) {
+                    Text(RDLocalization.string(
+                        "analysis.result.view.excel.hazirlaniyor.1331d227",
+                        table: .analysis,
+                        fallback: "Excel hazırlanıyor...",
+                        language: language
+                    ))
+                    .font(RDTypography.font(size: RDFontScale.size(24), weight: .bold, design: .rounded))
+                    .foregroundStyle(Color.rdBlack)
+                    .multilineTextAlignment(.center)
+
+                    Text(RDLocalization.string(
+                        "reports.pdfgeneration.overlay.rapor.verileri.hazirlaniyor.669b3ebb",
+                        table: .reports,
+                        fallback: "Rapor verileri hazırlanıyor",
+                        language: language
+                    ))
+                    .font(RDTypography.font(size: RDFontScale.size(14), weight: .medium, design: .rounded))
+                    .foregroundStyle(Color.rdSlate)
+                    .multilineTextAlignment(.center)
+                }
+            }
+            .padding(.horizontal, 28)
+            .padding(.vertical, 30)
+            .frame(maxWidth: 310)
+            .background(Color.rdWhite.opacity(0.96))
+            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .stroke(Color.rdLine.opacity(0.8), lineWidth: 1)
+            }
+            .shadow(color: Color.rdOnyx.opacity(0.18), radius: 30, x: 0, y: 16)
+            .padding(.horizontal, 30)
+        }
+        .transition(.opacity.combined(with: .scale(scale: 0.96)))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(RDLocalization.string(
+            "analysis.result.view.excel.hazirlaniyor.1331d227",
+            table: .analysis,
+            fallback: "Excel hazırlanıyor...",
+            language: language
+        ))
+        .accessibilityValue(RDLocalization.string(
+            "reports.pdfgeneration.overlay.rapor.verileri.hazirlaniyor.669b3ebb",
+            table: .reports,
+            fallback: "Rapor verileri hazırlanıyor",
+            language: language
+        ))
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
+                isPulsing = true
+            }
+        }
+    }
 }
 
 private struct ResultPhotoPreviewView: View {

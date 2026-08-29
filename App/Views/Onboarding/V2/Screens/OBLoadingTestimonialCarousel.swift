@@ -9,14 +9,11 @@ struct OBLoadingTestimonialCarousel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? 7 : 9) {
-            Text(RDLocalization.string(
-                "onboarding.obloading.view.sahadaki.profesyoneller.ne.diyor.9bf3d77a",
-                table: .onboarding,
-                fallback: "Sahadaki profesyoneller ne diyor?"
-            ))
+            Text(localized("onboarding.obloading.view.sahadaki.profesyoneller.ne.diyor.9bf3d77a"))
             .font(RDTypography.font(size: RDFontScale.size(compact ? 13 : 14), weight: .bold))
             .foregroundStyle(Color.rdOnyx)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, compact ? 6 : 10)
 
             ZStack {
                 testimonialCard(testimonials[index])
@@ -30,8 +27,7 @@ struct OBLoadingTestimonialCarousel: View {
                         )
                     )
             }
-            .frame(height: compact ? 132 : 148)
-            .clipped()
+            .frame(height: compact ? 176 : 196, alignment: .top)
 
             HStack(spacing: 5) {
                 ForEach(testimonials.indices, id: \.self) { itemIndex in
@@ -89,8 +85,9 @@ private extension OBLoadingTestimonialCarousel {
                     Text(testimonial.role)
                         .font(RDTypography.font(size: RDFontScale.size(compact ? 9.5 : 10.5), weight: .medium))
                         .foregroundStyle(Color.rdSlate)
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .layoutPriority(1)
 
                 Spacer(minLength: 4)
 
@@ -100,20 +97,20 @@ private extension OBLoadingTestimonialCarousel {
                             .font(RDTypography.font(size: RDFontScale.size(compact ? 8 : 9), weight: .regular))
                     }
                 }
-                .foregroundStyle(Color.rdOnyx)
-                .accessibilityLabel("5/5")
+                .foregroundStyle(Color.rdPlanPlus)
+                .accessibilityLabel(Text(verbatim: "\(5)/\(5)"))
             }
 
             Text(testimonial.headline)
                 .font(RDTypography.font(size: RDFontScale.size(compact ? 12.5 : 13.5), weight: .bold))
                 .foregroundStyle(Color.rdOnyx)
-                .lineLimit(1)
+                .fixedSize(horizontal: false, vertical: true)
 
             Text(testimonial.body)
                 .font(RDTypography.font(size: RDFontScale.size(compact ? 10.5 : 11.5), weight: .medium))
                 .foregroundStyle(Color.rdSlate)
                 .lineSpacing(2)
-                .lineLimit(compact ? 2 : 3)
+                .fixedSize(horizontal: false, vertical: true)
 
             Spacer(minLength: 0)
         }
@@ -136,41 +133,40 @@ private extension OBLoadingTestimonialCarousel {
             OBLoadingTestimonial(
                 id: "elif",
                 avatarAsset: "OBTestimonialAvatarElif",
-                name: localized("onboarding.obloading.testimonial.elif.name.e52e0716", fallback: "Elif Yılmaz"),
-                role: localized("onboarding.obloading.testimonial.elif.role.7019432c", fallback: "A Sınıfı İş Güvenliği Uzmanı"),
-                headline: localized("onboarding.obloading.testimonial.elif.headline.c1de84e8", fallback: "Saha raporları artık çok daha hızlı."),
-                body: localized(
-                    "onboarding.obloading.testimonial.elif.body.77713b0d",
-                    fallback: "Riskleri fotoğraftan düzenli bir rapora dönüştürmek saha çalışmalarımda ciddi zaman kazandırıyor."
-                )
+                name: localized("onboarding.obloading.testimonial.elif.name.e52e0716"),
+                role: localized("onboarding.obloading.testimonial.elif.role.7019432c"),
+                headline: localized("onboarding.obloading.testimonial.elif.headline.c1de84e8"),
+                body: localized("onboarding.obloading.testimonial.elif.body.77713b0d")
             ),
             OBLoadingTestimonial(
                 id: "mert",
                 avatarAsset: "OBTestimonialAvatarMert",
-                name: localized("onboarding.obloading.testimonial.mert.name.a7c05fb2", fallback: "Mert Kaya"),
-                role: localized("onboarding.obloading.testimonial.mert.role.0fdf6df8", fallback: "Şantiye Saha Sorumlusu"),
-                headline: localized("onboarding.obloading.testimonial.mert.headline.75a23da9", fallback: "Bulguları ekiple paylaşmak çok kolay."),
-                body: localized(
-                    "onboarding.obloading.testimonial.mert.body.c7672046",
-                    fallback: "Öncelikli riskleri net görüyor, alınacak önlemleri ekibimle aynı anda paylaşabiliyorum."
-                )
+                name: localized("onboarding.obloading.testimonial.mert.name.a7c05fb2"),
+                role: localized("onboarding.obloading.testimonial.mert.role.0fdf6df8"),
+                headline: localized("onboarding.obloading.testimonial.mert.headline.75a23da9"),
+                body: localized("onboarding.obloading.testimonial.mert.body.c7672046")
             ),
             OBLoadingTestimonial(
                 id: "selin",
                 avatarAsset: "OBTestimonialAvatarSelin",
-                name: localized("onboarding.obloading.testimonial.selin.name.e6db2340", fallback: "Selin Demir"),
-                role: localized("onboarding.obloading.testimonial.selin.role.a69649f2", fallback: "İSG Danışmanı"),
-                headline: localized("onboarding.obloading.testimonial.selin.headline.15a94ce8", fallback: "Risk önceliklerini net görüyorum."),
-                body: localized(
-                    "onboarding.obloading.testimonial.selin.body.d190c795",
-                    fallback: "Düzeltici önlemler ve risk skorları tek akışta olduğu için saha değerlendirmelerim daha tutarlı ilerliyor."
-                )
+                name: localized("onboarding.obloading.testimonial.selin.name.e6db2340"),
+                role: localized("onboarding.obloading.testimonial.selin.role.a69649f2"),
+                headline: localized("onboarding.obloading.testimonial.selin.headline.15a94ce8"),
+                body: localized("onboarding.obloading.testimonial.selin.body.d190c795")
+            ),
+            OBLoadingTestimonial(
+                id: "burak",
+                avatarAsset: "OBTestimonialAvatarBurak",
+                name: localized("onboarding.obloading.testimonial.burak.name.32f1b793"),
+                role: localized("onboarding.obloading.testimonial.burak.role.02596e55"),
+                headline: localized("onboarding.obloading.testimonial.burak.headline.2720e7e9"),
+                body: localized("onboarding.obloading.testimonial.burak.body.93b907c8")
             )
         ]
     }
 
-    func localized(_ key: String, fallback: String) -> String {
-        RDLocalization.string(key, table: .onboarding, fallback: fallback)
+    func localized(_ key: String) -> String {
+        RDLocalization.string(key, table: .onboarding, fallback: key)
     }
 }
 

@@ -4,7 +4,7 @@ import {
   assertFalse,
 } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import XLSX from "npm:xlsx-js-style@1.2.0";
-import { makeEnglishWorkbook } from "./index.ts";
+import { makeEnglishWorkbook, makeResultSectionWorkbook } from "./index.ts";
 
 Deno.test("English XLSX parser sees localized sheets and no TR regulatory template", () => {
   const workbook = makeEnglishWorkbook(
@@ -108,4 +108,82 @@ Deno.test("English XLSX parser sees localized sheets and no TR regulatory templa
   assertFalse(text.includes("6331"));
   assertFalse(text.includes("tehlike sınıfı"));
   assertFalse(text.includes("belge no"));
+});
+
+Deno.test("Expert recommendation XLSX includes every detailed field", () => {
+  const workbook = makeResultSectionWorkbook(
+    {
+      id: "33333333-3333-4333-8333-333333333333",
+      user_id: "22222222-2222-4222-8222-222222222222",
+      analysis_id: "11111111-1111-4111-8111-111111111111",
+      content_scope: "expert_recommendations",
+      format: "xlsx",
+      selected_item_keys: ["44444444-4444-4444-8444-444444444444"],
+      content_snapshot: {
+        items: [{
+          title: "Elektrik panosu saha teyidi",
+          description: "Koruma düzeni fotoğraftan doğrulanamıyor.",
+          recommended_action: "Yetkili elektrik uzmanıyla doğrulayın.",
+          recommended_measures: [
+            {
+              kind: "corrective",
+              text: "Enerjiyi kesin ve pano bağlantılarını kontrol edin.",
+            },
+            {
+              kind: "preventive",
+              text: "Periyodik kontrol planını kayıt altına alın.",
+            },
+          ],
+          root_cause_text: "Bakım ve doğrulama kaydı görünür değil.",
+          references_text: "Elektrik Tesislerinde Topraklamalar Yönetmeliği",
+          needs_field_verification: true,
+        }],
+      },
+      source_edit_version: 1,
+      projection_version: "analysis-result-sections-v1",
+      tier_snapshot: "plus",
+    },
+    {
+      id: "11111111-1111-4111-8111-111111111111",
+      user_id: "22222222-2222-4222-8222-222222222222",
+      title: "Elektrik güvenliği analizi",
+    },
+    {
+      language: "tr",
+      locale: "tr-TR",
+      safetyProfileID: "tr-isg-v1",
+      safetyProfileVersion: 1,
+      regulatorySectionsEnabled: true,
+      snapshot: {
+        schema_version: 1,
+        output_language: "tr",
+        output_locale: "tr-TR",
+      },
+    },
+    "XLSX-EXPERT-TEST",
+  );
+
+  const bytes = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "buffer",
+    cellStyles: true,
+  }) as Uint8Array;
+  const parsed = XLSX.read(bytes, { type: "buffer" });
+  const rows = XLSX.utils.sheet_to_json<unknown[]>(
+    parsed.Sheets["Uzman Görüşü"],
+    { header: 1, raw: false },
+  );
+  const text = rows.flat().map(String).join("\n");
+
+  assert(text.includes("Uzman Önerisi"));
+  assert(text.includes("Düzeltici Önlem"));
+  assert(text.includes("Önleyici Faaliyet"));
+  assert(text.includes("Kök Neden"));
+  assert(text.includes("Mevzuat"));
+  assert(text.includes("Yetkili elektrik uzmanıyla doğrulayın."));
+  assert(text.includes("Enerjiyi kesin ve pano bağlantılarını kontrol edin."));
+  assert(text.includes("Periyodik kontrol planını kayıt altına alın."));
+  assert(text.includes("Bakım ve doğrulama kaydı görünür değil."));
+  assert(text.includes("Elektrik Tesislerinde Topraklamalar Yönetmeliği"));
+  assertFalse(text.includes("[object Object]"));
 });

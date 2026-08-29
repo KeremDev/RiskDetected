@@ -132,6 +132,7 @@ final class AnalysisResultHubService {
         language: RDLanguage,
         section: AnalysisResultSectionID,
         format: String,
+        reportKind: PDFReportKind,
         selectedIDs: [UUID],
         requestID: UUID
     ) async throws -> AnalysisReportIntent {
@@ -145,6 +146,7 @@ final class AnalysisResultHubService {
             let client_app_build: String
             let section: String
             let format: String
+            let report_kind: String
             let selected_item_keys: [String]
             let request_id: String
         }
@@ -160,6 +162,7 @@ final class AnalysisResultHubService {
                 client_app_build: AppClientMetadata.appBuild,
                 section: section.rawValue,
                 format: format,
+                report_kind: reportKind.rawValue,
                 selected_item_keys: selectedIDs.map { $0.uuidString.lowercased() },
                 request_id: requestID.uuidString.lowercased()
             ))

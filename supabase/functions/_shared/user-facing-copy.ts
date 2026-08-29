@@ -59,6 +59,94 @@ const COPY = {
     tr: "Rapor kotan doldu.",
     en: "Your report quota is full.",
   },
+  reportPremiumRequired: {
+    tr: "Bu rapor Plus veya Pro aboneliği gerektirir.",
+    en: "This report requires a Plus or Pro subscription.",
+  },
+  reportRetryCheckFailed: {
+    tr: "Rapor tekrar deneme kontrolü tamamlanamadı.",
+    en: "The report retry check could not be completed.",
+  },
+  reportScorelessItemLocked: {
+    tr: "Saha teyidi kaydına risk skoru eklenemez.",
+    en: "A risk score cannot be added to a field-verification item.",
+  },
+  resultExpertSectionTitle: {
+    tr: "Uzman Görüşü Önerileri",
+    en: "Expert Recommendations",
+  },
+  resultNotebookSectionTitle: {
+    tr: "Onaylı Defter Önerisi",
+    en: "Safety Log Recommendation",
+  },
+  resultRiskAnalysisTitle: { tr: "Risk Analizi", en: "Risk Analysis" },
+  resultExpertDisclaimer: {
+    tr:
+      "Bağlayıcı uzman görüşü değildir; saha teyidi ve uzman değerlendirmesi gerekir.",
+    en:
+      "Not a binding expert opinion; field verification and expert review are required.",
+  },
+  resultNotebookDisclaimer: {
+    tr:
+      "Taslak çıktıdır; iş güvenliği uzmanı değerlendirmesi ve resmî deftere aktarım gerekir.",
+    en:
+      "Draft output; expert review and transfer to the applicable official record are required.",
+  },
+  resultExpertHubDisclaimer: {
+    tr:
+      "Bu içerik bağlayıcı uzman görüşü değildir; saha teyidi ve uzman değerlendirmesi gerekir.",
+    en:
+      "This content is not a binding expert opinion; field verification and expert review are required.",
+  },
+  resultNotebookHubDisclaimer: {
+    tr:
+      "Onaylı Defter önerisi/taslağıdır; uzman değerlendirmesi ve resmî deftere aktarım gerekir.",
+    en:
+      "This is a Safety Log recommendation; expert review and transfer to the applicable official record are required.",
+  },
+  resultExpertIntentDisclaimer: {
+    tr: "Bağlayıcı uzman görüşü değildir; saha teyidi gerekir.",
+    en: "Not a binding expert opinion; field verification is required.",
+  },
+  resultNotebookIntentDisclaimer: {
+    tr: "Onaylı Defter önerisi/taslağıdır; uzman değerlendirmesi gerekir.",
+    en: "Safety Log recommendation; expert review is required.",
+  },
+  resultHeaderNumber: { tr: "Sıra", en: "No." },
+  resultHeaderTitle: { tr: "Başlık", en: "Title" },
+  resultHeaderDescription: { tr: "Açıklama", en: "Description" },
+  resultHeaderFinding: { tr: "Tespit", en: "Finding" },
+  resultHeaderRecommendation: { tr: "Öneri", en: "Recommendation" },
+  resultHeaderBasis: { tr: "Dayanak", en: "Basis" },
+  resultHeaderSourceItems: { tr: "Kaynak Bulgu", en: "Source Items" },
+  resultHeaderExpertRecommendation: {
+    tr: "Uzman Önerisi",
+    en: "Expert Recommendation",
+  },
+  resultHeaderCorrectiveAction: {
+    tr: "Düzeltici Önlem",
+    en: "Corrective Action",
+  },
+  resultHeaderPreventiveAction: {
+    tr: "Önleyici Faaliyet",
+    en: "Preventive Action",
+  },
+  resultHeaderRootCause: { tr: "Kök Neden", en: "Root Cause" },
+  resultHeaderRegulatoryReferences: {
+    tr: "Mevzuat",
+    en: "Regulatory References",
+  },
+  resultHeaderStatus: { tr: "Durum", en: "Status" },
+  resultExpertReviewCompleted: {
+    tr: "Uzman değerlendirmesi tamamlandı",
+    en: "Expert review completed",
+  },
+  resultFieldVerificationRequired: {
+    tr: "Saha teyidi gerekir",
+    en: "Field verification required",
+  },
+  resultNotebookSheetName: { tr: "Defter Taslağı", en: "Safety Log Draft" },
+  resultExpertSheetName: { tr: "Uzman Görüşü", en: "Expert Advice" },
   reportRiskTrialUsed: {
     tr: "Bir kez tanımlanan risk analizi tablosu hakkını kullandın.",
     en: "You have used your one-time risk analysis table allowance.",

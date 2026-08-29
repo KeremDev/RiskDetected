@@ -30,12 +30,20 @@ declare
     '823b6ad1fa8a5cebecc18182c55fa2d9f68809e9e73b6832d07a6cc3a0e9fd1e';
 begin
   update private.analysis_v4_configs
-  set router_version = 'claim-routing-v23',
+  set router_version = case
+        when router_version = 'claim-routing-v22' then 'claim-routing-v23'
+        else router_version
+      end,
       config = config
         || jsonb_build_object(
-             'router_version', 'claim-routing-v23',
              'hedged_evidence_gate', true,
              'barrier_member_dedup_identity_version', 1
+           )
+        || jsonb_build_object(
+             'router_version', case
+               when router_version = 'claim-routing-v22' then 'claim-routing-v23'
+               else router_version
+             end
            ),
       updated_at = now()
   where engine_version = 'vnext-v4' and is_active = true;
@@ -47,9 +55,18 @@ begin
     and prompt_version = 'v4-vision-core-v10'
     and prompt_sha256 = v_sha
     and config->>'prompt_bundle_sha256' = v_sha
-    and router_version = 'claim-routing-v23'
+    and router_version in (
+      'claim-routing-v23',
+      'claim-routing-v24',
+      'claim-routing-v25',
+      'claim-routing-v26',
+      'claim-routing-v27'
+    )
+    and config->>'hedged_evidence_gate' = 'true'
+    and (config->>'barrier_member_dedup_identity_version')::int = 1
     and integrity_status = 'valid'
-    and (config->'compute_profiles'->'premium'->>'single_photo_gemini_thinking_budget')::int = 6144;
+    and (config->'compute_profiles'->'premium'->>'single_photo_gemini_thinking_budget')::int
+      in (3072, 6144);
   if not found then
     raise exception 'v4 router bump did not land cleanly';
   end if;

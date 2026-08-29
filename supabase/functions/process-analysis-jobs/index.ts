@@ -16,7 +16,10 @@ import {
   providerBackgroundRetrySeconds,
   reconcileQueueAfterDispatch,
 } from "./dispatch-policy.ts";
-import { analysisFunctionForJob } from "./analysis-engine-route.ts";
+import {
+  analysisFunctionForJob,
+  requiresV4ForIOSRelease,
+} from "./analysis-engine-route.ts";
 import { ANALYZE_NESTED_REQUEST_TIMEOUT_MS } from "../_shared/provider-execution-policy.ts";
 
 const QUEUE_NAME = "analysis_jobs";
@@ -342,6 +345,9 @@ async function drainQueueMessages(params: {
       : null;
     const userID = typeof job.user_id === "string" ? job.user_id : null;
     const isRepairJob = job.job_mode === "repair";
+    const v4Required = requiresV4ForIOSRelease(
+      job.analysis_engine_client_routing,
+    );
     const isPipelineV2 = isPipelineV2Message(job);
     const guardVersion = isPipelineV2 ? claimGuardVersion(job) : 1;
     const isGuardedV2 = isPipelineV2 && guardVersion === 2;
@@ -445,6 +451,10 @@ async function drainQueueMessages(params: {
         }
       }
 
+      if (v4Required && isRepairJob) {
+        throw new Error("v4_required_repair_route_not_supported");
+      }
+
       if (isPipelineV2 && !isRepairJob && analysisID && userID) {
         let { data: route, error: routeError } = await params.supabase.rpc(
           "resolve_analysis_engine_route_v5",
@@ -458,7 +468,7 @@ async function drainQueueMessages(params: {
         // Deploy-order compatibility: v5 is the isolated v4 router. If its
         // migration has not reached a region, the unchanged v3 resolver chain
         // remains authoritative.
-        if (routeError) {
+        if (routeError && !v4Required) {
           const legacyResolution = await params.supabase.rpc(
             "resolve_analysis_engine_route_v4",
             {
@@ -470,6 +480,13 @@ async function drainQueueMessages(params: {
           route = legacyResolution.data;
           routeError = legacyResolution.error;
         }
+        if (routeError && v4Required) {
+          throw new Error(
+            `v4_required_route_resolution_failed:${
+              safeText(routeError.message)
+            }`,
+          );
+        }
         if (routeError) {
           console.warn(
             "Analysis engine route resolution failed; using legacy",
@@ -477,6 +494,17 @@ async function drainQueueMessages(params: {
               analysis_id: analysisID,
               error: safeText(routeError.message),
             }),
+          );
+        }
+        if (
+          v4Required &&
+          !(route?.ok === true && route?.engine === "vnext" &&
+            route?.engine_variant === "vnext-v4")
+        ) {
+          throw new Error(
+            `v4_required_route_unavailable:${
+              safeText(route?.error_code ?? route?.state ?? "unknown")
+            }`,
           );
         }
         analysisFunctionName = analysisFunctionForJob({
@@ -735,7 +763,7 @@ async function drainQueueMessages(params: {
         claimToken
       ) {
         if (
-          workerAttempt >= MAX_READ_COUNT && isRepairJob &&
+          workerAttempt >= MAX_READ_COUNT && isRepairJob && !v4Required &&
           responseCode !== "lost_claim" && responseCode !== "superseded"
         ) {
           try {
@@ -819,7 +847,9 @@ async function drainQueueMessages(params: {
         continue;
       }
 
-      if (message.read_ct >= MAX_READ_COUNT && isRepairJob) {
+      if (
+        message.read_ct >= MAX_READ_COUNT && isRepairJob && !v4Required
+      ) {
         try {
           const fallbackResponse = await fetchWithTimeout(
             `${params.supabaseUrl}/functions/v1/analyze`,

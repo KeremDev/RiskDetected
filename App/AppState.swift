@@ -925,6 +925,8 @@ final class AppState: ObservableObject {
     private static var isUITestResetLaunch: Bool {
         CommandLine.arguments.contains("RD_UI_TEST_RESET_STATE")
             || ProcessInfo.processInfo.environment["RD_UI_TEST_RESET_STATE"] == "1"
+            || CommandLine.arguments.contains("RD_PREVIEW_ONBOARDING_LOADING")
+            || ProcessInfo.processInfo.environment["RD_PREVIEW_ONBOARDING_LOADING"] == "1"
     }
 
     private static var isUITestMainLaunch: Bool {

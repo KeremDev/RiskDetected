@@ -182,6 +182,20 @@ final class AnalysisResultHubPDFService {
             "title": "İskele Kurulum Güvencesinin Doğrulanması",
             "description": "İskelenin kurulum, ankraj ve taşıma uygunluğu yetkili saha kontrolüyle doğrulanmalıdır.",
             "recommended_action": "Kurulum planı ve saha uygunluğu kontrol edilerek sonuç kayıt altına alınmalıdır.",
+            "recommended_measures": [
+              {
+                "kind": "corrective",
+                "title": "Düzeltici Önlem",
+                "text": "İskele kullanımını durdurun; kurulum ve ankraj uygunluğunu yetkili kişiyle doğrulayın."
+              },
+              {
+                "kind": "preventive",
+                "title": "Önleyici Faaliyet",
+                "text": "İskele kabul ve periyodik kontrol kayıtlarını saha kontrol planına bağlayın."
+              }
+            ],
+            "root_cause_text": "Kurulum kabul sürecinin saha başlangıç kontrolüne bağlanmamış olması.",
+            "references_text": "Yapı İşlerinde İş Sağlığı ve Güvenliği Yönetmeliği; İş Ekipmanlarının Kullanımında Sağlık ve Güvenlik Şartları Yönetmeliği.",
             "needs_field_verification": true,
             "is_scored": false
           },
@@ -239,6 +253,26 @@ final class AnalysisResultHubPDFService {
                 userInfo: [NSLocalizedDescriptionKey: "English Safety Log terminology check failed"]
             )
         }
+        guard let expertText = PDFDocument(url: urls[1])?.string else {
+            throw NSError(
+                domain: "AnalysisResultHubPDFService",
+                code: 2,
+                userInfo: [NSLocalizedDescriptionKey: "Expert report text extraction failed"]
+            )
+        }
+        let requiredExpertSections = [
+            "DÜZELTİCİ ÖNLEM",
+            "ÖNLEYİCİ FAALİYET",
+            "KÖK NEDEN",
+            "MEVZUAT",
+        ]
+        guard requiredExpertSections.allSatisfy(expertText.contains) else {
+            throw NSError(
+                domain: "AnalysisResultHubPDFService",
+                code: 3,
+                userInfo: [NSLocalizedDescriptionKey: "Expert report detail sections are incomplete"]
+            )
+        }
         return urls
     }
     #endif
@@ -260,10 +294,49 @@ final class AnalysisResultHubPDFService {
             }
             return rows.filter { !$0.1.isEmpty }
         }
-        var rows = [(isTR ? "Açıklama" : "Description", item.description ?? "", "ink")]
-        if let action = item.recommendedAction, !action.isEmpty {
-            rows.append((isTR ? "Öneri" : "Recommendation", action, "slate"))
+        var rows: [(label: String, value: String, color: String)] = []
+        let clean: (String?) -> String? = { value in
+            guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !trimmed.isEmpty
+            else { return nil }
+            return trimmed
         }
+        let joinedMeasures: (FindingMeasure.Kind) -> String? = { kind in
+            let values = item.recommendedMeasures?
+                .filter { $0.kind == kind }
+                .compactMap { clean($0.text) }
+                ?? []
+            var seen = Set<String>()
+            let uniqueValues = values.filter { seen.insert($0).inserted }
+            let joined = uniqueValues.joined(separator: "\n\n")
+            return joined.isEmpty ? nil : joined
+        }
+
+        if let description = clean(item.description) {
+            rows.append((isTR ? "Açıklama" : "Description", description, "ink"))
+        }
+
+        let corrective = joinedMeasures(.corrective)
+        if let recommendation = clean(item.recommendedAction),
+           recommendation != corrective {
+            rows.append((isTR ? "Uzman Önerisi" : "Expert Recommendation", recommendation, "slate"))
+        }
+        if let corrective = corrective ?? clean(item.recommendedAction) {
+            rows.append((isTR ? "Düzeltici Önlem" : "Corrective Action", corrective, "ink"))
+        }
+        if let preventive = joinedMeasures(.preventive) {
+            rows.append((isTR ? "Önleyici Faaliyet" : "Preventive Action", preventive, "slate"))
+        }
+        if let otherMeasures = joinedMeasures(.unknown) {
+            rows.append((isTR ? "Diğer Kontrol Tedbirleri" : "Other Control Measures", otherMeasures, "slate"))
+        }
+        if let rootCause = clean(item.rootCauseText) {
+            rows.append((isTR ? "Kök Neden" : "Root Cause", rootCause, "ink"))
+        }
+        if let references = clean(item.referencesText) ?? clean(item.referenceText) {
+            rows.append((isTR ? "Mevzuat" : "Regulatory References", references, "slate"))
+        }
+
         if section == .riskAnalysis {
             let score = method == .fineKinney ? item.fkScore : item.m5Score.map(Double.init)
             let band = method == .fineKinney ? item.fkBand : item.m5Band

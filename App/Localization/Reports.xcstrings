@@ -229,6 +229,24 @@
         }
       }
     },
+    "reports.pdf.risk_table.field_verification": {
+      "comment": "Risk table label for an unscored field-verification item; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Field verification"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saha teyidi"
+          }
+        }
+      }
+    },
     "reports.pdf.risk_table.header": {
       "comment": "Report localization contract; placeholders: none; review: machine_draft",
       "extractionState": "manual",

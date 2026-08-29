@@ -138,5 +138,5 @@ Deno.test("three-photo UI fixture never references a fourth photo", async () => 
   assertEquals(fixture.includes("defaultSourcePhotoIndices = [4]"), false);
   assertEquals(fixture.includes("defaultSourcePhotoIndices = [2, 4]"), false);
   assertEquals(uiTests.includes('waitFor("Foto 4"'), false);
-  assertStringIncludes(uiTests, 'waitFor("Foto 3"');
+  assertStringIncludes(uiTests, 'waitFor("result.hub.analysis_photo.3"');
 });

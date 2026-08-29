@@ -4775,9 +4775,13 @@ function safeStringArray(value: unknown): string[] {
     .filter((item) => item.length > 0);
 }
 
-function onboardingProfessionalRole(row: OnboardingAnswersRow | null): string | null {
+function onboardingProfessionalRole(
+  row: OnboardingAnswersRow | null,
+): string | null {
   const rawAnswers = row?.raw_answers;
-  if (!rawAnswers || typeof rawAnswers !== "object" || Array.isArray(rawAnswers)) {
+  if (
+    !rawAnswers || typeof rawAnswers !== "object" || Array.isArray(rawAnswers)
+  ) {
     return null;
   }
   const rawRole = rawAnswers.professional_role;
@@ -4897,9 +4901,10 @@ function buildOnboardingContext(
   outputLanguage: "tr" | "en",
 ): OnboardingContext {
   const isEnglish = outputLanguage === "en";
-  const certificateClass = !isEnglish && typeof row?.certificate_class === "string"
-    ? row.certificate_class
-    : null;
+  const certificateClass =
+    !isEnglish && typeof row?.certificate_class === "string"
+      ? row.certificate_class
+      : null;
   const professionalRole = isEnglish ? onboardingProfessionalRole(row) : null;
   const hazardClasses = isEnglish ? [] : safeStringArray(row?.hazard_classes);
   const sectors = safeStringArray(row?.sectors);
@@ -4907,7 +4912,8 @@ function buildOnboardingContext(
     ? row.audit_frequency
     : null;
   const applied = Boolean(
-    certificateClass || professionalRole || hazardClasses.length > 0 || sectors.length > 0 ||
+    certificateClass || professionalRole || hazardClasses.length > 0 ||
+      sectors.length > 0 ||
       auditFrequency,
   );
   if (isEnglish) {

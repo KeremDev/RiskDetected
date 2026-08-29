@@ -1,5 +1,6 @@
 import SwiftUI
 #if DEBUG
+import Combine
 import UIKit
 #endif
 
@@ -7,14 +8,23 @@ import UIKit
 struct RiskDetectedApp: App {
     @UIApplicationDelegateAdaptor(RDAppDelegate.self) private var appDelegate
     @Environment(\.scenePhase) private var scenePhase
-    @StateObject private var appState = AppState()
+    @StateObject private var appState: AppState
     @StateObject private var networkMonitor = NetworkMonitor.shared
 
     init() {
         #if DEBUG
+        if Self.isPDFSelfTestLaunch {
+            _appState = StateObject(
+                wrappedValue: AppState(subscriptions: PDFSelfTestSubscriptionManager())
+            )
+        } else {
+            _appState = StateObject(wrappedValue: AppState())
+        }
         if Self.isUITestLaunch {
             UIView.setAnimationsEnabled(false)
         }
+        #else
+        _appState = StateObject(wrappedValue: AppState())
         #endif
         NotificationService.shared.configure()
     }
@@ -59,6 +69,10 @@ struct RiskDetectedApp: App {
             || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("RD_UI_TEST_") }
     }
 
+    private static var isPDFSelfTestLaunch: Bool {
+        isPDFReportLocalizationSelfTestLaunch || isResultHubPDFSelfTestLaunch
+    }
+
     private static var isPDFReportLocalizationSelfTestLaunch: Bool {
         CommandLine.arguments.contains("RD_UI_TEST_PDF_REPORT_LOCALIZATION")
             || ProcessInfo.processInfo.environment["RD_UI_TEST_PDF_REPORT_LOCALIZATION"] == "1"
@@ -72,6 +86,28 @@ struct RiskDetectedApp: App {
 }
 
 #if DEBUG
+@MainActor
+private final class PDFSelfTestSubscriptionManager: SubscriptionManaging {
+    private let stateSubject = CurrentValueSubject<SubscriptionState, Never>(.free)
+    private let packagesSubject = CurrentValueSubject<[SubscriptionPlanPackage], Never>([])
+
+    var state: SubscriptionState { stateSubject.value }
+    var statePublisher: AnyPublisher<SubscriptionState, Never> {
+        stateSubject.eraseToAnyPublisher()
+    }
+    var packages: [SubscriptionPlanPackage] { packagesSubject.value }
+    var packagesPublisher: AnyPublisher<[SubscriptionPlanPackage], Never> {
+        packagesSubject.eraseToAnyPublisher()
+    }
+
+    func configure() {}
+    func identify(userID: UUID?) async {}
+    func loadOfferings() async {}
+    func purchase(packageID: String) async throws -> SubscriptionState { .free }
+    func refreshCustomerInfo() async {}
+    func restorePurchases() async throws -> SubscriptionState { .free }
+}
+
 private struct PDFReportLocalizationSelfTestView: View {
     @State private var status = "PDF_REPORT_LOCALIZATION_RUNNING"
 

@@ -108,8 +108,8 @@ if (!candidate) {
 }
 const candidateAttributes = attributes(candidate);
 check(
-  "candidate_release_type_manual",
-  candidateAttributes.releaseType === "MANUAL",
+  "candidate_release_type_matches_plan",
+  candidateAttributes.releaseType === APP_CONFIG.release.release_type,
   `actual=${candidateAttributes.releaseType ?? "missing"}`,
 );
 check(

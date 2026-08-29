@@ -141,7 +141,7 @@ const plan = {
   screenshot_files: screenshotFiles,
   operations,
   safety: {
-    release_type: "MANUAL",
+    release_type: APP_CONFIG.release.release_type,
     review_submission_planned: false,
     final_release_implemented: false,
     production_rollout_change_planned: false,

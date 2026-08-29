@@ -53,8 +53,17 @@ function readJSON(relativePath) {
   return JSON.parse(read(relativePath));
 }
 
+const SWIFT_SOURCE_EXCLUDED_DIRECTORIES = new Set([
+  "Assets.xcassets",
+  "Preview Content",
+  "Resources",
+]);
+
 function walk(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    if (entry.isDirectory() && SWIFT_SOURCE_EXCLUDED_DIRECTORIES.has(entry.name)) {
+      return [];
+    }
     const path = join(directory, entry.name);
     if (entry.isDirectory()) return walk(path);
     return statSync(path).isFile() ? [path] : [];
@@ -292,8 +301,8 @@ test("L10N-005", "backend user-facing literal scan matches approved baseline", (
 test("L10N-006", "PDF/XLSX literal scan matches approved baseline", () => {
   assertLiteralSurfaceSnapshot(
     ["pdf", "xlsx"],
-    441,
-    "0f36b851ef457c3c342c70bea85ee5163ea6ba54116035998db6a9e1577f8722",
+    438,
+    "6f40593cc5751dd0070eafddda06dd3930b7a99c3a73a1fff3d812aac551586f",
   );
 });
 
@@ -763,7 +772,7 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
       }
     }
   }
-  assert.equal(rows.length, 2_121, "Turkish localized-unit count");
+  assert.equal(rows.length, 2_360, "Turkish localized-unit count");
   assert.equal(
     createHash("sha256").update(rows.join("\n")).digest("hex"),
     // 2026-08-19: "Fine-Kinney" dort anahtarda makine cevirisiyle "Ince Kinney"
@@ -780,7 +789,9 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
     // ("Insaaticin ..."); uc metin yer tutuculu bicime cevrildi. Plan ozeti sablon
     // sayisi 47'den 896'ya guncellendi.
     // 2026-08-20: paywall 7. gun aciklamasi ekranda yer kazanmak icin tek satira indi.
-    "73bc2d195fcffff905843755c505b44c79bddb23342fc9b32225a4d92c5ddc8e",
+    // 2026-08-30: yeni sonuc merkezi ve bulgu detay ekranlarindaki kullanici
+    // metinleri Analysis kataloguna tasindi; rapor saha-dogrulamasi etiketi eklendi.
+    "74fde0dd58c6f09aa9dedb710eabb0fda7cf03f7c06f9068b332f86c3627eab3",
     "Turkish catalog snapshot changed",
   );
   assert.equal(

@@ -1,60 +1,6 @@
 {
   "sourceLanguage": "tr",
   "strings": {
-    "analysis.result_hub.accessibility.go_back": {
-      "comment": "Result hub back button accessibility label; placeholders: none; review: human",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Go back"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geri dön"
-          }
-        }
-      }
-    },
-    "analysis.result_hub.error.report_create_failed": {
-      "comment": "Generic result hub report creation error title; placeholders: none; review: human",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The report could not be created"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rapor oluşturulamadı"
-          }
-        }
-      }
-    },
-    "analysis.result.view.analiz.bulgulari.11d57f5a": {
-      "comment": "swiftui_text; App/Views/Result/ResultView.swift; v4 neutral finding heading; placeholders: none; review: human",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Analysis findings"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Analiz bulguları"
-          }
-        }
-      }
-    },
     "analysis.analysis.canvas.atik.sizinti.dokulme.cevresel.maruziyet.ve.saha..cb35673c": {
       "comment": "swift_user_copy; App/Models/AnalysisCanvas.swift:82; placeholders: none; review: machine_draft",
       "extractionState": "manual",
@@ -6559,6 +6505,3246 @@
         }
       }
     },
+    "analysis.result_hub.accessibility.go_back": {
+      "comment": "Result hub back button accessibility label; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go back"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri dön"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.error.message": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check your connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bağlantını kontrol edip yeniden deneyebilirsin."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.error.report_create_failed": {
+      "comment": "Generic result hub report creation error title; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The report could not be created"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor oluşturulamadı"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.error.retry": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekrar dene"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.error.title": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load results"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sonuçlar yüklenemedi"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.feedback.reason.duplicate": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duplicate content"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekrar içerik"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.feedback.reason.incorrect_detection": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incorrect detection"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yanlış tespit"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.feedback.reason.missing_context": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Missing context"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eksik bağlam"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.feedback.reason.unclear_text": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unclear wording"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metin anlaşılır değil"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.feedback.reason.wrong_recommendation": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insufficient or incorrect action"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yetersiz / yanlış önlem"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.feedback.reason.wrong_score": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incorrect score"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yanlış skor"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.feedback.thanks": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thank you! We'll review your feedback as soon as possible."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teşekkürler! Geri bildiriminizi en kısa sürede inceleyeceğiz."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.loading.message": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading risk analysis, expert advice, and other results."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk analizi, uzman görüşleri ve diğer sonuçlar yükleniyor."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.loading.title": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing analysis results"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz sonuçları hazırlanıyor"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.training.group.emergency_and_rescue": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emergency"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acil durum"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.training.group.general_and_induction": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Genel ve uyum"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.training.group.qualification_and_authorization": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qualification"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeterlilik ve yetki"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.training.group.task_and_equipment": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Task and equipment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görev ve ekipman"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.training.group.toolbox": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toolbox"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saha bilgilendirmesi"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.training.promotion.free.accessibility_hint": {
+      "comment": "Training result feed PLUS/PRO promotion accessibility hint; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens PLUS and PRO subscription options"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PLUS ve PRO abonelik seçeneklerini açar"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.training.promotion.free.action": {
+      "comment": "Training result feed PLUS/PRO promotion action title; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore plans"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planları incele"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.training.promotion.free.message": {
+      "comment": "Training result feed PLUS/PRO promotion body; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose PLUS for worker-specific training recommendations, advanced analysis and reports; choose PRO for Deep Research, more capable AI and unlimited analyses."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çalışan gruplarına özel eğitim önerileri, gelişmiş analiz ve raporlar için PLUS’a; Derin Araştırma, daha güçlü yapay zekâ ve sınırsız analiz için PRO’ya geç."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.training.promotion.free.title": {
+      "comment": "Training result feed PLUS/PRO promotion title; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Power up your training with PLUS and PRO"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitimlerini PLUS ve PRO ile güçlendir"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.training.promotion.pro.title": {
+      "comment": "Training result feed PRO promotion title; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Power up your training plan with PRO"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitim planını PRO ile güçlendir"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.1.hak.hediye.6db763f3": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 FREE CREDIT"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 HAK HEDİYE"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.5.5.matris.30882165": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5×5 Matrix"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5×5 Matris"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.ac.klama.c96157c8": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açıklama"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.analiz.bulgular.ndan.uretilen.uzman.degerl.c8db360c": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Safety Log drafts created from analysis findings for expert review."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz bulgularından üretilen, uzman değerlendirmesine sunulan defter taslakları."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.analiz.yapt.g.n.z.fotograflar.ozelinde.uzm.8a305d0f": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This area contains expert information specific to the photos you analyzed. Check that it is suitable for your workplace. Available exclusively to PLUS and PRO members."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz yaptığınız fotoğraflar özelinde uzmanlık gerektiren bilgilerin yer aldığı alandır. İşyerinize uygunluğunu kontrol ediniz. PLUS ve PRO üyelerine özeldir."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.analizde.gorulen.tehlike.ve.ekipmanlara.go.ffeb2cda": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows which training is meaningful for each group of workers, based on the hazards and equipment seen in the analysis. It makes no claim about anyone's existing certificates."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizde görülen tehlike ve ekipmanlara göre, ilgili çalışan gruplarına hangi eğitimlerin anlamlı olduğunu gösterir. Kişilerin mevcut belgeleri hakkında bir tespit içermez."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.analizini.pro.ile.guclendir.0f794053": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Power up your analysis with PRO"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizini PRO ile güçlendir"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.analizlerinde.derin.arast.rma.ve.daha.gucl.fbc90452": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use Deep Research and more capable AI models in your analyses. Upgrade to PRO—unlimited analyses are waiting."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizlerinde Derin Araştırma ve daha güçlü yapay zekâ modellerinden yararlan. PRO’ya geç; sınırsız analiz seni bekliyor."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.analizlerini.7d5e7559": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calculate with "
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizlerini "
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.analizlerini.fine.kinney.veya.5.5.matris.i.4767b740": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calculate with Fine-Kinney or 5×5 Matrix, then create and share a PDF or Excel report."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizlerini Fine-Kinney veya 5×5 Matris ile hesapla, PDF ya da Excel olarak rapor oluştur ve paylaş."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.araman.zla.eslesen.firma.yok.9e628b24": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No companies match your search"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aramanızla eşleşen firma yok"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.bask.ya.haz.r.981e1308": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Print ready"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Baskıya hazır"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.bask.ya.ve.paylas.ma.haz.r.duzen.096236fc": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Print-ready and shareable layout"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Baskıya ve paylaşıma hazır düzen"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.begen.829db692": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Like"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beğen"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.begenme.627f80ac": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dislike"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beğenme"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.bir.hak.hediye.1ffce326": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One free credit"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir hak hediye"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.bu.analiz.icin.uygun.bir.onayl.defter.tasl.66596eba": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No applicable Safety Log draft was generated for this analysis."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu analiz için uygun bir onaylı defter taslağı oluşturulmadı."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.bu.analiz.icin.uygun.bir.uzman.gorusu.olus.bc24b708": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No applicable expert advice was generated for this analysis."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu analiz için uygun bir uzman görüşü oluşturulmadı."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.bu.analizde.egitim.onerisi.uretecek.bir.te.bcd77c08": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hazard or equipment in this analysis produced a training recommendation."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu analizde eğitim önerisi üretecek bir tehlike veya ekipman tanınmadı."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.bu.analizde.risk.bulgusu.bulunamad.baa0920b": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No risk findings in this analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu analizde risk bulgusu bulunamadı"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.bu.icerik.onayl.defter.taslag.d.r.uzman.de.c7716412": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is a Safety Log draft and requires expert review."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu içerik Onaylı Defter taslağıdır; uzman değerlendirmesi gerekir."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.bu.kay.t.bir.taslakt.r.59c2ed4b": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This entry is a draft"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kayıt bir taslaktır"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.bu.ozellikler.premium.ozelliktir.8f8ba189": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These features are premium"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu özellikler premium özelliktir"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.bu.ozellikler.premium.ozelliktir.cf363bbd": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These features are premium."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu özellikler premium özelliktir."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.bu.tehlike.derin.analiz.ve.derin.arast.rma.d1c985dd": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This hazard was produced using deep analysis and deep research exclusively for PLUS/PRO members."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu tehlike derin analiz ve derin araştırma kullanılarak sadece PLUS/PRO üyeleri için üretilmiştir."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.bulgu.192859cb": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FINDING"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BULGU"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.bulgu.96a82c3c": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "finding"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bulgu"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.bulgu.f4632731": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "findings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bulgu"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.cikti.bicimi.59bad551": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OUTPUT FORMAT"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ÇIKTI BİÇİMİ"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.cikti.bicimi.secin.958da115": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SELECT OUTPUT FORMAT"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ÇIKTI BİÇİMİ SEÇİN"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.dagilim.2a8e1c3d": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DISTRIBUTION"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DAĞILIM"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.dayanak.990d0beb": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dayanak"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.dayanak.e604d06c": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basis:"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dayanak:"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.defter.kayd.gizlensin.mi.f11e0473": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide this Safety Log entry?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defter kaydı gizlensin mi?"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.defter.taslag.n.duzenle.623cec17": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Safety Log Draft"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defter Taslağını Düzenle"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.degerlendirilmedi.067ca5b9": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UNASSESSED"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DEĞERLENDİRİLMEDİ"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.detaylar.513bcd14": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Details"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detaylar"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.devam.icin.t.klay.n.701eccbf": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to continue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devamı için tıklayın"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.dsk.94153e92": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LOW"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DŞK"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.dusuk.risk.9bdc8549": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LOW RISK"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DÜŞÜK RİSK"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.duzeltici.onlem.18528a0f": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CORRECTIVE ACTION"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DÜZELTİCİ ÖNLEM"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.duzeltici.onlem.96ad612c": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corrective action"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düzeltici önlem"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.duzenle.3248ed57": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düzenle"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.duzenlenebilir.adecc32b": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editable"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düzenlenebilir"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.duzenlenebilir.tablo.filtreli.sutunlar.1e727e15": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editable table with filtered columns"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düzenlenebilir tablo, filtreli sütunlar"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.egitim.onerileri.6c816a03": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training Recommendations"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitim Önerileri"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.egitim.onerisi.bulunmuyor.03b337b9": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No training recommendations"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitim önerisi bulunmuyor"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.en.yuksek.skor.5ad84b21": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "highest score"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "en yüksek skor"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.en.yuksek.skor.9364de00": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HIGHEST SCORE"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EN YÜKSEK SKOR"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.excel.olarak.indir.72738cce": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download as Excel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excel olarak indir"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.excel.raporu.olustur.66221b45": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create Excel Report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excel Raporu Oluştur"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.firma.4beb43de": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "COMPANIES"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FİRMA"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.firma.90198323": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "COMPANY"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FİRMA"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.firma.ad.veya.sektor.ara.9270211a": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search company or sector"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma adı veya sektör ara"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.firma.ekle.703fd054": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma ekle"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.firma.kayd.e73624c2": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company record"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma kaydı"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.firma.sec.ae50b7a6": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma seç"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.firma.secimi.kilitli.adf418a9": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company selection is locked"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma seçimi kilitli"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.firmalar.yukleniyor.27f1de9c": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading companies"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmalar yükleniyor"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.gelismemize.yard.mc.ol.boylelikle.bir.sonr.9f8f2880": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help us improve so your next analysis can get a little closer to perfect. Thank you."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gelişmemize yardımcı ol, böylelikle bir sonraki analizinde mükemmele biraz daha yaklaşabilelim. Teşekkürler."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.geri.bildiriminiz.7698d8e8": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your feedback"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri bildiriminiz"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.geri.bildiriminizi.yaz.n.86c7665a": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write your feedback..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri bildiriminizi yazın..."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.geri.don.1ff1d53c": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go back"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri dön"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.geri.don.be8542b6": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go Back"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri Dön"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.gizle.67e5db38": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gizle"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.gonder.39122e84": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gönder"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.gonderilemedi.lutfen.tekrar.deneyin.d5c399b5": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't send. Please try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gönderilemedi. Lütfen tekrar deneyin."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.gorus.3b700c2a": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "recommendations"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "görüş"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.gorus.4773142b": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "recommendation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "görüş"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.hediye.hakk.mla.olustur.df5fb619": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create with my free credit"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hediye hakkımla oluştur"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.ile.hesapla.5912929a": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", then create and share a "
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " ile hesapla, "
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.kapat.3ad24beb": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapat"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.kay.t.0506ad08": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "entry"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kayıt"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.kay.t.1154bb1b": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "entries"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kayıt"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.kay.t.geri.al.nabilir.bicimde.gizlenecek.g.1e0e2256": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The entry will be hidden reversibly; previous report snapshots will not change."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt geri alınabilir biçimde gizlenecek; geçmiş raporlar değişmeyecek."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.kay.t.metni.021163e0": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entry text"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt metni"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.kay.t.secili.880c1368": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "items selected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kayıt seçili"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.kay.t.secili.a5f9a55c": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "item selected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kayıt seçili"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.kay.tl.firma.bulunmuyor.ab9c253c": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No saved companies"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlı firma bulunmuyor"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.kay.tlar.saha.incelemesi.dayanag.yla.yaz.l.cc69a20f": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entries are written on the basis of a site inspection."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlar saha incelemesi dayanağıyla yazılmıştır."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.kaydet.2418617f": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydet"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.kok.neden.a37f29be": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Root Cause"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kök Neden"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.kritik.risk.091ca59c": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CRITICAL RISK"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KRİTİK RİSK"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.krt.4da4bdb1": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CRT"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KRT"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.mevzuat.c73d9b7a": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regulation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mevzuat"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.nedenini.yazmak.istiyorum.76bf7572": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I want to explain why"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nedenini Yazmak İstiyorum"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.neyi.gelistirebiliriz.53de16e6": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WHAT CAN WE IMPROVE?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NEYİ GELİŞTİREBİLİRİZ?"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.olarak.rapor.olustur.ve.paylas.00a71509": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " report."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " olarak rapor oluştur ve paylaş."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.onayl.defter.ca441ca5": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Safety Log"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onaylı Defter"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.onayl.defter.kayd.bulunmuyor.8764fde9": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Safety Log entries available"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onaylı defter kaydı bulunmuyor"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.onayli.defter.kayitlari.9c4c236c": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SAFETY LOG ENTRIES"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ONAYLI DEFTER KAYITLARI"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.oneri.86b1003f": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "recommendation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "öneri"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.oneri.95a4dc92": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "recommendations"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "öneri"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.oneri.cbecd1fc": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommendation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öneri"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.oneri.d5e11e40": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommendation:"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öneri:"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.onleyici.faaliyet.36b02828": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preventive Action"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önleyici Faaliyet"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.ort.339c6d29": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MED"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ORT"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.orta.risk.a014ee49": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MEDIUM RISK"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ORTA RİSK"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.paylas.5ce2681b": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "share your report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "paylaş"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.pdf.olarak.indir.07a7e79b": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download as PDF"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF olarak indir"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.pdf.raporu.olustur.891e596f": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create PDF Report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF Raporu Oluştur"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.plus.pro.ile.ac.9ed9163b": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock with PLUS / PRO"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PLUS / PRO ile aç"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.plus.pro.ile.ac.ad2bd639": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock with Plus / Pro"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus / Pro ile Aç"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.plus.pro.ile.tamam.n.ac.8257a71f": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock all with Plus / Pro"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus / Pro ile tamamını aç"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.plus.veya.pro.ile.ac.feb08372": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock with PLUS or PRO"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PLUS veya PRO ile aç"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.pro.abonelik.ekran.n.acar.9d0f7bfa": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the PRO subscription screen"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRO abonelik ekranını açar"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.pro.ya.gec.b850bf0c": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upgrade to PRO"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRO'ya geç"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.puan.1c38ab37": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "points"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "puan"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.rapor.haklar.ve.excel.c.kt.s.55eb6d2d": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report access and Excel export"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor hakları ve Excel çıktısı"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.rapor.icin.firma.secin.f925120d": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a company for this report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor için firma seçin"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.rapor.icin.secildi.f4b0b22b": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected for this report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor için seçildi"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.rapor.kendi.firmana.gore.uretilir.f9202ded": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generate reports for your company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor kendi firmana göre üretilir"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.rapor.olustur.e0a43f76": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create Report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor Oluştur"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.rapor.turu.secin.49b32bcb": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select report type"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor türü seçin"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.rapora.ekle.f54c4bf7": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapora ekle"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.rapordan.c.kar.7c294954": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapordan çıkar"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.raporunu.olustur.ve.3f14b005": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create and "
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raporunu oluştur ve "
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.raporunu.olustur.ve.paylas.eba53443": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create and share your report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raporunu oluştur ve paylaş"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.risk.analizi.tablosu.6ebbed72": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Analysis Table"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Analizi Tablosu"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.sec.0abbb5fb": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seç"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.secildi.7fb687e3": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçildi"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.secili.59f2bc7b": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "selected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "seçili"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.secili.9fce9c94": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçili"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.secili.bulgular.n.ozet.dokumu.9cda55fa": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summary of selected findings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçili bulguların özet dökümü"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.secili.degil.fe86ff2a": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not selected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçili değil"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.sektor.299a6675": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sector:"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sektör:"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.sil.c0b0d3c6": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sil"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.standart.rapor.13083cc0": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard Report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standart Rapor"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.standart.rapor.olustur.6e694f0f": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create Standard Report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standart Rapor Oluştur"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.taslak.688eaadb": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DRAFT"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TASLAK"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.tehlike.kaynag.izole.edilmeli.ve.guvenli.c.c73f25cf": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The hazard source should be isolated and a safe work method applied."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tehlike kaynağı izole edilmeli ve güvenli çalışma yöntemi uygulanmalıdır."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.tekrar.dene.bb3d56af": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekrar dene"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.tespit.4e395ed8": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finding"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tespit"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.tespit.dadc9d63": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finding:"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tespit:"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.toplam.bulgu.ba5791c2": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TOTAL FINDINGS"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TOPLAM BULGU"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.toplam.gorus.f284237a": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TOTAL ADVICE"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TOPLAM GÖRÜŞ"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.toplam.kayit.ed2dc876": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TOTAL ENTRIES"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TOPLAM KAYIT"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.toplam.oneri.6cb82f74": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TOTAL RECOMMENDATIONS"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TOPLAM ÖNERİ"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.tumunu.b.rak.8634f314": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear all"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tümünü bırak"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.tumunu.sec.fa983a39": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select all"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tümünü seç"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.uyeligine.ozel.1.kerelik.olusturma.hakk.n..f00bf147": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membership gift: your one-time report credit is ready"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Üyeliğine özel: 1 kerelik oluşturma hakkın tanımlandı"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.uyelik.seceneklerini.acar.6e331850": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens membership options"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Üyelik seçeneklerini açar"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.uzman.degerlendirmesi.78eb5c8a": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EXPERT REVIEW"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UZMAN DEĞERLENDİRMESİ"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.uzman.gorusu.130b1c61": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expert Advice"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzman Görüşü"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.uzman.gorusu.bulunmuyor.25287788": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No expert advice available"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzman görüşü bulunmuyor"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.uzman.onayi.75f9b460": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EXPERT REVIEW"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UZMAN ONAYI"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.uzman.onerisi.30a0f4e1": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EXPERT RECOMMENDATION"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UZMAN ÖNERİSİ"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.uzman.onerisi.76e0e541": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expert recommendation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzman önerisi"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.vazgec.583c4eba": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.veya.46b453c4": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "or"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "veya"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.veya.5e79def6": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " or "
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " veya "
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.ya.da.40287c6c": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " or "
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " ya da "
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.yontem.8e151e54": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "METHOD"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "YÖNTEM"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.ysk.b21595ae": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HGH"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "YSK"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.yuklediginiz.fotograflarda.raporlanabilir..bd7b16f9": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No reportable risk was detected in the uploaded photos. Continue your on-site checks as usual."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yüklediğiniz fotoğraflarda raporlanabilir bir risk tespit edilmedi. Saha kontrolünüzü yine de sürdürün."
+          }
+        }
+      }
+    },
+    "analysis.result_hub.v2.yuksek.risk.e8e28270": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HIGH RISK"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "YÜKSEK RİSK"
+          }
+        }
+      }
+    },
     "analysis.result.view.1.analiz.fotografi.1ae0e4df": {
       "comment": "swift_user_copy; App/Views/Result/ResultView.swift:3369; placeholders: %1$@; review: machine_draft",
       "extractionState": "manual",
@@ -6753,6 +9939,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aktif yöntem"
+          }
+        }
+      }
+    },
+    "analysis.result.view.analiz.bulgulari.11d57f5a": {
+      "comment": "swiftui_text; App/Views/Result/ResultView.swift; v4 neutral finding heading; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis findings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz bulguları"
           }
         }
       }
@@ -9831,6 +13035,690 @@
           "stringUnit": {
             "state": "translated",
             "value": "Yükselt"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.photo.short_label": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo %1$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto %1$@"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.analizini.plus.ve.pro.ile.guclendir.eebe6e13": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Power up your analysis with PLUS and PRO"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizini PLUS ve PRO ile güçlendir"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.analizini.pro.ile.guclendir.25dfc7da": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Power up your analysis with PRO"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizini PRO ile güçlendir"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.analizlerinde.derin.arast.rma.ve.daha.gucl.bf1621f8": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use Deep Research and more capable AI models in your analyses. Upgrade to PRO—unlimited analyses are waiting."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizlerinde Derin Araştırma ve daha güçlü yapay zekâ modellerinden yararlan. PRO’ya geç; sınırsız analiz seni bekliyor."
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.begen.c2cc0893": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Like"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beğen"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.begenme.8cc455ba": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dislike"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beğenme"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.bu.bulgu.standart.rapor.olarak.haz.rlan.r.9e4a8cc6": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creates a Standard Report for this finding"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu bulgu Standart Rapor olarak hazırlanır"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.bu.gorus.standart.rapor.olarak.haz.rlan.r.6487fe4e": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creates a Standard Report for this advice"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu görüş Standart Rapor olarak hazırlanır"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.bu.ozellikler.premium.ozelliktir.be3d321a": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These features are premium."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu özellikler premium özelliktir."
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.bulgu.e3e9e680": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FINDING"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BULGU"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.daha.detayl.analiz.uzman.gorusleri.ve.geli.0f8f55f6": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose PLUS for more detailed analysis, expert advice and advanced reports; choose PRO for Deep Research, more capable AI and unlimited analyses."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha detaylı analiz, uzman görüşleri ve gelişmiş raporlar için PLUS’a; Derin Araştırma, daha güçlü yapay zekâ ve sınırsız analiz için PRO’ya geç."
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.dayanak.172f1e65": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dayanak"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.dogrulanm.s.dayanak.bulunmuyor.f65cff13": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No verified reference available."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doğrulanmış dayanak bulunmuyor."
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.duzeltici.onlem.12648a73": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CORRECTIVE ACTION"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DÜZELTİCİ ÖNLEM"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.ilgili.yasal.dayanaklar.df4486ff": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Applicable regulatory basis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlgili yasal dayanaklar"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.kal.c.008b6870": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permanent"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalıcı"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.kok.neden.080d851e": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ROOT CAUSE"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KÖK NEDEN"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.mevcut.tehlikenin.giderilmesi.76be5fb1": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminate the current hazard"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mevcut tehlikenin giderilmesi"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.mevzuat.3eef1ac3": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "REGULATORY REFERENCES"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MEVZUAT"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.mevzuat.referanslar.plus.ve.pro.da.bu.ozel.94661dc8": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regulatory references are available with Plus and Pro. These features are premium."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mevzuat referansları Plus ve Pro’da. Bu özellikler premium özelliktir."
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.oncelikli.697a78d3": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Priority"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öncelikli"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.onleyici.faaliyet.ad95a8ff": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PREVENTIVE ACTION"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ÖNLEYİCİ FAALİYET"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.planlar.incele.4fdf89b7": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore plans"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planları incele"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.plus.ve.pro.abonelik.seceneklerini.acar.81aa104f": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens PLUS and PRO subscription options"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PLUS ve PRO abonelik seçeneklerini açar"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.pro.abonelik.ekran.n.acar.2ebb3f3f": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the PRO subscription screen"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRO abonelik ekranını açar"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.pro.ya.gec.8176054d": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upgrade to PRO"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRO'ya geç"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.puan.371b8add": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "POINTS"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PUAN"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.raporu.indir.5caa46b4": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download Report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raporu İndir"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.raporu.paylas.b8f10f0a": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raporu paylaş"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.risk.e2ab9b76": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RISK"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RİSK"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.saha.teyidi.ve.uzman.degerlendirmesi.gerek.03da05c6": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Field verification and expert review required"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saha teyidi ve uzman değerlendirmesi gerekir"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.tehlike.aciklamasi.9083161c": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HAZARD DESCRIPTION"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TEHLİKE AÇIKLAMASI"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.tehlikenin.temel.nedeni.108c3796": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Underlying cause of the hazard"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tehlikenin temel nedeni"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.tekrar.n.engelleyecek.kontroller.f0df07c1": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controls to prevent recurrence"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekrarını engelleyecek kontroller"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.tespit.46928bb5": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finding"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tespit"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.uzman.aciklamasi.8e3abad9": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EXPERT DESCRIPTION"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UZMAN AÇIKLAMASI"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.uzman.degerlendirmesi.c999e444": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expert review"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzman değerlendirmesi"
+          }
+        }
+      }
+    },
+    "analysis.risk.detail.v2.uzman.gorusu.81f7a08e": {
+      "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "EXPERT ADVICE"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UZMAN GÖRÜŞÜ"
           }
         }
       }

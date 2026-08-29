@@ -169,11 +169,11 @@ struct RiskDetailView: View {
                         Spacer()
                         roundReactionButton("hand.thumbsup", active: reaction == .like) { handleReactionTap(.like) }
                             .disabled(isReactionSaving)
-                            .accessibilityLabel(copy("Beğen", "Like"))
+                            .accessibilityLabel(copy("analysis.risk.detail.v2.begen.c2cc0893", "Beğen", "Like"))
                             .accessibilityIdentifier("result.detail.like")
                         roundReactionButton("hand.thumbsdown", active: reaction == .dislike) { handleReactionTap(.dislike) }
                             .disabled(isReactionSaving)
-                            .accessibilityLabel(copy("Beğenme", "Dislike"))
+                            .accessibilityLabel(copy("analysis.risk.detail.v2.begenme.8cc455ba", "Beğenme", "Dislike"))
                             .accessibilityIdentifier("result.detail.dislike")
                     }
                     .padding(.horizontal, 14)
@@ -192,7 +192,7 @@ struct RiskDetailView: View {
                                     .background(referenceRiskColor(band.level))
                                     .clipShape(RoundedRectangle(cornerRadius: 4))
                             } else {
-                                Text(copy("UZMAN GÖRÜŞÜ", "EXPERT ADVICE"))
+                                Text(copy("analysis.risk.detail.v2.uzman.gorusu.81f7a08e", "UZMAN GÖRÜŞÜ", "EXPERT ADVICE"))
                                     .font(referenceFont(8.5, .heavy))
                                     .foregroundStyle(.white)
                                     .padding(.horizontal, 7)
@@ -200,7 +200,7 @@ struct RiskDetailView: View {
                                     .background(Color(hex: "#A66A13"))
                                     .clipShape(RoundedRectangle(cornerRadius: 4))
                             }
-                            Text("\(copy("BULGU", "FINDING")) #F-\(String(format: "%04d", finding.id))")
+                            Text("\(copy("analysis.risk.detail.v2.bulgu.e3e9e680", "BULGU", "FINDING")) #F-\(String(format: "%04d", finding.id))")
                                 .font(referenceFont(9, .bold))
                                 .tracking(0.3)
                                 .foregroundStyle(.white.opacity(0.72))
@@ -209,7 +209,7 @@ struct RiskDetailView: View {
                                 Text(scoreText(finding.score(for: method)))
                                     .font(referenceFont(15, .heavy))
                                     .foregroundStyle(.white)
-                                Text(method == .fineKinney ? copy("PUAN", "POINTS") : copy("RİSK", "RISK"))
+                                Text(method == .fineKinney ? copy("analysis.risk.detail.v2.puan.371b8add", "PUAN", "POINTS") : copy("analysis.risk.detail.v2.risk.e2ab9b76", "RİSK", "RISK"))
                                     .font(referenceFont(9, .bold))
                                     .foregroundStyle(.white.opacity(0.72))
                             }
@@ -243,7 +243,12 @@ struct RiskDetailView: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("result.detail.photo_card")
         .overlay(alignment: .bottomTrailing) {
-            Text("Foto \(photoIndex)")
+            Text(RDLocalization.format(
+                "analysis.risk.detail.photo.short_label",
+                table: .analysis,
+                fallback: "Foto %1$@",
+                arguments: [String(photoIndex)]
+            ))
                 .font(referenceFont(1, .regular))
                 .foregroundStyle(Color.clear)
                 .accessibilityLabel(RDLocalization.format("analysis.risk.detail.view.kaynak.fotograf.1.1bb24334", table: .analysis, fallback: "Kaynak fotoğraf %1$@", arguments: [String(photoIndex)]))
@@ -262,12 +267,12 @@ struct RiskDetailView: View {
                         .background(Color.rdResultGreenTint)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(copy("Raporu İndir", "Download Report"))
+                        Text(copy("analysis.risk.detail.v2.raporu.indir.5caa46b4", "Raporu İndir", "Download Report"))
                             .font(referenceFont(13.5, .heavy)).foregroundStyle(ink)
                         Text(
                             finding.isScored
-                                ? copy("Bu bulgu Standart Rapor olarak hazırlanır", "Creates a Standard Report for this finding")
-                                : copy("Bu görüş Standart Rapor olarak hazırlanır", "Creates a Standard Report for this advice")
+                                ? copy("analysis.risk.detail.v2.bu.bulgu.standart.rapor.olarak.haz.rlan.r.9e4a8cc6", "Bu bulgu Standart Rapor olarak hazırlanır", "Creates a Standard Report for this finding")
+                                : copy("analysis.risk.detail.v2.bu.gorus.standart.rapor.olarak.haz.rlan.r.6487fe4e", "Bu görüş Standart Rapor olarak hazırlanır", "Creates a Standard Report for this advice")
                         )
                             .font(referenceFont(9.5, .medium)).foregroundStyle(Color.rdResultTertiaryText)
                             .lineLimit(1).minimumScaleFactor(0.72)
@@ -289,7 +294,7 @@ struct RiskDetailView: View {
                 actionSquareLabel("square.and.arrow.up", color: greenDark)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(copy("Raporu paylaş", "Share report"))
+            .accessibilityLabel(copy("analysis.risk.detail.v2.raporu.paylas.b8f10f0a", "Raporu paylaş", "Share report"))
             .accessibilityIdentifier("result.detail.share_report")
         }
         .padding(.horizontal, 20)
@@ -312,7 +317,7 @@ struct RiskDetailView: View {
             HStack(spacing: 10) {
                 HStack(alignment: .lastTextBaseline, spacing: 4) {
                     Text(scoreText(score)).font(referenceFont(26, .heavy)).tracking(-1.2)
-                    Text(method == .fineKinney ? copy("PUAN", "POINTS") : copy("RİSK", "RISK"))
+                    Text(method == .fineKinney ? copy("analysis.risk.detail.v2.puan.371b8add", "PUAN", "POINTS") : copy("analysis.risk.detail.v2.risk.e2ab9b76", "RİSK", "RISK"))
                         .font(referenceFont(8.5, .heavy))
                         .lineLimit(1)
                         .minimumScaleFactor(0.72)
@@ -346,13 +351,13 @@ struct RiskDetailView: View {
                 .background(Color.white.opacity(0.14))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             VStack(alignment: .leading, spacing: 3) {
-                Text(copy("UZMAN GÖRÜŞÜ", "EXPERT ADVICE"))
+                Text(copy("analysis.risk.detail.v2.uzman.gorusu.81f7a08e", "UZMAN GÖRÜŞÜ", "EXPERT ADVICE"))
                     .font(referenceFont(10.5, .heavy))
                     .tracking(0.4)
                 Text(
                     finding.needsFieldVerification
-                        ? copy("Saha teyidi ve uzman değerlendirmesi gerekir", "Field verification and expert review required")
-                        : copy("Uzman değerlendirmesi", "Expert review")
+                        ? copy("analysis.risk.detail.v2.saha.teyidi.ve.uzman.degerlendirmesi.gerek.03da05c6", "Saha teyidi ve uzman değerlendirmesi gerekir", "Field verification and expert review required")
+                        : copy("analysis.risk.detail.v2.uzman.degerlendirmesi.c999e444", "Uzman değerlendirmesi", "Expert review")
                 )
                 .font(referenceFont(10.5, .medium))
                 .foregroundStyle(.white.opacity(0.78))
@@ -389,7 +394,7 @@ struct RiskDetailView: View {
                             .padding(.horizontal, 7).padding(.vertical, 4)
                             .background(referenceRiskColor(band.level)).clipShape(RoundedRectangle(cornerRadius: 4))
                     } else {
-                        Text(copy("UZMAN GÖRÜŞÜ", "EXPERT ADVICE"))
+                        Text(copy("analysis.risk.detail.v2.uzman.gorusu.81f7a08e", "UZMAN GÖRÜŞÜ", "EXPERT ADVICE"))
                             .font(referenceFont(8.5, .heavy)).foregroundStyle(.white)
                             .padding(.horizontal, 7).padding(.vertical, 4)
                             .background(Color(hex: "#A66A13")).clipShape(RoundedRectangle(cornerRadius: 4))
@@ -401,8 +406,8 @@ struct RiskDetailView: View {
                 HStack(spacing: 6) {
                     Text(
                         finding.isScored
-                            ? copy("TEHLİKE AÇIKLAMASI", "HAZARD DESCRIPTION")
-                            : copy("UZMAN AÇIKLAMASI", "EXPERT DESCRIPTION")
+                            ? copy("analysis.risk.detail.v2.tehlike.aciklamasi.9083161c", "TEHLİKE AÇIKLAMASI", "HAZARD DESCRIPTION")
+                            : copy("analysis.risk.detail.v2.uzman.aciklamasi.8e3abad9", "UZMAN AÇIKLAMASI", "EXPERT DESCRIPTION")
                     )
                         .font(referenceFont(9, .heavy)).tracking(0.3).foregroundStyle(Color.rdResultTertiaryText)
                     Rectangle().fill(Color.rdResultLine).frame(height: 1)
@@ -424,8 +429,8 @@ struct RiskDetailView: View {
         VStack(spacing: 10) {
             if !finding.rootCause.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 detailBlock(
-                    icon: "magnifyingglass", title: copy("KÖK NEDEN", "ROOT CAUSE"), tag: copy("Tespit", "Finding"),
-                    lead: copy("Tehlikenin temel nedeni", "Underlying cause of the hazard"), text: finding.rootCause,
+                    icon: "magnifyingglass", title: copy("analysis.risk.detail.v2.kok.neden.080d851e", "KÖK NEDEN", "ROOT CAUSE"), tag: copy("analysis.risk.detail.v2.tespit.46928bb5", "Tespit", "Finding"),
+                    lead: copy("analysis.risk.detail.v2.tehlikenin.temel.nedeni.108c3796", "Tehlikenin temel nedeni", "Underlying cause of the hazard"), text: finding.rootCause,
                     color: Color(hex: "#A66A13"), background: Color.rdResultAmberTint
                 )
             }
@@ -433,8 +438,8 @@ struct RiskDetailView: View {
             let corrective = finding.controlMeasures.filter { $0.kind != .preventive }
             if !corrective.isEmpty {
                 detailBlock(
-                    icon: "wrench.and.screwdriver", title: copy("DÜZELTİCİ ÖNLEM", "CORRECTIVE ACTION"), tag: copy("Öncelikli", "Priority"),
-                    lead: copy("Mevcut tehlikenin giderilmesi", "Eliminate the current hazard"), text: corrective.map(\.text).joined(separator: "\n"),
+                    icon: "wrench.and.screwdriver", title: copy("analysis.risk.detail.v2.duzeltici.onlem.12648a73", "DÜZELTİCİ ÖNLEM", "CORRECTIVE ACTION"), tag: copy("analysis.risk.detail.v2.oncelikli.697a78d3", "Öncelikli", "Priority"),
+                    lead: copy("analysis.risk.detail.v2.mevcut.tehlikenin.giderilmesi.76be5fb1", "Mevcut tehlikenin giderilmesi", "Eliminate the current hazard"), text: corrective.map(\.text).joined(separator: "\n"),
                     color: greenDark, background: Color.rdResultGreenTint
                 )
             }
@@ -444,8 +449,8 @@ struct RiskDetailView: View {
             let preventive = finding.controlMeasures.filter { $0.kind == .preventive }
             if !preventive.isEmpty {
                 detailBlock(
-                    icon: "shield.checkered", title: copy("ÖNLEYİCİ FAALİYET", "PREVENTIVE ACTION"), tag: copy("Kalıcı", "Permanent"),
-                    lead: copy("Tekrarını engelleyecek kontroller", "Controls to prevent recurrence"), text: preventive.map(\.text).joined(separator: "\n"),
+                    icon: "shield.checkered", title: copy("analysis.risk.detail.v2.onleyici.faaliyet.ad95a8ff", "ÖNLEYİCİ FAALİYET", "PREVENTIVE ACTION"), tag: copy("analysis.risk.detail.v2.kal.c.008b6870", "Kalıcı", "Permanent"),
+                    lead: copy("analysis.risk.detail.v2.tekrar.n.engelleyecek.kontroller.f0df07c1", "Tekrarını engelleyecek kontroller", "Controls to prevent recurrence"), text: preventive.map(\.text).joined(separator: "\n"),
                     color: greenDark, background: Color.rdResultMintTint
                 )
             }
@@ -461,35 +466,29 @@ struct RiskDetailView: View {
         case .free:
             ResultMembershipPromotionCard(
                 variant: .plusAndPro,
-                title: copy("Analizini PLUS ve PRO ile güçlendir", "Power up your analysis with PLUS and PRO"),
-                message: copy(
-                    "Daha detaylı analiz, uzman görüşleri ve gelişmiş raporlar için PLUS’a; Derin Araştırma, daha güçlü yapay zekâ ve sınırsız analiz için PRO’ya geç.",
-                    "Choose PLUS for more detailed analysis, expert advice and advanced reports; choose PRO for Deep Research, more capable AI and unlimited analyses."
-                ),
-                actionTitle: copy("Planları incele", "Explore plans")
+                title: copy("analysis.risk.detail.v2.analizini.plus.ve.pro.ile.guclendir.eebe6e13", "Analizini PLUS ve PRO ile güçlendir", "Power up your analysis with PLUS and PRO"),
+                message: copy("analysis.risk.detail.v2.daha.detayl.analiz.uzman.gorusleri.ve.geli.0f8f55f6", "Daha detaylı analiz, uzman görüşleri ve gelişmiş raporlar için PLUS’a; Derin Araştırma, daha güçlü yapay zekâ ve sınırsız analiz için PRO’ya geç.", "Choose PLUS for more detailed analysis, expert advice and advanced reports; choose PRO for Deep Research, more capable AI and unlimited analyses."),
+                actionTitle: copy("analysis.risk.detail.v2.planlar.incele.4fdf89b7", "Planları incele", "Explore plans")
             ) {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 beginPaywallEntry(at: .findingDetailPlusProPromotion, targetTier: .plus)
                 showPaywall = true
             }
-            .accessibilityHint(copy("PLUS ve PRO abonelik seçeneklerini açar", "Opens PLUS and PRO subscription options"))
+            .accessibilityHint(copy("analysis.risk.detail.v2.plus.ve.pro.abonelik.seceneklerini.acar.81aa104f", "PLUS ve PRO abonelik seçeneklerini açar", "Opens PLUS and PRO subscription options"))
             .accessibilityIdentifier("result.detail.plus_pro_promotion")
 
         case .plus:
             ResultMembershipPromotionCard(
                 variant: .pro,
-                title: copy("Analizini PRO ile güçlendir", "Power up your analysis with PRO"),
-                message: copy(
-                    "Analizlerinde Derin Araştırma ve daha güçlü yapay zekâ modellerinden yararlan. PRO’ya geç; sınırsız analiz seni bekliyor.",
-                    "Use Deep Research and more capable AI models in your analyses. Upgrade to PRO—unlimited analyses are waiting."
-                ),
-                actionTitle: copy("PRO'ya geç", "Upgrade to PRO")
+                title: copy("analysis.risk.detail.v2.analizini.pro.ile.guclendir.25dfc7da", "Analizini PRO ile güçlendir", "Power up your analysis with PRO"),
+                message: copy("analysis.risk.detail.v2.analizlerinde.derin.arast.rma.ve.daha.gucl.bf1621f8", "Analizlerinde Derin Araştırma ve daha güçlü yapay zekâ modellerinden yararlan. PRO’ya geç; sınırsız analiz seni bekliyor.", "Use Deep Research and more capable AI models in your analyses. Upgrade to PRO—unlimited analyses are waiting."),
+                actionTitle: copy("analysis.risk.detail.v2.pro.ya.gec.8176054d", "PRO'ya geç", "Upgrade to PRO")
             ) {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 beginPaywallEntry(at: .findingDetailProPromotion, targetTier: .pro)
                 showPaywall = true
             }
-            .accessibilityHint(copy("PRO abonelik ekranını açar", "Opens the PRO subscription screen"))
+            .accessibilityHint(copy("analysis.risk.detail.v2.pro.abonelik.ekran.n.acar.2ebb3f3f", "PRO abonelik ekranını açar", "Opens the PRO subscription screen"))
             .accessibilityIdentifier("result.detail.pro_promotion")
 
         case .pro:
@@ -501,8 +500,8 @@ struct RiskDetailView: View {
     private var referenceBlock: some View {
         if app.currentTier.isPaid {
             detailBlock(
-                icon: "building.columns", title: copy("MEVZUAT", "REGULATORY REFERENCES"), tag: copy("Dayanak", "Basis"),
-                lead: copy("İlgili yasal dayanaklar", "Applicable regulatory basis"),
+                icon: "building.columns", title: copy("analysis.risk.detail.v2.mevzuat.3eef1ac3", "MEVZUAT", "REGULATORY REFERENCES"), tag: copy("analysis.risk.detail.v2.dayanak.172f1e65", "Dayanak", "Basis"),
+                lead: copy("analysis.risk.detail.v2.ilgili.yasal.dayanaklar.df4486ff", "İlgili yasal dayanaklar", "Applicable regulatory basis"),
                 text: regulatoryReferenceText,
                 color: Color(hex: "#4E8EB8"), background: Color.rdResultBlueTint
             )
@@ -513,8 +512,8 @@ struct RiskDetailView: View {
             } label: {
                 ZStack {
                     detailBlock(
-                        icon: "building.columns", title: copy("MEVZUAT", "REGULATORY REFERENCES"), tag: copy("Dayanak", "Basis"),
-                        lead: copy("İlgili yasal dayanaklar", "Applicable regulatory basis"),
+                        icon: "building.columns", title: copy("analysis.risk.detail.v2.mevzuat.3eef1ac3", "MEVZUAT", "REGULATORY REFERENCES"), tag: copy("analysis.risk.detail.v2.dayanak.172f1e65", "Dayanak", "Basis"),
+                        lead: copy("analysis.risk.detail.v2.ilgili.yasal.dayanaklar.df4486ff", "İlgili yasal dayanaklar", "Applicable regulatory basis"),
                         text: regulatoryReferenceText,
                         color: Color(hex: "#4E8EB8"), background: Color.rdResultBlueTint
                     )
@@ -528,7 +527,7 @@ struct RiskDetailView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "building.columns")
                                 .font(RDTypography.font(size: 15, weight: .semibold))
-                            Text(copy("MEVZUAT", "REGULATORY REFERENCES"))
+                            Text(copy("analysis.risk.detail.v2.mevzuat.3eef1ac3", "MEVZUAT", "REGULATORY REFERENCES"))
                                 .font(referenceFont(10, .heavy))
                                 .tracking(0.25)
                             Spacer()
@@ -546,7 +545,7 @@ struct RiskDetailView: View {
                 .background(Color.rdResultBlueTint)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(copy("Mevzuat referansları Plus ve Pro’da. Bu özellikler premium özelliktir.", "Regulatory references are available with Plus and Pro. These features are premium."))
+                .accessibilityLabel(copy("analysis.risk.detail.v2.mevzuat.referanslar.plus.ve.pro.da.bu.ozel.94661dc8", "Mevzuat referansları Plus ve Pro’da. Bu özellikler premium özelliktir.", "Regulatory references are available with Plus and Pro. These features are premium."))
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("result.detail.references.premium_lock")
@@ -570,7 +569,7 @@ struct RiskDetailView: View {
     private var regulatoryReferenceText: String {
         let references = finding.references.trimmingCharacters(in: .whitespacesAndNewlines)
         return references.isEmpty
-            ? copy("Doğrulanmış dayanak bulunmuyor.", "No verified reference available.")
+            ? copy("analysis.risk.detail.v2.dogrulanm.s.dayanak.bulunmuyor.f65cff13", "Doğrulanmış dayanak bulunmuyor.", "No verified reference available.")
             : references
     }
 
@@ -591,7 +590,7 @@ struct RiskDetailView: View {
             }
             .font(referenceFont(12.5, .black))
 
-            Text(copy("Bu özellikler premium özelliktir.", "These features are premium."))
+            Text(copy("analysis.risk.detail.v2.bu.ozellikler.premium.ozelliktir.be3d321a", "Bu özellikler premium özelliktir.", "These features are premium."))
                 .font(referenceFont(10.5, .semibold))
                 .foregroundStyle(Color.rdResultSecondaryText)
                 .multilineTextAlignment(.center)
@@ -773,7 +772,9 @@ struct RiskDetailView: View {
         return formatter.string(from: NSNumber(value: value)) ?? String(value)
     }
 
-    private func copy(_ tr: String, _ en: String) -> String { RDLanguage.current == .turkish ? tr : en }
+    private func copy(_ key: String, _ tr: String, _ en: String) -> String {
+        RDLocalization.string(key, table: .analysis, fallback: RDLanguage.current == .turkish ? tr : en)
+    }
     private func referenceFont(_ size: CGFloat, _ weight: Font.Weight) -> Font {
         RDTypography.font(size, weight)
     }

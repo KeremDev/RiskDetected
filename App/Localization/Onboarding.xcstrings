@@ -398,7 +398,7 @@
       }
     },
     "onboarding.obloading.testimonial.elif.body.77713b0d": {
-      "comment": "onboarding loading testimonial body",
+      "comment": "Onboarding loading testimonial body; placeholders: none; review: human",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -416,7 +416,7 @@
       }
     },
     "onboarding.obloading.testimonial.elif.headline.c1de84e8": {
-      "comment": "onboarding loading testimonial headline",
+      "comment": "Onboarding loading testimonial headline; placeholders: none; review: human",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -434,7 +434,7 @@
       }
     },
     "onboarding.obloading.testimonial.elif.name.e52e0716": {
-      "comment": "onboarding loading testimonial display name",
+      "comment": "Onboarding loading testimonial display name; placeholders: none; review: human",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -452,7 +452,7 @@
       }
     },
     "onboarding.obloading.testimonial.elif.role.7019432c": {
-      "comment": "onboarding loading testimonial role",
+      "comment": "Onboarding loading testimonial role; placeholders: none; review: human",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -470,7 +470,7 @@
       }
     },
     "onboarding.obloading.testimonial.mert.body.c7672046": {
-      "comment": "onboarding loading testimonial body",
+      "comment": "Onboarding loading testimonial body; placeholders: none; review: human",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -488,7 +488,7 @@
       }
     },
     "onboarding.obloading.testimonial.mert.headline.75a23da9": {
-      "comment": "onboarding loading testimonial headline",
+      "comment": "Onboarding loading testimonial headline; placeholders: none; review: human",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -506,7 +506,7 @@
       }
     },
     "onboarding.obloading.testimonial.mert.name.a7c05fb2": {
-      "comment": "onboarding loading testimonial display name",
+      "comment": "Onboarding loading testimonial display name; placeholders: none; review: human",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -524,7 +524,7 @@
       }
     },
     "onboarding.obloading.testimonial.mert.role.0fdf6df8": {
-      "comment": "onboarding loading testimonial role",
+      "comment": "Onboarding loading testimonial role; placeholders: none; review: human",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -542,7 +542,7 @@
       }
     },
     "onboarding.obloading.testimonial.selin.body.d190c795": {
-      "comment": "onboarding loading testimonial body",
+      "comment": "Onboarding loading testimonial body; placeholders: none; review: human",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -560,7 +560,7 @@
       }
     },
     "onboarding.obloading.testimonial.selin.headline.15a94ce8": {
-      "comment": "onboarding loading testimonial headline",
+      "comment": "Onboarding loading testimonial headline; placeholders: none; review: human",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -578,7 +578,7 @@
       }
     },
     "onboarding.obloading.testimonial.selin.name.e6db2340": {
-      "comment": "onboarding loading testimonial display name",
+      "comment": "Onboarding loading testimonial display name; placeholders: none; review: human",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -596,7 +596,7 @@
       }
     },
     "onboarding.obloading.testimonial.selin.role.a69649f2": {
-      "comment": "onboarding loading testimonial role",
+      "comment": "Onboarding loading testimonial role; placeholders: none; review: human",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -609,6 +609,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "İSG Danışmanı"
+          }
+        }
+      }
+    },
+    "onboarding.obloading.testimonial.burak.body.93b907c8": {
+      "comment": "Onboarding loading testimonial body; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seeing analysis results, required actions, and reports in one place makes coordination with my team much easier."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz sonuçlarını, alınacak önlemleri ve raporları tek yerde görmek ekibimle yürüttüğüm takibi çok kolaylaştırıyor."
+          }
+        }
+      }
+    },
+    "onboarding.obloading.testimonial.burak.headline.2720e7e9": {
+      "comment": "Onboarding loading testimonial headline; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The follow-up process is much more organized."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takip süreci çok daha düzenli."
+          }
+        }
+      }
+    },
+    "onboarding.obloading.testimonial.burak.name.32f1b793": {
+      "comment": "Onboarding loading testimonial display name; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Burak Aksoy"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Burak Aksoy"
+          }
+        }
+      }
+    },
+    "onboarding.obloading.testimonial.burak.role.02596e55": {
+      "comment": "Onboarding loading testimonial role; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Class B Occupational Safety Specialist"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "B Sınıfı İş Güvenliği Uzmanı"
           }
         }
       }
@@ -668,7 +740,7 @@
       }
     },
     "onboarding.obloading.view.risk.analizi.hazirlaniyor.fbb92976": {
-      "comment": "label inside onboarding loading progress ring",
+      "comment": "Label inside onboarding loading progress ring; placeholders: none; review: human",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -704,7 +776,7 @@
       }
     },
     "onboarding.obloading.view.sahadaki.profesyoneller.ne.diyor.9bf3d77a": {
-      "comment": "heading above onboarding loading testimonial carousel",
+      "comment": "Heading above onboarding loading testimonial carousel; placeholders: none; review: human",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -740,7 +812,7 @@
       }
     },
     "onboarding.obloading.view.yukleme.ilerlemesi.97991bbf": {
-      "comment": "accessibility label for onboarding loading progress",
+      "comment": "Accessibility label for onboarding loading progress; placeholders: none; review: human",
       "extractionState": "manual",
       "localizations": {
         "en": {

@@ -817,7 +817,10 @@ Deno.test("iOS result model and UI preserve field verification flag", async () =
   assertStringIncludes(resultSource, "localPreviewImage(forSourceIndex:");
   assertStringIncludes(riskDetailSource, "var photoIndex: Int = 1");
   assertStringIncludes(riskDetailSource, "result.detail.photo_index.");
-  assertStringIncludes(riskDetailSource, "RDCard(showsShadow: false)");
+  assertStringIncludes(
+    riskDetailSource,
+    '.accessibilityIdentifier("result.detail.expert_summary")',
+  );
 });
 
 Deno.test("Android build-allowlist gate mirrors iOS's, closed by default", async () => {

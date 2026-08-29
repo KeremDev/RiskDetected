@@ -16,7 +16,7 @@ struct OBLoadingView: View {
     @State private var hasStarted = false
     @State private var flowTask: Task<Void, Never>?
 
-    private let loadingDuration: TimeInterval = 10
+    private let loadingDuration: TimeInterval = 15
 
     var body: some View {
         GeometryReader { proxy in
@@ -35,6 +35,7 @@ struct OBLoadingView: View {
                         .tracking(-0.45)
                         .foregroundStyle(Color.rdOnyx)
                         .multilineTextAlignment(.center)
+                        .padding(.top, compact ? 6 : 10)
                         .animation(.easeInOut(duration: 0.25), value: title)
 
                     VStack(spacing: compact ? 8 : 10) {
@@ -65,24 +66,40 @@ struct OBLoadingView: View {
     private func startFlowIfNeeded() {
         guard !hasStarted else { return }
         hasStarted = true
-        startedAt = Date()
 
         flowTask = Task { @MainActor in
-            guard await wait(3.34) else { return }
-            OBHaptic.soft()
-            guard await wait(3.33) else { return }
-            OBHaptic.soft()
-            guard await wait(3.33) else { return }
-            OBHaptic.success()
-            title = RDLocalization.string(
-                "onboarding.obloading.view.plan.hazir.d352f51f",
-                table: .onboarding,
-                fallback: "Plan hazır."
-            )
-            guard await wait(0.35) else { return }
-            leaving = true
-            guard await wait(0.30) else { return }
-            onComplete()
+            while !Task.isCancelled {
+                startedAt = Date()
+                leaving = false
+                title = RDLocalization.string(
+                    "onboarding.obloading.view.sana.ozel.kurulum.hazirlaniyor.a7043077",
+                    table: .onboarding,
+                    fallback: "Sana özel kurulum hazırlanıyor…"
+                )
+
+                guard await wait(5) else { return }
+                OBHaptic.soft()
+                guard await wait(5) else { return }
+                OBHaptic.soft()
+                guard await wait(5) else { return }
+                OBHaptic.success()
+                title = RDLocalization.string(
+                    "onboarding.obloading.view.plan.hazir.d352f51f",
+                    table: .onboarding,
+                    fallback: "Plan hazır."
+                )
+
+                if Self.isPreviewLaunch {
+                    guard await wait(0.70) else { return }
+                    continue
+                }
+
+                guard await wait(0.35) else { return }
+                leaving = true
+                guard await wait(0.30) else { return }
+                onComplete()
+                return
+            }
         }
     }
 
@@ -99,6 +116,15 @@ struct OBLoadingView: View {
         } catch {
             return false
         }
+    }
+
+    private static var isPreviewLaunch: Bool {
+        #if DEBUG
+        CommandLine.arguments.contains("RD_PREVIEW_ONBOARDING_LOADING")
+            || ProcessInfo.processInfo.environment["RD_PREVIEW_ONBOARDING_LOADING"] == "1"
+        #else
+        false
+        #endif
     }
 }
 
@@ -130,21 +156,11 @@ private extension OBLoadingView {
                 .padding(lineWidth + 7)
                 .shadow(color: Color.rdOnyx.opacity(0.06), radius: 10, y: 5)
 
-            VStack(spacing: 1) {
-                Text("\(percentage)%")
-                    .font(RDTypography.font(size: RDFontScale.size(compact ? 28 : 32), weight: .bold))
-                    .monospacedDigit()
-                    .tracking(-1)
-                    .foregroundStyle(Color.rdOnyx)
-
-                Text(RDLocalization.string(
-                    "onboarding.obloading.view.risk.analizi.hazirlaniyor.fbb92976",
-                    table: .onboarding,
-                    fallback: "Risk analizi"
-                ))
-                .font(RDTypography.font(size: RDFontScale.size(10), weight: .semibold))
-                .foregroundStyle(Color.rdSlate)
-            }
+            Text("\(percentage)%")
+                .font(RDTypography.font(size: RDFontScale.size(compact ? 36 : 42), weight: .bold))
+                .monospacedDigit()
+                .tracking(-1.4)
+                .foregroundStyle(Color.rdOnyx)
         }
         .frame(width: diameter, height: diameter)
         .accessibilityElement(children: .ignore)

@@ -338,7 +338,10 @@
 				"$(SRCROOT)/supabase/functions/_shared/generated",
 				"$(SRCROOT)/supabase/functions/_shared/localization",
 				"$(SRCROOT)/supabase/functions/account-deletion-complete",
+				"$(SRCROOT)/supabase/functions/analysis-result-sections",
 				"$(SRCROOT)/supabase/functions/analyze",
+				"$(SRCROOT)/supabase/functions/analyze-v4",
+				"$(SRCROOT)/supabase/functions/analyze-vnext",
 				"$(SRCROOT)/supabase/functions/app-release-policy",
 				"$(SRCROOT)/supabase/functions/auth-send-email-hook",
 				"$(SRCROOT)/supabase/functions/firebase-phone-bridge",
@@ -563,7 +566,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = App/RiskDetected.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 86;
+				CURRENT_PROJECT_VERSION = 87;
 				DEVELOPMENT_ASSET_PATHS = "\"App/Preview Content\"";
 				DEVELOPMENT_TEAM = 68CU98HAY3;
 				ENABLE_PREVIEWS = YES;
@@ -583,7 +586,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3.4;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.riskdetected.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -601,7 +604,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = App/RiskDetected.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 86;
+				CURRENT_PROJECT_VERSION = 87;
 				DEVELOPMENT_ASSET_PATHS = "\"App/Preview Content\"";
 				DEVELOPMENT_TEAM = 68CU98HAY3;
 				ENABLE_PREVIEWS = YES;
@@ -621,7 +624,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3.4;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.riskdetected.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RISKDETECTED_REVENUECAT_API_KEY = appl_mckFFxUrvtNqzjShezjMIrFmItA;

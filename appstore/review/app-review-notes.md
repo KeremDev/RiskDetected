@@ -1,12 +1,13 @@
-RiskDetected 1.3.4 (build 86) is a subscription-screen and onboarding update.
-No new permissions, no new external services, no change to data collection.
+RiskDetected 2.0.0 (build 87) introduces the V4 analysis engine and a redesigned results and reporting workflow.
+No new permissions, no new external services, and no change to the declared data collection categories.
 
 Changes in this build:
-- The subscription screen was rebuilt. Every paid entry point and the final onboarding step now use the same screen.
-- Price, billing period, discount badge and free-trial length are read from the user's App Store storefront through StoreKit. When the store returns no offer, the screen shows no price and makes no trial claim instead of a placeholder.
-- The yearly card leads with the monthly equivalent and shows the yearly total beneath it; the renewal price appears under the purchase button.
-- The plan comparison table marks Deep Research and Focused Analysis as PRO-only, and the feature strip on the PLUS screen no longer advertises them.
-- Onboarding copy corrections.
+- Every new iOS build-87 analysis uses the V4 engine. The result route is pinned when the analysis is created and never silently falls back to an older engine.
+- Risk Analysis, Expert Guidance, Approved Notebook and Training Recommendations are presented in one redesigned results hub. Empty, single-finding and multi-finding results have explicit states.
+- Finding details now include evidence, corrective action, preventive action and regulatory references when available. Like/dislike feedback and optional reasons persist with the analysis.
+- PDF and Excel exports now preserve the selected result section and full expert-guidance content. Single-finding download/share and archive tracking are supported.
+- Free, Plus and Pro access states, paywall entry attribution, onboarding and light/dark presentation were refreshed.
+- Subscription products and entitlement names are unchanged. StoreKit remains the source of price, period and offer information.
 
 Reviewer login:
 Use the demo account supplied in App Review Information. Sign-in is email OTP; no password is required. Credentials are intentionally excluded from these notes and from the repository.
@@ -47,12 +48,13 @@ Suggested review path:
 1. Sign in with the supplied demo account.
 2. Select English and review the safety terminology profiles.
 3. Create a photo analysis using the synthetic image available to the account.
-4. Review evidence-linked findings and Fine-Kinney / 5×5 scoring.
-5. Generate PDF and Excel reports.
-6. Open Profile to inspect legal documents, restore purchases, and account deletion.
+4. Review Risk Analysis, Expert Guidance, Approved Notebook and Training tabs.
+5. Open a finding, submit like/dislike feedback, and inspect Fine-Kinney / 5×5 scoring.
+6. Generate and share PDF and Excel reports, including an Expert Guidance report.
+7. Open Profile to inspect legal documents, restore purchases, and account deletion.
 
 Important product boundaries:
 - AI findings may be incomplete or inaccurate and require professional review.
 - Non-Turkish profiles provide terminology guidance only; they do not claim regulatory certification.
 - Screenshots use synthetic debug fixtures with no real user or workplace data.
-- Existing App Store metadata and screenshots are unchanged.
+- Existing historical analyses are displayed through a compatibility projection and are not reprocessed.

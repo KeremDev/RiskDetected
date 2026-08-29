@@ -56,14 +56,32 @@ extension Color {
     static let rdSectionRiskEnd = Color(hex: "#74404F")
     static let rdSectionRiskAccent = Color(hex: "#A9717D")
     static let rdSectionRiskIcon = Color(hex: "#F6DCE2")
-    static let rdSectionExpertStart = Color(hex: "#527696")
-    static let rdSectionExpertEnd = Color(hex: "#385D7B")
-    static let rdSectionExpertAccent = Color(hex: "#7296B2")
-    static let rdSectionExpertIcon = Color(hex: "#DEECF6")
-    static let rdSectionNotebookStart = Color(hex: "#887341")
-    static let rdSectionNotebookEnd = Color(hex: "#66532D")
-    static let rdSectionNotebookAccent = Color(hex: "#A18A52")
-    static let rdSectionNotebookIcon = Color(hex: "#F7E9BF")
+    // Expert advice: grounded amber. Dark enough for white banner copy, warm
+    // enough to stay distinct from both risk severity red and subscription gold.
+    static let rdSectionExpertStart = Color(hex: "#9C6517")
+    static let rdSectionExpertEnd = Color(hex: "#654006")
+    static let rdSectionExpertAccent = Color.dynamic(light: "#B7791F", dark: "#D9A441")
+    static let rdSectionExpertStrong = Color.dynamic(light: "#754A0B", dark: "#F0BE5A")
+    static let rdSectionExpertIcon = Color(hex: "#FBE4B0")
+    static let rdSectionExpertTint = Color.dynamic(light: "#FFF6E2", dark: "#31230D")
+
+    // Training: confident purple, kept muted so long-form education content is
+    // calm while selected controls and outlines still read immediately.
+    static let rdSectionTrainingStart = Color(hex: "#73549A")
+    static let rdSectionTrainingEnd = Color(hex: "#493165")
+    static let rdSectionTrainingAccent = Color.dynamic(light: "#7653A6", dark: "#A98BD0")
+    static let rdSectionTrainingStrong = Color.dynamic(light: "#58387E", dark: "#C5A8E8")
+    static let rdSectionTrainingIcon = Color(hex: "#EEE3FA")
+    static let rdSectionTrainingTint = Color.dynamic(light: "#F5EFFB", dark: "#281D33")
+
+    // Safety Log: restrained burgundy. The ruled-paper surface stays legible;
+    // the surrounding rail, outline and summary banner carry its identity.
+    static let rdSectionNotebookStart = Color(hex: "#8A4051")
+    static let rdSectionNotebookEnd = Color(hex: "#572432")
+    static let rdSectionNotebookAccent = Color.dynamic(light: "#985164", dark: "#C98294")
+    static let rdSectionNotebookStrong = Color.dynamic(light: "#6B2C3C", dark: "#E0A1B0")
+    static let rdSectionNotebookIcon = Color(hex: "#F5DFE4")
+    static let rdSectionNotebookTint = Color.dynamic(light: "#F9EEF1", dark: "#321820")
 
     // Risk semantic
     static let rdCritical = Color(hex: "#B42318")

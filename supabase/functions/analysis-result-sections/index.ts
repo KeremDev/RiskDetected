@@ -35,9 +35,10 @@ import {
 } from "../_shared/approved-book/index.ts";
 import {
   hazardClassFrom,
-  trainingRecommendationsFor,
   type TrainingItemRow,
+  trainingRecommendationsFor,
 } from "../_shared/training-recommendations/index.ts";
+import { userFacingCopy } from "../_shared/user-facing-copy.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -297,7 +298,10 @@ function trainingCardID(analysisID: string, catalogCode: string): string {
     hash = Math.imul(hash, 0x01000193) >>> 0;
   }
   const seed = hash.toString(16).padStart(8, "0");
-  const body = `${seed}${analysisID.replace(/-/g, "").slice(0, 24)}`.slice(0, 32)
+  const body = `${seed}${analysisID.replace(/-/g, "").slice(0, 24)}`.slice(
+    0,
+    32,
+  )
     .padEnd(32, "0");
   return `${body.slice(0, 8)}-${body.slice(8, 12)}-5${body.slice(13, 16)}-a${
     body.slice(17, 20)
@@ -531,12 +535,8 @@ async function handleLoad(context: Context) {
       analytics: "analysis-result-events-v1",
     },
     disclaimers: {
-      expert: context.language === "tr"
-        ? "Bu içerik bağlayıcı uzman görüşü değildir; saha teyidi ve uzman değerlendirmesi gerekir."
-        : "This content is not a binding expert opinion; field verification and expert review are required.",
-      notebook: context.language === "tr"
-        ? "Onaylı Defter önerisi/taslağıdır; uzman değerlendirmesi ve resmî deftere aktarım gerekir."
-        : "This is a Safety Log recommendation; expert review and transfer to the applicable official record are required.",
+      expert: userFacingCopy("resultExpertHubDisclaimer", context.language),
+      notebook: userFacingCopy("resultNotebookHubDisclaimer", context.language),
     },
     sections: [
       sectionPayload("risk_analysis", context.tier, sections.risk),
@@ -769,13 +769,9 @@ async function handleReportIntent(context: Context) {
     report_kind: reportKind,
     items,
     disclaimers: section === "approved_notebook"
-      ? (context.language === "tr"
-        ? "Onaylı Defter önerisi/taslağıdır; uzman değerlendirmesi gerekir."
-        : "Safety Log recommendation; expert review is required.")
+      ? userFacingCopy("resultNotebookIntentDisclaimer", context.language)
       : section === "expert_recommendations"
-      ? (context.language === "tr"
-        ? "Bağlayıcı uzman görüşü değildir; saha teyidi gerekir."
-        : "Not a binding expert opinion; field verification is required.")
+      ? userFacingCopy("resultExpertIntentDisclaimer", context.language)
       : null,
   };
   const { data, error } = await context.supabase.rpc(

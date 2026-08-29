@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "locale": "en-GB",
+  "version": "2.0.0",
+  "market": "United Kingdom",
+  "app_info": {
+    "name": "RiskDetected: Risk Assessment",
+    "subtitle": "Hazard Checks & Risk Reports",
+    "privacy_policy_url": "https://riskdetected.com/en/privacy"
+  },
+  "version_info": {
+    "promotional_text": "Review workplace risks from photos, prioritise findings with Fine-Kinney or 5×5, and create professional PDF and Excel reports.",
+    "description": "Review workplace risks from field photos and turn observations into structured, evidence-grounded findings with RiskDetected.\n\nDesigned for safety professionals, site managers, consultants and operations teams, RiskDetected organises photo observations into Risk Analysis, Expert Guidance, Approved Notebook drafts and Training Recommendations.\n\nKey features:\n• V4-assisted analysis of workplace photos\n• Fine-Kinney and 5×5 risk assessment outputs\n• Corrective actions, preventive activities and regulatory references\n• PDF and Excel report creation, download and sharing\n• Reporting for one finding or selected findings\n• Report archive and persistent user feedback\n• Company, preparer and logo details for reports\n• Light and dark appearance support\n\nRiskDetected provides AI-assisted decision support. Outputs may be incomplete or inaccurate and must be checked against the workplace. The app does not replace a qualified safety professional, a site inspection or legal review.\n\nSome features and higher usage limits require a Plus or Pro subscription. Subscriptions are managed by Apple and purchases can be restored in the app.\n\nTerms of Use: https://riskdetected.com/en/terms\nPrivacy Policy: https://riskdetected.com/en/privacy\nApple Standard EULA: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
+    "keywords": "safety,inspection,health,site,workplace,audit,matrix,job,analysis,JSA,observation,generator",
+    "marketing_url": "https://riskdetected.com/en",
+    "support_url": "https://riskdetected.com/en/support",
+    "whats_new": "A new V4 analysis engine and redesigned results hub bring Risk Analysis, Expert Guidance, Approved Notebook records and Training Recommendations into one flow. Finding details, feedback, PDF/Excel reports, sharing and archives are improved, with refreshed Free, Plus and Pro experiences in light and dark mode."
+  },
+  "screenshots": {
+    "source_theme": "light",
+    "captions": [
+      "Spot site risks from a photo",
+      "Turn evidence into clear findings",
+      "Prioritise risk with Fine-Kinney or 5×5",
+      "Create professional PDF & Excel reports",
+      "Review expert guidance and notebook drafts"
+    ]
+  }
+}

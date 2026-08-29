@@ -127,8 +127,8 @@ select ok(
 
 select is(
   (select value->>'rollout_mode' from public.app_feature_flags where key = 'analysis_result_hub_v1'),
-  'user_allowlist',
-  'result hub remains isolated to the allowlist'
+  'build_allowlist',
+  'result hub is released through the supported iOS build gate'
 );
 select is(
   (select value->>'required_capability' from public.app_feature_flags where key = 'analysis_result_hub_v1'),

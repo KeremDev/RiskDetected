@@ -25,6 +25,7 @@ enum PaywallEntrySurface: String, Codable {
     case analysisResults = "analysis_results"
     case findingDetail = "finding_detail"
     case expertAdvice = "expert_advice"
+    case trainingRecommendations = "training_recommendations"
     case approvedNotebook = "approved_notebook"
     case onboarding, unknown
 }
@@ -56,6 +57,7 @@ enum PaywallEntryPoint: String, Codable {
     case reportsLockedReportOptions = "reports_locked_report_options"
     case resultHubRiskAnalysisPromotion = "result_hub_risk_analysis_promotion"
     case resultHubExpertAdvicePromotion = "result_hub_expert_advice_promotion"
+    case resultHubTrainingPromotion = "result_hub_training_promotion"
     case resultHubApprovedNotebookPromotion = "result_hub_approved_notebook_promotion"
     case resultLockedReportOptions = "result_locked_report_options"
     case resultSummaryUpgradeHint = "result_summary_upgrade_hint"
@@ -89,6 +91,8 @@ enum PaywallEntryPoint: String, Codable {
             return .analysisResults
         case .resultHubExpertAdvicePromotion:
             return .expertAdvice
+        case .resultHubTrainingPromotion:
+            return .trainingRecommendations
         case .resultHubApprovedNotebookPromotion:
             return .approvedNotebook
         case .findingDetailPlusProPromotion, .findingDetailProPromotion,
@@ -121,7 +125,8 @@ enum PaywallEntryPoint: String, Codable {
         case .profileUpsellCard, .reportsUpsellCard: return "plan_upsell_card"
         case .reportsLockedReportOptions, .resultLockedReportOptions: return "report_options_lock"
         case .resultHubRiskAnalysisPromotion, .resultHubExpertAdvicePromotion,
-             .resultHubApprovedNotebookPromotion: return "result_membership_promotion"
+             .resultHubTrainingPromotion, .resultHubApprovedNotebookPromotion:
+            return "result_membership_promotion"
         case .resultSummaryUpgradeHint: return "result_summary_hint"
         case .resultConfidenceChip: return "confidence_chip"
         case .resultFindingLockedFeature: return "finding_card_locked_feature"

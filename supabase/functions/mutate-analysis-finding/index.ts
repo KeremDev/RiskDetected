@@ -8,6 +8,7 @@
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { userFacingCopy } from "../_shared/user-facing-copy.ts";
 
 type MutationAction = "update" | "delete";
 
@@ -418,7 +419,7 @@ serve(async (req) => {
   const { data: analysis, error: analysisError } = await supabase
     .from("analyses")
     .select(
-      "id,user_id,status,analysis_edit_version,user_edit_count,photo_count",
+      "id,user_id,status,analysis_edit_version,user_edit_count,photo_count,output_language",
     )
     .eq("id", analysisID)
     .eq("user_id", user.id)
@@ -572,7 +573,10 @@ serve(async (req) => {
       ) {
         return json(400, {
           error: "scoreless_item_score_locked",
-          message: "Saha teyidi kaydına risk skoru eklenemez.",
+          message: userFacingCopy(
+            "reportScorelessItemLocked",
+            analysis.output_language,
+          ),
           request_id: requestID,
           support_id: supportID,
         });

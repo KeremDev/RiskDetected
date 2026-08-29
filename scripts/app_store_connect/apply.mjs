@@ -374,12 +374,12 @@ if (!candidate) {
     "--copyright",
     APP_CONFIG.release.copyright,
     "--release-type",
-    "MANUAL",
+    APP_CONFIG.release.release_type,
   ]);
   operations.push({
     operation: "create_version",
     version: VERSION,
-    release_type: "MANUAL",
+    release_type: APP_CONFIG.release.release_type,
   });
   versionsResponse = runAsc([
     "versions",
@@ -404,11 +404,12 @@ runAsc([
   "--copyright",
   APP_CONFIG.release.copyright,
   "--release-type",
-  "MANUAL",
+  APP_CONFIG.release.release_type,
 ]);
 operations.push({
-  operation: "enforce_manual_release",
+  operation: "enforce_release_type",
   version_id: candidate.id,
+  release_type: APP_CONFIG.release.release_type,
 });
 
 const protectedAfterVersionCreate = captureProtectedState();
@@ -470,7 +471,7 @@ writeJSON(evidencePath, {
   version: VERSION,
   version_id: candidate.id,
   build_id: BUILD_ID,
-  release_type: "MANUAL",
+  release_type: APP_CONFIG.release.release_type,
   review_submission_performed: false,
   release_performed: false,
   protected_locales: APP_CONFIG.protected_locales,

@@ -6,7 +6,9 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 const APP_ID = "6769498181";
-const VERSION = process.env.RD_RELEASE_VERSION ?? "1.3.1";
+const LOCAL_APP_STORE_CONFIG = readCurrentJson("appstore/app.json") ?? {};
+const LOCAL_RELEASE = LOCAL_APP_STORE_CONFIG.release ?? {};
+const VERSION = process.env.RD_RELEASE_VERSION ?? LOCAL_RELEASE.version ?? "1.3.1";
 const VERIFY_EVIDENCE_PATH = `.asc/evidence/verify-${VERSION}-result.json`;
 const APP_STORE_CANDIDATE = readAppStoreCandidate();
 const VERSION_ID =
@@ -16,6 +18,7 @@ const VERSION_ID =
 const BUILD_NUMBER =
   process.env.RD_RELEASE_BUILD ??
   APP_STORE_CANDIDATE.build_number ??
+  LOCAL_RELEASE.build_number ??
   "81";
 const BUILD_ID =
   process.env.RD_ASC_BUILD_ID ??

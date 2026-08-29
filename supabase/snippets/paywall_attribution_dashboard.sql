@@ -8,8 +8,15 @@ select
   events.entry_component,
   events.entry_target_tier,
   events.analysis_id,
-  events.result_section,
+  coalesce(
+    events.result_section,
+    events.entry_context #>> '{attributes,source_section}'
+  ) as result_section,
   events.item_id,
+  events.entry_context #>> '{attributes,entry_kind}' as entry_kind,
+  events.entry_context #>> '{attributes,placement}' as placement,
+  events.entry_context #>> '{attributes,promotion_variant}' as promotion_variant,
+  events.entry_context #>> '{attributes,after_item_count}' as after_item_count,
   events.funnel_session_id
 from public.paywall_events as events
 left join auth.users as users on users.id = events.user_id
@@ -30,8 +37,15 @@ select
   conversions.purchased_tier,
   conversions.product_identifier,
   conversions.analysis_id,
-  conversions.result_section,
+  coalesce(
+    conversions.result_section,
+    conversions.entry_context #>> '{attributes,source_section}'
+  ) as result_section,
   conversions.item_id,
+  conversions.entry_context #>> '{attributes,entry_kind}' as entry_kind,
+  conversions.entry_context #>> '{attributes,placement}' as placement,
+  conversions.entry_context #>> '{attributes,promotion_variant}' as promotion_variant,
+  conversions.entry_context #>> '{attributes,after_item_count}' as after_item_count,
   conversions.revenuecat_event_id
 from public.subscription_conversion_attributions as conversions
 left join auth.users as users on users.id = conversions.user_id
@@ -42,21 +56,27 @@ limit 500;
 with clicks as (
   select
     entry_point,
+    entry_context #>> '{attributes,promotion_variant}' as promotion_variant,
+    entry_context #>> '{attributes,placement}' as placement,
     count(*) as click_count,
     count(distinct user_id) as unique_users
   from public.paywall_events
   where event_name = 'entry_tap'
-  group by entry_point
+  group by entry_point, promotion_variant, placement
 ), conversions as (
   select
     entry_point,
+    entry_context #>> '{attributes,promotion_variant}' as promotion_variant,
+    entry_context #>> '{attributes,placement}' as placement,
     count(*) as purchase_count,
     count(distinct user_id) as purchasing_users
   from public.subscription_conversion_attributions
-  group by entry_point
+  group by entry_point, promotion_variant, placement
 )
 select
   clicks.entry_point,
+  clicks.promotion_variant,
+  clicks.placement,
   clicks.click_count,
   clicks.unique_users,
   coalesce(conversions.purchase_count, 0) as purchase_count,
@@ -67,5 +87,8 @@ select
     2
   ) as click_to_purchase_percent
 from clicks
-left join conversions using (entry_point)
+left join conversions
+  on conversions.entry_point = clicks.entry_point
+ and conversions.promotion_variant is not distinct from clicks.promotion_variant
+ and conversions.placement is not distinct from clicks.placement
 order by purchase_count desc, click_count desc;

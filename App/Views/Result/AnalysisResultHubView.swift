@@ -269,21 +269,18 @@ struct AnalysisResultHubView: View {
             .presentationDragIndicator(.hidden)
         }
         .sheet(item: $editingNotebook) { item in notebookEditor(item) }
-        .alert(copy("Defter kaydı gizlensin mi?", "Hide this Safety Log entry?"), isPresented: Binding(
+        .alert(copy("analysis.result_hub.v2.defter.kayd.gizlensin.mi.f11e0473", "Defter kaydı gizlensin mi?", "Hide this Safety Log entry?"), isPresented: Binding(
             get: { pendingNotebookSuppression != nil },
             set: { if !$0 { pendingNotebookSuppression = nil } }
         )) {
-            Button(copy("Vazgeç", "Cancel"), role: .cancel) { pendingNotebookSuppression = nil }
-            Button(copy("Gizle", "Hide"), role: .destructive) {
+            Button(copy("analysis.result_hub.v2.vazgec.583c4eba", "Vazgeç", "Cancel"), role: .cancel) { pendingNotebookSuppression = nil }
+            Button(copy("analysis.result_hub.v2.gizle.67e5db38", "Gizle", "Hide"), role: .destructive) {
                 guard let item = pendingNotebookSuppression else { return }
                 pendingNotebookSuppression = nil
                 onSuppressNotebook(item)
             }
         } message: {
-            Text(copy(
-                "Kayıt geri alınabilir biçimde gizlenecek; geçmiş raporlar değişmeyecek.",
-                "The entry will be hidden reversibly; previous report snapshots will not change."
-            ))
+            Text(copy("analysis.result_hub.v2.kay.t.geri.al.nabilir.bicimde.gizlenecek.g.1e0e2256", "Kayıt geri alınabilir biçimde gizlenecek; geçmiş raporlar değişmeyecek.", "The entry will be hidden reversibly; previous report snapshots will not change."))
         }
     }
 
@@ -410,7 +407,7 @@ struct AnalysisResultHubView: View {
 
     private func sectionAccentColor(_ id: AnalysisResultSectionID) -> Color {
         switch id {
-        case .riskAnalysis: return .rdSectionRiskAccent
+        case .riskAnalysis: return .rdResultGreen
         case .expertRecommendations: return .rdSectionExpertAccent
         case .approvedNotebook: return .rdSectionNotebookAccent
         case .trainingRecommendations: return .rdSectionTrainingAccent
@@ -507,10 +504,7 @@ struct AnalysisResultHubView: View {
             Image(systemName: "mappin.and.ellipse")
                 .font(RDTypography.font(size: 11, weight: .semibold))
                 .foregroundStyle(activeStrong)
-            Text(copy(
-                "Kayıtlar saha incelemesi dayanağıyla yazılmıştır.",
-                "Entries are written on the basis of a site inspection."
-            ))
+            Text(copy("analysis.result_hub.v2.kay.tlar.saha.incelemesi.dayanag.yla.yaz.l.cc69a20f", "Kayıtlar saha incelemesi dayanağıyla yazılmıştır.", "Entries are written on the basis of a site inspection."))
             .font(referenceFont(11, .medium))
             .foregroundStyle(muted)
             .fixedSize(horizontal: false, vertical: true)
@@ -563,19 +557,19 @@ struct AnalysisResultHubView: View {
     /// Sıra bilgi taşıyor: sahada görülene dayanan öneriler önce, her işyeri
     /// için doğru olan temel eğitimler sonra.
     private var trainingGroups: [TrainingGroup] {
-        let definitions: [(code: String, tr: String, en: String, icon: String)] = [
-            ("task_and_equipment", "Görev ve ekipman", "Task and equipment", "wrench.and.screwdriver.fill"),
-            ("qualification_and_authorization", "Yeterlilik ve yetki", "Qualification", "checkmark.seal.fill"),
-            ("emergency_and_rescue", "Acil durum", "Emergency", "cross.case.fill"),
-            ("general_and_induction", "Genel ve uyum", "General", "person.badge.plus"),
-            ("toolbox", "Saha bilgilendirmesi", "Toolbox", "megaphone.fill"),
+        let definitions: [(code: String, key: String, icon: String)] = [
+            ("task_and_equipment", "analysis.result_hub.training.group.task_and_equipment", "wrench.and.screwdriver.fill"),
+            ("qualification_and_authorization", "analysis.result_hub.training.group.qualification_and_authorization", "checkmark.seal.fill"),
+            ("emergency_and_rescue", "analysis.result_hub.training.group.emergency_and_rescue", "cross.case.fill"),
+            ("general_and_induction", "analysis.result_hub.training.group.general_and_induction", "person.badge.plus"),
+            ("toolbox", "analysis.result_hub.training.group.toolbox", "megaphone.fill"),
         ]
         return definitions.compactMap { definition in
             let items = activeSection.items.filter { $0.groupCode == definition.code }
             guard !items.isEmpty else { return nil }
             return TrainingGroup(
                 code: definition.code,
-                label: copy(definition.tr, definition.en),
+                label: localizedTrainingPromotion(definition.key),
                 icon: definition.icon,
                 items: items
             )
@@ -647,7 +641,9 @@ struct AnalysisResultHubView: View {
     /// bulgu numarası yerine kategoriyi taşıması -- burada numaralanacak bir
     /// bulgu yok, öneriyi tanımlayan şey türü.
     private func trainingCard(_ item: AnalysisResultHubItem) -> some View {
-        VStack(spacing: 0) {
+        let isLocked = isFreeTier || activeSection.access == .teaser
+
+        return VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 7) {
                     if let category = item.categoryLabel, !category.isEmpty {
@@ -659,7 +655,7 @@ struct AnalysisResultHubView: View {
                     }
                     Spacer(minLength: 0)
                 }
-                if activeSection.access == .full {
+                if !isLocked {
                     Text(item.title ?? "")
                         .font(referenceFont(14, .black)).foregroundStyle(ink).padding(.top, 10)
                         .fixedSize(horizontal: false, vertical: true)
@@ -680,13 +676,12 @@ struct AnalysisResultHubView: View {
                         .lineSpacing(3)
                         .padding(.top, 11)
                         .fixedSize(horizontal: false, vertical: true)
+
+                    trainingDurationRow(item)
                 } else {
-                    trainingTeaserBody(item)
+                    trainingPremiumTeaserContent(item)
+                        .padding(.top, 10)
                 }
-                // The statutory hours sit outside the sentence and outside the
-                // paywall: they are a published legal minimum, so a locked card
-                // still shows them.
-                trainingDurationRow(item)
             }
             .padding(.horizontal, 13).padding(.top, 26).padding(.bottom, 16)
         }
@@ -702,7 +697,7 @@ struct AnalysisResultHubView: View {
         .padding(.horizontal, 16)
         .contentShape(Rectangle())
         .onTapGesture {
-            guard activeSection.access == .teaser else { return }
+            guard isLocked else { return }
             openLockedTeaser(item)
         }
         .accessibilityElement(children: .contain)
@@ -752,26 +747,54 @@ struct AnalysisResultHubView: View {
         }
     }
 
-    @ViewBuilder
-    private func trainingTeaserBody(_ item: AnalysisResultHubItem) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(item.title ?? "")
-                .font(referenceFont(14, .black)).foregroundStyle(ink).padding(.top, 10)
-                .fixedSize(horizontal: false, vertical: true)
+    private func trainingPremiumTeaserContent(_ item: AnalysisResultHubItem) -> some View {
+        let title = normalizedSentenceText(item.title ?? "")
+        let visibleTitle = firstWords(of: title, count: 2)
+
+        return VStack(alignment: .leading, spacing: 9) {
+            Text(visibleTitle)
+                .font(referenceFont(14, .black))
+                .foregroundStyle(ink)
+                .lineLimit(1)
+
             ZStack {
-                Text(item.text ?? "")
-                    .font(referenceFont(12, .regular))
-                    .foregroundStyle(Color.rdResultSecondaryText)
-                    .lineSpacing(3)
-                    .frame(maxWidth: .infinity, minHeight: 58, alignment: .topLeading)
-                    .blur(radius: 4.5)
-                    .opacity(0.76)
-                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(title)
+                        .font(referenceFont(13, .bold))
+                        .foregroundStyle(Color.rdResultPrimaryText)
+                        .lineLimit(2)
+
+                    if let audience = item.audienceLabel, !audience.isEmpty {
+                        HStack(spacing: 5) {
+                            Image(systemName: "person.2.fill")
+                            Text(audience)
+                        }
+                        .font(referenceFont(11, .medium))
+                        .foregroundStyle(activeStrong)
+                        .lineLimit(2)
+                    }
+
+                    Text(item.text ?? "")
+                        .font(referenceFont(12, .regular))
+                        .foregroundStyle(Color.rdResultSecondaryText)
+                        .lineSpacing(4)
+                        .lineLimit(5)
+
+                    trainingDurationRow(item)
+                }
+                .frame(maxWidth: .infinity, minHeight: 148, alignment: .topLeading)
+                .blur(radius: 5.5)
+                .opacity(0.72)
+                .accessibilityHidden(true)
+
                 premiumTeaserCallout
             }
-            .padding(.top, 11)
+            .frame(maxWidth: .infinity, minHeight: 148)
             .clipped()
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(visibleTitle). \(copy("analysis.result_hub.v2.bu.ozellikler.premium.ozelliktir.8f8ba189", "Bu özellikler premium özelliktir", "These features are premium"))")
+        .accessibilityIdentifier("result.hub.training.premium_teaser.\(item.id.uuidString)")
     }
 
     // MARK: Reference summaries    // MARK: Reference summaries
@@ -788,18 +811,18 @@ struct AnalysisResultHubView: View {
 
         return HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
-                Text(copy("TOPLAM BULGU", "TOTAL FINDINGS"))
+                Text(copy("analysis.result_hub.v2.toplam.bulgu.ba5791c2", "TOPLAM BULGU", "TOTAL FINDINGS"))
                     .font(referenceFont(10, .heavy)).tracking(0.4).foregroundStyle(.white.opacity(0.88))
                 Text("\(activeSection.count)")
                     .font(referenceFont(30, .black)).tracking(-1.4).foregroundStyle(.white)
             }
             Rectangle().fill(.white.opacity(0.26)).frame(width: 1, height: 42)
             VStack(alignment: .leading, spacing: 3) {
-                Text(copy("EN YÜKSEK SKOR", "HIGHEST SCORE"))
+                Text(copy("analysis.result_hub.v2.en.yuksek.skor.9364de00", "EN YÜKSEK SKOR", "HIGHEST SCORE"))
                     .font(referenceFont(10, .heavy)).tracking(0.4).foregroundStyle(.white.opacity(0.88))
                 HStack(alignment: .lastTextBaseline, spacing: 3) {
                     Text(scoreText(highest)).font(referenceFont(22, .black)).tracking(-1)
-                    Text(method == .fineKinney ? copy("puan", "points") : "/25")
+                    Text(method == .fineKinney ? copy("analysis.result_hub.v2.puan.1c38ab37", "puan", "points") : "/25")
                         .font(referenceFont(9.5, .bold)).foregroundStyle(.white.opacity(0.85))
                 }
                 Text(riskBandLabel(highestLevel))
@@ -811,7 +834,7 @@ struct AnalysisResultHubView: View {
             .foregroundStyle(.white)
             Spacer(minLength: 0)
             VStack(alignment: .trailing, spacing: 2) {
-                Text(copy("DAĞILIM", "DISTRIBUTION"))
+                Text(copy("analysis.result_hub.v2.dagilim.2a8e1c3d", "DAĞILIM", "DISTRIBUTION"))
                     .font(referenceFont(8.5, .heavy)).tracking(0.3).foregroundStyle(.white.opacity(0.88))
                     .padding(.bottom, 1)
                 HStack(alignment: .bottom, spacing: 7) {
@@ -836,7 +859,7 @@ struct AnalysisResultHubView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(color: Color(hex: "#142A4A").opacity(0.24), radius: 9, x: 4, y: 8)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(activeSection.count) \(copy("bulgu", "findings")), \(copy("en yüksek skor", "highest score")) \(scoreText(highest))")
+        .accessibilityLabel("\(activeSection.count) \(copy("analysis.result_hub.v2.bulgu.f4632731", "bulgu", "findings")), \(copy("analysis.result_hub.v2.en.yuksek.skor.5ad84b21", "en yüksek skor", "highest score")) \(scoreText(highest))")
         .accessibilityIdentifier("result.hub.risk_summary")
     }
 
@@ -852,22 +875,16 @@ struct AnalysisResultHubView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             VStack(alignment: .leading, spacing: 5) {
                 Text(isTraining
-                     ? copy("Eğitim Önerileri", "Training Recommendations")
-                     : isExpert ? copy("Uzman Görüşü", "Expert Advice") : copy("Onaylı Defter", "Safety Log"))
+                     ? copy("analysis.result_hub.v2.egitim.onerileri.6c816a03", "Eğitim Önerileri", "Training Recommendations")
+                     : isExpert ? copy("analysis.result_hub.v2.uzman.gorusu.130b1c61", "Uzman Görüşü", "Expert Advice") : copy("analysis.result_hub.v2.onayl.defter.ca441ca5", "Onaylı Defter", "Safety Log"))
                     .font(referenceFont(16, .black))
                     .foregroundStyle(.white)
                     .lineLimit(1)
                 premiumPill
                 Text(isTraining
-                     ? copy(
-                        "Analizde görülen tehlike ve ekipmanlara göre, ilgili çalışan gruplarına hangi eğitimlerin anlamlı olduğunu gösterir. Kişilerin mevcut belgeleri hakkında bir tespit içermez.",
-                        "Shows which training is meaningful for each group of workers, based on the hazards and equipment seen in the analysis. It makes no claim about anyone's existing certificates."
-                     )
-                     : isExpert ? copy(
-                        "Analiz yaptığınız fotoğraflar özelinde uzmanlık gerektiren bilgilerin yer aldığı alandır. İşyerinize uygunluğunu kontrol ediniz. PLUS ve PRO üyelerine özeldir.",
-                        "This area contains expert information specific to the photos you analyzed. Check that it is suitable for your workplace. Available exclusively to PLUS and PRO members."
-                     )
-                     : copy("Analiz bulgularından üretilen, uzman değerlendirmesine sunulan defter taslakları.", "Safety Log drafts created from analysis findings for expert review."))
+                     ? copy("analysis.result_hub.v2.analizde.gorulen.tehlike.ve.ekipmanlara.go.ffeb2cda", "Analizde görülen tehlike ve ekipmanlara göre, ilgili çalışan gruplarına hangi eğitimlerin anlamlı olduğunu gösterir. Kişilerin mevcut belgeleri hakkında bir tespit içermez.", "Shows which training is meaningful for each group of workers, based on the hazards and equipment seen in the analysis. It makes no claim about anyone's existing certificates.")
+                     : isExpert ? copy("analysis.result_hub.v2.analiz.yapt.g.n.z.fotograflar.ozelinde.uzm.8a305d0f", "Analiz yaptığınız fotoğraflar özelinde uzmanlık gerektiren bilgilerin yer aldığı alandır. İşyerinize uygunluğunu kontrol ediniz. PLUS ve PRO üyelerine özeldir.", "This area contains expert information specific to the photos you analyzed. Check that it is suitable for your workplace. Available exclusively to PLUS and PRO members.")
+                     : copy("analysis.result_hub.v2.analiz.bulgular.ndan.uretilen.uzman.degerl.c8db360c", "Analiz bulgularından üretilen, uzman değerlendirmesine sunulan defter taslakları.", "Safety Log drafts created from analysis findings for expert review."))
                     .font(referenceFont(11, .medium)).foregroundStyle(.white.opacity(0.78)).lineSpacing(1)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -876,10 +893,10 @@ struct AnalysisResultHubView: View {
             VStack(spacing: 3) {
                 Text("\(activeSection.count)").font(referenceFont(26, .black)).tracking(-1.2)
                 Text(isTraining
-                     ? copy("TOPLAM ÖNERİ", "TOTAL RECOMMENDATIONS")
+                     ? copy("analysis.result_hub.v2.toplam.oneri.6cb82f74", "TOPLAM ÖNERİ", "TOTAL RECOMMENDATIONS")
                      : isExpert
-                     ? copy("TOPLAM GÖRÜŞ", "TOTAL ADVICE")
-                     : copy("TOPLAM KAYIT", "TOTAL ENTRIES"))
+                     ? copy("analysis.result_hub.v2.toplam.gorus.f284237a", "TOPLAM GÖRÜŞ", "TOTAL ADVICE")
+                     : copy("analysis.result_hub.v2.toplam.kayit.ed2dc876", "TOPLAM KAYIT", "TOTAL ENTRIES"))
                     .font(referenceFont(9, .heavy)).tracking(0.4).foregroundStyle(.white.opacity(0.78))
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
@@ -927,7 +944,7 @@ struct AnalysisResultHubView: View {
     private var methodSelector: some View {
         HStack(spacing: 8) {
             methodButton(.fineKinney, title: "Fine-Kinney", formula: localizedRiskFormula(.fineKinney, includesResult: true))
-            methodButton(.matrix5x5, title: copy("5×5 Matris", "5×5 Matrix"), formula: localizedRiskFormula(.matrix5x5, includesResult: true))
+            methodButton(.matrix5x5, title: copy("analysis.result_hub.v2.5.5.matris.30882165", "5×5 Matris", "5×5 Matrix"), formula: localizedRiskFormula(.matrix5x5, includesResult: true))
         }
     }
 
@@ -960,7 +977,7 @@ struct AnalysisResultHubView: View {
                 Text(analysisTitle).font(referenceFont(16, .heavy)).foregroundStyle(ink).lineLimit(2)
                 if let analysisSector, !analysisSector.isEmpty {
                     HStack(spacing: 4) {
-                        Text(copy("Sektör:", "Sector:"))
+                        Text(copy("analysis.result_hub.v2.sektor.299a6675", "Sektör:", "Sector:"))
                             .font(referenceFont(10.5, .bold)).foregroundStyle(Color.rdResultTertiaryText)
                         Text(analysisSector)
                             .font(referenceFont(10.5, .heavy)).foregroundStyle(greenDark).lineLimit(1)
@@ -1034,7 +1051,7 @@ struct AnalysisResultHubView: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(premiumDeepAnalysisMessage)
-        .accessibilityHint(copy("Üyelik seçeneklerini açar", "Opens membership options"))
+        .accessibilityHint(copy("analysis.result_hub.v2.uyelik.seceneklerini.acar.6e331850", "Üyelik seçeneklerini açar", "Opens membership options"))
         .accessibilityIdentifier("result.hub.premium_deep_analysis_card")
     }
 
@@ -1045,10 +1062,7 @@ struct AnalysisResultHubView: View {
         let level = riskLevel(for: item)
         let score = method == .fineKinney ? item.fkScore : item.m5Score.map(Double.init)
         let action = correctiveActionText(for: item)
-            ?? copy(
-                "Tehlike kaynağı izole edilmeli ve güvenli çalışma yöntemi uygulanmalıdır.",
-                "The hazard source should be isolated and a safe work method applied."
-            )
+            ?? copy("analysis.result_hub.v2.tehlike.kaynag.izole.edilmeli.ve.guvenli.c.c73f25cf", "Tehlike kaynağı izole edilmeli ve güvenli çalışma yöntemi uygulanmalıdır.", "The hazard source should be isolated and a safe work method applied.")
 
         return VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 0) {
@@ -1064,12 +1078,12 @@ struct AnalysisResultHubView: View {
                     HStack(alignment: .lastTextBaseline, spacing: 3) {
                         Text(score.map(scoreText) ?? "—")
                             .font(referenceFont(14, .black))
-                        Text(method == .fineKinney ? copy("puan", "points") : "/25")
+                        Text(method == .fineKinney ? copy("analysis.result_hub.v2.puan.1c38ab37", "puan", "points") : "/25")
                             .font(referenceFont(9.5, .bold))
                             .foregroundStyle(Color.rdResultTertiaryText)
                     }
                     Spacer()
-                    Text(copy("Seçili", "Selected"))
+                    Text(copy("analysis.result_hub.v2.secili.9fce9c94", "Seçili", "Selected"))
                         .font(referenceFont(11, .heavy))
                         .foregroundStyle(greenDark)
                     Image(systemName: "checkmark.circle.fill")
@@ -1095,7 +1109,7 @@ struct AnalysisResultHubView: View {
                     HStack(spacing: 5) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(RDTypography.font(size: 11, weight: .semibold))
-                        Text(copy("DÜZELTİCİ ÖNLEM", "CORRECTIVE ACTION"))
+                        Text(copy("analysis.result_hub.v2.duzeltici.onlem.18528a0f", "DÜZELTİCİ ÖNLEM", "CORRECTIVE ACTION"))
                             .font(referenceFont(9.5, .heavy))
                             .tracking(0.45)
                     }
@@ -1106,7 +1120,7 @@ struct AnalysisResultHubView: View {
                         .lineSpacing(2)
                         .lineLimit(3)
                     HStack(spacing: 5) {
-                        Text(copy("Devamı için tıklayın", "Tap to continue"))
+                        Text(copy("analysis.result_hub.v2.devam.icin.t.klay.n.701eccbf", "Devamı için tıklayın", "Tap to continue"))
                             .font(referenceFont(10.5, .heavy))
                         Image(systemName: "arrow.right.circle.fill")
                             .font(RDTypography.font(size: 12, weight: .semibold))
@@ -1125,9 +1139,9 @@ struct AnalysisResultHubView: View {
                 .padding(.top, 12)
 
                 HStack(spacing: 8) {
-                    premiumFeatureTag(copy("Kök Neden", "Root Cause"), color: Color(hex: "#F8E07A"))
-                    premiumFeatureTag(copy("Önleyici Faaliyet", "Preventive Action"), color: Color(hex: "#C8ECB0"))
-                    premiumFeatureTag(copy("Mevzuat", "Regulation"), color: Color(hex: "#BCD8F5"))
+                    premiumFeatureTag(copy("analysis.result_hub.v2.kok.neden.a37f29be", "Kök Neden", "Root Cause"), color: Color(hex: "#F8E07A"))
+                    premiumFeatureTag(copy("analysis.result_hub.v2.onleyici.faaliyet.36b02828", "Önleyici Faaliyet", "Preventive Action"), color: Color(hex: "#C8ECB0"))
+                    premiumFeatureTag(copy("analysis.result_hub.v2.mevzuat.c73d9b7a", "Mevzuat", "Regulation"), color: Color(hex: "#BCD8F5"))
                 }
                 .padding(.top, 12)
             }
@@ -1139,7 +1153,7 @@ struct AnalysisResultHubView: View {
                 Image(systemName: "hand.thumbsup")
                 Image(systemName: "hand.thumbsdown")
                 Spacer()
-                Text(copy("Detaylar", "Details"))
+                Text(copy("analysis.result_hub.v2.detaylar.513bcd14", "Detaylar", "Details"))
                 Image(systemName: "chevron.right")
             }
             .font(referenceFont(11.5, .heavy))
@@ -1226,10 +1240,7 @@ struct AnalysisResultHubView: View {
     }
 
     private var premiumDeepAnalysisMessage: String {
-        copy(
-            "Bu tehlike derin analiz ve derin araştırma kullanılarak sadece PLUS/PRO üyeleri için üretilmiştir.",
-            "This hazard was produced using deep analysis and deep research exclusively for PLUS/PRO members."
-        )
+        copy("analysis.result_hub.v2.bu.tehlike.derin.analiz.ve.derin.arast.rma.d1c985dd", "Bu tehlike derin analiz ve derin araştırma kullanılarak sadece PLUS/PRO üyeleri için üretilmiştir.", "This hazard was produced using deep analysis and deep research exclusively for PLUS/PRO members.")
     }
 
     @ViewBuilder
@@ -1281,9 +1292,9 @@ struct AnalysisResultHubView: View {
                 ? localizedTrainingPromotion(
                     "analysis.result_hub.training.promotion.pro.title"
                 )
-                : copy("Analizini PRO ile güçlendir", "Power up your analysis with PRO"),
+                : copy("analysis.result_hub.v2.analizini.pro.ile.guclendir.0f794053", "Analizini PRO ile güçlendir", "Power up your analysis with PRO"),
             message: proUpgradeMessage,
-            actionTitle: copy("PRO'ya geç", "Upgrade to PRO")
+            actionTitle: copy("analysis.result_hub.v2.pro.ya.gec.b850bf0c", "PRO'ya geç", "Upgrade to PRO")
         ) {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
             requestPaywall(
@@ -1294,15 +1305,12 @@ struct AnalysisResultHubView: View {
                 afterItemCount: afterItemCount
             )
         }
-        .accessibilityHint(copy("PRO abonelik ekranını açar", "Opens the PRO subscription screen"))
+        .accessibilityHint(copy("analysis.result_hub.v2.pro.abonelik.ekran.n.acar.9d0f7bfa", "PRO abonelik ekranını açar", "Opens the PRO subscription screen"))
         .accessibilityIdentifier("result.hub.pro_upgrade.\(section.rawValue)")
     }
 
     private var proUpgradeMessage: String {
-        copy(
-            "Analizlerinde Derin Araştırma ve daha güçlü yapay zekâ modellerinden yararlan. PRO’ya geç; sınırsız analiz seni bekliyor.",
-            "Use Deep Research and more capable AI models in your analyses. Upgrade to PRO—unlimited analyses are waiting."
-        )
+        copy("analysis.result_hub.v2.analizlerinde.derin.arast.rma.ve.daha.gucl.fbc90452", "Analizlerinde Derin Araştırma ve daha güçlü yapay zekâ modellerinden yararlan. PRO’ya geç; sınırsız analiz seni bekliyor.", "Use Deep Research and more capable AI models in your analyses. Upgrade to PRO—unlimited analyses are waiting.")
     }
 
     private var selectionControls: some View {
@@ -1317,7 +1325,7 @@ struct AnalysisResultHubView: View {
                 } label: {
                     HStack(spacing: 5) {
                         Image(systemName: "checkmark").font(RDTypography.font(size: 10, weight: .black))
-                        Text(selectedIDs.count == activeSection.items.count ? copy("Tümünü bırak", "Clear all") : copy("Tümünü seç", "Select all"))
+                        Text(selectedIDs.count == activeSection.items.count ? copy("analysis.result_hub.v2.tumunu.b.rak.8634f314", "Tümünü bırak", "Clear all") : copy("analysis.result_hub.v2.tumunu.sec.fa983a39", "Tümünü seç", "Select all"))
                             .font(referenceFont(11.5, .heavy))
                     }
                     .foregroundStyle(activeStrong)
@@ -1330,12 +1338,12 @@ struct AnalysisResultHubView: View {
     private var selectedCountText: String {
         let unit: String
         switch selectedSection {
-        case .riskAnalysis: unit = copy("bulgu", selectedIDs.count == 1 ? "finding" : "findings")
-        case .expertRecommendations: unit = copy("görüş", selectedIDs.count == 1 ? "recommendation" : "recommendations")
-        case .approvedNotebook: unit = copy("kayıt", selectedIDs.count == 1 ? "entry" : "entries")
-        case .trainingRecommendations: unit = copy("öneri", selectedIDs.count == 1 ? "recommendation" : "recommendations")
+        case .riskAnalysis: unit = selectedIDs.count == 1 ? copy("analysis.result_hub.v2.bulgu.96a82c3c", "bulgu", "finding") : copy("analysis.result_hub.v2.bulgu.f4632731", "bulgu", "findings")
+        case .expertRecommendations: unit = selectedIDs.count == 1 ? copy("analysis.result_hub.v2.gorus.4773142b", "görüş", "recommendation") : copy("analysis.result_hub.v2.gorus.3b700c2a", "görüş", "recommendations")
+        case .approvedNotebook: unit = selectedIDs.count == 1 ? copy("analysis.result_hub.v2.kay.t.0506ad08", "kayıt", "entry") : copy("analysis.result_hub.v2.kay.t.1154bb1b", "kayıt", "entries")
+        case .trainingRecommendations: unit = selectedIDs.count == 1 ? copy("analysis.result_hub.v2.oneri.86b1003f", "öneri", "recommendation") : copy("analysis.result_hub.v2.oneri.95a4dc92", "öneri", "recommendations")
         }
-        return "\(selectedIDs.count)/\(activeSection.count) \(unit) \(copy("seçili", "selected"))"
+        return "\(selectedIDs.count)/\(activeSection.count) \(unit) \(copy("analysis.result_hub.v2.secili.59f2bc7b", "seçili", "selected"))"
     }
 
     // MARK: Finding cards
@@ -1352,7 +1360,7 @@ struct AnalysisResultHubView: View {
                         .background(referenceRiskColor(level)).clipShape(RoundedRectangle(cornerRadius: 2))
                     HStack(alignment: .lastTextBaseline, spacing: 3) {
                         Text(score.map(scoreText) ?? "—").font(referenceFont(14, .black))
-                        Text(method == .fineKinney ? copy("puan", "points") : "/25")
+                        Text(method == .fineKinney ? copy("analysis.result_hub.v2.puan.1c38ab37", "puan", "points") : "/25")
                             .font(referenceFont(9.5, .bold)).foregroundStyle(Color.rdResultTertiaryText)
                     }
                     Spacer()
@@ -1401,7 +1409,7 @@ struct AnalysisResultHubView: View {
                     HStack(spacing: 5) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(RDTypography.font(size: 11, weight: .semibold))
-                        Text(copy("DÜZELTİCİ ÖNLEM", "CORRECTIVE ACTION"))
+                        Text(copy("analysis.result_hub.v2.duzeltici.onlem.18528a0f", "DÜZELTİCİ ÖNLEM", "CORRECTIVE ACTION"))
                             .font(referenceFont(9.5, .heavy))
                             .tracking(0.45)
                     }
@@ -1414,7 +1422,7 @@ struct AnalysisResultHubView: View {
                         .fixedSize(horizontal: false, vertical: true)
 
                     HStack(spacing: 5) {
-                        Text(copy("Devamı için tıklayın", "Tap to continue"))
+                        Text(copy("analysis.result_hub.v2.devam.icin.t.klay.n.701eccbf", "Devamı için tıklayın", "Tap to continue"))
                             .font(referenceFont(10.5, .heavy))
                         Image(systemName: "arrow.right.circle.fill")
                             .font(RDTypography.font(size: 12, weight: .semibold))
@@ -1432,7 +1440,7 @@ struct AnalysisResultHubView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("\(copy("Düzeltici önlem", "Corrective action")): \(firstSentence(of: action)). \(copy("Devamı için tıklayın", "Tap to continue"))")
+            .accessibilityLabel("\(copy("analysis.result_hub.v2.duzeltici.onlem.96ad612c", "Düzeltici önlem", "Corrective action")): \(firstSentence(of: action)). \(copy("analysis.result_hub.v2.devam.icin.t.klay.n.701eccbf", "Devamı için tıklayın", "Tap to continue"))")
             .accessibilityIdentifier("result.hub.item.corrective_preview.\(item.id.uuidString)")
         }
     }
@@ -1526,7 +1534,7 @@ struct AnalysisResultHubView: View {
             .clipped()
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(visibleTitle). \(copy("Bu özellikler premium özelliktir", "These features are premium"))")
+        .accessibilityLabel("\(visibleTitle). \(copy("analysis.result_hub.v2.bu.ozellikler.premium.ozelliktir.8f8ba189", "Bu özellikler premium özelliktir", "These features are premium"))")
         .accessibilityIdentifier("result.hub.item.premium_teaser.\(item.id.uuidString)")
     }
 
@@ -1553,7 +1561,7 @@ struct AnalysisResultHubView: View {
             }
             .font(referenceFont(12.5, .black))
 
-            Text(copy("Bu özellikler premium özelliktir.", "These features are premium."))
+            Text(copy("analysis.result_hub.v2.bu.ozellikler.premium.ozelliktir.cf363bbd", "Bu özellikler premium özelliktir.", "These features are premium."))
                 .font(referenceFont(10.5, .semibold))
                 .foregroundStyle(Color.rdResultSecondaryText)
                 .multilineTextAlignment(.center)
@@ -1586,7 +1594,7 @@ struct AnalysisResultHubView: View {
                         .padding(.horizontal, 7).padding(.vertical, 4).background(Color.rdResultSubtleSurface)
                         .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.rdResultLine, lineWidth: 1))
                         .clipShape(RoundedRectangle(cornerRadius: 5))
-                    Text("\(copy("BULGU", "FINDING")) #\(item.ordinal ?? position)")
+                    Text("\(copy("analysis.result_hub.v2.bulgu.192859cb", "BULGU", "FINDING")) #\(item.ordinal ?? position)")
                         .font(referenceFont(10, .heavy)).tracking(0.4).foregroundStyle(muted)
                     Spacer()
                     if activeSection.access == .full { selectionControl(item) }
@@ -1680,7 +1688,7 @@ struct AnalysisResultHubView: View {
                     HStack(spacing: 5) {
                         Image(systemName: "lightbulb.fill")
                             .font(RDTypography.font(size: 11, weight: .semibold))
-                        Text(copy("UZMAN ÖNERİSİ", "EXPERT RECOMMENDATION"))
+                        Text(copy("analysis.result_hub.v2.uzman.onerisi.30a0f4e1", "UZMAN ÖNERİSİ", "EXPERT RECOMMENDATION"))
                             .font(referenceFont(9.5, .heavy))
                             .tracking(0.45)
                     }
@@ -1695,7 +1703,7 @@ struct AnalysisResultHubView: View {
                 }
 
                 HStack(spacing: 5) {
-                    Text(copy("Devamı için tıklayın", "Tap to continue"))
+                    Text(copy("analysis.result_hub.v2.devam.icin.t.klay.n.701eccbf", "Devamı için tıklayın", "Tap to continue"))
                         .font(referenceFont(10.5, .heavy))
                     Image(systemName: "arrow.right.circle.fill")
                         .font(RDTypography.font(size: 12, weight: .semibold))
@@ -1715,8 +1723,8 @@ struct AnalysisResultHubView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(
             recommendation.map {
-                "\(copy("Uzman önerisi", "Expert recommendation")): \(firstSentence(of: $0)). \(copy("Devamı için tıklayın", "Tap to continue"))"
-            } ?? copy("Devamı için tıklayın", "Tap to continue")
+                "\(copy("analysis.result_hub.v2.uzman.onerisi.76e0e541", "Uzman önerisi", "Expert recommendation")): \(firstSentence(of: $0)). \(copy("analysis.result_hub.v2.devam.icin.t.klay.n.701eccbf", "Devamı için tıklayın", "Tap to continue"))"
+            } ?? copy("analysis.result_hub.v2.devam.icin.t.klay.n.701eccbf", "Devamı için tıklayın", "Tap to continue")
         )
         .accessibilityIdentifier("result.hub.item.expert_preview.\(item.id.uuidString)")
     }
@@ -1724,17 +1732,17 @@ struct AnalysisResultHubView: View {
     private func featureTags(_ item: AnalysisResultHubItem) -> some View {
         let tags: [(label: String, color: Color, isAvailable: Bool)] = [
             (
-                copy("Kök Neden", "Root Cause"),
+                copy("analysis.result_hub.v2.kok.neden.a37f29be", "Kök Neden", "Root Cause"),
                 Color(hex: "#F8E07A"),
                 !(item.rootCauseText ?? "").isEmpty
             ),
             (
-                copy("Önleyici Faaliyet", "Preventive Action"),
+                copy("analysis.result_hub.v2.onleyici.faaliyet.36b02828", "Önleyici Faaliyet", "Preventive Action"),
                 Color(hex: "#C8ECB0"),
                 item.recommendedMeasures?.contains(where: { $0.kind == .preventive }) == true
             ),
             (
-                copy("Mevzuat", "Regulation"),
+                copy("analysis.result_hub.v2.mevzuat.c73d9b7a", "Mevzuat", "Regulation"),
                 Color(hex: "#BCD8F5"),
                 !(item.referencesText ?? "").isEmpty
             )
@@ -1763,7 +1771,7 @@ struct AnalysisResultHubView: View {
     private var notebookPaper: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(copy("ONAYLI DEFTER KAYITLARI", "SAFETY LOG ENTRIES"))
+                Text(copy("analysis.result_hub.v2.onayli.defter.kayitlari.9c4c236c", "ONAYLI DEFTER KAYITLARI", "SAFETY LOG ENTRIES"))
                     .font(referenceFont(9.5, .heavy)).tracking(0.7).foregroundStyle(activeStrong)
                 Spacer()
                 if activeSection.access == .teaser { Image(systemName: "lock.fill").foregroundStyle(activeStrong) }
@@ -1792,15 +1800,15 @@ struct AnalysisResultHubView: View {
             .background(NotebookRuledBackground(paper: Color.rdResultKhakiTint, line: Color.rdResultLine))
             HStack(alignment: .bottom, spacing: 10) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(copy("UZMAN DEĞERLENDİRMESİ", "EXPERT REVIEW"))
+                    Text(copy("analysis.result_hub.v2.uzman.degerlendirmesi.78eb5c8a", "UZMAN DEĞERLENDİRMESİ", "EXPERT REVIEW"))
                         .font(referenceFont(9.5, .heavy)).tracking(0.5).foregroundStyle(activeStrong)
-                    Text(copy("Bu kayıt bir taslaktır", "This entry is a draft"))
+                    Text(copy("analysis.result_hub.v2.bu.kay.t.bir.taslakt.r.59c2ed4b", "Bu kayıt bir taslaktır", "This entry is a draft"))
                         .font(referenceFont(12, .bold)).foregroundStyle(Color.rdResultPrimaryText)
                 }
                 Spacer()
                 VStack(spacing: 1) {
-                    Text(copy("TASLAK", "DRAFT")).font(referenceFont(8.5, .heavy)).tracking(0.5)
-                    Text(copy("UZMAN ONAYI", "EXPERT REVIEW")).font(referenceFont(8, .bold))
+                    Text(copy("analysis.result_hub.v2.taslak.688eaadb", "TASLAK", "DRAFT")).font(referenceFont(8.5, .heavy)).tracking(0.5)
+                    Text(copy("analysis.result_hub.v2.uzman.onayi.75f9b460", "UZMAN ONAYI", "EXPERT REVIEW")).font(referenceFont(8, .bold))
                 }
                 .foregroundStyle(activeStrong).frame(width: 74, height: 74)
                 .overlay(Circle().stroke(activeAccent.opacity(0.62), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])))
@@ -1876,7 +1884,7 @@ struct AnalysisResultHubView: View {
                 .clipped()
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(firstParts.first). \(copy("Bu özellikler premium özelliktir", "These features are premium"))")
+            .accessibilityLabel("\(firstParts.first). \(copy("analysis.result_hub.v2.bu.ozellikler.premium.ozelliktir.8f8ba189", "Bu özellikler premium özelliktir", "These features are premium"))")
             .accessibilityIdentifier("result.hub.notebook.premium_teaser")
         }
     }
@@ -1899,9 +1907,9 @@ struct AnalysisResultHubView: View {
         // Onaylı defter metni tek akıcı paragraftır; "Tespit:"/"Öneri:" gibi
         // rapor etiketleri taşımaz. Öneri alanı boşsa metin zaten bu biçimdedir.
         if recommendation.isEmpty { return finding }
-        var result = "\(copy("Tespit:", "Finding:")) \(finding) \(copy("Öneri:", "Recommendation:")) \(recommendation)"
+        var result = "\(copy("analysis.result_hub.v2.tespit.dadc9d63", "Tespit:", "Finding:")) \(finding) \(copy("analysis.result_hub.v2.oneri.d5e11e40", "Öneri:", "Recommendation:")) \(recommendation)"
         let basis = (item.referenceText ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        if !basis.isEmpty { result += " \(copy("Dayanak:", "Basis:")) \(basis)" }
+        if !basis.isEmpty { result += " \(copy("analysis.result_hub.v2.dayanak.e604d06c", "Dayanak:", "Basis:")) \(basis)" }
         return result
     }
 
@@ -1917,7 +1925,7 @@ struct AnalysisResultHubView: View {
         } label: {
             HStack(spacing: 6) {
                 if !compact {
-                    Text(selected ? copy("Seçildi", "Selected") : copy("Seç", "Select"))
+                    Text(selected ? copy("analysis.result_hub.v2.secildi.7fb687e3", "Seçildi", "Selected") : copy("analysis.result_hub.v2.sec.0abbb5fb", "Seç", "Select"))
                         .font(referenceFont(11.5, .heavy)).foregroundStyle(selected ? activeStrong : Color.rdResultTertiaryText)
                 }
                 Image(systemName: selected ? "checkmark" : "")
@@ -1929,19 +1937,19 @@ struct AnalysisResultHubView: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(selected ? copy("Rapordan çıkar", "Remove from report") : copy("Rapora ekle", "Add to report"))
+        .accessibilityLabel(selected ? copy("analysis.result_hub.v2.rapordan.c.kar.7c294954", "Rapordan çıkar", "Remove from report") : copy("analysis.result_hub.v2.rapora.ekle.f54c4bf7", "Rapora ekle", "Add to report"))
     }
 
     private func actionStrip(_ item: AnalysisResultHubItem) -> some View {
         HStack(spacing: 2) {
             if activeSection.canEdit {
-                stripButton("pencil", label: copy("Düzenle", "Edit")) { edit(item) }
-                stripButton("trash", label: copy("Sil", "Delete")) { delete(item) }
+                stripButton("pencil", label: copy("analysis.result_hub.v2.duzenle.3248ed57", "Düzenle", "Edit")) { edit(item) }
+                stripButton("trash", label: copy("analysis.result_hub.v2.sil.c0b0d3c6", "Sil", "Delete")) { delete(item) }
             }
-            stripButton(reaction(for: item) == .like ? "hand.thumbsup.fill" : "hand.thumbsup", label: copy("Beğen", "Like")) {
+            stripButton(reaction(for: item) == .like ? "hand.thumbsup.fill" : "hand.thumbsup", label: copy("analysis.result_hub.v2.begen.829db692", "Beğen", "Like")) {
                 toggleReaction(item, reaction: .like)
             }
-            stripButton(reaction(for: item) == .dislike ? "hand.thumbsdown.fill" : "hand.thumbsdown", label: copy("Beğenme", "Dislike")) {
+            stripButton(reaction(for: item) == .dislike ? "hand.thumbsdown.fill" : "hand.thumbsdown", label: copy("analysis.result_hub.v2.begenme.627f80ac", "Beğenme", "Dislike")) {
                 if reaction(for: item) == .dislike { toggleReaction(item, reaction: .dislike) }
                 else {
                     feedbackComposerExpanded = false
@@ -1950,7 +1958,7 @@ struct AnalysisResultHubView: View {
             }
             Spacer(minLength: 0)
             Button { openDetails(item) } label: {
-                HStack(spacing: 5) { Text(copy("Detaylar", "Details")); Image(systemName: "chevron.right") }
+                HStack(spacing: 5) { Text(copy("analysis.result_hub.v2.detaylar.513bcd14", "Detaylar", "Details")); Image(systemName: "chevron.right") }
                     .font(referenceFont(11.5, .heavy)).foregroundStyle(.white).padding(.horizontal, 4).frame(height: 44)
             }
             .buttonStyle(.plain)
@@ -1996,7 +2004,7 @@ struct AnalysisResultHubView: View {
             Button {
                 openLockedTeaser(item)
             } label: {
-                HStack(spacing: 7) { Image(systemName: "lock.open.fill"); Text(copy("Plus / Pro ile tamamını aç", "Unlock all with Plus / Pro")) }
+                HStack(spacing: 7) { Image(systemName: "lock.open.fill"); Text(copy("analysis.result_hub.v2.plus.pro.ile.tamam.n.ac.8257a71f", "Plus / Pro ile tamamını aç", "Unlock all with Plus / Pro")) }
                     .font(referenceFont(12, .heavy)).foregroundStyle(.white)
                     .frame(maxWidth: .infinity).padding(.vertical, 10).background(activeStrong)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -2032,7 +2040,7 @@ struct AnalysisResultHubView: View {
             VStack(spacing: 1) {
                 Image(systemName: "chevron.left")
                     .font(RDTypography.font(size: 15, weight: .black))
-                Text(copy("Geri Dön", "Go Back"))
+                Text(copy("analysis.result_hub.v2.geri.don.be8542b6", "Geri Dön", "Go Back"))
                     .font(referenceFont(8.5, .heavy))
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -2048,7 +2056,7 @@ struct AnalysisResultHubView: View {
             .shadow(color: activeStrong.opacity(0.12), radius: 6, x: 2, y: 4)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(copy("Geri dön", "Go back"))
+        .accessibilityLabel(copy("analysis.result_hub.v2.geri.don.1ff1d53c", "Geri dön", "Go back"))
         .accessibilityIdentifier("result.hub.bottom_back")
     }
 
@@ -2073,7 +2081,7 @@ struct AnalysisResultHubView: View {
                 HStack(spacing: 9) {
                     Image(systemName: activeSection.access == .teaser ? "lock.fill" : "slider.horizontal.3")
                         .font(RDTypography.font(size: 18, weight: .regular))
-                    Text(activeSection.access == .teaser ? copy("Plus / Pro ile Aç", "Unlock with Plus / Pro") : copy("Rapor Oluştur", "Create Report"))
+                    Text(activeSection.access == .teaser ? copy("analysis.result_hub.v2.plus.pro.ile.ac.ad2bd639", "Plus / Pro ile Aç", "Unlock with Plus / Pro") : copy("analysis.result_hub.v2.rapor.olustur.e0a43f76", "Rapor Oluştur", "Create Report"))
                         .font(referenceFont(15.5, .heavy))
                         .lineLimit(1)
                         .minimumScaleFactor(0.74)
@@ -2091,10 +2099,10 @@ struct AnalysisResultHubView: View {
         .buttonStyle(.plain)
         .disabled(selectedIDs.isEmpty && activeSection.access == .full)
         .accessibilityLabel(activeSection.access == .teaser
-                            ? copy("Plus / Pro ile Aç", "Unlock with Plus / Pro")
+                            ? copy("analysis.result_hub.v2.plus.pro.ile.ac.ad2bd639", "Plus / Pro ile Aç", "Unlock with Plus / Pro")
                             : selectedSection == .approvedNotebook
-                                ? copy("Rapor Oluştur", "Create Report")
-                                : "\(copy("Rapor Oluştur", "Create Report")) · \(selectedIDs.count)/\(activeSection.count)")
+                                ? copy("analysis.result_hub.v2.rapor.olustur.e0a43f76", "Rapor Oluştur", "Create Report")
+                                : "\(copy("analysis.result_hub.v2.rapor.olustur.e0a43f76", "Rapor Oluştur", "Create Report")) · \(selectedIDs.count)/\(activeSection.count)")
         .accessibilityIdentifier("result.hub.report")
     }
 
@@ -2119,11 +2127,11 @@ struct AnalysisResultHubView: View {
     }
     private func riskBandLabel(_ level: RiskLevel) -> String {
         switch level {
-        case .critical: copy("KRİTİK RİSK", "CRITICAL RISK")
-        case .high: copy("YÜKSEK RİSK", "HIGH RISK")
-        case .medium: copy("ORTA RİSK", "MEDIUM RISK")
-        case .low: copy("DÜŞÜK RİSK", "LOW RISK")
-        case .unknown: copy("DEĞERLENDİRİLMEDİ", "UNASSESSED")
+        case .critical: copy("analysis.result_hub.v2.kritik.risk.091ca59c", "KRİTİK RİSK", "CRITICAL RISK")
+        case .high: copy("analysis.result_hub.v2.yuksek.risk.e8e28270", "YÜKSEK RİSK", "HIGH RISK")
+        case .medium: copy("analysis.result_hub.v2.orta.risk.a014ee49", "ORTA RİSK", "MEDIUM RISK")
+        case .low: copy("analysis.result_hub.v2.dusuk.risk.9bdc8549", "DÜŞÜK RİSK", "LOW RISK")
+        case .unknown: copy("analysis.result_hub.v2.degerlendirilmedi.067ca5b9", "DEĞERLENDİRİLMEDİ", "UNASSESSED")
         }
     }
     private func methodRiskBandLabel(for item: AnalysisResultHubItem, fallback level: RiskLevel) -> String {
@@ -2162,10 +2170,10 @@ struct AnalysisResultHubView: View {
     }
     private func shortRiskLabel(_ level: RiskLevel) -> String {
         switch level {
-        case .critical: copy("KRT", "CRT")
-        case .high: copy("YSK", "HGH")
-        case .medium: copy("ORT", "MED")
-        case .low: copy("DŞK", "LOW")
+        case .critical: copy("analysis.result_hub.v2.krt.4da4bdb1", "KRT", "CRT")
+        case .high: copy("analysis.result_hub.v2.ysk.b21595ae", "YSK", "HGH")
+        case .medium: copy("analysis.result_hub.v2.ort.339c6d29", "ORT", "MED")
+        case .low: copy("analysis.result_hub.v2.dsk.94153e92", "DŞK", "LOW")
         case .unknown: "?"
         }
     }
@@ -2325,24 +2333,24 @@ struct AnalysisResultHubView: View {
         return NavigationStack {
             Form {
                 if singleParagraph {
-                    Section(copy("Kayıt metni", "Entry text")) {
+                    Section(copy("analysis.result_hub.v2.kay.t.metni.021163e0", "Kayıt metni", "Entry text")) {
                         TextEditor(text: $notebookFindingDraft).frame(minHeight: 220)
                     }
                 } else {
-                    Section(copy("Tespit", "Finding")) { TextEditor(text: $notebookFindingDraft).frame(minHeight: 120) }
-                    Section(copy("Öneri", "Recommendation")) { TextEditor(text: $notebookRecommendationDraft).frame(minHeight: 150) }
+                    Section(copy("analysis.result_hub.v2.tespit.4e395ed8", "Tespit", "Finding")) { TextEditor(text: $notebookFindingDraft).frame(minHeight: 120) }
+                    Section(copy("analysis.result_hub.v2.oneri.cbecd1fc", "Öneri", "Recommendation")) { TextEditor(text: $notebookRecommendationDraft).frame(minHeight: 150) }
                 }
                 Section {
-                    Text(copy("Bu içerik Onaylı Defter taslağıdır; uzman değerlendirmesi gerekir.", "This is a Safety Log draft and requires expert review."))
+                    Text(copy("analysis.result_hub.v2.bu.icerik.onayl.defter.taslag.d.r.uzman.de.c7716412", "Bu içerik Onaylı Defter taslağıdır; uzman değerlendirmesi gerekir.", "This is a Safety Log draft and requires expert review."))
                         .font(RDTypography.font(.footnote)).foregroundStyle(Color.rdSlate)
                 }
             }
-            .navigationTitle(copy("Defter Taslağını Düzenle", "Edit Safety Log Draft"))
+            .navigationTitle(copy("analysis.result_hub.v2.defter.taslag.n.duzenle.623cec17", "Defter Taslağını Düzenle", "Edit Safety Log Draft"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button(copy("Vazgeç", "Cancel")) { editingNotebook = nil } }
+                ToolbarItem(placement: .cancellationAction) { Button(copy("analysis.result_hub.v2.vazgec.583c4eba", "Vazgeç", "Cancel")) { editingNotebook = nil } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(copy("Kaydet", "Save")) {
+                    Button(copy("analysis.result_hub.v2.kaydet.2418617f", "Kaydet", "Save")) {
                         onEditNotebook(item, notebookFindingDraft, notebookRecommendationDraft)
                         editingNotebook = nil
                     }
@@ -2375,38 +2383,26 @@ struct AnalysisResultHubView: View {
         case .riskAnalysis:
             (
                 "checkmark.shield",
-                copy("Bu analizde risk bulgusu bulunamadı", "No risk findings in this analysis"),
-                copy(
-                    "Yüklediğiniz fotoğraflarda raporlanabilir bir risk tespit edilmedi. Saha kontrolünüzü yine de sürdürün.",
-                    "No reportable risk was detected in the uploaded photos. Continue your on-site checks as usual."
-                )
+                copy("analysis.result_hub.v2.bu.analizde.risk.bulgusu.bulunamad.baa0920b", "Bu analizde risk bulgusu bulunamadı", "No risk findings in this analysis"),
+                copy("analysis.result_hub.v2.yuklediginiz.fotograflarda.raporlanabilir..bd7b16f9", "Yüklediğiniz fotoğraflarda raporlanabilir bir risk tespit edilmedi. Saha kontrolünüzü yine de sürdürün.", "No reportable risk was detected in the uploaded photos. Continue your on-site checks as usual.")
             )
         case .expertRecommendations:
             (
                 "person.badge.shield.checkmark",
-                copy("Uzman görüşü bulunmuyor", "No expert advice available"),
-                copy(
-                    "Bu analiz için uygun bir uzman görüşü oluşturulmadı.",
-                    "No applicable expert advice was generated for this analysis."
-                )
+                copy("analysis.result_hub.v2.uzman.gorusu.bulunmuyor.25287788", "Uzman görüşü bulunmuyor", "No expert advice available"),
+                copy("analysis.result_hub.v2.bu.analiz.icin.uygun.bir.uzman.gorusu.olus.bc24b708", "Bu analiz için uygun bir uzman görüşü oluşturulmadı.", "No applicable expert advice was generated for this analysis.")
             )
         case .approvedNotebook:
             (
                 "book.closed",
-                copy("Onaylı defter kaydı bulunmuyor", "No Safety Log entries available"),
-                copy(
-                    "Bu analiz için uygun bir onaylı defter taslağı oluşturulmadı.",
-                    "No applicable Safety Log draft was generated for this analysis."
-                )
+                copy("analysis.result_hub.v2.onayl.defter.kayd.bulunmuyor.8764fde9", "Onaylı defter kaydı bulunmuyor", "No Safety Log entries available"),
+                copy("analysis.result_hub.v2.bu.analiz.icin.uygun.bir.onayl.defter.tasl.66596eba", "Bu analiz için uygun bir onaylı defter taslağı oluşturulmadı.", "No applicable Safety Log draft was generated for this analysis.")
             )
         case .trainingRecommendations:
             (
                 "graduationcap",
-                copy("Eğitim önerisi bulunmuyor", "No training recommendations"),
-                copy(
-                    "Bu analizde eğitim önerisi üretecek bir tehlike veya ekipman tanınmadı.",
-                    "No hazard or equipment in this analysis produced a training recommendation."
-                )
+                copy("analysis.result_hub.v2.egitim.onerisi.bulunmuyor.03b337b9", "Eğitim önerisi bulunmuyor", "No training recommendations"),
+                copy("analysis.result_hub.v2.bu.analizde.egitim.onerisi.uretecek.bir.te.bcd77c08", "Bu analizde eğitim önerisi üretecek bir tehlike veya ekipman tanınmadı.", "No hazard or equipment in this analysis produced a training recommendation.")
             )
         }
 
@@ -2476,7 +2472,9 @@ struct AnalysisResultHubView: View {
         )
     }
 
-    private func copy(_ turkish: String, _ english: String) -> String { language == .turkish ? turkish : english }
+    private func copy(_ key: String, _ turkish: String, _ english: String) -> String {
+        RDLocalization.string(key, table: .analysis, fallback: language == .turkish ? turkish : english, language: language)
+    }
     private func referenceFont(_ size: CGFloat, _ weight: Font.Weight) -> Font { RDTypography.font(size, weight) }
 }
 
@@ -2672,8 +2670,7 @@ struct ResultMembershipPromotionCard: View {
 
 private struct FeedbackReasonOption: Identifiable {
     let code: String
-    let turkish: String
-    let english: String
+    let localizationKey: String
     var id: String { code }
 }
 
@@ -2697,12 +2694,12 @@ struct DislikeFeedbackPanel: View {
         GridItem(.flexible(), spacing: 8),
     ]
     private let reasons = [
-        FeedbackReasonOption(code: "incorrect_detection", turkish: "Yanlış tespit", english: "Incorrect detection"),
-        FeedbackReasonOption(code: "missing_context", turkish: "Eksik bağlam", english: "Missing context"),
-        FeedbackReasonOption(code: "wrong_score", turkish: "Yanlış skor", english: "Incorrect score"),
-        FeedbackReasonOption(code: "wrong_recommendation", turkish: "Yetersiz / yanlış önlem", english: "Insufficient or incorrect action"),
-        FeedbackReasonOption(code: "duplicate", turkish: "Tekrar içerik", english: "Duplicate content"),
-        FeedbackReasonOption(code: "unclear_text", turkish: "Metin anlaşılır değil", english: "Unclear wording"),
+        FeedbackReasonOption(code: "incorrect_detection", localizationKey: "analysis.result_hub.feedback.reason.incorrect_detection"),
+        FeedbackReasonOption(code: "missing_context", localizationKey: "analysis.result_hub.feedback.reason.missing_context"),
+        FeedbackReasonOption(code: "wrong_score", localizationKey: "analysis.result_hub.feedback.reason.wrong_score"),
+        FeedbackReasonOption(code: "wrong_recommendation", localizationKey: "analysis.result_hub.feedback.reason.wrong_recommendation"),
+        FeedbackReasonOption(code: "duplicate", localizationKey: "analysis.result_hub.feedback.reason.duplicate"),
+        FeedbackReasonOption(code: "unclear_text", localizationKey: "analysis.result_hub.feedback.reason.unclear_text"),
     ]
 
     private var trimmedNote: String {
@@ -2734,7 +2731,7 @@ struct DislikeFeedbackPanel: View {
                 }
 
                 if showsError {
-                    Text(copy("Gönderilemedi. Lütfen tekrar deneyin.", "Couldn't send. Please try again."))
+                    Text(copy("analysis.result_hub.v2.gonderilemedi.lutfen.tekrar.deneyin.d5c399b5", "Gönderilemedi. Lütfen tekrar deneyin.", "Couldn't send. Please try again."))
                         .font(RDTypography.font(10.5, .semibold))
                         .foregroundStyle(Color(hex: "#B42318"))
                         .padding(.top, 8)
@@ -2757,15 +2754,12 @@ struct DislikeFeedbackPanel: View {
     private var header: some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 5) {
-                Text(copy("NEYİ GELİŞTİREBİLİRİZ?", "WHAT CAN WE IMPROVE?"))
+                Text(copy("analysis.result_hub.v2.neyi.gelistirebiliriz.53de16e6", "NEYİ GELİŞTİREBİLİRİZ?", "WHAT CAN WE IMPROVE?"))
                     .font(RDTypography.font(17, .black))
                     .tracking(0.15)
                     .foregroundStyle(ink)
 
-                Text(copy(
-                    "Gelişmemize yardımcı ol, böylelikle bir sonraki analizinde mükemmele biraz daha yaklaşabilelim. Teşekkürler.",
-                    "Help us improve so your next analysis can get a little closer to perfect. Thank you."
-                ))
+                Text(copy("analysis.result_hub.v2.gelismemize.yard.mc.ol.boylelikle.bir.sonr.9f8f2880", "Gelişmemize yardımcı ol, böylelikle bir sonraki analizinde mükemmele biraz daha yaklaşabilelim. Teşekkürler.", "Help us improve so your next analysis can get a little closer to perfect. Thank you."))
                 .font(RDTypography.font(11.5, .medium))
                 .foregroundStyle(muted)
                 .lineSpacing(2)
@@ -2783,7 +2777,7 @@ struct DislikeFeedbackPanel: View {
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(copy("Kapat", "Close"))
+            .accessibilityLabel(copy("analysis.result_hub.v2.kapat.3ad24beb", "Kapat", "Close"))
             .accessibilityIdentifier("feedback.close")
         }
     }
@@ -2794,7 +2788,7 @@ struct DislikeFeedbackPanel: View {
                 Button {
                     submit(reason: reason.code, note: nil)
                 } label: {
-                    Text(language == .turkish ? reason.turkish : reason.english)
+                    Text(RDLocalization.string(reason.localizationKey, table: .analysis, fallback: reason.code, language: language))
                         .font(RDTypography.font(11.5, .semibold))
                         .foregroundStyle(ink)
                         .lineLimit(2)
@@ -2829,7 +2823,7 @@ struct DislikeFeedbackPanel: View {
             HStack(spacing: 8) {
                 Image(systemName: "square.and.pencil")
                     .font(RDTypography.font(size: 13, weight: .semibold))
-                Text(copy("Nedenini Yazmak İstiyorum", "I want to explain why"))
+                Text(copy("analysis.result_hub.v2.nedenini.yazmak.istiyorum.76bf7572", "Nedenini Yazmak İstiyorum", "I want to explain why"))
                     .font(RDTypography.font(12, .heavy))
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.down")
@@ -2853,7 +2847,7 @@ struct DislikeFeedbackPanel: View {
         VStack(spacing: 10) {
             ZStack(alignment: .topLeading) {
                 if note.isEmpty {
-                    Text(copy("Geri bildiriminizi yazın...", "Write your feedback..."))
+                    Text(copy("analysis.result_hub.v2.geri.bildiriminizi.yaz.n.86c7665a", "Geri bildiriminizi yazın...", "Write your feedback..."))
                         .font(RDTypography.font(11.5, .regular))
                         .foregroundStyle(Color.rdResultTertiaryText)
                         .padding(.horizontal, 12)
@@ -2868,7 +2862,7 @@ struct DislikeFeedbackPanel: View {
                     .padding(.horizontal, 7)
                     .padding(.vertical, 5)
                     .focused($noteFocused)
-                    .accessibilityLabel(copy("Geri bildiriminiz", "Your feedback"))
+                    .accessibilityLabel(copy("analysis.result_hub.v2.geri.bildiriminiz.7698d8e8", "Geri bildiriminiz", "Your feedback"))
                     .accessibilityIdentifier("feedback.custom.note")
             }
             .frame(height: 84)
@@ -2896,7 +2890,7 @@ struct DislikeFeedbackPanel: View {
                         Image(systemName: "paperplane.fill")
                             .font(RDTypography.font(size: 13, weight: .semibold))
                     }
-                    Text(copy("Gönder", "Send"))
+                    Text(copy("analysis.result_hub.v2.gonder.39122e84", "Gönder", "Send"))
                         .font(RDTypography.font(13.5, .heavy))
                 }
                 .foregroundStyle(.white)
@@ -2926,8 +2920,8 @@ struct DislikeFeedbackPanel: View {
         }
     }
 
-    private func copy(_ turkish: String, _ english: String) -> String {
-        language == .turkish ? turkish : english
+    private func copy(_ key: String, _ turkish: String, _ english: String) -> String {
+        RDLocalization.string(key, table: .analysis, fallback: language == .turkish ? turkish : english, language: language)
     }
 }
 
@@ -2943,9 +2937,14 @@ struct FeedbackThanksToast: View {
                 .background(Color.rdResultGreen)
                 .clipShape(Circle())
 
-            Text(language == .turkish
-                 ? "Teşekkürler! Geri bildiriminizi en kısa sürede inceleyeceğiz."
-                 : "Thank you! We'll review your feedback as soon as possible.")
+            Text(RDLocalization.string(
+                "analysis.result_hub.feedback.thanks",
+                table: .analysis,
+                fallback: language == .turkish
+                    ? "Teşekkürler! Geri bildiriminizi en kısa sürede inceleyeceğiz."
+                    : "Thank you! We'll review your feedback as soon as possible.",
+                language: language
+            ))
                 .font(RDTypography.font(11.5, .semibold))
                 .foregroundStyle(Color.rdResultPrimaryText)
                 .lineSpacing(1)
@@ -3079,9 +3078,9 @@ private struct ReferenceReportSheet: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12)).shadow(color: Color(hex: "#1F8F9C").opacity(0.26), radius: 6, y: 4)
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: 0) {
-                            Text(copy("Raporunu oluştur ve ", "Create and "))
+                            Text(copy("analysis.result_hub.v2.raporunu.olustur.ve.3f14b005", "Raporunu oluştur ve ", "Create and "))
                                 .foregroundStyle(Color.rdResultPrimaryText)
-                            Text(copy("paylaş", "share your report"))
+                            Text(copy("analysis.result_hub.v2.paylas.5ce2681b", "paylaş", "share your report"))
                                 .foregroundStyle(
                                     LinearGradient(
                                         colors: [Color(hex: "#E8762A"), Color(hex: "#1F8F9C")],
@@ -3092,8 +3091,8 @@ private struct ReferenceReportSheet: View {
                         }
                         .font(RDTypography.font(16.5, .black))
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(copy("Raporunu oluştur ve paylaş", "Create and share your report"))
-                        Text("\(selectedCount)/\(totalCount) \(selectedItemLabel) · PDF \(copy("veya", "or")) Excel")
+                        .accessibilityLabel(copy("analysis.result_hub.v2.raporunu.olustur.ve.paylas.eba53443", "Raporunu oluştur ve paylaş", "Create and share your report"))
+                        Text("\(selectedCount)/\(totalCount) \(selectedItemLabel) · PDF \(copy("analysis.result_hub.v2.veya.46b453c4", "veya", "or")) Excel")
                             .font(RDTypography.font(11, .semibold)).foregroundStyle(Color.rdResultTertiaryText)
                             .lineLimit(2)
                             .minimumScaleFactor(0.86)
@@ -3113,30 +3112,27 @@ private struct ReferenceReportSheet: View {
                     if isRisk {
                         reportTypeCard(
                             kind: .standard,
-                            title: copy("Standart Rapor", "Standard Report"),
-                            subtitle: copy("Seçili bulguların özet dökümü", "Summary of selected findings"),
+                            title: copy("analysis.result_hub.v2.standart.rapor.13083cc0", "Standart Rapor", "Standard Report"),
+                            subtitle: copy("analysis.result_hub.v2.secili.bulgular.n.ozet.dokumu.9cda55fa", "Seçili bulguların özet dökümü", "Summary of selected findings"),
                             icon: "doc.text"
                         )
                         reportTypeCard(
                             kind: .riskTable,
-                            title: copy("Risk Analizi Tablosu", "Risk Analysis Table"),
-                            subtitle: copy(
-                                "Analizlerini Fine-Kinney veya 5×5 Matris ile hesapla, PDF ya da Excel olarak rapor oluştur ve paylaş.",
-                                "Calculate with Fine-Kinney or 5×5 Matrix, then create and share a PDF or Excel report."
-                            ),
+                            title: copy("analysis.result_hub.v2.risk.analizi.tablosu.6ebbed72", "Risk Analizi Tablosu", "Risk Analysis Table"),
+                            subtitle: copy("analysis.result_hub.v2.analizlerini.fine.kinney.veya.5.5.matris.i.4767b740", "Analizlerini Fine-Kinney veya 5×5 Matris ile hesapla, PDF ya da Excel olarak rapor oluştur ve paylaş.", "Calculate with Fine-Kinney or 5×5 Matrix, then create and share a PDF or Excel report."),
                             icon: "tablecells",
                             emphasized: true
                         )
                         if reportKind == .riskTable {
                             companySelection
-                            fieldTitle(copy("YÖNTEM", "METHOD")); segmentedMethod
-                            fieldTitle(copy("ÇIKTI BİÇİMİ", "OUTPUT FORMAT")); segmentedFormat
+                            fieldTitle(copy("analysis.result_hub.v2.yontem.8e151e54", "YÖNTEM", "METHOD")); segmentedMethod
+                            fieldTitle(copy("analysis.result_hub.v2.cikti.bicimi.59bad551", "ÇIKTI BİÇİMİ", "OUTPUT FORMAT")); segmentedFormat
                         }
                         if isFreeTier && !canReport { upgradeCard }
                     } else {
-                        fieldTitle(copy("ÇIKTI BİÇİMİ SEÇİN", "SELECT OUTPUT FORMAT"))
-                        formatCard("pdf", title: copy("PDF olarak indir", "Download as PDF"), subtitle: copy("Baskıya ve paylaşıma hazır düzen", "Print-ready and shareable layout"))
-                        formatCard("xlsx", title: copy("Excel olarak indir", "Download as Excel"), subtitle: copy("Düzenlenebilir tablo, filtreli sütunlar", "Editable table with filtered columns"))
+                        fieldTitle(copy("analysis.result_hub.v2.cikti.bicimi.secin.958da115", "ÇIKTI BİÇİMİ SEÇİN", "SELECT OUTPUT FORMAT"))
+                        formatCard("pdf", title: copy("analysis.result_hub.v2.pdf.olarak.indir.07a7e79b", "PDF olarak indir", "Download as PDF"), subtitle: copy("analysis.result_hub.v2.bask.ya.ve.paylas.ma.haz.r.duzen.096236fc", "Baskıya ve paylaşıma hazır düzen", "Print-ready and shareable layout"))
+                        formatCard("xlsx", title: copy("analysis.result_hub.v2.excel.olarak.indir.72738cce", "Excel olarak indir", "Download as Excel"), subtitle: copy("analysis.result_hub.v2.duzenlenebilir.tablo.filtreli.sutunlar.1e727e15", "Düzenlenebilir tablo, filtreli sütunlar", "Editable table with filtered columns"))
                     }
                 }
                 .padding(.horizontal, 20).padding(.top, 14).padding(.bottom, 4)
@@ -3206,7 +3202,7 @@ private struct ReferenceReportSheet: View {
     private var companySelection: some View {
         VStack(alignment: .leading, spacing: 6) {
             if isFreeTier {
-                fieldTitle(copy("FİRMA", "COMPANY"))
+                fieldTitle(copy("analysis.result_hub.v2.firma.90198323", "FİRMA", "COMPANY"))
                 Button(action: onUpgrade) {
                     HStack(spacing: 10) {
                         Image(systemName: "lock.fill")
@@ -3216,10 +3212,10 @@ private struct ReferenceReportSheet: View {
                             .background(Color.rdResultKhakiTint)
                             .clipShape(RoundedRectangle(cornerRadius: 9))
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(copy("Firma seçimi kilitli", "Company selection is locked"))
+                            Text(copy("analysis.result_hub.v2.firma.secimi.kilitli.adf418a9", "Firma seçimi kilitli", "Company selection is locked"))
                                 .font(RDTypography.font(12.5, .heavy))
                                 .foregroundStyle(Color.rdResultSecondaryText)
-                            Text(copy("Rapor kendi firmana göre üretilir", "Generate reports for your company"))
+                            Text(copy("analysis.result_hub.v2.rapor.kendi.firmana.gore.uretilir.f9202ded", "Rapor kendi firmana göre üretilir", "Generate reports for your company"))
                                 .font(RDTypography.font(10, .semibold))
                                 .foregroundStyle(Color.rdResultTertiaryText)
                         }
@@ -3259,12 +3255,12 @@ private struct ReferenceReportSheet: View {
                 .accessibilityIdentifier("result.report_sheet.company.locked")
             } else {
                 HStack {
-                    fieldTitle(copy("FİRMA", "COMPANY"))
+                    fieldTitle(copy("analysis.result_hub.v2.firma.90198323", "FİRMA", "COMPANY"))
                     Spacer()
                     Button {
                         companyPickerPresented = true
                     } label: {
-                        Text(copy("Firma ekle", "Select company"))
+                        Text(copy("analysis.result_hub.v2.firma.ekle.703fd054", "Firma ekle", "Select company"))
                             .font(RDTypography.font(9.5, .heavy))
                             .foregroundStyle(greenDark)
                     }
@@ -3277,7 +3273,7 @@ private struct ReferenceReportSheet: View {
                     HStack(spacing: 10) {
                         companyAvatar(selectedCompany)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(selectedCompany?.name ?? copy("Firma seç", "Select company"))
+                            Text(selectedCompany?.name ?? copy("analysis.result_hub.v2.firma.sec.ae50b7a6", "Firma seç", "Select company"))
                                 .font(RDTypography.font(12.5, .heavy))
                                 .foregroundStyle(Color.rdResultPrimaryText)
                                 .lineLimit(1)
@@ -3327,11 +3323,11 @@ private struct ReferenceReportSheet: View {
 
     private func companySubtitle(_ company: Company?) -> String {
         guard let company else {
-            return copy("Rapor için firma seçin", "Choose a company for this report")
+            return copy("analysis.result_hub.v2.rapor.icin.firma.secin.f925120d", "Rapor için firma seçin", "Choose a company for this report")
         }
         let subtitle = company.listSubtitle.trimmingCharacters(in: .whitespacesAndNewlines)
         return subtitle.isEmpty
-            ? copy("Rapor için seçildi", "Selected for this report")
+            ? copy("analysis.result_hub.v2.rapor.icin.secildi.f4b0b22b", "Rapor için seçildi", "Selected for this report")
             : subtitle
     }
 
@@ -3368,10 +3364,7 @@ private struct ReferenceReportSheet: View {
                         .accessibilityIdentifier("result.report_sheet.option.\(kind.rawValue).title")
                     if gifted { riskTableGiftBadge }
                     if gifted {
-                        Text(copy(
-                            "Üyeliğine özel: 1 kerelik oluşturma hakkın tanımlandı",
-                            "Membership gift: your one-time report credit is ready"
-                        ))
+                        Text(copy("analysis.result_hub.v2.uyeligine.ozel.1.kerelik.olusturma.hakk.n..f00bf147", "Üyeliğine özel: 1 kerelik oluşturma hakkın tanımlandı", "Membership gift: your one-time report credit is ready"))
                         .font(RDTypography.font(10, .bold))
                         .foregroundStyle(Color(hex: "#B47C00"))
                         .fixedSize(horizontal: false, vertical: true)
@@ -3416,7 +3409,7 @@ private struct ReferenceReportSheet: View {
         HStack(spacing: 4) {
             Image(systemName: "gift.fill")
                 .font(RDTypography.font(size: 8, weight: .bold))
-            Text(copy("1 HAK HEDİYE", "1 FREE CREDIT"))
+            Text(copy("analysis.result_hub.v2.1.hak.hediye.6db763f3", "1 HAK HEDİYE", "1 FREE CREDIT"))
                 .font(RDTypography.font(8, .black))
         }
         .foregroundStyle(Color.white)
@@ -3431,7 +3424,7 @@ private struct ReferenceReportSheet: View {
         )
         .clipShape(Capsule())
         .fixedSize()
-        .accessibilityLabel(copy("Bir hak hediye", "One free credit"))
+        .accessibilityLabel(copy("analysis.result_hub.v2.bir.hak.hediye.1ffce326", "Bir hak hediye", "One free credit"))
         .accessibilityIdentifier("result.report_sheet.option.riskTable.gift")
     }
 
@@ -3446,25 +3439,25 @@ private struct ReferenceReportSheet: View {
 
     private var riskTableSubtitle: Text {
         if language == .turkish {
-            return Text("Analizlerini ")
+            return Text(copy("analysis.result_hub.v2.analizlerini.7d5e7559", "Analizlerini ", "Calculate with "))
                 + Text("Fine-Kinney").underline()
-                + Text(" veya ")
+                + Text(copy("analysis.result_hub.v2.veya.5e79def6", " veya ", " or "))
                 + Text("5×5 Matris").underline()
-                + Text(" ile hesapla, ")
+                + Text(copy("analysis.result_hub.v2.ile.hesapla.5912929a", " ile hesapla, ", ", then create and share a "))
                 + Text("PDF").underline()
-                + Text(" ya da ")
+                + Text(copy("analysis.result_hub.v2.ya.da.40287c6c", " ya da ", " or "))
                 + Text("Excel").underline()
-                + Text(" olarak rapor oluştur ve paylaş.")
+                + Text(copy("analysis.result_hub.v2.olarak.rapor.olustur.ve.paylas.00a71509", " olarak rapor oluştur ve paylaş.", " report."))
         }
-        return Text("Calculate with ")
+        return Text(copy("analysis.result_hub.v2.analizlerini.7d5e7559", "Analizlerini ", "Calculate with "))
             + Text("Fine-Kinney").underline()
-            + Text(" or ")
+            + Text(copy("analysis.result_hub.v2.veya.5e79def6", " veya ", " or "))
             + Text("5×5 Matrix").underline()
-            + Text(", then create and share a ")
+            + Text(copy("analysis.result_hub.v2.ile.hesapla.5912929a", " ile hesapla, ", ", then create and share a "))
             + Text("PDF").underline()
-            + Text(" or ")
+            + Text(copy("analysis.result_hub.v2.ya.da.40287c6c", " ya da ", " or "))
             + Text("Excel").underline()
-            + Text(" report.")
+            + Text(copy("analysis.result_hub.v2.olarak.rapor.olustur.ve.paylas.00a71509", " olarak rapor oluştur ve paylaş.", " report."))
     }
 
     @ViewBuilder
@@ -3532,7 +3525,7 @@ private struct ReferenceReportSheet: View {
     private var segmentedMethod: some View {
         HStack(spacing: 3) {
             segment("Fine-Kinney", subtitle: localizedRiskFormula(.fineKinney), selected: method == .fineKinney) { method = .fineKinney }
-            segment(copy("5×5 Matris", "5×5 Matrix"), subtitle: localizedRiskFormula(.matrix5x5), selected: method == .matrix5x5) { method = .matrix5x5 }
+            segment(copy("analysis.result_hub.v2.5.5.matris.30882165", "5×5 Matris", "5×5 Matrix"), subtitle: localizedRiskFormula(.matrix5x5), selected: method == .matrix5x5) { method = .matrix5x5 }
         }
         .padding(4).background(Color.rdResultSubtleSurface).clipShape(RoundedRectangle(cornerRadius: 11))
         .accessibilityIdentifier("result.report_sheet.method")
@@ -3540,8 +3533,8 @@ private struct ReferenceReportSheet: View {
 
     private var segmentedFormat: some View {
         HStack(spacing: 3) {
-            segment("PDF", subtitle: copy("Baskıya hazır", "Print ready"), selected: reportFormat == "pdf") { reportFormat = "pdf" }
-            segment("Excel", subtitle: copy("Düzenlenebilir", "Editable"), selected: reportFormat == "xlsx") { reportFormat = "xlsx" }
+            segment("PDF", subtitle: copy("analysis.result_hub.v2.bask.ya.haz.r.981e1308", "Baskıya hazır", "Print ready"), selected: reportFormat == "pdf") { reportFormat = "pdf" }
+            segment("Excel", subtitle: copy("analysis.result_hub.v2.duzenlenebilir.adecc32b", "Düzenlenebilir", "Editable"), selected: reportFormat == "xlsx") { reportFormat = "xlsx" }
         }
         .padding(4).background(Color.rdResultSubtleSurface).clipShape(RoundedRectangle(cornerRadius: 11))
         .accessibilityIdentifier("result.report_sheet.format")
@@ -3573,8 +3566,8 @@ private struct ReferenceReportSheet: View {
                 Image(systemName: "lock.fill").foregroundStyle(Color(hex: "#A99A6D")).frame(width: 30, height: 30)
                     .background(Color.rdResultKhakiTint).clipShape(RoundedRectangle(cornerRadius: 9))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(copy("PLUS veya PRO ile aç", "Unlock with PLUS or PRO")).font(RDTypography.font(12.5, .heavy))
-                    Text(copy("Rapor hakları ve Excel çıktısı", "Report access and Excel export"))
+                    Text(copy("analysis.result_hub.v2.plus.veya.pro.ile.ac.feb08372", "PLUS veya PRO ile aç", "Unlock with PLUS or PRO")).font(RDTypography.font(12.5, .heavy))
+                    Text(copy("analysis.result_hub.v2.rapor.haklar.ve.excel.c.kt.s.55eb6d2d", "Rapor hakları ve Excel çıktısı", "Report access and Excel export"))
                         .font(RDTypography.font(10, .semibold)).foregroundStyle(Color.rdResultTertiaryText)
                 }
                 Spacer()
@@ -3597,14 +3590,14 @@ private struct ReferenceReportSheet: View {
         Text(title).font(RDTypography.font(9, .heavy)).tracking(0.6).foregroundStyle(Color.rdResultTertiaryText)
     }
     private var generateTitle: String {
-        if !canReport { return copy("PLUS / PRO ile aç", "Unlock with PLUS / PRO") }
-        if isGiftSelected { return copy("Hediye hakkımla oluştur", "Create with my free credit") }
-        guard canGenerate else { return copy("Rapor türü seçin", "Select report type") }
-        if reportKind == .standard { return copy("Standart Rapor Oluştur", "Create Standard Report") }
-        return reportFormat == "xlsx" ? copy("Excel Raporu Oluştur", "Create Excel Report") : copy("PDF Raporu Oluştur", "Create PDF Report")
+        if !canReport { return copy("analysis.result_hub.v2.plus.pro.ile.ac.9ed9163b", "PLUS / PRO ile aç", "Unlock with PLUS / PRO") }
+        if isGiftSelected { return copy("analysis.result_hub.v2.hediye.hakk.mla.olustur.df5fb619", "Hediye hakkımla oluştur", "Create with my free credit") }
+        guard canGenerate else { return copy("analysis.result_hub.v2.rapor.turu.secin.49b32bcb", "Rapor türü seçin", "Select report type") }
+        if reportKind == .standard { return copy("analysis.result_hub.v2.standart.rapor.olustur.6e694f0f", "Standart Rapor Oluştur", "Create Standard Report") }
+        return reportFormat == "xlsx" ? copy("analysis.result_hub.v2.excel.raporu.olustur.66221b45", "Excel Raporu Oluştur", "Create Excel Report") : copy("analysis.result_hub.v2.pdf.raporu.olustur.891e596f", "PDF Raporu Oluştur", "Create PDF Report")
     }
     private var selectedItemLabel: String {
-        copy("kayıt seçili", selectedCount == 1 ? "item selected" : "items selected")
+        selectedCount == 1 ? copy("analysis.result_hub.v2.kay.t.secili.a5f9a55c", "kayıt seçili", "item selected") : copy("analysis.result_hub.v2.kay.t.secili.880c1368", "kayıt seçili", "items selected")
     }
     private func localizedRiskFormula(_ method: RiskMethod) -> String {
         switch method {
@@ -3624,7 +3617,9 @@ private struct ReferenceReportSheet: View {
             )
         }
     }
-    private func copy(_ tr: String, _ en: String) -> String { language == .turkish ? tr : en }
+    private func copy(_ key: String, _ tr: String, _ en: String) -> String {
+        RDLocalization.string(key, table: .analysis, fallback: language == .turkish ? tr : en, language: language)
+    }
 }
 
 private struct ReferenceCompanyPickerSheet: View {
@@ -3653,7 +3648,7 @@ private struct ReferenceCompanyPickerSheet: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(copy("Firma seç", "Select company"))
+                Text(copy("analysis.result_hub.v2.firma.sec.ae50b7a6", "Firma seç", "Select company"))
                     .font(RDTypography.font(17, .black))
                     .foregroundStyle(Color.rdResultPrimaryText)
                 Spacer()
@@ -3666,7 +3661,7 @@ private struct ReferenceCompanyPickerSheet: View {
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(copy("Kapat", "Close"))
+                .accessibilityLabel(copy("analysis.result_hub.v2.kapat.3ad24beb", "Kapat", "Close"))
             }
             .padding(.horizontal, 20)
             .padding(.top, 18)
@@ -3675,7 +3670,7 @@ private struct ReferenceCompanyPickerSheet: View {
                 Image(systemName: "magnifyingglass")
                     .font(RDTypography.font(size: 15, weight: .semibold))
                     .foregroundStyle(Color.rdResultTertiaryText)
-                TextField(copy("Firma adı veya sektör ara", "Search company or sector"), text: $searchText)
+                TextField(copy("analysis.result_hub.v2.firma.ad.veya.sektor.ara.9270211a", "Firma adı veya sektör ara", "Search company or sector"), text: $searchText)
                     .font(RDTypography.font(13.5, .medium))
                     .foregroundStyle(Color.rdResultPrimaryText)
                     .textInputAutocapitalization(.words)
@@ -3690,7 +3685,7 @@ private struct ReferenceCompanyPickerSheet: View {
             .accessibilityIdentifier("result.company_picker.search")
 
             HStack(spacing: 10) {
-                Text("\(filteredCompanies.count) \(copy("FİRMA", filteredCompanies.count == 1 ? "COMPANY" : "COMPANIES"))")
+                Text("\(filteredCompanies.count) \(filteredCompanies.count == 1 ? copy("analysis.result_hub.v2.firma.90198323", "FİRMA", "COMPANY") : copy("analysis.result_hub.v2.firma.4beb43de", "FİRMA", "COMPANIES"))")
                     .font(RDTypography.font(9.5, .heavy))
                     .tracking(0.5)
                     .foregroundStyle(Color.rdResultTertiaryText)
@@ -3705,7 +3700,7 @@ private struct ReferenceCompanyPickerSheet: View {
                 if isLoading {
                     VStack(spacing: 10) {
                         ProgressView().tint(green)
-                        Text(copy("Firmalar yükleniyor", "Loading companies"))
+                        Text(copy("analysis.result_hub.v2.firmalar.yukleniyor.27f1de9c", "Firmalar yükleniyor", "Loading companies"))
                             .font(RDTypography.font(11, .semibold))
                             .foregroundStyle(Color.rdResultSecondaryText)
                     }
@@ -3719,7 +3714,7 @@ private struct ReferenceCompanyPickerSheet: View {
                         Button {
                             Task { await loadCompanies() }
                         } label: {
-                            Label(copy("Tekrar dene", "Try again"), systemImage: "arrow.clockwise")
+                            Label(copy("analysis.result_hub.v2.tekrar.dene.bb3d56af", "Tekrar dene", "Try again"), systemImage: "arrow.clockwise")
                                 .font(RDTypography.font(11, .heavy))
                                 .foregroundStyle(greenDark)
                         }
@@ -3733,8 +3728,8 @@ private struct ReferenceCompanyPickerSheet: View {
                             .font(RDTypography.font(size: 24, weight: .semibold))
                             .foregroundStyle(Color.rdResultTertiaryText)
                         Text(searchText.isEmpty
-                             ? copy("Kayıtlı firma bulunmuyor", "No saved companies")
-                             : copy("Aramanızla eşleşen firma yok", "No companies match your search"))
+                             ? copy("analysis.result_hub.v2.kay.tl.firma.bulunmuyor.ab9c253c", "Kayıtlı firma bulunmuyor", "No saved companies")
+                             : copy("analysis.result_hub.v2.araman.zla.eslesen.firma.yok.9e628b24", "Aramanızla eşleşen firma yok", "No companies match your search"))
                             .font(RDTypography.font(12, .semibold))
                             .foregroundStyle(Color.rdResultSecondaryText)
                     }
@@ -3778,7 +3773,7 @@ private struct ReferenceCompanyPickerSheet: View {
                         .foregroundStyle(selected ? greenDark : Color.rdResultPrimaryText)
                         .lineLimit(1)
                     Text(company.listSubtitle.isEmpty
-                         ? copy("Firma kaydı", "Company record")
+                         ? copy("analysis.result_hub.v2.firma.kayd.e73624c2", "Firma kaydı", "Company record")
                          : company.listSubtitle)
                         .font(RDTypography.font(10, .medium))
                         .foregroundStyle(Color.rdResultTertiaryText)
@@ -3802,7 +3797,7 @@ private struct ReferenceCompanyPickerSheet: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(company.name)
-        .accessibilityValue(selected ? copy("Seçili", "Selected") : copy("Seçili değil", "Not selected"))
+        .accessibilityValue(selected ? copy("analysis.result_hub.v2.secili.9fce9c94", "Seçili", "Selected") : copy("analysis.result_hub.v2.secili.degil.fe86ff2a", "Seçili değil", "Not selected"))
         .accessibilityIdentifier("result.company_picker.company.\(company.id.uuidString)")
     }
 
@@ -3825,8 +3820,8 @@ private struct ReferenceCompanyPickerSheet: View {
         return value.uppercased(with: Locale(identifier: language == .turkish ? "tr_TR" : "en_US"))
     }
 
-    private func copy(_ tr: String, _ en: String) -> String {
-        language == .turkish ? tr : en
+    private func copy(_ key: String, _ tr: String, _ en: String) -> String {
+        RDLocalization.string(key, table: .analysis, fallback: language == .turkish ? tr : en, language: language)
     }
 }
 
@@ -3853,8 +3848,8 @@ private struct ReferenceHubDetailView: View {
                 Text(section.title(language: language)).font(RDTypography.font(15, .heavy))
                 Spacer()
                 Menu {
-                    Button(action: onEdit) { Label(copy("Düzenle", "Edit"), systemImage: "pencil") }
-                    Button(role: .destructive, action: onDelete) { Label(copy("Sil", "Delete"), systemImage: "trash") }
+                    Button(action: onEdit) { Label(copy("analysis.result_hub.v2.duzenle.3248ed57", "Düzenle", "Edit"), systemImage: "pencil") }
+                    Button(role: .destructive, action: onDelete) { Label(copy("analysis.result_hub.v2.sil.c0b0d3c6", "Sil", "Delete"), systemImage: "trash") }
                 } label: {
                     Image(systemName: "ellipsis").font(RDTypography.font(size: 17, weight: .semibold)).frame(width: 36, height: 36)
                         .background(Color.rdResultSubtleSurface).clipShape(Circle())
@@ -3864,12 +3859,12 @@ private struct ReferenceHubDetailView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 14) {
                     Text(item.displayTitle(language: language)).font(RDTypography.font(22, .black)).foregroundStyle(Color.rdResultPrimaryText)
-                    if !item.displayBody.isEmpty { detailBlock(copy("Açıklama", "Description"), item.displayBody, color: Color.rdResultBlueTint) }
-                    if let root = item.rootCauseText, !root.isEmpty { detailBlock(copy("Kök Neden", "Root Cause"), root, color: Color.rdResultAmberTint) }
-                    if let action = item.recommendedAction, !action.isEmpty { detailBlock(copy("Öneri", "Recommendation"), action, color: Color.rdResultGreenTintStrong) }
-                    if let finding = item.findingText, !finding.isEmpty { detailBlock(copy("Tespit", "Finding"), finding, color: Color.rdResultAmberTint) }
-                    if let recommendation = item.recommendationText, !recommendation.isEmpty { detailBlock(copy("Öneri", "Recommendation"), recommendation, color: Color.rdResultGreenTintStrong) }
-                    if let reference = item.referenceText ?? item.referencesText, !reference.isEmpty { detailBlock(copy("Dayanak", "Basis"), reference, color: Color.rdResultBlueTint) }
+                    if !item.displayBody.isEmpty { detailBlock(copy("analysis.result_hub.v2.ac.klama.c96157c8", "Açıklama", "Description"), item.displayBody, color: Color.rdResultBlueTint) }
+                    if let root = item.rootCauseText, !root.isEmpty { detailBlock(copy("analysis.result_hub.v2.kok.neden.a37f29be", "Kök Neden", "Root Cause"), root, color: Color.rdResultAmberTint) }
+                    if let action = item.recommendedAction, !action.isEmpty { detailBlock(copy("analysis.result_hub.v2.oneri.cbecd1fc", "Öneri", "Recommendation"), action, color: Color.rdResultGreenTintStrong) }
+                    if let finding = item.findingText, !finding.isEmpty { detailBlock(copy("analysis.result_hub.v2.tespit.4e395ed8", "Tespit", "Finding"), finding, color: Color.rdResultAmberTint) }
+                    if let recommendation = item.recommendationText, !recommendation.isEmpty { detailBlock(copy("analysis.result_hub.v2.oneri.cbecd1fc", "Öneri", "Recommendation"), recommendation, color: Color.rdResultGreenTintStrong) }
+                    if let reference = item.referenceText ?? item.referencesText, !reference.isEmpty { detailBlock(copy("analysis.result_hub.v2.dayanak.990d0beb", "Dayanak", "Basis"), reference, color: Color.rdResultBlueTint) }
                 }
                 .padding(20)
             }
@@ -3887,7 +3882,9 @@ private struct ReferenceHubDetailView: View {
         }
         .padding(13).frame(maxWidth: .infinity, alignment: .leading).background(color).clipShape(RoundedRectangle(cornerRadius: 10))
     }
-    private func copy(_ tr: String, _ en: String) -> String { language == .turkish ? tr : en }
+    private func copy(_ key: String, _ tr: String, _ en: String) -> String {
+        RDLocalization.string(key, table: .analysis, fallback: language == .turkish ? tr : en, language: language)
+    }
 }
 
 // MARK: Reference geometry

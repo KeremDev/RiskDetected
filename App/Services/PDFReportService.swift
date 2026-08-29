@@ -1105,7 +1105,18 @@ final class PDFReportService: @unchecked Sendable {
             drawText(scoreText(score, language: language), in: CGRect(x: x + 370, y: y + 19, width: 70, height: 20), font: .monospacedSystemFont(ofSize: 16, weight: .bold), color: .white, alignment: .center)
             drawText(riskBandLabel(band.level, method: method, score: score, language: language), in: CGRect(x: x + 360, y: y + 52, width: 90, height: 14), font: .systemFont(ofSize: 8, weight: .bold), color: band.level.pdfColor, alignment: .center)
         } else {
-            drawText(copy(language: language, tr: "Saha teyidi", en: "Field verification"), in: CGRect(x: x + 360, y: y + 24, width: 90, height: 20), font: .systemFont(ofSize: 9, weight: .bold), color: .rdPDFSlate, alignment: .center)
+            drawText(
+                RDLocalization.string(
+                    "reports.pdf.risk_table.field_verification",
+                    table: .reports,
+                    fallback: language == .english ? "Field verification" : "Saha teyidi",
+                    language: language
+                ),
+                in: CGRect(x: x + 360, y: y + 24, width: 90, height: 20),
+                font: .systemFont(ofSize: 9, weight: .bold),
+                color: .rdPDFSlate,
+                alignment: .center
+            )
         }
 
         drawFittingText(

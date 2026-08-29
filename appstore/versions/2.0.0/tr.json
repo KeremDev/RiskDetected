@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "locale": "tr",
+  "version": "2.0.0",
+  "market": "Türkiye",
+  "app_info": {
+    "name": "RiskDetected: İş Güvenliği İSG",
+    "subtitle": "Risk Analizi ve iş güvenliği",
+    "privacy_policy_url": "https://riskdetected.com/gizlilik"
+  },
+  "version_info": {
+    "promotional_text": null,
+    "description": "RiskDetected, saha fotoğraflarını yapay zeka desteğiyle inceleyerek iş güvenliği ve İSG süreçlerinde tehlike, uygunsuzluk ve riskleri değerlendirmenize yardımcı olur.\n\nİş güvenliği uzmanları, OSGB ekipleri, işveren vekilleri ve saha sorumluları için geliştirilen uygulama; fotoğraftan elde edilen gözlemleri Risk Analizi, Uzman Görüşü, Onaylı Defter taslağı ve Eğitim Önerileri başlıklarında düzenler.\n\nÖne çıkan özellikler:\n• Fotoğraf ile V4 destekli İSG risk analizi\n• Fine-Kinney ve 5x5 Matris risk değerlendirme çıktıları\n• Düzeltici önlem, önleyici faaliyet ve mevzuat referansları\n• PDF ve Excel rapor oluşturma, indirme ve paylaşma\n• Tek bulgu veya seçili bulgular için raporlama\n• Rapor arşivi ve kullanıcı geri bildirimi\n• Firma, hazırlayan ve logo bilgileriyle rapor özelleştirme\n• Açık ve koyu tema desteği\n\nRiskDetected karar destek amacıyla yapay zeka destekli analizler sunar. Çıktılar eksik veya hatalı olabilir; profesyonel değerlendirme, mevzuat yorumu ya da saha kontrolünün yerine geçmez. Nihai karar ve uygunluk değerlendirmesi yetkili iş güvenliği uzmanı veya sorumlu kişi tarafından yapılmalıdır.\n\nBazı özellikler ve daha yüksek kullanım limitleri Plus veya Pro aboneliği gerektirir. Abonelikler App Store üzerinden yönetilir ve uygulama içinden geri yüklenebilir.\n\nKullanım Koşulları: https://riskdetected.com/kullanim-kosullari\nGizlilik Politikası: https://riskdetected.com/gizlilik\nApple Standart Lisans Sözleşmesi (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
+    "keywords": "osgb,is güvenliği,is guvenligi,isg,değerlendirme,uzmanı,sağlığı,tehlike,tespit,5x5,matris",
+    "marketing_url": "https://riskdetected.com",
+    "support_url": "https://riskdetected.com",
+    "whats_new": "Yeni V4 analiz motoru ve tamamen yenilenen sonuç merkeziyle Risk Analizi, Uzman Görüşü, Onaylı Defter ve Eğitim önerileri tek akışta. Bulgu detayları, geri bildirimler, PDF/Excel raporları, paylaşım ve arşiv deneyimi geliştirildi. Free, Plus ve Pro görünümleri ile açık/koyu tema desteği yenilendi."
+  },
+  "screenshots": {
+    "source_theme": "light",
+    "captions": [
+      "Fotoğraftan saha risklerini belirleyin",
+      "Kanıtları anlaşılır bulgulara dönüştürün",
+      "Fine-Kinney veya 5×5 ile önceliklendirin",
+      "Profesyonel PDF ve Excel raporları oluşturun",
+      "Uzman görüşü ve onaylı defter taslaklarını inceleyin"
+    ]
+  }
+}

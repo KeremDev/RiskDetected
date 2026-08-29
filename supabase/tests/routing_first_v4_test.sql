@@ -21,11 +21,11 @@ select has_table('private','standards_registry','standards registry exists');
 select has_table('private','assurance_topics','assurance registry exists');
 select is(
   (select prompt_version from private.analysis_v4_configs where is_active),
-  'v4-vision-core-v5','active v4 prompt version is pinned'
+  'v4-vision-core-v10','active v4 prompt version is pinned'
 );
 select is(
   (select router_version from private.analysis_v4_configs where is_active),
-  'claim-routing-v15','active v4 router version is pinned'
+  'claim-routing-v27','active v4 router version is pinned'
 );
 select is(
   (select coverage_version from private.analysis_v4_configs where is_active),
@@ -174,8 +174,8 @@ select public.resolve_analysis_engine_route_v5(
 ) response from route_inputs;
 select isnt((select response->>'engine_variant' from other_user),'vnext-v4',
   'capability cannot bypass private allowlist');
-select is((select response->>'v4_fallback_reason' from other_user),'v4_user_not_allowlisted',
-  'non-allowlisted fallback is observable');
+select is((select response->>'v4_fallback_reason' from other_user),'v4_rollout_gate_miss',
+  'rollout-gated fallback is observable');
 
 update public.app_feature_flags
 set value=jsonb_set(value,'{kill_switch}','true'::jsonb,true)

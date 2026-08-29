@@ -56,7 +56,7 @@ struct OnboardingViewV2: View {
     ) {
         _state = StateObject(
             wrappedValue: OnboardingV2State(
-                step: initialStep,
+                step: Self.resolvedInitialStep(initialStep),
                 appLanguage: appLanguage,
                 safetyProfileID: initialSafetyProfileID
             )
@@ -317,8 +317,20 @@ struct OnboardingViewV2: View {
     }
 
     #if DEBUG
+    private static func resolvedInitialStep(_ initialStep: Int) -> Int {
+        if CommandLine.arguments.contains("RD_PREVIEW_ONBOARDING_LOADING")
+            || ProcessInfo.processInfo.environment["RD_PREVIEW_ONBOARDING_LOADING"] == "1" {
+            return 6
+        }
+        return initialStep
+    }
+
     private static var isUITestAuthBypassLaunch: Bool {
         CommandLine.arguments.contains("RD_UI_TEST_BYPASS_AUTH")
+    }
+    #else
+    private static func resolvedInitialStep(_ initialStep: Int) -> Int {
+        initialStep
     }
     #endif
 

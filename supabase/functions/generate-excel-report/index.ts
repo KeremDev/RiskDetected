@@ -409,6 +409,29 @@ function snapshotItems(intent: ReportIntent | null): Record<string, unknown>[] {
     : [];
 }
 
+function resultSectionMeasureText(
+  item: Record<string, unknown>,
+  kind: "corrective" | "preventive",
+): string {
+  const measures = Array.isArray(item.recommended_measures)
+    ? item.recommended_measures
+    : [];
+  return [
+    ...new Set(
+      measures
+        .filter((measure): measure is Record<string, unknown> =>
+          measure != null && typeof measure === "object" &&
+          !Array.isArray(measure)
+        )
+        .filter((measure) =>
+          safeText(measure.kind).trim().toLowerCase() === kind
+        )
+        .map((measure) => safeText(measure.text).trim())
+        .filter(Boolean),
+    ),
+  ].join("\n\n");
+}
+
 function bool(value: unknown, fallback: boolean): boolean {
   return typeof value === "boolean" ? value : fallback;
 }
@@ -1172,7 +1195,7 @@ function appendSheet(
   return sheet;
 }
 
-function makeResultSectionWorkbook(
+export function makeResultSectionWorkbook(
   intent: ReportIntent,
   analysis: AnalysisRow,
   localization: ReportLocalizationContext,
@@ -1183,23 +1206,31 @@ function makeResultSectionWorkbook(
   const isTR = localization.language === "tr";
   const notebook = intent.content_scope === "approved_notebook";
   const sectionTitle = notebook
-    ? (isTR ? "Onaylı Defter Önerisi" : "Safety Log Recommendation")
-    : (isTR ? "Uzman Görüşü Önerileri" : "Expert Recommendations");
+    ? userFacingCopy("resultNotebookSectionTitle", localization.language)
+    : userFacingCopy("resultExpertSectionTitle", localization.language);
   const disclaimer = notebook
-    ? (isTR
-      ? "Taslak çıktıdır; iş güvenliği uzmanı değerlendirmesi ve resmî deftere aktarım gerekir."
-      : "Draft output; expert review and transfer to the applicable official record are required.")
-    : (isTR
-      ? "Bağlayıcı uzman görüşü değildir; saha teyidi ve uzman değerlendirmesi gerekir."
-      : "Not a binding expert opinion; field verification and expert review are required.");
+    ? userFacingCopy("resultNotebookDisclaimer", localization.language)
+    : userFacingCopy("resultExpertDisclaimer", localization.language);
   const items = snapshotItems(intent);
   const headers = notebook
-    ? (isTR
-      ? ["Sıra", "Tespit", "Öneri", "Dayanak", "Kaynak Bulgu"]
-      : ["No.", "Finding", "Recommendation", "Basis", "Source Items"])
-    : (isTR
-      ? ["Sıra", "Başlık", "Açıklama", "Öneri", "Durum"]
-      : ["No.", "Title", "Description", "Recommendation", "Status"]);
+    ? [
+      userFacingCopy("resultHeaderNumber", localization.language),
+      userFacingCopy("resultHeaderFinding", localization.language),
+      userFacingCopy("resultHeaderRecommendation", localization.language),
+      userFacingCopy("resultHeaderBasis", localization.language),
+      userFacingCopy("resultHeaderSourceItems", localization.language),
+    ]
+    : [
+      userFacingCopy("resultHeaderNumber", localization.language),
+      userFacingCopy("resultHeaderTitle", localization.language),
+      userFacingCopy("resultHeaderDescription", localization.language),
+      userFacingCopy("resultHeaderExpertRecommendation", localization.language),
+      userFacingCopy("resultHeaderCorrectiveAction", localization.language),
+      userFacingCopy("resultHeaderPreventiveAction", localization.language),
+      userFacingCopy("resultHeaderRootCause", localization.language),
+      userFacingCopy("resultHeaderRegulatoryReferences", localization.language),
+      userFacingCopy("resultHeaderStatus", localization.language),
+    ];
   const rows: unknown[][] = [
     [sectionTitle],
     [safeText(analysis.title, sectionTitle)],
@@ -1224,28 +1255,74 @@ function makeResultSectionWorkbook(
           index + 1,
           safeText(item.title),
           safeText(item.description),
-          safeText(item.recommended_action) ||
-          (Array.isArray(item.recommended_measures)
-            ? item.recommended_measures.map(String).join("\n")
-            : safeText(item.recommended_measures)),
-          isTR ? "Saha teyidi" : "Field verification",
+          safeText(item.recommended_action),
+          resultSectionMeasureText(item, "corrective") ||
+          safeText(item.recommended_action),
+          resultSectionMeasureText(item, "preventive"),
+          safeText(item.root_cause_text),
+          safeText(item.references_text, safeText(item.reference_text)),
+          item.needs_field_verification === false
+            ? userFacingCopy(
+              "resultExpertReviewCompleted",
+              localization.language,
+            )
+            : userFacingCopy(
+              "resultFieldVerificationRequired",
+              localization.language,
+            ),
         ],
     );
   }
   const sheet = appendSheet(
     workbook,
-    isTR ? (notebook ? "Defter Taslağı" : "Uzman Görüşü") : sectionTitle,
+    notebook
+      ? userFacingCopy("resultNotebookSheetName", localization.language)
+      : userFacingCopy("resultExpertSheetName", localization.language),
     rows,
   );
-  setCols(sheet, [8, 34, 58, 58, 18]);
-  addMerges(sheet, ["A1:E1", "A2:E2", "A3:E3", "A4:E4"]);
-  setStyle(sheet, "A1:E1", styles.title);
-  setStyle(sheet, "A2:E4", styles.subtitle);
-  setStyle(sheet, "A6:E6", styles.tableHeader);
+  const columnWidths = notebook
+    ? [8, 34, 58, 58, 18]
+    : [8, 32, 52, 42, 52, 52, 40, 48, 24];
+  const lastColumn = XLSX.utils.encode_col(headers.length - 1);
+  setCols(sheet, columnWidths);
+  setRows(sheet, [
+    38,
+    24,
+    20,
+    42,
+    10,
+    36,
+    ...rows.slice(6).map((row) =>
+      estimatedRowHeight(
+        row.slice(1).map((value, index) => ({
+          value,
+          width: columnWidths[index + 1],
+        })),
+        { min: notebook ? 58 : 72, max: 260, base: 10, lineHeight: 14 },
+      )
+    ),
+  ]);
+  addMerges(sheet, [
+    `A1:${lastColumn}1`,
+    `A2:${lastColumn}2`,
+    `A3:${lastColumn}3`,
+    `A4:${lastColumn}4`,
+  ]);
+  setStyle(sheet, `A1:${lastColumn}1`, styles.title);
+  setStyle(sheet, `A2:${lastColumn}4`, styles.subtitle);
+  setStyle(sheet, `A6:${lastColumn}6`, styles.tableHeader);
   if (items.length > 0) {
-    setStyle(sheet, `A7:E${items.length + 6}`, styles.tableCell);
+    setStyle(
+      sheet,
+      `A7:${lastColumn}${items.length + 6}`,
+      styles.tableCell,
+    );
+    setStyle(sheet, `A7:A${items.length + 6}`, styles.tableNumber);
   }
-  sheet["!autofilter"] = { ref: `A6:E${Math.max(6, items.length + 6)}` };
+  sheet["!autofilter"] = {
+    ref: `A6:${lastColumn}${Math.max(6, items.length + 6)}`,
+  };
+  sheet["!freeze"] = { xSplit: 0, ySplit: 6 };
   return workbook;
 }
 
@@ -3366,8 +3443,14 @@ export async function handleGenerateExcelReportRequest(req: Request) {
       return json(code === "premium_required" ? 403 : 429, {
         error: code,
         message: code === "premium_required"
-          ? "Bu rapor Plus veya Pro aboneliği gerektirir."
-          : "Rapor kotan doldu.",
+          ? userFacingCopy(
+            "reportPremiumRequired",
+            reportLocalization.context.language,
+          )
+          : userFacingCopy(
+            "reportQuotaExceeded",
+            reportLocalization.context.language,
+          ),
       });
     }
   }
@@ -3576,16 +3659,19 @@ export async function handleGenerateExcelReportRequest(req: Request) {
       title: safeText(
         (analysis as AnalysisRow).title,
         reportIntent?.content_scope === "expert_recommendations"
-          ? (reportLocalization.context.language === "en"
-            ? "Expert Recommendations"
-            : "Uzman Görüşü Önerileri")
+          ? userFacingCopy(
+            "resultExpertSectionTitle",
+            reportLocalization.context.language,
+          )
           : reportIntent?.content_scope === "approved_notebook"
-          ? (reportLocalization.context.language === "en"
-            ? "Safety Log Recommendation"
-            : "Onaylı Defter Önerisi")
-          : (reportLocalization.context.language === "en"
-            ? "Risk Analysis"
-            : "Risk Analizi"),
+          ? userFacingCopy(
+            "resultNotebookSectionTitle",
+            reportLocalization.context.language,
+          )
+          : userFacingCopy(
+            "resultRiskAnalysisTitle",
+            reportLocalization.context.language,
+          ),
       ),
       storage_path: storagePath,
       file_name: fileName,
