@@ -23,6 +23,7 @@ import {
 } from "./dynamic-modules.ts";
 import { topicConsequenceRank } from "./assurance-playbook.ts";
 import { controlPlaybook } from "./control-playbook.ts";
+import { reconcileVerificationPass } from "./verification-pass.ts";
 import { normalizeCandidates } from "./evidence-normalizer.ts";
 import { buildCoverageRepairPrompt } from "./provider.ts";
 import { buildTargetedQueue, mergeTargetedOutput } from "./targeted-queue.ts";
@@ -2347,4 +2348,184 @@ Deno.test("açıklamadaki ekipman numarası da temizlenir", () => {
   });
   assertStringIncludes(routed.items[0].description, "Makinenin üst kısmında");
   assertEquals(routed.items[0].description.includes("Makine 3"), false);
+});
+
+Deno.test("ikinci geçiş: birinci geçişin kaçırdığı tehlike eklenir", () => {
+  // 96c7f819: model tankların üzerindeki korumasız karıştırıcıları hiç
+  // görmemiş, makine modülünü "sorun yok" diye kapatmıştı.
+  const primary = output([candidate({
+    candidate_key: "P1",
+    module_id: "falls_falling_objects",
+    raw_label: "Korkulukta etek tahtası eksikliği",
+    affirmative_cues: ["etek tahtası görünmüyor"],
+    potential_consequence: "serious",
+  })]);
+  const second = output([candidate({
+    candidate_key: "S1",
+    module_id: "machinery",
+    asset_ref: "agitator",
+    raw_label: "Tank üzerindeki karıştırıcının korumasız dönen parçaları",
+    affirmative_cues: ["dönen şaft ve kaplin açıkta"],
+    event_path: {
+      source: "dönen karıştırıcı",
+      contact_or_failure: "temas",
+      consequence: "uzuv kaybı",
+    },
+    potential_consequence: "permanent",
+  })]);
+  const reconciled = reconcileVerificationPass({
+    primaryCandidates: normalizeCandidates(primary, 1),
+    second,
+    secondCandidates: normalizeCandidates(second, 1),
+  });
+  assertEquals(reconciled.added.length, 1);
+  assertEquals(reconciled.added[0].module_id, "machinery");
+  assertEquals(reconciled.disputed.length, 0);
+});
+
+Deno.test("ikinci geçiş: aynı tehlikeyi iki kez yayınlamaz", () => {
+  const make = (key: string, label: string) =>
+    output([candidate({
+      candidate_key: key,
+      module_id: "machinery",
+      asset_ref: "lathe_01",
+      raw_label: label,
+      affirmative_cues: ["koruyucu yok"],
+      event_path: {
+        source: "dönen ayna",
+        contact_or_failure: "temas",
+        consequence: "uzuv kaybı",
+      },
+      potential_consequence: "permanent",
+    })]);
+  const primary = make("P1", "Torna aynasında koruyucu eksikliği");
+  const second = make("S1", "Torna tezgahı aynasında koruyucu bulunmuyor");
+  const reconciled = reconcileVerificationPass({
+    primaryCandidates: normalizeCandidates(primary, 1),
+    second,
+    secondCandidates: normalizeCandidates(second, 1),
+  });
+  assertEquals(reconciled.added.length, 0);
+  assertEquals(reconciled.duplicateCount, 1);
+});
+
+Deno.test("ikinci geçiş elemanı görürse yokluk iddiası saha teyidine düşer", () => {
+  // 96c7f819'un yanlış bulgusu: etek tahtası fotoğrafta duruyordu.
+  const primary = output([candidate({
+    candidate_key: "P1",
+    module_id: "falls_falling_objects",
+    raw_label: "Korkuluk sisteminde etek tahtası eksikliği",
+    affirmative_cues: [
+      "korkuluk sisteminin en alt kısmında etek tahtası görünmüyor",
+    ],
+    event_path: {
+      source: "platform kenarı",
+      contact_or_failure: "nesne düşmesi",
+      consequence: "aşağıdaki kişiye çarpma",
+    },
+    potential_consequence: "serious",
+  })]);
+  const second = output([]);
+  second.positive_controls = [{
+    control_key: "toeboard-seen",
+    module_id: "falls_falling_objects",
+    description: "Platform kenarında etek tahtası mevcut.",
+    affirmative_cues: ["sarı etek tahtası boydan boya görülüyor"],
+    evidence_region: { x: 0, y: 0.55, width: 1, height: 0.15 },
+  }] as never;
+  const primaryCandidates = normalizeCandidates(primary, 1);
+  const reconciled = reconcileVerificationPass({
+    primaryCandidates,
+    second,
+    secondCandidates: normalizeCandidates(second, 1),
+  });
+  assertEquals(reconciled.disputed.length, 1);
+  assertStringIncludes(reconciled.disputed[0].reason, "second_pass_saw");
+
+  const routed = routeCandidates({
+    candidates: primaryCandidates,
+    photoOutputs: [{ photoIndex: 1, output: primary }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.item_class, "verification_request");
+  assertEquals(item?.is_scored, false);
+  assertStringIncludes(
+    String(item?.internal_priority.route_reason),
+    "second_pass_disagreement",
+  );
+});
+
+Deno.test("ikinci geçişin sessizliği itiraz sayılmaz", () => {
+  // İkinci geçiş modülü "değerlendirilemedi" ile kapatırsa bu bir karşı kanıt
+  // değildir; doğru bulguyu bastırmamalı.
+  const primary = output([candidate({
+    candidate_key: "P1",
+    module_id: "falls_falling_objects",
+    raw_label: "Korkulukta etek tahtası eksikliği",
+    affirmative_cues: ["etek tahtası görünmüyor"],
+    event_path: {
+      source: "platform kenarı",
+      contact_or_failure: "nesne düşmesi",
+      consequence: "çarpma",
+    },
+    potential_consequence: "serious",
+  })]);
+  const second = output([]);
+  second.module_coverage = second.module_coverage.map((entry) =>
+    entry.module_id === "falls_falling_objects"
+      ? {
+        ...entry,
+        outcome: "not_assessable_due_to_image" as const,
+        note: "Kenar bölgesi bu açıdan çözülemiyor.",
+      }
+      : entry
+  );
+  const primaryCandidates = normalizeCandidates(primary, 1);
+  const reconciled = reconcileVerificationPass({
+    primaryCandidates,
+    second,
+    secondCandidates: [],
+  });
+  assertEquals(reconciled.disputed.length, 0);
+  const routed = routeCandidates({
+    candidates: primaryCandidates,
+    photoOutputs: [{ photoIndex: 1, output: primary }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(routed.items[0].item_class, "observed_finding");
+});
+
+Deno.test("varlık iddiası ikinci geçişle çürütülmez, yalnız yokluk iddiası", () => {
+  // Görünen bir tehlike (açıkta dönen parça) ikinci geçiş sessiz kalsa da
+  // skorlu kalır; kapı yalnız yokluk iddialarına bakar.
+  const primary = output([candidate({
+    candidate_key: "P1",
+    module_id: "machinery",
+    raw_label: "Açıkta dönen kaplin",
+    affirmative_cues: ["kaplin dönerken görülüyor"],
+    event_path: {
+      source: "dönen kaplin",
+      contact_or_failure: "temas",
+      consequence: "uzuv kaybı",
+    },
+    potential_consequence: "permanent",
+  })]);
+  const second = output([]);
+  second.module_coverage = second.module_coverage.map((entry) =>
+    entry.module_id === "machinery"
+      ? {
+        ...entry,
+        outcome: "no_actionable_issue_visible" as const,
+        note: "Görünürde korumasız hareketli parça yok.",
+      }
+      : entry
+  );
+  const primaryCandidates = normalizeCandidates(primary, 1);
+  const reconciled = reconcileVerificationPass({
+    primaryCandidates,
+    second,
+    secondCandidates: [],
+  });
+  assertEquals(reconciled.disputed.length, 0);
 });

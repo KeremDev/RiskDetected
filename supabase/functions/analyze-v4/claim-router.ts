@@ -1447,6 +1447,13 @@ export function routeCandidates(params: {
     }
     let itemClass = route.itemClass!;
     let routeReason = route.reason;
+    // Two independent looks at the same photograph disagreed about whether the
+    // thing this claim says is missing is actually missing. Neither look wins;
+    // the report asks for a field check instead of scoring a coin toss.
+    if (itemClass === "observed_finding" && candidate.verification_disputed) {
+      itemClass = "verification_request";
+      routeReason = `second_pass_disagreement:${candidate.verification_disputed}`;
+    }
     const photoForCandidate = outputByPhoto.get(candidate.photo_index);
     if (
       itemClass === "observed_finding" &&

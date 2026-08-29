@@ -36,6 +36,11 @@ import { normalizeCandidates } from "./evidence-normalizer.ts";
 import { assertV4PromptIntegrity, sha256Text } from "./prompt-integrity.ts";
 import { buildV4PhotoPrompt, V4_PROMPT_COMMON } from "./prompt.ts";
 import {
+  reconcileVerificationPass,
+  summarizePrimaryPass,
+  V4_VERIFICATION_PROMPT_COMMON,
+} from "./verification-pass.ts";
+import {
   buildCoverageRepairPrompt,
   callV4Gemini,
   V4ProviderError,
@@ -152,7 +157,8 @@ async function recordAttempt(supabase: any, params: {
     | "primary"
     | "technical_retry"
     | "provider_fallback"
-    | "targeted_reinspection";
+    | "targeted_reinspection"
+    | "verification_pass";
   number: number;
   model: string;
   state: "persisted" | "failed";
@@ -812,6 +818,102 @@ serve(async (req) => {
     let candidates = results.flatMap((result) =>
       normalizeCandidates(result.output, result.photo.photoIndex)
     );
+
+    // A second, independent look at the same photograph. Single photo only: a
+    // multi-photo analysis already spends one call per photo and doubling that
+    // is a cost decision that has not been taken. See verification-pass.ts for
+    // why agreement is required in one direction and not the other.
+    let verification: {
+      ran: boolean;
+      added: number;
+      disputed: Array<{ candidate_id: string; label: string; reason: string }>;
+      duplicates: number;
+      error?: string;
+    } = { ran: false, added: 0, disputed: [], duplicates: 0 };
+    if (photos.length === 1 && results.length === 1) {
+      const primary = results[0];
+      const photo = primary.photo;
+      const attemptID = crypto.randomUUID();
+      try {
+        const second = await callV4Gemini({
+          apiKey: key,
+          model: config.primaryModel,
+          prompt: `${V4_PROMPT_COMMON}\n\n${V4_VERIFICATION_PROMPT_COMMON}\n\n${
+            summarizePrimaryPass(primary.output)
+          }\n\nDEĞİŞKEN BAĞLAM\n- Fotoğraf: 1/1\n- Çıktı dili: ${language}\n- Etkin modüller: ${
+            initialActiveModules(sectorID).join(", ")
+          }\n\nJSON sözleşmesine tam uy. Başka metin ekleme.`,
+          imageData: photo.base64,
+          mimeType: photo.mimeType,
+          timeoutMs: 110_000,
+          thinkingBudget: config.geminiThinkingBudget,
+          maxOutputTokens: config.maxProviderOutputTokens,
+          serviceTier: config.requestedServiceTier,
+          requiredModules: initialActiveModules(sectorID),
+        });
+        await recordAttempt(supabase, {
+          attemptID,
+          userID,
+          engineRunID: engineRunID!,
+          photoRunID: null,
+          kind: "verification_pass",
+          number: 1,
+          model: config.primaryModel,
+          state: "persisted",
+          result: second,
+          computeProfile: config.computeProfile,
+          providerPool: config.providerPool,
+          requestedTier: config.requestedServiceTier,
+          promptSHA256: promptSHA,
+          promptBundleSHA256: promptSHA,
+          maxOutputTokens: config.maxProviderOutputTokens,
+        });
+        const reconciled = reconcileVerificationPass({
+          primaryCandidates: candidates,
+          second: second.output,
+          secondCandidates: normalizeCandidates(second.output, photo.photoIndex),
+        });
+        candidates = [...candidates, ...reconciled.added];
+        verification = {
+          ran: true,
+          added: reconciled.added.length,
+          disputed: reconciled.disputed,
+          duplicates: reconciled.duplicateCount,
+        };
+      } catch (unknownError) {
+        // The second look is an improvement, not a dependency. A failure here
+        // must never cost the reader the analysis the first pass already
+        // produced -- it is recorded and the run continues on one pass.
+        const error = unknownError instanceof V4ProviderError
+          ? unknownError
+          : new V4ProviderError(
+            safe(unknownError),
+            "verification_pass_failed",
+            null,
+            0,
+            false,
+          );
+        await recordAttempt(supabase, {
+          attemptID,
+          userID,
+          engineRunID: engineRunID!,
+          photoRunID: null,
+          kind: "verification_pass",
+          number: 1,
+          model: config.primaryModel,
+          state: "failed",
+          error,
+          computeProfile: config.computeProfile,
+          providerPool: config.providerPool,
+          requestedTier: config.requestedServiceTier,
+          promptSHA256: promptSHA,
+          promptBundleSHA256: promptSHA,
+          maxOutputTokens: config.maxProviderOutputTokens,
+        });
+        verification = { ...verification, error: error.code };
+      }
+    }
+
     const targetedQueue = buildTargetedQueue(candidates, config.computeProfile);
     await Promise.all(
       targetedQueue.budgetExcluded.map((group) =>
@@ -1020,6 +1122,7 @@ serve(async (req) => {
         // still did not become a finding. Zero silent drops used to be
         // reported while exactly this was happening.
         critical_demotions: [...criticalDemotions],
+        verification_pass: verification,
         // The report budget used to cut items with no record at all, so a
         // dropped tank assurance was indistinguishable from one the engine
         // never produced.

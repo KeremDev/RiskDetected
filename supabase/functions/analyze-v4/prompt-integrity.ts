@@ -4,6 +4,7 @@ import {
   V4_PROMPT_COMMON,
   V4_TARGETED_PROMPT_COMMON,
 } from "./prompt.ts";
+import { V4_VERIFICATION_PROMPT_COMMON } from "./verification-pass.ts";
 
 export async function sha256Text(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
@@ -28,7 +29,7 @@ function stable(value: unknown): string {
 }
 
 export function canonicalV4PromptBundle(): string {
-  return `${V4_PROMPT_COMMON.trim()}\n---COVERAGE-REPAIR---\n${V4_COVERAGE_REPAIR_COMMON.trim()}\n---TARGETED---\n${V4_TARGETED_PROMPT_COMMON.trim()}\n---SCHEMA---\n${
+  return `${V4_PROMPT_COMMON.trim()}\n---COVERAGE-REPAIR---\n${V4_COVERAGE_REPAIR_COMMON.trim()}\n---TARGETED---\n${V4_TARGETED_PROMPT_COMMON.trim()}\n---VERIFICATION---\n${V4_VERIFICATION_PROMPT_COMMON.trim()}\n---SCHEMA---\n${
     stable(V4_PROVIDER_RESPONSE_SCHEMA)
   }`;
 }
