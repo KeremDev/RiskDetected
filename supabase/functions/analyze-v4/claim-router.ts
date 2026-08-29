@@ -1859,6 +1859,20 @@ export function routeCandidates(params: {
         !noCandidates.has(entry.module_id)
       )
     ) {
+      const refuted = imageAnswersThisModule(coverage.module_id, output, items);
+      if (refuted) {
+        ledger.push({
+          from_state: "module_coverage",
+          to_state: "hard_reject",
+          reason_code: `not_assessable_refuted_by_same_photo:${refuted}`,
+          details: {
+            module_id: coverage.module_id,
+            photo_index: photoIndex,
+            note: (coverage.note ?? "").slice(0, 200),
+          },
+        });
+        continue;
+      }
       items.push(notAssessableItem(photoIndex, coverage));
     }
     // The prompt instructs the model to answer unresolved_requires_verification
@@ -1963,6 +1977,45 @@ export function routeCandidates(params: {
     item.display_order = index + 1;
   });
   return { items: ordered, ledger, hardRejections };
+}
+
+/**
+ * Did this very photograph already answer the module the model calls unreadable?
+ *
+ * "not_assessable_due_to_image" is a statement about the IMAGE, so the image can
+ * refute it. Analysis 5d5b1b67 -- five visible workers, two of them at height --
+ * published two fatal fall-from-height findings and then closed people_exposure,
+ * work_at_height and access_egress as not assessable, so the report told the
+ * reader "Yüksekte çalışma değerlendirilemedi" directly underneath them.
+ *
+ * The claim is dropped with a recorded reason rather than printed. Only the
+ * three overlaps that are actually decidable from the same output are checked;
+ * a module with no counter-evidence keeps its record, which is the whole point
+ * of publishing these.
+ */
+function imageAnswersThisModule(
+  moduleID: string,
+  output: ProviderPhotoOutput,
+  itemsSoFar: RoutedItem[],
+): string | null {
+  const mechanisms = new Set(
+    itemsSoFar.filter((item) => item.item_class === "observed_finding").map((
+      item,
+    ) => String(item.internal_priority.mechanism_code ?? "")),
+  );
+  if (moduleID === "people_exposure" && output.people.length > 0) {
+    return `people_visible:${output.people.length}`;
+  }
+  if (moduleID === "work_at_height" && mechanisms.has("fall_from_height")) {
+    return "fall_from_height_finding_published";
+  }
+  if (
+    moduleID === "access_egress" &&
+    (mechanisms.has("fall_from_height") || mechanisms.has("fall_same_level"))
+  ) {
+    return "fall_finding_published";
+  }
+  return null;
 }
 
 function notAssessableItem(

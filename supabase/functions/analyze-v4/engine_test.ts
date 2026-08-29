@@ -1616,6 +1616,72 @@ Deno.test("aynı cümlede var denen eleman yok sayılmaz", () => {
   );
 });
 
+Deno.test("fotoğrafın kendisi yalanladığı değerlendirilemedi kaydını basmaz", () => {
+  // 5d5b1b67: beş işçi görünür, ikisi yüksekte; motor iki ölümcül yüksekten
+  // düşme bulgusu yayınladı ve AYNI çıktıda people_exposure, work_at_height ve
+  // access_egress modüllerini "görüntüden değerlendirilemedi" ile kapattı.
+  // Rapor, iki fatal bulgunun altına "Yüksekte çalışma değerlendirilemedi"
+  // yazdı.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "falls_falling_objects",
+    raw_label: "Yüksekteki döşeme kenarında çalışanda düşme koruması yok",
+    affirmative_cues: [
+      "işçi yüksekteki beton döşeme üzerinde",
+      "kenar koruması yok",
+      "paraşüt tipi emniyet kemeri görünmüyor",
+    ],
+    event_path: {
+      source: "yükseltilmiş döşeme kenarı",
+      contact_or_failure: "kişinin kenardan düşmesi",
+      consequence: "ölümcül yaralanma",
+    },
+    potential_consequence: "fatal",
+  })]);
+  photo.people = [{
+    person_key: "P1",
+    description: "beton döşeme üzerinde çalışan işçi",
+    region: { x: 0.4, y: 0.3, width: 0.1, height: 0.2 },
+  }] as never;
+  photo.module_coverage = [
+    ...photo.module_coverage.filter((entry) =>
+      !["people_exposure", "work_at_height", "access_egress"].includes(
+        entry.module_id,
+      )
+    ),
+    {
+      module_id: "people_exposure",
+      outcome: "not_assessable_due_to_image" as const,
+      note: "değerlendirilemedi",
+      candidate_keys: [],
+      activated_by: ["scene"],
+      entity_refs: [],
+    },
+    {
+      module_id: "work_at_height",
+      outcome: "not_assessable_due_to_image" as const,
+      note: "değerlendirilemedi",
+      candidate_keys: [],
+      activated_by: ["scene"],
+      entity_refs: [],
+    },
+  ];
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  const unassessable = routed.items.filter((entry) =>
+    entry.item_class === "not_assessable"
+  ).map((entry) => entry.title).join(" ");
+  assertEquals(unassessable.includes("Yüksekte çalışma"), false);
+  assertEquals(unassessable.includes("Çalışan maruziyeti"), false);
+  assertStringIncludes(
+    routed.ledger.map((entry) => entry.reason_code).join(" "),
+    "not_assessable_refuted_by_same_photo",
+  );
+});
+
 Deno.test("merdivenden kayma yüksekten düşmedir", () => {
   // 3faeb7fb: asma kata yaslanmış, üstü sabitlenmemiş ve sahanlığı aşmayan
   // portatif merdiven. Olay yolu "merdivenden kayma/düşme" yazıyordu; kayma
