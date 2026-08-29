@@ -1616,6 +1616,37 @@ Deno.test("aynı cümlede var denen eleman yok sayılmaz", () => {
   );
 });
 
+Deno.test("iki eleman arasındaki boşluk o elemanları yok saymaz", () => {
+  // 12d20568: "üst korkuluk ile etek tahtası arasında boşluk var; ara korkuluk
+  // bulunmuyor" cümlesinde eksik olan yalnız ara korkuluktur; diğer ikisi
+  // boşluğu sınırlayan işaretlerdir ve yerinde durmaktadır.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "falls_falling_objects",
+    raw_label: "Korkuluk sisteminde ara korkuluk eksikliği",
+    affirmative_cues: [
+      "Alt platform korkuluğunun bir bölümünde üst korkuluk ile etek tahtası arasında boşluk var",
+      "ara korkuluk bulunmuyor",
+    ],
+    event_path: {
+      source: "platform kenarı",
+      contact_or_failure: "düşme",
+      consequence: "zemine çarpma",
+    },
+    potential_consequence: "serious",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  const key = String(item?.internal_priority.dedup_key);
+  assertStringIncludes(key, "mid_rail");
+  assertEquals(key.includes("top_rail"), false);
+  assertEquals(key.includes("toeboard"), false);
+});
+
 Deno.test("kendi kanıtında ihtimal belirten iddia skorlanmaz", () => {
   // afd0ffa9: "sıkışma noktaları OLABİLECEK kısımlarında koruyucu görünmüyor"
   // permanent olarak skorlandı, FK 270, raporun tek skorlu maddesiydi.

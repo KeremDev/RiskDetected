@@ -1250,6 +1250,16 @@ function componentsClaimedAbsent(candidate: NormalizedCandidate): string[] {
   const absent = new Set<string>();
   const present = new Set<string>();
   for (const clause of clauses) {
+    // "üst korkuluk ile etek tahtası ARASINDA boşluk var" names the two members
+    // that bound the gap -- they are landmarks, and both are standing. Reading
+    // them as absent put mid_rail+toeboard+top_rail on one mid-rail claim's
+    // dedup key (12d20568) and, worse, opened a path where a second pass
+    // disputing the landmarks could drop the claim about the member between
+    // them. A clause that locates a gap between members claims nothing about
+    // those members.
+    if (/(?:arasında|arasındaki|arasinda|arasindaki|between)/u.test(clause)) {
+      continue;
+    }
     const hasAbsence = ABSENCE_WORD.test(clause) || GAP_WORD.test(clause);
     const hasPresence = PRESENCE_WORD.test(clause) && !GAP_WORD.test(clause);
     for (const component of BARRIER_COMPONENTS) {
