@@ -31,10 +31,10 @@ final class AnalysisResultHubPDFService {
 
         var pageNumber = 0
         var y = margin
-        let bodyFont = UIFont.systemFont(ofSize: 10.5)
-        let titleFont = UIFont.systemFont(ofSize: 22, weight: .bold)
-        let itemTitleFont = UIFont.systemFont(ofSize: 13.5, weight: .bold)
-        let labelFont = UIFont.systemFont(ofSize: 9, weight: .bold)
+        let bodyFont = RDTypography.uiFont(size: 10.5)
+        let titleFont = RDTypography.uiFont(size: 22, weight: .bold)
+        let itemTitleFont = RDTypography.uiFont(size: 13.5, weight: .bold)
+        let labelFont = RDTypography.uiFont(size: 9, weight: .bold)
         let ink = UIColor(red: 0.07, green: 0.10, blue: 0.09, alpha: 1)
         let green = UIColor(red: 0.02, green: 0.43, blue: 0.17, alpha: 1)
         let slate = UIColor(red: 0.35, green: 0.40, blue: 0.39, alpha: 1)
@@ -67,7 +67,7 @@ final class AnalysisResultHubPDFService {
 
         func drawFooter() {
             let footer = "RiskDetected  |  \(pageNumber)"
-            _ = drawText(footer, font: UIFont.systemFont(ofSize: 8.5), color: slate, rect: CGRect(x: margin, y: page.height - 29, width: contentWidth, height: 15))
+            _ = drawText(footer, font: RDTypography.uiFont(size: 8.5), color: slate, rect: CGRect(x: margin, y: page.height - 29, width: contentWidth, height: 15))
         }
 
         func beginPage(_ context: UIGraphicsPDFRendererContext) {
@@ -80,22 +80,22 @@ final class AnalysisResultHubPDFService {
             UIBezierPath(roundedRect: logoRect, cornerRadius: 8).fill()
             let mark = "R"
             let markAttributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 15, weight: .heavy),
+                .font: RDTypography.uiFont(size: 15, weight: .heavy),
                 .foregroundColor: UIColor.white
             ]
             mark.draw(at: CGPoint(x: logoRect.minX + 8, y: logoRect.minY + 5), withAttributes: markAttributes)
-            _ = drawText("RISKDETECTED", font: UIFont.systemFont(ofSize: 10.5, weight: .bold), color: green, rect: CGRect(x: margin + 38, y: y + 7, width: 180, height: 20))
+            _ = drawText("RISKDETECTED", font: RDTypography.uiFont(size: 10.5, weight: .bold), color: green, rect: CGRect(x: margin + 38, y: y + 7, width: 180, height: 20))
             y += 43
         }
 
         let data = renderer.pdfData { context in
             beginPage(context)
             y += drawText(title, font: titleFont, color: ink, rect: CGRect(x: margin, y: y, width: contentWidth, height: 80)) + 4
-            y += drawText(analysisTitle, font: UIFont.systemFont(ofSize: 11.5, weight: .medium), color: slate, rect: CGRect(x: margin, y: y, width: contentWidth, height: 60)) + 14
+            y += drawText(analysisTitle, font: RDTypography.uiFont(size: 11.5, weight: .medium), color: slate, rect: CGRect(x: margin, y: y, width: contentWidth, height: 60)) + 14
             if let company {
                 y += drawText(
                     company.name,
-                    font: UIFont.systemFont(ofSize: 11.5, weight: .semibold),
+                    font: RDTypography.uiFont(size: 11.5, weight: .semibold),
                     color: ink,
                     rect: CGRect(x: margin, y: y, width: contentWidth, height: 40)
                 ) + 2
@@ -103,7 +103,7 @@ final class AnalysisResultHubPDFService {
                 if !companyInfo.isEmpty {
                     y += drawText(
                         companyInfo,
-                        font: UIFont.systemFont(ofSize: 9.5, weight: .regular),
+                        font: RDTypography.uiFont(size: 9.5, weight: .regular),
                         color: slate,
                         rect: CGRect(x: margin, y: y, width: contentWidth, height: 60)
                     ) + 10
@@ -114,17 +114,17 @@ final class AnalysisResultHubPDFService {
             if let disclaimer {
                 let height = measuredTextHeight(
                     disclaimer,
-                    font: UIFont.systemFont(ofSize: 9.5, weight: .medium),
+                    font: RDTypography.uiFont(size: 9.5, weight: .medium),
                     width: contentWidth - 24
                 )
                 UIColor(red: 0.92, green: 0.98, blue: 0.94, alpha: 1).setFill()
                 UIBezierPath(roundedRect: CGRect(x: margin, y: y, width: contentWidth, height: height + 18), cornerRadius: 8).fill()
-                _ = drawText(disclaimer, font: UIFont.systemFont(ofSize: 9.5, weight: .medium), color: green, rect: CGRect(x: margin + 12, y: y + 9, width: contentWidth - 24, height: height))
+                _ = drawText(disclaimer, font: RDTypography.uiFont(size: 9.5, weight: .medium), color: green, rect: CGRect(x: margin + 12, y: y + 9, width: contentWidth - 24, height: height))
                 y += height + 30
             }
 
             for (index, item) in items.enumerated() {
-                let blocks = contentBlocks(for: item, section: section, method: method, isTR: isTR)
+                let blocks = contentBlocks(for: item, section: section, method: method, language: language)
                 let itemTitle = item.displayTitle(language: language)
                 let titleHeight = measuredTextHeight(itemTitle, font: itemTitleFont, width: contentWidth - 28)
                 let bodyHeight = blocks.reduce(CGFloat.zero) { partial, block in
@@ -143,11 +143,11 @@ final class AnalysisResultHubPDFService {
                 path.lineWidth = 0.8
                 path.stroke()
 
-                _ = drawText("\(index + 1)", font: UIFont.monospacedDigitSystemFont(ofSize: 10, weight: .bold), color: green, rect: CGRect(x: margin + 14, y: y + 14, width: 24, height: 18))
+                _ = drawText("\(index + 1)", font: RDTypography.uiFont(size: 10, weight: .bold), color: green, rect: CGRect(x: margin + 14, y: y + 14, width: 24, height: 18))
                 var cardY = y + 13
                 cardY += drawText(itemTitle, font: itemTitleFont, color: ink, rect: CGRect(x: margin + 42, y: cardY, width: contentWidth - 56, height: titleHeight)) + 11
                 for block in blocks {
-                    _ = drawText(block.label.uppercased(), font: labelFont, color: green, rect: CGRect(x: margin + 14, y: cardY, width: contentWidth - 28, height: 15))
+                    _ = drawText(block.label.uppercased(with: language.locale), font: labelFont, color: green, rect: CGRect(x: margin + 14, y: cardY, width: contentWidth - 28, height: 15))
                     cardY += 16
                     cardY += drawText(block.value, font: bodyFont, color: block.color == "slate" ? slate : ink, rect: CGRect(x: margin + 14, y: cardY, width: contentWidth - 28, height: 200)) + 8
                 }
@@ -247,8 +247,9 @@ final class AnalysisResultHubPDFService {
         for item: AnalysisResultHubItem,
         section: AnalysisResultSectionID,
         method: RiskMethod,
-        isTR: Bool
+        language: RDLanguage
     ) -> [(label: String, value: String, color: String)] {
+        let isTR = language == .turkish
         if section == .approvedNotebook {
             var rows = [
                 (isTR ? "Tespit" : "Finding", item.findingText ?? "", "ink"),
@@ -266,11 +267,34 @@ final class AnalysisResultHubPDFService {
         if section == .riskAnalysis {
             let score = method == .fineKinney ? item.fkScore : item.m5Score.map(Double.init)
             let band = method == .fineKinney ? item.fkBand : item.m5Band
-            rows.append((isTR ? "Risk" : "Risk", "\(band ?? "-") - \(score.map { String(Int($0)) } ?? "-")", "ink"))
+            let bandText = localizedRiskBand(band, language: language)
+            let scoreValue = score.map { localizedScore($0, language: language) } ?? "-"
+            rows.append((isTR ? "Risk" : "Risk", "\(bandText) - \(scoreValue)", "ink"))
         } else {
             rows.append((isTR ? "Durum" : "Status", isTR ? "Saha teyidi gerekir" : "Field verification required", "slate"))
         }
         return rows.filter { !$0.1.isEmpty }
+    }
+
+    private func localizedRiskBand(_ rawValue: String?, language: RDLanguage) -> String {
+        let isTR = language == .turkish
+        switch rawValue?.lowercased() {
+        case "critical": return isTR ? "Kritik risk" : "Critical risk"
+        case "high": return isTR ? "Yüksek risk" : "High risk"
+        case "medium": return isTR ? "Orta risk" : "Medium risk"
+        case "low": return isTR ? "Düşük risk" : "Low risk"
+        default: return isTR ? "Değerlendirilmedi" : "Unassessed"
+        }
+    }
+
+    private func localizedScore(_ value: Double, language: RDLanguage) -> String {
+        let formatter = NumberFormatter()
+        formatter.locale = language.locale
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 1
+        formatter.usesGroupingSeparator = false
+        return formatter.string(from: NSNumber(value: value)) ?? String(value)
     }
 
     private func measuredTextHeight(_ text: String, font: UIFont, width: CGFloat) -> CGFloat {

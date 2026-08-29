@@ -297,11 +297,11 @@ private struct OfflineStatusBanner: View {
     var body: some View {
         HStack(spacing: 9) {
             Image(systemName: "wifi.slash")
-                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdCriticalText)
 
             Text(RDLocalization.string("localizable.root.view.cevrimdisisin.bazi.veriler.son.kayitli.haliyle.g.08875828", table: .localizable, fallback: "Çevrimdışısın. Bazı veriler son kayıtlı haliyle görünebilir."))
-                .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -329,15 +329,15 @@ private struct LegalUpdateBanner: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "doc.text.fill")
-                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreenDark)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(notice.title)
-                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Text(notice.message)
-                    .font(.system(size: RDFontScale.size(11), weight: .medium, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(11), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(2)
             }
@@ -345,13 +345,13 @@ private struct LegalUpdateBanner: View {
             Spacer(minLength: 0)
 
             Button(RDLocalization.string("localizable.root.view.incele.1d16e710", table: .localizable, fallback: "İncele"), action: onReview)
-                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreenDark)
                 .buttonStyle(.plain)
 
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
-                    .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .frame(width: 28, height: 28)
             }
@@ -378,15 +378,15 @@ private struct AppReleaseSoftUpdateBanner: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "arrow.down.app.fill")
-                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdPlanPlusDark)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(RDLocalization.string("localizable.root.view.yeni.surum.hazir.6c683226", table: .localizable, fallback: "Yeni sürüm hazır"))
-                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Text(policy.displayMessage)
-                    .font(.system(size: RDFontScale.size(11), weight: .medium, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(11), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdCharcoal)
                     .lineLimit(2)
             }
@@ -394,14 +394,14 @@ private struct AppReleaseSoftUpdateBanner: View {
             Spacer(minLength: 0)
 
             Button(RDLocalization.string("localizable.root.view.guncelle.b2397c17", table: .localizable, fallback: "Güncelle"), action: onUpdate)
-                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdPlanPlusDark)
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("app_release.soft_update.update")
 
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
-                    .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .frame(width: 28, height: 28)
             }
@@ -437,7 +437,7 @@ private struct AppReleaseRequiredView: View {
 
                 VStack(spacing: 14) {
                     Image(systemName: "arrow.down.app.fill")
-                        .font(.system(size: RDFontScale.size(34), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(34), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdPlanPlusDark)
                         .frame(width: 76, height: 76)
                         .background(Color.rdPlanPlusSoft)
@@ -448,12 +448,12 @@ private struct AppReleaseRequiredView: View {
                         )
 
                     Text(RDLocalization.string("localizable.root.view.guncelleme.gerekli.ed75982f", table: .localizable, fallback: "Güncelleme gerekli"))
-                        .font(.system(size: RDFontScale.size(27), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(27), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .multilineTextAlignment(.center)
 
                     Text(policy.displayMessage)
-                        .font(.system(size: RDFontScale.size(15), weight: .medium, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(15), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdCharcoal)
                         .multilineTextAlignment(.center)
                         .lineSpacing(4)
@@ -466,7 +466,7 @@ private struct AppReleaseRequiredView: View {
                     Text("\(currentVersion) (\(currentBuild))")
                         .foregroundStyle(Color.rdBlack)
                 }
-                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 .padding(.horizontal, 14)
                 .frame(height: 40)
                 .background(Color.rdWhite)
@@ -481,7 +481,7 @@ private struct AppReleaseRequiredView: View {
                         Image(systemName: "arrow.up.forward.app.fill")
                         Text(RDLocalization.string("localizable.root.view.app.store.da.guncelle.93093aa7", table: .localizable, fallback: "App Store'da güncelle"))
                     }
-                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 58)
@@ -513,7 +513,7 @@ private struct LegalUpdateDecisionSheet: View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: notice.changeType == .explicitConsent ? "checkmark.shield.fill" : "doc.text.fill")
-                    .font(.system(size: RDFontScale.size(22), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(22), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreenDark)
                     .frame(width: 38, height: 38)
                     .background(Color.rdGreenSoft)
@@ -521,10 +521,10 @@ private struct LegalUpdateDecisionSheet: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(notice.title)
-                        .font(.system(size: RDFontScale.size(19), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(19), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(notice.message)
-                        .font(.system(size: RDFontScale.size(13), weight: .medium, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(13), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineSpacing(3)
                         .fixedSize(horizontal: false, vertical: true)
@@ -541,7 +541,7 @@ private struct LegalUpdateDecisionSheet: View {
                     Spacer()
                     Image(systemName: "chevron.right")
                 }
-                .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .padding(.horizontal, 14)
                 .frame(height: 48)
@@ -558,7 +558,7 @@ private struct LegalUpdateDecisionSheet: View {
                     onExplicitAccept()
                 }
                 Button(RDLocalization.string("localizable.root.view.simdilik.kapat.9e0bc284", table: .localizable, fallback: "Şimdilik kapat"), action: onClose)
-                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .frame(maxWidth: .infinity)
                     .buttonStyle(.plain)

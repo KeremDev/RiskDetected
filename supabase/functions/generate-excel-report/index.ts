@@ -3210,7 +3210,7 @@ export async function handleGenerateExcelReportRequest(req: Request) {
     }
     reportIntent = intentData as ReportIntent;
     if (
-      reportIntent.analysis_id !== analysisID ||
+      reportIntent.analysis_id.toLowerCase() !== analysisID.toLowerCase() ||
       reportIntent.format !== "xlsx"
     ) {
       return json(409, { error: "report_intent_mismatch" });

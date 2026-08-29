@@ -105,12 +105,12 @@ struct PDFGenerationOverlay: View {
 
                 VStack(spacing: 8) {
                     Text(RDLocalization.string("reports.pdfgeneration.overlay.pdf.hazirlaniyor.fc82f5ea", table: .reports, fallback: "PDF hazırlanıyor"))
-                        .font(.system(size: RDFontScale.size(28), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(28), weight: .bold, design: .rounded))
                         .tracking(-0.4)
                         .foregroundStyle(Color.rdBlack)
 
                     Text(statusText)
-                        .font(.system(size: RDFontScale.size(15), weight: .medium, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(15), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
                 }
@@ -118,7 +118,7 @@ struct PDFGenerationOverlay: View {
                 VStack(spacing: 12) {
                     HStack {
                         Text(RDLocalization.string("reports.pdfgeneration.overlay.ilerleme.c4f1db2d", table: .reports, fallback: "İlerleme"))
-                            .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                            .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                             .textCase(.uppercase)
                             .tracking(1.2)
@@ -126,7 +126,7 @@ struct PDFGenerationOverlay: View {
                         Spacer()
 
                         Text(percentText)
-                            .font(.system(size: RDFontScale.size(20), weight: .heavy, design: .rounded))
+                            .font(RDTypography.font(size: RDFontScale.size(20), weight: .heavy, design: .rounded))
                             .foregroundStyle(Color.rdGreen)
                             .monospacedDigit()
                     }
@@ -155,7 +155,7 @@ struct PDFGenerationOverlay: View {
                     Image(systemName: "sparkles")
                     Text(RDLocalization.string("reports.pdfgeneration.overlay.riskdetected.raporu.olusturulurken.uygulamayi.ac.f81bb077", table: .reports, fallback: "RiskDetected raporu oluşturulurken uygulamayı açık tut."))
                 }
-                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
             }
             .padding(.horizontal, 24)
@@ -210,11 +210,11 @@ struct PDFGenerationOverlay: View {
                 .rotationEffect(.degrees(orbit ? 360 : 0))
 
             Image(systemName: "doc.text.magnifyingglass")
-                .font(.system(size: RDFontScale.size(38), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(38), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
 
             Image(systemName: "sparkle")
-                .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreen)
                 .offset(x: 44, y: -42)
                 .opacity(pulse ? 1 : 0.45)

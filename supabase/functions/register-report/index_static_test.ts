@@ -125,6 +125,30 @@ Deno.test("register-report rejects exhausted quota before Storage download", asy
   );
 });
 
+Deno.test("register-report is idempotent for client retries", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(source, '.eq("request_id", requestID)');
+  assertStringIncludes(source, '.eq("analysis_id", analysisID)');
+  assertStringIncludes(source, 'error: "report_idempotency_check_failed"');
+  assertStringIncludes(source, "return json(200, existingRequestReport)");
+});
+
+Deno.test("register-report compares report intent UUIDs canonically", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(
+    source,
+    "reportIntent.analysis_id.toLowerCase() !== analysisID.toLowerCase()",
+  );
+});
+
 Deno.test("register-report persists a validated request platform with analysis fallback", async () => {
   const source = await readTextIfAllowed(
     new URL("./index.ts", import.meta.url),

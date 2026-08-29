@@ -881,7 +881,7 @@ final class AnalysisService {
 
         let fileSize = data.count
         let payload = RegisterReportPayload(
-            analysis_id: bundle.analysis.id.uuidString,
+            analysis_id: bundle.analysis.id.uuidString.lowercased(),
             kind: kind.rawValue,
             method: Self.databaseReportMethodValue(method),
             report_language: bundle.analysis.resolvedOutputLanguage.rawValue,
@@ -906,9 +906,9 @@ final class AnalysisService {
             client_capabilities: AppClientMetadata.capabilities,
             request_id: requestID,
             support_id: supportID,
-            export_intent_id: exportIntentID?.uuidString,
+            export_intent_id: exportIntentID?.uuidString.lowercased(),
             content_scope: contentScope?.rawValue,
-            selected_item_keys: selectedItemKeys.map(\.uuidString)
+            selected_item_keys: selectedItemKeys.map { $0.uuidString.lowercased() }
         )
 
         if ReportFailureSimulation.isEnabled(.metadataInsert) {
@@ -918,11 +918,24 @@ final class AnalysisService {
         }
 
         do {
-            let row: ReportRow = try await supabase.functions.invoke(
-                RDConfig.registerReportFunctionName,
-                options: FunctionInvokeOptions(body: payload)
-            )
-            return row
+            let maxMetadataAttempts = 3
+            var lastMetadataError: Error?
+            for attempt in 1...maxMetadataAttempts {
+                do {
+                    let row: ReportRow = try await supabase.functions.invoke(
+                        RDConfig.registerReportFunctionName,
+                        options: FunctionInvokeOptions(body: payload)
+                    )
+                    return row
+                } catch {
+                    lastMetadataError = error
+                    let canRetry = attempt < maxMetadataAttempts && Self.isTransientReportMetadataError(error)
+                    Self.logger.warning("Report metadata attempt failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) attempt=\(attempt) retry=\(canRetry, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+                    guard canRetry else { throw error }
+                    try? await Task.sleep(nanoseconds: UInt64(attempt) * 650_000_000)
+                }
+            }
+            throw lastMetadataError ?? AnalysisError.databaseFailed("report_metadata_retry_failed")
         } catch let FunctionsError.httpError(_, data) {
             let payload = Self.functionErrorPayload(from: data)
             let remoteSupportID = payload.supportID ?? supportID
@@ -1006,12 +1019,43 @@ final class AnalysisService {
             lower.contains("504")
     }
 
+    private static func isTransientReportMetadataError(_ error: Error) -> Bool {
+        if let functionsError = error as? FunctionsError {
+            switch functionsError {
+            case .relayError:
+                return true
+            case let .httpError(code, data):
+                if code == 429 {
+                    let payload = functionErrorPayload(from: data)
+                    let message = "\(payload.code ?? "") \(payload.message)"
+                    return !AppErrorMessage.isReportQuotaExceeded(message) &&
+                        !AppErrorMessage.isFreeRiskAnalysisTrialExhausted(message)
+                }
+                return code == 408 || code == 425 || (500...599).contains(code)
+            }
+        }
+        return isTransientReportUploadError(error)
+    }
+
     /// Storage'daki PDF raporu indirir ve geçici dosya URL'i döndürür.
-    func reportFileURL(for report: ReportRow, requestID: String, supportID: String) async throws -> URL {
+    func reportFileURL(
+        for report: ReportRow,
+        requestID: String,
+        supportID: String,
+        source: ReportActivitySource = .unknown
+    ) async throws -> URL {
         let data: Data
         if ReportFailureSimulation.isEnabled(.download) {
             let error = ReportFailureSimulation.simulatedError(.download)
             Self.logger.error("Report download simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            await ReportActivityService.shared.recordDownload(
+                reportID: report.id,
+                succeeded: false,
+                source: source,
+                requestID: requestID,
+                supportID: supportID,
+                failureStage: "simulation"
+            )
             throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.pdf.raporu.indirilemedi.destek.kodu.1.3ab369c0", table: .analysis, fallback: "PDF raporu indirilemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
 
@@ -1021,6 +1065,14 @@ final class AnalysisService {
                 .download(path: report.storagePath)
         } catch {
             Self.logger.error("Report download failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            await ReportActivityService.shared.recordDownload(
+                reportID: report.id,
+                succeeded: false,
+                source: source,
+                requestID: requestID,
+                supportID: supportID,
+                failureStage: "storage_download"
+            )
             throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.pdf.raporu.indirilemedi.destek.kodu.1.3ab369c0", table: .analysis, fallback: "PDF raporu indirilemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
 
@@ -1028,9 +1080,24 @@ final class AnalysisService {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(safeName)
         do {
             try data.write(to: url, options: .atomic)
+            await ReportActivityService.shared.recordDownload(
+                reportID: report.id,
+                succeeded: true,
+                source: source,
+                requestID: requestID,
+                supportID: supportID
+            )
             return url
         } catch {
             Self.logger.error("Report local file write failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            await ReportActivityService.shared.recordDownload(
+                reportID: report.id,
+                succeeded: false,
+                source: source,
+                requestID: requestID,
+                supportID: supportID,
+                failureStage: "local_file_write"
+            )
             throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.pdf.dosyasi.paylasim.icin.hazirlanamadi.destek.k.90ef78f6", table: .analysis, fallback: "PDF dosyası paylaşım için hazırlanamadı. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
     }
@@ -2685,7 +2752,7 @@ final class AnalysisService {
             marker.stroke()
 
             let attributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.monospacedSystemFont(ofSize: 28, weight: .bold),
+                .font: RDTypography.uiFont(size: 28, weight: .bold),
                 .foregroundColor: UIColor.white
             ]
             NSString(string: "UI TEST FOTOĞRAF \(seed + 1)").draw(

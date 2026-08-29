@@ -34,6 +34,7 @@ struct RiskDetectedApp: App {
                 RootView()
                 #endif
             }
+                .font(RDTypography.font(17, .regular))
                 .environmentObject(appState)
                 .environmentObject(networkMonitor)
                 .preferredColorScheme(appState.themePreference.colorScheme)
@@ -76,7 +77,7 @@ private struct PDFReportLocalizationSelfTestView: View {
 
     var body: some View {
         Text(status)
-            .font(.system(.body, design: .monospaced))
+            .font(RDTypography.font(.body, design: .monospaced))
             .multilineTextAlignment(.center)
             .padding()
             .accessibilityIdentifier("pdf_report_localization.status")
@@ -98,7 +99,7 @@ private struct ResultHubPDFSelfTestView: View {
 
     var body: some View {
         Text(status)
-            .font(.system(.body, design: .monospaced))
+            .font(RDTypography.font(.body, design: .monospaced))
             .multilineTextAlignment(.center)
             .padding()
             .accessibilityIdentifier("result_hub_pdf.status")

@@ -35,11 +35,14 @@ enum AnalysisResultSectionID: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    func countLabel(language: RDLanguage) -> String {
+    func countLabel(language: RDLanguage, count: Int? = nil) -> String {
         switch self {
-        case .riskAnalysis: return language == .turkish ? "Bulgu" : "Findings"
-        case .expertRecommendations: return language == .turkish ? "Öneri" : "Recommendations"
-        case .approvedNotebook: return language == .turkish ? "Kayıt" : "Entries"
+        case .riskAnalysis:
+            return language == .turkish ? "Bulgu" : (count == 1 ? "Finding" : "Findings")
+        case .expertRecommendations:
+            return language == .turkish ? "Öneri" : (count == 1 ? "Recommendation" : "Recommendations")
+        case .approvedNotebook:
+            return language == .turkish ? "Kayıt" : (count == 1 ? "Entry" : "Entries")
         }
     }
 
@@ -203,10 +206,10 @@ struct AnalysisResultHubItem: Decodable, Identifiable, Hashable {
             ordinal: ordinal ?? max(1, displayOrder ?? 1),
             title: title ?? displayTitle,
             category: category,
-            description: description,
-            recommendedAction: recommendedAction,
+            description: description ?? findingText,
+            recommendedAction: recommendedAction ?? recommendationText,
             recommendedMeasures: recommendedMeasures,
-            referencesText: referencesText,
+            referencesText: referencesText ?? referenceText,
             rootCauseText: rootCauseText,
             needsFieldVerification: needsFieldVerification,
             confidence: confidence ?? 0,

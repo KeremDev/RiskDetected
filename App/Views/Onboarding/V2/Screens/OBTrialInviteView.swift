@@ -51,7 +51,7 @@ struct OBTrialInviteView: View {
                     onDismiss()
                 } label: {
                     Text(RDLocalization.string("onboarding.obtimeline.paywall.view.simdilik.ucretsiz.devam.et.b59d7d99", table: .onboarding, fallback: "Ücretsiz Devam Et"))
-                        .font(.system(size: RDFontScale.size(12), weight: .semibold))
+                        .font(RDTypography.font(size: RDFontScale.size(12), weight: .semibold))
                         .foregroundStyle(Color.rdSlate.opacity(0.72))
                         .underline(true, color: Color.rdSlate.opacity(0.46))
                         .frame(height: 34)
@@ -91,7 +91,7 @@ struct OBTrialInviteView: View {
     private var title: some View {
         (Text(RDLocalization.string("onboarding.obtrial.invite.view.uygulamayi.faee4cf2", table: .onboarding, fallback: "Ücretsiz ")).foregroundColor(Color.rdGreen)
          + Text(RDLocalization.string("onboarding.obtrial.invite.view.ucretsiz.84c94af9", table: .onboarding, fallback: "Denemenizi İstiyoruz")).foregroundColor(Color.rdOnyx))
-            .font(.system(size: RDFontScale.size(26), weight: .semibold))
+            .font(RDTypography.font(size: RDFontScale.size(26), weight: .semibold))
             .tracking(-0.6)
             .fixedSize(horizontal: false, vertical: true)
         .multilineTextAlignment(.center)
@@ -103,7 +103,7 @@ struct OBTrialInviteView: View {
             onDismiss()
         } label: {
             Image(systemName: "xmark")
-                .font(.system(size: RDFontScale.size(13), weight: .bold))
+                .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold))
                 .foregroundStyle(Color.rdSlate)
                 .frame(width: 34, height: 34)
                 .background(Color.white.opacity(0.86))
@@ -252,9 +252,9 @@ struct OBTrialInviteView: View {
 
             HStack(spacing: 6) {
                 Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: RDFontScale.size(13)))
+                    .font(RDTypography.font(size: RDFontScale.size(13)))
                 Text(RDLocalization.string("onboarding.obtrial.invite.view.rapor.hazir.2cda9278", table: .onboarding, fallback: "Rapor hazır"))
-                    .font(.system(size: RDFontScale.size(12), weight: .semibold))
+                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .semibold))
             }
             .foregroundStyle(Color.rdGreen)
             .padding(.bottom, 28)
@@ -267,11 +267,11 @@ struct OBTrialInviteView: View {
         HStack(spacing: 10) {
             Circle().fill(level.color).frame(width: 8, height: 8)
             Text(label)
-                .font(.system(size: RDFontScale.size(11), weight: .medium))
+                .font(RDTypography.font(size: RDFontScale.size(11), weight: .medium))
                 .foregroundStyle(.white)
             Spacer()
             Text(level.shortLabel)
-                .font(.system(size: RDFontScale.size(9), weight: .bold))
+                .font(RDTypography.font(size: RDFontScale.size(9), weight: .bold))
                 .foregroundStyle(level.color)
                 .padding(.horizontal, 6).padding(.vertical, 2)
                 .background(level.bgColor.opacity(0.18))
@@ -285,10 +285,10 @@ struct OBTrialInviteView: View {
     private var noPaymentLine: some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark")
-                .font(.system(size: RDFontScale.size(13), weight: .bold))
+                .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold))
                 .foregroundStyle(Color.rdOnyx)
             Text(RDLocalization.string("onboarding.obtrial.invite.view.su.an.odeme.yok.5ab25673", table: .onboarding, fallback: "Herhangi bir ücret alınmaz."))
-                .font(.system(size: RDFontScale.size(15), weight: .semibold))
+                .font(RDTypography.font(size: RDFontScale.size(15), weight: .semibold))
                 .foregroundStyle(Color.rdOnyx)
         }
     }
@@ -302,7 +302,7 @@ struct OBTrialInviteView: View {
             footerLink(RDLocalization.string("onboarding.obtrial.invite.view.sartlar.de56b87b", table: .onboarding, fallback: "Şartlar"), action: onTerms)
                 .accessibilityIdentifier("onboarding.trial_invite.terms")
         }
-        .font(.system(size: RDFontScale.size(11), weight: .medium))
+        .font(RDTypography.font(size: RDFontScale.size(11), weight: .medium))
     }
 
     private func footerLink(_ text: String, action: @escaping () -> Void) -> some View {

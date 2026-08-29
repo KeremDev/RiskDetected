@@ -52,8 +52,8 @@ private struct PaywallDesignLineHeight: ViewModifier {
     let multiple: CGFloat
 
     func body(content: Content) -> some View {
-        let systemLineHeight = UIFont.systemFont(ofSize: fontSize).lineHeight
-        let extra = max(0, fontSize * multiple - systemLineHeight)
+        let fontLineHeight = RDTypography.uiFont(size: fontSize).lineHeight
+        let extra = max(0, fontSize * multiple - fontLineHeight)
         return content
             .lineSpacing(extra)
             .padding(.vertical, extra / 2)
@@ -339,7 +339,7 @@ struct PaywallDesignHero: View {
             VStack(spacing: 0) {
                 Spacer(minLength: 0)
                 Text(label)
-                    .font(.system(size: 12.5, weight: .bold))
+                    .font(RDTypography.font(size: 12.5, weight: .bold))
                     .foregroundColor(PaywallDesignColor.ink)
                     .padding(.vertical, 5)
                     .padding(.horizontal, 14)
@@ -495,7 +495,7 @@ struct PaywallDesignTrialTimeline: View {
     private var todayStep: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(todayTitle)
-                .font(.system(size: 13.5, weight: .bold))
+                .font(RDTypography.font(size: 13.5, weight: .bold))
                 .foregroundColor(PaywallDesignColor.ink)
             todayDetailText
                 .fixedSize(horizontal: false, vertical: true)
@@ -508,7 +508,7 @@ struct PaywallDesignTrialTimeline: View {
     /// yer tutucunun karşılığı aranarak bulunur, sabit bir ön/son ek varsayılmaz.
     private var todayDetailText: Text {
         let detail = todayDetail
-        let body = Font.system(size: 12.5)
+        let body = RDTypography.font(size: 12.5)
         guard let range = detail.range(of: tierName) else {
             return Text(detail).font(body).foregroundColor(PaywallDesignColor.muted)
         }
@@ -516,7 +516,7 @@ struct PaywallDesignTrialTimeline: View {
         // ikon da adla birlikte taşınır. Satır içi görsel için sistem sembolü
         // kullanılıyor; `Text` yalnızca `Image` kabul eder, çizilen vektörü değil.
         let crown = Text(Image(systemName: "crown.fill"))
-            .font(.system(size: 10.5))
+            .font(RDTypography.font(size: 10.5))
             .foregroundColor(accent)
         return Text(String(detail[detail.startIndex..<range.lowerBound]))
             .font(body)
@@ -524,7 +524,7 @@ struct PaywallDesignTrialTimeline: View {
             + crown
             + Text(" ")
             + Text(tierName)
-                .font(.system(size: 12.5, weight: .bold))
+                .font(RDTypography.font(size: 12.5, weight: .bold))
                 .foregroundColor(accent)
             + Text(String(detail[range.upperBound...]))
                 .font(body)
@@ -534,10 +534,10 @@ struct PaywallDesignTrialTimeline: View {
     private func step(title: String, detail: String) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(title)
-                .font(.system(size: 13.5, weight: .bold))
+                .font(RDTypography.font(size: 13.5, weight: .bold))
                 .foregroundColor(PaywallDesignColor.ink)
             Text(detail)
-                .font(.system(size: 12.5))
+                .font(RDTypography.font(size: 12.5))
                 .foregroundColor(PaywallDesignColor.muted)
                 .designLineHeight(12.5)
                 .fixedSize(horizontal: false, vertical: true)
@@ -863,7 +863,7 @@ struct PaywallDesignFeatureMarquee: View {
             Text(feature.title)
                 // Şerit bir vitrin, okunması gereken bir liste değil; düz ağırlıkta
                 // ve küçük olması hem etiketi alçaltıyor hem de gözü yormuyor.
-                .font(.system(size: 11.5))
+                .font(RDTypography.font(size: 11.5))
                 .foregroundColor(PaywallDesignColor.ink)
                 .lineLimit(1)
                 .fixedSize()
@@ -975,7 +975,7 @@ struct PaywallDesignComparisonTable: View {
             ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
                 HStack(spacing: 0) {
                     Text(row.title)
-                        .font(.system(size: 12.5))
+                        .font(RDTypography.font(size: 12.5))
                         .foregroundColor(PaywallDesignColor.ink)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     mark(row.left)
@@ -1012,7 +1012,7 @@ struct PaywallDesignComparisonTable: View {
                 )
             }
             Text(column.title)
-                .font(.system(size: 12, weight: column.weight))
+                .font(RDTypography.font(size: 12, weight: column.weight))
                 .foregroundColor(column.color)
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
@@ -1040,7 +1040,7 @@ struct PaywallDesignComparisonTable: View {
                 )
             case let .text(value, color):
                 Text(value)
-                    .font(.system(size: 10.5, weight: .bold))
+                    .font(RDTypography.font(size: 10.5, weight: .bold))
                     .foregroundColor(color)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -1080,7 +1080,7 @@ struct PaywallDesignPlanCard: View {
                         }
                     )
                 Text(title)
-                    .font(.system(size: 13, weight: .bold))
+                    .font(RDTypography.font(size: 13, weight: .bold))
                     .foregroundColor(PaywallDesignColor.ink)
             }
             .padding(.bottom, 10)
@@ -1089,7 +1089,7 @@ struct PaywallDesignPlanCard: View {
                 // Fiyat kartin en agir ogesi olmamali; 14.5pt yari kalin, plan adiyla
                 // ayni agirlikta durup goze batmadan okunuyor. Kalinlik ayrica bazi
                 // para birimlerinde ("₺2.499,99", "$49.99") karti zorluyordu.
-                .font(.system(size: 14.5, weight: .semibold))
+                .font(RDTypography.font(size: 14.5, weight: .semibold))
                 .foregroundColor(PaywallDesignColor.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
@@ -1097,7 +1097,7 @@ struct PaywallDesignPlanCard: View {
             Text(caption)
                 // Yıllık kartta bu satır toplam tutarı taşıyor; başlıktan da fiyattan da
                 // hafif kalsın diye 11pt.
-                .font(.system(size: 11))
+                .font(RDTypography.font(size: 11))
                 .foregroundColor(PaywallDesignColor.muted)
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
@@ -1105,7 +1105,7 @@ struct PaywallDesignPlanCard: View {
 
             if let trialNote {
                 Text(trialNote)
-                    .font(.system(size: 11, weight: .bold))
+                    .font(RDTypography.font(size: 11, weight: .bold))
                     .foregroundColor(accent)
                     .padding(.top, 7)
             }
@@ -1125,14 +1125,14 @@ struct PaywallDesignPlanCard: View {
             if let badge {
                 VStack(spacing: 2) {
                     Text(badge.label)
-                        .font(.system(size: 10, weight: .bold))
+                        .font(RDTypography.font(size: 10, weight: .bold))
                         .foregroundColor(.white)
                         .padding(.vertical, 3)
                         .padding(.horizontal, 9)
                         .background(Capsule().fill(accent))
                         .fixedSize()
                     Text(badge.discount)
-                        .font(.system(size: 9, weight: .heavy))
+                        .font(RDTypography.font(size: 9, weight: .heavy))
                         .foregroundColor(accent)
                         .fixedSize()
                 }
@@ -1164,7 +1164,7 @@ struct PaywallDesignUpsellCard<Icon: View>: View {
         HStack(spacing: 10) {
             icon
             text
-                .font(.system(size: 13))
+                .font(RDTypography.font(size: 13))
                 .foregroundColor(PaywallDesignColor.ink)
                 .designLineHeight(13)
                 .fixedSize(horizontal: false, vertical: true)
@@ -1197,7 +1197,7 @@ struct PaywallDesignNotice: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 12))
+            .font(RDTypography.font(size: 12))
             .foregroundColor(isError ? Color(hex: "B3261E") : PaywallDesignColor.ink)
             .designLineHeight(12)
             .multilineTextAlignment(.leading)
@@ -1256,7 +1256,7 @@ struct PaywallDesignFooter: View {
                             .tint(.white)
                     }
                     Text(ctaTitle)
-                        .font(.system(size: 17, weight: .bold))
+                        .font(RDTypography.font(size: 17, weight: .bold))
                         .kerning(0.2)
                         .foregroundColor(.white)
                         .lineLimit(1)
@@ -1281,7 +1281,7 @@ struct PaywallDesignFooter: View {
             .accessibilityIdentifier(ctaAccessibilityIdentifier)
 
             autoRenewText
-                .font(.system(size: 11))
+                .font(RDTypography.font(size: 11))
                 .foregroundColor(PaywallDesignColor.footer)
                 .designLineHeight(11)
                 .multilineTextAlignment(.center)
@@ -1340,7 +1340,7 @@ struct PaywallDesignFooter: View {
 
     private var separator: some View {
         Text(verbatim: "·")
-            .font(.system(size: 11))
+            .font(RDTypography.font(size: 11))
             .foregroundColor(PaywallDesignColor.footer)
             .accessibilityHidden(true)
     }
@@ -1348,7 +1348,7 @@ struct PaywallDesignFooter: View {
     private func link(_ title: String, identifier: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 11))
+                .font(RDTypography.font(size: 11))
                 .foregroundColor(PaywallDesignColor.footer)
         }
         .buttonStyle(.plain)

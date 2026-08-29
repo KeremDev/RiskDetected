@@ -37,7 +37,7 @@ struct AnnotateView: View {
         HStack {
             Button(action: onCancel) {
                 Image(systemName: "xmark")
-                    .font(.system(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .frame(width: 36, height: 36)
                     .background(Color.white.opacity(0.12))
@@ -47,13 +47,13 @@ struct AnnotateView: View {
 
             Spacer()
             Text(RDLocalization.string("analysis.annotate.view.isaretleme.4574bc26", table: .analysis, fallback: "İşaretleme"))
-                .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
             Spacer()
 
             Button(action: undoLast) {
                 Image(systemName: "arrow.uturn.backward")
-                    .font(.system(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
                     .frame(width: 36, height: 36)
                     .background(Color.white.opacity(0.12))
@@ -131,9 +131,9 @@ struct AnnotateView: View {
                 } label: {
                     VStack(spacing: 2) {
                         Image(systemName: t.icon)
-                            .font(.system(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
+                            .font(RDTypography.font(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
                         Text(t.label)
-                            .font(.system(size: RDFontScale.size(9), weight: .semibold, design: .rounded))
+                            .font(RDTypography.font(size: RDFontScale.size(9), weight: .semibold, design: .rounded))
                     }
                     .frame(width: 52, height: 44)
                     .foregroundStyle(active ? Color.white : Color.black)

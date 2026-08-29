@@ -74,7 +74,7 @@ struct AuthView: View {
                     VStack(spacing: 10) {
                         RDLogo(size: phase == .email ? 36 : 38)
                         Text(RDLocalization.string("auth.auth.view.saha.icin.yapay.zeka.destekli.is.guvenligi.asist.73caffd7", table: .auth, fallback: "Saha için yapay zekâ destekli iş güvenliği asistanı"))
-                            .font(.system(size: RDFontScale.size(13), weight: .medium, design: .rounded))
+                            .font(RDTypography.font(size: RDFontScale.size(13), weight: .medium, design: .rounded))
                             .foregroundStyle(Color.rdGraphite)
                             .multilineTextAlignment(.center)
                             .frame(maxWidth: 270)
@@ -166,7 +166,7 @@ struct AuthView: View {
             HStack(spacing: 12) {
                 Rectangle().fill(Color.rdSlate.opacity(0.22)).frame(height: 1)
                 Text(RDLocalization.string("auth.auth.view.veya.96cc844b", table: .auth, fallback: "veya"))
-                    .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdGraphite.opacity(0.78))
                     .padding(.horizontal, 4)
                 Rectangle().fill(Color.rdSlate.opacity(0.22)).frame(height: 1)
@@ -195,14 +195,14 @@ struct AuthView: View {
 
             if let err = authError {
                 Text(err.message)
-                    .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdCritical)
                     .multilineTextAlignment(.center)
                     .padding(.top, 2)
             }
             if let svcErr = app.authError {
                 Text("⚠️ \(svcErr)")
-                    .font(.system(size: RDFontScale.size(11), weight: .medium, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(11), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdCritical)
                     .multilineTextAlignment(.center)
             }
@@ -219,11 +219,11 @@ struct AuthView: View {
         return Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: "envelope.fill")
-                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreenDark)
 
                 Text(localizedTitle)
-                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdOnyx)
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
@@ -250,7 +250,7 @@ struct AuthView: View {
             HStack(spacing: 9) {
                 if isSigningInWithGoogle {
                     Image(systemName: "hourglass")
-                        .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                 } else {
                     GoogleMark()
@@ -259,7 +259,7 @@ struct AuthView: View {
 
                 if isSigningInWithGoogle {
                     Text(RDLocalization.string("auth.auth.view.google.ile.baglaniyor.d73e6d77", table: .auth, fallback: "Google ile bağlanıyor..."))
-                        .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .tracking(-0.2)
                 } else {
@@ -304,12 +304,12 @@ struct AuthView: View {
             VStack(alignment: .leading, spacing: 9) {
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "exclamationmark.circle.fill")
-                        .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdCritical)
                         .padding(.top, 1)
 
                     Text(err.message)
-                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdCritical)
                         .multilineTextAlignment(.leading)
                         .lineLimit(nil)
@@ -322,9 +322,9 @@ struct AuthView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: isSendingEmailCode ? "hourglass" : "arrow.clockwise")
-                                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                                .font(RDTypography.font(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                             Text(isSendingEmailCode ? RDLocalization.string("auth.auth.view.yeni.kod.gonderiliyor.b1451c30", table: .auth, fallback: "Yeni kod gönderiliyor...") : RDLocalization.string("auth.auth.view.yeni.kod.gonder.7cb92f87", table: .auth, fallback: "Yeni kod gönder"))
-                                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                                .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                         }
                         .foregroundStyle(Color.rdCritical)
                     }
@@ -349,7 +349,7 @@ struct AuthView: View {
     private var emailForm: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(RDLocalization.string("auth.auth.view.e.posta.adresinizi.giriniz.e6b9a429", table: .auth, fallback: "E-posta Adresinizi Giriniz"))
-                .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdInk)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
@@ -372,7 +372,7 @@ struct AuthView: View {
                 .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 3)
             HStack(spacing: 8) {
                 Image(systemName: "envelope.fill")
-                    .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdOnyx.opacity(0.82))
                     .frame(width: 54, height: 52)
                     .background(Color.white)
@@ -388,7 +388,7 @@ struct AuthView: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .focused($focusedField, equals: .email)
-                    .font(.system(size: RDFontScale.size(16), design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(16), design: .rounded))
                     .foregroundColor(Color.rdOnyx)
                     .tint(Color.rdGreen)
                     .lineLimit(1)
@@ -413,7 +413,7 @@ struct AuthView: View {
             Button(RDLocalization.string("auth.auth.view.diger.giris.yontemleri.99e4376a", table: .auth, fallback: "← Diğer giriş yöntemleri")) {
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .options }
             }
-            .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
+            .font(RDTypography.font(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
             .foregroundStyle(Color.rdInk)
             .frame(maxWidth: .infinity)
             .padding(8)
@@ -426,11 +426,11 @@ struct AuthView: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(RDLocalization.string("auth.auth.view.dogrulama.kodu.95aeac29", table: .auth, fallback: "Doğrulama kodu"))
-                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.white)
                     .shadow(color: Color.black.opacity(0.34), radius: 8, x: 0, y: 2)
                 Text(RDLocalization.format("auth.auth.view.1.adresine.gonderildi.a08ac01d", table: .auth, fallback: "%1$@ adresine gönderildi", arguments: [String(describing: normalizedEmail.isEmpty ? "mail@ornek.com" : normalizedEmail)]))
-                    .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.white.opacity(0.94))
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -441,7 +441,7 @@ struct AuthView: View {
                     .keyboardType(.numberPad)
                     .textContentType(.oneTimeCode)
                     .focused($focusedField, equals: .otp)
-                    .font(.system(size: RDFontScale.size(1)))
+                    .font(RDTypography.font(size: RDFontScale.size(1)))
                     .foregroundStyle(Color.clear)
                     .tint(Color.clear)
                     .multilineTextAlignment(.center)
@@ -464,7 +464,7 @@ struct AuthView: View {
             }
 
             Text(RDLocalization.string("auth.auth.view.kod.gelmedi.mi.e.posta.adresini.kontrol.edip.tek.b7b833bb", table: .auth, fallback: "Kod gelmedi mi? E-posta adresini kontrol edip tekrar gönderebilirsin."))
-                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.white.opacity(0.92))
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
@@ -486,7 +486,7 @@ struct AuthView: View {
             Button(RDLocalization.string("auth.auth.view.e.posta.adresini.degistir.e85f01e6", table: .auth, fallback: "← E-posta adresini değiştir")) {
                 withAnimation(.easeInOut(duration: 0.22)) { phase = .email }
             }
-            .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+            .font(RDTypography.font(size: RDFontScale.size(14), weight: .bold, design: .rounded))
             .foregroundStyle(Color.white.opacity(0.94))
             .frame(maxWidth: .infinity)
             .padding(8)
@@ -651,7 +651,7 @@ struct AuthView: View {
 
             Text(code[index])
                 .multilineTextAlignment(.center)
-                .font(.system(size: RDFontScale.size(28), weight: .bold, design: .monospaced))
+                .font(RDTypography.font(size: RDFontScale.size(28), weight: .bold, design: .monospaced))
                 .foregroundStyle(Color.rdOnyx)
 
             if isActive && !hasValue {
@@ -673,7 +673,7 @@ private struct GoogleMark: View {
                 .fill(Color.white)
 
             Text(RDLocalization.string("auth.auth.view.g.1bdc8bd9", table: .auth, fallback: "G"))
-                .font(.system(size: RDFontScale.size(16), weight: .heavy, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(16), weight: .heavy, design: .rounded))
                 .foregroundStyle(
                     LinearGradient(
                         colors: [
@@ -705,7 +705,7 @@ private struct GoogleWordmark: View {
 
     var body: some View {
         localizedText
-        .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
+        .font(RDTypography.font(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
         .tracking(-0.2)
         .lineLimit(1)
         .minimumScaleFactor(0.82)

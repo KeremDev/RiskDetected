@@ -1214,6 +1214,9 @@ function dedupEventKey(candidate: NormalizedCandidate): string {
 // contradicts itself about the same component, the honest output is a field
 // check, not a scored finding: nothing is lost, because the engine already held
 // both statements.
+/** Bumped whenever the canonical code block below changes shape. */
+export const BOOK_SOURCE_SCHEMA_VERSION = "book-source-v1";
+
 const BARRIER_COMPONENTS: Array<{ code: string; pattern: RegExp }> = [
   {
     code: "mid_rail",
@@ -1534,7 +1537,80 @@ function visibleAssetAssuranceItem(params: {
       dedup_key: topic.id,
       consequence_rank: topicConsequenceRank(topic.id),
       route_reason: "visible_asset_deterministic_assurance",
+      // A visible asset with a known assurance topic is the cleanest book
+      // source there is: the topic itself carries the whole claim, and no
+      // model sentence is involved at any point.
+      book_source: {
+        schema: BOOK_SOURCE_SCHEMA_VERSION,
+        module_id: params.moduleID,
+        item_class: "assurance_requirement",
+        condition_code: "visible_asset_assurance",
+        mechanism_code: null,
+        evidence_level: "E3",
+        criticality: "ordinary",
+        occlusion: "none",
+        asset_ref: params.entityID,
+        asset_family: topic.id,
+        assurance_topic_id: topic.id,
+        barrier_components_absent: [],
+        confidence: { visibility: 1, localization: 1, mechanism: 1 },
+        visually_resolvable: false,
+        requires_document_or_measurement: true,
+        accessible_event_path: false,
+        people_visible: 0,
+        photo_index: params.photoIndex,
+      },
     },
+  };
+}
+
+/**
+ * Canonical codes for the approved-book engine, carried on every routed item.
+ *
+ * The approved-book text has to be planned from codes, never from the model's
+ * own sentences -- that is the whole safety premise of the feature, and this
+ * session showed why: five consecutive runs of one photograph produced five
+ * different guardrail claims in the model's own words. Rewriting that prose in a
+ * more official register would only have made a wrong claim read better.
+ *
+ * So the engine publishes what it decided rather than what the model wrote. No
+ * free text belongs in here; `raw_label`, cues and `event_path` stay out on
+ * purpose. Everything a sentence planner needs to pick a Turkish surface form
+ * has to be a code, an enum or a number.
+ */
+function bookSourceCodes(params: {
+  candidate: NormalizedCandidate;
+  itemClass: SafetyItemClass;
+  mechanism: string;
+  assuranceTopicID: string | null;
+  claimedAbsent: string[];
+  peopleVisible: number;
+}): Record<string, unknown> {
+  const { candidate } = params;
+  return {
+    schema: BOOK_SOURCE_SCHEMA_VERSION,
+    module_id: candidate.module_id,
+    item_class: params.itemClass,
+    condition_code: candidate.condition_code,
+    mechanism_code: params.mechanism,
+    evidence_level: candidate.evidence_level,
+    criticality: candidate.criticality,
+    occlusion: candidate.occlusion,
+    asset_ref: candidate.asset_ref ?? null,
+    asset_family: params.assuranceTopicID ?? candidate.module_id,
+    assurance_topic_id: params.assuranceTopicID,
+    barrier_components_absent: [...params.claimedAbsent].sort(),
+    confidence: {
+      visibility: candidate.confidence.visibility,
+      localization: candidate.confidence.localization,
+      mechanism: candidate.confidence.mechanism,
+    },
+    visually_resolvable: candidate.visually_resolvable,
+    requires_document_or_measurement:
+      candidate.requires_document_or_measurement,
+    accessible_event_path: candidate.accessible_event_path,
+    people_visible: params.peopleVisible,
+    photo_index: candidate.photo_index,
   };
 }
 
@@ -1797,6 +1873,16 @@ export function routeCandidates(params: {
           ? topicConsequenceRank(assurance.id)
           : moduleConsequenceRank(candidate.module_id),
         ...(assurance ? { assurance_topic_id: assurance.id } : {}),
+        // Canonical codes for the approved-book engine. Kept beside the routing
+        // metadata because both are engine decisions, not model prose.
+        book_source: bookSourceCodes({
+          candidate,
+          itemClass,
+          mechanism: mechanismCode(candidate),
+          assuranceTopicID: assurance ? assurance.id : null,
+          claimedAbsent,
+          peopleVisible: photoForCandidate?.people.length ?? 0,
+        }),
       },
     });
     ledger.push({

@@ -34,6 +34,11 @@ struct MainTabView: View {
         .ignoresSafeArea(edges: .bottom)
         .alert(RDLocalization.string("analysis.main.tab.view.ucretsiz.hak.doldu.02b7d919", table: .analysis, fallback: "Ücretsiz hak doldu"), isPresented: $showQuotaAlert) {
             Button(RDLocalization.string("analysis.main.tab.view.yukselt.a7a8cbd7", table: .analysis, fallback: "Yükselt")) {
+                PaywallEventService.shared.beginEntry(
+                    at: .quickScanQuotaAlert,
+                    currentTier: app.currentTier,
+                    targetTier: .plus
+                )
                 showPaywall = true
             }
             Button(RDLocalization.string("analysis.main.tab.view.tamam.ce1433e3", table: .analysis, fallback: "Tamam"), role: .cancel) {}

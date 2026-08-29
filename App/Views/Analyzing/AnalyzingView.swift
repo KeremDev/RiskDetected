@@ -248,11 +248,11 @@ struct AnalyzingView: View {
 
                 VStack(spacing: 6) {
                     Text(RDLocalization.string("localizable.analyzing.view.analiz.devam.ediyor.e37a9f96", table: .localizable, fallback: "Analiz devam ediyor"))
-                        .font(.system(size: RDFontScale.size(22), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(22), weight: .bold, design: .rounded))
                         .tracking(-0.4)
                         .foregroundStyle(Color.rdBlack)
                     Text(heroSubtitle)
-                        .font(.system(size: RDFontScale.size(12.5), weight: .medium, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(12.5), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
@@ -353,12 +353,12 @@ struct AnalyzingView: View {
         VStack(spacing: 9) {
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text("\(percentValue)")
-                    .font(.system(size: RDFontScale.size(64), weight: .heavy, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(64), weight: .heavy, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(.white)
                     .accessibilityIdentifier("analysis.progress.percent")
                 Text(RDLocalization.string("localizable.analyzing.view.copy.e242ae58", table: .localizable, fallback: "%"))
-                    .font(.system(size: RDFontScale.size(28), weight: .heavy, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(28), weight: .heavy, design: .rounded))
                     .foregroundStyle(.white.opacity(0.92))
             }
             .shadow(color: .black.opacity(0.26), radius: 8, x: 0, y: 3)
@@ -368,7 +368,7 @@ struct AnalyzingView: View {
 
             if resolvedPhotoCount > 1 {
                 Label(RDLocalization.format("localizable.analyzing.view.1.fotograf.79ece311", table: .localizable, fallback: "%1$@ fotoğraf", arguments: [String(describing: resolvedPhotoCount)]), systemImage: "photo.stack.fill")
-                    .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 10)
                     .frame(height: 26)
@@ -403,9 +403,9 @@ struct AnalyzingView: View {
     private func aiSignal(icon: String, label: String, alignment: Alignment) -> some View {
         HStack(spacing: 5) {
             Image(systemName: icon)
-                .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(10), weight: .bold, design: .rounded))
             Text(label)
-                .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(10), weight: .bold, design: .rounded))
         }
         .foregroundStyle(Color.rdGreenDark)
         .padding(.horizontal, 8)
@@ -489,7 +489,7 @@ struct AnalyzingView: View {
                     stepDot(index: index, fill: fill)
                     VStack(alignment: .leading, spacing: 8) {
                         Text(label)
-                            .font(.system(size: RDFontScale.size(13.5), weight: .semibold, design: .rounded))
+                            .font(RDTypography.font(size: RDFontScale.size(13.5), weight: .semibold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
                             .lineLimit(1)
 
@@ -542,15 +542,15 @@ struct AnalyzingView: View {
     private func progressStatus(_ update: AnalysisProgressUpdate) -> some View {
         HStack(spacing: 10) {
             Image(systemName: update.icon)
-                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreen)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(update.title)
-                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Text(update.message)
-                    .font(.system(size: RDFontScale.size(11), weight: .medium, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(11), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(2)
             }
@@ -582,7 +582,7 @@ struct AnalyzingView: View {
 
             if isCompleted {
                 Image(systemName: "checkmark")
-                    .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
             } else if isActive {
                 Circle()

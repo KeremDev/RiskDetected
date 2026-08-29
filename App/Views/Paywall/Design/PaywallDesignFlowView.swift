@@ -23,6 +23,7 @@ struct PaywallDesignFlowView: View {
     @State private var workingMessage: String?
     @State private var errorMessage: String?
     @State private var funnelSessionID = UUID()
+    @State private var entryContext: PaywallEntryContext?
     @State private var didLogView = false
     @State private var selectedLegalDocument: LegalDocumentKind?
     @State private var processingOverlayTitle: String?
@@ -92,6 +93,27 @@ struct PaywallDesignFlowView: View {
             }
         }
         .task {
+            let preferredFunnelID = resultHubContext?.funnelSessionID
+            if let pendingEntry = PaywallEventService.shared.consumePendingEntry(
+                preferredFunnelSessionID: preferredFunnelID
+            ) {
+                entryContext = pendingEntry
+                funnelSessionID = pendingEntry.funnelSessionID
+            } else if source == .onboardingV2 {
+                let onboardingEntry = PaywallEntryContext(
+                    funnelSessionID: funnelSessionID,
+                    entryPoint: .onboardingFlow,
+                    surface: .onboarding,
+                    component: PaywallEntryPoint.onboardingFlow.component,
+                    targetTier: .plus,
+                    analysisID: nil,
+                    resultSection: nil,
+                    itemID: nil,
+                    attributes: [:],
+                    clientOccurredAt: Date()
+                )
+                entryContext = onboardingEntry
+            }
             if let resultHubContext {
                 funnelSessionID = resultHubContext.funnelSessionID
                 await recordResultHubEvent("paywall_viewed")
@@ -533,6 +555,11 @@ struct PaywallDesignFlowView: View {
                 stopProcessingOverlay()
                 workingMessage = nil
                 isWorking = false
+                logPaywallEvent(
+                    .purchaseCancelled,
+                    screen: purchaseScreen,
+                    billing: purchaseBilling
+                )
             } catch {
                 stopProcessingOverlay()
                 workingMessage = nil
@@ -685,7 +712,8 @@ struct PaywallDesignFlowView: View {
                 errorMessage: errorMessage,
                 contextHeadline: nil,
                 purchaseError: purchaseError
-            )
+            ),
+            entryContext: entryContext
         )
     }
 

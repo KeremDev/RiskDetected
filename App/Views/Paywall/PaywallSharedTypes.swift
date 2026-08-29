@@ -57,12 +57,12 @@ struct PaywallProcessingOverlay: View {
 
                 VStack(spacing: 5) {
                     Text(title)
-                        .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .multilineTextAlignment(.center)
 
                     Text(message)
-                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
                         .lineSpacing(2)

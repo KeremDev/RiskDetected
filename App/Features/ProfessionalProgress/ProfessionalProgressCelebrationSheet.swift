@@ -17,7 +17,7 @@ struct ProfessionalProgressCelebrationSheet: View {
 
             VStack(spacing: RDSpacing.lg) {
                 Image(systemName: badge.iconName)
-                    .font(.system(size: RDFontScale.size(34), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(34), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreenDark)
                     .frame(width: 72, height: 72)
                     .background(Color.rdGreenSoft)
@@ -27,7 +27,7 @@ struct ProfessionalProgressCelebrationSheet: View {
 
                 VStack(spacing: 9) {
                     Text(RDLocalization.string("professionalprogress.professional.progress.celebration.sheet.tebrikler.b7a58ea5", table: .professionalProgress, fallback: "Tebrikler"))
-                        .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdGreenDark)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 7)
@@ -35,12 +35,12 @@ struct ProfessionalProgressCelebrationSheet: View {
                         .clipShape(Capsule())
 
                     Text(badge.title)
-                        .font(.system(size: RDFontScale.size(22), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(22), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .multilineTextAlignment(.center)
 
                     Text(badge.subtitle)
-                        .font(.system(size: RDFontScale.size(14), design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(14), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)

@@ -187,7 +187,7 @@ struct PaywallDesignScreen: View {
             background: background,
             text: Text(crossSell.prefix)
                 + Text(crossSell.highlight)
-                    .font(.system(size: 13, weight: .heavy))
+                    .font(RDTypography.font(size: 13, weight: .heavy))
                     .foregroundColor(highlightColor)
                 + Text(crossSell.suffix),
             chevronColor: border,

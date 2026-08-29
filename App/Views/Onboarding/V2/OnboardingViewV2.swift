@@ -348,13 +348,13 @@ private struct OBSkipConfirmationView: View {
 
                 VStack(spacing: 8) {
                     Text(RDLocalization.string("onboarding.onboarding.view.v2.sana.ozel.sonuclar.veremeyecegiz.38eef1fd", table: .onboarding, fallback: "Sana özel sonuçlar veremeyeceğiz"))
-                        .font(.system(size: RDFontScale.size(23), weight: .semibold))
+                        .font(RDTypography.font(size: RDFontScale.size(23), weight: .semibold))
                         .foregroundStyle(Color.rdOnyx)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(RDLocalization.string("onboarding.onboarding.view.v2.birkac.kisa.cevap.analizlerini.sektorune.ve.cali.b9867bb8", table: .onboarding, fallback: "Birkaç kısa cevap, analizlerini sektörüne ve çalışma alanına göre daha isabetli hazırlamamıza yardım eder."))
-                        .font(.system(size: RDFontScale.size(14)))
+                        .font(RDTypography.font(size: RDFontScale.size(14)))
                         .lineSpacing(2)
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
@@ -370,7 +370,7 @@ private struct OBSkipConfirmationView: View {
                         onConfirm()
                     } label: {
                         Text(RDLocalization.string("onboarding.onboarding.view.v2.yine.de.atla.de185fdb", table: .onboarding, fallback: "Yine de atla"))
-                            .font(.system(size: RDFontScale.size(14), weight: .semibold))
+                            .font(RDTypography.font(size: RDFontScale.size(14), weight: .semibold))
                             .foregroundStyle(Color.rdSlate.opacity(0.72))
                             .frame(maxWidth: .infinity)
                             .frame(height: 48)

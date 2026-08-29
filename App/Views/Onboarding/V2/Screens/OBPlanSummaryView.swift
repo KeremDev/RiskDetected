@@ -85,7 +85,7 @@ struct OBPlanSummaryView: View {
                         RoundedRectangle(cornerRadius: 16)
                             .stroke(Color.rdGreen.opacity(0.16), lineWidth: 1)
                         Image(systemName: context.heroIcon)
-                            .font(.system(size: RDFontScale.size(23), weight: .semibold))
+                            .font(RDTypography.font(size: RDFontScale.size(23), weight: .semibold))
                             .foregroundStyle(Color.rdOnyx)
                     }
                     .frame(width: 56, height: 56)
@@ -101,12 +101,12 @@ struct OBPlanSummaryView: View {
 
                     VStack(spacing: 7) {
                         Text(context.eyebrow)
-                            .font(.system(size: RDFontScale.size(13), weight: .semibold))
+                            .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold))
                             .foregroundStyle(Color.rdGreenDark)
                             .lineLimit(1)
 
                         Text(context.headline)
-                            .font(.system(size: RDFontScale.size(24), weight: .semibold))
+                            .font(RDTypography.font(size: RDFontScale.size(24), weight: .semibold))
                             .tracking(-0.6)
                             .foregroundStyle(Color.rdOnyx)
                             .multilineTextAlignment(.center)
@@ -114,7 +114,7 @@ struct OBPlanSummaryView: View {
                             .minimumScaleFactor(0.78)
 
                         Text(context.subtitle)
-                            .font(.system(size: RDFontScale.size(13.5)))
+                            .font(RDTypography.font(size: RDFontScale.size(13.5)))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.center)
                             .lineSpacing(3)
@@ -138,7 +138,7 @@ struct OBPlanSummaryView: View {
         VStack(alignment: .trailing, spacing: 5) {
             ForEach(values, id: \.self) { value in
                 Text(value)
-                    .font(.system(size: RDFontScale.size(9.5), weight: .semibold))
+                    .font(RDTypography.font(size: RDFontScale.size(9.5), weight: .semibold))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(1)
                     .minimumScaleFactor(0.76)
@@ -215,7 +215,7 @@ struct OBPlanSummaryView: View {
                     Circle()
                         .fill(Color.rdGreenSoft.opacity(0.54))
                     Image(systemName: step.icon)
-                        .font(.system(size: RDFontScale.size(12.5), weight: .semibold))
+                        .font(RDTypography.font(size: RDFontScale.size(12.5), weight: .semibold))
                         .foregroundStyle(Color.rdGreenDark)
                 }
                 .frame(width: 30, height: 30)
@@ -229,12 +229,12 @@ struct OBPlanSummaryView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(step.title)
-                    .font(.system(size: RDFontScale.size(14.5), weight: .semibold))
+                    .font(RDTypography.font(size: RDFontScale.size(14.5), weight: .semibold))
                     .foregroundStyle(Color.rdOnyx)
                     .lineLimit(2)
                     .minimumScaleFactor(0.82)
                 Text(step.subtitle)
-                    .font(.system(size: RDFontScale.size(12.5)))
+                    .font(RDTypography.font(size: RDFontScale.size(12.5)))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(2)
                     .minimumScaleFactor(0.82)
@@ -249,10 +249,10 @@ struct OBPlanSummaryView: View {
     private var trustRow: some View {
         HStack(spacing: 9) {
             Image(systemName: "lock.fill")
-                .font(.system(size: RDFontScale.size(11), weight: .bold))
+                .font(RDTypography.font(size: RDFontScale.size(11), weight: .bold))
                 .foregroundStyle(Color.rdGreenDark)
             Text(RDLocalization.string("onboarding.obplan.summary.view.planini.hesabina.kaydedelim.7.gun.ucretsiz.denem.ae67c90f", table: .onboarding, fallback: "Son Aşama 🙂 Planını hesabına kaydedelim; sana özel analizler ve raporlar sunalım."))
-                .font(.system(size: RDFontScale.size(12.5), weight: .medium))
+                .font(RDTypography.font(size: RDFontScale.size(12.5), weight: .medium))
                 .foregroundStyle(Color.rdSlate)
                 .lineLimit(3)
                 .minimumScaleFactor(0.82)

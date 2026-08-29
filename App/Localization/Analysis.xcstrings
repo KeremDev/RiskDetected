@@ -1,6 +1,42 @@
 {
   "sourceLanguage": "tr",
   "strings": {
+    "analysis.result_hub.accessibility.go_back": {
+      "comment": "Result hub back button accessibility label; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go back"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri dön"
+          }
+        }
+      }
+    },
+    "analysis.result_hub.error.report_create_failed": {
+      "comment": "Generic result hub report creation error title; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The report could not be created"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor oluşturulamadı"
+          }
+        }
+      }
+    },
     "analysis.result.view.analiz.bulgulari.11d57f5a": {
       "comment": "swiftui_text; App/Views/Result/ResultView.swift; v4 neutral finding heading; placeholders: none; review: human",
       "extractionState": "manual",

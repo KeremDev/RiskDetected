@@ -29,6 +29,42 @@ extension Color {
     static let rdFog = Color.dynamic(light: "#F1F4F2", dark: "#202526")
     static let rdCloud = Color.dynamic(light: "#F6F7F6", dark: "#111415")
 
+    // Adaptive result surfaces
+    // These tokens keep the approved light appearance intact while giving the
+    // result hub, detail cards and sheets a consistent dark hierarchy.
+    static let rdResultBackground = Color.dynamic(light: "#FFFFFF", dark: "#090C0B")
+    static let rdResultSurface = Color.dynamic(light: "#FFFFFF", dark: "#151A18")
+    static let rdResultElevatedSurface = Color.dynamic(light: "#FFFFFF", dark: "#1B211E")
+    static let rdResultPrimaryText = Color.dynamic(light: "#1A1A1A", dark: "#F3F7F4")
+    static let rdResultSecondaryText = Color.dynamic(light: "#6D6D6D", dark: "#B2BBB6")
+    static let rdResultTertiaryText = Color.dynamic(light: "#9A9A9A", dark: "#87918B")
+    static let rdResultLine = Color.dynamic(light: "#E6E6E6", dark: "#303735")
+    static let rdResultSubtleSurface = Color.dynamic(light: "#F4F4F4", dark: "#202623")
+    static let rdResultGreenTint = Color.dynamic(light: "#EDF8F0", dark: "#102A19")
+    static let rdResultGreenTintStrong = Color.dynamic(light: "#F1FAEA", dark: "#142D18")
+    static let rdResultAmberTint = Color.dynamic(light: "#FFF8E8", dark: "#30240D")
+    static let rdResultMintTint = Color.dynamic(light: "#EFF8F4", dark: "#102820")
+    static let rdResultBlueTint = Color.dynamic(light: "#EFF6FB", dark: "#102632")
+    static let rdResultKhakiTint = Color.dynamic(light: "#F1EFE7", dark: "#2B291F")
+    static let rdResultSelectedSurface = Color.dynamic(light: "#F4FAEC", dark: "#152B19")
+    static let rdResultGreen = Color.dynamic(light: "#35774A", dark: "#63C680")
+    static let rdResultGreenDark = Color.dynamic(light: "#2E6B41", dark: "#7AD496")
+    static let rdResultGreenMuted = Color.dynamic(light: "#5D9670", dark: "#9AC7A8")
+    // Result section identities use muted, low-saturation gradients. Their
+    // darkest label surfaces retain accessible contrast with white typography.
+    static let rdSectionRiskStart = Color(hex: "#94606D")
+    static let rdSectionRiskEnd = Color(hex: "#74404F")
+    static let rdSectionRiskAccent = Color(hex: "#A9717D")
+    static let rdSectionRiskIcon = Color(hex: "#F6DCE2")
+    static let rdSectionExpertStart = Color(hex: "#527696")
+    static let rdSectionExpertEnd = Color(hex: "#385D7B")
+    static let rdSectionExpertAccent = Color(hex: "#7296B2")
+    static let rdSectionExpertIcon = Color(hex: "#DEECF6")
+    static let rdSectionNotebookStart = Color(hex: "#887341")
+    static let rdSectionNotebookEnd = Color(hex: "#66532D")
+    static let rdSectionNotebookAccent = Color(hex: "#A18A52")
+    static let rdSectionNotebookIcon = Color(hex: "#F7E9BF")
+
     // Risk semantic
     static let rdCritical = Color(hex: "#B42318")
     static let rdHigh = Color(hex: "#C76A00")
@@ -38,11 +74,11 @@ extension Color {
     static let rdUnknown = Color(hex: "#94A3B8")
 
     // Risk semantic backgrounds
-    static let rdCriticalBg = Color(hex: "#FDECEC")
-    static let rdHighBg = Color(hex: "#FFF4DE")
-    static let rdMediumBg = Color(hex: "#FEF9C3")
-    static let rdLowBg = Color(hex: "#E8F5EF")
-    static let rdUnknownBg = Color(hex: "#F1F4F2")
+    static let rdCriticalBg = Color.dynamic(light: "#FDECEC", dark: "#341512")
+    static let rdHighBg = Color.dynamic(light: "#FFF4DE", dark: "#33220C")
+    static let rdMediumBg = Color.dynamic(light: "#FEF9C3", dark: "#302B0C")
+    static let rdLowBg = Color.dynamic(light: "#E8F5EF", dark: "#10291A")
+    static let rdUnknownBg = Color.dynamic(light: "#F1F4F2", dark: "#202526")
 
     // Risk semantic text colors (for chips)
     static let rdCriticalText = Color(hex: "#9F2623")

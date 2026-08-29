@@ -664,6 +664,8 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("Risk Analizi, 3 Bulgu", timeout: 10).exists)
         XCTAssertTrue(waitFor("Uzman Görüşü Önerileri, 2 Öneri", timeout: 4).exists)
         XCTAssertTrue(waitFor("Onaylı Defter Önerisi, 2 Kayıt", timeout: 4).exists)
+        XCTAssertTrue(waitFor("result.hub.bottom_back", timeout: 4).exists)
+        XCTAssertTrue(waitFor("Geri dön", timeout: 4).exists)
         let reportButton = waitFor("Rapor Oluştur · 3/3", timeout: 4)
         XCTAssertTrue(reportButton.exists)
         XCTAssertLessThanOrEqual(
@@ -673,11 +675,71 @@ final class RiskDetectedUITests: XCTestCase {
         )
     }
 
-    func testResultHubGroupsAnalysisMetadataShowsActualPhotosAndPlacesPremiumAfterSecondFinding() throws {
+    func testResultHubDislikeFeedbackIsCompactSupportsNoteAndShowsTimedThanks() throws {
         launchMainApp(extraArguments: [
             "RD_UI_TEST_OPEN_RESULT",
             "RD_UI_TEST_RESULT_HUB",
             "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        XCTAssertTrue(waitFor("Risk Analizi, 3 Bulgu", timeout: 10).exists)
+        tapScrolling("Beğenme", timeout: 10)
+
+        let feedbackTitle = waitFor("NEYİ GELİŞTİREBİLİRİZ?", timeout: 6)
+        XCTAssertTrue(
+            waitFor(
+                "Gelişmemize yardımcı ol, böylelikle bir sonraki analizinde mükemmele biraz daha yaklaşabilelim. Teşekkürler.",
+                timeout: 4
+            ).exists
+        )
+        let longestReason = waitFor("feedback.reason.wrong_recommendation", timeout: 4)
+        let customReason = waitFor("feedback.custom.toggle", timeout: 4)
+        XCTAssertLessThanOrEqual(longestReason.frame.height, 52)
+        XCTAssertLessThan(
+            customReason.frame.maxY - feedbackTitle.frame.minY,
+            app.frame.height * 0.48,
+            "Hazır nedenler ekranın büyük bölümünü kaplamamalı."
+        )
+        attachScreenshot("feedback-sheet-compact")
+
+        tap("feedback.custom.toggle")
+        let noteField = waitFor("feedback.custom.note", timeout: 6)
+        noteField.tap()
+        noteField.typeText("Koruma onerisi daha acik olabilir.")
+        XCTAssertTrue(waitFor("feedback.custom.submit", timeout: 4).isEnabled)
+        attachScreenshot("feedback-sheet-custom-note")
+        tap("feedback.custom.submit")
+
+        let thanks = waitFor("feedback.success.toast", timeout: 6)
+        XCTAssertTrue(thanks.label.contains("Teşekkürler"))
+        XCTAssertTrue(thanks.label.contains("en kısa sürede inceleyeceğiz"))
+        attachScreenshot("feedback-thanks-toast")
+
+        RunLoop.current.run(until: Date().addingTimeInterval(7.5))
+        XCTAssertFalse(app.descendants(matching: .any)["feedback.success.toast"].exists)
+    }
+
+    func testResultHubBottomBackReturnsToPreviousScreen() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        XCTAssertTrue(waitFor("Risk Analizi, 3 Bulgu", timeout: 10).exists)
+        tap("result.hub.bottom_back", timeout: 6)
+
+        XCTAssertTrue(waitFor("main_tab.home", timeout: 8).exists)
+        XCTAssertFalse(app.descendants(matching: .any)["result.hub.section_selector"].exists)
+    }
+
+    func testResultHubFreePlacesPremiumDeepAnalysisCardAfterSecondFinding() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_FREE_TIER",
             "RD_UI_TEST_LIGHT_MODE",
         ])
 
@@ -702,16 +764,58 @@ final class RiskDetectedUITests: XCTestCase {
 
         for _ in 0..<3 { app.swipeUp() }
         let secondFinding = waitFor("result.hub.item.10000000-0000-4000-8000-000000000002", timeout: 6)
-        let premiumRibbon = waitFor("result.hub.premium_ribbon", timeout: 6)
+        let premiumCard = waitFor("result.hub.premium_deep_analysis_card", timeout: 6)
         let thirdFinding = waitFor("result.hub.item.10000000-0000-4000-8000-000000000003", timeout: 6)
 
-        XCTAssertGreaterThanOrEqual(premiumRibbon.frame.minY, secondFinding.frame.maxY)
-        XCTAssertLessThanOrEqual(premiumRibbon.frame.maxY, thirdFinding.frame.minY)
+        let premiumCardAttachment = XCTAttachment(screenshot: app.screenshot())
+        premiumCardAttachment.name = "result-hub-premium-card-after-second-finding"
+        premiumCardAttachment.lifetime = .keepAlways
+        add(premiumCardAttachment)
 
-        let ribbonAttachment = XCTAttachment(screenshot: app.screenshot())
-        ribbonAttachment.name = "result-hub-premium-after-second-finding"
-        ribbonAttachment.lifetime = .keepAlways
-        add(ribbonAttachment)
+        let premiumCardFocusedAttachment = XCTAttachment(screenshot: premiumCard.screenshot())
+        premiumCardFocusedAttachment.name = "result-hub-premium-card-focused"
+        premiumCardFocusedAttachment.lifetime = .keepAlways
+        add(premiumCardFocusedAttachment)
+
+        // SwiftUI blur extends the accessibility frame by two points. Compare
+        // centers so the test validates list order instead of the blur halo.
+        XCTAssertGreaterThan(premiumCard.frame.midY, secondFinding.frame.midY)
+        XCTAssertLessThan(premiumCard.frame.midY, thirdFinding.frame.midY)
+        XCTAssertTrue(premiumCard.label.contains("derin Analiz ve derin araştırma"))
+    }
+
+    func testResultHubFreePlacesPremiumDeepAnalysisCardAfterOnlyFinding() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_SINGLE_FINDING",
+            "RD_UI_TEST_FREE_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        let firstFinding = waitFor("result.hub.item.10000000-0000-4000-8000-000000000001", timeout: 10)
+        let premiumCard = waitFor("result.hub.premium_deep_analysis_card", timeout: 8)
+
+        let premiumCardAttachment = XCTAttachment(screenshot: app.screenshot())
+        premiumCardAttachment.name = "result-hub-premium-card-after-only-finding"
+        premiumCardAttachment.lifetime = .keepAlways
+        add(premiumCardAttachment)
+
+        XCTAssertGreaterThan(premiumCard.frame.midY, firstFinding.frame.midY)
+        XCTAssertFalse(app.descendants(matching: .any)["result.hub.item.10000000-0000-4000-8000-000000000002"].exists)
+    }
+
+    func testResultHubPaidDoesNotShowPremiumDeepAnalysisCard() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        XCTAssertTrue(waitFor("result.hub.item.10000000-0000-4000-8000-000000000001", timeout: 10).exists)
+        for _ in 0..<4 { app.swipeUp() }
+        XCTAssertFalse(app.descendants(matching: .any)["result.hub.premium_deep_analysis_card"].exists)
     }
 
     func testResultHubHeaderStaysAbovePinnedSectionSelectorWithoutGap() throws {
@@ -778,6 +882,26 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("Devamı için tıklayın", timeout: 4).exists)
         tapScrolling("result.hub.item.corrective_preview.10000000-0000-4000-8000-000000000001", timeout: 8)
         XCTAssertTrue(waitFor("result.detail.close", timeout: 8).exists)
+    }
+
+    func testResultHubExpertCardUsesCompactPreviewAndOpensFindingDetails() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        tap("Uzman Görüşü Önerileri, 2 Öneri", timeout: 10)
+        let previewID = "result.hub.item.expert_preview.20000000-0000-4000-8000-000000000001"
+        XCTAssertTrue(waitFor(previewID, timeout: 6).exists)
+        XCTAssertTrue(waitFor("Devamı için tıklayın", timeout: 4).exists)
+
+        tapScrolling(previewID, timeout: 8)
+        XCTAssertTrue(waitFor("result.detail.close", timeout: 8).exists)
+        XCTAssertTrue(waitFor("result.detail.expert_summary", timeout: 4).exists)
+        XCTAssertTrue(waitFor("İskele Kurulum Güvencesinin Doğrulanması", timeout: 4).exists)
+        XCTAssertTrue(waitFor("Kurulum planı ve saha koşulları birlikte kontrol edilmelidir.", timeout: 4).exists)
     }
 
     func testResultHubReferenceVisualStates() throws {
@@ -959,12 +1083,71 @@ final class RiskDetectedUITests: XCTestCase {
         ])
 
         tap("Uzman Görüşü Önerileri, 2 Öneri", timeout: 10)
+        let expertTeaser = waitFor(
+            "result.hub.item.premium_teaser.20000000-0000-4000-8000-000000000001",
+            timeout: 6
+        )
+        XCTAssertTrue(expertTeaser.label.hasPrefix("İskele Kurulum"))
+        XCTAssertFalse(expertTeaser.label.contains("Güvencesinin"))
+        XCTAssertFalse(expertTeaser.label.contains("İskelenin kurulum"))
         XCTAssertTrue(waitFor("Plus / Pro ile Aç", timeout: 4).exists)
         XCTAssertFalse(app.buttons["Beğen"].exists)
         XCTAssertFalse(app.buttons["Beğenme"].exists)
 
+        tap("Onaylı Defter Önerisi, 2 Kayıt", timeout: 6)
+        let notebookTeaser = waitFor("result.hub.notebook.premium_teaser", timeout: 6)
+        XCTAssertTrue(notebookTeaser.label.contains("Çalışma platformunun erişilebilir açık kenarında"))
+
+        tap("Uzman Görüşü Önerileri, 2 Öneri", timeout: 6)
         tap("Plus / Pro ile Aç", timeout: 4)
         XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 10).exists)
+    }
+
+    func testResultHubFreeGiftBadgeSitsBelowFullRiskTableTitle() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_FREE_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        tap("Rapor Oluştur · 3/3", timeout: 10)
+        let title = waitFor("result.report_sheet.option.riskTable.title", timeout: 6)
+        let gift = waitFor("result.report_sheet.option.riskTable.gift", timeout: 6)
+
+        XCTAssertEqual(title.label, "Risk Analizi Tablosu")
+        XCTAssertGreaterThanOrEqual(
+            gift.frame.minY,
+            title.frame.maxY,
+            "Hediye etiketi başlıkla aynı satırda sıkışmamalı"
+        )
+    }
+
+    func testFreeRiskDetailLocksRealRegulatoryContentWithPremiumOverlay() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_FREE_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        tapScrolling("result.hub.item.10000000-0000-4000-8000-000000000001", timeout: 10)
+        XCTAssertTrue(waitFor("result.detail.close", timeout: 8).exists)
+        let premiumReferences = waitFor("result.detail.references.premium_lock", timeout: 12)
+        XCTAssertTrue(premiumReferences.label.contains("Mevzuat"))
+
+        app.swipeUp()
+        RunLoop.current.run(until: Date().addingTimeInterval(0.4))
+
+        let premiumReferencesAttachment = XCTAttachment(screenshot: app.screenshot())
+        premiumReferencesAttachment.name = "free-regulatory-premium-lock-visible"
+        premiumReferencesAttachment.lifetime = .keepAlways
+        add(premiumReferencesAttachment)
+
+        let premiumReferencesFocusedAttachment = XCTAttachment(screenshot: premiumReferences.screenshot())
+        premiumReferencesFocusedAttachment.name = "free-regulatory-premium-lock-focused"
+        premiumReferencesFocusedAttachment.lifetime = .keepAlways
+        add(premiumReferencesFocusedAttachment)
     }
 
     func testResultFindingDetailUsesSourcePhoto() throws {
@@ -1445,6 +1628,47 @@ final class RiskDetectedUITests: XCTestCase {
 
         XCTAssertTrue(waitFor("canvas_sheet", timeout: 8).exists)
         XCTAssertTrue(waitFor("Odaklı Analiz").exists)
+    }
+
+    func testPreAnalysisSheetsKeepPrimaryActionsCloseToBottomEdge() throws {
+        launchMainApp(
+            extraArguments: ["RD_UI_TEST_PHOTO_TRAY_WITH_PHOTOS"],
+            disablesAnimations: false
+        )
+
+        let photoCTA = waitFor("home.photo_tray.primary", timeout: 10)
+        XCTAssertLessThanOrEqual(
+            app.frame.maxY - photoCTA.frame.maxY,
+            48,
+            "Fotoğraf sheet'inde CTA altında gereksiz boşluk kalmamalı."
+        )
+        attachScreenshot("pre-analysis-photo-sheet-compact-bottom")
+        photoCTA.tap()
+
+        XCTAssertTrue(waitFor("analysis_sector_picker", timeout: 8).exists)
+        tap("analysis_sector_chip_construction")
+        let sectorCTA = waitFor("analysis_sector_continue_button")
+        XCTAssertLessThanOrEqual(
+            app.frame.maxY - sectorCTA.frame.maxY,
+            48,
+            "Sektör sheet'inde CTA altında gereksiz boşluk kalmamalı."
+        )
+        attachScreenshot("pre-analysis-sector-sheet-compact-bottom")
+
+        launchMainApp(
+            extraArguments: ["RD_UI_TEST_OPEN_CANVAS_SHEET"],
+            disablesAnimations: false
+        )
+
+        XCTAssertTrue(waitFor("canvas_sheet", timeout: 10).exists)
+        let canvasCTA = waitFor("canvas_sheet.confirm")
+        XCTAssertLessThanOrEqual(
+            app.frame.maxY - canvasCTA.frame.maxY,
+            48,
+            "Odaklı analiz sheet'inde CTA altında gereksiz boşluk kalmamalı."
+        )
+        XCTAssertEqual(canvasCTA.label, "Onayla ve devam et")
+        attachScreenshot("pre-analysis-canvas-sheet-black-compact-bottom")
     }
 
     /// Gerçek cihaz animasyonuyla fotoğraf tepsisi kapanmadan ikinci sheet'i açmaya

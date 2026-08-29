@@ -130,6 +130,11 @@ struct ReportView: View {
                     selectedCompanyFilter = company
                 },
                 onPaywall: {
+                    PaywallEventService.shared.beginEntry(
+                        at: .reportsCompanyPicker,
+                        currentTier: app.currentTier,
+                        targetTier: .plus
+                    )
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                         showPaywall = true
                     }
@@ -161,6 +166,11 @@ struct ReportView: View {
                     },
                     onPaywall: {
                         showSourceReportSheet = false
+                        PaywallEventService.shared.beginEntry(
+                            at: .reportsLockedReportOptions,
+                            currentTier: app.currentTier,
+                            targetTier: app.currentTier == .plus ? .pro : .plus
+                        )
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
                             showPaywall = true
                         }
@@ -204,7 +214,10 @@ struct ReportView: View {
                     ProgressView()
                         .controlSize(.small)
                 }
-                RDHeaderAccountCTA {
+                RDHeaderAccountCTA(
+                    directEntryPoint: .reportsHeaderUpgrade,
+                    menuEntryPoint: .reportsHeaderProfileMenuUpgrade
+                ) {
                     showPaywall = true
                 }
             }
@@ -227,7 +240,7 @@ struct ReportView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "doc.text.magnifyingglass")
-                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreenDark)
                     .frame(width: 42, height: 42)
                     .background(Color.rdGreenSoft)
@@ -235,11 +248,11 @@ struct ReportView: View {
 
                 VStack(alignment: .leading, spacing: 7) {
                     Text(RDLocalization.string("reports.report.view.denetime.hazir.ciktilar.57e9283a", table: .reports, fallback: "Denetime hazır çıktılar"))
-                        .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
 
                     Text(RDLocalization.string("reports.report.view.pdf.excel.ve.risk.tablolarini.tek.yerden.yonet.e98bd72a", table: .reports, fallback: "PDF, Excel ve risk tablolarını tek yerden yönet."))
-                        .font(.system(size: RDFontScale.size(13), weight: .medium, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(13), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -289,7 +302,7 @@ struct ReportView: View {
     private func overviewMetric(icon: String, title: String, value: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                 .foregroundStyle(overviewMetricIconText)
                 .frame(width: 26, height: 26)
                 .background(overviewMetricIconBackground)
@@ -301,7 +314,7 @@ struct ReportView: View {
                     .foregroundStyle(overviewMetricPrimaryText)
                     .lineLimit(1)
                 Text(title)
-                    .font(.system(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
                     .foregroundStyle(overviewMetricSecondaryText)
                     .lineLimit(1)
                     .minimumScaleFactor(0.76)
@@ -355,6 +368,11 @@ struct ReportView: View {
 
     private var reportValuePanel: some View {
         RDPlanUpsellCard {
+            PaywallEventService.shared.beginEntry(
+                at: .reportsUpsellCard,
+                currentTier: app.currentTier,
+                targetTier: app.currentTier == .plus ? .pro : .plus
+            )
             showPaywall = true
         }
     }
@@ -449,11 +467,11 @@ struct ReportView: View {
             HStack(spacing: 8) {
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
-                        .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
 
                     TextField(RDLocalization.string("reports.report.view.rapor.ara.1e3bedc8", table: .reports, fallback: "Rapor ara"), text: $reportSearch)
-                        .font(.system(size: RDFontScale.size(14), weight: .medium, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(14), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
@@ -464,7 +482,7 @@ struct ReportView: View {
                             reportSearch = ""
                         } label: {
                             Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                                .font(RDTypography.font(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdSlate.opacity(0.72))
                         }
                         .buttonStyle(.plain)
@@ -486,7 +504,7 @@ struct ReportView: View {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     } label: {
                         Image(systemName: selectedCompanyFilter == nil ? "building.2" : "building.2.fill")
-                            .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
+                            .font(RDTypography.font(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                             .foregroundStyle(selectedCompanyFilter == nil ? Color.rdBlack : Color.rdGreenDark)
                             .frame(width: 40, height: 40)
                             .background(selectedCompanyFilter == nil ? reportInsetFill : Color.rdGreenSoft)
@@ -506,7 +524,7 @@ struct ReportView: View {
                         clearReportArchiveFilters()
                     } label: {
                         Image(systemName: "line.3.horizontal.decrease.circle.fill")
-                            .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
+                            .font(RDTypography.font(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdGreen)
                             .frame(width: 40, height: 40)
                             .background(Color.rdGreenSoft)
@@ -601,14 +619,14 @@ struct ReportView: View {
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: icon)
-                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreen)
                     .frame(width: 30, height: 30)
                     .background(Color.rdGreenSoft)
                     .clipShape(RoundedRectangle(cornerRadius: 9))
 
                 Text(title)
-                    .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .multilineTextAlignment(.leading)
@@ -622,7 +640,7 @@ struct ReportView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 Image(systemName: "chevron.down")
-                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                     .foregroundStyle(reportMetaText)
                     .frame(width: 28, height: 28)
                     .background(reportInsetFill)
@@ -690,10 +708,10 @@ struct ReportView: View {
                     .controlSize(.regular)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(RDLocalization.string("reports.report.view.rapor.verileri.hazirlaniyor.c052fd0a", table: .reports, fallback: "Rapor verileri hazırlanıyor"))
-                        .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(RDLocalization.string("reports.report.view.son.tamamlanan.analizler.getiriliyor.8dd7d1d4", table: .reports, fallback: "Son tamamlanan analizler getiriliyor."))
-                        .font(.system(size: RDFontScale.size(13), design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(13), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                 }
                 Spacer()
@@ -705,7 +723,7 @@ struct ReportView: View {
         RDCard {
             VStack(alignment: .leading, spacing: 12) {
                 Image(systemName: "doc.text.magnifyingglass")
-                    .font(.system(size: RDFontScale.size(28), weight: .semibold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(28), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdGreen)
                     .frame(width: 52, height: 52)
                     .background(Color.rdGreenSoft)
@@ -713,10 +731,10 @@ struct ReportView: View {
 
                 VStack(alignment: .leading, spacing: 5) {
                     Text(RDLocalization.string("reports.report.view.henuz.raporlanacak.analiz.yok.ff3a933e", table: .reports, fallback: "Henüz raporlanacak analiz yok"))
-                        .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(RDLocalization.string("reports.report.view.fotograf.analizi.tamamlandiginda.rapor.onizlemes.960da4ed", table: .reports, fallback: "Fotoğraf analizi tamamlandığında rapor önizlemesi burada gerçek bulgularla oluşacak."))
-                        .font(.system(size: RDFontScale.size(13), design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(13), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -1229,7 +1247,8 @@ struct ReportView: View {
                 let url = try await AnalysisService.shared.reportFileURL(
                     for: report,
                     requestID: requestID,
-                    supportID: supportID
+                    supportID: supportID,
+                    source: .reportsArchive
                 )
                 shareItem = ShareItem(url: url)
             } catch {
@@ -1338,7 +1357,8 @@ struct ReportView: View {
                 let url = try await AnalysisService.shared.reportFileURL(
                     for: report,
                     requestID: requestID,
-                    supportID: supportID
+                    supportID: supportID,
+                    source: .reportsArchive
                 )
                 shareItem = ShareItem(url: url)
             } catch {
@@ -1528,7 +1548,7 @@ private struct ReportPreview: View {
 
             if let summary = analysis.aiSummary, !summary.isEmpty {
                 Text(summary)
-                    .font(.system(size: RDFontScale.size(12), design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(12), design: .rounded))
                     .foregroundStyle(Color.rdCharcoal)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(10)
@@ -1576,11 +1596,11 @@ private struct ReportPreview: View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 5) {
                 Text(RDLocalization.string("reports.report.view.is.guvenligi.risk.analizi.18db139d", table: .reports, fallback: "İş Güvenliği Risk Analizi"))
-                    .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                     .tracking(-0.3)
                     .foregroundStyle(Color.rdBlack)
                 Text("\(analysis.title) · \(canvasLabel)")
-                    .font(.system(size: RDFontScale.size(12), design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(12), design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(methodSummary)
@@ -1627,14 +1647,14 @@ private struct ReportPreview: View {
     private var noFindingsBlock: some View {
         HStack(spacing: 10) {
             Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: RDFontScale.size(20), weight: .semibold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(20), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdLow)
             VStack(alignment: .leading, spacing: 3) {
                 Text(RDLocalization.string("reports.report.view.tehlike.tespit.edilmedi.69a999af", table: .reports, fallback: "Tehlike tespit edilmedi"))
-                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Text(RDLocalization.string("reports.report.view.bu.analiz.icin.ai.bulgu.kaydi.donmedi.8e37f5b1", table: .reports, fallback: "Bu analiz için AI bulgu kaydı dönmedi."))
-                    .font(.system(size: RDFontScale.size(12), design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(12), design: .rounded))
                     .foregroundStyle(Color.rdSlate)
             }
         }
@@ -1662,7 +1682,7 @@ private struct ReportPreview: View {
                 .rdMono(size: 16, weight: .bold)
                 .foregroundStyle(level.textColor)
             Text(level.shortLabel)
-                .font(.system(size: RDFontScale.size(9), weight: .semibold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(9), weight: .semibold, design: .rounded))
                 .foregroundStyle(level.textColor)
         }
         .padding(8)
@@ -1678,7 +1698,7 @@ private struct ReportPreview: View {
             Text(RDLocalization.string("reports.report.view.fk.a594f58b", table: .reports, fallback: "FK")).frame(width: 48, alignment: .leading)
             Text(RDLocalization.string("reports.report.view.5.5.fcdf178d", table: .reports, fallback: "5×5")).frame(width: 44, alignment: .leading)
         }
-        .font(.system(size: RDFontScale.size(9), weight: .bold, design: .rounded))
+        .font(RDTypography.font(size: RDFontScale.size(9), weight: .bold, design: .rounded))
         .tracking(0.7)
         .foregroundStyle(Color.rdSlate)
         .padding(.vertical, 6)
@@ -1694,11 +1714,11 @@ private struct ReportPreview: View {
                 .frame(width: 20, alignment: .leading)
             VStack(alignment: .leading, spacing: 2) {
                 Text(finding.displayTitle)
-                    .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .lineLimit(2)
                 Text(finding.category)
-                    .font(.system(size: RDFontScale.size(9), design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(9), design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(1)
             }
@@ -1849,7 +1869,7 @@ private struct ReportSourceSheet: View {
                 dismiss()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .frame(width: 40, height: 40)
                     .background(Color.rdWhite.opacity(0.96))
@@ -1897,7 +1917,7 @@ private struct ReportAnalysisRow: View {
         Button(action: action) {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "camera.viewfinder")
-                    .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                     .foregroundStyle(level.textColor)
                     .frame(width: 44, height: 44)
                     .background(level.bgColor)
@@ -1906,13 +1926,13 @@ private struct ReportAnalysisRow: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .top, spacing: 8) {
                         Text(row.title)
-                            .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
+                            .font(RDTypography.font(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
                             .lineLimit(2)
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         Text(level.label)
-                            .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                            .font(RDTypography.font(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                             .foregroundStyle(level.textColor)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
@@ -1936,7 +1956,7 @@ private struct ReportAnalysisRow: View {
                         )
                             .rdMono(size: 12, weight: .semibold)
                     }
-                    .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(1)
                 }
@@ -1947,7 +1967,7 @@ private struct ReportAnalysisRow: View {
                         .controlSize(.small)
                 } else {
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "chevron.right")
-                        .font(.system(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
                         .foregroundStyle(isSelected ? Color.rdGreen : Color.rdSlate)
                 }
             }
@@ -1996,7 +2016,7 @@ private struct ReportEmptyInlineCard: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
                 .frame(width: 42, height: 42)
                 .background(Color.rdFog)
@@ -2004,10 +2024,10 @@ private struct ReportEmptyInlineCard: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Text(subtitle)
-                    .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -2058,11 +2078,11 @@ private struct ReportArchiveFilterChip: View {
             HStack(spacing: 6) {
                 if isSelected {
                     Image(systemName: "checkmark")
-                        .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                 }
 
                 Text(title)
-                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded))
 
                 Text("\(count)")
                     .rdMono(size: 10, weight: .bold)
@@ -2095,7 +2115,7 @@ private struct ReportArchiveStateCard: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                 .foregroundStyle(tint)
                 .frame(width: 42, height: 42)
                 .background(tint.opacity(0.12))
@@ -2104,10 +2124,10 @@ private struct ReportArchiveStateCard: View {
             VStack(alignment: .leading, spacing: 8) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(subtitle)
-                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -2116,9 +2136,9 @@ private struct ReportArchiveStateCard: View {
                     Button(action: action) {
                         HStack(spacing: 6) {
                             Image(systemName: actionTitle.localizedCaseInsensitiveContains("tekrar") ? "arrow.clockwise" : "xmark.circle")
-                                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                                .font(RDTypography.font(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                             Text(actionTitle)
-                                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                                .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                         }
                         .foregroundStyle(Color.rdBlack)
                         .padding(.horizontal, 10)
@@ -2163,7 +2183,7 @@ private struct ReportArchiveLoadMoreButton: View {
                         .frame(width: 28, height: 28)
                 } else {
                     Image(systemName: hasRemoteMore ? "arrow.down.circle.fill" : "plus")
-                        .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                         .frame(width: 28, height: 28)
                         .foregroundStyle(Color.rdGreen)
                         .background(Color.rdGreenSoft)
@@ -2172,7 +2192,7 @@ private struct ReportArchiveLoadMoreButton: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(isLoading ? RDLocalization.string("reports.report.view.yukleniyor.a5d75bb0", table: .reports, fallback: "Yükleniyor") : hasRemoteMore ? RDLocalization.string("reports.report.view.arsivden.devamini.yukle.c2bc6c86", table: .reports, fallback: "Arşivden devamını yükle") : RDLocalization.string("reports.report.view.daha.fazla.yukle.d1217a26", table: .reports, fallback: "Daha fazla yükle"))
-                        .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(hasRemoteMore ? RDLocalization.format("reports.report.view.1.eslesen.rapor.gosteriliyor.5d23a465", table: .reports, fallback: "%1$@ eşleşen rapor gösteriliyor", arguments: [String(describing: visibleCount)]) : RDLocalization.format("reports.report.view.1.2.gosteriliyor.dd210f2b", table: .reports, fallback: "%1$@/%2$@ gösteriliyor", arguments: [String(describing: visibleCount), String(describing: totalCount)]))
                         .rdMono(size: 10, weight: .semibold)
@@ -2230,7 +2250,7 @@ private struct StoredReportRow: View {
                 RoundedRectangle(cornerRadius: 11)
                     .fill(isExcel ? Color(hex: "#EAF1FF") : isRiskAnalysis ? Color.rdGreenSoft : Color.rdFog)
                 Image(systemName: iconName)
-                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .foregroundStyle(isExcel ? Color(hex: "#2563EB") : isRiskAnalysis ? Color.rdGreen : Color.rdCharcoal)
             }
             .frame(width: 36, height: 36)
@@ -2238,14 +2258,14 @@ private struct StoredReportRow: View {
             VStack(alignment: .leading, spacing: 5) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(reportTitle)
-                        .font(.system(size: RDFontScale.size(13.5), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(13.5), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                         .lineLimit(1)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     if let titleDateText {
                         Text(titleDateText)
-                            .font(.system(size: RDFontScale.size(10.5), weight: .medium, design: .rounded))
+                            .font(RDTypography.font(size: RDFontScale.size(10.5), weight: .medium, design: .rounded))
                             .foregroundStyle(Color.rdSlate)
                             .lineLimit(1)
                             .layoutPriority(-1)
@@ -2254,7 +2274,7 @@ private struct StoredReportRow: View {
 
                 HStack(spacing: 5) {
                     Text(kindLabel)
-                        .font(.system(size: RDFontScale.size(9.8), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(9.8), weight: .bold, design: .rounded))
                         .foregroundStyle(kindStyle.text)
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)
@@ -2272,7 +2292,7 @@ private struct StoredReportRow: View {
                         .fixedSize(horizontal: true, vertical: false)
 
                     Text(statusLabel)
-                        .font(.system(size: RDFontScale.size(9.5), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(9.5), weight: .bold, design: .rounded))
                         .foregroundStyle(statusStyle.text)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
@@ -2282,7 +2302,7 @@ private struct StoredReportRow: View {
 
                     if let companyLabel {
                         Text(companyLabel)
-                            .font(.system(size: RDFontScale.size(9.5), weight: .bold, design: .rounded))
+                            .font(RDTypography.font(size: RDFontScale.size(9.5), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdGreenDark)
                             .lineLimit(1)
                             .padding(.horizontal, 6)
@@ -2293,7 +2313,7 @@ private struct StoredReportRow: View {
                 }
 
                 Text(dateText)
-                    .font(.system(size: RDFontScale.size(10.5), weight: .medium, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(10.5), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(1)
             }
@@ -2304,7 +2324,7 @@ private struct StoredReportRow: View {
                     .controlSize(.small)
             } else {
                 Image(systemName: "arrow.down.to.line")
-                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .frame(width: 32, height: 32)
                     .background(Color.rdFog)

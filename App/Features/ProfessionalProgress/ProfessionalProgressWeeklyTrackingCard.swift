@@ -24,7 +24,7 @@ struct ProfessionalProgressWeeklyTrackingCard: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(tracking.body)
-                    .font(.system(size: isCompact ? 15 : 16, weight: .semibold, design: .rounded))
+                    .font(RDTypography.font(size: isCompact ? 15 : 16, weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .lineLimit(isCompact ? 2 : 3)
                     .fixedSize(horizontal: false, vertical: true)
@@ -69,7 +69,7 @@ struct ProfessionalProgressWeeklyTrackingCard: View {
 
             if tracking.hasActivity {
                 Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: isCompact ? 17 : 19, weight: .black, design: .rounded))
+                    .font(RDTypography.font(size: isCompact ? 17 : 19, weight: .black, design: .rounded))
                     .foregroundStyle(iconColor)
             } else {
                 ZStack {
@@ -85,12 +85,12 @@ struct ProfessionalProgressWeeklyTrackingCard: View {
                         .shadow(color: Color.rdInfo.opacity(0.24), radius: 5, x: 0, y: 2)
 
                     Image(systemName: "play.fill")
-                        .font(.system(size: isCompact ? 9 : 10, weight: .black, design: .rounded))
+                        .font(RDTypography.font(size: isCompact ? 9 : 10, weight: .black, design: .rounded))
                         .foregroundStyle(Color.white)
                         .offset(x: 1)
 
                     Image(systemName: "sparkle")
-                        .font(.system(size: isCompact ? 7 : 8, weight: .black, design: .rounded))
+                        .font(RDTypography.font(size: isCompact ? 7 : 8, weight: .black, design: .rounded))
                         .foregroundStyle(Color.rdInfo)
                         .frame(width: isCompact ? 14 : 16, height: isCompact ? 14 : 16)
                         .background(Color.rdWhite.opacity(0.94))

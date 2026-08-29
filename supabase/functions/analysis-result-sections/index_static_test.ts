@@ -23,9 +23,16 @@ Deno.test("free premium sections are redacted and exports are rejected", () => {
 });
 
 Deno.test("report intents validate selected server item identifiers", () => {
+  assertStringIncludes(source, ".map(canonicalUUID)");
   assertStringIncludes(source, "selected.some((key) => !byID.has(key))");
   assertStringIncludes(source, '"result_hub_create_report_intent"');
   assertStringIncludes(source, "p_selected_item_keys: selected");
+});
+
+Deno.test("feedback identifiers are canonicalized before lookup and persistence", () => {
+  assertStringIncludes(source, "function canonicalUUID");
+  assertStringIncludes(source, "canonicalUUID(rawTargetKey)");
+  assertStringIncludes(source, "p_target_key: targetKey");
 });
 
 Deno.test("result endpoint adds no model call", () => {

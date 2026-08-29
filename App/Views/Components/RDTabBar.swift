@@ -86,7 +86,7 @@ struct RDTabBar: View {
                 }
 
                 Image(systemName: tab.icon)
-                    .font(.system(size: RDFontScale.size(21), weight: isActive ? .semibold : .regular, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(21), weight: isActive ? .semibold : .regular, design: .rounded))
                     .symbolRenderingMode(.monochrome)
                     .foregroundStyle(isActive ? Color.rdBlack : inactiveIconColor)
                     .opacity(isActive ? 1 : 0.82)
@@ -110,7 +110,7 @@ struct RDTabBar: View {
                 Circle()
                     .stroke(quickScanStroke, lineWidth: 1)
                 Image(systemName: "viewfinder")
-                    .font(.system(size: RDFontScale.size(23), weight: .semibold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(23), weight: .semibold, design: .rounded))
                     .symbolRenderingMode(.monochrome)
                     .foregroundStyle(Color.rdGreen)
             }

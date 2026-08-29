@@ -7,9 +7,9 @@ struct RDTierBadge: View {
     var body: some View {
         HStack(spacing: 3) {
             Image(systemName: tier.badgeIcon)
-                .font(.system(size: small ? 9 : 11, weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: small ? 9 : 11, weight: .bold, design: .rounded))
             Text(tier.badgeLabel)
-                .font(.system(size: small ? 9 : 10, weight: .heavy, design: .rounded))
+                .font(RDTypography.font(size: small ? 9 : 10, weight: .heavy, design: .rounded))
                 .tracking(0.6)
         }
         .padding(.horizontal, small ? 6 : 8)

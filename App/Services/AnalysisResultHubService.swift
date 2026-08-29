@@ -27,7 +27,7 @@ final class AnalysisResultHubService {
             "analysis-result-sections",
             options: FunctionInvokeOptions(body: BaseBody(
                 action: "load",
-                analysis_id: analysisID.uuidString,
+                analysis_id: analysisID.uuidString.lowercased(),
                 language: language.rawValue,
                 client_capabilities: AppClientMetadata.capabilities,
                 client_platform: AppClientMetadata.platform,
@@ -43,8 +43,16 @@ final class AnalysisResultHubService {
         section: AnalysisResultSectionID,
         item: AnalysisResultHubItem,
         reaction: AnalysisItemReaction,
-        reason: String? = nil
+        reason: String? = nil,
+        note: String? = nil
     ) async throws {
+        #if DEBUG
+        if CommandLine.arguments.contains("RD_UI_TEST_RESULT_HUB") ||
+            ProcessInfo.processInfo.environment["RD_UI_TEST_RESULT_HUB"] == "1" {
+            return
+        }
+        #endif
+
         struct Body: Encodable {
             let action = "feedback"
             let analysis_id: String
@@ -58,20 +66,22 @@ final class AnalysisResultHubService {
             let section: String
             let rating: Int
             let reason_code: String?
+            let note: String?
         }
         let isNotebook = section == .approvedNotebook
         let body = Body(
-            analysis_id: analysisID.uuidString,
+            analysis_id: analysisID.uuidString.lowercased(),
             language: language.rawValue,
             client_capabilities: AppClientMetadata.capabilities,
             client_platform: AppClientMetadata.platform,
             client_app_version: AppClientMetadata.appVersion,
             client_app_build: AppClientMetadata.appBuild,
             target_kind: isNotebook ? "notebook_entry" : "finding",
-            target_key: item.id.uuidString,
+            target_key: item.id.uuidString.lowercased(),
             section: section.rawValue,
             rating: reaction == .like ? 1 : reaction == .dislike ? -1 : 0,
-            reason_code: reason
+            reason_code: reason,
+            note: note
         )
         let _: EmptyResponse = try await functions.invoke(
             "analysis-result-sections",
@@ -103,13 +113,13 @@ final class AnalysisResultHubService {
         let _: EmptyResponse = try await functions.invoke(
             "analysis-result-sections",
             options: FunctionInvokeOptions(body: Body(
-                analysis_id: analysisID.uuidString,
+                analysis_id: analysisID.uuidString.lowercased(),
                 language: language.rawValue,
                 client_capabilities: AppClientMetadata.capabilities,
                 client_platform: AppClientMetadata.platform,
                 client_app_version: AppClientMetadata.appVersion,
                 client_app_build: AppClientMetadata.appBuild,
-                entry_id: entryID.uuidString,
+                entry_id: entryID.uuidString.lowercased(),
                 mutation: mutation,
                 finding_text: findingText,
                 recommendation_text: recommendationText
@@ -142,7 +152,7 @@ final class AnalysisResultHubService {
         let response: Response = try await functions.invoke(
             "analysis-result-sections",
             options: FunctionInvokeOptions(body: Body(
-                analysis_id: analysisID.uuidString,
+                analysis_id: analysisID.uuidString.lowercased(),
                 language: language.rawValue,
                 client_capabilities: AppClientMetadata.capabilities,
                 client_platform: AppClientMetadata.platform,
@@ -150,8 +160,8 @@ final class AnalysisResultHubService {
                 client_app_build: AppClientMetadata.appBuild,
                 section: section.rawValue,
                 format: format,
-                selected_item_keys: selectedIDs.map(\.uuidString),
-                request_id: requestID.uuidString
+                selected_item_keys: selectedIDs.map { $0.uuidString.lowercased() },
+                request_id: requestID.uuidString.lowercased()
             ))
         )
         return response.report_intent
@@ -180,17 +190,17 @@ final class AnalysisResultHubService {
             let target_key: String?
         }
         let body = Body(
-            analysis_id: analysisID.uuidString,
+            analysis_id: analysisID.uuidString.lowercased(),
             language: language.rawValue,
             client_capabilities: AppClientMetadata.capabilities,
             client_platform: AppClientMetadata.platform,
             client_app_version: AppClientMetadata.appVersion,
             client_app_build: AppClientMetadata.appBuild,
-            client_event_id: UUID().uuidString,
-            funnel_session_id: funnelSessionID.uuidString,
+            client_event_id: UUID().uuidString.lowercased(),
+            funnel_session_id: funnelSessionID.uuidString.lowercased(),
             event_name: name,
             section: section?.rawValue,
-            target_key: itemID?.uuidString
+            target_key: itemID?.uuidString.lowercased()
         )
         let _: EmptyResponse? = try? await functions.invoke(
             "analysis-result-sections",
@@ -206,6 +216,19 @@ final class AnalysisResultHubService {
             ProcessInfo.processInfo.environment["RD_UI_TEST_FREE_TIER"] == "1"
         let premiumAccess = isFree ? "teaser" : "full"
         let premiumCanEdit = isFree ? "false" : "true"
+        let isSingleFinding = CommandLine.arguments.contains("RD_UI_TEST_SINGLE_FINDING") ||
+            ProcessInfo.processInfo.environment["RD_UI_TEST_SINGLE_FINDING"] == "1"
+        let firstRiskItem = """
+        {"id":"10000000-0000-4000-8000-000000000001","analysis_id":"\(analysisID.uuidString)","ordinal":1,"title":"Açık Kenarda Düşme Tehlikesi","category":"Yüksekte Çalışma","description":"Çalışma platformunun erişilebilir açık kenarında düşmeyi önleyen yeterli korkuluk sistemi görülmemektedir.","recommended_action":"1. Üst ve ara korkuluk ile topuk levhasından oluşan uygun kenar koruması kurulmalıdır.","root_cause_text":"Kenar koruma sisteminin çalışma başlamadan önce tamamlanmaması.","needs_field_verification":true,"fk_probability":6,"fk_frequency":6,"fk_severity":40,"fk_score":1440,"fk_band":"critical","m5_probability":5,"m5_severity":5,"m5_score":25,"m5_band":"critical","source_photo_indices":[1,2],"item_class":"observed_finding","is_scored":true,"display_order":0}
+        """
+        let remainingRiskItems = """
+        {"id":"10000000-0000-4000-8000-000000000002","analysis_id":"\(analysisID.uuidString)","ordinal":2,"title":"Geçiş Yolunda Malzeme Birikimi","category":"Düzen ve Temizlik","description":"Yaya geçiş güzergâhında takılmaya neden olabilecek dağınık malzeme bulunmaktadır.","recommended_action":"Geçiş yolu temizlenmeli ve malzeme için belirlenmiş depolama alanı kullanılmalıdır.","fk_probability":3,"fk_frequency":6,"fk_severity":7,"fk_score":126,"fk_band":"medium","m5_probability":3,"m5_severity":3,"m5_score":9,"m5_band":"medium","source_photo_indices":[2],"item_class":"observed_finding","is_scored":true,"display_order":1},
+        {"id":"10000000-0000-4000-8000-000000000003","analysis_id":"\(analysisID.uuidString)","ordinal":3,"title":"Düşen Cisim Maruziyeti","category":"Yüksekte Çalışma","description":"Alt çalışma bölgesine malzeme düşmesini engelleyecek fiziksel ayırma görünür değildir.","recommended_action":"Düşen cisim bölgesi fiziksel olarak ayrılmalı ve malzemeler sabitlenmelidir.","fk_probability":3,"fk_frequency":3,"fk_severity":40,"fk_score":360,"fk_band":"high","m5_probability":4,"m5_severity":5,"m5_score":20,"m5_band":"critical","source_photo_indices":[3],"item_class":"observed_finding","is_scored":true,"display_order":2}
+        """
+        let riskItems = isSingleFinding
+            ? firstRiskItem
+            : "\(firstRiskItem),\n\(remainingRiskItems)"
+        let riskCount = isSingleFinding ? 1 : 3
         let json = """
         {
           "enabled": true,
@@ -221,11 +244,9 @@ final class AnalysisResultHubService {
           },
           "sections": [
             {
-              "id": "risk_analysis", "access": "full", "count": 3, "can_edit": true, "can_report": true,
+              "id": "risk_analysis", "access": "full", "count": \(riskCount), "can_edit": true, "can_report": true,
               "items": [
-                {"id":"10000000-0000-4000-8000-000000000001","analysis_id":"\(analysisID.uuidString)","ordinal":1,"title":"Açık Kenarda Düşme Tehlikesi","category":"Yüksekte Çalışma","description":"Çalışma platformunun erişilebilir açık kenarında düşmeyi önleyen yeterli korkuluk sistemi görülmemektedir.","recommended_action":"1. Üst ve ara korkuluk ile topuk levhasından oluşan uygun kenar koruması kurulmalıdır.","root_cause_text":"Kenar koruma sisteminin çalışma başlamadan önce tamamlanmaması.","needs_field_verification":true,"fk_probability":6,"fk_frequency":6,"fk_severity":40,"fk_score":1440,"fk_band":"critical","m5_probability":5,"m5_severity":5,"m5_score":25,"m5_band":"critical","source_photo_indices":[1,2],"item_class":"observed_finding","is_scored":true,"display_order":0},
-                {"id":"10000000-0000-4000-8000-000000000002","analysis_id":"\(analysisID.uuidString)","ordinal":2,"title":"Geçiş Yolunda Malzeme Birikimi","category":"Düzen ve Temizlik","description":"Yaya geçiş güzergâhında takılmaya neden olabilecek dağınık malzeme bulunmaktadır.","recommended_action":"Geçiş yolu temizlenmeli ve malzeme için belirlenmiş depolama alanı kullanılmalıdır.","fk_probability":3,"fk_frequency":6,"fk_severity":7,"fk_score":126,"fk_band":"medium","m5_probability":3,"m5_severity":3,"m5_score":9,"m5_band":"medium","source_photo_indices":[2],"item_class":"observed_finding","is_scored":true,"display_order":1},
-                {"id":"10000000-0000-4000-8000-000000000003","analysis_id":"\(analysisID.uuidString)","ordinal":3,"title":"Düşen Cisim Maruziyeti","category":"Yüksekte Çalışma","description":"Alt çalışma bölgesine malzeme düşmesini engelleyecek fiziksel ayırma görünür değildir.","recommended_action":"Düşen cisim bölgesi fiziksel olarak ayrılmalı ve malzemeler sabitlenmelidir.","fk_probability":3,"fk_frequency":3,"fk_severity":40,"fk_score":360,"fk_band":"high","m5_probability":4,"m5_severity":5,"m5_score":20,"m5_band":"critical","source_photo_indices":[3],"item_class":"observed_finding","is_scored":true,"display_order":2}
+                \(riskItems)
               ]
             },
             {

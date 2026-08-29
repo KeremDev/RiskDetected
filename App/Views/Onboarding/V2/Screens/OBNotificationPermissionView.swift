@@ -44,7 +44,7 @@ struct OBNotificationPermissionView: View {
 
     private var headline: some View {
         Text(RDLocalization.string("onboarding.obnotification.permission.view.ucretsiz.denemeniz.bitmeden.once.size.hatirlatac.21ab39bb", table: .onboarding, fallback: "Deneme süren bitmeden sana haber verelim"))
-            .font(.system(size: RDFontScale.size(28), weight: .bold))
+            .font(RDTypography.font(size: RDFontScale.size(28), weight: .bold))
             .lineSpacing(2)
             .foregroundStyle(Color.rdOnyx)
             .multilineTextAlignment(.center)
@@ -53,7 +53,7 @@ struct OBNotificationPermissionView: View {
 
     private var subcopy: some View {
         Text(RDLocalization.string("onboarding.obnotification.permission.view.deneme.suresi.ve.uygulama.hatirlatmalari.icin.bi.8fffda58", table: .onboarding, fallback: "Plan, teklif ve uygulama hatırlatmaları için bildirimleri aç."))
-            .font(.system(size: RDFontScale.size(16)))
+            .font(RDTypography.font(size: RDFontScale.size(16)))
             .lineSpacing(3)
             .foregroundStyle(Color.rdSlate)
             .multilineTextAlignment(.center)
@@ -68,13 +68,13 @@ struct OBNotificationPermissionView: View {
                     Circle()
                         .fill(Color.rdGreenSoft)
                     Image(systemName: "checkmark")
-                        .font(.system(size: RDFontScale.size(11), weight: .bold))
+                        .font(RDTypography.font(size: RDFontScale.size(11), weight: .bold))
                         .foregroundStyle(Color.rdGreenDark)
                 }
                 .frame(width: 20, height: 20)
 
                 Text(RDLocalization.string("onboarding.obnotification.permission.view.simdi.odeme.alinmayacak.39364ad1", table: .onboarding, fallback: "Bu adımda satın alma yapılmaz"))
-                    .font(.system(size: RDFontScale.size(15), weight: .semibold))
+                    .font(RDTypography.font(size: RDFontScale.size(15), weight: .semibold))
                     .foregroundStyle(Color.rdGraphite)
             }
 
@@ -82,7 +82,7 @@ struct OBNotificationPermissionView: View {
                 Task { await continueAfterPermissionRequest() }
             } label: {
                 Text(RDLocalization.string("onboarding.obnotification.permission.view.ucretsiz.devam.et.c00788c5", table: .onboarding, fallback: "Bildirimleri Aç"))
-                    .font(.system(size: RDFontScale.size(18), weight: .bold))
+                    .font(RDTypography.font(size: RDFontScale.size(18), weight: .bold))
                     .foregroundStyle(Color.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 60)

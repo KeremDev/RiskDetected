@@ -21,13 +21,13 @@ struct OBHazardClassView: View {
                         OBHeroTile { OBHeroHazard() }
                             .obStage(delay: 0.08)
                         Text(RDLocalization.string("onboarding.obhazard.class.view.hangi.tehlike.sinifinda.calisiyorsun.79f6293b", table: .onboarding, fallback: "Hangi tehlike sınıfında çalışıyorsun?"))
-                            .font(.system(size: RDFontScale.size(28), weight: .semibold))
+                            .font(RDTypography.font(size: RDFontScale.size(28), weight: .semibold))
                             .tracking(-0.8)
                             .foregroundStyle(Color.rdOnyx)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.14)
                         Text(RDLocalization.string("onboarding.obhazard.class.view.birden.fazla.secebilirsin.9a89b3cb", table: .onboarding, fallback: "Birden fazla seçebilirsin."))
-                            .font(.system(size: RDFontScale.size(15)))
+                            .font(RDTypography.font(size: RDFontScale.size(15)))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.22)
@@ -79,7 +79,7 @@ struct OBHazardClassView: View {
         ZStack {
             RoundedRectangle(cornerRadius: 12).fill(cls.bgColor)
             Image(systemName: icon)
-                .font(.system(size: RDFontScale.size(20)))
+                .font(RDTypography.font(size: RDFontScale.size(20)))
                 .foregroundStyle(cls.color)
         }
         .frame(width: 44, height: 44)

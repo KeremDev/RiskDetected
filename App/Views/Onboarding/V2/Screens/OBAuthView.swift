@@ -87,7 +87,7 @@ struct OBAuthView: View {
             HStack {
                 Button { OBHaptic.soft(); onBack() } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: RDFontScale.size(17), weight: .semibold))
+                        .font(RDTypography.font(size: RDFontScale.size(17), weight: .semibold))
                         .foregroundStyle(Color.rdOnyx)
                         .frame(width: 40, height: 40)
                 }
@@ -105,7 +105,7 @@ struct OBAuthView: View {
                         .obStage(delay: 0.04)
 
                     Text(RDLocalization.string("auth.obauth.view.son.adim.7bc70890", table: .auth, fallback: "Son adım."))
-                        .font(.system(size: RDFontScale.size(28), weight: .semibold))
+                        .font(RDTypography.font(size: RDFontScale.size(28), weight: .semibold))
                         .tracking(-0.8)
                         .foregroundStyle(Color.rdOnyx)
                         .multilineTextAlignment(.center)
@@ -113,7 +113,7 @@ struct OBAuthView: View {
                         .obStage(delay: 0.08)
 
                     Text(RDLocalization.string("auth.obauth.view.hazirladigin.plani.kaydedebilmen.icin.hesabini.o.aab9969d", table: .auth, fallback: "Hazırladığın planı kaydedebilmen için hesabını oluşturalım."))
-                        .font(.system(size: RDFontScale.size(15)))
+                        .font(RDTypography.font(size: RDFontScale.size(15)))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
@@ -133,10 +133,10 @@ struct OBAuthView: View {
 
                     HStack(spacing: 8) {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: RDFontScale.size(11), weight: .semibold))
+                            .font(RDTypography.font(size: RDFontScale.size(11), weight: .semibold))
                             .foregroundStyle(Color.rdGreenDark)
                         Text(RDLocalization.string("auth.obauth.view.planin.hesabina.kilitlensin.diye.10.saniyeni.ala.dd40087d", table: .auth, fallback: "Planın hesabına kilitlensin diye 10 saniyeni alacağız"))
-                            .font(.system(size: RDFontScale.size(12), weight: .medium))
+                            .font(RDTypography.font(size: RDFontScale.size(12), weight: .medium))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.leading)
                             .lineSpacing(2)
@@ -155,7 +155,7 @@ struct OBAuthView: View {
                     VStack(spacing: 10) {
                         authButton(
                             title: isSigningInWithApple ? RDLocalization.string("auth.obauth.view.apple.ile.baglaniyor.2a373fb3", table: .auth, fallback: "Apple ile bağlanıyor...") : RDLocalization.string("auth.obauth.view.apple.ile.devam.et.891fa08e", table: .auth, fallback: "Apple ile devam et"),
-                            icon: { Image(systemName: isSigningInWithApple ? "hourglass" : "apple.logo").font(.system(size: RDFontScale.size(18), weight: .medium)) },
+                            icon: { Image(systemName: isSigningInWithApple ? "hourglass" : "apple.logo").font(RDTypography.font(size: RDFontScale.size(18), weight: .medium)) },
                             bg: .black, fg: .white, bordered: false
                         ) {
                             OBHaptic.light()
@@ -175,10 +175,10 @@ struct OBAuthView: View {
                             HStack(spacing: 10) {
                                 if isSigningInWithGoogle {
                                     Image(systemName: "hourglass")
-                                        .font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
+                                        .font(RDTypography.font(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                                         .foregroundStyle(Color.rdOnyx)
                                     Text(RDLocalization.string("auth.obauth.view.google.ile.baglaniyor.365debda", table: .auth, fallback: "Google ile bağlanıyor..."))
-                                        .font(.system(size: RDFontScale.size(16), weight: .semibold))
+                                        .font(RDTypography.font(size: RDFontScale.size(16), weight: .semibold))
                                         .foregroundStyle(Color.rdOnyx)
                                 } else {
                                     googleG
@@ -204,8 +204,8 @@ struct OBAuthView: View {
                                 withAnimation(.obSpring) { emailPhase = .email }
                             } label: {
                                 HStack(spacing: 10) {
-                                    Image(systemName: "envelope").font(.system(size: RDFontScale.size(16)))
-                                    Text(RDLocalization.string("auth.obauth.view.e.posta.ile.devam.et.55c15dd1", table: .auth, fallback: "E-posta ile devam et")).font(.system(size: RDFontScale.size(16), weight: .semibold))
+                                    Image(systemName: "envelope").font(RDTypography.font(size: RDFontScale.size(16)))
+                                    Text(RDLocalization.string("auth.obauth.view.e.posta.ile.devam.et.55c15dd1", table: .auth, fallback: "E-posta ile devam et")).font(RDTypography.font(size: RDFontScale.size(16), weight: .semibold))
                                 }
                                 .foregroundStyle(Color.rdOnyx)
                                 .frame(maxWidth: .infinity).frame(height: 56)
@@ -244,13 +244,13 @@ struct OBAuthView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "person.crop.circle")
-                                .font(.system(size: RDFontScale.size(13), weight: .medium))
+                                .font(RDTypography.font(size: RDFontScale.size(13), weight: .medium))
                                 .foregroundStyle(Color.rdSlate)
                             Text(RDLocalization.string("auth.obauth.view.zaten.hesabim.var.36115df5", table: .auth, fallback: "Zaten hesabım var ·"))
-                                .font(.system(size: RDFontScale.size(13)))
+                                .font(RDTypography.font(size: RDFontScale.size(13)))
                                 .foregroundColor(Color.rdSlate)
                             + Text(RDLocalization.string("auth.obauth.view.giris.yap.58e1b061", table: .auth, fallback: "Giriş Yap"))
-                                .font(.system(size: RDFontScale.size(13), weight: .semibold))
+                                .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold))
                                 .foregroundColor(Color.rdOnyx)
                         }
                         .padding(.horizontal, 16).padding(.vertical, 10)
@@ -287,7 +287,7 @@ struct OBAuthView: View {
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: emailPhase == .otp ? "number.square.fill" : "envelope.fill")
-                    .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreen)
                     .frame(width: 42, height: 42)
                     .background(Color.rdGreen.opacity(0.12))
@@ -295,10 +295,10 @@ struct OBAuthView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(emailPhase == .otp ? RDLocalization.string("auth.obauth.view.kod.dogrulama.acik.a3979975", table: .auth, fallback: "Kod doğrulama açık") : RDLocalization.string("auth.obauth.view.e.posta.ile.devam.6878ce15", table: .auth, fallback: "E-posta ile devam"))
-                        .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdOnyx)
                     Text(emailPhase == .otp ? normalizedEmail : RDLocalization.string("auth.obauth.view.e.posta.adresini.gir.b2e37c77", table: .auth, fallback: "E-posta adresini gir"))
-                        .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(1)
                         .truncationMode(.middle)
@@ -307,7 +307,7 @@ struct OBAuthView: View {
                 Spacer()
 
                 Image(systemName: "chevron.down")
-                    .font(.system(size: RDFontScale.size(12), weight: .bold))
+                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold))
                     .foregroundStyle(Color.rdSlate)
             }
             .padding(.horizontal, 12)
@@ -334,7 +334,7 @@ struct OBAuthView: View {
                         Text(isSendingEmailCode ? RDLocalization.string("auth.obauth.view.kod.gonderiliyor.a71cc123", table: .auth, fallback: "Kod gönderiliyor...") : RDLocalization.string("auth.obauth.view.kod.gonder.57ce42d7", table: .auth, fallback: "Kod gönder"))
                         Image(systemName: isSendingEmailCode ? "hourglass" : "arrow.right")
                     }
-                    .font(.system(size: RDFontScale.size(15), weight: .semibold))
+                    .font(RDTypography.font(size: RDFontScale.size(15), weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
@@ -354,7 +354,7 @@ struct OBAuthView: View {
                         Text(isVerifyingEmailCode ? RDLocalization.string("auth.obauth.view.dogrulaniyor.d63b1354", table: .auth, fallback: "Doğrulanıyor...") : RDLocalization.string("auth.obauth.view.dogrula.ve.devam.et.cf4af808", table: .auth, fallback: "Doğrula ve devam et"))
                         Image(systemName: isVerifyingEmailCode ? "hourglass" : "arrow.right")
                     }
-                    .font(.system(size: RDFontScale.size(15), weight: .semibold))
+                    .font(RDTypography.font(size: RDFontScale.size(15), weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
@@ -379,13 +379,13 @@ struct OBAuthView: View {
                         focusEmailField()
                     }
                 }
-                .font(.system(size: RDFontScale.size(12), weight: .medium))
+                .font(RDTypography.font(size: RDFontScale.size(12), weight: .medium))
                 .foregroundStyle(Color.rdSlate)
             }
 
             if let authErrorMessage {
                 Text(authErrorMessage)
-                    .font(.system(size: RDFontScale.size(12), weight: .medium))
+                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .medium))
                     .foregroundStyle(Color.red.opacity(0.88))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -408,7 +408,7 @@ struct OBAuthView: View {
     private var panelHeader: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: emailPhase == .otp ? "number.square.fill" : "envelope.fill")
-                .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreen)
                 .frame(width: 36, height: 36)
                 .background(Color.rdGreen.opacity(0.12))
@@ -416,10 +416,10 @@ struct OBAuthView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(emailPhase == .otp ? RDLocalization.string("auth.obauth.view.dogrulama.kodu.2178a0be", table: .auth, fallback: "Doğrulama kodu") : RDLocalization.string("auth.obauth.view.e.posta.adresinizi.giriniz.da5d336b", table: .auth, fallback: "E-posta adresinizi giriniz"))
-                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdOnyx)
                 Text(emailPhase == .otp ? RDLocalization.format("auth.obauth.view.1.adresine.gonderildi.c6eb060c", table: .auth, fallback: "%1$@ adresine gönderildi", arguments: [String(describing: normalizedEmail)]) : RDLocalization.string("auth.obauth.view.kod.gondermek.icin.e.posta.adresini.yaz.6a8d2849", table: .auth, fallback: "Kod göndermek için e-posta adresini yaz."))
-                    .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(2)
                     .truncationMode(.middle)
@@ -439,7 +439,7 @@ struct OBAuthView: View {
                 }
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: RDFontScale.size(12), weight: .bold))
+                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold))
                     .foregroundStyle(Color.rdSlate)
                     .frame(width: 32, height: 32)
                     .background(Color.rdPaper)
@@ -452,7 +452,7 @@ struct OBAuthView: View {
     private var emailInputRow: some View {
         HStack(spacing: 8) {
             Image(systemName: "envelope.fill")
-                .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdOnyx.opacity(0.82))
                 .frame(width: 54, height: 54)
                 .background(Color.white)
@@ -717,7 +717,7 @@ struct OBAuthView: View {
 
             Text(code[index])
                 .multilineTextAlignment(.center)
-                .font(.system(size: RDFontScale.size(24), weight: .bold, design: .monospaced))
+                .font(RDTypography.font(size: RDFontScale.size(24), weight: .bold, design: .monospaced))
                 .foregroundStyle(Color.rdOnyx)
 
             if isActive && !hasValue {
@@ -735,7 +735,7 @@ struct OBAuthView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 10).fill(Color.rdGreen)
                 Image(systemName: "checkmark")
-                    .font(.system(size: RDFontScale.size(14), weight: .heavy))
+                    .font(RDTypography.font(size: RDFontScale.size(14), weight: .heavy))
                     .foregroundStyle(.white)
             }
             .frame(width: 36, height: 36)
@@ -743,9 +743,9 @@ struct OBAuthView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 4) {
                     Image(systemName: "sparkles")
-                        .font(.system(size: RDFontScale.size(9), weight: .bold))
+                        .font(RDTypography.font(size: RDFontScale.size(9), weight: .bold))
                     Text(RDLocalization.string("auth.obauth.view.sana.ozel.76ff23c3", table: .auth, fallback: "SANA ÖZEL"))
-                        .font(.system(size: RDFontScale.size(9), weight: .bold))
+                        .font(RDTypography.font(size: RDFontScale.size(9), weight: .bold))
                         .tracking(0.6)
                 }
                 .foregroundStyle(Color.rdGreenDark)
@@ -755,10 +755,10 @@ struct OBAuthView: View {
                 .clipShape(Capsule())
 
                 Text(RDLocalization.string("auth.obauth.view.planin.hazir.seni.bekliyor.150275ab", table: .auth, fallback: "Planın hazır, seni bekliyor"))
-                    .font(.system(size: RDFontScale.size(13), weight: .semibold))
+                    .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold))
                     .foregroundStyle(Color.rdOnyx)
                 Text(RDLocalization.format("auth.obauth.view.47.sablon.1.2.443461d9", table: .auth, fallback: "896 şablon · %1$@ · %2$@", arguments: [String(describing: state.primarySectorLabel), String(describing: state.certificateLabel)]))
-                    .font(.system(size: RDFontScale.size(12)))
+                    .font(RDTypography.font(size: RDFontScale.size(12)))
                     .foregroundStyle(Color.rdSlate)
             }
             Spacer()
@@ -791,7 +791,7 @@ struct OBAuthView: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 icon()
-                Text(title).font(.system(size: RDFontScale.size(16), weight: .semibold))
+                Text(title).font(RDTypography.font(size: RDFontScale.size(16), weight: .semibold))
             }
             .foregroundStyle(fg)
             .frame(maxWidth: .infinity).frame(height: 56)
@@ -809,12 +809,12 @@ struct OBAuthView: View {
     private func onboardingAuthError(_ message: String) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "exclamationmark.circle.fill")
-                .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdCritical)
                 .padding(.top, 1)
 
             Text(message)
-                .font(.system(size: RDFontScale.size(12), weight: .medium, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(12), weight: .medium, design: .rounded))
                 .foregroundStyle(Color.rdCriticalText)
                 .lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -845,7 +845,7 @@ struct OBAuthView: View {
             )
         )
         .foregroundStyle(Color.rdOnyx)
-        .font(.system(size: RDFontScale.size(16), weight: .semibold))
+        .font(RDTypography.font(size: RDFontScale.size(16), weight: .semibold))
     }
 }
 
@@ -1047,11 +1047,7 @@ private struct OBFirstResponderTextField: UIViewRepresentable {
 
 private extension UIFont {
     static func rdRounded(ofSize size: CGFloat, weight: UIFont.Weight) -> UIFont {
-        let base = UIFont.systemFont(ofSize: size, weight: weight)
-        guard let descriptor = base.fontDescriptor.withDesign(.rounded) else {
-            return base
-        }
-        return UIFont(descriptor: descriptor, size: size)
+        RDTypography.uiFont(size: size, weight: weight)
     }
 }
 

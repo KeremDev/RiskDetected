@@ -23,7 +23,7 @@ struct LegalAcceptanceNotice: View {
 
     var body: some View {
         Text(noticeText())
-            .font(.system(size: fontSize, weight: .medium, design: .rounded))
+            .font(RDTypography.font(size: fontSize, weight: .medium, design: .rounded))
             .multilineTextAlignment(.center)
             .lineSpacing(3)
             .fixedSize(horizontal: false, vertical: true)

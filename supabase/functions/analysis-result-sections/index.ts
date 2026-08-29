@@ -147,6 +147,10 @@ function isUUID(value: unknown): value is string {
       .test(value);
 }
 
+function canonicalUUID(value: string): string {
+  return value.toLowerCase();
+}
+
 function cleanString(value: unknown, maxLength = 200): string {
   return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 }
@@ -166,7 +170,8 @@ function reactionMap(rows: unknown): Map<string, Record<string, unknown>> {
   for (const raw of rows) {
     const row = safeObject(raw);
     const kind = cleanString(row.target_kind, 40);
-    const key = cleanString(row.target_key, 200);
+    const rawKey = cleanString(row.target_key, 200);
+    const key = isUUID(rawKey) ? canonicalUUID(rawKey) : rawKey;
     if (kind && key) map.set(`${kind}:${key}`, row);
   }
   return map;
@@ -177,7 +182,9 @@ function withReaction(
   kind: string,
   reactions: Map<string, Record<string, unknown>>,
 ): Record<string, unknown> {
-  const reaction = reactions.get(`${kind}:${String(item.id ?? "")}`);
+  const rawID = String(item.id ?? "");
+  const itemID = isUUID(rawID) ? canonicalUUID(rawID) : rawID;
+  const reaction = reactions.get(`${kind}:${itemID}`);
   return {
     ...item,
     user_reaction: reaction?.reaction ?? "none",
@@ -384,7 +391,10 @@ async function handleNotebookMutation(context: Context) {
 async function handleFeedback(context: Context) {
   const section = context.body.section;
   const targetKind = context.body.target_kind;
-  const targetKey = cleanString(context.body.target_key, 200);
+  const rawTargetKey = cleanString(context.body.target_key, 200);
+  const targetKey = isUUID(rawTargetKey)
+    ? canonicalUUID(rawTargetKey)
+    : rawTargetKey;
   const rating = Math.round(Number(context.body.rating ?? 0));
   if (!section || !targetKind || !targetKey || ![-1, 0, 1].includes(rating)) {
     return json(400, { error: "invalid_feedback" });
@@ -398,7 +408,10 @@ async function handleFeedback(context: Context) {
     : section === "expert_recommendations"
     ? sections.expertFull
     : sections.notebookFull;
-  const item = candidates.find((row) => String(row.id) === targetKey);
+  const item = candidates.find((row) => {
+    const rawID = String(row.id ?? "");
+    return (isUUID(rawID) ? canonicalUUID(rawID) : rawID) === targetKey;
+  });
   if (!item) return json(404, { error: "feedback_target_not_found" });
   const reason = cleanString(context.body.reason_code, 80);
   if (reason && !ALLOWED_FEEDBACK_REASONS.has(reason)) {
@@ -481,8 +494,11 @@ async function handleReportIntent(context: Context) {
   const section = context.body.section;
   const format = context.body.format;
   const selected = [
-    ...new Set((context.body.selected_item_keys ?? [])
-      .filter(isUUID)),
+    ...new Set(
+      (context.body.selected_item_keys ?? [])
+        .filter(isUUID)
+        .map(canonicalUUID),
+    ),
   ].slice(0, 100);
   if (!section || !format || selected.length === 0) {
     return json(400, { error: "invalid_report_selection" });
@@ -496,7 +512,10 @@ async function handleReportIntent(context: Context) {
     : section === "expert_recommendations"
     ? sections.expertFull
     : sections.notebookFull;
-  const byID = new Map(candidates.map((item) => [String(item.id), item]));
+  const byID = new Map(candidates.map((item) => {
+    const rawID = String(item.id ?? "");
+    return [isUUID(rawID) ? canonicalUUID(rawID) : rawID, item] as const;
+  }));
   if (selected.some((key) => !byID.has(key))) {
     return json(422, { error: "report_selection_out_of_scope" });
   }
@@ -626,8 +645,7 @@ serve(async (req) => {
   const tier = resolveResultHubTier(subscription);
   const flag = safeObject(flagRow?.value);
   const allowlisted = allowlistRow === true;
-  const capability =
-    body.client_capabilities?.analysis_result_hub_v1 === true;
+  const capability = body.client_capabilities?.analysis_result_hub_v1 === true;
   const enabled = resultHubGateOpen({
     flag,
     allowlisted,

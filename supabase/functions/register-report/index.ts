@@ -530,6 +530,35 @@ serve(async (req) => {
     });
   }
 
+  // A client may safely retry the same metadata request after a relay, 5xx or
+  // timeout response. If the first invocation committed before its response
+  // was lost, return that row instead of consuming quota and inserting a
+  // duplicate report.
+  const { data: existingRequestReports, error: existingRequestError } =
+    await supabase
+      .from("reports")
+      .select(
+        "id,user_id,analysis_id,company_id,company_snapshot,format,kind,method,title,storage_path,file_name,mime_type,file_size,client_platform,request_id,support_id,report_language,report_locale,safety_profile_id,safety_profile_version,regulatory_sections_enabled,content_scope,selection_count,export_intent_id,created_at",
+      )
+      .eq("user_id", user.id)
+      .eq("analysis_id", analysisID)
+      .eq("request_id", requestID)
+      .limit(1);
+  if (existingRequestError) {
+    return json(500, {
+      error: "report_idempotency_check_failed",
+      message: "Rapor tekrar deneme kontrolü tamamlanamadı.",
+      request_id: requestID,
+      support_id: supportID,
+    });
+  }
+  const existingRequestReport = Array.isArray(existingRequestReports)
+    ? existingRequestReports[0]
+    : null;
+  if (existingRequestReport) {
+    return json(200, existingRequestReport);
+  }
+
   let reportIntent: ReportIntent | null = null;
   if (body.export_intent_id != null) {
     if (!isUUID(body.export_intent_id)) {
@@ -546,7 +575,8 @@ serve(async (req) => {
     }
     reportIntent = intentData as ReportIntent;
     if (
-      reportIntent.analysis_id !== analysisID || reportIntent.format !== "pdf"
+      reportIntent.analysis_id.toLowerCase() !== analysisID.toLowerCase() ||
+      reportIntent.format !== "pdf"
     ) {
       await supabase.storage.from("reports").remove([storagePath]);
       return json(409, { error: "report_intent_mismatch" });

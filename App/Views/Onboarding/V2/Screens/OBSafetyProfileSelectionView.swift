@@ -13,7 +13,7 @@ struct OBSafetyProfileSelectionView: View {
                 VStack(spacing: 18) {
                     VStack(spacing: 12) {
                         Image(systemName: "globe.europe.africa.fill")
-                            .font(.system(size: 34, weight: .semibold))
+                            .font(RDTypography.font(size: 34, weight: .semibold))
                             .foregroundStyle(Color.rdGreenDark)
                             .frame(width: 76, height: 76)
                             .background(Color.rdGreenSoft)
@@ -26,7 +26,7 @@ struct OBSafetyProfileSelectionView: View {
                                 fallback: "İş güvenliği terminolojini seç"
                             )
                         )
-                            .font(.system(size: RDFontScale.size(28), weight: .semibold))
+                            .font(RDTypography.font(size: RDFontScale.size(28), weight: .semibold))
                             .tracking(-0.8)
                             .foregroundStyle(Color.rdOnyx)
                             .multilineTextAlignment(.center)
@@ -38,7 +38,7 @@ struct OBSafetyProfileSelectionView: View {
                                 fallback: "Çalışmanda kullanılan terminolojiyi seç. Bu seçim analiz ve rapor ifadelerini değiştirir; yasal uyumluluğu belgelemez."
                             )
                         )
-                            .font(.system(size: RDFontScale.size(15)))
+                            .font(RDTypography.font(size: RDFontScale.size(15)))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.center)
                     }
@@ -54,7 +54,7 @@ struct OBSafetyProfileSelectionView: View {
                                 accessibilityID: "onboarding.safety_profile.\(profileID.rawValue)",
                                 leading: {
                                     Image(systemName: profileID.icon)
-                                        .font(.system(size: 18, weight: .semibold))
+                                        .font(RDTypography.font(size: 18, weight: .semibold))
                                         .foregroundStyle(Color.rdGreenDark)
                                         .frame(width: 44, height: 44)
                                         .background(Color.rdGreenSoft)
@@ -76,7 +76,7 @@ struct OBSafetyProfileSelectionView: View {
                             fallback: "Gelecekteki analizler için bu seçimi Profil’den değiştirebilirsin."
                         )
                     )
-                        .font(.system(size: RDFontScale.size(12)))
+                        .font(RDTypography.font(size: RDFontScale.size(12)))
                         .foregroundStyle(Color.rdSlate)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 4)

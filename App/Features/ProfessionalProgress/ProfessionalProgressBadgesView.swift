@@ -64,19 +64,19 @@ struct ProfessionalProgressBadgesView: View {
                     )
 
                 Image(systemName: badge.icon)
-                    .font(.system(size: RDFontScale.size(23), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(23), weight: .bold, design: .rounded))
                     .foregroundStyle(badge.iconForeground)
                     .frame(width: 52, height: 52)
 
                 if badge.isEarned {
                     Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                         .foregroundStyle(badge.accent)
                         .background(Circle().fill(Color.rdWhite))
                         .offset(x: 4, y: -2)
                 } else {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .frame(width: 20, height: 20)
                         .background(Circle().fill(Color.rdWhite))
@@ -85,7 +85,7 @@ struct ProfessionalProgressBadgesView: View {
             }
 
             Text(badge.title)
-                .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                 .foregroundStyle(badge.isEarned ? Color.rdBlack : Color.rdSlate)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
