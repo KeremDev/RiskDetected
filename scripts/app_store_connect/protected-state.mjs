@@ -132,16 +132,33 @@ export function captureProtectedState() {
     APP_CONFIG.production_policy.current_live_version,
   );
   const candidate = versionRow(versionsResponse, VERSION);
-  const appInfo = protectedRows(
+  const appInfos = rows(
     runAsc([
-      "localizations",
+      "apps",
+      "info",
       "list",
       "--app",
       APP_ID,
-      "--type",
-      "app-info",
-      "--paginate",
     ]),
+  );
+  const targetVersion = candidate ?? live;
+  const targetState = attributes(targetVersion).appStoreState;
+  const targetAppInfo = appInfos.find((row) => {
+    const state = attributes(row).state ?? attributes(row).appStoreState;
+    return state === targetState;
+  }) ?? appInfos[0] ?? null;
+  const appInfoArgs = [
+    "localizations",
+    "list",
+    "--app",
+    APP_ID,
+    "--type",
+    "app-info",
+  ];
+  if (targetAppInfo?.id) appInfoArgs.push("--app-info", targetAppInfo.id);
+  appInfoArgs.push("--paginate");
+  const appInfo = protectedRows(
+    runAsc(appInfoArgs),
   );
 
   const versionState = [];

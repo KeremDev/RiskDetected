@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   CANDIDATE_BUILD,
+  RELEASE_VERSION,
   applyActiveReachabilityProbe,
   buildPhysicalSmokeEvidence,
   findInstalledCandidate,
@@ -50,13 +51,13 @@ test("installed app parser accepts bounded CoreDevice variants", () => {
     result: {
       apps: [{
         bundleIdentifier: "com.riskdetected.app",
-        bundleShortVersion: "1.3.0",
+        bundleShortVersion: RELEASE_VERSION,
         bundleVersion: CANDIDATE_BUILD,
         path: "/private/application/path",
       }],
     },
   }), {
-    version: "1.3.0",
+    version: RELEASE_VERSION,
     build: CANDIDATE_BUILD,
     is_candidate: true,
   });
@@ -123,7 +124,7 @@ test("candidate install and launch produce a passing readiness artifact", () => 
   });
   devices[0].evidence.app_inventory_status = "available";
   devices[0].evidence.candidate_app = {
-    version: "1.3.0",
+    version: RELEASE_VERSION,
     build: CANDIDATE_BUILD,
     is_candidate: true,
   };

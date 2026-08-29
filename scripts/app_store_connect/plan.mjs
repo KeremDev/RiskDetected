@@ -51,17 +51,25 @@ const currentCandidateLocalizations = candidate
       ]),
     )
   : [];
-const currentAppInfoLocalizations = rows(
-  runAsc([
-    "localizations",
-    "list",
-    "--app",
-    APP_ID,
-    "--type",
-    "app-info",
-    "--paginate",
-  ]),
+const appInfos = rows(
+  runAsc(["apps", "info", "list", "--app", APP_ID]),
 );
+const targetAppState = attributes(candidate ?? live).appStoreState;
+const targetAppInfo = appInfos.find((row) => {
+  const state = attributes(row).state ?? attributes(row).appStoreState;
+  return state === targetAppState;
+}) ?? appInfos[0] ?? null;
+const appInfoArgs = [
+  "localizations",
+  "list",
+  "--app",
+  APP_ID,
+  "--type",
+  "app-info",
+];
+if (targetAppInfo?.id) appInfoArgs.push("--app-info", targetAppInfo.id);
+appInfoArgs.push("--paginate");
+const currentAppInfoLocalizations = rows(runAsc(appInfoArgs));
 
 const currentCandidateByLocale = new Map(
   currentCandidateLocalizations.map((row) => [attributes(row).locale, row]),
@@ -142,7 +150,8 @@ const plan = {
   operations,
   safety: {
     release_type: APP_CONFIG.release.release_type,
-    review_submission_planned: false,
+    review_submission_planned:
+      APP_CONFIG.production_policy.review_submission_performed_by_automation === true,
     final_release_implemented: false,
     production_rollout_change_planned: false,
     protected_locales: PROTECTED_LOCALES,

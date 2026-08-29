@@ -50,6 +50,7 @@ const RELEASE_STAGING_GUARD_FILE = "scripts/release_staging_guard.mjs";
 const GITIGNORE_FILE = ".gitignore";
 const PHYSICAL_SMOKE_EVIDENCE_DIR = "output/app-review-physical-smoke/iphone-17-pro-max";
 const PHYSICAL_AGGREGATE_EVIDENCE = [
+  `output/app-review-physical-smoke/PHYSICAL_BUILD_${BUILD_NUMBER}_SMOKE_READINESS_${REPORT_DATE}.json`,
   `docs/localization/phase-8/PHYSICAL_BUILD_${BUILD_NUMBER}_SMOKE_READINESS_${REPORT_DATE}.json`,
   `docs/localization/phase-8/PHYSICAL_BUILD_${BUILD_NUMBER}_SMOKE_READINESS_2026-08-02.json`,
   `docs/localization/phase-8/PHYSICAL_BUILD_${BUILD_NUMBER}_SMOKE_READINESS_2026-08-01.json`,
@@ -1696,10 +1697,19 @@ function runAscChecks() {
 
   if (VERSION_ID) {
     const review = run("asc-review-status", "asc", ["review", "status", "--app", APP_ID, "--version-id", VERSION_ID, "--output", "markdown"]);
+    const reviewSubmissionExpected =
+      LOCAL_APP_STORE_CONFIG.production_policy?.review_submission_performed_by_automation === true;
+    const reviewSubmitted = review.status === 0 &&
+      /WAITING_FOR_REVIEW|IN_REVIEW|PENDING_(?:DEVELOPER|APPLE)_RELEASE|PROCESSING_FOR_DISTRIBUTION|READY_FOR_(?:SALE|DISTRIBUTION)/u.test(review.stdout);
+    const reviewStateMatchesPlan = reviewSubmissionExpected
+      ? reviewSubmitted
+      : review.status === 0 && review.stdout.includes("NOT_SUBMITTED");
     addCheck(
-      "ASC review intentionally not submitted",
-      review.status === 0 && review.stdout.includes("NOT_SUBMITTED") && review.stdout.includes("reviewDetail") ? "PASS" : "FAIL",
-      "Review submission is intentionally absent; this confirms automation did not submit the version.",
+      "ASC review submission state",
+      reviewStateMatchesPlan && review.stdout.includes("reviewDetail") ? "PASS" : "FAIL",
+      reviewSubmissionExpected
+        ? "Review submission should be present and waiting for or progressing through Apple review."
+        : "Review submission should remain absent until the configured submission step.",
       truncate(review.stdout || review.stderr),
     );
 
@@ -1718,15 +1728,23 @@ function runAscChecks() {
       validate.stdout.includes(`| ${APP_ID} | ${VERSION_ID} | ${VERSION}`) &&
       validate.stdout.includes("| 0      |") &&
       validate.stdout.includes("| 0        |");
+    const errorRows = validate.stdout.match(/^\| \d+\s+\| error\s+\|/gmu) ?? [];
+    const hasOnlyExpectedPostSubmissionState = reviewSubmissionExpected &&
+      reviewSubmitted &&
+      validate.stdout.includes("version.state.editable") &&
+      validate.stdout.includes(`non-editable state \"WAITING_FOR_REVIEW\"`) &&
+      errorRows.length === 1;
     addCheck(
       "ASC validation blockers",
-      hasNoBlockingErrors ? "PASS" : "FAIL",
-      "The selected App Store version should have zero blocking validation errors.",
+      hasNoBlockingErrors || hasOnlyExpectedPostSubmissionState ? "PASS" : "FAIL",
+      hasOnlyExpectedPostSubmissionState
+        ? "The only post-submission validation error is the expected non-editable WAITING_FOR_REVIEW state; no content blocker remains."
+        : "The selected editable App Store version should have zero blocking validation errors.",
       truncate(validate.stdout || validate.stderr),
     );
   } else {
     addCheck(
-      "ASC review intentionally not submitted",
+      "ASC review submission state",
       "HOLD",
       `App Store version ${VERSION} is intentionally not created during Phase 6; review cannot be submitted.`,
     );

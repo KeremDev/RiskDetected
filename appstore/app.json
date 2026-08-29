@@ -7,7 +7,7 @@
   "release": {
     "version": "2.0.0",
     "build_number": "87",
-    "build_id": null,
+    "build_id": "778f16af-5325-4999-802e-bc4f370e604f",
     "release_type": "AFTER_APPROVAL",
     "copyright": "2026 RiskDetected"
   },
@@ -67,7 +67,7 @@
     "current_live_version": "1.3.4",
     "current_live_build": "86",
     "localization_rollout_must_remain_off": false,
-    "review_submission_performed_by_automation": false,
+    "review_submission_performed_by_automation": true,
     "release_performed_by_automation": false
   }
 }

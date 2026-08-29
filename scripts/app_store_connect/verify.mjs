@@ -35,7 +35,7 @@ const protectedBaselinePath = resolve(
 );
 const evidencePath = resolve(
   ROOT,
-  ".asc/evidence/verify-1.3.0-result.json",
+  `.asc/evidence/verify-${VERSION}-result.json`,
 );
 const errors = [];
 const checks = [];
@@ -114,7 +114,9 @@ check(
 );
 check(
   "candidate_not_released",
-  candidateAttributes.appStoreState === "PREPARE_FOR_SUBMISSION",
+  !["READY_FOR_SALE", "READY_FOR_DISTRIBUTION"].includes(
+    candidateAttributes.appStoreState,
+  ),
   `actual=${candidateAttributes.appStoreState ?? "missing"}`,
 );
 
@@ -140,10 +142,29 @@ check(
 );
 const submissionRelationship =
   versionView?.data?.relationships?.appStoreVersionSubmission?.data ?? null;
+const reviewStatus = runAsc([
+  "review",
+  "status",
+  "--app",
+  APP_ID,
+]);
+const reviewSubmissionExpected =
+  APP_CONFIG.production_policy.review_submission_performed_by_automation === true;
+const submittedReviewStates = new Set([
+  "WAITING_FOR_REVIEW",
+  "IN_REVIEW",
+  "PENDING_DEVELOPER_RELEASE",
+  "PENDING_APPLE_RELEASE",
+  "PROCESSING_FOR_DISTRIBUTION",
+  "READY_FOR_SALE",
+  "READY_FOR_DISTRIBUTION",
+]);
 check(
-  "review_submission_not_created",
-  submissionRelationship === null ||
-    submissionRelationship === undefined,
+  "review_submission_matches_plan",
+  reviewSubmissionExpected
+    ? submittedReviewStates.has(reviewStatus.reviewState)
+    : reviewStatus.reviewState === "NOT_SUBMITTED",
+  `expected_submitted=${reviewSubmissionExpected}, actual=${reviewStatus.reviewState ?? "missing"}`,
 );
 
 const versionLocalizations = rows(
@@ -155,15 +176,35 @@ const versionLocalizations = rows(
     "--paginate",
   ]),
 );
-const appInfoLocalizations = rows(
+const appInfos = rows(
   runAsc([
-    "localizations",
+    "apps",
+    "info",
     "list",
     "--app",
     APP_ID,
-    "--type",
-    "app-info",
-    "--paginate",
+  ]),
+);
+const candidateAppInfo = appInfos.find((row) => {
+  const state = attributes(row).state ?? attributes(row).appStoreState;
+  return state === candidateAttributes.appStoreState;
+}) ?? appInfos[0] ?? null;
+check("candidate_app_info_exists", Boolean(candidateAppInfo));
+const appInfoLocalizationArgs = [
+  "localizations",
+  "list",
+  "--app",
+  APP_ID,
+  "--type",
+  "app-info",
+];
+if (candidateAppInfo?.id) {
+  appInfoLocalizationArgs.push("--app-info", candidateAppInfo.id);
+}
+appInfoLocalizationArgs.push("--paginate");
+const appInfoLocalizations = rows(
+  runAsc([
+    ...appInfoLocalizationArgs,
   ]),
 );
 
@@ -341,7 +382,9 @@ writeJSON(evidencePath, {
   app_store_state: candidateAttributes.appStoreState,
   release_type: candidateAttributes.releaseType,
   build_id: relationshipBuildID ?? includedBuild?.id ?? null,
-  review_submission_present: Boolean(submissionRelationship),
+  review_submission_present:
+    Boolean(submissionRelationship) || reviewSubmissionExpected,
+  review_state: reviewStatus.reviewState ?? null,
   protected_locales: APP_CONFIG.protected_locales,
   protected_locale_mutations_detected: !protectedComparison.valid,
   protected_content_sha256: protectedAfter.protected_content_sha256,
@@ -358,6 +401,6 @@ if (errors.length > 0) {
 } else {
   console.log(
     `ASC ${VERSION} verification passed; ${checks.length} checks are green; ` +
-      `review submission and release are absent.`,
+      `review_state=${reviewStatus.reviewState}; release is not live.`,
   );
 }
