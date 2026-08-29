@@ -27,6 +27,7 @@ struct AnalysisResultHubView: View {
     let onCreateReport: (AnalysisResultSectionID, [UUID], String) -> Void
     let onEditNotebook: (AnalysisResultHubItem, String, String) -> Void
     let onSuppressNotebook: (AnalysisResultHubItem) -> Void
+    let onSetObservationBasis: (ObservationBasis?) -> Void
 
     @State private var selectedSection: AnalysisResultSectionID = .riskAnalysis
     @State private var selections: [AnalysisResultSectionID: Set<UUID>] = [:]
@@ -63,7 +64,9 @@ struct AnalysisResultHubView: View {
                 count: 0,
                 canEdit: false,
                 canReport: false,
-                items: []
+                items: [],
+                observationBasis: nil,
+                observationBasisOptions: []
             )
     }
 
@@ -402,8 +405,69 @@ struct AnalysisResultHubView: View {
     private var notebookContent: some View {
         VStack(spacing: 0) {
             nonRiskSummary.padding(.top, 12)
+            if activeSection.access == .full, !activeSection.observationBasisOptions.isEmpty {
+                observationBasisPicker.padding(.top, 16)
+            }
             notebookPaper.padding(.top, 16)
         }
+    }
+
+    /// Gözlem dayanağı seçici.
+    ///
+    /// Motorun "saha incelemesinde gözlenmiştir" yazabilmesi buna bağlı ve
+    /// bunu sistem varsayamaz: fotoğraf yüklendi diye sahaya gidilmiş olmaz.
+    /// Seçim yapılmadan defter metni üretilmez, mevcut kayıtlar aynen kalır.
+    private var observationBasisPicker: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            Text(copy("GÖZLEM DAYANAĞI", "OBSERVATION BASIS"))
+                .font(referenceFont(9.5, .heavy)).tracking(0.5)
+                .foregroundStyle(muted)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 7) {
+                    ForEach(activeSection.observationBasisOptions) { option in
+                        let selected = activeSection.observationBasis == option
+                        Button {
+                            onSetObservationBasis(selected ? nil : option)
+                        } label: {
+                            Text(option.label(language: language))
+                                .font(referenceFont(11.5, selected ? .heavy : .medium))
+                                .foregroundStyle(selected ? .white : ink)
+                                .padding(.horizontal, 12)
+                                .frame(height: 32)
+                                .background(selected ? green : Color.rdResultKhakiTint)
+                                .clipShape(Capsule())
+                                .overlay(
+                                    Capsule().stroke(
+                                        selected ? .clear : Color.rdResultLine,
+                                        lineWidth: 1
+                                    )
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("result.hub.notebook.basis.\(option.rawValue)")
+                        .accessibilityAddTraits(selected ? [.isSelected] : [])
+                    }
+                }
+                .padding(.horizontal, 2)
+            }
+
+            Text(
+                activeSection.observationBasis == nil
+                    ? copy(
+                        "Dayanağı seçtiğinizde kayıt metni bu dayanağa göre yeniden yazılır.",
+                        "Choosing a basis rewrites the entry text to match it."
+                    )
+                    : copy(
+                        "Metin bu dayanağa göre yazıldı. Değiştirmek için tekrar dokunun.",
+                        "The text is written for this basis. Tap again to change it."
+                    )
+            )
+            .font(referenceFont(10.5, .medium))
+            .foregroundStyle(muted)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 16)
     }
 
     // MARK: Reference summaries
@@ -1455,6 +1519,9 @@ struct AnalysisResultHubView: View {
         let finding = item.findingText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let recommendation = item.recommendationText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if activeSection.access == .teaser { return finding }
+        // Onaylı defter metni tek akıcı paragraftır; "Tespit:"/"Öneri:" gibi
+        // rapor etiketleri taşımaz. Öneri alanı boşsa metin zaten bu biçimdedir.
+        if recommendation.isEmpty { return finding }
         var result = "\(copy("Tespit:", "Finding:")) \(finding) \(copy("Öneri:", "Recommendation:")) \(recommendation)"
         let basis = (item.referenceText ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         if !basis.isEmpty { result += " \(copy("Dayanak:", "Basis:")) \(basis)" }
@@ -1861,10 +1928,21 @@ struct AnalysisResultHubView: View {
     }
 
     private func notebookEditor(_ item: AnalysisResultHubItem) -> some View {
-        NavigationStack {
+        // Defter metni tek paragrafsa tek alanda düzenlenir. İki alanlı biçim
+        // eski projeksiyona ait; boş bir "Öneri" kutusu göstermek kullanıcıya
+        // doldurması gereken bir yer varmış gibi görünür.
+        let singleParagraph = (item.recommendationText ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return NavigationStack {
             Form {
-                Section(copy("Tespit", "Finding")) { TextEditor(text: $notebookFindingDraft).frame(minHeight: 120) }
-                Section(copy("Öneri", "Recommendation")) { TextEditor(text: $notebookRecommendationDraft).frame(minHeight: 150) }
+                if singleParagraph {
+                    Section(copy("Kayıt metni", "Entry text")) {
+                        TextEditor(text: $notebookFindingDraft).frame(minHeight: 220)
+                    }
+                } else {
+                    Section(copy("Tespit", "Finding")) { TextEditor(text: $notebookFindingDraft).frame(minHeight: 120) }
+                    Section(copy("Öneri", "Recommendation")) { TextEditor(text: $notebookRecommendationDraft).frame(minHeight: 150) }
+                }
                 Section {
                     Text(copy("Bu içerik Onaylı Defter taslağıdır; uzman değerlendirmesi gerekir.", "This is a Safety Log draft and requires expert review."))
                         .font(RDTypography.font(.footnote)).foregroundStyle(Color.rdSlate)
@@ -1879,7 +1957,10 @@ struct AnalysisResultHubView: View {
                         onEditNotebook(item, notebookFindingDraft, notebookRecommendationDraft)
                         editingNotebook = nil
                     }
-                    .disabled(notebookFindingDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || notebookRecommendationDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(
+                        notebookFindingDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            || (!singleParagraph && notebookRecommendationDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    )
                 }
             }
         }

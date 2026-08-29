@@ -26,15 +26,15 @@ export const APPROVED_BOOK_TEMPLATE_VERSION = "book-tr-templates-v3";
 export const APPROVED_BOOK_LANGUAGE_CATALOG_VERSION = "book-tr-catalog-v2";
 
 /**
- * Shadow projection version.
+ * Projection version for book paragraphs.
  *
  * Deliberately distinct from `approved-notebook-projection-v2`: rows written
- * under this version live beside the served ones, are never returned to the
- * app, and mark nothing obsolete. Nothing a user has already seen or edited
- * moves while the catalogues are still being tuned.
+ * under this version live beside the v2 rows rather than replacing them. Their
+ * obsolete-marking is scoped per version, so nothing a user has already edited
+ * moves, and clearing the observation basis returns them to exactly what they
+ * had before.
  */
-export const APPROVED_BOOK_SHADOW_PROJECTION_VERSION =
-  "approved-book-shadow-v1";
+export const APPROVED_BOOK_PROJECTION_VERSION = "approved-book-v1";
 
 /** Canonical JSON: sorted keys, so the hash tracks content and not key order. */
 function canonical(value: unknown): string {

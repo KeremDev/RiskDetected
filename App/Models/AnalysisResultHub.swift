@@ -101,6 +101,33 @@ struct AnalysisResultHubDisclaimers: Decodable {
     let notebook: String
 }
 
+/// How the specialist states they observed the site.
+///
+/// The engine never infers this. Without it no Onaylı Defter paragraph may say
+/// "gözlenmiştir", so the section falls back to the previous entries until the
+/// specialist chooses.
+enum ObservationBasis: String, Codable, CaseIterable, Identifiable {
+    case directSiteObservation = "direct_site_observation"
+    case employerSuppliedVisualRecord = "employer_supplied_visual_record"
+    case documentReview = "document_review"
+    case followUpCheck = "follow_up_check"
+
+    var id: String { rawValue }
+
+    func label(language: RDLanguage) -> String {
+        switch self {
+        case .directSiteObservation:
+            return language == .turkish ? "Saha incelemesi" : "Site inspection"
+        case .employerSuppliedVisualRecord:
+            return language == .turkish ? "İletilen görsel" : "Supplied image"
+        case .documentReview:
+            return language == .turkish ? "Belge incelemesi" : "Document review"
+        case .followUpCheck:
+            return language == .turkish ? "Takip kontrolü" : "Follow-up check"
+        }
+    }
+}
+
 struct AnalysisResultSection: Decodable, Identifiable {
     let id: AnalysisResultSectionID
     let access: AnalysisResultSectionAccess
@@ -108,11 +135,49 @@ struct AnalysisResultSection: Decodable, Identifiable {
     let canEdit: Bool
     let canReport: Bool
     let items: [AnalysisResultHubItem]
+    let observationBasis: ObservationBasis?
+    let observationBasisOptions: [ObservationBasis]
 
     enum CodingKeys: String, CodingKey {
         case id, access, count, items
         case canEdit = "can_edit"
         case canReport = "can_report"
+        case observationBasis = "observation_basis"
+        case observationBasisOptions = "observation_basis_options"
+    }
+
+    /// A custom `init(from:)` removes the memberwise initialiser, and the view
+    /// needs one for its empty-section fallback.
+    init(
+        id: AnalysisResultSectionID,
+        access: AnalysisResultSectionAccess,
+        count: Int,
+        canEdit: Bool,
+        canReport: Bool,
+        items: [AnalysisResultHubItem],
+        observationBasis: ObservationBasis? = nil,
+        observationBasisOptions: [ObservationBasis] = []
+    ) {
+        self.id = id
+        self.access = access
+        self.count = count
+        self.canEdit = canEdit
+        self.canReport = canReport
+        self.items = items
+        self.observationBasis = observationBasis
+        self.observationBasisOptions = observationBasisOptions
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(AnalysisResultSectionID.self, forKey: .id)
+        access = try container.decode(AnalysisResultSectionAccess.self, forKey: .access)
+        count = try container.decodeIfPresent(Int.self, forKey: .count) ?? 0
+        canEdit = try container.decodeIfPresent(Bool.self, forKey: .canEdit) ?? false
+        canReport = try container.decodeIfPresent(Bool.self, forKey: .canReport) ?? false
+        items = try container.decodeIfPresent([AnalysisResultHubItem].self, forKey: .items) ?? []
+        observationBasis = try container.decodeIfPresent(ObservationBasis.self, forKey: .observationBasis)
+        observationBasisOptions = try container.decodeIfPresent([ObservationBasis].self, forKey: .observationBasisOptions) ?? []
     }
 }
 

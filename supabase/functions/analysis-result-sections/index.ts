@@ -26,9 +26,11 @@ import {
   type V4ResultMetadata,
 } from "../_shared/approved-notebook-projector.ts";
 import {
-  APPROVED_BOOK_SHADOW_PROJECTION_VERSION,
+  APPROVED_BOOK_PROJECTION_VERSION,
   APPROVED_BOOK_TEMPLATE_VERSION,
   buildApprovedBookDrafts,
+  OBSERVATION_BASES,
+  type ObservationBasis,
   type V4ItemRow,
 } from "../_shared/approved-book/index.ts";
 
@@ -104,10 +106,12 @@ type Body = {
     | "mutate_notebook"
     | "feedback"
     | "event"
-    | "create_report_intent";
+    | "create_report_intent"
+    | "set_observation_basis";
   analysis_id?: string;
   language?: string;
   client_capabilities?: Record<string, unknown>;
+  observation_basis?: string;
   client_platform?: string;
   client_app_version?: string;
   client_app_build?: string;
@@ -199,72 +203,89 @@ function withReaction(
 }
 
 /**
- * Shadow run of the approved-book engine.
+ * Approved-book paragraphs for this analysis, or an empty list.
  *
- * Writes under its own projection version, beside the served rows, and is never
- * returned to the app -- the serving filter above enforces that. Nothing a user
- * has seen or edited moves while the Turkish catalogues are still being tuned.
+ * Empty is the normal answer and covers every case where the deterministic text
+ * is not available or not permitted: no observation basis chosen, an English
+ * report, a v3 analysis with no canonical codes, or a set of items none of which
+ * is writable. The caller falls back to the v2 projection, so the section never
+ * goes blank.
  *
- * The observation basis is `employer_supplied_visual_record`, which is what a
- * photo upload actually is. That is not a way around the gate: it is the honest
- * basis for this input, and the stronger claim -- "saha incelemesinde" -- stays
- * unavailable until a specialist states it themselves in the context screen.
- * Critical wording still needs a per-cluster approval, so those clusters stay
- * blocked here and that is the point: the shadow shows how often the gate fires.
+ * Rows are stored under the book engine's own projection version, beside the v2
+ * rows rather than replacing them. Nothing a user has already edited moves, and
+ * clearing the basis returns them to exactly what they had.
  *
- * Failures are swallowed. A shadow evaluation must never break the result
- * screen a user is waiting on.
+ * `recommendation_text` is stored empty on purpose. A book entry is one flowing
+ * paragraph; the finding/recommendation split belongs to v2 and reproducing it
+ * here would let a reader mistake half a paragraph for a whole record.
  */
-async function writeApprovedBookShadow(
+async function buildApprovedBookSection(
   context: Context,
   metadata: V4ResultMetadata[],
-): Promise<void> {
-  if (context.language !== "tr") return;
+): Promise<Record<string, unknown>[]> {
+  if (context.language !== "tr") return [];
+  const basis = cleanString(
+    context.analysis.approved_book_observation_basis,
+    64,
+  );
+  if (!OBSERVATION_BASES.includes(basis as ObservationBasis)) return [];
+
   try {
-    const rows = metadata as unknown as V4ItemRow[];
-    const result = await buildApprovedBookDrafts(rows, {
-      observationBasis: "employer_supplied_visual_record",
-      criticalLanguageApprovals: [],
-      locationByCluster: {},
-      legalReferenceMode: "title_only",
-    });
-    if (result.drafts.length === 0) return;
+    const result = await buildApprovedBookDrafts(
+      metadata as unknown as V4ItemRow[],
+      {
+        observationBasis: basis as ObservationBasis,
+        criticalLanguageApprovals: [],
+        locationByCluster: {},
+        legalReferenceMode: "title_only",
+      },
+    );
+    if (result.drafts.length === 0) return [];
 
-    const entries = await Promise.all(result.drafts.map(async (draft, index) => ({
-      id: await shadowEntryID(String(context.analysis.id), draft.clusterId),
-      grouping_key: draft.clusterId,
-      source_finding_ids: draft.sourceItemIds,
-      source_hash: draft.outputSha256,
-      // The book paragraph is one flowing text; the two-field shape belongs to
-      // the v2 projection and is not reproduced here. Recommendation is stored
-      // empty rather than duplicated, so a later reader cannot mistake half a
-      // paragraph for a complete record.
-      finding_text: draft.copyText,
-      recommendation_text: "",
-      reference_text: null,
-      display_order: index,
-    })));
+    const entries = await Promise.all(
+      result.drafts.map(async (draft, index) => ({
+        id: await bookEntryID(String(context.analysis.id), draft.clusterId),
+        grouping_key: draft.clusterId,
+        source_finding_ids: draft.sourceItemIds,
+        source_hash: draft.outputSha256,
+        finding_text: draft.copyText,
+        recommendation_text: "",
+        reference_text: null,
+        display_order: index,
+      })),
+    );
 
-    await context.supabase.rpc("result_hub_upsert_notebook_entries", {
-      p_user_id: context.userID,
-      p_analysis_id: context.analysis.id,
-      p_language: context.language,
-      p_projection_version: APPROVED_BOOK_SHADOW_PROJECTION_VERSION,
-      p_template_version: APPROVED_BOOK_TEMPLATE_VERSION,
-      p_entries: entries,
-    });
+    const { data } = await context.supabase.rpc(
+      "result_hub_upsert_notebook_entries",
+      {
+        p_user_id: context.userID,
+        p_analysis_id: context.analysis.id,
+        p_language: context.language,
+        p_projection_version: APPROVED_BOOK_PROJECTION_VERSION,
+        p_template_version: APPROVED_BOOK_TEMPLATE_VERSION,
+        p_entries: entries,
+      },
+    );
+
+    return (Array.isArray(data) ? data : [])
+      .map(safeObject)
+      .filter((row) =>
+        row.is_suppressed !== true &&
+        row.projection_version === APPROVED_BOOK_PROJECTION_VERSION
+      );
   } catch (_error) {
-    // Shadow only. Never surfaced, never retried, never fatal.
+    // Fall back to v2 rather than showing the reader an empty section.
+    return [];
   }
 }
 
 /** Stable per-cluster id, distinct from the v2 id space. */
-async function shadowEntryID(
+async function bookEntryID(
   analysisID: string,
   clusterID: string,
 ): Promise<string> {
   const bytes = new TextEncoder().encode(
-    [APPROVED_BOOK_SHADOW_PROJECTION_VERSION, analysisID, clusterID].join("|"),
+    [APPROVED_BOOK_PROJECTION_VERSION, analysisID, clusterID].join("|"),
   );
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   const hex = [...new Uint8Array(digest)]
@@ -340,7 +361,7 @@ async function loadAuthoritativeSections(context: Context) {
       row.projection_version === APPROVED_NOTEBOOK_PROJECTION_VERSION
     );
 
-  await writeApprovedBookShadow(context, metadata);
+  const book = await buildApprovedBookSection(context, metadata);
 
   const { data: feedbackData } = await context.supabase
     .rpc("result_hub_feedback_for_analysis", {
@@ -355,7 +376,11 @@ async function loadAuthoritativeSections(context: Context) {
   const expertFull = findings
     .filter((row) => findingSection(row) === "expert_recommendations")
     .map((row) => withReaction(row, "finding", reactions));
-  const notebookFull = notebookRows
+  // The specialist choosing an observation basis is what turns the book text on
+  // for this analysis. Until they choose, `book` is empty and the v2 projection
+  // is served exactly as before -- no hidden flag, and no paragraph claiming an
+  // observation nobody stated.
+  const notebookFull = (book.length > 0 ? book : notebookRows)
     .map((row) => withReaction(row, "notebook_entry", reactions));
   const paid = isPaidTier(context.tier);
 
@@ -366,6 +391,10 @@ async function loadAuthoritativeSections(context: Context) {
     expert: paid ? expertFull : expertFull.map(redactFindingForFree),
     notebook: paid ? notebookFull : notebookFull.map(redactNotebookForFree),
     templateVersion,
+    observationBasis: cleanString(
+      context.analysis.approved_book_observation_basis,
+      64,
+    ) || null,
   };
 }
 
@@ -439,9 +468,47 @@ async function handleLoad(context: Context) {
     sections: [
       sectionPayload("risk_analysis", context.tier, sections.risk),
       sectionPayload("expert_recommendations", context.tier, sections.expert),
-      sectionPayload("approved_notebook", context.tier, sections.notebook),
+      {
+        ...sectionPayload("approved_notebook", context.tier, sections.notebook),
+        // The reader has to state how they observed the site before the engine
+        // will write "gözlenmiştir" about it, so the section carries both the
+        // current choice and the options rather than the app hard-coding them.
+        observation_basis: sections.observationBasis,
+        observation_basis_options: OBSERVATION_BASES,
+      },
     ],
   });
+}
+
+/**
+ * Record how the specialist observed the site.
+ *
+ * Setting it turns the deterministic book text on for this analysis; clearing it
+ * (null) returns the section to the v2 projection. Both directions are the
+ * reader's to choose, and neither is inferred from the upload.
+ */
+async function handleObservationBasis(context: Context) {
+  const raw = cleanString(context.body.observation_basis, 64);
+  const basis = raw.length === 0 ? null : raw;
+  if (basis !== null && !OBSERVATION_BASES.includes(basis as ObservationBasis)) {
+    return json(400, { error: "invalid_observation_basis" });
+  }
+  if (!isPaidTier(context.tier)) {
+    return json(403, { error: "paid_tier_required" });
+  }
+  const { error } = await context.supabase.rpc(
+    "result_hub_set_observation_basis",
+    {
+      p_user_id: context.userID,
+      p_analysis_id: context.analysis.id,
+      p_basis: basis,
+    },
+  );
+  if (error) {
+    return json(400, { error: "observation_basis_update_failed" });
+  }
+  context.analysis.approved_book_observation_basis = basis;
+  return await handleLoad(context);
 }
 
 async function handleNotebookMutation(context: Context) {
@@ -725,7 +792,7 @@ serve(async (req) => {
       .eq("user_id", user.id).maybeSingle(),
     supabase.from("analyses")
       .select(
-        "id,user_id,status,title,created_at,analysis_edit_version,analysis_sector,output_language,rollout_snapshot,localization_snapshot",
+        "id,user_id,status,title,created_at,analysis_edit_version,analysis_sector,output_language,rollout_snapshot,localization_snapshot,approved_book_observation_basis",
       )
       .eq("id", body.analysis_id).eq("user_id", user.id).maybeSingle(),
   ]);
@@ -788,6 +855,8 @@ serve(async (req) => {
         return await handleEvent(context);
       case "create_report_intent":
         return await handleReportIntent(context);
+      case "set_observation_basis":
+        return await handleObservationBasis(context);
     }
   } catch (error) {
     console.error("analysis-result-sections failed", String(error));

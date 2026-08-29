@@ -151,7 +151,7 @@ export type { V4ItemRow };
 export * from "./contracts.ts";
 export {
   APPROVED_BOOK_ENGINE_VERSION,
-  APPROVED_BOOK_SHADOW_PROJECTION_VERSION,
+  APPROVED_BOOK_PROJECTION_VERSION,
   APPROVED_BOOK_TEMPLATE_VERSION,
   computeApprovedBookBundleSHA256,
 } from "./version-contract.ts";

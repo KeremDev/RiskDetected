@@ -310,11 +310,16 @@ struct PaywallDesignHero: View {
         ZStack(alignment: .topLeading) {
             Color.white
 
-            Image("PaywallHeroFace")
-                .resizable()
-                .aspectRatio(PaywallDesignMetric.heroImageAspect, contentMode: .fit)
-                .frame(maxWidth: .infinity)
-                .offset(y: PaywallDesignMetric.heroImageTop)
+            GeometryReader { proxy in
+                let imageHeight = proxy.size.width / PaywallDesignMetric.heroImageAspect
+
+                Image("PaywallHeroFace")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: proxy.size.width, height: imageHeight, alignment: .top)
+                    .clipped()
+                    .offset(y: PaywallDesignMetric.heroImageTop)
+            }
 
             LinearGradient(
                 colors: [Color.white.opacity(0.85), Color.white.opacity(0)],
