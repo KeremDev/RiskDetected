@@ -6,10 +6,10 @@ import {
 } from "./contracts.ts";
 
 const RELEASED_PROMPT_SHA256 =
-  "c066259216d0dbb3c43e966e2b9bad48afc6f8c33fd133a0ca0b07fd2e96cb61";
+  "7a1ff1e61401699a1264af54a71c3c65a97939a31511de0bc3193022be61d2e3";
 
 Deno.test("v4 prompt/schema bundle cannot change without versioned SHA update", async () => {
-  assertEquals(V4_PROMPT_VERSION, "v4-vision-core-v6");
+  assertEquals(V4_PROMPT_VERSION, "v4-vision-core-v7");
   assertEquals(V4_PROVIDER_CONTRACT_VERSION, "visual-claim-candidate-v1");
   assertEquals(await computeV4PromptSHA256(), RELEASED_PROMPT_SHA256);
 });

@@ -829,6 +829,7 @@ serve(async (req) => {
       disputed: Array<{ candidate_id: string; label: string; reason: string }>;
       duplicates: number;
       error?: string;
+      errorDetail?: string;
     } = { ran: false, added: 0, disputed: [], duplicates: 0 };
     if (photos.length === 1 && results.length === 1) {
       const primary = results[0];
@@ -849,7 +850,11 @@ serve(async (req) => {
           thinkingBudget: config.geminiThinkingBudget,
           maxOutputTokens: config.maxProviderOutputTokens,
           serviceTier: config.requestedServiceTier,
-          requiredModules: initialActiveModules(sectorID),
+          // Coverage is established by the primary pass and this output's
+          // matrix is never read, so holding the second look to the coverage
+          // contract only discards valid gap-finding answers.
+          requiredModules: [],
+          skipCoverageContract: true,
         });
         await recordAttempt(supabase, {
           attemptID,
@@ -910,7 +915,13 @@ serve(async (req) => {
           promptBundleSHA256: promptSHA,
           maxOutputTokens: config.maxProviderOutputTokens,
         });
-        verification = { ...verification, error: error.code };
+        // The bare code said only "provider_schema_invalid" and the message was
+        // nowhere, so diagnosing the first failure meant reading the parser.
+        verification = {
+          ...verification,
+          error: error.code,
+          errorDetail: safe(error.message).slice(0, 300),
+        };
       }
     }
 

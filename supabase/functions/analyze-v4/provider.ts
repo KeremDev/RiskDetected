@@ -130,6 +130,7 @@ function geminiCost(
 function parseOutput(
   text: string,
   requiredModules: readonly V4ModuleID[],
+  skipCoverageContract = false,
 ): ProviderPhotoOutput {
   let raw: unknown;
   try {
@@ -211,9 +212,16 @@ function parseOutput(
       !MODULE_OUTCOMES.includes(coverage.outcome)
     )
   ) throw new Error("provider_coverage_enum_invalid");
-  const coverageIssues = coverageValidationIssues(output, requiredModules);
-  if (coverageIssues.length > 0) {
-    throw new V4CoverageContractError(output, coverageIssues);
+  // expectedCoverageModules always unions Core-7, so an empty requiredModules
+  // does not relax anything. The verification pass is a gap-finding second look
+  // whose coverage matrix is never read -- the report is projected from the
+  // primary pass -- so holding it to the coverage contract only throws away
+  // otherwise valid answers. It cost one wasted call before this existed.
+  if (!skipCoverageContract) {
+    const coverageIssues = coverageValidationIssues(output, requiredModules);
+    if (coverageIssues.length > 0) {
+      throw new V4CoverageContractError(output, coverageIssues);
+    }
   }
   return output;
 }
@@ -229,6 +237,8 @@ export async function callV4Gemini(params: {
   maxOutputTokens: number;
   serviceTier: AnalysisServiceTier;
   requiredModules?: readonly V4ModuleID[];
+  /** Set for calls whose module_coverage is never consumed. */
+  skipCoverageContract?: boolean;
 }): Promise<V4ProviderResult> {
   const started = Date.now();
   let response: Response;
@@ -319,7 +329,11 @@ export async function callV4Gemini(params: {
   }
   try {
     return {
-      output: parseOutput(text, params.requiredModules ?? CORE_MODULE_IDS),
+      output: parseOutput(
+        text,
+        params.requiredModules ?? CORE_MODULE_IDS,
+        params.skipCoverageContract === true,
+      ),
       providerRequestID: requestID,
       durationMs,
       httpStatus: response.status,

@@ -43,7 +43,7 @@ export const V4_VERIFICATION_PROMPT_COMMON =
 - Görevin birinci incelemeyi onaylamak değil; kaçırdığını bulmak ve dayanaksız iddiasını göstermektir.
 - Fotoğrafa sıfırdan bak. Birinci incelemenin bulduğu bir koşulu tekrar yazma; yalnızca onun görmediği tehlikeler için aday üret.
 - Birinci incelemenin bir yokluk iddiası varsa (bir korkuluk elemanı, bir koruyucu, bir emniyet parçası yok deniyorsa) o noktaya özellikle bak. Elemanı GÖRÜYORSAN bunu ilgili modülün positive_controls kaydına açık biçimde yaz.
-- Bir modülde gerçekten değerlendirilecek bir şey yoksa o modülü no_actionable_issue_visible ile ve gördüğünü anlatan bir not ile kapat. Emin değilsen veya görüntü yetersizse not_assessable_due_to_image ya da unresolved_requires_verification kullan; bu ikisi "sorun yok" anlamına gelmez.
+- module_coverage alanına yalnız yeniden incelediğin modülleri yaz; bu geçişte tam kapsam beklenmiyor, kapsam birinci geçişte belirlenmiştir. Boş bırakabilirsin.
 - Uydurma yapma. Görmediğin bir ekipmana isim verme, görmediğin bir koşulu rapor etme.`;
 
 /** Compact statement of the first pass, small enough to prepend to the prompt. */
