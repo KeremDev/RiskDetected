@@ -7,12 +7,14 @@ export type ResultHubTier = "free" | "plus" | "pro";
 export type ResultHubSection =
   | "risk_analysis"
   | "expert_recommendations"
-  | "approved_notebook";
+  | "approved_notebook"
+  | "training_recommendations";
 
 export const RESULT_HUB_SECTIONS: ResultHubSection[] = [
   "risk_analysis",
   "expert_recommendations",
   "approved_notebook",
+  "training_recommendations",
 ];
 
 export function isPaidTier(tier: ResultHubTier): boolean {
@@ -135,6 +137,27 @@ export function redactNotebookForFree(
     is_user_edited: false,
     is_stale: false,
     is_suppressed: false,
+    locked: true,
+  };
+}
+
+/**
+ * Free-tier view of a training card.
+ *
+ * The title and the audience are enough to show what the section is for; the
+ * recommendation text itself is the paid content.
+ */
+export function redactTrainingForFree(
+  row: Record<string, unknown>,
+): Record<string, unknown> {
+  return {
+    id: row.id,
+    title: row.title,
+    category_label: row.category_label,
+    audience_label: row.audience_label,
+    text: firstSentenceTeaser(row.text, 120),
+    group_code: row.group_code,
+    display_order: row.display_order,
     locked: true,
   };
 }

@@ -1079,6 +1079,10 @@ struct ResultView: View {
             return .resultHubExpertAdvicePromotion
         case .approvedNotebook:
             return .resultHubApprovedNotebookPromotion
+        case .trainingRecommendations:
+            // Eğitim önerileri uzman görüşüyle aynı paket; ayrı bir giriş
+            // noktası açmak paywall ölçümünü bölerdi.
+            return .resultHubExpertAdvicePromotion
         }
     }
 

@@ -4,6 +4,7 @@ enum AnalysisResultSectionID: String, Codable, CaseIterable, Identifiable {
     case riskAnalysis = "risk_analysis"
     case expertRecommendations = "expert_recommendations"
     case approvedNotebook = "approved_notebook"
+    case trainingRecommendations = "training_recommendations"
 
     var id: String { rawValue }
 
@@ -12,6 +13,7 @@ enum AnalysisResultSectionID: String, Codable, CaseIterable, Identifiable {
         case .riskAnalysis: return language == .turkish ? "Risk Analizi" : "Risk Analysis"
         case .expertRecommendations: return language == .turkish ? "Uzman Görüşü Önerileri" : "Expert Recommendations"
         case .approvedNotebook: return language == .turkish ? "Onaylı Defter Önerisi" : "Safety Log Recommendation"
+        case .trainingRecommendations: return language == .turkish ? "Eğitim Önerileri" : "Training Recommendations"
         }
     }
 
@@ -22,6 +24,7 @@ enum AnalysisResultSectionID: String, Codable, CaseIterable, Identifiable {
         case .riskAnalysis: return language == .turkish ? "Risk Analizi" : "Risk Analysis"
         case .expertRecommendations: return language == .turkish ? "Uzman Görüşü" : "Expert Advice"
         case .approvedNotebook: return language == .turkish ? "Onaylı Defter" : "Safety Log"
+        case .trainingRecommendations: return language == .turkish ? "Eğitim" : "Training"
         }
     }
 
@@ -32,6 +35,7 @@ enum AnalysisResultSectionID: String, Codable, CaseIterable, Identifiable {
         case .riskAnalysis: return "exclamationmark.shield.fill"
         case .expertRecommendations: return "person.badge.shield.checkmark.fill"
         case .approvedNotebook: return "book.closed.fill"
+        case .trainingRecommendations: return "graduationcap.fill"
         }
     }
 
@@ -43,6 +47,8 @@ enum AnalysisResultSectionID: String, Codable, CaseIterable, Identifiable {
             return language == .turkish ? "Öneri" : (count == 1 ? "Recommendation" : "Recommendations")
         case .approvedNotebook:
             return language == .turkish ? "Kayıt" : (count == 1 ? "Entry" : "Entries")
+        case .trainingRecommendations:
+            return language == .turkish ? "Öneri" : (count == 1 ? "Recommendation" : "Recommendations")
         }
     }
 
@@ -210,6 +216,11 @@ struct AnalysisResultHubItem: Decodable, Identifiable, Hashable {
     let sourceFindingIDs: [UUID]?
     let isUserEdited: Bool?
     let isStale: Bool?
+    let catalogCode: String?
+    let categoryLabel: String?
+    let audienceLabel: String?
+    let text: String?
+    let groupCode: String?
 
     enum CodingKeys: String, CodingKey {
         case id, ordinal, title, category, description, confidence, locked
@@ -239,6 +250,11 @@ struct AnalysisResultHubItem: Decodable, Identifiable, Hashable {
         case sourceFindingIDs = "source_finding_ids"
         case isUserEdited = "is_user_edited"
         case isStale = "is_stale"
+        case catalogCode = "catalog_code"
+        case categoryLabel = "category_label"
+        case audienceLabel = "audience_label"
+        case text
+        case groupCode = "group_code"
     }
 
     var displayTitle: String {

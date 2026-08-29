@@ -328,6 +328,7 @@ struct AnalysisResultHubView: View {
         case .riskAnalysis: return "exclamationmark.triangle"
         case .expertRecommendations: return "person.badge.shield.checkmark"
         case .approvedNotebook: return "book.closed"
+        case .trainingRecommendations: return "graduationcap"
         }
     }
 
@@ -336,6 +337,7 @@ struct AnalysisResultHubView: View {
         case .riskAnalysis: return .rdSectionRiskAccent
         case .expertRecommendations: return .rdSectionExpertAccent
         case .approvedNotebook: return .rdSectionNotebookAccent
+        case .trainingRecommendations: return .rdSectionExpertAccent
         }
     }
 
@@ -350,6 +352,7 @@ struct AnalysisResultHubView: View {
             case .riskAnalysis: riskContent
             case .expertRecommendations: expertContent
             case .approvedNotebook: notebookContent
+            case .trainingRecommendations: trainingContent
             }
         }
     }
@@ -433,6 +436,120 @@ struct AnalysisResultHubView: View {
         }
         .padding(.horizontal, 16)
         .accessibilityIdentifier("result.hub.notebook.basis_note")
+    }
+
+    /// Eğitim önerileri.
+    ///
+    /// Analizde görülen tehlike mekanizmalarına ve ekipmana göre, ilgili
+    /// çalışan gruplarına hangi eğitimlerin anlamlı olduğunu söyler. Onay,
+    /// seçim veya form beklemez; analiz tamamlandığında hazırdır.
+    ///
+    /// Kartlar gruplanır çünkü sıra bilgi taşıyor: sahada görülene dayanan
+    /// öneriler üstte, her işyeri için doğru olan temel eğitimler altta.
+    private var trainingContent: some View {
+        let grouped = groupedTrainingItems
+
+        return VStack(spacing: 0) {
+            nonRiskSummary.padding(.top, 12)
+            LazyVStack(alignment: .leading, spacing: 26) {
+                ForEach(grouped, id: \.title) { group in
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(group.title.localizedUppercase)
+                            .font(referenceFont(9.5, .heavy)).tracking(0.5)
+                            .foregroundStyle(muted)
+                            .padding(.horizontal, 16)
+                        ForEach(group.items) { item in
+                            trainingCard(item)
+                        }
+                    }
+                }
+            }
+            .padding(.top, 20)
+        }
+    }
+
+    private var groupedTrainingItems: [(title: String, items: [AnalysisResultHubItem])] {
+        let titles: [(code: String, tr: String, en: String)] = [
+            ("task_and_equipment", "Göreve ve ekipmana özgü", "Task and equipment"),
+            ("qualification_and_authorization", "Yeterlilik ve yetki", "Qualification and authorisation"),
+            ("emergency_and_rescue", "Acil durum ve kurtarma", "Emergency and rescue"),
+            ("general_and_induction", "Genel ve uyum", "General and induction"),
+            ("toolbox", "Saha bilgilendirmesi", "Toolbox"),
+        ]
+        return titles.compactMap { group in
+            let items = activeSection.items.filter { $0.groupCode == group.code }
+            guard !items.isEmpty else { return nil }
+            return (copy(group.tr, group.en), items)
+        }
+    }
+
+    private func trainingCard(_ item: AnalysisResultHubItem) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(item.title ?? "")
+                .font(referenceFont(14, .black)).foregroundStyle(ink)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if let category = item.categoryLabel, !category.isEmpty {
+                Text(category)
+                    .font(referenceFont(10, .heavy)).tracking(0.3)
+                    .foregroundStyle(greenDark)
+                    .padding(.horizontal, 7).padding(.vertical, 3)
+                    .background(greenMuted.opacity(0.35))
+                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                    .padding(.top, 8)
+            }
+
+            if let audience = item.audienceLabel, !audience.isEmpty {
+                HStack(spacing: 5) {
+                    Image(systemName: "person.2.fill")
+                        .font(RDTypography.font(size: 10, weight: .semibold))
+                    Text(audience)
+                }
+                .font(referenceFont(11, .medium))
+                .foregroundStyle(muted)
+                .padding(.top, 9)
+            }
+
+            if activeSection.access == .full {
+                Text(item.text ?? "")
+                    .font(referenceFont(12, .regular))
+                    .foregroundStyle(Color.rdResultSecondaryText)
+                    .lineSpacing(4)
+                    .padding(.top, 11)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                trainingTeaserBody(item)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Color.rdResultSurface)
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.rdResultLine, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal, 16)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard activeSection.access == .teaser else { return }
+            openLockedTeaser(item)
+        }
+        .accessibilityIdentifier("result.hub.training.card.\(item.id.uuidString)")
+    }
+
+    @ViewBuilder
+    private func trainingTeaserBody(_ item: AnalysisResultHubItem) -> some View {
+        ZStack {
+            Text(item.text ?? "")
+                .font(referenceFont(12, .regular))
+                .foregroundStyle(Color.rdResultSecondaryText)
+                .lineSpacing(4)
+                .frame(maxWidth: .infinity, minHeight: 54, alignment: .topLeading)
+                .blur(radius: 4.5)
+                .opacity(0.76)
+                .accessibilityHidden(true)
+            premiumTeaserCallout
+        }
+        .padding(.top, 11)
+        .clipped()
     }
 
     // MARK: Reference summaries
@@ -922,6 +1039,7 @@ struct AnalysisResultHubView: View {
         case .riskAnalysis: unit = copy("bulgu", selectedIDs.count == 1 ? "finding" : "findings")
         case .expertRecommendations: unit = copy("görüş", selectedIDs.count == 1 ? "recommendation" : "recommendations")
         case .approvedNotebook: unit = copy("kayıt", selectedIDs.count == 1 ? "entry" : "entries")
+        case .trainingRecommendations: unit = copy("öneri", selectedIDs.count == 1 ? "recommendation" : "recommendations")
         }
         return "\(selectedIDs.count)/\(activeSection.count) \(unit) \(copy("seçili", "selected"))"
     }
@@ -1785,6 +1903,9 @@ struct AnalysisResultHubView: View {
             onOpenFinding(item.asFindingRow(fallbackAnalysisID: analysisID), selectedSection)
         case .approvedNotebook:
             detailItem = item
+        case .trainingRecommendations:
+            // Eğitim kartının kendisi zaten tam metin; açılacak bir detay yok.
+            break
         }
         Task {
             await AnalysisResultHubService.shared.recordEvent(
@@ -1973,6 +2094,15 @@ struct AnalysisResultHubView: View {
                 copy(
                     "Bu analiz için uygun bir onaylı defter taslağı oluşturulmadı.",
                     "No applicable Safety Log draft was generated for this analysis."
+                )
+            )
+        case .trainingRecommendations:
+            (
+                "graduationcap",
+                copy("Eğitim önerisi bulunmuyor", "No training recommendations"),
+                copy(
+                    "Bu analizde eğitim önerisi üretecek bir tehlike veya ekipman tanınmadı.",
+                    "No hazard or equipment in this analysis produced a training recommendation."
                 )
             )
         }
