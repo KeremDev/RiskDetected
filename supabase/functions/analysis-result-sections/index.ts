@@ -25,6 +25,12 @@ import {
   sanitizeNotebookText,
   type V4ResultMetadata,
 } from "../_shared/approved-notebook-projector.ts";
+import {
+  APPROVED_BOOK_SHADOW_PROJECTION_VERSION,
+  APPROVED_BOOK_TEMPLATE_VERSION,
+  buildApprovedBookDrafts,
+  type V4ItemRow,
+} from "../_shared/approved-book/index.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -192,6 +198,88 @@ function withReaction(
   };
 }
 
+/**
+ * Shadow run of the approved-book engine.
+ *
+ * Writes under its own projection version, beside the served rows, and is never
+ * returned to the app -- the serving filter above enforces that. Nothing a user
+ * has seen or edited moves while the Turkish catalogues are still being tuned.
+ *
+ * The observation basis is `employer_supplied_visual_record`, which is what a
+ * photo upload actually is. That is not a way around the gate: it is the honest
+ * basis for this input, and the stronger claim -- "saha incelemesinde" -- stays
+ * unavailable until a specialist states it themselves in the context screen.
+ * Critical wording still needs a per-cluster approval, so those clusters stay
+ * blocked here and that is the point: the shadow shows how often the gate fires.
+ *
+ * Failures are swallowed. A shadow evaluation must never break the result
+ * screen a user is waiting on.
+ */
+async function writeApprovedBookShadow(
+  context: Context,
+  metadata: V4ResultMetadata[],
+): Promise<void> {
+  if (context.language !== "tr") return;
+  try {
+    const rows = metadata as unknown as V4ItemRow[];
+    const result = await buildApprovedBookDrafts(rows, {
+      observationBasis: "employer_supplied_visual_record",
+      criticalLanguageApprovals: [],
+      locationByCluster: {},
+      legalReferenceMode: "title_only",
+    });
+    if (result.drafts.length === 0) return;
+
+    const entries = await Promise.all(result.drafts.map(async (draft, index) => ({
+      id: await shadowEntryID(String(context.analysis.id), draft.clusterId),
+      grouping_key: draft.clusterId,
+      source_finding_ids: draft.sourceItemIds,
+      source_hash: draft.outputSha256,
+      // The book paragraph is one flowing text; the two-field shape belongs to
+      // the v2 projection and is not reproduced here. Recommendation is stored
+      // empty rather than duplicated, so a later reader cannot mistake half a
+      // paragraph for a complete record.
+      finding_text: draft.copyText,
+      recommendation_text: "",
+      reference_text: null,
+      display_order: index,
+    })));
+
+    await context.supabase.rpc("result_hub_upsert_notebook_entries", {
+      p_user_id: context.userID,
+      p_analysis_id: context.analysis.id,
+      p_language: context.language,
+      p_projection_version: APPROVED_BOOK_SHADOW_PROJECTION_VERSION,
+      p_template_version: APPROVED_BOOK_TEMPLATE_VERSION,
+      p_entries: entries,
+    });
+  } catch (_error) {
+    // Shadow only. Never surfaced, never retried, never fatal.
+  }
+}
+
+/** Stable per-cluster id, distinct from the v2 id space. */
+async function shadowEntryID(
+  analysisID: string,
+  clusterID: string,
+): Promise<string> {
+  const bytes = new TextEncoder().encode(
+    [APPROVED_BOOK_SHADOW_PROJECTION_VERSION, analysisID, clusterID].join("|"),
+  );
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const hex = [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  const raw = (hex.slice(0, 32).match(/../g) ?? []).map((value) =>
+    Number.parseInt(value, 16)
+  );
+  raw[6] = (raw[6] & 0x0f) | 0x50;
+  raw[8] = (raw[8] & 0x3f) | 0x80;
+  const value = raw.map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${value.slice(0, 8)}-${value.slice(8, 12)}-${value.slice(12, 16)}-${
+    value.slice(16, 20)
+  }-${value.slice(20, 32)}`;
+}
+
 async function loadAuthoritativeSections(context: Context) {
   const { data: findingData, error: findingsError } = await context.supabase
     .from("findings")
@@ -243,7 +331,16 @@ async function loadAuthoritativeSections(context: Context) {
   }
   const notebookRows = (Array.isArray(notebookData) ? notebookData : [])
     .map(safeObject)
-    .filter((row) => row.is_suppressed !== true);
+    .filter((row) => row.is_suppressed !== true)
+    // The shadow projection writes rows beside these under its own version.
+    // The list RPC does not filter by version, so the filter lives here: a
+    // shadow paragraph must never reach a reader while its catalogues are
+    // still being tuned.
+    .filter((row) =>
+      row.projection_version === APPROVED_NOTEBOOK_PROJECTION_VERSION
+    );
+
+  await writeApprovedBookShadow(context, metadata);
 
   const { data: feedbackData } = await context.supabase
     .rpc("result_hub_feedback_for_analysis", {

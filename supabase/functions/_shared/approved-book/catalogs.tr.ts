@@ -49,51 +49,51 @@ export type VerificationSurface = {
 
 export const OBSERVATION_BY_MECHANISM: Record<string, ObservationSurface> = {
   fall_from_height: {
-    condition: "yüksekte çalışma yüzeyinin kenarında toplu koruma eksikliği",
+    condition: "yüksekte çalışma yüzeyinin kenarında toplu korumanın bulunmadığı",
     consequence: "çalışanların yüksekten düşmesi",
   },
   falling_object: {
-    condition: "yüksekteki çalışma yüzeyinden malzeme düşmesine karşı koruma eksikliği",
+    condition: "yüksekteki çalışma yüzeyinde malzeme düşmesine karşı koruma bulunmadığı",
     consequence: "alt kotta bulunan çalışanların üzerine malzeme düşmesi",
   },
   caught_in_pinch_shear: {
-    condition: "hareketli makine parçalarına erişimi engelleyen koruyucunun bulunmaması",
+    condition: "hareketli makine parçalarına erişimi engelleyen koruyucunun bulunmadığı",
     consequence: "çalışanın hareketli parçaya kaptırılması veya uzuv sıkışması",
   },
   sharp_edge_contact: {
-    condition: "açıkta kalan sivri uçlara ve keskin kenarlara doğrudan erişim",
+    condition: "açıkta kalan sivri uçlara ve keskin kenarlara doğrudan erişim bulunduğu",
     consequence: "çalışanların saplanma veya kesilme yoluyla yaralanması",
   },
   electrical_contact_arc: {
-    condition: "elektrik hattına doğrudan temas yolunun açık olması",
+    condition: "elektrik hattına doğrudan temas yolunun açık olduğu",
     consequence: "çalışanların elektrik çarpması veya ark yoluyla yaralanması",
   },
   mechanical_separation_release: {
-    condition: "bağlantı elemanının emniyetinin üretici parçası dışındaki bir düzenle sağlanmış olması",
+    condition: "bağlantı elemanının emniyetinin üretici parçası dışındaki bir düzenle sağlandığı",
     consequence: "hattın basınç altında ayrılması ve madde salınımı",
   },
   hydraulic_pneumatic_release: {
-    condition: "basınçlı hat üzerinde hasar ve emniyetsiz bağlantı",
+    condition: "basınçlı hat üzerinde hasar ve emniyetsiz bağlantı bulunduğu",
     consequence: "basınçlı akışkanın boşalması ve çalışanın yaralanması",
   },
   fall_same_level: {
-    condition: "geçiş güzergâhında malzeme birikmesi ve zemin düzensizliği",
+    condition: "geçiş güzergâhında malzeme biriktiği ve zeminin düzensiz olduğu",
     consequence: "çalışanların takılarak veya kayarak düşmesi",
   },
   vehicle_equipment_strike: {
-    condition: "yaya güzergâhı ile araç güzergâhının fiziksel olarak ayrılmamış olması",
+    condition: "yaya güzergâhı ile araç güzergâhının fiziksel olarak ayrılmadığı",
     consequence: "yayaların iş makinesi veya araç çarpması sonucu yaralanması",
   },
   structural_collapse: {
-    condition: "taşıyıcı düzende kararsızlık belirtisi",
+    condition: "taşıyıcı düzende kararsızlık belirtisi bulunduğu",
     consequence: "yapı veya istif elemanlarının göçmesi",
   },
   thermal_contact: {
-    condition: "sıcak yüzeye korumasız erişim",
+    condition: "sıcak yüzeye korumasız erişim bulunduğu",
     consequence: "çalışanların yanma yoluyla yaralanması",
   },
   chemical_contact_release: {
-    condition: "kimyasal maddeye korumasız temas yolu",
+    condition: "kimyasal maddeye korumasız temas yolu bulunduğu",
     consequence: "çalışanların kimyasal temas veya soluma yoluyla etkilenmesi",
   },
 };
