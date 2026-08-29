@@ -16,6 +16,7 @@
 
 import type {
   AudienceCode,
+  StatutoryDuration,
   TrainingGroupCode,
   TrainingRecommendationClass,
 } from "./contracts.ts";
@@ -34,6 +35,14 @@ export interface TrainingCatalogEntry {
   conditionalContext?: string;
   /** Optional second sentence. Used where a real distinction must be drawn. */
   secondSentence?: string;
+  /**
+   * Only where the regulation itself fixes a duration.
+   *
+   * Two entries have one. Everything else in this catalogue is a training whose
+   * length is a matter of content and competence, not law, and putting an hour
+   * figure on it would read as a legal minimum that does not exist.
+   */
+  statutoryDuration?: StatutoryDuration;
   /** Entries sharing a merge key collapse to one card. */
   mergeKey: string;
 }
@@ -79,6 +88,15 @@ export const TRAINING_CATALOG: Record<string, TrainingCatalogEntry> = {
       "acil durum davranışları",
     ],
     conditionalContext: "Bu işyerinde",
+    // Ek-2 fixes the hours and Madde 6 the refresh interval, both on the
+    // workplace hazard class. Neither is visible in a photograph, so the
+    // renderer shows all three rows whenever the class is unknown.
+    statutoryDuration: {
+      hoursByHazardClass: { low: 8, medium: 12, high: 16 },
+      refreshYearsByHazardClass: { low: 3, medium: 2, high: 1 },
+      basisCode: "TR-EGITIM-YONETMELIK-EK2",
+      verified: true,
+    },
     mergeKey: "general_ohs",
   },
   "TRN-GEN-001": {
@@ -95,6 +113,16 @@ export const TRAINING_CATALOG: Record<string, TrainingCatalogEntry> = {
       "tehlike bildirimi",
     ],
     conditionalContext: "Bu alanda",
+    // Carried as a domain expert's statement, not a verified citation: the
+    // two-hour floor for pre-start orientation was supplied rather than read
+    // off the text, so `verified` stays false until it is checked. The figure
+    // renders; no claim to a verified basis is made anywhere alongside it.
+    statutoryDuration: {
+      minimumHours: 2,
+      noteTr: "İşe başlamadan önce",
+      basisCode: "TR-EGITIM-YONETMELIK-ISBASI",
+      verified: false,
+    },
     mergeKey: "induction",
   },
 

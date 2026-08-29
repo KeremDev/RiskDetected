@@ -321,3 +321,88 @@ Deno.test("linter termin ve sorumlu ifadesini yakalar", () => {
   );
   assert(findings.some((entry) => entry.rule === "deadline_or_assignment"));
 });
+
+// --------------------------------------------------------------------------
+// Statutory durations
+// --------------------------------------------------------------------------
+
+function generalOHS(hazardClass?: "low" | "medium" | "high" | null) {
+  const cards = trainingRecommendationsFor({
+    sectorId: null,
+    hazardClass: hazardClass ?? null,
+    rows: [item({ id: "f1" })],
+  });
+  return cards.find((card) => card.catalogCode === "TRN-GEN-002");
+}
+
+Deno.test("temel İSG eğitimi bilinen tehlike sınıfında tek satır süre verir", () => {
+  const high = generalOHS("high");
+  assertEquals(high?.duration?.value, "Çok tehlikeli sınıf · en az 16 saat");
+  assertEquals(high?.duration?.note, "Yenileme: yılda bir");
+
+  const medium = generalOHS("medium");
+  assertEquals(medium?.duration?.value, "Tehlikeli sınıf · en az 12 saat");
+  assertEquals(medium?.duration?.note, "Yenileme: iki yılda bir");
+
+  const low = generalOHS("low");
+  assertEquals(low?.duration?.value, "Az tehlikeli sınıf · en az 8 saat");
+  assertEquals(low?.duration?.note, "Yenileme: üç yılda bir");
+});
+
+Deno.test("tehlike sınıfı bilinmiyorsa üç sınıf da yazılır, biri seçilmez", () => {
+  const card = generalOHS(null);
+  assertEquals(
+    card?.duration?.value,
+    "Az tehlikeli 8 · Tehlikeli 12 · Çok tehlikeli 16 saat",
+  );
+  assertStringIncludes(card?.duration?.note ?? "", "sırasıyla");
+});
+
+Deno.test("işbaşı eğitimi sınıftan bağımsız iki saatlik asgari süre taşır", () => {
+  for (const hazardClass of ["low", "high", null] as const) {
+    const card = trainingRecommendationsFor({
+      sectorId: null,
+      hazardClass,
+      rows: [item({ id: "f1" })],
+    }).find((entry) => entry.catalogCode === "TRN-GEN-001");
+    assertEquals(card?.duration?.value, "En az 2 saat");
+    assertEquals(card?.duration?.note, "İşe başlamadan önce");
+  }
+});
+
+Deno.test("mevzuatın süre bağlamadığı eğitimlerde saat uydurulmaz", () => {
+  const cards = trainingRecommendationsFor({
+    sectorId: null,
+    hazardClass: "high",
+    rows: [item({ id: "f1", people: 2, asset: "seyyar merdiven" })],
+  });
+  const withoutStatute = cards.filter((card) =>
+    !["TRN-GEN-001", "TRN-GEN-002"].includes(card.catalogCode)
+  );
+  assert(withoutStatute.length > 0, "karşılaştıracak kart yok");
+  for (const card of withoutStatute) {
+    assertEquals(card.duration, null, card.catalogCode);
+  }
+});
+
+Deno.test("süre metne sızmaz; cümlelerde saat geçmez", () => {
+  const cards = trainingRecommendationsFor({
+    sectorId: null,
+    hazardClass: "high",
+    rows: [item({ id: "f1", people: 1 })],
+  });
+  for (const card of cards) {
+    assert(
+      !/\d+\s*saat/u.test(card.text),
+      `${card.catalogCode} metninde süre var: ${card.text}`,
+    );
+  }
+});
+
+Deno.test("yalnızca iki kayıt yasal süre taşır", () => {
+  const withDuration = Object.values(TRAINING_CATALOG)
+    .filter((entry) => entry.statutoryDuration)
+    .map((entry) => entry.code)
+    .sort();
+  assertEquals(withDuration, ["TRN-GEN-001", "TRN-GEN-002"]);
+});

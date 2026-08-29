@@ -149,6 +149,18 @@ Deno.test("register-report compares report intent UUIDs canonically", async () =
   );
 });
 
+Deno.test("register-report uses the report kind authorized by the export intent", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(
+    source,
+    "normalizeKind(reportIntent.content_snapshot.report_kind)",
+  );
+});
+
 Deno.test("register-report persists a validated request platform with analysis fallback", async () => {
   const source = await readTextIfAllowed(
     new URL("./index.ts", import.meta.url),

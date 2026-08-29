@@ -34,6 +34,7 @@ import {
   type V4ItemRow,
 } from "../_shared/approved-book/index.ts";
 import {
+  hazardClassFrom,
   trainingRecommendationsFor,
   type TrainingItemRow,
 } from "../_shared/training-recommendations/index.ts";
@@ -132,6 +133,7 @@ type Body = {
   event_name?: string;
   metadata?: Record<string, unknown>;
   format?: "pdf" | "xlsx";
+  report_kind?: "standard" | "riskAnalysis";
   selected_item_keys?: string[];
   request_id?: string;
 };
@@ -390,8 +392,15 @@ async function loadAuthoritativeSections(context: Context) {
   // same catalogue always produce the same cards, so persisting them would only
   // add a copy to keep in sync. Ids are stable per catalogue code so reactions
   // and selections keep pointing at the same card.
+  // The statutory hours split on the workplace hazard class, which no
+  // photograph shows. It arrives only from a company the user bound to this
+  // analysis; without one the card states all three classes rather than
+  // asserting a class nobody declared.
   const training = trainingRecommendationsFor({
     sectorId: cleanString(context.analysis.analysis_sector, 64) || null,
+    hazardClass: hazardClassFrom(
+      safeObject(context.analysis.companies).hazard_class,
+    ),
     rows: metadata as unknown as TrainingItemRow[],
   }).map((card) => ({
     id: trainingCardID(String(context.analysis.id), card.catalogCode),
@@ -401,6 +410,9 @@ async function loadAuthoritativeSections(context: Context) {
     audience_label: card.audienceLabel,
     text: card.text,
     group_code: card.groupCode,
+    duration_label: card.duration?.label ?? null,
+    duration_value: card.duration?.value ?? null,
+    duration_note: card.duration?.note ?? null,
     source_finding_ids: card.sourceItemIds,
     display_order: card.displayOrder,
   }));
@@ -702,6 +714,12 @@ async function handleReportIntent(context: Context) {
   if (!section || !format || selected.length === 0) {
     return json(400, { error: "invalid_report_selection" });
   }
+  const reportKind = section === "risk_analysis" && format === "pdf" &&
+      context.body.report_kind === "standard"
+    ? "standard"
+    : section === "risk_analysis"
+    ? "riskAnalysis"
+    : "standard";
   if (section !== "risk_analysis" && !isPaidTier(context.tier)) {
     return json(403, { error: "premium_required" });
   }
@@ -721,7 +739,7 @@ async function handleReportIntent(context: Context) {
     return json(422, { error: "report_selection_out_of_scope" });
   }
   const items = selected.map((key) => byID.get(key) as Record<string, unknown>);
-  const quotaKind = section === "risk_analysis" ? "riskAnalysis" : "standard";
+  const quotaKind = reportKind;
   const { data: quota, error: quotaError } = await context.supabase.rpc(
     "check_report_quota_eligibility_v2",
     {
@@ -748,6 +766,7 @@ async function handleReportIntent(context: Context) {
       output_language: context.language,
     },
     content_scope: section,
+    report_kind: reportKind,
     items,
     disclaimers: section === "approved_notebook"
       ? (context.language === "tr"
@@ -829,7 +848,7 @@ serve(async (req) => {
       .eq("user_id", user.id).maybeSingle(),
     supabase.from("analyses")
       .select(
-        "id,user_id,status,title,created_at,analysis_edit_version,analysis_sector,output_language,rollout_snapshot,localization_snapshot,approved_book_observation_basis",
+        "id,user_id,status,title,created_at,analysis_edit_version,analysis_sector,output_language,rollout_snapshot,localization_snapshot,approved_book_observation_basis,companies(hazard_class)",
       )
       .eq("id", body.analysis_id).eq("user_id", user.id).maybeSingle(),
   ]);

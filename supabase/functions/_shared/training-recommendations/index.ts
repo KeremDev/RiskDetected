@@ -5,7 +5,7 @@
 // model call, no approval step: the plan's first product decision is that these
 // appear automatically in the same response as the analysis.
 
-import type { TrainingRecommendation } from "./contracts.ts";
+import type { HazardClass, TrainingRecommendation } from "./contracts.ts";
 import {
   buildTrainingRecommendations,
   resolveContext,
@@ -14,7 +14,7 @@ import {
 import { lintTrainingText } from "./linter.ts";
 
 export const TRAINING_ENGINE_VERSION = "training-recommendations-v1";
-export const TRAINING_CATALOG_VERSION = "training-catalog-tr-v1";
+export const TRAINING_CATALOG_VERSION = "training-catalog-tr-v2";
 
 export type TrainingItemRow = {
   public_finding_id?: string | null;
@@ -60,8 +60,15 @@ export function adaptTrainingItems(rows: TrainingItemRow[]): TrainingSourceItem[
   return items;
 }
 
+/** Only the three values the regulation and `companies.hazard_class` share. */
+export function hazardClassFrom(value: unknown): HazardClass | null {
+  const raw = text(value).toLowerCase();
+  return raw === "low" || raw === "medium" || raw === "high" ? raw : null;
+}
+
 export function trainingRecommendationsFor(params: {
   sectorId: string | null;
+  hazardClass?: HazardClass | null;
   rows: TrainingItemRow[];
 }): TrainingRecommendation[] {
   const items = adaptTrainingItems(params.rows);
@@ -69,7 +76,11 @@ export function trainingRecommendationsFor(params: {
   // An empty list is the honest answer; the section simply does not appear.
   if (items.length === 0) return [];
 
-  const context = resolveContext({ sectorId: params.sectorId, items });
+  const context = resolveContext({
+    sectorId: params.sectorId,
+    hazardClass: params.hazardClass ?? null,
+    items,
+  });
   const cards = buildTrainingRecommendations(context);
 
   // A card that trips the linter is dropped, not repaired. Every sentence here

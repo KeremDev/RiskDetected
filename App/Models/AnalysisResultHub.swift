@@ -221,6 +221,9 @@ struct AnalysisResultHubItem: Decodable, Identifiable, Hashable {
     let audienceLabel: String?
     let text: String?
     let groupCode: String?
+    let durationLabel: String?
+    let durationValue: String?
+    let durationNote: String?
 
     enum CodingKeys: String, CodingKey {
         case id, ordinal, title, category, description, confidence, locked
@@ -255,6 +258,9 @@ struct AnalysisResultHubItem: Decodable, Identifiable, Hashable {
         case audienceLabel = "audience_label"
         case text
         case groupCode = "group_code"
+        case durationLabel = "duration_label"
+        case durationValue = "duration_value"
+        case durationNote = "duration_note"
     }
 
     var displayTitle: String {

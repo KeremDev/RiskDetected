@@ -29,6 +29,12 @@ Deno.test("report intents validate selected server item identifiers", () => {
   assertStringIncludes(source, "p_selected_item_keys: selected");
 });
 
+Deno.test("risk report intents preserve standard versus risk-table output", () => {
+  assertStringIncludes(source, 'context.body.report_kind === "standard"');
+  assertStringIncludes(source, "const quotaKind = reportKind");
+  assertStringIncludes(source, "report_kind: reportKind");
+});
+
 Deno.test("feedback identifiers are canonicalized before lookup and persistence", () => {
   assertStringIncludes(source, "function canonicalUUID");
   assertStringIncludes(source, "canonicalUUID(rawTargetKey)");

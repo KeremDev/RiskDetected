@@ -642,7 +642,9 @@ serve(async (req) => {
 
   const contentScope = reportIntent?.content_scope ??
     normalizeContentScope(body.content_scope);
-  const kind = contentScope === "risk_analysis"
+  const kind = reportIntent
+    ? normalizeKind(reportIntent.content_snapshot.report_kind)
+    : contentScope === "risk_analysis"
     ? "riskAnalysis"
     : normalizeKind(body.kind);
   const method = normalizeMethod(body.method);

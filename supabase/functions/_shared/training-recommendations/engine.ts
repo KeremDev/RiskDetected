@@ -6,6 +6,9 @@
 
 import type {
   AudienceCode,
+  HazardClass,
+  RenderedDuration,
+  StatutoryDuration,
   TrainingApplicability,
   TrainingContext,
   TrainingRecommendation,
@@ -13,6 +16,7 @@ import type {
 import {
   AUDIENCE_TR,
   CLASS_LABEL_TR,
+  HAZARD_CLASS_TR,
   type TrainingGroupCode,
 } from "./contracts.ts";
 import {
@@ -45,6 +49,7 @@ export function equipmentFamilyOf(assetRef: string | null): string | null {
 
 export function resolveContext(params: {
   sectorId: string | null;
+  hazardClass: HazardClass | null;
   items: TrainingSourceItem[];
 }): TrainingContext {
   const byTrigger: Record<string, string[]> = {};
@@ -82,6 +87,7 @@ export function resolveContext(params: {
 
   return {
     sectorId: params.sectorId,
+    hazardClass: params.hazardClass,
     mechanismCodes: [...mechanisms].sort(),
     assuranceTopicIds: [...topics].sort(),
     moduleIds: [...modules].sort(),
@@ -207,6 +213,69 @@ function renderText(
   return entry.secondSentence ? `${first} ${entry.secondSentence}` : first;
 }
 
+/** "yılda bir", "iki yılda bir", "üç yılda bir" -- no bare digits in prose. */
+const YEAR_WORD_TR: Record<number, string> = {
+  1: "yılda bir",
+  2: "iki yılda bir",
+  3: "üç yılda bir",
+};
+
+const CLASS_ORDER: HazardClass[] = ["low", "medium", "high"];
+
+/**
+ * A statutory duration, resolved against whatever the workplace class is known
+ * to be.
+ *
+ * Known class: the reader's own row, and only that row. Unknown class: all
+ * three, which is the honest form -- the alternative is picking one, and
+ * picking one means asserting a hazard class nobody stated. The row is data,
+ * not prose, so it never passes through the linter and never has to satisfy
+ * the two-sentence rule.
+ */
+export function renderDuration(
+  duration: StatutoryDuration | undefined,
+  hazardClass: HazardClass | null,
+): RenderedDuration | null {
+  if (!duration) return null;
+  const label = "Yasal süre";
+
+  if (typeof duration.minimumHours === "number") {
+    return {
+      label,
+      value: `En az ${duration.minimumHours} saat`,
+      ...(duration.noteTr ? { note: duration.noteTr } : {}),
+    };
+  }
+
+  const hours = duration.hoursByHazardClass;
+  if (!hours) return null;
+  const refresh = duration.refreshYearsByHazardClass;
+
+  if (hazardClass) {
+    const interval = refresh ? YEAR_WORD_TR[refresh[hazardClass]] : undefined;
+    const note = interval ? `Yenileme: ${interval}` : duration.noteTr;
+    return {
+      label,
+      value: `${HAZARD_CLASS_TR[hazardClass]} sınıf · en az ${
+        hours[hazardClass]
+      } saat`,
+      ...(note ? { note } : {}),
+    };
+  }
+
+  // No company on the analysis, so no stated class. Say all three rather than
+  // guess one; the reader knows which line is theirs and the engine does not.
+  const value = CLASS_ORDER
+    .map((code) => `${HAZARD_CLASS_TR[code]} ${hours[code]}`)
+    .join(" · ") + " saat";
+  const note = refresh
+    ? `Yenileme: sırasıyla ${
+      CLASS_ORDER.map((code) => YEAR_WORD_TR[refresh[code]] ?? "").join(", ")
+    }`
+    : undefined;
+  return { label, value, ...(note ? { note } : {}) };
+}
+
 const GROUP_ORDER: TrainingGroupCode[] = [
   "task_and_equipment",
   "qualification_and_authorization",
@@ -273,6 +342,7 @@ export function buildTrainingRecommendations(
       categoryLabel: CLASS_LABEL_TR[match.entry.recommendationClass],
       audienceLabel: audienceLabel(match.entry.audiences),
       text: renderText(match.entry, match.applicability),
+      duration: renderDuration(match.entry.statutoryDuration, context.hazardClass),
       applicability: match.applicability,
       triggerCodes: [...match.triggers].sort(),
       sourceItemIds,

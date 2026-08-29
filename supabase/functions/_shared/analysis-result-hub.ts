@@ -145,7 +145,9 @@ export function redactNotebookForFree(
  * Free-tier view of a training card.
  *
  * The title and the audience are enough to show what the section is for; the
- * recommendation text itself is the paid content.
+ * recommendation text itself is the paid content. The statutory duration is
+ * not: it is a published legal minimum, and paywalling a fact anyone can look
+ * up would be a worse product than showing it.
  */
 export function redactTrainingForFree(
   row: Record<string, unknown>,
@@ -157,6 +159,9 @@ export function redactTrainingForFree(
     audience_label: row.audience_label,
     text: firstSentenceTeaser(row.text, 120),
     group_code: row.group_code,
+    duration_label: row.duration_label ?? null,
+    duration_value: row.duration_value ?? null,
+    duration_note: row.duration_note ?? null,
     display_order: row.display_order,
     locked: true,
   };

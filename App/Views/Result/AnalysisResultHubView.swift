@@ -1,6 +1,32 @@
 import SwiftUI
 import UIKit
 
+struct AnalysisResultPaywallRequest {
+    let section: AnalysisResultSectionID
+    let funnelSessionID: UUID
+    let itemID: String?
+    let attributes: [String: String]
+}
+
+enum AnalysisResultHubReportKind: String, Identifiable {
+    case standard
+    case riskTable
+    case section
+
+    var id: String { rawValue }
+
+    var pdfReportKind: PDFReportKind? {
+        switch self {
+        case .standard:
+            return .standard
+        case .riskTable:
+            return .riskAnalysis
+        case .section:
+            return nil
+        }
+    }
+}
+
 /// Native SwiftUI projection of the approved 440 × 956 result-hub reference.
 /// Product data and permissions remain authoritative while the supplied HTML
 /// defines layout, hierarchy and interaction styling.
@@ -23,8 +49,8 @@ struct AnalysisResultHubView: View {
     let onOpenFinding: (FindingRow, AnalysisResultSectionID) -> Void
     let onEditFinding: (FindingRow) -> Void
     let onDeleteFinding: (FindingRow) -> Void
-    let onPaywall: (AnalysisResultSectionID, UUID) -> Void
-    let onCreateReport: (AnalysisResultSectionID, [UUID], String) -> Void
+    let onPaywall: (AnalysisResultPaywallRequest) -> Void
+    let onCreateReport: (AnalysisResultSectionID, [UUID], String, AnalysisResultHubReportKind) -> Void
     let onEditNotebook: (AnalysisResultHubItem, String, String) -> Void
     let onSuppressNotebook: (AnalysisResultHubItem) -> Void
 
@@ -40,7 +66,7 @@ struct AnalysisResultHubView: View {
     @State private var notebookFindingDraft = ""
     @State private var notebookRecommendationDraft = ""
     @State private var reportSheetPresented = false
-    @State private var reportKind: ReferenceReportKind?
+    @State private var reportKind: AnalysisResultHubReportKind?
     @State private var reportFormat = "pdf"
     @State private var reportSheetHeight = ReferenceReportSheetLayout.initialHeight
     @State private var reportSheetDetent: PresentationDetent = .height(ReferenceReportSheetLayout.compactHeight)
@@ -52,9 +78,48 @@ struct AnalysisResultHubView: View {
     private let greenMuted = Color.rdResultGreenMuted
     private let ink = Color.rdResultPrimaryText
     private let muted = Color.rdResultSecondaryText
-    private let summaryStart = Color(hex: "#3F6FA8")
-    private let summaryMid = Color(hex: "#2F5183")
-    private let summaryEnd = Color(hex: "#1F3557")
+
+    /// The risk-analysis cards retain their established green controls. The
+    /// three supporting sections each own one visual identity end to end.
+    private var activeAccent: Color {
+        switch selectedSection {
+        case .riskAnalysis: return green
+        case .expertRecommendations: return .rdSectionExpertAccent
+        case .approvedNotebook: return .rdSectionNotebookAccent
+        case .trainingRecommendations: return .rdSectionTrainingAccent
+        }
+    }
+
+    private var activeStrong: Color {
+        switch selectedSection {
+        case .riskAnalysis: return greenDark
+        case .expertRecommendations: return .rdSectionExpertStrong
+        case .approvedNotebook: return .rdSectionNotebookStrong
+        case .trainingRecommendations: return .rdSectionTrainingStrong
+        }
+    }
+
+    private var activeTint: Color {
+        switch selectedSection {
+        case .riskAnalysis: return .rdResultGreenTint
+        case .expertRecommendations: return .rdSectionExpertTint
+        case .approvedNotebook: return .rdSectionNotebookTint
+        case .trainingRecommendations: return .rdSectionTrainingTint
+        }
+    }
+
+    private var summaryGradientColors: [Color] {
+        switch selectedSection {
+        case .riskAnalysis:
+            return [Color(hex: "#3F6FA8"), Color(hex: "#2F5183"), Color(hex: "#1F3557")]
+        case .expertRecommendations:
+            return [.rdSectionExpertStart, .rdSectionExpertAccent, .rdSectionExpertEnd]
+        case .approvedNotebook:
+            return [.rdSectionNotebookStart, .rdSectionNotebookAccent, .rdSectionNotebookEnd]
+        case .trainingRecommendations:
+            return [.rdSectionTrainingStart, .rdSectionTrainingAccent, .rdSectionTrainingEnd]
+        }
+    }
 
     private var activeSection: AnalysisResultSection {
         hub.sections.first(where: { $0.id == selectedSection })
@@ -187,12 +252,17 @@ struct AnalysisResultHubView: View {
                 onClose: { reportSheetPresented = false },
                 onUpgrade: {
                     reportSheetPresented = false
-                    onPaywall(selectedSection, funnelSessionID)
+                    requestPaywall(
+                        section: selectedSection,
+                        placement: "report_sheet_upgrade",
+                        entryKind: "report_gate"
+                    )
                 },
                 onGenerate: {
+                    guard let reportKind else { return }
                     let format = reportKind == .standard ? "pdf" : reportFormat
                     reportSheetPresented = false
-                    onCreateReport(selectedSection, Array(selectedIDs), format)
+                    onCreateReport(selectedSection, Array(selectedIDs), format, reportKind)
                 }
             )
             .presentationDetents(reportSheetDetents, selection: $reportSheetDetent)
@@ -343,7 +413,7 @@ struct AnalysisResultHubView: View {
         case .riskAnalysis: return .rdSectionRiskAccent
         case .expertRecommendations: return .rdSectionExpertAccent
         case .approvedNotebook: return .rdSectionNotebookAccent
-        case .trainingRecommendations: return .rdSectionExpertAccent
+        case .trainingRecommendations: return .rdSectionTrainingAccent
         }
     }
 
@@ -382,7 +452,10 @@ struct AnalysisResultHubView: View {
                             )
                         }
                         if isPlusTier && index == premiumInsertionIndex {
-                            proUpgradeCard(section: .riskAnalysis)
+                            proUpgradeCard(
+                                section: .riskAnalysis,
+                                afterItemCount: index + 1
+                            )
                         }
                     }
                 }
@@ -401,7 +474,10 @@ struct AnalysisResultHubView: View {
                     VStack(spacing: 16) {
                         expertCard(item, position: index + 1)
                         if isPlusTier && index == proInsertionIndex {
-                            proUpgradeCard(section: .expertRecommendations)
+                            proUpgradeCard(
+                                section: .expertRecommendations,
+                                afterItemCount: index + 1
+                            )
                         }
                     }
                 }
@@ -430,7 +506,7 @@ struct AnalysisResultHubView: View {
         HStack(spacing: 7) {
             Image(systemName: "mappin.and.ellipse")
                 .font(RDTypography.font(size: 11, weight: .semibold))
-                .foregroundStyle(green)
+                .foregroundStyle(activeStrong)
             Text(copy(
                 "Kayıtlar saha incelemesi dayanağıyla yazılmıştır.",
                 "Entries are written on the basis of a site inspection."
@@ -453,6 +529,7 @@ struct AnalysisResultHubView: View {
         let groups = trainingGroups
         let active = activeTrainingGroup(in: groups)
         let items = groups.first(where: { $0.code == active })?.items ?? []
+        let promotionInsertionIndex = min(1, max(0, items.count - 1))
 
         return VStack(spacing: 0) {
             nonRiskSummary.padding(.top, 12)
@@ -461,8 +538,13 @@ struct AnalysisResultHubView: View {
                     .padding(.top, 14)
             }
             LazyVStack(spacing: 34) {
-                ForEach(items) { item in
-                    trainingCard(item)
+                ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                    VStack(spacing: 16) {
+                        trainingCard(item)
+                        if index == promotionInsertionIndex {
+                            trainingMembershipPromotion(afterItemCount: index + 1)
+                        }
+                    }
                 }
             }
             .padding(.top, 26)
@@ -540,7 +622,7 @@ struct AnalysisResultHubView: View {
                         .foregroundStyle(selected ? .white : ink)
                         .padding(.horizontal, 12)
                         .frame(height: 34)
-                        .background(selected ? green : Color.rdResultSurface)
+                        .background(selected ? activeAccent : Color.rdResultSurface)
                         .clipShape(Capsule())
                         .overlay(
                             Capsule().stroke(
@@ -589,7 +671,7 @@ struct AnalysisResultHubView: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                         .font(referenceFont(11, .medium))
-                        .foregroundStyle(greenDark)
+                        .foregroundStyle(activeStrong)
                         .padding(.top, 7)
                     }
                     Text(item.text ?? "")
@@ -601,16 +683,20 @@ struct AnalysisResultHubView: View {
                 } else {
                     trainingTeaserBody(item)
                 }
+                // The statutory hours sit outside the sentence and outside the
+                // paywall: they are a published legal minimum, so a locked card
+                // still shows them.
+                trainingDurationRow(item)
             }
             .padding(.horizontal, 13).padding(.top, 26).padding(.bottom, 16)
         }
         .background(Color.rdResultSurface)
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(green, lineWidth: 1.5))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(activeAccent, lineWidth: 1.5))
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .shadow(color: Color.black.opacity(0.10), radius: 7, x: 4, y: 6)
         .overlay(alignment: .topLeading) {
             Image(systemName: "graduationcap.fill")
-                .font(RDTypography.font(size: 20, weight: .regular)).foregroundStyle(greenDark)
+                .font(RDTypography.font(size: 20, weight: .regular)).foregroundStyle(activeStrong)
                 .frame(width: 36, height: 36).background(Color.rdResultSurface).clipShape(Circle()).offset(x: 15, y: -18)
         }
         .padding(.horizontal, 16)
@@ -621,6 +707,49 @@ struct AnalysisResultHubView: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("result.hub.training.card.\(item.id.uuidString)")
+    }
+
+    /// Hours and refresh interval, where the regulation fixes them.
+    ///
+    /// Only two trainings carry one, so most cards draw nothing here. The value
+    /// names the workplace hazard class when the analysis is bound to a company
+    /// that states it, and all three classes when it is not -- the backend
+    /// decides which, because guessing a hazard class is exactly what it must
+    /// not do.
+    @ViewBuilder
+    private func trainingDurationRow(_ item: AnalysisResultHubItem) -> some View {
+        if let value = item.durationValue, !value.isEmpty {
+            VStack(alignment: .leading, spacing: 0) {
+                Rectangle()
+                    .fill(muted.opacity(0.22))
+                    .frame(height: 1)
+                    .padding(.top, 13)
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Image(systemName: "clock.fill")
+                        .font(RDTypography.font(size: 10, weight: .semibold))
+                        .foregroundStyle(muted)
+                    VStack(alignment: .leading, spacing: 3) {
+                        if let label = item.durationLabel, !label.isEmpty {
+                            Text(label.localizedUppercase)
+                                .font(referenceFont(9, .heavy)).tracking(0.4)
+                                .foregroundStyle(muted)
+                        }
+                        Text(value)
+                            .font(referenceFont(11, .semibold))
+                            .foregroundStyle(ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                        if let note = item.durationNote, !note.isEmpty {
+                            Text(note)
+                                .font(referenceFont(10, .regular))
+                                .foregroundStyle(Color.rdResultSecondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.top, 11)
+            }
+        }
     }
 
     @ViewBuilder
@@ -699,7 +828,7 @@ struct AnalysisResultHubView: View {
         .frame(maxWidth: .infinity, minHeight: 87)
         .background(
             ZStack {
-                LinearGradient(colors: [summaryStart, summaryMid, summaryEnd], startPoint: .topLeading, endPoint: .bottomTrailing)
+                LinearGradient(colors: summaryGradientColors, startPoint: .topLeading, endPoint: .bottomTrailing)
                 Circle().fill(.white.opacity(0.08)).frame(width: 84, height: 84).offset(x: 178, y: -35)
                 Circle().fill(.white.opacity(0.05)).frame(width: 60, height: 60).offset(x: 90, y: 54)
             }
@@ -763,12 +892,12 @@ struct AnalysisResultHubView: View {
         .frame(maxWidth: .infinity, minHeight: 88)
         .background(
             ZStack {
-                LinearGradient(colors: [summaryStart, summaryMid, summaryEnd], startPoint: .topLeading, endPoint: .bottomTrailing)
+                LinearGradient(colors: summaryGradientColors, startPoint: .topLeading, endPoint: .bottomTrailing)
                 Circle().fill(.white.opacity(0.08)).frame(width: 84, height: 84).offset(x: 180, y: -32)
             }
         )
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .shadow(color: Color(hex: "#142A4A").opacity(0.24), radius: 9, x: 4, y: 8)
+        .shadow(color: activeStrong.opacity(0.24), radius: 9, x: 4, y: 8)
     }
 
     private func distributionBar(_ level: RiskLevel, count: Int, maximum: Int) -> some View {
@@ -875,7 +1004,16 @@ struct AnalysisResultHubView: View {
         source item: AnalysisResultHubItem,
         position: Int
     ) -> some View {
-        Button { onPaywall(.riskAnalysis, funnelSessionID) } label: {
+        Button {
+            requestPaywall(
+                section: .riskAnalysis,
+                placement: "results_feed_promotion",
+                entryKind: "membership_promotion",
+                promotionVariant: "plus_pro_deep_analysis",
+                itemID: item.id.uuidString,
+                afterItemCount: max(1, position - 1)
+            )
+        } label: {
             ZStack {
                 premiumDeepAnalysisCardBody(source: item, position: position)
                     .blur(radius: 6)
@@ -1094,15 +1232,67 @@ struct AnalysisResultHubView: View {
         )
     }
 
-    private func proUpgradeCard(section: AnalysisResultSectionID) -> some View {
-        ResultMembershipPromotionCard(
+    @ViewBuilder
+    private func trainingMembershipPromotion(afterItemCount: Int) -> some View {
+        if isFreeTier {
+            ResultMembershipPromotionCard(
+                variant: .plusAndPro,
+                title: localizedTrainingPromotion(
+                    "analysis.result_hub.training.promotion.free.title"
+                ),
+                message: localizedTrainingPromotion(
+                    "analysis.result_hub.training.promotion.free.message"
+                ),
+                actionTitle: localizedTrainingPromotion(
+                    "analysis.result_hub.training.promotion.free.action"
+                )
+            ) {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                requestPaywall(
+                    section: .trainingRecommendations,
+                    placement: "results_feed_promotion",
+                    entryKind: "membership_promotion",
+                    promotionVariant: "plus_pro",
+                    afterItemCount: afterItemCount
+                )
+            }
+            .accessibilityHint(
+                localizedTrainingPromotion(
+                    "analysis.result_hub.training.promotion.free.accessibility_hint"
+                )
+            )
+            .accessibilityIdentifier("result.hub.training.plus_pro_upgrade")
+        } else if isPlusTier {
+            proUpgradeCard(
+                section: .trainingRecommendations,
+                afterItemCount: afterItemCount
+            )
+        }
+    }
+
+    private func proUpgradeCard(
+        section: AnalysisResultSectionID,
+        afterItemCount: Int
+    ) -> some View {
+        let isTraining = section == .trainingRecommendations
+        return ResultMembershipPromotionCard(
             variant: .pro,
-            title: copy("Analizini PRO ile güçlendir", "Power up your analysis with PRO"),
+            title: isTraining
+                ? localizedTrainingPromotion(
+                    "analysis.result_hub.training.promotion.pro.title"
+                )
+                : copy("Analizini PRO ile güçlendir", "Power up your analysis with PRO"),
             message: proUpgradeMessage,
             actionTitle: copy("PRO'ya geç", "Upgrade to PRO")
         ) {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            onPaywall(section, funnelSessionID)
+            requestPaywall(
+                section: section,
+                placement: "results_feed_promotion",
+                entryKind: "membership_promotion",
+                promotionVariant: "pro",
+                afterItemCount: afterItemCount
+            )
         }
         .accessibilityHint(copy("PRO abonelik ekranını açar", "Opens the PRO subscription screen"))
         .accessibilityIdentifier("result.hub.pro_upgrade.\(section.rawValue)")
@@ -1130,7 +1320,7 @@ struct AnalysisResultHubView: View {
                         Text(selectedIDs.count == activeSection.items.count ? copy("Tümünü bırak", "Clear all") : copy("Tümünü seç", "Select all"))
                             .font(referenceFont(11.5, .heavy))
                     }
-                    .foregroundStyle(greenDark)
+                    .foregroundStyle(activeStrong)
                 }
                 .buttonStyle(.plain)
             }
@@ -1185,7 +1375,7 @@ struct AnalysisResultHubView: View {
             if activeSection.access == .full { actionStrip(item) }
         }
         .background(Color.rdResultSurface)
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(green, lineWidth: 1.5))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(activeAccent, lineWidth: 1.5))
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .shadow(color: Color.black.opacity(0.10), radius: 7, x: 4, y: 6)
         .overlay(alignment: .topLeading) {
@@ -1422,12 +1612,12 @@ struct AnalysisResultHubView: View {
             if activeSection.access == .full { actionStrip(item) }
         }
         .background(Color.rdResultSurface)
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(green, lineWidth: 1.5))
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(activeAccent, lineWidth: 1.5))
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .shadow(color: Color.black.opacity(0.10), radius: 7, x: 4, y: 6)
         .overlay(alignment: .topLeading) {
             Image(systemName: "lightbulb")
-                .font(RDTypography.font(size: 23, weight: .regular)).foregroundStyle(Color(hex: "#C9A227"))
+                .font(RDTypography.font(size: 23, weight: .regular)).foregroundStyle(activeStrong)
                 .frame(width: 36, height: 36).background(Color.rdResultSurface).clipShape(Circle()).offset(x: 15, y: -18)
         }
         .contentShape(Rectangle())
@@ -1494,7 +1684,7 @@ struct AnalysisResultHubView: View {
                             .font(referenceFont(9.5, .heavy))
                             .tracking(0.45)
                     }
-                    .foregroundStyle(greenDark)
+                    .foregroundStyle(activeStrong)
 
                     Text(firstSentence(of: recommendation))
                         .font(referenceFont(11.5, .medium))
@@ -1510,15 +1700,15 @@ struct AnalysisResultHubView: View {
                     Image(systemName: "arrow.right.circle.fill")
                         .font(RDTypography.font(size: 12, weight: .semibold))
                 }
-                .foregroundStyle(greenDark)
+                .foregroundStyle(activeStrong)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 9)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.rdResultGreenTintStrong)
+            .background(activeTint)
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(green.opacity(0.30), lineWidth: 1)
+                    .stroke(activeAccent.opacity(0.36), lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
@@ -1574,19 +1764,19 @@ struct AnalysisResultHubView: View {
         VStack(spacing: 0) {
             HStack {
                 Text(copy("ONAYLI DEFTER KAYITLARI", "SAFETY LOG ENTRIES"))
-                    .font(referenceFont(9.5, .heavy)).tracking(0.7).foregroundStyle(Color(hex: "#A2937A"))
+                    .font(referenceFont(9.5, .heavy)).tracking(0.7).foregroundStyle(activeStrong)
                 Spacer()
-                if activeSection.access == .teaser { Image(systemName: "lock.fill").foregroundStyle(Color(hex: "#A2937A")) }
+                if activeSection.access == .teaser { Image(systemName: "lock.fill").foregroundStyle(activeStrong) }
             }
             .padding(.leading, 50).padding(.trailing, 15).padding(.vertical, 15)
-            .background(Color.rdResultKhakiTint)
+            .background(activeTint)
             VStack(spacing: 27) {
                 if activeSection.access == .teaser {
                     notebookPremiumTeaser
                 } else {
                     ForEach(Array(activeSection.items.enumerated()), id: \.element.id) { index, item in
                         HStack(alignment: .top, spacing: 9) {
-                            Text("\(index + 1)-").font(referenceFont(13, .heavy)).foregroundStyle(Color(hex: "#B3453C"))
+                            Text("\(index + 1)-").font(referenceFont(13, .heavy)).foregroundStyle(activeStrong)
                                 .frame(width: 17, alignment: .trailing)
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(notebookCombinedText(item))
@@ -1603,7 +1793,7 @@ struct AnalysisResultHubView: View {
             HStack(alignment: .bottom, spacing: 10) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(copy("UZMAN DEĞERLENDİRMESİ", "EXPERT REVIEW"))
-                        .font(referenceFont(9.5, .heavy)).tracking(0.5).foregroundStyle(Color(hex: "#A2937A"))
+                        .font(referenceFont(9.5, .heavy)).tracking(0.5).foregroundStyle(activeStrong)
                     Text(copy("Bu kayıt bir taslaktır", "This entry is a draft"))
                         .font(referenceFont(12, .bold)).foregroundStyle(Color.rdResultPrimaryText)
                 }
@@ -1612,18 +1802,18 @@ struct AnalysisResultHubView: View {
                     Text(copy("TASLAK", "DRAFT")).font(referenceFont(8.5, .heavy)).tracking(0.5)
                     Text(copy("UZMAN ONAYI", "EXPERT REVIEW")).font(referenceFont(8, .bold))
                 }
-                .foregroundStyle(Color(hex: "#B3453C")).frame(width: 74, height: 74)
-                .overlay(Circle().stroke(Color(hex: "#C1A9A4"), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])))
+                .foregroundStyle(activeStrong).frame(width: 74, height: 74)
+                .overlay(Circle().stroke(activeAccent.opacity(0.62), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])))
                 .rotationEffect(.degrees(-8))
             }
             .padding(.leading, 50).padding(.trailing, 15).padding(.vertical, 12)
-            .background(Color.rdResultKhakiTint)
+            .background(activeTint)
         }
         .overlay(alignment: .leading) {
-            LinearGradient(colors: [Color(hex: "#C9B98C"), Color(hex: "#E3D7AE"), .clear], startPoint: .leading, endPoint: .trailing).frame(width: 7)
-            Rectangle().fill(Color(hex: "#DDA9A2")).frame(width: 1.5).offset(x: 38)
+            LinearGradient(colors: [activeAccent.opacity(0.58), activeAccent.opacity(0.16), .clear], startPoint: .leading, endPoint: .trailing).frame(width: 7)
+            Rectangle().fill(activeAccent.opacity(0.58)).frame(width: 1.5).offset(x: 38)
         }
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: "#E6DFC9"), lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(activeAccent.opacity(0.50), lineWidth: 1.2))
         .clipShape(NotebookOuterShape())
         .shadow(color: Color.black.opacity(0.16), radius: 10, x: 5, y: 8)
         .contentShape(Rectangle())
@@ -1642,7 +1832,7 @@ struct AnalysisResultHubView: View {
                 HStack(alignment: .top, spacing: 9) {
                     Text("1-")
                         .font(referenceFont(13, .heavy))
-                        .foregroundStyle(Color(hex: "#B3453C"))
+                        .foregroundStyle(activeStrong)
                         .frame(width: 17, alignment: .trailing)
                     Text(firstParts.first)
                         .font(referenceFont(12.5, .medium))
@@ -1665,7 +1855,7 @@ struct AnalysisResultHubView: View {
                             HStack(alignment: .top, spacing: 9) {
                                 Text("\(index + 2)-")
                                     .font(referenceFont(13, .heavy))
-                                    .foregroundStyle(Color(hex: "#B3453C"))
+                                    .foregroundStyle(activeStrong)
                                     .frame(width: 17, alignment: .trailing)
                                 Text(notebookTeaserSource(for: item))
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -1728,13 +1918,13 @@ struct AnalysisResultHubView: View {
             HStack(spacing: 6) {
                 if !compact {
                     Text(selected ? copy("Seçildi", "Selected") : copy("Seç", "Select"))
-                        .font(referenceFont(11.5, .heavy)).foregroundStyle(selected ? greenDark : Color.rdResultTertiaryText)
+                        .font(referenceFont(11.5, .heavy)).foregroundStyle(selected ? activeStrong : Color.rdResultTertiaryText)
                 }
                 Image(systemName: selected ? "checkmark" : "")
                     .font(RDTypography.font(size: 10, weight: .black)).foregroundStyle(Color.white)
                     .frame(width: compact ? 20 : 24, height: compact ? 20 : 24)
-                    .background(selected ? green : Color.rdResultSurface)
-                    .overlay(Circle().stroke(selected ? green : Color.rdResultLine, lineWidth: 1.5))
+                    .background(selected ? activeAccent : Color.rdResultSurface)
+                    .overlay(Circle().stroke(selected ? activeAccent : Color.rdResultLine, lineWidth: 1.5))
                     .clipShape(Circle())
             }
         }
@@ -1766,7 +1956,7 @@ struct AnalysisResultHubView: View {
             .buttonStyle(.plain)
             .accessibilityIdentifier("result.hub.item.details.\(item.id.uuidString)")
         }
-        .padding(.horizontal, 10).frame(height: 48).background(green)
+        .padding(.horizontal, 10).frame(height: 48).background(activeAccent)
     }
 
     private func stripButton(_ icon: String, label: String, action: @escaping () -> Void) -> some View {
@@ -1787,7 +1977,12 @@ struct AnalysisResultHubView: View {
                 funnelSessionID: funnelSessionID
             )
         }
-        onPaywall(selectedSection, funnelSessionID)
+        requestPaywall(
+            section: selectedSection,
+            placement: "locked_content_teaser",
+            entryKind: "content_gate",
+            itemID: item.id.uuidString
+        )
     }
 
     private func lockedContent(_ item: AnalysisResultHubItem) -> some View {
@@ -1803,7 +1998,7 @@ struct AnalysisResultHubView: View {
             } label: {
                 HStack(spacing: 7) { Image(systemName: "lock.open.fill"); Text(copy("Plus / Pro ile tamamını aç", "Unlock all with Plus / Pro")) }
                     .font(referenceFont(12, .heavy)).foregroundStyle(.white)
-                    .frame(maxWidth: .infinity).padding(.vertical, 10).background(greenDark)
+                    .frame(maxWidth: .infinity).padding(.vertical, 10).background(activeStrong)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
             }
             .buttonStyle(.plain)
@@ -1842,15 +2037,15 @@ struct AnalysisResultHubView: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
-            .foregroundStyle(greenDark)
+            .foregroundStyle(activeStrong)
             .frame(width: 66, height: 50)
-            .background(Color.rdResultGreenTint)
+            .background(activeTint)
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(green.opacity(0.48), lineWidth: 1.2)
+                    .stroke(activeAccent.opacity(0.48), lineWidth: 1.2)
             )
             .clipShape(RoundedRectangle(cornerRadius: 14))
-            .shadow(color: greenDark.opacity(0.12), radius: 6, x: 2, y: 4)
+            .shadow(color: activeStrong.opacity(0.12), radius: 6, x: 2, y: 4)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(copy("Geri dön", "Go back"))
@@ -1860,7 +2055,11 @@ struct AnalysisResultHubView: View {
     private var reportActionButton: some View {
         Button {
             if activeSection.access == .teaser || !activeSection.canReport {
-                onPaywall(selectedSection, funnelSessionID)
+                requestPaywall(
+                    section: selectedSection,
+                    placement: "sticky_report_cta",
+                    entryKind: "report_gate"
+                )
             } else if !selectedIDs.isEmpty {
                 reportKind = selectedSection == .riskAnalysis ? nil : .section
                 reportFormat = "pdf"
@@ -2214,7 +2413,7 @@ struct AnalysisResultHubView: View {
         return VStack(spacing: 10) {
             Image(systemName: content.icon)
                 .font(RDTypography.font(size: 28, weight: .medium))
-                .foregroundStyle(greenDark)
+                .foregroundStyle(activeStrong)
             Text(content.title)
                 .font(referenceFont(14, .heavy))
                 .foregroundStyle(ink)
@@ -2228,15 +2427,55 @@ struct AnalysisResultHubView: View {
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 24)
         .padding(.vertical, 32)
-        .background(Color.rdResultGreenTint)
+        .background(activeTint)
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(green.opacity(0.42), lineWidth: 1)
+                .stroke(activeAccent.opacity(0.42), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("result.hub.empty_state.\(selectedSection.rawValue)")
     }
+    private func requestPaywall(
+        section: AnalysisResultSectionID,
+        placement: String,
+        entryKind: String,
+        promotionVariant: String? = nil,
+        itemID: String? = nil,
+        afterItemCount: Int? = nil
+    ) {
+        var attributes = [
+            "entry_kind": entryKind,
+            "placement": placement,
+            "source_section": section.rawValue,
+            "current_tier": (hub.tier ?? "unknown").lowercased(),
+        ]
+        if let promotionVariant {
+            attributes["promotion_variant"] = promotionVariant
+        }
+        if let afterItemCount {
+            attributes["after_item_count"] = String(afterItemCount)
+        }
+
+        onPaywall(
+            AnalysisResultPaywallRequest(
+                section: section,
+                funnelSessionID: funnelSessionID,
+                itemID: itemID,
+                attributes: attributes
+            )
+        )
+    }
+
+    private func localizedTrainingPromotion(_ key: String) -> String {
+        RDLocalization.string(
+            key,
+            table: .analysis,
+            fallback: key,
+            language: language
+        )
+    }
+
     private func copy(_ turkish: String, _ english: String) -> String { language == .turkish ? turkish : english }
     private func referenceFont(_ size: CGFloat, _ weight: Font.Weight) -> Font { RDTypography.font(size, weight) }
 }
@@ -2760,8 +2999,6 @@ private enum ReferenceReportSheetLayout {
     }
 }
 
-private enum ReferenceReportKind: String, Identifiable { case standard, riskTable, section; var id: String { rawValue } }
-
 private enum ReferenceReportSheetMeasuredRegion: Hashable {
     case header
     case content
@@ -2802,7 +3039,7 @@ private struct ReferenceReportSheet: View {
     let freeRiskAnalysisTrialRemaining: Int
     @Binding var method: RiskMethod
     @Binding var selectedCompany: Company?
-    @Binding var reportKind: ReferenceReportKind?
+    @Binding var reportKind: AnalysisResultHubReportKind?
     @Binding var reportFormat: String
     @Binding var preferredHeight: CGFloat
     @Binding var selectedDetent: PresentationDetent
@@ -3105,7 +3342,7 @@ private struct ReferenceReportSheet: View {
     }
 
     private func reportTypeCard(
-        kind: ReferenceReportKind,
+        kind: AnalysisResultHubReportKind,
         title: String,
         subtitle: String,
         icon: String,

@@ -64,9 +64,65 @@ export type TrainingGroupCode =
   | "emergency_and_rescue"
   | "toolbox";
 
+/**
+ * The workplace hazard class, in the regulation's own three-way split.
+ *
+ * `low` az tehlikeli, `medium` tehlikeli, `high` çok tehlikeli -- the values
+ * `companies.hazard_class` already stores. It is never inferred: a photograph
+ * does not show it and a sector does not determine it, so it arrives only when
+ * the analysis is bound to a company that states it. Null is a legitimate
+ * answer and the renderer has an honest form for it.
+ */
+export type HazardClass = "low" | "medium" | "high";
+
+export const HAZARD_CLASS_TR: Record<HazardClass, string> = {
+  low: "Az tehlikeli",
+  medium: "Tehlikeli",
+  high: "Çok tehlikeli",
+};
+
+/**
+ * A statutory duration, rendered as a labelled row rather than a sentence.
+ *
+ * Keeping it out of the prose is deliberate. The writing standard allows two
+ * sentences and forbids obligation verbs, and an hour figure is neither an
+ * argument nor a recommendation -- it is a fact the reader wants to find at a
+ * glance. As data it also stays honest about provenance: only the two entries
+ * the regulation actually fixes carry one, and inventing an hour figure for a
+ * task-specific training would be exactly the fabrication this engine exists
+ * to prevent.
+ */
+export interface StatutoryDuration {
+  /** Fixed minimum, where the regulation states one irrespective of class. */
+  minimumHours?: number;
+  /** Minimum by hazard class, where the regulation splits on it. */
+  hoursByHazardClass?: Record<HazardClass, number>;
+  /** Refresh interval in years, by hazard class. */
+  refreshYearsByHazardClass?: Record<HazardClass, number>;
+  /** Short qualifier shown beneath the figure, where one clarifies it. */
+  noteTr?: string;
+  /** Registry code for the reference; carried for the audit trail. */
+  basisCode: string;
+  /**
+   * False while the figure is a domain expert's statement rather than a
+   * verified citation. Mirrors the approved-book registry policy: the text
+   * still renders, the claim to a verified basis does not.
+   */
+  verified: boolean;
+}
+
+/** What a duration becomes once the hazard class is known -- or is not. */
+export interface RenderedDuration {
+  label: string;
+  value: string;
+  note?: string;
+}
+
 /** What the analysis showed, reduced to the codes the rules may read. */
 export interface TrainingContext {
   sectorId: string | null;
+  /** Null unless the analysis is bound to a company that states it. */
+  hazardClass: HazardClass | null;
   mechanismCodes: string[];
   assuranceTopicIds: string[];
   moduleIds: string[];
@@ -86,6 +142,8 @@ export interface TrainingRecommendation {
   categoryLabel: string;
   audienceLabel: string;
   text: string;
+  /** Present only where the regulation fixes a duration for this training. */
+  duration: RenderedDuration | null;
   /** Audit only; never rendered. */
   applicability: TrainingApplicability;
   triggerCodes: string[];
