@@ -297,8 +297,44 @@ const BY_MECHANISM: Record<string, ControlPlaybook> = {
   other_visible_physical: GENERIC,
 };
 
-export function controlPlaybook(mechanism: string): ControlPlaybook {
-  return BY_MECHANISM[mechanism] ?? GENERIC;
+// Mechanism is the causal axis, but one mechanism can fail two ways.
+//
+// A load leaving a crane hook and a brick falling off a slab edge are both
+// `falling_object`, and the mechanism playbook is written for the second: cut
+// the drop path with a toeboard, a net or a closed platform. Analysis 031d5068
+// scored a missing hook latch and told the reader to fit a toeboard, which is
+// not a control for a hook and not a thing you can fit to one. The remedy for a
+// load coming off the hook is the hook: its latch, the sling, the eye, and the
+// pre-use inspection that covers all three.
+//
+// Keyed by module rather than asset, because module is the field every call
+// site already carries, and `lifting` is exactly the distinction that matters.
+const BY_MECHANISM_AND_MODULE: Record<string, ControlPlaybook> = {
+  "falling_object@lifting": {
+    rootCause:
+      "Yük ile kaldırma aksesuarı arasındaki bağlantı, yükün kancadan ayrılmasını önleyecek biçimde emniyete alınmamıştır.",
+    control:
+      "Kaldırmayı durdurup yükü indirin; kanca emniyet mandalını, sapanı ve bağlama noktasını kullanım öncesi muayeneden geçirin.",
+    corrective: [
+      "Askıdaki yükü güvenli biçimde indirin; yükün altını ve salınım alanını boşaltın.",
+      "Kanca emniyet mandalını yerinde, yaylı ve tam kapanır durumda tamamlayın; mandalı eksik veya işlevsiz kancayı hizmet dışı bırakın.",
+      "Sapan, mapa ve bağlantı elemanlarını çatlak, deformasyon ve aşınma yönünden muayene edin; uygun olmayanı etiketleyerek ayırın.",
+      "Yükü kanca ağzına tam oturacak biçimde bağlayın; uç yükleme ve ağızdan kaçırmalı bağlamayı önleyin.",
+      "Kaldırma alanında dışlama bölgesi kurun; yük altında ve salınım yolunda personel bulunmasını engelleyin.",
+    ],
+    preventive:
+      "Kaldırma ekipmanını ve aksesuarlarını periyodik kontrol ile kullanım öncesi muayene kaydına bağlayın; kanca mandalı kontrolünü vardiya öncesi listesine yazın, uygun olmayan aksesuarın hizmet dışına alınmasını tek yetkiliye bağlayın.",
+  },
+};
+
+export function controlPlaybook(
+  mechanism: string,
+  moduleID?: string,
+): ControlPlaybook {
+  const specific = moduleID
+    ? BY_MECHANISM_AND_MODULE[`${mechanism}@${moduleID}`]
+    : undefined;
+  return specific ?? BY_MECHANISM[mechanism] ?? GENERIC;
 }
 
 export function correctiveSteps(playbook: ControlPlaybook): string {

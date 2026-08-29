@@ -28,6 +28,7 @@ import { outputLanguageFailure } from "./language-contract.ts";
 import { normalizeCandidates } from "./evidence-normalizer.ts";
 import { buildCoverageRepairPrompt } from "./provider.ts";
 import { buildTargetedQueue, mergeTargetedOutput } from "./targeted-queue.ts";
+import { SERVER_SYNTHESIZED_COVERAGE_NOTE } from "./dynamic-modules.ts";
 
 function candidate(
   overrides: Partial<ProviderCandidate> = {},
@@ -3285,5 +3286,177 @@ Deno.test("model görsel olarak çözülemez dediyse iddia skorlanmaz", () => {
   assertStringIncludes(
     String(item?.internal_priority.route_reason),
     "unresolvable_claim_cannot_be_scored",
+  );
+});
+
+// --------------------------------------------------------------------------
+// 031d5068 -- the remaining three defects from that run
+// --------------------------------------------------------------------------
+
+Deno.test("elektrik doğrulama başlığı olmayan su birikintisini uydurmaz", () => {
+  // 031d5068: kuru beton zemin üzerinde "Su birikintisi yakınındaki hat veya
+  // kablonun elektriksel durumu" yayımlandı. Su kelimesi o çıktının hiçbir
+  // kanıtında, karşı kanıtında veya varlığında geçmiyor -- başlık sabit metindi
+  // ve maddeyi aciliyetli gösteren tek olguyu kendisi uydurmuştu.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "electrical",
+    raw_label: "Zeminde tanımlanamayan kabloların varlığı",
+    affirmative_cues: ["Zeminde görünen koyu renkli hatlar/kablolar"],
+    counter_cues: [
+      "Kabloların elektriksel kimliği veya enerjili olup olmadığı görsel olarak ayırt edilemiyor",
+    ],
+    event_path: {
+      source: "zemindeki kablolar",
+      contact_or_failure: "takılma veya elektrik teması",
+      consequence: "düşme veya elektrik çarpması",
+    },
+    potential_consequence: "ordinary",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(String(item?.title).includes("birikinti"), false);
+  assertStringIncludes(String(item?.title), "kablo");
+});
+
+Deno.test("kanıtta ıslaklık varsa elektrik başlığı bunu söyler", () => {
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "electrical",
+    raw_label: "Su birikintisi içinden geçen kablo",
+    affirmative_cues: ["Kablo zemindeki su birikintisinin içinden geçiyor"],
+    counter_cues: ["Kablonun enerjili olup olmadığı ayırt edilemiyor"],
+    event_path: {
+      source: "zemindeki kablolar",
+      contact_or_failure: "elektrik teması",
+      consequence: "elektrik çarpması",
+    },
+    potential_consequence: "ordinary",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertStringIncludes(String(item?.title), "birikinti");
+});
+
+Deno.test("kaldırmada düşen cisim önerisi kancayı anlatır, topuk levhasını değil", () => {
+  // 031d5068: eksik kanca mandalı için "topuk levhası, ağ veya kapalı platform"
+  // önerildi. Topuk levhası kancaya takılan bir şey değil.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "lifting",
+    raw_label: "Vinç kancasında emniyet mandalı eksikliği",
+    asset_ref: "hook_1",
+    affirmative_cues: ["Kanca ağzında mandal yok, ağız tamamen açık"],
+    evidence_region: { x: 0.3, y: 0.3, width: 0.2, height: 0.2 },
+    event_path: {
+      source: "asılı yük",
+      contact_or_failure: "kancadan yükün ayrılması",
+      consequence: "yükün düşmesi",
+    },
+    potential_consequence: "fatal",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.is_scored, true);
+  const action = String(item?.recommended_action);
+  assertEquals(action.includes("topuk levhası"), false);
+  assertStringIncludes(action, "mandal");
+  const corrective = String(
+    item?.recommended_measures?.find((measure) => measure.kind === "corrective")
+      ?.text,
+  );
+  assertStringIncludes(corrective, "Sapan");
+});
+
+Deno.test("kenardan düşen cisimde topuk levhası önerisi korunur", () => {
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "falls_falling_objects",
+    raw_label: "Platform kenarında etek tahtası eksik, malzeme düşebilir",
+    affirmative_cues: ["Döşeme kenarında etek tahtası yok, malzeme kenarda"],
+    evidence_region: { x: 0.3, y: 0.3, width: 0.2, height: 0.2 },
+    event_path: {
+      source: "kenardaki malzeme",
+      contact_or_failure: "malzemenin kenardan düşmesi",
+      consequence: "alttaki kişiye çarpma",
+    },
+    potential_consequence: "fatal",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertStringIncludes(String(item?.recommended_action), "topuk levhası");
+});
+
+Deno.test("sunucunun uydurduğu kapsam satırı değerlendirilemedi diye yayımlanmaz", () => {
+  // 031d5068: "Lojistik ve istif değerlendirilemedi" yayımlandı. O satırı model
+  // yazmamıştı -- modül çıktıda hiç yoktu, sunucu kapsam haritasını tamamlamak
+  // için ekledi ve notu bir muhasebe kaydıydı. Fotoğrafta dolu paletli raf var.
+  const photo = output([candidate()]);
+  photo.module_coverage.push({
+    module_id: "logistics",
+    activated_by: ["server_coverage_recovery"],
+    outcome: "not_assessable_due_to_image",
+    entity_refs: [],
+    candidate_keys: [],
+    note: SERVER_SYNTHESIZED_COVERAGE_NOTE,
+  });
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const notAssessable = routed.items.filter((item) =>
+    item.item_class === "not_assessable"
+  );
+  assertEquals(
+    notAssessable.some((item) => String(item.title).includes("Lojistik")),
+    false,
+  );
+});
+
+Deno.test("görünen raf ünitesi lojistik modülünü cevaplar", () => {
+  const photo = output([candidate()]);
+  photo.scene_entities.push({
+    id: "shelving_unit",
+    kind: "storage_rack",
+    label: "Raf ünitesi",
+    visible: true,
+    accessible: true,
+  });
+  photo.module_coverage.push({
+    module_id: "logistics",
+    activated_by: ["shelving_unit"],
+    outcome: "not_assessable_due_to_image",
+    entity_refs: ["shelving_unit"],
+    candidate_keys: [],
+    note: "Istif düzeni değerlendirilemedi.",
+  });
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(
+    routed.items.some((item) =>
+      item.item_class === "not_assessable" &&
+      String(item.title).includes("Lojistik")
+    ),
+    false,
   );
 });

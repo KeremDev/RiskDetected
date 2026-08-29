@@ -14,6 +14,7 @@ import {
   assuranceTopicForModule,
 } from "./assurance-topic-catalog.ts";
 import { controlPlaybook, correctiveSteps } from "./control-playbook.ts";
+import { SERVER_SYNTHESIZED_COVERAGE_NOTE } from "./dynamic-modules.ts";
 import {
   assuranceMeasures,
   moduleConsequenceRank,
@@ -322,7 +323,28 @@ function conciseTitle(candidate: NormalizedCandidate): string {
     return "Çalışma kenarında düşmeye karşı koruma eksikliği";
   }
   if (candidate.condition_code === "electrical_identity_unresolved") {
-    return "Su birikintisi yakınındaki hat veya kablonun elektriksel durumu";
+    // This was one fixed string that always named a water puddle, exactly the
+    // bug fixed for housekeeping a few lines below and never checked for here.
+    // Analysis 031d5068 published "Su birikintisi yakınındaki hat veya kablonun
+    // elektriksel durumu" over a dry concrete floor; the word water appears in
+    // no cue, no counter-cue and no entity in that whole output. The title had
+    // invented the one fact that made the item sound urgent.
+    //
+    // A verification request may say the identity of a line is unresolved. It
+    // may not assert the condition that would make the line dangerous.
+    const wetContext =
+      /(?:ıslak|islak|su birikinti|sıvı döküntü|sivi dokuntu|kaygan|wet|puddle)/u
+        .test(context);
+    if (wetContext) {
+      return "Su birikintisi yakınındaki hat veya kablonun elektriksel durumu";
+    }
+    if (/(?:pano|dolap|tablo|panel|switchboard)/u.test(context)) {
+      return "Elektrik panosunun kapak ve erişim durumu";
+    }
+    if (/(?:kablo|hat|hortum|kordon|cable|cord)/u.test(context)) {
+      return "Zeminde görünen hat veya kablonun elektriksel durumu";
+    }
+    return "Görünen elektrik tesisatı bileşeninin durumu";
   }
   if (
     candidate.module_id === "housekeeping_physical_contact" &&
@@ -486,10 +508,10 @@ function endSentence(value: string): string {
 function controlTextFor(candidate: NormalizedCandidate): string {
   const mechanism = mechanismCode(candidate);
   if (mechanism !== "other_visible_physical") {
-    return controlPlaybook(mechanism).control;
+    return controlPlaybook(mechanism, candidate.module_id).control;
   }
   return CONTROL_CATALOG[candidate.module_id] ??
-    controlPlaybook(mechanism).control;
+    controlPlaybook(mechanism, candidate.module_id).control;
 }
 
 function verificationAction(candidate: NormalizedCandidate): string {
@@ -520,7 +542,7 @@ function rootCauseFor(
   return cleanText(
     moduleSpecific?.mechanisms.includes(mechanism)
       ? moduleSpecific.text
-      : controlPlaybook(mechanism).rootCause,
+      : controlPlaybook(mechanism, candidate.module_id).rootCause,
     "",
   );
 }
@@ -558,7 +580,10 @@ function measuresFor(
     }];
   }
   if (itemClass !== "observed_finding") return [];
-  const playbook = controlPlaybook(mechanismCode(candidate));
+  const playbook = controlPlaybook(
+    mechanismCode(candidate),
+    candidate.module_id,
+  );
   return [{
     kind: "corrective",
     title: "Acil düzeltme",
@@ -2045,6 +2070,20 @@ export function routeCandidates(params: {
         !noCandidates.has(entry.module_id)
       )
     ) {
+      // The model never answered for this module; the server added the row to
+      // keep the coverage map whole. Publishing it tells the reader "lojistik
+      // ve istif değerlendirilemedi" on the strength of a bookkeeping event,
+      // and analysis 031d5068 did exactly that over a photograph holding a
+      // loaded pallet rack. Silence about a module is not a verdict on it.
+      if ((coverage.note ?? "").trim() === SERVER_SYNTHESIZED_COVERAGE_NOTE) {
+        ledger.push({
+          from_state: "module_coverage",
+          to_state: "hard_reject",
+          reason_code: "server_synthesized_coverage_not_published",
+          details: { module_id: coverage.module_id, photo_index: photoIndex },
+        });
+        continue;
+      }
       const refuted = imageAnswersThisModule(coverage.module_id, output, items);
       if (refuted) {
         ledger.push({
@@ -2200,6 +2239,19 @@ function imageAnswersThisModule(
     (mechanisms.has("fall_from_height") || mechanisms.has("fall_same_level"))
   ) {
     return "fall_finding_published";
+  }
+  // Racking and stacked pallets in the frame are what this module is about, so
+  // a photograph containing them has answered it whichever way the answer went.
+  if (moduleID === "logistics") {
+    const storage = output.scene_entities.filter((entity) =>
+      entity.visible !== false &&
+      /(?:storage_rack|racking|shelv|pallet|stack|istif|raf)/u.test(
+        `${entity.kind} ${entity.label ?? ""}`.toLocaleLowerCase("tr-TR"),
+      )
+    );
+    if (storage.length > 0) {
+      return `storage_entities_visible:${storage.length}`;
+    }
   }
   return null;
 }

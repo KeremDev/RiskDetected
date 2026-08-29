@@ -6,6 +6,16 @@ import {
   type V4ModuleID,
 } from "./contracts.ts";
 
+/**
+ * The note on a coverage row the server invented because the model omitted the
+ * module entirely.
+ *
+ * Not a finding about the photograph -- a record that the provider's answer was
+ * short. Exported so the router can drop these rather than publish them.
+ */
+export const SERVER_SYNTHESIZED_COVERAGE_NOTE =
+  "Provider kapsam sonucu teknik olarak eksikti; olumlu tehlike varsayılmadı.";
+
 const SIGNALS: Record<string, string[]> = {
   work_at_height: [
     "scaffold",
@@ -319,14 +329,17 @@ export function recoverCoverageDeterministically(
           note: "Olumlu kontrol bağlantısı sunucu tarafından geri kazanıldı.",
         };
       }
+      // The model said nothing at all about this module, so there is no verdict
+      // to record -- this row exists to keep the coverage map complete, not to
+      // report a judgement about the image. The router must not publish it as
+      // one, and this note is how it tells them apart.
       return {
         module_id: moduleID,
         activated_by: ["server_coverage_recovery"],
         outcome: "not_assessable_due_to_image",
         entity_refs: [],
         candidate_keys: [],
-        note:
-          "Provider kapsam sonucu teknik olarak eksikti; olumlu tehlike varsayılmadı.",
+        note: SERVER_SYNTHESIZED_COVERAGE_NOTE,
       };
     }
 
