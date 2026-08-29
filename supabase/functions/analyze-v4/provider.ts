@@ -1,5 +1,6 @@
 import type { AnalysisServiceTier } from "../_shared/analysis-compute-profile.ts";
 import { sendGeminiGenerateContent } from "../_shared/gemini-provider-client.ts";
+import { outputLanguageFailure } from "./language-contract.ts";
 import {
   CORE_MODULE_IDS,
   DYNAMIC_MODULE_IDS,
@@ -239,6 +240,8 @@ export async function callV4Gemini(params: {
   requiredModules?: readonly V4ModuleID[];
   /** Set for calls whose module_coverage is never consumed. */
   skipCoverageContract?: boolean;
+  /** Analysis output language. A mismatch is retryable, like a schema failure. */
+  expectedLanguage?: string;
 }): Promise<V4ProviderResult> {
   const started = Date.now();
   let response: Response;
@@ -328,12 +331,34 @@ export async function callV4Gemini(params: {
     );
   }
   try {
+    const parsed = parseOutput(
+      text,
+      params.requiredModules ?? CORE_MODULE_IDS,
+      params.skipCoverageContract === true,
+    );
+    // The output contract covers the language too. Treated like a schema
+    // failure so the existing retry path re-asks rather than publishing an
+    // English report to a Turkish reader.
+    const languageFailure = outputLanguageFailure(
+      parsed,
+      params.expectedLanguage ?? "",
+    );
+    if (languageFailure) {
+      throw new V4ProviderError(
+        languageFailure,
+        "provider_output_language_invalid",
+        response.status,
+        durationMs,
+        true,
+        usage,
+        requestID,
+        [],
+        null,
+        effectiveServiceTier,
+      );
+    }
     return {
-      output: parseOutput(
-        text,
-        params.requiredModules ?? CORE_MODULE_IDS,
-        params.skipCoverageContract === true,
-      ),
+      output: parsed,
       providerRequestID: requestID,
       durationMs,
       httpStatus: response.status,
@@ -342,6 +367,9 @@ export async function callV4Gemini(params: {
       usage,
     };
   } catch (error) {
+    // Already shaped and classified; re-wrapping it as a schema failure would
+    // lose the language code the retry path keys on.
+    if (error instanceof V4ProviderError) throw error;
     const coverageError = error instanceof V4CoverageContractError
       ? error
       : null;

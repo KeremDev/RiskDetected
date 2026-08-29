@@ -41,6 +41,7 @@ import {
   summarizeSecondPass,
   V4_VERIFICATION_PROMPT_COMMON,
 } from "./verification-pass.ts";
+import { languageContractCorrection } from "./language-contract.ts";
 import {
   buildCoverageRepairPrompt,
   callV4Gemini,
@@ -280,6 +281,7 @@ async function analyzePhoto(params: {
   requiredModules: ReturnType<typeof initialActiveModules>;
   promptSHA256: string;
   promptBundleSHA256: string;
+  outputLanguage: string;
 }): Promise<PhotoResult> {
   const attempts: Array<{
     kind: "primary" | "technical_retry" | "provider_fallback";
@@ -296,6 +298,7 @@ async function analyzePhoto(params: {
   let attempt = 0;
   let lastError: V4ProviderError | null = null;
   let schemaRetryAdded = false;
+  let languageRetryAdded = false;
   let flexFallbackAdded = false;
   while (attempt < attempts.length) {
     const spec = attempts[attempt];
@@ -313,6 +316,7 @@ async function analyzePhoto(params: {
         maxOutputTokens: params.maxOutput,
         serviceTier: spec.tier,
         requiredModules: params.requiredModules,
+        expectedLanguage: params.outputLanguage,
       });
       const photoRunID = await checkpointPhoto(params.supabase, {
         userID: params.userID,
@@ -437,7 +441,19 @@ async function analyzePhoto(params: {
         promptBundleSHA256: params.promptBundleSHA256,
         maxOutputTokens: params.maxOutput,
       });
-      if (!schemaRetryAdded && error.code === "provider_schema_invalid") {
+      if (
+        !languageRetryAdded && error.code === "provider_output_language_invalid"
+      ) {
+        // One retry, with the failure named. Publishing an English report to a
+        // Turkish reader is worse than the cost of asking again.
+        languageRetryAdded = true;
+        attempts.push({
+          kind: "technical_retry",
+          tier: spec.tier,
+          thinking: params.retryThinking,
+          prompt: languageContractCorrection(params.prompt),
+        });
+      } else if (!schemaRetryAdded && error.code === "provider_schema_invalid") {
         schemaRetryAdded = true;
         attempts.push({
           kind: "technical_retry",
@@ -812,6 +828,7 @@ serve(async (req) => {
           requiredModules: initialActiveModules(sectorID),
           promptSHA256: promptSHA,
           promptBundleSHA256: promptSHA,
+          outputLanguage: language,
         });
       }),
     );
@@ -857,6 +874,7 @@ serve(async (req) => {
           // contract only discards valid gap-finding answers.
           requiredModules: [],
           skipCoverageContract: true,
+          expectedLanguage: language,
         });
         await recordAttempt(supabase, {
           attemptID,

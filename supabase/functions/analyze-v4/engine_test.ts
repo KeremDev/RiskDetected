@@ -24,6 +24,7 @@ import {
 import { topicConsequenceRank } from "./assurance-playbook.ts";
 import { controlPlaybook } from "./control-playbook.ts";
 import { reconcileVerificationPass } from "./verification-pass.ts";
+import { outputLanguageFailure } from "./language-contract.ts";
 import { normalizeCandidates } from "./evidence-normalizer.ts";
 import { buildCoverageRepairPrompt } from "./provider.ts";
 import { buildTargetedQueue, mergeTargetedOutput } from "./targeted-queue.ts";
@@ -2528,4 +2529,80 @@ Deno.test("varlık iddiası ikinci geçişle çürütülmez, yalnız yokluk iddi
     secondCandidates: [],
   });
   assertEquals(reconciled.disputed.length, 0);
+});
+
+Deno.test("İngilizce cevap Türkçe sözleşmesini ihlal eder", () => {
+  // 8747d7c1: beş birincil adayın hepsi İngilizce döndü ve rapora çıktı --
+  // "Bu durum contact with exposed rotating parts yoluyla entanglement or
+  // crushing injury sonucuna neden olabilir."
+  const english = output([
+    candidate({
+      candidate_key: "C1",
+      module_id: "falls_falling_objects",
+      raw_label: "Missing toeboard on elevated platform guardrail.",
+      affirmative_cues: [
+        "Gap between platform surface and mid-rail",
+        "no visible toeboard on the front edge of the walkway",
+      ],
+      event_path: {
+        source: "person on platform",
+        contact_or_failure: "object falling from platform edge",
+        consequence: "injury to person below",
+      },
+    }),
+    candidate({
+      candidate_key: "C2",
+      module_id: "machinery",
+      raw_label: "Unguarded rotating machinery parts.",
+      affirmative_cues: [
+        "Exposed motor casing with a visible shaft connection to the tank",
+      ],
+      event_path: {
+        source: "rotating machinery",
+        contact_or_failure: "contact with exposed rotating parts",
+        consequence: "entanglement or crushing injury",
+      },
+    }),
+  ]);
+  assertStringIncludes(
+    String(outputLanguageFailure(english, "tr")),
+    "output_language_not_turkish",
+  );
+  // Only Turkish is judged; an English analysis must pass untouched.
+  assertEquals(outputLanguageFailure(english, "en"), null);
+});
+
+Deno.test("Türkçe cevap dil denetiminden geçer", () => {
+  const turkish = output([candidate({
+    candidate_key: "C1",
+    module_id: "falls_falling_objects",
+    raw_label: "Yükseltilmiş platform korkuluğunda etek tahtası eksikliği",
+    affirmative_cues: [
+      "Platform yüzeyi ile ara korkuluk arasında boşluk görülmektedir",
+      "korkuluğun alt kısmında etek tahtası bulunmamaktadır",
+    ],
+    event_path: {
+      source: "platform kenarı",
+      contact_or_failure: "nesnenin kenardan düşmesi",
+      consequence: "aşağıdaki çalışana çarpma",
+    },
+  })]);
+  assertEquals(outputLanguageFailure(turkish, "tr"), null);
+});
+
+Deno.test("kısa Türkçe metin diakritiksiz olsa da yanlış alarm vermez", () => {
+  // "motor kaplini" gibi kısa bir etiket ünlü işareti taşımayabilir; bunun için
+  // retry harcanmamalı.
+  const short = output([candidate({
+    candidate_key: "C1",
+    module_id: "machinery",
+    raw_label: "Motor kaplini",
+    affirmative_cues: ["kaplin acikta"],
+    event_path: {
+      source: "kaplin",
+      contact_or_failure: "temas",
+      consequence: "yaralanma",
+    },
+  })]);
+  assertEquals(outputLanguageFailure(short, "tr"), null);
 });
