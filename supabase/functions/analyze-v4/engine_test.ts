@@ -1616,6 +1616,82 @@ Deno.test("aynı cümlede var denen eleman yok sayılmaz", () => {
   );
 });
 
+Deno.test("eleman adı vermeyen korkuluk boşluğu iddiası da skorlanmaz", () => {
+  // 09e812b0: "Ana platformun sağ tarafındaki korkulukta boşluk", fatal, FK 720,
+  // güven 0,9. Hiçbir eleman adı geçmediği için eleman kapıları boştaydı; aynı
+  // fotoğrafın kendi olumlu kontrolü "Platform kenarı boyunca uzanan sarı üst
+  // korkuluk mevcuttur" diyordu. Korkuluk iki kenara kadar kesintisiz.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "falls_falling_objects",
+    raw_label: "Ana platformun sağ tarafındaki korkulukta boşluk",
+    affirmative_cues: [
+      "Korkuluk hattının kesintiye uğradığı ve açık bir kenar oluşturduğu boşluk görülmektedir",
+      "Platform yüksekte bulunmaktadır",
+    ],
+    event_path: {
+      source: "yüksekteki platform",
+      contact_or_failure: "korkuluk boşluğundan düşme",
+      consequence: "zemine çarpma ve ölümcül yaralanma",
+    },
+    potential_consequence: "fatal",
+  })]);
+  photo.positive_controls = [{
+    control_key: "main-rail",
+    module_id: "falls_falling_objects",
+    description: "Ana platformdaki sarı korkuluklar düşmeye karşı koruma sağlar.",
+    affirmative_cues: [
+      "Platform kenarı boyunca uzanan sarı üst korkuluk mevcuttur",
+      "Platform kenarı boyunca uzanan sarı ara korkuluk mevcuttur",
+    ],
+    evidence_region: { x: 0, y: 0.4, width: 1, height: 0.2 },
+  }];
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.item_class, "verification_request");
+  assertEquals(item?.is_scored, false);
+  assertStringIncludes(
+    String(item?.internal_priority.route_reason),
+    "barrier_deficiency_against_affirmed_continuity",
+  );
+});
+
+Deno.test("tek noktada görülen korkuluk elemanı açık kenarı bastırmaz", () => {
+  // Süreklilik dili olmayan tek bir olumlu kontrol, hattın geri kalanı hakkında
+  // bir şey söylemez: gerçek korumasız kenar skorlu kalmalı.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "falls_falling_objects",
+    raw_label: "Döşeme kenarında korkuluk bulunmuyor",
+    affirmative_cues: ["kenar boyunca hiçbir korkuluk yok", "beton döşeme kenarı açık"],
+    event_path: {
+      source: "döşeme kenarı",
+      contact_or_failure: "kenardan düşme",
+      consequence: "ölüm",
+    },
+    potential_consequence: "fatal",
+  })]);
+  photo.positive_controls = [{
+    control_key: "one-spot",
+    module_id: "falls_falling_objects",
+    description: "Merdiven sahanlığında üst korkuluk mevcuttur.",
+    affirmative_cues: ["sahanlıkta üst korkuluk"],
+    evidence_region: { x: 0.8, y: 0.1, width: 0.1, height: 0.1 },
+  }];
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.item_class, "observed_finding");
+  assertEquals(item?.is_scored, true);
+});
+
 Deno.test("üstü teyitli, altı teyitsiz ara korkuluk iddiası skorlu kalır", () => {
   // Sandviç kuralı yalnız iki komşusu da görülmüşken uygular. Etek tahtası
   // hakkında hiçbir teyit yoksa iddia normal yolundan geçer.

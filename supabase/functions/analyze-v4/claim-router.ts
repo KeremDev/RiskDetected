@@ -1302,6 +1302,63 @@ function componentsSeenBySecondPass(disputed: string | null | undefined): string
     .filter(Boolean);
 }
 
+// A guardrail claim that names no member at all.
+//
+// The member-specific gates closed one door and analysis 09e812b0 walked through
+// the next one: "Ana platformun sağ tarafındaki korkulukta boşluk", fatal, FK
+// 720, confidence 0.9 -- a break in the rail LINE rather than a missing top
+// rail, mid rail or toeboard. Nothing named, so nothing to match against the
+// positive controls, and the same photo's controls read "Platform kenarı boyunca
+// uzanan sarı üst korkuluk mevcuttur" and the same for the mid rail. The rail
+// runs unbroken to both frame edges.
+//
+// Fifth consecutive run of this photograph with a false guardrail claim, each in
+// a different form. So the gate stops chasing the wording: when the photo's own
+// controls describe a barrier that RUNS ALONG the edge and affirm more than one
+// of its members, a claim that the same barrier is deficient is asked, not
+// asserted -- whether or not it names the member it means.
+const BARRIER_WORD = /(?:korkuluk|korkulu[gğ]|guardrail|handrail|parapet)/u;
+const BARRIER_DISCONTINUITY =
+  /(?:boşluk|bosluk|kesinti|kesintiye|süreksiz|sureksiz|açık kenar|acik kenar|korumasız kenar|korumasiz kenar|gap\b|discontinu)/u;
+const BARRIER_CONTINUITY =
+  /(?:boyunca|eksiksiz|kesintisiz|süreklilik|sureklilik|tam koruma|boydan boya|along the)/u;
+
+/** Does this claim say a guardrail is deficient, however it words it? */
+function claimsBarrierDeficiency(candidate: NormalizedCandidate): boolean {
+  const text = `${candidate.normalized_label} ${
+    candidate.affirmative_cues.join(" ")
+  }`.toLocaleLowerCase("tr-TR");
+  if (!BARRIER_WORD.test(text)) return false;
+  return BARRIER_DISCONTINUITY.test(text) || ABSENCE_WORD.test(text);
+}
+
+/**
+ * A positive control describing a barrier that runs along the edge.
+ *
+ * Two members at least, and language of continuity rather than a single spot
+ * check -- "kenar boyunca uzanan üst korkuluk", "üst korkuluk, ara korkuluk ve
+ * etek tahtası eksiksizdir". One member seen at one point says nothing about the
+ * rest of the run and must not gate anything.
+ */
+function affirmsContinuousBarrier(
+  output: ProviderPhotoOutput,
+  moduleID: string,
+): string | null {
+  for (const control of output.positive_controls) {
+    if (control.module_id !== moduleID) continue;
+    const text = `${control.description} ${control.affirmative_cues.join(" ")}`
+      .toLocaleLowerCase("tr-TR");
+    if (!BARRIER_CONTINUITY.test(text)) continue;
+    const members = BARRIER_COMPONENTS.filter((component) =>
+      component.code !== "guard" && component.pattern.test(text)
+    );
+    if (members.length >= 2) {
+      return members.map((member) => member.code).join("+");
+    }
+  }
+  return null;
+}
+
 // A macro close-up of a hose coupling produced "Yerdeki gevşek tel ve
 // döküntülerden kaynaklanan takılma tehlikesi" from an offcut of wire and some
 // dry grass in the gravel. There is no walking route in that frame: the model
@@ -1526,6 +1583,23 @@ export function routeCandidates(params: {
       continue;
     }
 
+    // The photo's own controls describe a barrier running along this edge with
+    // more than one member affirmed. A claim that the same barrier is broken --
+    // a named member missing, or an unnamed gap in the line -- is asked, not
+    // scored. Demotion, never a drop: rails do get removed and not put back.
+    if (
+      itemClass === "observed_finding" && photoForCandidate &&
+      claimsBarrierDeficiency(candidate)
+    ) {
+      const continuous = affirmsContinuousBarrier(
+        photoForCandidate,
+        candidate.module_id,
+      );
+      if (continuous) {
+        itemClass = "verification_request";
+        routeReason = `barrier_deficiency_against_affirmed_continuity:${continuous}`;
+      }
+    }
     // A guardrail is a welded assembly, not three parts bolted on separately.
     // When the photo's own positive controls affirm the member ABOVE and the
     // member BELOW the one this claim calls missing, the claim is asking the
