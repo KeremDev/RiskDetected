@@ -1278,6 +1278,22 @@ function componentsAffirmedPresent(
   return { flat, general };
 }
 
+/**
+ * Barrier components the second pass reported it could see.
+ *
+ * Parses the reason string the verification pass wrote onto the candidate
+ * (`second_pass_saw:top_rail+toeboard`) rather than re-reading its output, so
+ * the two passes' verdicts stay in one place.
+ */
+function componentsSeenBySecondPass(disputed: string | null | undefined): string[] {
+  if (!disputed) return [];
+  const marker = "second_pass_saw:";
+  const at = disputed.indexOf(marker);
+  if (at < 0) return [];
+  return disputed.slice(at + marker.length).split("+").map((code) => code.trim())
+    .filter(Boolean);
+}
+
 // A macro close-up of a hose coupling produced "Yerdeki gevşek tel ve
 // döküntülerden kaynaklanan takılma tehlikesi" from an offcut of wire and some
 // dry grass in the gravel. There is no walking route in that frame: the model
@@ -1447,6 +1463,61 @@ export function routeCandidates(params: {
     }
     let itemClass = route.itemClass!;
     let routeReason = route.reason;
+    const photoForCandidate = outputByPhoto.get(candidate.photo_index);
+
+    // What this candidate says is missing, and what the engine already holds
+    // against it: the same photo's own positive controls, and the second look.
+    const claimedAbsent = photoForCandidate
+      ? componentsClaimedAbsent(candidate)
+      : [];
+    const selfAffirmed = photoForCandidate && claimedAbsent.length > 0
+      ? componentsAffirmedPresent(
+        photoForCandidate,
+        candidate.module_id,
+        candidate.candidate_key,
+      )
+      : { flat: new Set<string>(), general: new Set<string>() };
+    const secondPassSaw = componentsSeenBySecondPass(
+      candidate.verification_disputed,
+    );
+
+    // Three statements about one component: this claim says it is missing, the
+    // pass that produced the claim says it is there, and an independent second
+    // look says it is there. Publishing that as a field check is not caution --
+    // it prints a fatal-criticality item over something the engine has twice
+    // recorded as present, and analysis 9b9ff9c2 led its report with two of
+    // them. One dissent is a field check; two make the claim wrong.
+    const doublyContradicted = claimedAbsent.filter((component) =>
+      selfAffirmed.flat.has(component) && secondPassSaw.includes(component)
+    );
+    if (doublyContradicted.length > 0) {
+      const reason = `barrier_absence_doubly_contradicted:${
+        doublyContradicted.join("+")
+      }`;
+      // Marked on the candidate so the critical-drop audit reads this as a
+      // rejection with a recorded reason, not a silent demotion.
+      candidate.hard_reject_reason = reason;
+      hardRejections.push({
+        candidate_id: candidate.id,
+        reason_code: reason,
+        criticality: candidate.criticality,
+        evidence_snapshot: {
+          cues: candidate.affirmative_cues,
+          counter_cues: candidate.counter_cues,
+          self_affirmed: [...selfAffirmed.flat],
+          second_pass_saw: secondPassSaw,
+        },
+      });
+      ledger.push({
+        candidate_id: candidate.id,
+        from_state: "candidate",
+        to_state: "hard_reject",
+        reason_code: reason,
+        evidence_level: candidate.evidence_level,
+      });
+      continue;
+    }
+
     // Two independent looks at the same photograph disagreed about whether the
     // thing this claim says is missing is actually missing. Neither look wins;
     // the report asks for a field check instead of scoring a coin toss.
@@ -1454,7 +1525,6 @@ export function routeCandidates(params: {
       itemClass = "verification_request";
       routeReason = `second_pass_disagreement:${candidate.verification_disputed}`;
     }
-    const photoForCandidate = outputByPhoto.get(candidate.photo_index);
     if (
       itemClass === "observed_finding" &&
       mechanismCode(candidate) === "fall_same_level" &&
@@ -1483,14 +1553,8 @@ export function routeCandidates(params: {
     // component this candidate calls missing. Demote rather than publish a
     // scored absence the model itself disputed.
     if (itemClass === "observed_finding") {
-      const photoOutput = photoForCandidate;
-      const claimedAbsent = photoOutput ? componentsClaimedAbsent(candidate) : [];
-      if (photoOutput && claimedAbsent.length > 0) {
-        const affirmed = componentsAffirmedPresent(
-          photoOutput,
-          candidate.module_id,
-          candidate.candidate_key,
-        );
+      if (photoForCandidate && claimedAbsent.length > 0) {
+        const affirmed = selfAffirmed;
         const contradicted = claimedAbsent.filter((component) =>
           affirmed.flat.has(component)
         );

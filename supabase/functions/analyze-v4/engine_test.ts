@@ -2457,6 +2457,100 @@ Deno.test("ikinci geçiş elemanı görürse yokluk iddiası saha teyidine düş
   );
 });
 
+Deno.test("iki kez çürütülen yokluk iddiası yayımlanmaz", () => {
+  // 9b9ff9c2: birinci geçiş "üst korkuluk eksik" dedi ve AYNI çıktıda
+  // "üst korkuluk, ara korkuluk, etek tahtası mevcut" olumlu kontrolünü yazdı;
+  // ikinci geçiş de üst korkuluğu gördü. Rapor bunu iki fatal saha teyidi
+  // olarak başa koymuştu. İki bağımsız teyit varken iddia yanlıştır: düşer.
+  const primary = output([candidate({
+    candidate_key: "C1",
+    module_id: "falls_falling_objects",
+    raw_label: "Üst platformda eksik üst korkuluk",
+    affirmative_cues: ["üst korkuluk hattında boşluk", "platform kenarı açıkta"],
+    event_path: {
+      source: "platform kenarı",
+      contact_or_failure: "yüksekten düşme",
+      consequence: "ölüm",
+    },
+    potential_consequence: "fatal",
+  })]);
+  primary.positive_controls = [{
+    control_key: "guardrail-system",
+    module_id: "falls_falling_objects",
+    description:
+      "Platform kenarlarında korkuluk sistemi (üst korkuluk, ara korkuluk, etek tahtası)",
+    affirmative_cues: ["sarı metal korkuluklar; üst korkuluk mevcut"],
+    evidence_region: { x: 0, y: 0.3, width: 1, height: 0.3 },
+  }] as never;
+  const second = output([]);
+  second.positive_controls = [{
+    control_key: "top-rail-seen",
+    module_id: "falls_falling_objects",
+    description: "Üst platform sol bölüm korkuluğunda üst korkuluk mevcut.",
+    affirmative_cues: ["üst korkuluk boydan boya görülüyor"],
+    evidence_region: { x: 0, y: 0.3, width: 1, height: 0.1 },
+  }] as never;
+
+  const primaryCandidates = normalizeCandidates(primary, 1);
+  reconcileVerificationPass({
+    primaryCandidates,
+    second,
+    secondCandidates: normalizeCandidates(second, 1),
+  });
+
+  const routed = routeCandidates({
+    candidates: primaryCandidates,
+    photoOutputs: [{ photoIndex: 1, output: primary }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(routed.items.filter((entry) => entry.candidate_id).length, 0);
+  assertEquals(routed.hardRejections.length, 1);
+  assertStringIncludes(
+    routed.hardRejections[0].reason_code,
+    "barrier_absence_doubly_contradicted:top_rail",
+  );
+});
+
+Deno.test("tek itiraz hâlâ saha teyidi kalır, düşmez", () => {
+  // Yalnız ikinci geçiş itiraz ediyor, birinci geçiş kendini yalanlamıyor:
+  // bu bir görüş ayrılığıdır, iddia yanlış sayılmaz.
+  const primary = output([candidate({
+    candidate_key: "C1",
+    module_id: "falls_falling_objects",
+    raw_label: "Platformda eksik üst korkuluk",
+    affirmative_cues: ["üst korkuluk hattında boşluk"],
+    event_path: {
+      source: "platform kenarı",
+      contact_or_failure: "yüksekten düşme",
+      consequence: "ölüm",
+    },
+    potential_consequence: "fatal",
+  })]);
+  const second = output([]);
+  second.positive_controls = [{
+    control_key: "top-rail-seen",
+    module_id: "falls_falling_objects",
+    description: "Platform korkuluğunda üst korkuluk mevcut.",
+    affirmative_cues: ["üst korkuluk görülüyor"],
+    evidence_region: { x: 0, y: 0.3, width: 1, height: 0.1 },
+  }] as never;
+
+  const primaryCandidates = normalizeCandidates(primary, 1);
+  reconcileVerificationPass({
+    primaryCandidates,
+    second,
+    secondCandidates: normalizeCandidates(second, 1),
+  });
+  const routed = routeCandidates({
+    candidates: primaryCandidates,
+    photoOutputs: [{ photoIndex: 1, output: primary }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.item_class, "verification_request");
+  assertEquals(routed.hardRejections.length, 0);
+});
+
 Deno.test("ikinci geçişin sessizliği itiraz sayılmaz", () => {
   // İkinci geçiş modülü "değerlendirilemedi" ile kapatırsa bu bir karşı kanıt
   // değildir; doğru bulguyu bastırmamalı.
