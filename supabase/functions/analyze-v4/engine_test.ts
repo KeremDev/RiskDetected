@@ -1616,6 +1616,102 @@ Deno.test("aynı cümlede var denen eleman yok sayılmaz", () => {
   );
 });
 
+Deno.test("kendi kanıtında ihtimal belirten iddia skorlanmaz", () => {
+  // afd0ffa9: "sıkışma noktaları OLABİLECEK kısımlarında koruyucu görünmüyor"
+  // permanent olarak skorlandı, FK 270, raporun tek skorlu maddesiydi.
+  // Fotoğrafta tank üstünde boru, kaplı bir vana ve çelik yapı var; dönen
+  // parça yok. Model görmedi, olabileceğini düşündü.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "machinery",
+    raw_label: "Tank üstü ekipmanlarda koruyucu eksikliği",
+    affirmative_cues: [
+      "Tankların üzerinde bulunan ekipmanların hareketli veya sıkışma noktaları olabilecek kısımlarında belirgin bir koruyucu görünmüyor",
+    ],
+    event_path: {
+      source: "tank üstü ekipman",
+      contact_or_failure: "koruyucusuz hareketli parçaya temas",
+      consequence: "sıkışma veya ezilme",
+    },
+    potential_consequence: "permanent",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.item_class, "verification_request");
+  assertEquals(item?.is_scored, false);
+  assertStringIncludes(
+    String(item?.internal_priority.route_reason),
+    "hedged_evidence_not_an_observation",
+  );
+});
+
+Deno.test("sonuç cümlesindeki olabilir ifadesi bulguyu düşürmez", () => {
+  // Motorun kendi yazdığı sonuç cümlesi "...neden olabilir" ile biter; bu
+  // ihtimal beyanı değil, şablonun kendisidir.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "machinery",
+    raw_label: "Torna aynasında koruyucu bulunmuyor",
+    affirmative_cues: ["dönen ayna açıkta", "koruyucu kapak takılı değil"],
+    event_path: {
+      source: "dönen ayna",
+      contact_or_failure: "temas",
+      consequence: "uzuv kaybına neden olabilir",
+    },
+    potential_consequence: "permanent",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.item_class, "observed_finding");
+  assertEquals(item?.is_scored, true);
+});
+
+Deno.test("farklı korkuluk elemanları tek maddeye birleşmez", () => {
+  // afd0ffa9: "ara korkuluk eksikliği" başlığı, "etek tahtası bulunmuyor"
+  // gövdesinin üstüne bindi. İki eleman aynı olay yolunu paylaştığı için
+  // dedup anahtarı aynı çıkıyordu.
+  const photo = output([
+    candidate({
+      candidate_key: "C1",
+      module_id: "falls_falling_objects",
+      raw_label: "Alt platform korkuluğunda etek tahtası eksikliği",
+      affirmative_cues: ["etek tahtası bulunmuyor"],
+      event_path: {
+        source: "platform kenarı",
+        contact_or_failure: "nesne düşmesi",
+        consequence: "aşağıdaki kişiye çarpma",
+      },
+      potential_consequence: "serious",
+    }),
+    candidate({
+      candidate_key: "C2",
+      module_id: "falls_falling_objects",
+      raw_label: "Alt platform korkuluğunda ara korkuluk eksikliği",
+      affirmative_cues: ["ara korkuluk bulunmuyor"],
+      event_path: {
+        source: "platform kenarı",
+        contact_or_failure: "nesne düşmesi",
+        consequence: "aşağıdaki kişiye çarpma",
+      },
+      potential_consequence: "serious",
+    }),
+  ]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  assertEquals(routed.items.filter((entry) => entry.candidate_id).length, 2);
+});
+
 Deno.test("eleman adı vermeyen korkuluk boşluğu iddiası da skorlanmaz", () => {
   // 09e812b0: "Ana platformun sağ tarafındaki korkulukta boşluk", fatal, FK 720,
   // güven 0,9. Hiçbir eleman adı geçmediği için eleman kapıları boştaydı; aynı

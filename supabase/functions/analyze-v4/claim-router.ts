@@ -1184,6 +1184,14 @@ function dedupEventKey(candidate: NormalizedCandidate): string {
       candidate.module_id,
     )
   ) return `${candidate.photo_index}:ground_access_fall_same_level`;
+  // Two different guardrail members on one rail share an event path -- edge,
+  // fall, injury -- so they merged into a single item and the report showed a
+  // title about the mid rail over a description about the toeboard
+  // (afd0ffa9). The member is part of the claim's identity.
+  const members = componentsClaimedAbsent(candidate);
+  if (members.length > 0) {
+    return `${semanticEventKey(candidate)}:${[...members].sort().join("+")}`;
+  }
   return semanticEventKey(candidate);
 }
 
@@ -1300,6 +1308,30 @@ function componentsSeenBySecondPass(disputed: string | null | undefined): string
   if (at < 0) return [];
   return disputed.slice(at + marker.length).split("+").map((code) => code.trim())
     .filter(Boolean);
+}
+
+// The claim hedges about the very thing it reports.
+//
+// "Tankların üzerinde bulunan ekipmanların hareketli veya sıkışma noktaları
+// OLABİLECEK kısımlarında belirgin bir koruyucu görünmüyor" -- scored
+// permanent, FK 270, and the only scored item in analysis afd0ffa9. The
+// photograph shows piping, a wrapped valve and structural steel on the tank
+// tops; no drive, no coupling, nothing turning. The model did not see an
+// unguarded moving part, it reasoned that there might be one.
+//
+// A cue is supposed to be a physical detail that is visible. A cue that says
+// "might be" is a hypothesis, and a hypothesis belongs in the field checks.
+// Bare "olabilir" is deliberately NOT here: the consequence sentence the engine
+// itself writes ends "...sonucuna neden olabilir", and the noun-qualifying forms
+// are what mark a guess about what the thing IS.
+const HEDGED_EXISTENCE =
+  /(?:olabilecek|olabileceği|olabilecegi|olası|olasi|muhtemel|potansiyel|could be|may be|might be|possibly|potentially|appears to be)/u;
+
+function claimHedgesItsOwnEvidence(candidate: NormalizedCandidate): boolean {
+  const text = `${candidate.normalized_label} ${
+    candidate.affirmative_cues.join(" ")
+  }`.toLocaleLowerCase("tr-TR");
+  return HEDGED_EXISTENCE.test(text);
 }
 
 // A guardrail claim that names no member at all.
@@ -1583,6 +1615,13 @@ export function routeCandidates(params: {
       continue;
     }
 
+    // A hypothesis, not an observation. Field check, not a score.
+    if (
+      itemClass === "observed_finding" && claimHedgesItsOwnEvidence(candidate)
+    ) {
+      itemClass = "verification_request";
+      routeReason = "hedged_evidence_not_an_observation";
+    }
     // The photo's own controls describe a barrier running along this edge with
     // more than one member affirmed. A claim that the same barrier is broken --
     // a named member missing, or an unnamed gap in the line -- is asked, not
