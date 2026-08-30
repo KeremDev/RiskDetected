@@ -326,10 +326,10 @@ Deno.test("köşe kutusu depolanan biçime çevrilir", () => {
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "d6fc98cf166c5ab9bc221b317389fc33a78b89fbc8aa8d28c4dfc11835f093ed";
+  "048bfc2be7c64c4f4916eff0e73f06c041e1016c34ec8c749dbe2825a40a522f";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v11");
+  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v12");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 
@@ -685,4 +685,13 @@ Deno.test("kayıt katmanı fiziksel tehlikeyi yutamaz", () => {
   });
   const output = parseV5Output(raw);
   assertEquals(recordsFindingsAbsorbingHazards(output), ["kayit_yuttu"]);
+});
+
+Deno.test("alan bütçeleri kısılmadı", () => {
+  // Bulgu sayısını artırmak için kaliteyi kısmak istenmedi; bu satırlar
+  // kısaltılmıştı ve geri alındı.
+  assertStringIncludes(V5_FREE_PROMPT, "**1-4** dayanak yaz");
+  assertStringIncludes(V5_FREE_PROMPT, "2-5 somut adım olsun");
+  assertEquals(V5_FREE_PROMPT.includes("iki cümleyi geçme"), false);
+  assertEquals(V5_FREE_PROMPT.includes("bulgu sayısından kısma"), false);
 });

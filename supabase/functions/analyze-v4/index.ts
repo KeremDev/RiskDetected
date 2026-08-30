@@ -909,7 +909,12 @@ serve(async (req) => {
               requestedServiceTier: config.requestedServiceTier,
             },
           });
-          return { photoIndex: photo.photoIndex, output, usage: response.usage };
+          return {
+            photoIndex: photo.photoIndex,
+            output,
+            usage: response.usage,
+            finishReason: response.finishReason,
+          };
         } catch (error) {
           // The call was made and billed, so the usage travels with the
           // failure. v4 lost exactly this twice and could not say afterwards
@@ -1023,6 +1028,16 @@ serve(async (req) => {
             compute_profile: config.computeProfile,
             photo_count: photos.length,
             thinking_budget: config.geminiThinkingBudget,
+            // Why the answer ended. STOP means the model chose to stop and any
+            // length ceiling is its own; MAX_TOKENS means we capped it. Six
+            // runs sat within 4% of 3200 visible tokens against a 32768 budget
+            // and the cause was being deduced rather than read.
+            thinking_level: freeThinkingLevel,
+            max_output_tokens: freeMaxOutputTokens,
+            finish_reasons: outputs.map((entry) => entry.finishReason),
+            stopped_naturally: outputs.every((entry) =>
+              entry.finishReason === "STOP"
+            ),
             input_tokens: sum((usage) => usage.inputTokens),
             visible_output_tokens: sum((usage) => usage.outputTokens),
             thinking_tokens: sum((usage) => usage.reasoningTokens),

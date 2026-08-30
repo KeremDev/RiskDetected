@@ -145,7 +145,7 @@ Bu bölümün bulgularını **19. katmana** bağla ve \`layers\` dizisine 19 yaz
 
 ## 6. MEVZUAT VE STANDARTLAR
 
-Her bulgu için doğrudan ilgili **1-2** dayanak yaz; daha fazlası gereksiz yer kaplar. Öncelik: **6331 sayılı Kanun → güncel Türkiye yönetmeliği → teknik standart veya iyi mühendislik uygulaması**. Madde, bölüm, standart veya baskı numarasını yalnız kesin biliyorsan yaz; uydurma.
+Her bulgu için doğrudan ilgili **1-4** dayanak yaz. Öncelik: **6331 sayılı Kanun → güncel Türkiye yönetmeliği → teknik standart veya iyi mühendislik uygulaması**. Madde, bölüm, standart veya baskı numarasını yalnız kesin biliyorsan yaz; uydurma.
 
 Kapsama göre İş Sağlığı ve Güvenliği Risk Değerlendirmesi, İş Ekipmanlarının Kullanımı, Yapı İşleri, İşyeri Bina ve Eklentileri, KKD, Elle Taşıma, Kimyasal Maddeler, Patlayıcı Ortamlar, Gürültü, Titreşim, Toz, Acil Durumlar, Sağlık ve Güvenlik İşaretleri, Basınçlı Ekipmanlar, Büyük Endüstriyel Kazalar ve Binaların Yangından Korunmasına ilişkin güncel düzenlemeleri değerlendir.
 
@@ -178,7 +178,7 @@ Olasılığı görünür kontrollere göre seç. Tek fotoğraf sıklığı kanı
 - \`finding_key\` hariç tüm doğal dil metinlerini Türkçe karakterlerle ve noktayla biten tam cümlelerle yaz.
 - Önlemleri emir kipinde, fotoğraftaki yer veya nesneyi adlandırarak yaz; belirsiz ifade kullanma.
 - \`root_cause\` alanına görünmeyen yönetimsel neden uydurma; belirlenemiyorsa "Fotoğraftan belirlenemez; sahada doğrulayın." yaz.
-- \`corrective_steps\` 2-3 somut adım olsun; kısa tut, bulgu sayısından kısma. Eğitim ve KKD önerisini yalnız doğrudan ilgiliyse yaz; değilse boş dize kullan.
+- \`corrective_steps\` 2-5 somut adım olsun. Eğitim ve KKD önerisini yalnız doğrudan ilgiliyse yaz; değilse boş dize kullan.
 - \`confidence\` görsel kanıt kesinliğini göstersin. \`evidence_region\` kanıtı çevreleyen en küçük \`0..1\` kutusu olsun; başlangıç sol üst olsun.
 - \`positive_controls\` en çok ${
   String(V5_MAX_POSITIVE_CONTROLS)
@@ -191,13 +191,13 @@ Alan içerikleri:
 - \`layers\`: bu bulgunun karşıladığı tüm tarama katmanı numaraları (1-19). Bir tehlike birden çok katmana giriyorsa hepsini yaz; tek bulgu, çok katman.
 - \`title\`: bu fotoğraftaki nesneye özgü kısa başlık.
 - \`category\`: iki-üç kelimelik tehlike ailesi.
-- \`description\`: görünür kanıt, konum ve maruziyet; iki cümleyi geçme.
+- \`description\`: görünür kanıt, konum ve maruziyet.
 - \`event_path\`: tek satır, "kaynak → temas, arıza veya tetikleyici → sonuç".
 - \`root_cause\`: görünür en yakın neden.
-- \`regulatory_references\`: 1-2 kayıtlık dizi; her kayıt \`Mevzuat — ...\` veya \`Standart/iyi mühendislik uygulaması — ...\` ile başlasın ve tek bir dayanak içersin.
+- \`regulatory_references\`: 1-4 kayıtlık dizi; her kayıt \`Mevzuat — ...\` veya \`Standart/iyi mühendislik uygulaması — ...\` ile başlasın ve tek bir dayanak içersin.
 - \`fine_kinney\`: \`olasılık\`, \`frekans\`, \`şiddet\` ve \`gerekçe\`.
 - \`immediate_control\`: emir kipinde tek cümle.
-- \`corrective_steps\`: 2-3 somut adım.
+- \`corrective_steps\`: 2-5 somut adım.
 - \`preventive_measure\`: tekrarı önleyen sistem kontrolü, emir kipinde.
 - \`training_recommendation\`, \`ppe_recommendation\`: doğrudan ilgiliyse yaz, değilse boş dize.
 - \`evidence_region\`: \`x_min\`, \`y_min\`, \`x_max\`, \`y_max\`; 0..1 aralığında, sol üst başlangıçlı en küçük kutu.
