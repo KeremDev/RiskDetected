@@ -14,7 +14,8 @@ import {
 import { coverageValidationIssues } from "./dynamic-modules.ts";
 import {
   V4_COVERAGE_REPAIR_COMMON,
-  V4_GEMINI3_THRESHOLD_ADDENDUM,
+  V4_GEMINI3_PROMPT,
+  V4_PROMPT_COMMON,
 } from "./prompt.ts";
 
 export type V4ProviderUsage = {
@@ -251,16 +252,21 @@ function parseOutput(
 /**
  * The prompt the model actually receives.
  *
- * Gemini 3 gets the threshold addendum appended; 2.5 gets exactly the bytes it
- * has always had, which is what keeps its measured baseline comparable. Applied
- * here rather than at the call sites so the primary pass, the coverage repair,
- * the targeted reinspection and the verification pass all agree -- a threshold
- * that held for one call and not the next would produce candidates the second
- * look then dropped.
+ * Gemini 3 gets its own core in place of the 2.5 one; 2.5 gets exactly the
+ * bytes it has always had, which is what keeps its measured baseline
+ * comparable. A substitution rather than a wholesale swap, because the caller
+ * has already appended the per-call context -- the photo index, the output
+ * language, the sector block, the active module list, or a targeted block --
+ * and all of that has to survive.
+ *
+ * The verification pass carries its own prompt and never generates candidates,
+ * so it is left alone: it holds no base to substitute and the rules that
+ * changed are about emitting candidates.
  */
 function promptFor(model: string, prompt: string): string {
-  return isGemini3(model)
-    ? `${prompt}\n${V4_GEMINI3_THRESHOLD_ADDENDUM}`
+  if (!isGemini3(model)) return prompt;
+  return prompt.includes(V4_PROMPT_COMMON)
+    ? prompt.replace(V4_PROMPT_COMMON, V4_GEMINI3_PROMPT)
     : prompt;
 }
 

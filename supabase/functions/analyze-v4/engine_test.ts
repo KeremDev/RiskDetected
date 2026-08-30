@@ -1,3 +1,47 @@
+Deno.test("Gemini 3 kendi çekirdek istemini alır, 2.5'inkini değil", async () => {
+  const sent = await captureGeminiBody("gemini-3.7-flash");
+  const contents = sent.contents as Array<Record<string, unknown>>;
+  const parts = contents[0].parts as Array<Record<string, unknown>>;
+  const text = String(parts[0].text);
+  assertStringIncludes(text, "v4-gemini3-core-v1");
+  assertStringIncludes(text, "ÖNCE ADAY, SONRA KAPSAM");
+  assertStringIncludes(text, "ADAY EŞİĞİ");
+  // 2.5'in korkuluk paranoyası taşınmadı.
+  assertEquals(text.includes("senin gözünden kaçmasıdır"), false);
+  // Çağrıya özgü bağlam korunmalı; yerine geçme değil, ikame.
+  assertStringIncludes(text, "DEĞİŞKEN BAĞLAM");
+});
+
+Deno.test("Gemini 2.5 kendi istemini aynen alır", async () => {
+  const sent = await captureGeminiBody("gemini-2.5-flash");
+  const contents = sent.contents as Array<Record<string, unknown>>;
+  const parts = contents[0].parts as Array<Record<string, unknown>>;
+  const text = String(parts[0].text);
+  assertStringIncludes(text, "v4-vision-core-v10");
+  assertEquals(text.includes("v4-gemini3-core-v1"), false);
+  assertEquals(text.includes("ÖNCE ADAY, SONRA KAPSAM"), false);
+});
+
+Deno.test("3.5 Flash Lite de Gemini 3 çekirdeğini alır", async () => {
+  const sent = await captureGeminiBody("gemini-3.5-flash-lite");
+  const contents = sent.contents as Array<Record<string, unknown>>;
+  const parts = contents[0].parts as Array<Record<string, unknown>>;
+  assertStringIncludes(String(parts[0].text), "ÖNCE ADAY, SONRA KAPSAM");
+});
+
+Deno.test("temel istem içermeyen çağrı ikame edilmez", async () => {
+  // Doğrulama geçişi kendi istemini taşır ve aday üretmez; dokunulmamalı.
+  const sent = await captureGeminiBody(
+    "gemini-3.7-flash",
+    "DOĞRULAMA GEÇİŞİ\n- Yalnız verilen yokluk iddiasını teyit et.",
+  );
+  const contents = sent.contents as Array<Record<string, unknown>>;
+  const parts = contents[0].parts as Array<Record<string, unknown>>;
+  const text = String(parts[0].text);
+  assertEquals(text.includes("ÖNCE ADAY, SONRA KAPSAM"), false);
+  assertStringIncludes(text, "DOĞRULAMA GEÇİŞİ");
+});
+
 import {
   assertEquals,
   assertStringIncludes,
@@ -26,6 +70,7 @@ import { controlPlaybook } from "./control-playbook.ts";
 import { reconcileVerificationPass } from "./verification-pass.ts";
 import { outputLanguageFailure } from "./language-contract.ts";
 import { callV4Gemini } from "./provider.ts";
+import { V4_PROMPT_COMMON } from "./prompt.ts";
 import { normalizeCandidates } from "./evidence-normalizer.ts";
 import { buildCoverageRepairPrompt } from "./provider.ts";
 import { buildTargetedQueue, mergeTargetedOutput } from "./targeted-queue.ts";
@@ -3659,6 +3704,7 @@ Deno.test("raf saha kontrolü korkuluk sürekliliğinden söz etmez", () => {
  */
 async function captureGeminiBody(
   model: string,
+  prompt = `${V4_PROMPT_COMMON}\n\nDEĞİŞKEN BAĞLAM\n- Fotoğraf: 1/1`,
 ): Promise<Record<string, unknown>> {
   const original = globalThis.fetch;
   let captured: Record<string, unknown> | null = null;
@@ -3670,7 +3716,7 @@ async function captureGeminiBody(
     await callV4Gemini({
       apiKey: "test-key",
       model,
-      prompt: "test",
+      prompt,
       imageData: "AAAA",
       mimeType: "image/jpeg",
       timeoutMs: 10_000,
@@ -3750,30 +3796,6 @@ Deno.test("Gemini 3.7 Flash isteği Gemini 3 şeklini alır", async () => {
   );
 });
 
-Deno.test("Gemini 3 istemine eşik eki eklenir", async () => {
-  const sent = await captureGeminiBody("gemini-3.7-flash");
-  const contents = sent.contents as Array<Record<string, unknown>>;
-  const parts = contents[0].parts as Array<Record<string, unknown>>;
-  const text = String(parts[0].text);
-  assertStringIncludes(text, "EK SÖZLEŞME — ADAY EŞİĞİ");
-  assertStringIncludes(text, "v4-gemini3-threshold-v1");
-  // Kanıt eşiği düşürülmüyor; ek bunu kendi içinde söylemeli.
-  assertStringIncludes(text, "Bu ek kanıt eşiğini düşürmez");
-});
-
-Deno.test("Gemini 2.5 istemi ek almaz", async () => {
-  const sent = await captureGeminiBody("gemini-2.5-flash");
-  const contents = sent.contents as Array<Record<string, unknown>>;
-  const parts = contents[0].parts as Array<Record<string, unknown>>;
-  assertEquals(String(parts[0].text).includes("EK SÖZLEŞME"), false);
-});
-
-Deno.test("3.5 Flash Lite de eki alır", async () => {
-  const sent = await captureGeminiBody("gemini-3.5-flash-lite");
-  const contents = sent.contents as Array<Record<string, unknown>>;
-  const parts = contents[0].parts as Array<Record<string, unknown>>;
-  assertStringIncludes(String(parts[0].text), "EK SÖZLEŞME — ADAY EŞİĞİ");
-});
 
 // --------------------------------------------------------------------------
 // 4492df2f -- a slip is how you reach the rebar, not what it does to you
