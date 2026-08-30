@@ -288,8 +288,10 @@ export function metadataValidation(configs = localeConfigs()) {
           `${APP_CONFIG.screenshots.slides_per_locale} screenshot captions.`,
       );
     }
-    if (row.screenshot_theme !== "light") {
-      errors.push(`${locale} screenshot theme must be light.`);
+    if (row.screenshot_theme !== APP_CONFIG.screenshots.theme) {
+      errors.push(
+        `${locale} screenshot theme must be ${APP_CONFIG.screenshots.theme}.`,
+      );
     }
 
     const searchableText = [

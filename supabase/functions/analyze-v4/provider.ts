@@ -1,4 +1,5 @@
 import type { AnalysisServiceTier } from "../_shared/analysis-compute-profile.ts";
+import type { GeminiThinkingLevel } from "../analyze-vnext/compute-profile.ts";
 import { sendGeminiGenerateContent } from "../_shared/gemini-provider-client.ts";
 import { outputLanguageFailure } from "./language-contract.ts";
 import {
@@ -112,9 +113,18 @@ function geminiCost(
   serviceTier: AnalysisServiceTier,
   usage: Omit<V4ProviderUsage, "costUSD" | "standardEquivalentCostUSD">,
 ): number {
-  const lite = model.trim().toLowerCase().includes("2.5-flash-lite");
-  const rates = lite
+  // Named per family rather than by a single "lite" substring: "Lite" stopped
+  // meaning cheap at Gemini 3. gemini-3.5-flash-lite lists at the same $0.30 /
+  // $2.50 as 2.5 Flash, so a switch to it is a quality and latency decision,
+  // not a cost saving -- and gemini-3.5-flash is five times the input price.
+  // Matching on "2.5-flash-lite" alone would have priced all three the same.
+  const name = model.trim().toLowerCase();
+  const rates = name.includes("2.5-flash-lite")
     ? { input: 0.10, cachedInput: 0.01, output: 0.40 }
+    : name.includes("3.5-flash-lite")
+    ? { input: 0.30, cachedInput: 0.03, output: 2.50 }
+    : name.includes("3.5-flash")
+    ? { input: 1.50, cachedInput: 0.15, output: 9.00 }
     : { input: 0.30, cachedInput: 0.03, output: 2.50 };
   const uncachedInput = Math.max(
     0,
@@ -227,6 +237,52 @@ function parseOutput(
   return output;
 }
 
+/** Gemini 3 and later: the thinking enum, no temperature, ultra-high media. */
+function isGemini3(model: string): boolean {
+  return /gemini-3(?:\.|-)/u.test(model.trim().toLowerCase());
+}
+
+/**
+ * Temperature is dropped on Gemini 3.
+ *
+ * Google's migration guidance is explicit that values below the default of 1.0
+ * cause looping and degraded output on these models. We had 0.1 for
+ * reproducibility, which was the right call on 2.5 and is the documented wrong
+ * one here. Run-to-run variance is already a known property of this engine and
+ * the routing gates are what contain it -- see the resolution floor.
+ */
+function geminiSamplingConfig(model: string): Record<string, unknown> {
+  return isGemini3(model) ? {} : { temperature: 0.1 };
+}
+
+function geminiThinkingConfig(
+  model: string,
+  params: { thinkingBudget: number; thinkingLevel: GeminiThinkingLevel },
+): Record<string, unknown> {
+  // Sending both is a 400, so this is an either/or and never a merge.
+  return {
+    thinkingConfig: isGemini3(model)
+      ? { thinkingLevel: params.thinkingLevel }
+      : { thinkingBudget: params.thinkingBudget },
+  };
+}
+
+/**
+ * Media resolution, which on this workload matters more than thinking does.
+ *
+ * For images Gemini 3's default is 1120 tokens -- the same allocation as
+ * `high`, so asking for high changes nothing. `ultra_high` is 2240 and is the
+ * only setting that actually gives the model more of the picture. That is the
+ * lever for the failure this engine keeps producing: a crane hook twelve pixels
+ * across, whose latch no amount of reasoning can resolve because it was never
+ * in the tensor. About three hundredths of a cent per analysis.
+ */
+function mediaResolutionFor(model: string): string {
+  return isGemini3(model)
+    ? "MEDIA_RESOLUTION_ULTRA_HIGH"
+    : "MEDIA_RESOLUTION_HIGH";
+}
+
 export async function callV4Gemini(params: {
   apiKey: string;
   model: string;
@@ -235,6 +291,8 @@ export async function callV4Gemini(params: {
   mimeType: string;
   timeoutMs: number;
   thinkingBudget: number;
+  /** Used instead of the budget on Gemini 3; the two cannot both be sent. */
+  thinkingLevel: GeminiThinkingLevel;
   maxOutputTokens: number;
   serviceTier: AnalysisServiceTier;
   requiredModules?: readonly V4ModuleID[];
@@ -264,10 +322,10 @@ export async function callV4Gemini(params: {
         generationConfig: {
           responseMimeType: "application/json",
           responseSchema: toGeminiResponseSchema(V4_PROVIDER_RESPONSE_SCHEMA),
-          temperature: 0.1,
           maxOutputTokens: params.maxOutputTokens,
-          thinkingConfig: { thinkingBudget: params.thinkingBudget },
-          mediaResolution: "MEDIA_RESOLUTION_HIGH",
+          ...geminiSamplingConfig(params.model),
+          ...geminiThinkingConfig(params.model, params),
+          mediaResolution: mediaResolutionFor(params.model),
         },
       },
     });

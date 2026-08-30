@@ -6,6 +6,21 @@ import type {
 
 export type VNextProviderName = "gemini" | "openai";
 export type OpenAIReasoningEffort = "high" | "xhigh" | "max";
+export type GeminiThinkingLevel = "MINIMAL" | "LOW" | "MEDIUM" | "HIGH";
+
+const THINKING_LEVELS: GeminiThinkingLevel[] = [
+  "MINIMAL",
+  "LOW",
+  "MEDIUM",
+  "HIGH",
+];
+
+function thinkingLevel(value: unknown): GeminiThinkingLevel | null {
+  const raw = String(value ?? "").trim().toUpperCase();
+  return (THINKING_LEVELS as string[]).includes(raw)
+    ? raw as GeminiThinkingLevel
+    : null;
+}
 
 export type ResolvedVNextConfig = {
   primaryProvider: VNextProviderName;
@@ -13,6 +28,12 @@ export type ResolvedVNextConfig = {
   fallbackProvider: VNextProviderName;
   fallbackModel: string;
   geminiThinkingBudget: number;
+  /**
+   * Gemini 3 replaced the numeric budget with an enum, and sending both in
+   * one request is a 400. The budget stays for 2.5; the provider picks
+   * whichever the model understands.
+   */
+  geminiThinkingLevel: GeminiThinkingLevel;
   geminiRetryThinkingBudget: number;
   geminiTargetedThinkingBudget: number;
   geminiThinkingByPhotoEnabled: boolean;
@@ -172,6 +193,15 @@ export function resolveVNextConfig(
       24_576,
     ),
   );
+  // MEDIUM rather than HIGH on purpose. Raising the 2.5 budget from 3072 to
+  // 6144 bought nothing on this workload and was reverted, and the defects
+  // this engine keeps producing are perceptual -- a twelve-pixel hook latch
+  // -- which no amount of reasoning resolves. Media resolution is the lever
+  // for those. MEDIUM also keeps the model switch a single variable.
+  const geminiThinkingLevel = thinkingLevel(selected.gemini_thinking_level) ??
+    thinkingLevel(engineConfig.gemini_thinking_level) ??
+    (computeProfile === "economy" ? "LOW" : "MEDIUM");
+
   const maxProviderOutputTokens = boundedInteger(
     selected.max_provider_output_tokens,
     computeProfile === "economy" ? 6_144 : 12_288,
@@ -207,6 +237,7 @@ export function resolveVNextConfig(
     fallbackProvider,
     fallbackModel,
     geminiThinkingBudget: thinking,
+    geminiThinkingLevel,
     geminiRetryThinkingBudget: retryThinking,
     geminiTargetedThinkingBudget: targetedThinking,
     geminiThinkingByPhotoEnabled,

@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import type { AnalysisServiceTier } from "../_shared/analysis-compute-profile.ts";
 import { resolveVNextConfig } from "../analyze-vnext/compute-profile.ts";
+import type { GeminiThinkingLevel } from "../analyze-vnext/compute-profile.ts";
 import {
   getSectorProfile,
   resolveVNextSectorSelection,
@@ -276,6 +277,7 @@ async function analyzePhoto(params: {
   providerPool: string;
   serviceTier: AnalysisServiceTier;
   thinking: number;
+  thinkingLevel: GeminiThinkingLevel;
   retryThinking: number;
   maxOutput: number;
   requiredModules: ReturnType<typeof initialActiveModules>;
@@ -313,6 +315,7 @@ async function analyzePhoto(params: {
         mimeType: params.photo.mimeType,
         timeoutMs: 110_000,
         thinkingBudget: spec.thinking,
+        thinkingLevel: params.thinkingLevel,
         maxOutputTokens: params.maxOutput,
         serviceTier: spec.tier,
         requiredModules: params.requiredModules,
@@ -823,6 +826,7 @@ serve(async (req) => {
           providerPool: config.providerPool,
           serviceTier: config.requestedServiceTier,
           thinking: config.geminiThinkingBudget,
+          thinkingLevel: config.geminiThinkingLevel,
           retryThinking: config.geminiRetryThinkingBudget,
           maxOutput: config.maxProviderOutputTokens,
           requiredModules: initialActiveModules(sectorID),
@@ -867,6 +871,7 @@ serve(async (req) => {
           mimeType: photo.mimeType,
           timeoutMs: 110_000,
           thinkingBudget: config.geminiThinkingBudget,
+          thinkingLevel: config.geminiThinkingLevel,
           maxOutputTokens: config.maxProviderOutputTokens,
           serviceTier: config.requestedServiceTier,
           // Coverage is established by the primary pass and this output's
@@ -986,6 +991,7 @@ serve(async (req) => {
             mimeType: photo.mimeType,
             timeoutMs: 80_000,
             thinkingBudget: config.geminiTargetedThinkingBudget,
+            thinkingLevel: config.geminiThinkingLevel,
             maxOutputTokens: config.targetedMaxProviderOutputTokens,
             serviceTier: config.requestedServiceTier,
             // A regional reinspection must close only the module represented

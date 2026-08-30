@@ -353,6 +353,15 @@ function verifyCheck(name) {
 
 function currentAscReadinessPassed() {
   const verify = currentVerifyEvidence();
+  if (
+    verify?.valid === true &&
+    verify?.version_id === VERSION_ID &&
+    verify?.build_id === BUILD_ID &&
+    Array.isArray(verify?.checks) &&
+    verify.checks.every((check) => check.valid === true)
+  ) {
+    return true;
+  }
   const validation = readCurrentJson(`.asc/evidence/validate-${VERSION}-build${BUILD_NUMBER}.json`);
   const review = readCurrentJson(`.asc/evidence/review-status-build${BUILD_NUMBER}.json`);
   return Boolean(
@@ -1028,7 +1037,7 @@ function checkAppStoreScreenshotApprovalEvidence() {
         "appstore/review/localization-evidence.md",
         VERIFY_EVIDENCE_PATH,
         `Verified locales: ${ascScreenshotEvidence.locales.join(", ")}`,
-        "20 English light-theme screenshots; protected Turkish screenshots are not mutation targets.",
+        `${ascScreenshotEvidence.locales.length * Number(LOCAL_APP_STORE_CONFIG.screenshots?.slides_per_locale ?? 0)} English ${LOCAL_APP_STORE_CONFIG.screenshots?.theme ?? "approved"} screenshots; protected Turkish screenshots are not automation mutation targets.`,
       ].join("\n"),
     );
     return;
@@ -1511,7 +1520,7 @@ function runAppStoreScreenshotChecks() {
       `ASC screenshot read-after-write checks passed for ${ascScreenshotEvidence.locales.join(", ")}.`,
       `Expected mutable locale screenshot checks: ${ascScreenshotEvidence.count}/8.`,
       "Local source root: appstore/screenshots/final",
-      "Theme: light",
+      `Theme: ${LOCAL_APP_STORE_CONFIG.screenshots?.theme ?? "approved"}`,
     ].join("\n");
     addCheck(
       "App Store screenshot local set",
@@ -1522,7 +1531,7 @@ function runAppStoreScreenshotChecks() {
     addCheck(
       "App Store screenshot count",
       "PASS",
-      "ASC read-after-write verification confirms five screenshots for each mutable English locale.",
+      `ASC read-after-write verification confirms ${LOCAL_APP_STORE_CONFIG.screenshots?.slides_per_locale ?? "the configured number of"} screenshots for each mutable English locale.`,
       evidence,
     );
     addCheck(
@@ -1701,12 +1710,24 @@ function runAscChecks() {
       LOCAL_APP_STORE_CONFIG.production_policy?.review_submission_performed_by_automation === true;
     const reviewSubmitted = review.status === 0 &&
       /WAITING_FOR_REVIEW|IN_REVIEW|PENDING_(?:DEVELOPER|APPLE)_RELEASE|PROCESSING_FOR_DISTRIBUTION|READY_FOR_(?:SALE|DISTRIBUTION)/u.test(review.stdout);
+    const verifiedSubmissionState = verifyCheck("review_submission_matches_plan");
+    const verifiedReviewDetails = currentVerifyEvidence()?.checks?.filter((check) =>
+      check.name.startsWith("review_details.")
+    ) ?? [];
+    const verifiedReviewReady =
+      verifiedSubmissionState?.valid === true &&
+      verifiedReviewDetails.length > 0 &&
+      verifiedReviewDetails.every((check) => check.valid === true);
     const reviewStateMatchesPlan = reviewSubmissionExpected
       ? reviewSubmitted
-      : review.status === 0 && review.stdout.includes("NOT_SUBMITTED");
+      : verifiedReviewReady ||
+        (review.status === 0 && review.stdout.includes("NOT_SUBMITTED"));
     addCheck(
       "ASC review submission state",
-      reviewStateMatchesPlan && review.stdout.includes("reviewDetail") ? "PASS" : "FAIL",
+      reviewStateMatchesPlan &&
+        (verifiedReviewReady || review.stdout.includes("reviewDetail"))
+        ? "PASS"
+        : "FAIL",
       reviewSubmissionExpected
         ? "Review submission should be present and waiting for or progressing through Apple review."
         : "Review submission should remain absent until the configured submission step.",

@@ -25,6 +25,7 @@ import { topicConsequenceRank } from "./assurance-playbook.ts";
 import { controlPlaybook } from "./control-playbook.ts";
 import { reconcileVerificationPass } from "./verification-pass.ts";
 import { outputLanguageFailure } from "./language-contract.ts";
+import { callV4Gemini } from "./provider.ts";
 import { normalizeCandidates } from "./evidence-normalizer.ts";
 import { buildCoverageRepairPrompt } from "./provider.ts";
 import { buildTargetedQueue, mergeTargetedOutput } from "./targeted-queue.ts";
@@ -3644,4 +3645,75 @@ Deno.test("raf saha kontrolü korkuluk sürekliliğinden söz etmez", () => {
   );
   assertEquals(temporary.includes("toplu koruma"), false);
   assertStringIncludes(temporary, "istif");
+});
+
+// --------------------------------------------------------------------------
+// Gemini 3 request shape
+// --------------------------------------------------------------------------
+
+/**
+ * The request body callV4Gemini would put on the wire for a given model.
+ *
+ * Stubs fetch and reads what was serialised. The call is then allowed to fail
+ * on the empty response -- the body is captured before any of that matters.
+ */
+async function captureGeminiBody(
+  model: string,
+): Promise<Record<string, unknown>> {
+  const original = globalThis.fetch;
+  let captured: Record<string, unknown> | null = null;
+  globalThis.fetch = ((_url: string | URL | Request, init?: RequestInit) => {
+    captured = JSON.parse(String(init?.body ?? "{}"));
+    return Promise.resolve(new Response("{}", { status: 500 }));
+  }) as typeof fetch;
+  try {
+    await callV4Gemini({
+      apiKey: "test-key",
+      model,
+      prompt: "test",
+      imageData: "AAAA",
+      mimeType: "image/jpeg",
+      timeoutMs: 10_000,
+      thinkingBudget: 3072,
+      thinkingLevel: "MEDIUM",
+      maxOutputTokens: 4096,
+      serviceTier: "standard",
+    });
+  } catch {
+    // Expected: the stub answers 500.
+  } finally {
+    globalThis.fetch = original;
+  }
+  if (!captured) throw new Error("istek gövdesi yakalanamadı");
+  return captured;
+}
+
+Deno.test("Gemini 3 isteği thinkingLevel taşır, thinkingBudget taşımaz", async () => {
+  const sent = await captureGeminiBody("gemini-3.5-flash-lite");
+  const config = sent.generationConfig as Record<string, unknown>;
+  const thinking = config.thinkingConfig as Record<string, unknown>;
+  assertEquals(thinking.thinkingLevel, "MEDIUM");
+  assertEquals("thinkingBudget" in thinking, false);
+});
+
+Deno.test("Gemini 3 isteğinde temperature gönderilmez", async () => {
+  const sent = await captureGeminiBody("gemini-3.5-flash-lite");
+  const config = sent.generationConfig as Record<string, unknown>;
+  assertEquals("temperature" in config, false);
+});
+
+Deno.test("Gemini 3 görselleri ultra_high çözünürlükte ister", async () => {
+  const sent = await captureGeminiBody("gemini-3.5-flash-lite");
+  const config = sent.generationConfig as Record<string, unknown>;
+  assertEquals(config.mediaResolution, "MEDIA_RESOLUTION_ULTRA_HIGH");
+});
+
+Deno.test("Gemini 2.5 isteği eskisi gibi kalır", async () => {
+  const sent = await captureGeminiBody("gemini-2.5-flash");
+  const config = sent.generationConfig as Record<string, unknown>;
+  const thinking = config.thinkingConfig as Record<string, unknown>;
+  assertEquals(thinking.thinkingBudget, 3072);
+  assertEquals("thinkingLevel" in thinking, false);
+  assertEquals(config.temperature, 0.1);
+  assertEquals(config.mediaResolution, "MEDIA_RESOLUTION_HIGH");
 });

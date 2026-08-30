@@ -5,25 +5,29 @@
   "market": "Canada",
   "app_info": {
     "name": "RiskDetected: Safety Audit",
-    "subtitle": "OHS Inspections & Risk Reports",
+    "subtitle": "OHS Hazard Assessment Reports",
     "privacy_policy_url": "https://riskdetected.com/en/privacy"
   },
   "version_info": {
-    "promotional_text": "Review workplace hazards with OHS terminology, evidence-grounded findings, risk scoring, and professional PDF and Excel reports.",
-    "description": "Review workplace hazards from field photos and turn observations into structured, evidence-grounded findings with RiskDetected.\n\nDesigned for safety professionals, site managers, consultants and operations teams, RiskDetected organizes photo observations into Risk Analysis, Expert Guidance, Approved Notebook drafts and Training Recommendations.\n\nKey features:\n• V4-assisted analysis of workplace photos\n• Fine-Kinney and 5×5 risk assessment outputs\n• Corrective actions, preventive activities and regulatory references\n• PDF and Excel report creation, download and sharing\n• Reporting for one finding or selected findings\n• Report archive and persistent user feedback\n• Canadian OHS terminology profiles\n• Light and dark appearance support\n\nRiskDetected provides AI-assisted decision support. Outputs may be incomplete or inaccurate and must be checked against the workplace. The app does not replace a qualified safety professional, a workplace inspection or legal review.\n\nSome features and higher usage limits require a Plus or Pro subscription. Subscriptions are managed by Apple and purchases can be restored in the app.\n\nTerms of Use: https://riskdetected.com/en/terms\nPrivacy Policy: https://riskdetected.com/en/privacy\nApple Standard EULA: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
-    "keywords": "JSA,job,analysis,hazard,assessment,observation,matrix,workplace,site,generator,Fine-Kinney",
+    "promotional_text": "Turn a field photo into a structured risk report in minutes. Fine-Kinney and 5×5 scoring, evidence-linked findings, PDF and Excel export.",
+    "description": "Review workplace hazards from field photos and turn observations into structured, evidence-grounded findings with RiskDetected.\n\nDesigned for safety professionals, site managers, consultants and operations teams, RiskDetected helps you organize a consistent hazard assessment and workplace inspection workflow from initial review to report export.\n\nKey features:\n• Review a field photo with AI-assisted analysis\n• Plus and Pro plans can combine up to three photos in one assessment\n• Connect findings to their source photo for field verification\n• Prioritize risk using Fine-Kinney or a 5×5 matrix\n• Record likely contributing factors, controls and recommended actions\n• Create professional PDF and Excel reports\n• Add company, preparer and logo details to reports\n• Keep assessments and reports organized in the archive\n• Choose International or Canadian OHS terminology for future analyses\n\nRiskDetected provides decision support. AI-generated findings may be incomplete or inaccurate and must be checked against the workplace. The app does not replace a qualified safety professional, a workplace inspection or legal review.\n\nSome features and higher usage limits require a Plus or Pro subscription. Subscriptions are managed by Apple and purchases can be restored in the app.\n\nTerms of Use: https://riskdetected.com/en/terms\nPrivacy Policy: https://riskdetected.com/en/privacy\nApple Standard EULA: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
+    "keywords": "JSA,JHA,FLRA,inspections,matrix,job,analysis,observation,generator,risk,workplace,Fine-Kinney",
     "marketing_url": "https://riskdetected.com/en",
     "support_url": "https://riskdetected.com/en/support",
-    "whats_new": "A new V4 analysis engine and redesigned results hub bring Risk Analysis, Expert Guidance, Approved Notebook records and Training Recommendations into one flow. Finding details, feedback, PDF/Excel reports, sharing and archives are improved, with refreshed Free, Plus and Pro experiences in light and dark mode."
+    "whats_new": "RiskDetected 2.0 introduces a redesigned analysis experience:\n\n• Risk Analysis, Expert Opinion, Approved Logbook and Training Recommendations now come together in the new results hub.\n• Finding details, corrective measures, preventive actions and regulatory sections have been improved.\n• PDF and Excel reports are now more comprehensive.\n• Free, Plus and Pro membership experiences have been refreshed.\n• Feedback, sharing and report archive flows have been improved.\n• Dark mode, localization, performance and stability updates are included."
   },
   "screenshots": {
-    "source_theme": "light",
+    "source_theme": "legacy-1.3.4",
     "captions": [
-      "Spot workplace hazards from a photo",
-      "Turn evidence into clear findings",
-      "Prioritize risk with Fine-Kinney or 5×5",
-      "Create professional PDF & Excel reports",
-      "Review expert guidance and notebook drafts"
+      "01: 1.3.4 screenshot 01",
+      "02: 1.3.4 screenshot 06",
+      "03: 1.3.4 screenshot 03",
+      "04: 1.3.4 screenshot 02",
+      "05: 1.3.4 screenshot 07",
+      "06: 1.3.4 screenshot 04",
+      "07: 1.3.4 screenshot 05",
+      "08: 1.3.4 screenshot 08",
+      "09: 1.3.4 screenshot 09"
     ]
   }
 }

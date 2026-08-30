@@ -159,12 +159,25 @@ const submittedReviewStates = new Set([
   "READY_FOR_SALE",
   "READY_FOR_DISTRIBUTION",
 ]);
+const editableUnsubmittedStates = new Set([
+  "PREPARE_FOR_SUBMISSION",
+  "DEVELOPER_REJECTED",
+  "REJECTED",
+]);
+const hasActiveSubmission = Boolean(
+  submissionRelationship ??
+    versionView?.submission ??
+    versionView?.submissionId,
+);
 check(
   "review_submission_matches_plan",
   reviewSubmissionExpected
     ? submittedReviewStates.has(reviewStatus.reviewState)
-    : reviewStatus.reviewState === "NOT_SUBMITTED",
-  `expected_submitted=${reviewSubmissionExpected}, actual=${reviewStatus.reviewState ?? "missing"}`,
+    : reviewStatus.reviewState === "NOT_SUBMITTED" ||
+      (!hasActiveSubmission &&
+        editableUnsubmittedStates.has(candidateAttributes.appStoreState)),
+  `expected_submitted=${reviewSubmissionExpected}, actual=${reviewStatus.reviewState ?? "missing"}, ` +
+    `active_submission=${hasActiveSubmission}, version_state=${candidateAttributes.appStoreState ?? "missing"}`,
 );
 
 const versionLocalizations = rows(
