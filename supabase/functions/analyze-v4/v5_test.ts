@@ -223,10 +223,10 @@ Deno.test("serbest istem sözleşme motorunun hiçbir parçasını taşımaz", (
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "740fdc91637faa05a3603ff1f204761b82b8bfa3bacbc95c854cb0fcd2e05679";
+  "04e495e52a793894c3dd1c7b8efcf96fcd703942837dd30450d3d07f1efa9efa";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v5-free-core-v1");
+  assertEquals(V5_PROMPT_VERSION, "v5-free-core-v2");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 
@@ -251,4 +251,17 @@ Deno.test("v5 şeması bulgunun tamamını ister", () => {
   // Eğitim ve KKD isteğe bağlı: her bulguda karşılığı yok.
   assertEquals(required.includes("training_recommendation"), false);
   assertEquals(required.includes("ppe_recommendation"), false);
+});
+
+Deno.test("tarama sırası sözleşme değil, dikkat yönlendirmesidir", () => {
+  // Nereye bakılacağını söyler...
+  assertStringIncludes(V5_FREE_PROMPT, "TARAMA");
+  assertStringIncludes(V5_FREE_PROMPT, "enerji: elektrik hattı");
+  assertStringIncludes(V5_FREE_PROMPT, "yükseltilmiş yüzeyler ve kenarlar");
+  // ...ama her başlık için satır üretmeyi istemez. v4'ün kapsam matrisi
+  // tam olarak bunu istediği için bir raporun on dört maddesinin dokuzu
+  // "değerlendirilemedi" oldu.
+  assertStringIncludes(V5_FREE_PROMPT, "o başlığı sessizce geç");
+  assertEquals(V5_FREE_PROMPT.includes("module_coverage"), false);
+  assertEquals(V5_FREE_PROMPT.includes("not_assessable"), false);
 });
