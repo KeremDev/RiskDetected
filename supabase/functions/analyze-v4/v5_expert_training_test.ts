@@ -144,6 +144,29 @@ Deno.test("her kayıt kendi defter cümlesini taşır, uzman paragrafından kesi
   }
 });
 
+// --------------------------------------------------------------------------
+// The operator: "emir kipinden ziyade önerilmektedir yazılması daha
+// mantıklı ... daha çok önerilmektedir, tavsiye edilmektedir tarzında
+// bitmesi daha uygun olacaktır"
+// --------------------------------------------------------------------------
+
+const IMPERATIVE_VERB_ENDING = /(?:in|ın|ün|un|yin|yın|yün|yun)\.$/u;
+const ADVISORY_ENDING = /(?:önerilmektedir|tavsiye edilmektedir|gerekmektedir)\.$/u;
+
+Deno.test("kayıt defteri önerisi tavsiye kipinde biter, emir kipinde değil", () => {
+  const built = expertRecommendationsFor(Object.keys(EXPERT_REGISTRY));
+  for (const card of built.recommendations) {
+    assert(
+      ADVISORY_ENDING.test(card.notebookOneri),
+      `${card.family}: "${card.notebookOneri}"`,
+    );
+    assert(
+      !IMPERATIVE_VERB_ENDING.test(card.notebookOneri),
+      `${card.family}: "${card.notebookOneri}"`,
+    );
+  }
+});
+
 Deno.test("kayıt defterinde karşılığı olmayan aile uydurulmaz, sayılır", () => {
   // All 22 EXPERT_ASSET_FAMILIES now have a registry entry; this exercises the
   // missing-entry path with a family the registry has never heard of, which is

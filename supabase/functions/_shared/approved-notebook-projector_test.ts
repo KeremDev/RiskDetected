@@ -241,6 +241,64 @@ Deno.test("assurance items without a registry line keep the prior behaviour", as
   assert(entries[0].recommendation_text.includes("İlgili güvence kayıt"));
 });
 
+// --------------------------------------------------------------------------
+// The operator: "işciyi derhal indirin ve çalışmayı durdurun ... bu dil iyi
+// değil. emir kipinden ziyade önerilmektedir yazılması daha mantıklı."
+// --------------------------------------------------------------------------
+
+Deno.test("scored finding uses the model's advisory-register line over the imperative action", async () => {
+  const entries = await projectApprovedNotebookEntries({
+    analysisID: "88888888-8888-4888-8888-888888888888",
+    language: "tr",
+    findings: [{
+      id: "99999999-9999-4999-8999-999999999999",
+      item_class: "observed_finding",
+      is_scored: true,
+      title: "Silindirik Tank Üzerinde Korkuluksuz Yüksekte Çalışma",
+      description:
+        "İşçi, yüksek konumdaki silindirik metal tankın üzerinde korkuluk olmaksızın çalışmaktadır.",
+      recommended_action:
+        "İşçiyi derhal tank üzerinden güvenli bir platforma indirin ve çalışmayı durdurun.",
+      fk_band: "critical",
+      display_order: 0,
+    }],
+    metadata: [{
+      public_finding_id: "99999999-9999-4999-8999-999999999999",
+      internal_priority: {
+        engine_mode: "free",
+        control_source: "model",
+        notebook_oneri: "Çalışmanın derhal durdurulması önerilmektedir.",
+      },
+    }],
+  });
+  assertEquals(entries.length, 1);
+  assertEquals(
+    entries[0].recommendation_text,
+    "Çalışmanın derhal durdurulması önerilmektedir.",
+  );
+  assert(!entries[0].recommendation_text.includes("indirin"));
+});
+
+Deno.test("scored finding without notebook_oneri keeps the imperative action (v4 legacy)", async () => {
+  const entries = await projectApprovedNotebookEntries({
+    analysisID: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    language: "tr",
+    findings: [{
+      id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      item_class: "observed_finding",
+      is_scored: true,
+      title: "Açık kenarda düşme riski",
+      description: "Kenar koruması bulunmayan erişilebilir çalışma alanı.",
+      recommended_action: "Uygun korkuluk sistemi kurulmalıdır.",
+      display_order: 0,
+    }],
+  });
+  assertEquals(
+    entries[0].recommendation_text,
+    "Uygun korkuluk sistemi kurulmalıdır.",
+  );
+});
+
 Deno.test("teaser returns only the first bounded sentence", () => {
   assertEquals(
     firstSentenceTeaser("İlk cümle. İkinci cümle gizli."),

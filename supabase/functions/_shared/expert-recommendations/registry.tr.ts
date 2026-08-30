@@ -63,7 +63,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada köprülü vinç bulunmakta, periyodik kontrol ve yük deneyi kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "Vinç yük altına alınmadan önce güncel periyodik kontrol raporu ve yük deneyi kaydı istenmelidir.",
+      "Vinç yük altına alınmadan önce güncel periyodik kontrol raporu ve yük deneyi kaydının istenmesi önerilmektedir.",
   },
 
   lifting_accessory: {
@@ -105,7 +105,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada sapan, zincir veya kanca türü kaldırma aksesuarı bulunmakta, tekil kimlik ve kontrol kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "Aksesuarların etiket ve periyodik kontrol kaydı sahadaki envanterle eşleştirilmelidir.",
+      "Aksesuarların etiket ve periyodik kontrol kaydının sahadaki envanterle eşleştirilmesi önerilmektedir.",
   },
 
   storage_tank: {
@@ -147,7 +147,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada atmosferik depolama tankı bulunmakta, API 653 kapsamında et kalınlığı ölçüm kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "Tankın dış muayene ve ultrasonik et kalınlığı ölçüm raporu istenmelidir.",
+      "Tankın dış muayene ve ultrasonik et kalınlığı ölçüm raporunun istenmesi önerilmektedir.",
   },
 
   pressure_vessel: {
@@ -189,7 +189,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada basınçlı kap veya hava tankı bulunmakta, periyodik kontrol ve basınç deneyi kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "Hidrostatik test ve et kalınlığı ölçüm raporu istenmelidir.",
+      "Hidrostatik test ve et kalınlığı ölçüm raporunun istenmesi önerilmektedir.",
   },
 
   process_piping: {
@@ -231,7 +231,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada proses borulaması bulunmakta, muayene devresi ve kalınlık ölçüm kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "Hattın API 570 kapsamında muayene planına bağlandığı ve ölçüm noktalarının kayıt altında olduğu doğrulanmalıdır.",
+      "Hattın API 570 kapsamında muayene planına bağlandığının ve ölçüm noktalarının kayıt altında olduğunun doğrulanması önerilmektedir.",
   },
 
   electrical_panel: {
@@ -273,7 +273,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada elektrik panosu bulunmakta, iç tesisat ve topraklama ölçüm kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "Ölçüm sonuçlarının sayısal olarak raporlandığı ve sınır değerlerin altında kaldığı istenmelidir.",
+      "Ölçüm sonuçlarının sayısal olarak raporlanması ve sınır değerlerin altında kaldığının doğrulanması önerilmektedir.",
   },
 
   earthing_system: {
@@ -315,7 +315,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada gövde topraklaması gereken elektrikli ekipman bulunmakta, süreklilik ölçüm kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "Ekipman gövdesi ile toprak barası arasındaki süreklilik ölçümü istenmelidir.",
+      "Ekipman gövdesi ile toprak barası arasındaki süreklilik ölçümünün istenmesi önerilmektedir.",
   },
 
   gas_cylinder: {
@@ -357,7 +357,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada basınçlı gaz tüpü bulunmakta, depolama uyumluluğu ve test damgası doğrulanmamıştır.",
     notebookOneriTr:
-      "Gaz uyumluluk matrisi ve tüplerin test damgası sahada doğrulanmalıdır.",
+      "Gaz uyumluluk matrisinin ve tüplerin test damgasının sahada doğrulanması önerilmektedir.",
   },
 
   mobile_crane: {
@@ -399,7 +399,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada mobil vinç bulunmakta, periyodik kontrol ve kaldırma planı kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "Kaldırma öncesi periyodik kontrol raporu ve zemin taşıma hesabı istenmelidir.",
+      "Kaldırma öncesi periyodik kontrol raporu ve zemin taşıma hesabının istenmesi önerilmektedir.",
   },
 
   hoist: {
@@ -441,7 +441,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada caraskal bulunmakta, taşıyıcı bağlantı ve periyodik kontrol kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "Caraskalın bağlı olduğu kirişin kapasite hesabı ve kontrol kaydı istenmelidir.",
+      "Caraskalın bağlı olduğu kirişin kapasite hesabı ve kontrol kaydının istenmesi önerilmektedir.",
   },
 
   forklift: {
@@ -483,7 +483,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada forklift bulunmakta, periyodik kontrol ve ataşman kapasite kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "Kapasite plakasının takılı ataşmanla uyumlu olduğu ve periyodik kontrol kaydının güncel olduğu doğrulanmalıdır.",
+      "Kapasite plakasının takılı ataşmanla uyumlu olduğunun ve periyodik kontrol kaydının güncel olduğunun doğrulanması önerilmektedir.",
   },
 
   mewp: {
@@ -525,7 +525,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada yükseltilebilir çalışma platformu bulunmakta, periyodik kontrol ve kurtarma planı doğrulanmamıştır.",
     notebookOneriTr:
-      "Platformun periyodik kontrol raporu ve saha kurtarma planı istenmelidir.",
+      "Platformun periyodik kontrol raporu ve saha kurtarma planının istenmesi önerilmektedir.",
   },
 
   earthmoving_equipment: {
@@ -567,7 +567,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada iş makinesi bulunmakta, periyodik kontrol ve koruyucu yapı kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "ROPS/FOPS bütünlüğü ve periyodik kontrol raporu istenmelidir.",
+      "ROPS/FOPS bütünlüğü ve periyodik kontrol raporunun istenmesi önerilmektedir.",
   },
 
   boiler: {
@@ -609,7 +609,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada kazan bulunmakta, basınç ve emniyet sistemi kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "Düşük su seviyesi kesicisi ve emniyet ventili fonksiyon testi kaydı istenmelidir.",
+      "Düşük su seviyesi kesicisi ve emniyet ventili fonksiyon testi kaydının istenmesi önerilmektedir.",
   },
 
   compressor: {
@@ -651,7 +651,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada kompresör ve hava tankı bulunmakta, basınç deneyi kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "Hava tankının periyodik kontrol ve emniyet ventili kaydı istenmelidir.",
+      "Hava tankının periyodik kontrol ve emniyet ventili kaydının istenmesi önerilmektedir.",
   },
 
   welding_machine: {
@@ -693,7 +693,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada kaynak makinesi bulunmakta, elektriksel test ve sıcak iş izni kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "TS EN IEC 60974-4 kapsamında elektriksel test ve sıcak iş izni kaydı istenmelidir.",
+      "TS EN IEC 60974-4 kapsamında elektriksel test ve sıcak iş izni kaydının istenmesi önerilmektedir.",
   },
 
   machine_tool: {
@@ -735,7 +735,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada tezgâh veya pres bulunmakta, koruyucu sistem doğrulama kaydı bulunmamaktadır.",
     notebookOneriTr:
-      "Koruyucu ve acil durdurma sisteminin fonksiyon testi kaydı istenmelidir.",
+      "Koruyucu ve acil durdurma sisteminin fonksiyon testi kaydının istenmesi önerilmektedir.",
   },
 
   fire_equipment: {
@@ -777,7 +777,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada yangın söndürme sistemi bulunmakta, periyodik kontrol ve performans kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "Pompa debi-basınç testi ve söndürücü envanterinin güncel rapor üzerinden doğrulanması istenmelidir.",
+      "Pompa debi-basınç testi ve söndürücü envanterinin güncel rapor üzerinden doğrulanması önerilmektedir.",
   },
 
   ventilation_system: {
@@ -819,7 +819,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada havalandırma veya duman emiş sistemi bulunmakta, performans ölçüm kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "Kaynak noktasındaki debi ve basınç ölçüm kaydı istenmelidir.",
+      "Kaynak noktasındaki debi ve basınç ölçüm kaydının istenmesi önerilmektedir.",
   },
 
   scaffold: {
@@ -861,7 +861,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada iskele bulunmakta, kurulum ve haftalık kontrol kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "İskelenin statik projesi ve güncel haftalık kontrol etiketi istenmelidir.",
+      "İskelenin statik projesi ve güncel haftalık kontrol etiketinin istenmesi önerilmektedir.",
   },
 
   ladder: {
@@ -903,7 +903,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada taşınabilir merdiven kullanılmakta, kullanım öncesi kontrol kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "Merdiven seçiminin gerekçesi ve sabitleme koşulları sahada doğrulanmalıdır.",
+      "Merdiven seçiminin gerekçesinin ve sabitleme koşullarının sahada doğrulanması önerilmektedir.",
   },
 
   conveyor: {
@@ -945,7 +945,7 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
     notebookTespitTr:
       "Sahada konveyör bulunmakta, koruyucu ve acil durdurma kaydı doğrulanmamıştır.",
     notebookOneriTr:
-      "Halatlı acil durdurmanın tüm hat boyunca fonksiyon testi kaydı istenmelidir.",
+      "Halatlı acil durdurmanın tüm hat boyunca fonksiyon testi kaydının istenmesi önerilmektedir.",
   },
 
 };

@@ -1996,10 +1996,13 @@ struct AnalysisResultHubView: View {
         if activeSection.access == .teaser { return finding }
         // Onaylı defter metni tek akıcı paragraftır; "Tespit:"/"Öneri:" gibi
         // rapor etiketleri taşımaz. Öneri alanı boşsa metin zaten bu biçimdedir.
+        // Bu artık yorumun söylediği şeyi gerçekten yapıyor: cümleler kendi
+        // başına okunacak biçimde yazılıyor (bkz. notebook_recommendation /
+        // notebookOneriTr), etiket eklemeye gerek kalmıyor.
         if recommendation.isEmpty { return finding }
-        var result = "\(copy("analysis.result_hub.v2.tespit.dadc9d63", "Tespit:", "Finding:")) \(finding) \(copy("analysis.result_hub.v2.oneri.d5e11e40", "Öneri:", "Recommendation:")) \(recommendation)"
+        var result = "\(finding) \(recommendation)"
         let basis = (item.referenceText ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        if !basis.isEmpty { result += " \(copy("analysis.result_hub.v2.dayanak.e604d06c", "Dayanak:", "Basis:")) \(basis)" }
+        if !basis.isEmpty { result += " \(basis)" }
         return result
     }
 

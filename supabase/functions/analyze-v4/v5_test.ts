@@ -52,6 +52,8 @@ function finding(overrides: Record<string, unknown> = {}) {
     immediate_control: "Üst kat döşeme kenarındaki çalışmayı durdurun.",
     corrective_steps: ["Kenarı korkulukla kapatın.", "Erişimi sınırlandırın."],
     preventive_measure: "Kenar koruma planını iş programına bağlayın.",
+    notebook_recommendation:
+      "Üst kat döşeme kenarındaki çalışmanın durdurulması önerilmektedir.",
     training_recommendation: "Yüksekte çalışma eğitimi verin.",
     ppe_recommendation: "Tam vücut emniyet kemeri ve çift kancalı lanyard.",
     evidence_region: { x_min: 0.37, y_min: 0.29, x_max: 0.43, y_max: 0.33 },
@@ -91,6 +93,26 @@ Deno.test("modelin bulgusu olduğu gibi rapora geçer", () => {
     "Kişisel koruyucu donanım:",
   );
   assertStringIncludes(item.recommended_measures[1].text, "Eğitim:");
+  // Onaylı Defter's own register, kept separate from the checklist action
+  // above: the operator flagged "İşçiyi derhal indirin ve çalışmayı
+  // durdurun." as bad report language, and asked for an advisory ending
+  // instead.
+  assertEquals(
+    item.internal_priority.notebook_oneri,
+    "Üst kat döşeme kenarındaki çalışmanın durdurulması önerilmektedir.",
+  );
+});
+
+Deno.test("notebook_recommendation boşsa emir kipindeki önlem yerine geçer", () => {
+  // Better a log entry in the wrong mood than an empty one.
+  const routed = routeV5Findings([{
+    photoIndex: 1,
+    output: parseV5Output(envelope([finding({ notebook_recommendation: "" })])),
+  }]);
+  assertEquals(
+    routed.items[0].internal_priority.notebook_oneri,
+    "Üst kat döşeme kenarındaki çalışmayı durdurun.",
+  );
 });
 
 Deno.test("bulgular skora göre sıralanır, modelin sırasına göre değil", () => {
@@ -332,10 +354,10 @@ Deno.test("köşe kutusu depolanan biçime çevrilir", () => {
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "17092314b40c97e3e8e4894b01096bfdcc038960be4537b12dc73f32d6e0a985";
+  "04e9f73f8d180fd5b18894dfa12905f79fd5ba653f07476db6c73d0a09e365eb";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v14");
+  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v15");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 
