@@ -797,6 +797,12 @@ export function routeV5Findings(
         control_source: "registry",
         expert_family: card.family,
         expert_class: card.recommendationClass,
+        // The Onaylı Defter's one-line pair. Written for the registry entry,
+        // not sliced from `description` or `recommended_action` above: those
+        // are the specialist's full paragraph, and a paragraph cut mid-clause
+        // reads worse in a logbook than a sentence written for the purpose.
+        notebook_tespit: card.notebookTespit,
+        notebook_oneri: card.notebookOneri,
       },
     });
   }

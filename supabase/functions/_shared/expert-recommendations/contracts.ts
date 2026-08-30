@@ -51,6 +51,20 @@ export type ExpertRegistryEntry = {
   interval?: ExpertInterval;
   /** Layers whose hazard makes this card more urgent, not what triggers it. */
   relatedLayers?: number[];
+  /**
+   * One sentence for the Onaylı Defter, not a trim of the specialist card.
+   *
+   * The card above is written for the reader who wants "et kalınlığı ultrasonik
+   * olarak ölçülmelidir"; the log entry is written for the employer who wants
+   * to know, in one line, what to ask for. Truncating `observationTr` or
+   * `requirementsTr` at render time was tried and rejected -- a paragraph cut
+   * mid-clause is worse than a fresh sentence, and the log entry's job is
+   * different enough (name the record, not teach the standard) that it earns
+   * its own text rather than a slice of someone else's.
+   */
+  notebookTespitTr: string;
+  /** The single instruction: what to ask for, one sentence, imperative. */
+  notebookOneriTr: string;
 };
 
 export type ExpertRecommendation = {
@@ -68,4 +82,7 @@ export type ExpertRecommendation = {
   ongoing: string;
   references: string;
   displayOrder: number;
+  /** The Onaylı Defter's one-line pair, carried through unchanged. */
+  notebookTespit: string;
+  notebookOneri: string;
 };

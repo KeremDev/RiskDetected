@@ -97,6 +97,8 @@ export function expertRecommendationsFor(
       ongoing: endSentence(ongoingFor(entry)),
       references: entry.referencesTr.map(endSentence).join("\n"),
       displayOrder: index + 1,
+      notebookTespit: endSentence(entry.notebookTespitTr),
+      notebookOneri: endSentence(entry.notebookOneriTr),
     })),
     familiesWithoutEntry: missing.sort(),
   };

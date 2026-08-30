@@ -389,7 +389,24 @@ async function loadAuthoritativeSections(context: Context) {
       row.projection_version === APPROVED_NOTEBOOK_PROJECTION_VERSION
     );
 
-  const book = await buildApprovedBookSection(context, metadata);
+  // The v1 book engine writes one paragraph per mechanism code, and its
+  // catalogue predates the free engine's broader hazard vocabulary. On
+  // analysis bc85eccd it gave a suspended-lifting-hook hazard the generic
+  // falling-object-from-a-platform-edge paragraph, and an arc-radiation/fume
+  // exposure the hot-surface-contact paragraph -- both wrong, because a whole
+  // scan layer collapses to one mechanism code and the two mismatches shared
+  // theirs with something else. It also never learned about the free engine's
+  // registry-driven assurance cards, so none of Uzman Görüşü reached it. v5
+  // analyses skip it entirely and use the v2 projector below, which reads the
+  // model's own finding text for Risk Analizi and the registry's own
+  // notebookTespitTr/notebookOneriTr for Uzman Görüşü -- both purpose-written,
+  // neither a generic template guessing at what a shared code might mean.
+  const isFreeEngineAnalysis = metadata.some((row) =>
+    safeObject(row.internal_priority).engine_mode === "free"
+  );
+  const book = isFreeEngineAnalysis
+    ? []
+    : await buildApprovedBookSection(context, metadata);
 
   // Training recommendations are derived, not stored: the same analysis and the
   // same catalogue always produce the same cards, so persisting them would only
@@ -453,8 +470,13 @@ async function loadAuthoritativeSections(context: Context) {
     training: paid ? trainingFull : trainingFull.map(redactTrainingForFree),
     templateVersion,
     // Reported so the section can tell the reader what the entries assume,
-    // not so anything can be picked.
-    observationBasis: book.length > 0 ? FIXED_OBSERVATION_BASIS : null,
+    // not so anything can be picked. Every entry in this product -- book,
+    // v2 projection, or the free engine's registry cards -- describes a
+    // photograph the specialist took on site, so the statement holds for
+    // whichever source produced what is actually being shown; it was wrongly
+    // gated on `book.length` alone, which went to zero for every v5 analysis
+    // once the book engine stopped running for them.
+    observationBasis: notebookFull.length > 0 ? FIXED_OBSERVATION_BASIS : null,
   };
 }
 

@@ -120,6 +120,30 @@ Deno.test("her kayıt cümlesi noktayla biter ve boş kalmaz", () => {
   }
 });
 
+// --------------------------------------------------------------------------
+// bc85eccd -- the notebook was showing 345-511 character paragraphs where a
+// one-line record request belonged
+// --------------------------------------------------------------------------
+
+Deno.test("her kayıt kendi defter cümlesini taşır, uzman paragrafından kesilmez", () => {
+  const built = expertRecommendationsFor(Object.keys(EXPERT_REGISTRY));
+  for (const card of built.recommendations) {
+    assert(card.notebookTespit.endsWith("."), card.family);
+    assert(card.notebookOneri.endsWith("."), card.family);
+    // A log line, not a slice of the specialist paragraph: short enough to
+    // read as one sentence, and not a truncated fragment of `text`.
+    assert(
+      card.notebookTespit.length < 170,
+      `${card.family}: ${card.notebookTespit.length} karakter`,
+    );
+    assert(
+      card.notebookOneri.length < 170,
+      `${card.family}: ${card.notebookOneri.length} karakter`,
+    );
+    assert(!card.text.startsWith(card.notebookTespit), card.family);
+  }
+});
+
 Deno.test("kayıt defterinde karşılığı olmayan aile uydurulmaz, sayılır", () => {
   // All 22 EXPERT_ASSET_FAMILIES now have a registry entry; this exercises the
   // missing-entry path with a family the registry has never heard of, which is
@@ -183,6 +207,14 @@ Deno.test("uzman kartları puanlanmaz ve toplam skoru şişirmez", () => {
   assertEquals(cards[0].needs_field_verification, true);
   assertEquals(cards[0].internal_priority.control_source, "registry");
   assertEquals(routed.expertCardCount, 1);
+  // The notebook reads these two fields directly off internal_priority; if
+  // routing stops carrying them the log book silently falls back to the
+  // generic template and the full specialist paragraph again.
+  assertStringIncludes(
+    String(cards[0].internal_priority.notebook_tespit),
+    "köprülü vinç",
+  );
+  assert(String(cards[0].internal_priority.notebook_oneri).endsWith("."));
 });
 
 // --------------------------------------------------------------------------

@@ -169,6 +169,78 @@ Deno.test("unverified standard identifiers never leak from source prose", async 
   assert(!entries[0].recommendation_text.includes("API 653"));
 });
 
+// --------------------------------------------------------------------------
+// bc85eccd -- five registry cards published a 345-511 character paragraph as
+// the notebook recommendation, because the assurance branch dumped the
+// specialist card's full recommended_action instead of a line written for
+// the log book.
+// --------------------------------------------------------------------------
+
+Deno.test("registry-authored notebook line replaces the generic template and the long dump", async () => {
+  const entries = await projectApprovedNotebookEntries({
+    analysisID: "44444444-4444-4444-8444-444444444444",
+    language: "tr",
+    findings: [{
+      id: "55555555-5555-4555-8555-555555555555",
+      item_class: "assurance_requirement",
+      is_scored: false,
+      title: "Basınçlı Kap ve Hava Tankı — Periyodik Kontrol, Basınç Deneyi ve Kalan Ömür Doğrulaması",
+      description: "Sahada basınçlı kap görülmektedir. (uzun uzman paragrafı burada devam eder)",
+      recommended_action:
+        "Rapor mevcutsa; “1,5 kat yapıldı” ifadesine tek başına güvenmeyin. Yıllık veya üç yıllık/onarım sonrası hangi rejimin uygulandığını, test basıncının etiket ve tasarım dosyasından nasıl türetildiğini, test ortamı/sıcaklığı/hava tahliyesini, kalibrasyonlu referans manometreyi ve deformasyon-kaçak kabul kriterlerini inceleyin.",
+      display_order: 0,
+    }],
+    metadata: [{
+      public_finding_id: "55555555-5555-4555-8555-555555555555",
+      internal_priority: {
+        engine_mode: "free",
+        control_source: "registry",
+        expert_family: "pressure_vessel",
+        notebook_tespit:
+          "Sahada basınçlı kap veya hava tankı bulunmakta, periyodik kontrol ve basınç deneyi kaydı doğrulanmamıştır.",
+        notebook_oneri: "Hidrostatik test ve et kalınlığı ölçüm raporu istenmelidir.",
+      },
+    }],
+  });
+  assertEquals(entries.length, 1);
+  assertEquals(
+    entries[0].finding_text,
+    "Sahada basınçlı kap veya hava tankı bulunmakta, periyodik kontrol ve basınç deneyi kaydı doğrulanmamıştır.",
+  );
+  assertEquals(
+    entries[0].recommendation_text,
+    "Hidrostatik test ve et kalınlığı ölçüm raporu istenmelidir.",
+  );
+  // Neither the generic "saha veya kayıt teyidi gerektirmektedir" template nor
+  // the specialist card's long paragraph reaches the reader.
+  assert(!entries[0].finding_text.includes("saha veya kayıt teyidi"));
+  assert(!entries[0].recommendation_text.includes("İlgili güvence kayıt"));
+  assert(!entries[0].recommendation_text.includes("1,5 kat"));
+  assert(entries[0].finding_text.length < 150);
+  assert(entries[0].recommendation_text.length < 100);
+});
+
+Deno.test("assurance items without a registry line keep the prior behaviour", async () => {
+  // A v4 legacy item, or a model-sourced records finding the registry never
+  // covered: no internal_priority.notebook_tespit/notebook_oneri, so the
+  // generic template and the short model action still apply.
+  const entries = await projectApprovedNotebookEntries({
+    analysisID: "66666666-6666-4666-8666-666666666666",
+    language: "tr",
+    findings: [{
+      id: "77777777-7777-4777-8777-777777777777",
+      item_class: "assurance_requirement",
+      is_scored: false,
+      title: "Elektrik panosu koruma düzeni",
+      recommended_action: "Yetkili elektrik personeliyle doğrulayın.",
+      display_order: 0,
+    }],
+  });
+  assertEquals(entries.length, 1);
+  assert(entries[0].finding_text.includes("saha veya kayıt teyidi"));
+  assert(entries[0].recommendation_text.includes("İlgili güvence kayıt"));
+});
+
 Deno.test("teaser returns only the first bounded sentence", () => {
   assertEquals(
     firstSentenceTeaser("İlk cümle. İkinci cümle gizli."),

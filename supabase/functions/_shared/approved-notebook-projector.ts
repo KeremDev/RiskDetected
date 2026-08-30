@@ -313,6 +313,7 @@ function actionTexts(finding: ProjectorFinding): string[] {
 function findingText(
   finding: ProjectorFinding,
   language: ResultHubLanguage,
+  metadata?: V4ResultMetadata,
 ): string {
   const title = sanitizeNotebookContentText(finding.title);
   const description = sanitizeNotebookContentText(finding.description);
@@ -320,6 +321,17 @@ function findingText(
     (finding.is_scored === false ? "verification_request" : "observed_finding");
 
   if (itemClass === "assurance_requirement") {
+    // The registry's own one-line tespit, where one exists. Written for the
+    // logbook specifically -- see ExpertRegistryEntry.notebookTespitTr -- so
+    // it names the equipment and the record in one short sentence instead of
+    // the generic "X saha veya kayıt teyidi gerektirmektedir" every assurance
+    // item used to get regardless of what it actually was.
+    const registryTespit = language === "tr"
+      ? sanitizeNotebookContentText(
+        pathValue(metadata?.internal_priority, [["notebook_tespit"]]),
+      )
+      : "";
+    if (registryTespit) return sentence(registryTespit);
     return language === "tr"
       ? sentence(
         `${
@@ -349,9 +361,27 @@ function findingText(
 function recommendationText(
   finding: ProjectorFinding,
   language: ResultHubLanguage,
+  metadata?: V4ResultMetadata,
 ): string {
   const itemClass = finding.item_class ??
     (finding.is_scored === false ? "verification_request" : "observed_finding");
+
+  if (itemClass === "assurance_requirement") {
+    // Was: the generic prefix followed by the specialist card's full
+    // recommended_action -- for a registry card that is `ifPresentTr`, a
+    // multi-sentence paragraph written for the Uzman Görüşü reader, not a
+    // defter line. Analysis bc85eccd published five of these at 345-511
+    // characters each, which is most of the "gereksiz uzun" the operator
+    // flagged. notebookOneriTr is the one-sentence instruction written for
+    // this purpose specifically.
+    const registryOneri = language === "tr"
+      ? sanitizeNotebookContentText(
+        pathValue(metadata?.internal_priority, [["notebook_oneri"]]),
+      )
+      : "";
+    if (registryOneri) return sentence(registryOneri);
+  }
+
   const actions = uniqueSentences(actionTexts(finding));
   const fallback = language === "tr"
     ? "Uygun mühendislik ve organizasyonel kontroller belirlenerek uygulanmalıdır."
@@ -368,6 +398,8 @@ function recommendationText(
       }${joined.slice(1)}`;
   }
   if (itemClass === "assurance_requirement") {
+    // No registry-authored line -- a v4 legacy assurance item, or an English
+    // report. Falls back to what shipped before.
     return language === "tr"
       ? `İlgili güvence kayıt, ölçüm veya yetkili saha kontrolüyle doğrulanmalıdır. ${joined}`
       : `The relevant assurance should be verified through records, measurement, or an authorised field check. ${joined}`;
@@ -452,10 +484,14 @@ export async function projectApprovedNotebookEntries(params: {
   return await Promise.all(ordered.map(async (group, index) => {
     const sourceIDs = [...new Set(group.rows.map((row) => row.id))].sort();
     const findings = uniqueSentences(
-      group.rows.map((row) => findingText(row, params.language)),
+      group.rows.map((row) =>
+        findingText(row, params.language, metadataByFinding.get(row.id))
+      ),
     ).join(" ");
     const recommendations = uniqueSentences(
-      group.rows.map((row) => recommendationText(row, params.language)),
+      group.rows.map((row) =>
+        recommendationText(row, params.language, metadataByFinding.get(row.id))
+      ),
     ).join(" ");
     const references = uniqueSentences(
       group.metadata.flatMap((item) => item.verified_references ?? []),

@@ -51,6 +51,24 @@ Deno.test("feedback validates the target kind for all four result sections", () 
   assertStringIncludes(source, 'error: "invalid_feedback_target_kind"');
 });
 
+Deno.test("v5 analyses skip the mechanism-template book and keep the site-observation disclaimer", () => {
+  // bc85eccd: the v1 book engine's ~12 mechanism templates predate the free
+  // engine's broader hazard vocabulary. On that analysis it gave a suspended
+  // lifting hook the generic falling-object-from-a-platform-edge paragraph and
+  // an arc-radiation/fume exposure the hot-surface-contact paragraph, and it
+  // never saw the registry's Uzman Görüşü cards at all -- book_source was
+  // never attached to them. v5 analyses now skip it outright.
+  assertStringIncludes(source, 'internal_priority).engine_mode === "free"');
+  assertStringIncludes(source, "const book = isFreeEngineAnalysis");
+  // The book-only gate on this disclaimer went to zero for every v5 analysis
+  // the moment the line above shipped; it must key off what is actually being
+  // shown, not off which engine produced it.
+  assertStringIncludes(
+    source,
+    "observationBasis: notebookFull.length > 0 ? FIXED_OBSERVATION_BASIS : null",
+  );
+});
+
 Deno.test("result endpoint adds no model call", () => {
   const providerMarkers = [
     "generativelanguage.googleapis.com",

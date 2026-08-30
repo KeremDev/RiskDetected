@@ -60,6 +60,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [5, 6, 7, 19],
+    notebookTespitTr:
+      "Sahada köprülü vinç bulunmakta, periyodik kontrol ve yük deneyi kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "Vinç yük altına alınmadan önce güncel periyodik kontrol raporu ve yük deneyi kaydı istenmelidir.",
   },
 
   lifting_accessory: {
@@ -98,6 +102,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [7, 19],
+    notebookTespitTr:
+      "Sahada sapan, zincir veya kanca türü kaldırma aksesuarı bulunmakta, tekil kimlik ve kontrol kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "Aksesuarların etiket ve periyodik kontrol kaydı sahadaki envanterle eşleştirilmelidir.",
   },
 
   storage_tank: {
@@ -136,6 +144,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [10, 11, 13, 14, 18, 19],
+    notebookTespitTr:
+      "Sahada atmosferik depolama tankı bulunmakta, API 653 kapsamında et kalınlığı ölçüm kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "Tankın dış muayene ve ultrasonik et kalınlığı ölçüm raporu istenmelidir.",
   },
 
   pressure_vessel: {
@@ -174,6 +186,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [12, 13, 14, 19],
+    notebookTespitTr:
+      "Sahada basınçlı kap veya hava tankı bulunmakta, periyodik kontrol ve basınç deneyi kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "Hidrostatik test ve et kalınlığı ölçüm raporu istenmelidir.",
   },
 
   process_piping: {
@@ -212,6 +228,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [10, 11, 12, 13, 14],
+    notebookTespitTr:
+      "Sahada proses borulaması bulunmakta, muayene devresi ve kalınlık ölçüm kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "Hattın API 570 kapsamında muayene planına bağlandığı ve ölçüm noktalarının kayıt altında olduğu doğrulanmalıdır.",
   },
 
   electrical_panel: {
@@ -250,6 +270,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [5, 13, 18, 19],
+    notebookTespitTr:
+      "Sahada elektrik panosu bulunmakta, iç tesisat ve topraklama ölçüm kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "Ölçüm sonuçlarının sayısal olarak raporlandığı ve sınır değerlerin altında kaldığı istenmelidir.",
   },
 
   earthing_system: {
@@ -288,6 +312,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [5, 6, 13, 19],
+    notebookTespitTr:
+      "Sahada gövde topraklaması gereken elektrikli ekipman bulunmakta, süreklilik ölçüm kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "Ekipman gövdesi ile toprak barası arasındaki süreklilik ölçümü istenmelidir.",
   },
 
   gas_cylinder: {
@@ -326,6 +354,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [10, 12, 13, 18],
+    notebookTespitTr:
+      "Sahada basınçlı gaz tüpü bulunmakta, depolama uyumluluğu ve test damgası doğrulanmamıştır.",
+    notebookOneriTr:
+      "Gaz uyumluluk matrisi ve tüplerin test damgası sahada doğrulanmalıdır.",
   },
 
   mobile_crane: {
@@ -364,6 +396,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [3, 4, 7, 8, 18, 19],
+    notebookTespitTr:
+      "Sahada mobil vinç bulunmakta, periyodik kontrol ve kaldırma planı kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "Kaldırma öncesi periyodik kontrol raporu ve zemin taşıma hesabı istenmelidir.",
   },
 
   hoist: {
@@ -402,6 +438,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [4, 7, 19],
+    notebookTespitTr:
+      "Sahada caraskal bulunmakta, taşıyıcı bağlantı ve periyodik kontrol kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "Caraskalın bağlı olduğu kirişin kapasite hesabı ve kontrol kaydı istenmelidir.",
   },
 
   forklift: {
@@ -440,6 +480,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [6, 8, 9, 17, 18, 19],
+    notebookTespitTr:
+      "Sahada forklift bulunmakta, periyodik kontrol ve ataşman kapasite kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "Kapasite plakasının takılı ataşmanla uyumlu olduğu ve periyodik kontrol kaydının güncel olduğu doğrulanmalıdır.",
   },
 
   mewp: {
@@ -478,6 +522,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [3, 4, 6, 8, 18, 19],
+    notebookTespitTr:
+      "Sahada yükseltilebilir çalışma platformu bulunmakta, periyodik kontrol ve kurtarma planı doğrulanmamıştır.",
+    notebookOneriTr:
+      "Platformun periyodik kontrol raporu ve saha kurtarma planı istenmelidir.",
   },
 
   earthmoving_equipment: {
@@ -516,6 +564,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [4, 8, 15, 18, 19],
+    notebookTespitTr:
+      "Sahada iş makinesi bulunmakta, periyodik kontrol ve koruyucu yapı kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "ROPS/FOPS bütünlüğü ve periyodik kontrol raporu istenmelidir.",
   },
 
   boiler: {
@@ -554,6 +606,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [5, 10, 12, 13, 14, 18, 19],
+    notebookTespitTr:
+      "Sahada kazan bulunmakta, basınç ve emniyet sistemi kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "Düşük su seviyesi kesicisi ve emniyet ventili fonksiyon testi kaydı istenmelidir.",
   },
 
   compressor: {
@@ -592,6 +648,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [5, 6, 12, 16, 18, 19],
+    notebookTespitTr:
+      "Sahada kompresör ve hava tankı bulunmakta, basınç deneyi kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "Hava tankının periyodik kontrol ve emniyet ventili kaydı istenmelidir.",
   },
 
   welding_machine: {
@@ -630,6 +690,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [5, 6, 10, 13, 15, 16, 18],
+    notebookTespitTr:
+      "Sahada kaynak makinesi bulunmakta, elektriksel test ve sıcak iş izni kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "TS EN IEC 60974-4 kapsamında elektriksel test ve sıcak iş izni kaydı istenmelidir.",
   },
 
   machine_tool: {
@@ -668,6 +732,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [5, 6, 17, 19],
+    notebookTespitTr:
+      "Sahada tezgâh veya pres bulunmakta, koruyucu sistem doğrulama kaydı bulunmamaktadır.",
+    notebookOneriTr:
+      "Koruyucu ve acil durdurma sisteminin fonksiyon testi kaydı istenmelidir.",
   },
 
   fire_equipment: {
@@ -706,6 +774,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [13, 18, 19],
+    notebookTespitTr:
+      "Sahada yangın söndürme sistemi bulunmakta, periyodik kontrol ve performans kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "Pompa debi-basınç testi ve söndürücü envanterinin güncel rapor üzerinden doğrulanması istenmelidir.",
   },
 
   ventilation_system: {
@@ -744,6 +816,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [10, 13, 16, 18, 19],
+    notebookTespitTr:
+      "Sahada havalandırma veya duman emiş sistemi bulunmakta, performans ölçüm kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "Kaynak noktasındaki debi ve basınç ölçüm kaydı istenmelidir.",
   },
 
   scaffold: {
@@ -782,6 +858,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [3, 4, 18, 19],
+    notebookTespitTr:
+      "Sahada iskele bulunmakta, kurulum ve haftalık kontrol kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "İskelenin statik projesi ve güncel haftalık kontrol etiketi istenmelidir.",
   },
 
   ladder: {
@@ -820,6 +900,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [3, 4, 18],
+    notebookTespitTr:
+      "Sahada taşınabilir merdiven kullanılmakta, kullanım öncesi kontrol kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "Merdiven seçiminin gerekçesi ve sabitleme koşulları sahada doğrulanmalıdır.",
   },
 
   conveyor: {
@@ -858,6 +942,10 @@ export const EXPERT_REGISTRY: Record<string, ExpertRegistryEntry> = {
       verified: true,
     },
     relatedLayers: [5, 6, 9, 13, 14, 19],
+    notebookTespitTr:
+      "Sahada konveyör bulunmakta, koruyucu ve acil durdurma kaydı doğrulanmamıştır.",
+    notebookOneriTr:
+      "Halatlı acil durdurmanın tüm hat boyunca fonksiyon testi kaydı istenmelidir.",
   },
 
 };
