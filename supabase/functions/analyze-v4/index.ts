@@ -367,6 +367,23 @@ async function analyzePhoto(params: {
           false,
         );
       lastError = error;
+      // Which clause of the contract the provider broke, not just that it broke
+      // one. `provider_schema_invalid` reached the attempts table with no
+      // detail anywhere, so a gemini-3.7-flash trial that failed two of three
+      // calls could not be told apart from a model that saw nothing -- and the
+      // two call for opposite decisions.
+      console.error(
+        "v4 provider attempt failed",
+        JSON.stringify({
+          engine_run_id: params.engineRunID,
+          model: params.model,
+          kind: spec.kind,
+          attempt,
+          code: error.code,
+          detail: safe(error.message, 400),
+          schema_issues: error.schemaIssues.slice(0, 6),
+        }),
+      );
       // Coverage-only defects do not justify paying for a second vision pass.
       // The candidate payload already passed the semantic schema; close only
       // the missing coverage rows deterministically and preserve its facts.
