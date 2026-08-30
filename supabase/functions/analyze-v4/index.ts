@@ -49,6 +49,7 @@ import {
 import {
   looksLikePlaceholder,
   parseV5Output,
+  recordsFindingsAbsorbingHazards,
   routeV5Findings,
   unfulfilledHazardLayers,
 } from "./v5-engine.ts";
@@ -991,6 +992,18 @@ serve(async (req) => {
               row.result === "tehlike_var"
             ).map((row) => row.layer),
             layers_without_finding: unfulfilledHazardLayers(entry.output),
+            records_findings_absorbing_hazards:
+              recordsFindingsAbsorbingHazards(entry.output),
+            findings_per_hazard_layer: entry.output.layer_scan.filter((row) =>
+                row.result === "tehlike_var"
+              ).length > 0
+              ? Number(
+                (entry.output.findings.length /
+                  entry.output.layer_scan.filter((row) =>
+                    row.result === "tehlike_var"
+                  ).length).toFixed(2),
+              )
+              : null,
           })),
           candidate_counts: {
             raw: routedFree.candidates.length,
@@ -1027,6 +1040,11 @@ serve(async (req) => {
                 unfulfilledHazardLayers(entry.output).length > 0
               )
               ? ["v5_layer_hazard_without_finding"]
+              : []),
+            ...(outputs.some((entry) =>
+                recordsFindingsAbsorbingHazards(entry.output).length > 0
+              )
+              ? ["v5_records_finding_absorbed_hazard"]
               : []),
             ...(visibleFree.length === 0 ? ["no_visible_items"] : []),
             ...(routedFree.sanitizedCount > 0 ? ["v5_text_sanitized"] : []),

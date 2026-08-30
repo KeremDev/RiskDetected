@@ -275,6 +275,27 @@ export function unfulfilledHazardLayers(output: V5PhotoOutput): number[] {
     .map((row) => row.layer);
 }
 
+/**
+ * Records findings that also claim a physical layer.
+ *
+ * Layer 19 asks whether a document exists. In analysis 71021610 the model
+ * bound it to layer 7 and published "Kaldırma Ekipmanları Periyodik Kontrol
+ * Doğrulaması" -- a man welding under a suspended tank, turned into a
+ * paperwork item. The physical hazard left the report through the records
+ * layer, which is the one way this section can do harm.
+ */
+export const RECORDS_LAYER = 19;
+
+export function recordsFindingsAbsorbingHazards(
+  output: V5PhotoOutput,
+): string[] {
+  return output.findings
+    .filter((finding) =>
+      finding.layers.includes(RECORDS_LAYER) && finding.layers.length > 1
+    )
+    .map((finding) => finding.finding_key);
+}
+
 export type V5Routed = {
   candidates: Record<string, unknown>[];
   items: RoutedItem[];

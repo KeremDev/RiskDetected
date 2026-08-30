@@ -7,6 +7,7 @@ import {
   criticalityForSeverity,
   looksLikePlaceholder,
   parseV5Output,
+  recordsFindingsAbsorbingHazards,
   routeV5Findings,
   sanitizeFreeText,
   snapToScale,
@@ -325,10 +326,10 @@ Deno.test("köşe kutusu depolanan biçime çevrilir", () => {
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "797ffc6957263e0d30716488757f13d81fcd42c8b5398d9558b8d91f14e5dcd0";
+  "a5a28ddd9ec031252b2f674c067906952089ef4fc22e8bd9bafebfda361456df";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v9");
+  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v10");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 
@@ -635,4 +636,47 @@ Deno.test("mevzuat faaliyet türüne göre seçilir", () => {
     V5_FREE_PROMPT,
     "atölye, fabrika, imalathane, depo ve tesis içi işlerde bunu dayanak gösterme",
   );
+});
+
+Deno.test("varsayılan ayrı bulgu, birleştirme istisna", () => {
+  // Analiz 71021610: dokuz tehlike katmanı yine dört bulguya sıkıştı --
+  // [1,3,17], [5,6,19], [1,13,16], [7,19]. Sunucuda tavan yok
+  // (V5_MAX_FINDINGS 24); sayıyı model seçiyor.
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    "HER `tehlike_var` KATMANI KENDİ BULGUSUNU ALIR",
+  );
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    "Birleştirme istisnadır, varsayılan değildir",
+  );
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    "Bulgu sayısını azaltmak bir erdem değildir",
+  );
+  assertEquals(V5_MAX_FINDINGS, 24);
+});
+
+Deno.test("kayıt katmanı fiziksel tehlikeyi yutamaz", () => {
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    "19. KATMAN HİÇBİR FİZİKSEL TEHLİKEYİ YUTAMAZ",
+  );
+  // 71021610'da askıdaki yük altında çalışma (katman 7, fatal) "Kaldırma
+  // Ekipmanları Periyodik Kontrol Doğrulaması" başlığıyla evrak maddesine
+  // dönüştü ve fiziksel tehlike rapordan çıktı.
+  const raw = JSON.stringify({
+    scene_summary: "Atölye sahnesi.",
+    layer_scan: [
+      { layer: 7, result: "tehlike_var", note: "Askıdaki yük." },
+      { layer: 19, result: "tehlike_var", note: "Vinç kaydı." },
+    ],
+    positive_controls: [],
+    findings: [
+      finding({ finding_key: "kayit_yuttu", layers: [7, 19] }),
+      finding({ finding_key: "temiz", layers: [19] }),
+    ],
+  });
+  const output = parseV5Output(raw);
+  assertEquals(recordsFindingsAbsorbingHazards(output), ["kayit_yuttu"]);
 });
