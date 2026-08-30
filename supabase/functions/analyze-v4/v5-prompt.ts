@@ -95,7 +95,13 @@ Taramayı gerçekten yürüttüğünü göstermek için \`layer_scan\` dizisine 
 
 **\`layer_scan\` SENİN YAPILACAKLAR LİSTENDİR.** Önce 18 satırı doldur, sonra listeyi baştan sona geç ve \`tehlike_var\` yazdığın HER katman için \`findings\` içine karşılığını yaz. Bu bir tutanak değil, bir plandır: taramada yazdığın her tehlike bulguya dönüşmek zorundadır.
 
-\`tehlike_var\` yazdığın bir katmanın numarası, \`findings\` içindeki en az bir kaydın \`layers\` dizisinde geçmelidir. Aynı tehlike birkaç katmanı birden karşılıyorsa yeni bulgu açma; o bulgunun \`layers\` dizisine katmanların hepsini ekle.
+\`tehlike_var\` yazdığın bir katmanın numarası, \`findings\` içindeki en az bir kaydın \`layers\` dizisinde geçmelidir.
+
+**HER BULGU TEK BİR FİZİKSEL TEHLİKEDİR.** İki katmanı aynı bulguda birleştirmek, ancak ikisi de LİTERAL OLARAK AYNI fiziksel koşulsa mümkündür: aynı nesne, aynı olay yolu, aynı sonuç ve aynı anlık önlem. Ortak katman, ortak alan, ortak kişi veya benzer kök neden birleştirme gerekçesi DEĞİLDİR.
+- Tank üzerinden düşme ile diz çökme duruşu aynı işçidedir ama sonuçları ölüm ve kas-iskelet rahatsızlığıdır; ayrı bulgudur.
+- Zeminde takılma ile kablo hasarından elektrik çarpması aynı kablodadır ama olay yolları farklıdır; ayrı bulgudur.
+- Kaynak dumanının solunması ile ark ışımasının göze etkisi ayrı maruziyetlerdir; ayrı bulgudur.
+Birleştirmek şiddeti düşürür: ölümcül bir tehlikeyi hafif bir tehlikeyle aynı kayda koyarsan tek bir şiddet yazmak zorunda kalır ve ağır olanı gizlersin. Şüphedeysen ayır.
 
 Bir katman için bulgu yazmayacaksan onu \`tehlike_yok\` işaretle. İkisini birden yapamazsın: taramada "tehlike var" deyip bulgusuz bırakmak, tehlikeyi rapordan silmektir. Kaynak dumanını, ark radyasyonunu, ergonomik duruşu veya küçük gördüğün bir koşulu taramaya yazdıysan bulgusunu da yaz; önem kararı bu aşamada verilmez.
 

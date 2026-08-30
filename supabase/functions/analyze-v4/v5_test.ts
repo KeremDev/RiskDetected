@@ -321,10 +321,10 @@ Deno.test("köşe kutusu depolanan biçime çevrilir", () => {
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "d395dde743af72a6d4b069f2364e02d39338a59084d45bf2ae00840e9140bfe4";
+  "0de53fc81e9c4117b3e5173ad1e51f1f8a352771a3d2ebb3cc67e6716ba7fc5d";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v7");
+  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v8");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 
@@ -579,4 +579,22 @@ Deno.test("olumlu kontrol bir önlemdir, bir yokluk değil", () => {
     V5_FREE_PROMPT,
     "Gösterecek bir şey yoksa diziyi boş bırak",
   );
+});
+
+Deno.test("katman birleştirme yalnız aynı fiziksel tehlike için serbest", () => {
+  // Analiz 1bdf0ab0: dokuz tehlike katmanı dört bulguya sıkıştı --
+  // [1,3,17], [7,11], [13,16], [2,5] -- ve birleşen her kayıt tek bir
+  // şiddet taşıdığı için tank üzerinden düşme 40'tan 7'ye indi. Aynı
+  // fotoğrafın bir önceki koşusunda aynı bulgu fatal/1440'tı.
+  assertStringIncludes(V5_FREE_PROMPT, "HER BULGU TEK BİR FİZİKSEL TEHLİKEDİR");
+  assertStringIncludes(V5_FREE_PROMPT, "LİTERAL OLARAK AYNI");
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    "Ortak katman, ortak alan, ortak kişi veya benzer kök neden birleştirme gerekçesi DEĞİLDİR",
+  );
+  // Ve neden önemli olduğu: birleştirmek ağır olanı gizler.
+  assertStringIncludes(V5_FREE_PROMPT, "Birleştirmek şiddeti düşürür");
+  assertStringIncludes(V5_FREE_PROMPT, "Şüphedeysen ayır");
+  // Bağlama kuralı duruyor; kaldırılan yalnız serbest birleştirme izni.
+  assertStringIncludes(V5_FREE_PROMPT, "dizisinde geçmelidir");
 });
