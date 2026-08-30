@@ -30,7 +30,7 @@
 // config key.
 
 export const V5_ENGINE_MODE = "free";
-export const V5_PROMPT_VERSION = "v7-free-core-multidisciplinary-v6";
+export const V5_PROMPT_VERSION = "v7-free-core-multidisciplinary-v7";
 
 /** Fine-Kinney scales. The arithmetic stays deterministic; the values do not. */
 export const FK_PROBABILITY = [0.2, 0.5, 1, 3, 6, 10] as const;
@@ -59,6 +59,10 @@ export type V5Finding = {
    * worker, "güvensiz pozisyonda kaynak" -- was reported unanswered beside two
    * layers that genuinely were. The oldest engine had inspection_layer_keys
    * plural for this reason.
+   *
+   * This binding, not the array order, is what fixes a hazard recorded in the
+   * scan and never written as a finding. layer_scan is emitted first again so
+   * the sweep can act as the checklist the findings discharge.
    */
   layers: number[];
   title: string;
@@ -144,6 +148,21 @@ export const V5_RESPONSE_SCHEMA = {
   type: "object",
   properties: {
     scene_summary: { type: "string" },
+    layer_scan: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          layer: { type: "number" },
+          result: {
+            type: "string",
+            enum: ["tehlike_var", "tehlike_yok", "kadrajda_yok"],
+          },
+          note: { type: "string" },
+        },
+        required: ["layer", "result", "note"],
+      },
+    },
     positive_controls: {
       type: "array",
       items: {
@@ -205,21 +224,6 @@ export const V5_RESPONSE_SCHEMA = {
         ],
       },
     },
-    layer_scan: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          layer: { type: "number" },
-          result: {
-            type: "string",
-            enum: ["tehlike_var", "tehlike_yok", "kadrajda_yok"],
-          },
-          note: { type: "string" },
-        },
-        required: ["layer", "result", "note"],
-      },
-    },
   },
-  required: ["scene_summary", "findings", "positive_controls", "layer_scan"],
+  required: ["scene_summary", "layer_scan", "findings", "positive_controls"],
 };

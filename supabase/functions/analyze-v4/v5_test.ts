@@ -321,10 +321,10 @@ Deno.test("köşe kutusu depolanan biçime çevrilir", () => {
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "11bb1000b04c996734df03555705fd39e7560841b224786b8705f394e6f2c8f8";
+  "d395dde743af72a6d4b069f2364e02d39338a59084d45bf2ae00840e9140bfe4";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v6");
+  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v7");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 
@@ -507,18 +507,25 @@ Deno.test("katman izi ayrıştırılır ve bulguya dönüşmez", () => {
   assertEquals(routed.items[0].item_class, "observed_finding");
 });
 
-Deno.test("şema bulguları kayıttan önce ister", () => {
+Deno.test("tarama listesi bulgulardan önce gelir", () => {
   const schema = V5_RESPONSE_SCHEMA as unknown as Record<string, any>;
   const keys = Object.keys(schema.properties);
-  // Analiz 88a9c731: layer_scan önce geldiği için model tehlikeyi kayda
-  // yazıp bulgusuz bıraktı -- v4'ün en eski hatası, yeni bir yerde.
-  assertEquals(keys.indexOf("findings") < keys.indexOf("layer_scan"), true);
+  // Tarama yapılacaklar listesidir; bulgular onu karşılar. Bulgular öne
+  // alındığında (v5) model taramada gördüğü kaynak dumanını bulguya
+  // dönüştüremedi, çünkü dizi çoktan kapanmıştı -- analiz 0e48c1c8.
+  assertEquals(keys.indexOf("layer_scan") < keys.indexOf("findings"), true);
   assertEquals(
     schema.properties.findings.items.required.includes("layers"),
     true,
   );
-  assertStringIncludes(V5_FREE_PROMPT, "ÖNCE BULGU, SONRA KAYIT");
-  assertStringIncludes(V5_FREE_PROMPT, "kayıt satırı bulgunun yerine geçmez");
+  assertStringIncludes(V5_FREE_PROMPT, "SENİN YAPILACAKLAR LİSTENDİR");
+  assertStringIncludes(V5_FREE_PROMPT, "SON KONTROL");
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    "bulgusuz bırakmak, tehlikeyi rapordan silmektir",
+  );
+  // Kaynak dumanı bu koşuda taramaya yazılıp bulgusuz kalmıştı.
+  assertStringIncludes(V5_FREE_PROMPT, "Kaynak dumanını, ark radyasyonunu");
 });
 
 Deno.test("sözü tutulmayan katman ölçülür, uydurulmaz", () => {

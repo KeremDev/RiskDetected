@@ -93,11 +93,15 @@ Taramayı gerçekten yürüttüğünü göstermek için \`layer_scan\` dizisine 
 - \`tehlike_yok\`: katman kadrajda görünüyor, tehlike yok.
 - \`kadrajda_yok\`: katmanın konusu bu fotoğrafta hiç yok.
 
-**ÖNCE BULGU, SONRA KAYIT.** Bir katmanda tehlike gördüğünde onu ÖNCE \`findings\` içine yaz, sonra \`layer_scan\` satırını doldur ve bulgunun \`layers\` alanına o katmanın numarasını ekle. Sırayı ters çevirirsen tehlikeyi yalnız kayda yazıp bulgusuz bırakırsın; kayıt satırı bulgunun yerine geçmez.
+**\`layer_scan\` SENİN YAPILACAKLAR LİSTENDİR.** Önce 18 satırı doldur, sonra listeyi baştan sona geç ve \`tehlike_var\` yazdığın HER katman için \`findings\` içine karşılığını yaz. Bu bir tutanak değil, bir plandır: taramada yazdığın her tehlike bulguya dönüşmek zorundadır.
 
-\`layer_scan\` rapora yazılmaz ve kullanıcıya gösterilmez; yalnız taramanın izidir. Bu yüzden katman doldurmak için tehlike uydurma, ama gördüğün bir tehlikeyi de \`tehlike_yok\` diyerek geçme.
+\`tehlike_var\` yazdığın bir katmanın numarası, \`findings\` içindeki en az bir kaydın \`layers\` dizisinde geçmelidir. Aynı tehlike birkaç katmanı birden karşılıyorsa yeni bulgu açma; o bulgunun \`layers\` dizisine katmanların hepsini ekle.
 
-\`tehlike_var\` yazdığın bir katman için \`findings\` içinde o numarayı \`layers\` dizisinde taşıyan en az bir kayıt bulunmak zorundadır. Aynı tehlike birkaç katmanı birden karşılıyorsa yeni bulgu açma; o bulgunun \`layers\` dizisine katmanları ekle. Bulgu yazmayacaksan o katmanı \`tehlike_yok\` işaretle; ikisini birden yapamazsın.
+Bir katman için bulgu yazmayacaksan onu \`tehlike_yok\` işaretle. İkisini birden yapamazsın: taramada "tehlike var" deyip bulgusuz bırakmak, tehlikeyi rapordan silmektir. Kaynak dumanını, ark radyasyonunu, ergonomik duruşu veya küçük gördüğün bir koşulu taramaya yazdıysan bulgusunu da yaz; önem kararı bu aşamada verilmez.
+
+\`layer_scan\` rapora yazılmaz ve kullanıcıya gösterilmez; yalnız taramanın izidir. Bu yüzden katman doldurmak için tehlike uydurma.
+
+**SON KONTROL:** Yanıtı bitirmeden önce \`layer_scan\` satırlarını tek tek geç. \`tehlike_var\` olan her numaranın \`findings\` içinde karşılığı var mı? Yoksa ya bulguyu ekle ya o satırı \`tehlike_yok\` yap.
 
 Katman sırası önem sırası değildir. Her katmanı tara; tehlike yoksa bulgu üretme. Yangın ekipmanı önünde yalnız geçici duran kişiyi erişim engeli sayma; sabit malzeme, araç, ekipman, kilitli alan veya süreklilik gösteren kapatma ara.
 
@@ -180,7 +184,7 @@ Alan içerikleri:
 - \`confidence\`: 0..1 arasında görsel kanıt kesinliği.
 - \`needs_field_verification\`: sahada doğrulanması gerekiyorsa true.
 - \`positive_controls\`: her kayıt \`title\` ve \`description\` taşısın. Yalnız görünen bir önlem, koruma, donanım veya doğru uygulama yazılır; bir şeyin yokluğu ("dağınıklık yok", "hat kurulmuş") olumlu kontrol değildir. Gösterecek bir şey yoksa diziyi boş bırak.
-- \`layer_scan\`: 18 satır; \`layer\`, \`result\` ve kısa \`note\`.
+- \`layer_scan\`: 18 satır; \`layer\`, \`result\` ve kısa \`note\`. Önce bu doldurulur, bulgular bu listeyi karşılar.
 
 Alan adları ve JSON yapısı yanıt şemasıyla dayatılır; yukarısı ne yazacağını anlatır. Bu listedeki örnek ifadeleri çıktına kopyalama.
 `;
