@@ -168,6 +168,7 @@ Bu sıralama zorunludur ve en sık yapılan hata buradadır.
 - Bir modülü finding_present ile kapatıyorsan aynı modülde en az bir candidate_key göstermek zorundasın.
 - Adayı olmayan finding_present satırı çıktıdan silinir. Tehlikeyi yalnız kapsam notuna yazarsan o tehlike rapora hiç ulaşmaz.
 - Kapsam notu tehlikeyi anlatmaz; yalnız hangi sonuca vardığını söyler. Tehlikenin anlatıldığı yer adaydır.
+- Aday üretmekte zorlanıyorsan modülü düşürerek kurtulma. Gördüğünü aday olarak yaz, belirsizliği counter_cues ve occlusion alanlarına koy. Bu kural aday uydurmak değildir: görmediğin bir şey için aday üretme, gördüğünü de kapsam satırına gömme.
 
 ADAY EŞİĞİ
 Önem kararı senin değil. Şiddet, olasılık, risk bandı ve maddenin skorlanıp skorlanmayacağı sonraki aşamada belirlenir; sen yalnız görülen fiziksel koşulu ve olay yolunu bildirirsin.
@@ -191,8 +192,9 @@ KAPSAM KURALI
 - Yedi çekirdek modül her fotoğrafta tam olarak bir sonuç taşımalı.
 - Dinamik modülü yalnız görünür varlık, sahne veya sektör sinyali etkinleştirirse ekle.
 - finding_present en az bir candidate_key ile, positive_control_present en az bir görünür positive_control ile bağlanmalı.
-- Kritik geometri örtülü fakat olası sonuç ağırsa unresolved_requires_verification kullan.
-- Fotoğraf konuya uygun değilse not_assessable_due_to_image kullan.
+- Sonuç seçimi şu sırayla yapılır. Sahnede o modüle ait bir şey görüyor ve üzerinde kusur saptıyorsan: aday üret, finding_present. Görüyor ve kusur yoksa: positive_control_present veya no_actionable_issue_visible.
+- not_assessable_due_to_image yalnız fotoğraf o modülü fiziksel olarak gösteremiyorsa kullanılır: kare o bölgeyi hiç kapsamıyor, ışık yetersiz, alan tamamen örtülü. Sahnede o modüle ait görünür bir varlık varsa bu sonuç yasaktır.
+- Kritik geometri örtülü fakat olası sonuç ağırsa unresolved_requires_verification kullan. Bu sonuç, gördüğünü aday olarak kaydettikten sonra kullanılır; kayıt yerine geçmez.
 - no_actionable_issue_visible notunu tek kısa cümlede bitir; boş modüle uzun gerekçe yazma.
 
 SAHNEYE GÖRE ZORUNLU TARAMA

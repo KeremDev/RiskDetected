@@ -3,7 +3,7 @@ Deno.test("Gemini 3 kendi çekirdek istemini alır, 2.5'inkini değil", async ()
   const contents = sent.contents as Array<Record<string, unknown>>;
   const parts = contents[0].parts as Array<Record<string, unknown>>;
   const text = String(parts[0].text);
-  assertStringIncludes(text, "v4-gemini3-core-v1");
+  assertStringIncludes(text, "v4-gemini3-core-v2");
   assertStringIncludes(text, "ÖNCE ADAY, SONRA KAPSAM");
   assertStringIncludes(text, "ADAY EŞİĞİ");
   // 2.5'in korkuluk paranoyası taşınmadı.
@@ -18,7 +18,7 @@ Deno.test("Gemini 2.5 kendi istemini aynen alır", async () => {
   const parts = contents[0].parts as Array<Record<string, unknown>>;
   const text = String(parts[0].text);
   assertStringIncludes(text, "v4-vision-core-v10");
-  assertEquals(text.includes("v4-gemini3-core-v1"), false);
+  assertEquals(text.includes("v4-gemini3-core-v2"), false);
   assertEquals(text.includes("ÖNCE ADAY, SONRA KAPSAM"), false);
 });
 
@@ -4064,4 +4064,19 @@ Deno.test("kişinin üstüne malzeme düşmesi düşen cisim kalır", () => {
   });
   const item = routed.items.find((entry) => entry.candidate_id);
   assertEquals(item?.internal_priority.mechanism_code, "falling_object");
+});
+
+Deno.test("Gemini 3 istemi modülü düşürerek kaçmayı yasaklar", () => {
+  // e4bee3d9: bağlama kuralı tuttu ama model gerilimi aşağı çözdü -- üç modülü
+  // aday üretmek yerine not_assessable_due_to_image ile kapattı. Kuralın
+  // lafzına uydu, ruhuna değil; çıkış kapısını metnin kendisi bırakmıştı.
+  return captureGeminiBody("gemini-3.5-flash-lite").then((sent) => {
+    const contents = sent.contents as Array<Record<string, unknown>>;
+    const parts = contents[0].parts as Array<Record<string, unknown>>;
+    const text = String(parts[0].text);
+    assertStringIncludes(text, "modülü düşürerek kurtulma");
+    assertStringIncludes(text, "bu sonuç yasaktır");
+    // Ve diğer yöne kaymamalı: uydurma hâlâ yasak.
+    assertStringIncludes(text, "görmediğin bir şey için aday üretme");
+  });
 });
