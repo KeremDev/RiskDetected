@@ -959,7 +959,17 @@ serve(async (req) => {
       // and 2e350e22 ruled out thinking competing for the budget. A length
       // prior no instruction reaches needs a second call, not an eighth rule.
       const splitOutcomes: Array<Record<string, unknown>> = [];
-      for (let index = 0; index < outputs.length; index += 1) {
+      // Config-gated so the second call can be turned off without a deploy.
+      // It doubles the cost of a packed run -- $0.051 against $0.031 -- and in
+      // analysis 078cd96f the primary pass alone produced seven findings, so
+      // how far one request gets on its own is worth measuring before paying
+      // for two.
+      const splitPassEnabled = engineConfig.v5_split_pass_enabled !== false;
+      for (
+        let index = 0;
+        splitPassEnabled && index < outputs.length;
+        index += 1
+      ) {
         const entry = outputs[index];
         const packed = packedFindings(entry.output);
         if (packed.length === 0) continue;
@@ -1136,7 +1146,17 @@ serve(async (req) => {
             cost_usd: sum((usage) => usage.costUSD),
           },
           v5_free: {
+            split_pass_enabled: splitPassEnabled,
             split_pass: splitOutcomes,
+            // Recorded whether or not the split ran, so a single-request run
+            // still shows how much packing it left behind.
+            packed_findings: outputs.flatMap((entry) =>
+              packedFindings(entry.output).map((finding) => ({
+                photo_index: entry.photoIndex,
+                title: finding.title,
+                layers: finding.layers,
+              }))
+            ),
             sanitized_removals: routedFree.sanitizedCount,
             scale_snaps: routedFree.snappedCount,
             dropped_findings: routedFree.droppedFindings,
