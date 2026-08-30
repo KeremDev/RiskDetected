@@ -326,10 +326,10 @@ Deno.test("köşe kutusu depolanan biçime çevrilir", () => {
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "a5a28ddd9ec031252b2f674c067906952089ef4fc22e8bd9bafebfda361456df";
+  "d6fc98cf166c5ab9bc221b317389fc33a78b89fbc8aa8d28c4dfc11835f093ed";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v10");
+  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v11");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 
@@ -650,10 +650,16 @@ Deno.test("varsayılan ayrı bulgu, birleştirme istisna", () => {
     V5_FREE_PROMPT,
     "Birleştirme istisnadır, varsayılan değildir",
   );
+  assertStringIncludes(V5_FREE_PROMPT, "RAPOR UZUNLUĞU BİR KISIT DEĞİLDİR");
+  assertStringIncludes(V5_FREE_PROMPT, "6-12 bulgu** olağandır");
+  // Analiz d90e1db4: "her katman kendi bulgusunu alır" deyince model
+  // bulguyu artırmak yerine katmanı tehlike_yok'a çekti -- 17. katman
+  // "Ergonomik aşırılık kadrajda sınırlı" oldu, aynı diz çökmüş işçi.
   assertStringIncludes(
     V5_FREE_PROMPT,
-    "Bulgu sayısını azaltmak bir erdem değildir",
+    "rapor kısalsın diye \`tehlike_yok\` yapma",
   );
+  assertStringIncludes(V5_FREE_PROMPT, "gördüm ama küçük");
   assertEquals(V5_MAX_FINDINGS, 24);
 });
 
