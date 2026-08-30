@@ -10,6 +10,7 @@ import {
   routeV5Findings,
   sanitizeFreeText,
   snapToScale,
+  unfulfilledHazardLayers,
 } from "./v5-engine.ts";
 import {
   FK_SEVERITY,
@@ -25,6 +26,7 @@ import { V4_PROMPT_COMMON } from "./prompt.ts";
 function finding(overrides: Record<string, unknown> = {}) {
   return {
     finding_key: "f1",
+    layer: 3,
     title: "Üst kat döşeme kenarında korumasız çalışma.",
     category: "Yüksekte çalışma",
     description: "İşçi açık döşeme kenarında korkuluk olmadan çalışıyor.",
@@ -319,10 +321,10 @@ Deno.test("köşe kutusu depolanan biçime çevrilir", () => {
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "cf8cb59f56daa17572c4890ecc2d07f9c7af45ddaf2a479d82e1028e22d4273e";
+  "4350f70979b12276cddc19c9be2ad5e2679fef285578e14019007300196a4861";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v4");
+  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v5");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 
@@ -503,4 +505,37 @@ Deno.test("katman izi ayrıştırılır ve bulguya dönüşmez", () => {
   // Tek bulgu; katman satırları madde üretmedi.
   assertEquals(routed.items.length, 1);
   assertEquals(routed.items[0].item_class, "observed_finding");
+});
+
+Deno.test("şema bulguları kayıttan önce ister", () => {
+  const schema = V5_RESPONSE_SCHEMA as unknown as Record<string, any>;
+  const keys = Object.keys(schema.properties);
+  // Analiz 88a9c731: layer_scan önce geldiği için model tehlikeyi kayda
+  // yazıp bulgusuz bıraktı -- v4'ün en eski hatası, yeni bir yerde.
+  assertEquals(keys.indexOf("findings") < keys.indexOf("layer_scan"), true);
+  assertEquals(
+    schema.properties.findings.items.required.includes("layer"),
+    true,
+  );
+  assertStringIncludes(V5_FREE_PROMPT, "ÖNCE BULGU, SONRA KAYIT");
+  assertStringIncludes(V5_FREE_PROMPT, "kayıt satırı bulgunun yerine geçmez");
+});
+
+Deno.test("sözü tutulmayan katman ölçülür, uydurulmaz", () => {
+  const raw = JSON.stringify({
+    scene_summary: "Şantiye sahnesi.",
+    positive_controls: [],
+    findings: [finding({ layer: 3 })],
+    layer_scan: [
+      { layer: 3, result: "tehlike_var", note: "Açık kenar." },
+      // 88a9c731'de tam olarak bu satır vardı ve karşılığı gelmedi.
+      { layer: 5, result: "tehlike_var", note: "Zeminde kablo ve nem." },
+      { layer: 11, result: "kadrajda_yok", note: "Kazı yok." },
+    ],
+  });
+  const output = parseV5Output(raw);
+  assertEquals(unfulfilledHazardLayers(output), [5]);
+  // Ölçülür, ama sunucu eksik bulguyu kendisi yazmaz.
+  const routed = routeV5Findings([{ photoIndex: 1, output }]);
+  assertEquals(routed.items.length, 1);
 });

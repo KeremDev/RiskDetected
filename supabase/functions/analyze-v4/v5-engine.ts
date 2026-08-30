@@ -202,6 +202,7 @@ export function parseV5Output(raw: string): V5PhotoOutput {
       const kinney = (finding.fine_kinney ?? {}) as Record<string, unknown>;
       return {
         finding_key: text(finding.finding_key, 120),
+        layer: Number(finding.layer),
         title: text(finding.title, 200),
         category: text(finding.category, 80),
         description: text(finding.description, 1600),
@@ -247,6 +248,30 @@ export function parseV5Output(raw: string): V5PhotoOutput {
           };
         }).filter((control) => control.title && control.description),
   };
+}
+
+/**
+ * Layers the model called hazardous and then wrote no finding for.
+ *
+ * In analysis 88a9c731 layer 5 came back tehlike_var with the note "Zeminde
+ * dağınık kablolar ve nemli ortam etkileşimi vardır" and no finding followed:
+ * the model had seen the cable and the damp and recorded it in the wrong
+ * array. That is v4's oldest failure in a new place -- there it was a hazard
+ * written into module_coverage instead of candidates -- and the fix is the
+ * same one, findings first and the record second.
+ *
+ * Measured here rather than repaired: inventing the finding the model did not
+ * write would be the server making a safety claim of its own.
+ */
+export function unfulfilledHazardLayers(output: V5PhotoOutput): number[] {
+  const answered = new Set(
+    output.findings.map((finding) => Number(finding.layer)).filter((layer) =>
+      Number.isFinite(layer)
+    ),
+  );
+  return output.layer_scan
+    .filter((row) => row.result === "tehlike_var" && !answered.has(row.layer))
+    .map((row) => row.layer);
 }
 
 export type V5Routed = {

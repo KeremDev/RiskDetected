@@ -93,7 +93,11 @@ Taramayı gerçekten yürüttüğünü göstermek için \`layer_scan\` dizisine 
 - \`tehlike_yok\`: katman kadrajda görünüyor, tehlike yok.
 - \`kadrajda_yok\`: katmanın konusu bu fotoğrafta hiç yok.
 
-\`layer_scan\` rapora yazılmaz ve kullanıcıya gösterilmez; yalnız taramanın izidir. Bu yüzden katman doldurmak için tehlike uydurma, ama gördüğün bir tehlikeyi de \`tehlike_yok\` diyerek geçme. Önce 18 satırı doldur, sonra bulguları yaz.
+**ÖNCE BULGU, SONRA KAYIT.** Bir katmanda tehlike gördüğünde onu ÖNCE \`findings\` içine yaz, sonra \`layer_scan\` satırını doldur ve bulgunun \`layer\` alanına o katmanın numarasını koy. Sırayı ters çevirirsen tehlikeyi yalnız kayda yazıp bulgusuz bırakırsın; kayıt satırı bulgunun yerine geçmez.
+
+\`layer_scan\` rapora yazılmaz ve kullanıcıya gösterilmez; yalnız taramanın izidir. Bu yüzden katman doldurmak için tehlike uydurma, ama gördüğün bir tehlikeyi de \`tehlike_yok\` diyerek geçme.
+
+\`tehlike_var\` yazdığın bir katman için \`findings\` içinde o \`layer\` numarasını taşıyan en az bir kayıt bulunmak zorundadır. Bulgu yazmayacaksan o katmanı \`tehlike_yok\` işaretle; ikisini birden yapamazsın.
 
 Katman sırası önem sırası değildir. Her katmanı tara; tehlike yoksa bulgu üretme. Yangın ekipmanı önünde yalnız geçici duran kişiyi erişim engeli sayma; sabit malzeme, araç, ekipman, kilitli alan veya süreklilik gösteren kapatma ara.
 
@@ -160,6 +164,7 @@ Alan içerikleri:
 
 - \`scene_summary\`: bu fotoğrafı anlatan iki cümle. Şablon metnini kopyalama; gördüğün sahneyi yaz.
 - \`finding_key\`: kısa, benzersiz, ASCII kimlik.
+- \`layer\`: bu bulgunun karşıladığı tarama katmanı numarası (1-18).
 - \`title\`: bu fotoğraftaki nesneye özgü kısa başlık.
 - \`category\`: iki-üç kelimelik tehlike ailesi.
 - \`description\`: görünür kanıt, konum ve maruziyet.

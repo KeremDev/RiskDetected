@@ -30,7 +30,7 @@
 // config key.
 
 export const V5_ENGINE_MODE = "free";
-export const V5_PROMPT_VERSION = "v7-free-core-multidisciplinary-v4";
+export const V5_PROMPT_VERSION = "v7-free-core-multidisciplinary-v5";
 
 /** Fine-Kinney scales. The arithmetic stays deterministic; the values do not. */
 export const FK_PROBABILITY = [0.2, 0.5, 1, 3, 6, 10] as const;
@@ -50,6 +50,8 @@ export const V5_MAX_POSITIVE_CONTROLS = 4;
 
 export type V5Finding = {
   finding_key: string;
+  /** 1-18; the scan layer this finding discharges. */
+  layer: number;
   title: string;
   category: string;
   description: string;
@@ -107,6 +109,8 @@ export type V5LayerScan = {
   note: string;
 };
 
+/** Which scan layer the finding answers, so the coupling can be audited. */
+
 export type V5PhotoOutput = {
   scene_summary: string;
   findings: V5Finding[];
@@ -131,21 +135,6 @@ export const V5_RESPONSE_SCHEMA = {
   type: "object",
   properties: {
     scene_summary: { type: "string" },
-    layer_scan: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          layer: { type: "number" },
-          result: {
-            type: "string",
-            enum: ["tehlike_var", "tehlike_yok", "kadrajda_yok"],
-          },
-          note: { type: "string" },
-        },
-        required: ["layer", "result", "note"],
-      },
-    },
     positive_controls: {
       type: "array",
       items: {
@@ -163,6 +152,7 @@ export const V5_RESPONSE_SCHEMA = {
         type: "object",
         properties: {
           finding_key: { type: "string" },
+          layer: { type: "number" },
           title: { type: "string" },
           category: { type: "string" },
           description: { type: "string" },
@@ -190,6 +180,7 @@ export const V5_RESPONSE_SCHEMA = {
         },
         required: [
           "finding_key",
+          "layer",
           "title",
           "category",
           "description",
@@ -205,6 +196,21 @@ export const V5_RESPONSE_SCHEMA = {
         ],
       },
     },
+    layer_scan: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          layer: { type: "number" },
+          result: {
+            type: "string",
+            enum: ["tehlike_var", "tehlike_yok", "kadrajda_yok"],
+          },
+          note: { type: "string" },
+        },
+        required: ["layer", "result", "note"],
+      },
+    },
   },
-  required: ["scene_summary", "layer_scan", "positive_controls", "findings"],
+  required: ["scene_summary", "findings", "positive_controls", "layer_scan"],
 };

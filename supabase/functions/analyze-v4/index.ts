@@ -50,6 +50,7 @@ import {
   looksLikePlaceholder,
   parseV5Output,
   routeV5Findings,
+  unfulfilledHazardLayers,
 } from "./v5-engine.ts";
 import { buildV4PhotoPrompt, V4_PROMPT_COMMON } from "./prompt.ts";
 import {
@@ -973,6 +974,7 @@ serve(async (req) => {
             layers_with_hazard: entry.output.layer_scan.filter((row) =>
               row.result === "tehlike_var"
             ).map((row) => row.layer),
+            layers_without_finding: unfulfilledHazardLayers(entry.output),
           })),
           candidate_counts: {
             raw: routedFree.candidates.length,
@@ -1005,6 +1007,11 @@ serve(async (req) => {
           quality_flags: [
             "engine_mode_free",
             ...(echoedSummary ? ["v5_prompt_example_echoed"] : []),
+            ...(outputs.some((entry) =>
+                unfulfilledHazardLayers(entry.output).length > 0
+              )
+              ? ["v5_layer_hazard_without_finding"]
+              : []),
             ...(visibleFree.length === 0 ? ["no_visible_items"] : []),
             ...(routedFree.sanitizedCount > 0 ? ["v5_text_sanitized"] : []),
             ...(routedFree.snappedCount > 0 ? ["v5_scale_snapped"] : []),
