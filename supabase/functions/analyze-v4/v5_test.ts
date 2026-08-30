@@ -4,6 +4,7 @@ import {
 } from "https://deno.land/std@0.208.0/testing/asserts.ts";
 import {
   bandsFor,
+  looksLikePlaceholder,
   criticalityForSeverity,
   parseV5Output,
   routeV5Findings,
@@ -316,10 +317,10 @@ Deno.test("köşe kutusu depolanan biçime çevrilir", () => {
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "ba4f4fd7eca958738bd14b361c01689ef9f4b750addf2d506de6d92d848084df";
+  "def328a9ec6b610d52ca706c26b3c83bfd4cf89c8866eb184956878320311dc5";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v2");
+  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v3");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 
@@ -406,4 +407,48 @@ Deno.test("bilinmeyen sektör satırı hiç yazılmaz", () => {
   });
   assertEquals(built.includes("Saha türü"), false);
   assertStringIncludes(built, "BAĞLAM");
+});
+
+Deno.test("istemde kopyalanacak JSON iskeleti kalmadı", () => {
+  // Analiz 6f72a303: model örnekteki "Tam iki cümle." metnini aynen döndürdü
+  // ve bu analiz özeti olarak okuyucuya gitti. Yanıt şeması yapıyı zaten
+  // dayatıyor; örnek yalnız kopyalanacak bir kalıp sağlıyordu.
+  assertEquals(V5_FREE_PROMPT.includes("Tam iki cümle."), false);
+  assertEquals(V5_FREE_PROMPT.includes("kisa_benzersiz_ascii_kimlik_01"), false);
+  assertEquals(V5_FREE_PROMPT.includes("Fotoğrafa dayalı gerekçe."), false);
+  assertEquals(V5_FREE_PROMPT.includes("```json"), false);
+  // Alanlar hâlâ anlatılıyor, kalıp verilmeden.
+  assertStringIncludes(V5_FREE_PROMPT, "Alan içerikleri:");
+  assertStringIncludes(V5_FREE_PROMPT, "Şablon metnini kopyalama");
+});
+
+Deno.test("yer tutucu metin okuyucuya ulaşmadan yakalanır", () => {
+  assertEquals(looksLikePlaceholder("Tam iki cümle."), true);
+  assertEquals(looksLikePlaceholder("  Kısa başlık.  "), true);
+  assertEquals(looksLikePlaceholder("Görünür kanıt, konum ve maruziyet."), true);
+  assertEquals(
+    looksLikePlaceholder(
+      "Şantiye sahasında bir işçi omzunda profil taşıyor. Arka planda üst katta çalışma sürüyor.",
+    ),
+    false,
+  );
+});
+
+Deno.test("her dayanak kendi satırında durur", () => {
+  const routed = routeV5Findings([{
+    photoIndex: 1,
+    output: parseV5Output(envelope([
+      finding({
+        regulatory_references: [
+          "Mevzuat — 6331 sayılı İş Sağlığı ve Güvenliği Kanunu madde 4",
+          "Mevzuat — Elle Taşıma İşleri Yönetmeliği",
+        ],
+      }),
+    ])),
+  }]);
+  const text = routed.items[0].references_text;
+  // Boşlukla birleştirildiğinde "…madde 4 Elle Taşıma İşleri Yönetmeliği"
+  // çıkıyordu: iki ayrı dayanak, yanlış maddeyi işaret eden tek cümle.
+  assertEquals(text.split("\n").length, 2);
+  assertStringIncludes(text, "Kanunu madde 4.\nMevzuat — Elle Taşıma");
 });

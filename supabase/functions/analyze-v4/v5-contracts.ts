@@ -30,7 +30,7 @@
 // config key.
 
 export const V5_ENGINE_MODE = "free";
-export const V5_PROMPT_VERSION = "v7-free-core-multidisciplinary-v2";
+export const V5_PROMPT_VERSION = "v7-free-core-multidisciplinary-v3";
 
 /** Fine-Kinney scales. The arithmetic stays deterministic; the values do not. */
 export const FK_PROBABILITY = [0.2, 0.5, 1, 3, 6, 10] as const;

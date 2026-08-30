@@ -46,7 +46,11 @@ import {
   V5_PROMPT_VERSION,
   V5_RESPONSE_SCHEMA,
 } from "./v5-contracts.ts";
-import { parseV5Output, routeV5Findings } from "./v5-engine.ts";
+import {
+  looksLikePlaceholder,
+  parseV5Output,
+  routeV5Findings,
+} from "./v5-engine.ts";
 import { buildV4PhotoPrompt, V4_PROMPT_COMMON } from "./prompt.ts";
 import {
   reconcileVerificationPass,
@@ -924,6 +928,11 @@ serve(async (req) => {
       const visibleFree = routedFree.items.filter((item) =>
         item.item_class === "observed_finding"
       );
+      // A summary that came out of the prompt rather than the photograph must
+      // not reach the reader; the generic fallback is more honest.
+      const echoedSummary = outputs.some((entry) =>
+        looksLikePlaceholder(entry.output.scene_summary)
+      );
       const sum = (pick: (usage: V4ProviderResult["usage"]) => number) =>
         outputs.reduce((total, entry) => total + pick(entry.usage), 0);
       const freeBundle = {
@@ -980,6 +989,7 @@ serve(async (req) => {
           },
           quality_flags: [
             "engine_mode_free",
+            ...(echoedSummary ? ["v5_prompt_example_echoed"] : []),
             ...(visibleFree.length === 0 ? ["no_visible_items"] : []),
             ...(routedFree.sanitizedCount > 0 ? ["v5_text_sanitized"] : []),
             ...(routedFree.snappedCount > 0 ? ["v5_scale_snapped"] : []),
@@ -987,7 +997,7 @@ serve(async (req) => {
         },
         analysis_result: {
           status_message: `Analiz tamamlandı. Destek kodu: ${supportID}`,
-          ai_summary: outputs[0]?.output.scene_summary ||
+          ai_summary: (echoedSummary ? "" : outputs[0]?.output.scene_summary) ||
             (visibleFree.length > 0
               ? `${visibleFree.length} bulgu raporlandı.`
               : "Görüntüde kullanıcıya gösterilecek yeterli kanıt bulunamadı."),

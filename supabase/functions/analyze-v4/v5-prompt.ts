@@ -146,34 +146,27 @@ Olasılığı görünür kontrollere göre seç. Tek fotoğraf sıklığı kanı
   String(V5_MAX_POSITIVE_CONTROLS)
 } görünür doğru uygulama içersin. \`null\`, ek alan, yorum, Markdown veya JSON dışında metin üretme.
 
-\`\`\`json
-{
-  "scene_summary": "Tam iki cümle.",
-  "positive_controls": [
-    {"title": "Kısa başlık.", "description": "Görünen doğru uygulama."}
-  ],
-  "findings": [
-    {
-      "finding_key": "kisa_benzersiz_ascii_kimlik_01",
-      "title": "Kısa ve nesneye özgü başlık.",
-      "category": "İki-üç kelime.",
-      "description": "Görünür kanıt, konum ve maruziyet.",
-      "event_path": "Kaynak → temas, arıza veya tetikleyici → sonuç.",
-      "root_cause": "Görünür en yakın neden.",
-      "regulatory_references": ["Mevzuat — ...", "Standart/iyi mühendislik uygulaması — ..."],
-      "fine_kinney": {"olasılık": 3, "frekans": 2, "şiddet": 15, "gerekçe": "Fotoğrafa dayalı gerekçe."},
-      "immediate_control": "Acil kontrolü emir kipinde yazın.",
-      "corrective_steps": ["Birinci somut adımı uygulayın.", "İkinci somut adımı uygulayın."],
-      "preventive_measure": "Tekrarı önleyen sistem kontrolünü emir kipinde yazın.",
-      "training_recommendation": "",
-      "ppe_recommendation": "",
-      "evidence_region": {"x_min": 0.0, "y_min": 0.0, "x_max": 1.0, "y_max": 1.0},
-      "confidence": 0.0,
-      "needs_field_verification": true
-    }
-  ]
-}
-\`\`\`
+Alan içerikleri:
+
+- \`scene_summary\`: bu fotoğrafı anlatan iki cümle. Şablon metnini kopyalama; gördüğün sahneyi yaz.
+- \`finding_key\`: kısa, benzersiz, ASCII kimlik.
+- \`title\`: bu fotoğraftaki nesneye özgü kısa başlık.
+- \`category\`: iki-üç kelimelik tehlike ailesi.
+- \`description\`: görünür kanıt, konum ve maruziyet.
+- \`event_path\`: tek satır, "kaynak → temas, arıza veya tetikleyici → sonuç".
+- \`root_cause\`: görünür en yakın neden.
+- \`regulatory_references\`: 1-4 kayıtlık dizi; her kayıt \`Mevzuat — ...\` veya \`Standart/iyi mühendislik uygulaması — ...\` ile başlasın ve tek bir dayanak içersin.
+- \`fine_kinney\`: \`olasılık\`, \`frekans\`, \`şiddet\` ve \`gerekçe\`.
+- \`immediate_control\`: emir kipinde tek cümle.
+- \`corrective_steps\`: 2-5 somut adım.
+- \`preventive_measure\`: tekrarı önleyen sistem kontrolü, emir kipinde.
+- \`training_recommendation\`, \`ppe_recommendation\`: doğrudan ilgiliyse yaz, değilse boş dize.
+- \`evidence_region\`: \`x_min\`, \`y_min\`, \`x_max\`, \`y_max\`; 0..1 aralığında, sol üst başlangıçlı en küçük kutu.
+- \`confidence\`: 0..1 arasında görsel kanıt kesinliği.
+- \`needs_field_verification\`: sahada doğrulanması gerekiyorsa true.
+- \`positive_controls\`: her kayıt \`title\` ve \`description\` taşısın.
+
+Alan adları ve JSON yapısı yanıt şemasıyla dayatılır; yukarısı ne yazacağını anlatır. Bu listedeki örnek ifadeleri çıktına kopyalama.
 `;
 
 /**

@@ -56,10 +56,19 @@ export type SanitizeResult = { text: string; removed: string[] };
  * leave the reader with nothing, so the offending sentence is removed and the
  * rest published.
  */
-export function sanitizeFreeText(raw: string): SanitizeResult {
-  const value = text(raw);
+export function sanitizeFreeText(
+  raw: string,
+  keepLineBreaks = false,
+): SanitizeResult {
+  const value = keepLineBreaks
+    ? String(raw ?? "").split("\n").map((line) => text(line, 400)).filter(
+      Boolean,
+    ).join("\n")
+    : text(raw);
   if (!value) return { text: "", removed: [] };
-  const sentences = value.split(/(?<=[.!?])\s+/u).filter(Boolean);
+  const sentences = keepLineBreaks
+    ? value.split("\n")
+    : value.split(/(?<=[.!?])\s+/u).filter(Boolean);
   const removed: string[] = [];
   const kept = sentences.filter((sentence) => {
     if (ASSERTS_INVISIBLE_ABSENCE.test(sentence)) {
@@ -68,7 +77,7 @@ export function sanitizeFreeText(raw: string): SanitizeResult {
     }
     return true;
   });
-  return { text: kept.join(" ").trim(), removed };
+  return { text: kept.join(keepLineBreaks ? "\n" : " ").trim(), removed };
 }
 
 /**
@@ -151,6 +160,25 @@ function cornerBoxToRegion(
   const height = Math.abs(yMax - yMin);
   if (width <= 0 || height <= 0) return undefined;
   return { x, y, width, height };
+}
+
+/**
+ * Did the model echo the prompt's own example back at us?
+ *
+ * The operator's document carried a JSON skeleton with placeholder strings,
+ * and in analysis 6f72a303 gemini-3.5-flash-lite returned "Tam iki cümle." as
+ * the scene summary -- the placeholder, verbatim, straight into the analysis's
+ * ai_summary where the reader sees it. The same run produced 860 output tokens
+ * and two shallow findings, having spent its attention mirroring a skeleton
+ * the response schema already enforced. The example is gone; this stays as the
+ * tripwire, because a placeholder reaching the reader is the loudest possible
+ * symptom of the model copying rather than looking.
+ */
+const PLACEHOLDER_TEXT =
+  /^(?:tam iki c[üu]mle|k[ıi]sa ba[şs]l[ıi]k|g[öo]r[üu]n[üu]r kan[ıi]t, konum ve maruziyet|kaynak → temas|iki-[üu][çc] kelime|g[öo]r[üu]n[üu]r en yak[ıi]n neden|foto[ğg]rafa dayal[ıi] gerek[çc]e|birinci somut ad[ıi]m)/iu;
+
+export function looksLikePlaceholder(value: string): boolean {
+  return PLACEHOLDER_TEXT.test(value.trim());
 }
 
 export function parseV5Output(raw: string): V5PhotoOutput {
@@ -243,11 +271,17 @@ export function routeV5Findings(
       const description = sanitizeFreeText(finding.description);
       const control = sanitizeFreeText(finding.immediate_control);
       const rootCause = sanitizeFreeText(finding.root_cause);
+      // One dayanak per line. Joined with a space, analysis 6f72a303 published
+      // "6331 Sayılı İSG Kanunu — Madde 4 Elle Taşıma İşleri Yönetmeliği":
+      // two separate references read as one sentence naming the wrong article.
       const references = sanitizeFreeText(
-        finding.regulatory_references.join(" "),
+        finding.regulatory_references.map(endSentence).filter(Boolean).join(
+          "\n",
+        ),
+        true,
       );
       const preventive = sanitizeFreeText(finding.preventive_measure);
-      const steps = finding.corrective_steps.map(sanitizeFreeText);
+      const steps = finding.corrective_steps.map((step) => sanitizeFreeText(step));
       const training = sanitizeFreeText(finding.training_recommendation ?? "");
       const ppe = sanitizeFreeText(finding.ppe_recommendation ?? "");
       const removed = [
