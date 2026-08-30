@@ -68,8 +68,14 @@ const CORS_HEADERS = {
 };
 
 const DEFAULT_IOS_POLICY: ReleasePolicy = {
+  // minimum_supported_build and hard_update_enabled stay put even though the
+  // live flag is now 88/true: this fallback fires when Supabase is
+  // unreachable, and a hardcoded hard-block that can't be dialled back
+  // without a new App Store release would turn any outage into an app-wide
+  // lockout. Only latest_build (an informational nudge, gated by
+  // soft_update_enabled staying false here) tracks the real release.
   minimum_supported_build: 62,
-  latest_build: 76,
+  latest_build: 88,
   hard_update_enabled: false,
   soft_update_enabled: false,
   app_store_url:
