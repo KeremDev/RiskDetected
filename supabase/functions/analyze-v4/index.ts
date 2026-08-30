@@ -39,7 +39,7 @@ import {
   assertV5PromptIntegrity,
   sha256Text,
 } from "./prompt-integrity.ts";
-import { sendStructuredGemini } from "./provider.ts";
+import { sendStructuredGemini, thinkingTelemetry } from "./provider.ts";
 import { buildV5Prompt, buildV5SplitPrompt } from "./v5-prompt.ts";
 import {
   V5_ENGINE_MODE,
@@ -1129,13 +1129,18 @@ serve(async (req) => {
           provider_usage: {
             compute_profile: config.computeProfile,
             photo_count: photos.length,
-            thinking_budget: config.geminiThinkingBudget,
+            // Read from the same branch the request took, so the trace reports
+            // the lever that was actually sent rather than a config value the
+            // provider never saw.
+            ...thinkingTelemetry(config.primaryModel, {
+              thinkingBudget: config.geminiThinkingBudget,
+              thinkingLevel: freeThinkingLevel,
+            }),
+            max_output_tokens: freeMaxOutputTokens,
             // Why the answer ended. STOP means the model chose to stop and any
             // length ceiling is its own; MAX_TOKENS means we capped it. Six
             // runs sat within 4% of 3200 visible tokens against a 32768 budget
             // and the cause was being deduced rather than read.
-            thinking_level: freeThinkingLevel,
-            max_output_tokens: freeMaxOutputTokens,
             finish_reasons: outputs.map((entry) => entry.finishReason),
             stopped_naturally: outputs.every((entry) =>
               entry.finishReason === "STOP"
@@ -1633,7 +1638,10 @@ serve(async (req) => {
         provider_usage: {
           compute_profile: config.computeProfile,
           photo_count: photos.length,
-          thinking_budget: config.geminiThinkingBudget,
+          ...thinkingTelemetry(config.primaryModel, {
+            thinkingBudget: config.geminiThinkingBudget,
+            thinkingLevel: config.geminiThinkingLevel,
+          }),
           input_tokens: results.reduce(
             (sum, item) => sum + (item.usage?.inputTokens ?? 0),
             0,

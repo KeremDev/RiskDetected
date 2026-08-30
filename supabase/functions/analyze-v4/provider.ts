@@ -304,9 +304,14 @@ function geminiSamplingConfig(model: string): Record<string, unknown> {
   return isGemini3(model) ? {} : { temperature: 0.1 };
 }
 
+export type ThinkingParams = {
+  thinkingBudget: number;
+  thinkingLevel: GeminiThinkingLevel;
+};
+
 function geminiThinkingConfig(
   model: string,
-  params: { thinkingBudget: number; thinkingLevel: GeminiThinkingLevel },
+  params: ThinkingParams,
 ): Record<string, unknown> {
   // Sending both is a 400, so this is an either/or and never a merge.
   return {
@@ -314,6 +319,30 @@ function geminiThinkingConfig(
       ? { thinkingLevel: params.thinkingLevel }
       : { thinkingBudget: params.thinkingBudget },
   };
+}
+
+/**
+ * The thinking lever the request actually carried, for the quality trace.
+ *
+ * geminiThinkingConfig sends the enum on Gemini 3 and the budget on 2.5, and
+ * never both. The trace printed `thinking_budget: config.geminiThinkingBudget`
+ * unconditionally, so analysis 1f6c5ea2 reported a budget of 3072 next to 6143
+ * thinking tokens on gemini-3.5-flash-lite. That is not a stale number: the
+ * budget was never in the request at all, and a reader comparing the two would
+ * conclude the model had overrun a cap that did not exist.
+ *
+ * Both readings are derived from the same `isGemini3` branch here, so the trace
+ * cannot disagree with the request. `thinking_control` names which lever was in
+ * play, because a run whose level is absent and a run whose budget is absent
+ * are different runs, not an incomplete record.
+ */
+export function thinkingTelemetry(
+  model: string,
+  params: ThinkingParams,
+): Record<string, unknown> {
+  return isGemini3(model)
+    ? { thinking_control: "level", thinking_level: params.thinkingLevel }
+    : { thinking_control: "budget", thinking_budget: params.thinkingBudget };
 }
 
 /**

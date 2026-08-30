@@ -82,7 +82,7 @@ import { topicConsequenceRank } from "./assurance-playbook.ts";
 import { controlPlaybook } from "./control-playbook.ts";
 import { reconcileVerificationPass } from "./verification-pass.ts";
 import { outputLanguageFailure } from "./language-contract.ts";
-import { callV4Gemini } from "./provider.ts";
+import { callV4Gemini, thinkingTelemetry } from "./provider.ts";
 import { V4_PROMPT_COMMON } from "./prompt.ts";
 import { normalizeCandidates } from "./evidence-normalizer.ts";
 import { buildCoverageRepairPrompt } from "./provider.ts";
@@ -3807,6 +3807,44 @@ Deno.test("Gemini 3.7 Flash isteği Gemini 3 şeklini alır", async () => {
     (image?.mediaResolution as Record<string, unknown>)?.level,
     "media_resolution_ultra_high",
   );
+});
+
+// --------------------------------------------------------------------------
+// 1f6c5ea2 -- the trace reported a budget the request never carried
+// --------------------------------------------------------------------------
+
+Deno.test("Gemini 3 telemetrisi seviye yazar, bütçe yazmaz", async () => {
+  // 1f6c5ea2: iz "thinking_budget: 3072" yazarken gerçek düşünme 6143'tü.
+  // Bütçe eskimiş değildi -- gemini-3.5-flash-lite isteğinde hiç yoktu.
+  const sent = await captureGeminiBody("gemini-3.5-flash-lite");
+  const thinking =
+    (sent.generationConfig as Record<string, unknown>).thinkingConfig as Record<
+      string,
+      unknown
+    >;
+  const telemetry = thinkingTelemetry("gemini-3.5-flash-lite", {
+    thinkingBudget: 3072,
+    thinkingLevel: "MEDIUM",
+  });
+  assertEquals(telemetry.thinking_control, "level");
+  assertEquals(telemetry.thinking_level, thinking.thinkingLevel);
+  assertEquals("thinking_budget" in telemetry, false);
+});
+
+Deno.test("Gemini 2.5 telemetrisi bütçe yazar, seviye yazmaz", async () => {
+  const sent = await captureGeminiBody("gemini-2.5-flash");
+  const thinking =
+    (sent.generationConfig as Record<string, unknown>).thinkingConfig as Record<
+      string,
+      unknown
+    >;
+  const telemetry = thinkingTelemetry("gemini-2.5-flash", {
+    thinkingBudget: 3072,
+    thinkingLevel: "MEDIUM",
+  });
+  assertEquals(telemetry.thinking_control, "budget");
+  assertEquals(telemetry.thinking_budget, thinking.thinkingBudget);
+  assertEquals("thinking_level" in telemetry, false);
 });
 
 
