@@ -15,7 +15,7 @@ import {
   V5_PROMPT_VERSION,
   V5_RESPONSE_SCHEMA,
 } from "./v5-contracts.ts";
-import { V5_FREE_PROMPT } from "./v5-prompt.ts";
+import { buildV5Prompt, V5_FREE_PROMPT } from "./v5-prompt.ts";
 import { computeV5PromptSHA256 } from "./prompt-integrity.ts";
 import { V4_PROMPT_COMMON } from "./prompt.ts";
 
@@ -259,10 +259,10 @@ Deno.test("kalan kurallar dürüstlük, ölçek ve biçim; yöntem değil", () =
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "551cb269dcae63ff368bcb85b0ee92bd8af93a7dc3d3a12449e0d181b5a30881";
+  "8fad913d4659c11dd3ffa428eaa0edd3066633008bccb8188d2709030aed94d4";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v5-free-core-v5");
+  assertEquals(V5_PROMPT_VERSION, "v5-free-core-v6");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 
@@ -319,4 +319,45 @@ Deno.test("üslup kuralları yöntem kuralı değildir", () => {
   for (const token of ["TARAMA", "TEHLİKELERİN BİRLEŞİMİ", "EN AĞIR MAKUL"]) {
     assertEquals(V5_FREE_PROMPT.includes(token), false, token);
   }
+});
+
+Deno.test("sektör bir kelime olarak gelir, katalog olarak değil", () => {
+  const built = buildV5Prompt({
+    photoIndex: 1,
+    photoCount: 1,
+    outputLanguage: "tr",
+    sectorID: "construction",
+    analysisContext: "general",
+  });
+  assertStringIncludes(built, "- Saha türü: inşaat / şantiye");
+  // v4'ün sektör bloğu buraya bağlanmıştı ve istemin elli satır yukarıda
+  // "sana kontrol listesi verilmiyor" demesine rağmen tam olarak onu
+  // veriyordu. İnşaat için 1500 karakter, kabloyu "Geçici elektrik"
+  // altında, suyu "Kazı" altında listeleyerek.
+  for (
+    const token of [
+      "Zorunlu tarama",
+      "Öncelikli tarama",
+      "Görünürse kritik ekipman",
+      "Ölümcül mekanizma çapaları",
+      "Negatif varsayım kodları",
+      "seyyar kablo güzergâhı",
+      "access_and_work_at_height",
+    ]
+  ) {
+    assertEquals(built.includes(token), false, token);
+  }
+  // "general" bir not değil, varsayılan. Kullanıcı bağlamı olarak geçmez.
+  assertEquals(built.includes("Kullanıcının notu"), false);
+});
+
+Deno.test("bilinmeyen sektör satırı hiç yazılmaz", () => {
+  const built = buildV5Prompt({
+    photoIndex: 1,
+    photoCount: 1,
+    outputLanguage: "tr",
+    sectorID: null,
+  });
+  assertEquals(built.includes("Saha türü"), false);
+  assertStringIncludes(built, "BAĞLAM");
 });

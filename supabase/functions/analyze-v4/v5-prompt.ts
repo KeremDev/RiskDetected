@@ -70,30 +70,67 @@ En çok ${
 } bulgu yaz; daha fazlası varsa en ağırlarını seç. Aynı tehlikeyi iki kez yazma.
 `;
 
+/**
+ * The sector, as a human would say it, and nothing else.
+ *
+ * The free engine was being handed v4's sector block: "Zorunlu
+ * tarama=access_and_work_at_height, scaffold_and_ladder, ...", a component
+ * catalogue naming "seyyar kablo güzergâhı" and "su birikintisi" under two
+ * different equipment entries, and eight bare snake_case "negatif varsayım
+ * kodları" with nothing to say what they mean. Fifteen hundred characters of
+ * exactly the checklist the prompt fifty lines above it promises the model it
+ * will not be given.
+ *
+ * It also splits a hazard the same way the sweep order did, from a second
+ * source: the cable is filed under temporary electrics and the standing water
+ * under excavation, and the run that had to connect them saw them listed
+ * apart.
+ *
+ * A site inspector is told which kind of site they are visiting. That is
+ * context, and it is one word.
+ */
+const SECTOR_TR: Record<string, string> = {
+  general: "genel",
+  construction: "inşaat / şantiye",
+  manufacturing: "imalat / atölye",
+  mining: "madencilik",
+  energy: "enerji",
+  office: "ofis",
+  logistics_warehouse: "lojistik / depo",
+  chemical_laboratory: "kimya / laboratuvar",
+  healthcare: "sağlık",
+  food_production: "gıda üretimi",
+  agriculture_livestock: "tarım / hayvancılık",
+  retail: "perakende",
+  municipal_field_services: "belediye saha hizmetleri",
+  education: "eğitim",
+  hospitality: "konaklama / yeme-içme",
+};
+
+export function v5SectorLine(sectorID: string | null): string {
+  const label = SECTOR_TR[String(sectorID ?? "")] ?? "";
+  return label ? `- Saha türü: ${label}` : "";
+}
+
 export function buildV5Prompt(params: {
   photoIndex: number;
   photoCount: number;
   outputLanguage: string;
-  sectorBlock: string;
+  sectorID: string | null;
   analysisContext?: string;
 }): string {
-  return `${V5_FREE_PROMPT}
-
-DEĞİŞKEN BAĞLAM
-- Fotoğraf: ${params.photoIndex}/${params.photoCount}
-- Çıktı dili: ${params.outputLanguage}
-${
-    params.sectorBlock
-      ? `- Sektör bilgisi (yalnız bağlam; kanıt yerine geçmez):\n${params.sectorBlock}`
-      : ""
-  }
-${
-    params.analysisContext
-      ? `- Kullanıcı bağlamı (kanıt değildir): ${
-        params.analysisContext.slice(0, 800)
-      }`
-      : ""
-  }
-
-JSON sözleşmesine tam uy. Başka metin ekleme.`;
+  const context = (params.analysisContext ?? "").trim();
+  return [
+    V5_FREE_PROMPT,
+    "",
+    "BAĞLAM",
+    `- Fotoğraf: ${params.photoIndex}/${params.photoCount}`,
+    `- Çıktı dili: ${params.outputLanguage}`,
+    v5SectorLine(params.sectorID),
+    context && context !== "general"
+      ? `- Kullanıcının notu (kanıt değildir): ${context.slice(0, 800)}`
+      : "",
+    "",
+    "JSON sözleşmesine tam uy. Başka metin ekleme.",
+  ].filter((line) => line !== "").join("\n");
 }

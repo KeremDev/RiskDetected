@@ -830,7 +830,7 @@ serve(async (req) => {
           photoIndex: photo.photoIndex,
           photoCount: photos.length,
           outputLanguage: language,
-          sectorBlock: sectorPrompt(sectorID),
+          sectorID,
           analysisContext: String(analysis.canvas ?? "general"),
         });
         const telemetry = {
