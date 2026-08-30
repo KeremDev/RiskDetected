@@ -3,7 +3,7 @@ Deno.test("Gemini 3 kendi çekirdek istemini alır, 2.5'inkini değil", async ()
   const contents = sent.contents as Array<Record<string, unknown>>;
   const parts = contents[0].parts as Array<Record<string, unknown>>;
   const text = String(parts[0].text);
-  assertStringIncludes(text, "v4-gemini3-core-v3");
+  assertStringIncludes(text, "v4-gemini3-core-v4");
   assertStringIncludes(text, "ÖNCE ADAY, SONRA KAPSAM");
   assertStringIncludes(text, "ADAY EŞİĞİ");
   // 2.5'in korkuluk paranoyası taşınmadı.
@@ -18,7 +18,7 @@ Deno.test("Gemini 2.5 kendi istemini aynen alır", async () => {
   const parts = contents[0].parts as Array<Record<string, unknown>>;
   const text = String(parts[0].text);
   assertStringIncludes(text, "v4-vision-core-v10");
-  assertEquals(text.includes("v4-gemini3-core-v3"), false);
+  assertEquals(text.includes("v4-gemini3-core-v4"), false);
   assertEquals(text.includes("ÖNCE ADAY, SONRA KAPSAM"), false);
 });
 
@@ -29,8 +29,10 @@ Deno.test("3.5 Flash Lite de Gemini 3 çekirdeğini alır", async () => {
   assertStringIncludes(String(parts[0].text), "ÖNCE ADAY, SONRA KAPSAM");
 });
 
-Deno.test("temel istem içermeyen çağrı ikame edilmez", async () => {
-  // Doğrulama geçişi kendi istemini taşır ve aday üretmez; dokunulmamalı.
+Deno.test("temel istem içermeyen çağrı ikame edilmez ama dil kuralını alır", async () => {
+  // caabfd66: doğrulama geçişi diakritiksiz Türkçe döndürdü ve dil kapısı tüm
+  // geçişi reddetti -- doğru davranış, çünkü o geçiş yayımlanan aday ekleyebilir.
+  // Ama kural ona hiç ulaşmamıştı: kendi istemini taşıyor, ikame edilmiyor.
   const sent = await captureGeminiBody(
     "gemini-3.7-flash",
     "DOĞRULAMA GEÇİŞİ\n- Yalnız verilen yokluk iddiasını teyit et.",
@@ -40,6 +42,17 @@ Deno.test("temel istem içermeyen çağrı ikame edilmez", async () => {
   const text = String(parts[0].text);
   assertEquals(text.includes("ÖNCE ADAY, SONRA KAPSAM"), false);
   assertStringIncludes(text, "DOĞRULAMA GEÇİŞİ");
+  assertStringIncludes(text, "Türkçe karakterlerle yaz");
+});
+
+Deno.test("Gemini 2.5 kendi istemini taşıyan çağrıda da ek almaz", async () => {
+  const sent = await captureGeminiBody(
+    "gemini-2.5-flash",
+    "DOĞRULAMA GEÇİŞİ\n- Yalnız verilen yokluk iddiasını teyit et.",
+  );
+  const contents = sent.contents as Array<Record<string, unknown>>;
+  const parts = contents[0].parts as Array<Record<string, unknown>>;
+  assertEquals(String(parts[0].text).includes("ÇIKTI DİLİ"), false);
 });
 
 import {

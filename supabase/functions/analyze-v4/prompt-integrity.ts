@@ -1,6 +1,7 @@
 import { V4_PROVIDER_RESPONSE_SCHEMA } from "./contracts.ts";
 import {
   V4_COVERAGE_REPAIR_COMMON,
+  V4_GEMINI3_OUTPUT_LANGUAGE_LINE,
   V4_GEMINI3_PROMPT,
   V4_PROMPT_COMMON,
   V4_TARGETED_PROMPT_COMMON,
@@ -58,5 +59,7 @@ export async function assertV4PromptIntegrity(
  * made under, for a change that cannot affect them.
  */
 export async function computeV4Gemini3PromptSHA256(): Promise<string> {
-  return await sha256Text(V4_GEMINI3_PROMPT.trim());
+  return await sha256Text(
+    `${V4_GEMINI3_PROMPT.trim()}\n---LANG---\n${V4_GEMINI3_OUTPUT_LANGUAGE_LINE.trim()}`,
+  );
 }

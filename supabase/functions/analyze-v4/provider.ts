@@ -14,6 +14,7 @@ import {
 import { coverageValidationIssues } from "./dynamic-modules.ts";
 import {
   V4_COVERAGE_REPAIR_COMMON,
+  V4_GEMINI3_OUTPUT_LANGUAGE_LINE,
   V4_GEMINI3_PROMPT,
   V4_PROMPT_COMMON,
 } from "./prompt.ts";
@@ -267,7 +268,10 @@ function promptFor(model: string, prompt: string): string {
   if (!isGemini3(model)) return prompt;
   return prompt.includes(V4_PROMPT_COMMON)
     ? prompt.replace(V4_PROMPT_COMMON, V4_GEMINI3_PROMPT)
-    : prompt;
+    // A call with its own prompt still has to answer in Turkish. It gets the
+    // one rule that governs every Gemini 3 answer rather than the whole core,
+    // whose candidate and coverage sections would not apply to it.
+    : `${prompt}${V4_GEMINI3_OUTPUT_LANGUAGE_LINE}`;
 }
 
 /** Gemini 3 and later: the thinking enum, no temperature, ultra-high media. */

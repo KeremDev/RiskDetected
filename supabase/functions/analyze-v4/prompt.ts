@@ -226,3 +226,16 @@ KANIT
 - event_path kaynak → temas/arıza → sonuç zincirini kısa ve somut anlatmalı. Kişi düşüyorsa bunu temas alanında açıkça yaz; düşen malzemeyse malzemeyi adlandır.
 - Tüm metinleri Türkçe karakterlerle yaz: ı, İ, ş, Ş, ğ, Ğ, ç, Ç, ö, Ö, ü, Ü. Diakritiği düşürülmüş Türkçe ("gorulmektedir", "isci") kabul edilmez.
 `;
+
+/**
+ * Appended to Gemini 3 calls that carry their own prompt instead of the core.
+ *
+ * The verification pass and the language-correction call never contain
+ * V4_PROMPT_COMMON, so the substitution never reaches them and neither did the
+ * Turkish-characters rule. In analysis caabfd66 the verification pass came back
+ * with the diacritics stripped and the language gate rejected the whole pass --
+ * correctly, since that pass can add published candidates, but it cost the
+ * second look over a rule the model had never been given.
+ */
+export const V4_GEMINI3_OUTPUT_LANGUAGE_LINE =
+  `\nÇIKTI DİLİ\n- Tüm metinleri Türkçe karakterlerle yaz: ı, İ, ş, Ş, ğ, Ğ, ç, Ç, ö, Ö, ü, Ü. Diakritiği düşürülmüş Türkçe ("gorulmektedir", "isci") kabul edilmez ve çıktının tamamını geçersiz kılar.\n`;
