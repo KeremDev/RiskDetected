@@ -11,7 +11,7 @@ export const V4_PROMPT_VERSION = "v4-vision-core-v10";
  * prompt_integrity_test.ts, exactly as for the base bundle.
  */
 export const V4_GEMINI3_PROMPT_VERSION = "v4-gemini3-threshold-v1";
-export const V4_ROUTER_VERSION = "claim-routing-v32";
+export const V4_ROUTER_VERSION = "claim-routing-v33";
 export const V4_COVERAGE_VERSION = "critical-coverage-v3";
 export const V4_ASSURANCE_VERSION = "assurance-topic-v2";
 export const V4_STANDARDS_VERSION = "standards-registry-v1";

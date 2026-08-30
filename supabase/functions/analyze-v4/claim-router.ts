@@ -733,6 +733,38 @@ function mechanismCode(candidate: NormalizedCandidate): string {
     const eventPath = `${candidate.event_path.source} ${
       candidate.event_path.contact_or_failure
     } ${candidate.event_path.consequence}`.toLocaleLowerCase("tr-TR");
+    // Who falls, decided structurally rather than by phrase.
+    //
+    // The list below is a set of fixed phrases, and analysis a994c552 walked
+    // between them: "Denge kaybı veya takılma sonucu kenardan BOŞLUĞA düşme",
+    // "YÜKSEKTEN ZEMİNE düşmeye bağlı ağır yaralanma veya can kaybı". Neither
+    // matches "kenardan düşme", "yüksekten düşme" or "zeminle çarpışma", so a
+    // worker going over an unguarded slab edge was filed as a falling object.
+    // It still scored critical, but work_at_height was left unanswered and the
+    // report carried "Yüksekte çalışma değerlendirilemedi" three items below a
+    // fatal fall.
+    //
+    // The candidate already says whose hazard it is. A person_ref with a fall
+    // in the contact clause and no object noun in it is a person going down;
+    // material dropping onto someone names the material.
+    const contact = candidate.event_path.contact_or_failure
+      .toLocaleLowerCase("tr-TR");
+    const falls = /(?:düş|dus)/u.test(contact);
+    // A person losing their footing names the person or the loss of footing.
+    // Material going over the edge names the material, in the possessive.
+    // Mentioning material is not enough either way -- "malzemeye takılarak
+    // düşme" is a worker tripping, and reading the noun alone would file it as
+    // a falling object.
+    const personFalls =
+      /(?:denge kayb|takıl|takil|kayarak|kayma sonucu|işçi|isci|kişi|kisi|çalışan|calisan|personel)/u
+        .test(contact);
+    const objectFalls =
+      /(?:nesne|malzeme|yük|yuk|taş|tas|parça|parca|alet|ekipman|moloz|kepçe|kepce|cisim|object)(?:nin|nın|in|ın|un|ün)?\s+[^.]{0,20}?(?:düş|dus|kay|dök|dok|devril)/u
+        .test(contact);
+    if ((candidate.person_ref ?? "").trim() && falls && personFalls) {
+      return "fall_from_height";
+    }
+    if (objectFalls && !personFalls) return "falling_object";
     if (
       /(?:kişinin düşmesi|kisinin dusmesi|yüksekten düşme|yuksekten dusme|çalışanın düşmesi|calisanin dusmesi|kenardan düşme|kenardan dusme|zeminle çarpışma|zeminle carpisma|person fall|fall from height)/u
         .test(eventPath) ||

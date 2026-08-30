@@ -3973,3 +3973,73 @@ Deno.test("kişisiz bileşen iddiası tabanda kalmaya devam eder", () => {
     "absence_claim_below_resolution_floor",
   );
 });
+
+Deno.test("kişi kenardan düşüyorsa mekanizma düşen cisim olmaz", () => {
+  // a994c552: "Denge kaybı veya takılma sonucu kenardan BOŞLUĞA düşme" /
+  // "YÜKSEKTEN ZEMİNE düşmeye bağlı ... can kaybı" -- sabit kalıp listesinin
+  // arasından geçti ve işçi düşen cisim olarak sınıflandı. Skoru critical
+  // kaldı ama work_at_height cevapsız kalıp "Yüksekte çalışma
+  // değerlendirilemedi" ölümcül düşmenin üç madde altında yayımlandı.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "falls_falling_objects",
+    raw_label: "Korumasız döşeme kenarında düşme koruması olmadan çalışma",
+    person_ref: "person_roof_edge",
+    asset_ref: undefined,
+    affirmative_cues: ["Kenarda korkuluk yok", "İşçi kenarda çalışıyor"],
+    evidence_region: { x: 0.3, y: 0.2, width: 0.2, height: 0.2 },
+    event_path: {
+      source: "Korumasız üst kat döşeme kenarı",
+      contact_or_failure: "Denge kaybı veya takılma sonucu kenardan boşluğa düşme",
+      consequence: "Yüksekten zemine düşmeye bağlı ağır yaralanma veya can kaybı",
+    },
+    potential_consequence: "fatal",
+  })]);
+  photo.module_coverage.push({
+    module_id: "work_at_height",
+    activated_by: ["person_roof_edge"],
+    outcome: "not_assessable_due_to_image",
+    entity_refs: ["person_roof_edge"],
+    candidate_keys: [],
+    note: "Bağlı görsel aday bulunamadı.",
+  });
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.internal_priority.mechanism_code, "fall_from_height");
+  assertEquals(
+    routed.items.some((entry) =>
+      entry.item_class === "not_assessable" &&
+      String(entry.title).includes("Yüksekte çalışma")
+    ),
+    false,
+  );
+});
+
+Deno.test("kişinin üstüne malzeme düşmesi düşen cisim kalır", () => {
+  // Kapının bozmaması gereken hâl: mağdur kişi olsa da düşen şey malzemedir.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "falls_falling_objects",
+    raw_label: "Kenardan malzeme düşmesi",
+    person_ref: "person_below",
+    affirmative_cues: ["Kenarda istiflenmiş malzeme, etek tahtası yok"],
+    evidence_region: { x: 0.3, y: 0.2, width: 0.2, height: 0.2 },
+    event_path: {
+      source: "Kenardaki malzeme",
+      contact_or_failure: "Malzemenin kenardan düşmesi",
+      consequence: "Alttaki kişiye çarpma",
+    },
+    potential_consequence: "fatal",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.internal_priority.mechanism_code, "falling_object");
+});
