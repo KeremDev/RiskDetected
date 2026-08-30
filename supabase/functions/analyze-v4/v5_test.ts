@@ -12,6 +12,7 @@ import {
 } from "./v5-engine.ts";
 import {
   FK_SEVERITY,
+  V5_MAX_FINDINGS,
   V5_PROMPT_VERSION,
   V5_RESPONSE_SCHEMA,
 } from "./v5-contracts.ts";
@@ -102,22 +103,6 @@ Deno.test("bulgular skora göre sıralanır, modelin sırasına göre değil", (
   assertEquals(routed.items[1].display_order, 2);
 });
 
-Deno.test("mevzuat atfı taşıyan cümle silinir, bulgu kalır", () => {
-  const routed = routeV5Findings([{
-    photoIndex: 1,
-    output: parseV5Output(envelope([
-      finding({
-        description:
-          "İşçi açık döşeme kenarında çalışıyor. Bu durum 6331 sayılı kanuna aykırıdır.",
-      }),
-    ])),
-  }]);
-  assertEquals(routed.items.length, 1);
-  assertEquals(routed.items[0].description.includes("6331"), false);
-  assertStringIncludes(routed.items[0].description, "açık döşeme kenarında");
-  assertEquals(routed.sanitizedCount, 1);
-});
-
 Deno.test("görünmeyen kayıt hakkında yokluk iddiası silinir, öneri kalır", () => {
   const claim = sanitizeFreeText(
     "Kenarı korkulukla kapatın. Çalışanların yüksekte çalışma eğitimi yoktur.",
@@ -152,23 +137,6 @@ Deno.test("ölçek dışı Fine-Kinney değeri en yakınına oturur, bulgu düş
   assertEquals(routed.items.length, 1);
   assertEquals(routed.items[0].fk_severity, 40);
   assertEquals(routed.snappedCount > 0, true);
-});
-
-Deno.test("yayımlanacak metni kalmayan bulgu düşer ve iz bırakır", () => {
-  const routed = routeV5Findings([{
-    photoIndex: 1,
-    output: parseV5Output(envelope([
-      finding({
-        finding_key: "empty",
-        immediate_control: "6331 sayılı kanun gereğidir.",
-      }),
-    ])),
-  }]);
-  assertEquals(routed.items.length, 0);
-  assertEquals(routed.droppedFindings[0], {
-    finding_key: "empty",
-    reason: "empty_control",
-  });
 });
 
 Deno.test("tehlike yoksa boş rapor üretilir, uydurma bulgu değil", () => {
@@ -212,57 +180,109 @@ Deno.test("bantlar v4 ile aynı eşikleri kullanır", () => {
   assertEquals(bandsFor(1440, 20).m5Band, "critical");
 });
 
-Deno.test("istemde yöntem talimatı kalmadı", () => {
-  // Sözleşme motorunun hiçbir parçası.
+Deno.test("mevzuat dayanağı yayımlanır, silinmez", () => {
+  const routed = routeV5Findings([{
+    photoIndex: 1,
+    output: parseV5Output(envelope([
+      finding({
+        regulatory_references:
+          "6331 sayılı İş Sağlığı ve Güvenliği Kanunu; Yapı İşlerinde İSG Yönetmeliği Ek-4; TS EN 13374 kenar koruma sistemleri.",
+        description:
+          "İşçi açık döşeme kenarında çalışıyor. 6331 sayılı kanun işverene toplu koruma yükümlülüğü getirir.",
+      }),
+    ])),
+  }]);
+  assertEquals(routed.items.length, 1);
+  assertStringIncludes(routed.items[0].references_text, "TS EN 13374");
+  // Metin içindeki atıf da artık silinmiyor.
+  assertStringIncludes(routed.items[0].description, "6331");
+  assertEquals(routed.sanitizedCount, 0);
+});
+
+Deno.test("görünmeyen kayıt iddiası hâlâ silinir", () => {
+  const routed = routeV5Findings([{
+    photoIndex: 1,
+    output: parseV5Output(envelope([
+      finding({
+        description:
+          "İşçi açık döşeme kenarında çalışıyor. Çalışanın yüksekte çalışma eğitimi yoktur.",
+      }),
+    ])),
+  }]);
+  assertEquals(routed.items.length, 1);
+  assertEquals(routed.items[0].description.includes("eğitimi yoktur"), false);
+  assertEquals(routed.sanitizedCount, 1);
+});
+
+Deno.test("yayımlanacak metni kalmayan bulgu düşer ve iz bırakır", () => {
+  const routed = routeV5Findings([{
+    photoIndex: 1,
+    output: parseV5Output(envelope([
+      finding({ finding_key: "empty", immediate_control: "   " }),
+    ])),
+  }]);
+  assertEquals(routed.items.length, 0);
+  assertEquals(routed.droppedFindings[0], {
+    finding_key: "empty",
+    reason: "empty_control",
+  });
+});
+
+Deno.test("tarama katmanları bakışı yönlendirir, rapor şekli dayatmaz", () => {
+  // On iki katman geri geldi, en eski sürümdeki haliyle genişletilerek.
+  assertStringIncludes(V5_FREE_PROMPT, "12 KATMANDA TARA");
+  assertStringIncludes(V5_FREE_PROMPT, "SU VEYA NEM İLE ELEKTRİK TEMASI");
+  assertStringIncludes(V5_FREE_PROMPT, "ERGONOMİ VE ELLE TAŞIMA");
+  // Ama katman başına satır istemiyor -- v4'ün kapsam sözleşmesi tam olarak
+  // bunu istediği için bir raporun on dört maddesinin dokuzu
+  // "değerlendirilemedi" olmuştu.
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    "Katman başına satır üretme zorunluluğun yok",
+  );
+  assertStringIncludes(V5_FREE_PROMPT, "SONUCUNA GÖRE");
   for (
     const token of [
       "module_coverage",
       "candidate_key",
       "condition_code",
       "not_assessable",
-      "positive_control_present",
+      "inspection_layer_keys",
+      "checked_no_hazard",
     ]
   ) {
     assertEquals(V5_FREE_PROMPT.includes(token), false, token);
   }
   assertEquals(V5_FREE_PROMPT.includes(V4_PROMPT_COMMON.trim()), false);
-
-  // İki sürüm boyunca burada duran iskele de gitti. Analiz 0c4c9a03'te
-  // tarama listesi kabloyu "geçiş yolları / engel" başlığına yazdırdı ve
-  // model ıslak zemindeki kabloya takılma dedi; ardından eklenen birleşim
-  // kuralı, ilk iskeleyi yamayan ikinci iskeleydi.
-  for (
-    const token of [
-      "TARAMA",
-      "TEHLİKELERİN BİRLEŞİMİ",
-      "EN AĞIR MAKUL",
-      "su veya nem ile elektrik",
-      "yükseltilmiş yüzeyler ve kenarlar",
-      "toplu koruma sağlayan adım",
-    ]
-  ) {
-    assertEquals(V5_FREE_PROMPT.includes(token), false, token);
-  }
 });
 
-Deno.test("kalan kurallar dürüstlük, ölçek ve biçim; yöntem değil", () => {
-  // Üç dürüstlük kuralı.
+Deno.test("mevzuat yasağı kalktı, uydurma numara yasağı kaldı", () => {
+  assertEquals(V5_FREE_PROMPT.includes("standart kodu (TS EN, ISO"), false);
+  assertStringIncludes(V5_FREE_PROMPT, "MEVZUAT");
+  assertStringIncludes(V5_FREE_PROMPT, "6331 sayılı");
+  assertStringIncludes(V5_FREE_PROMPT, "numara uydurma");
+});
+
+Deno.test("bulgu sayısına tavan koyulmuyor", () => {
+  assertEquals(V5_FREE_PROMPT.includes("En çok"), false);
+  assertStringIncludes(V5_FREE_PROMPT, "sayıyı kısmak için bulgu atlama");
+  // Sunucudaki sınır bir bütçe değil, bozuk yanıta karşı emniyet.
+  assertEquals(V5_MAX_FINDINGS, 24);
+});
+
+Deno.test("kalan iki dürüstlük kuralı, ölçek ve üslup yerinde", () => {
   assertStringIncludes(V5_FREE_PROMPT, "Yalnız fotoğrafta gördüğünü yaz");
   assertStringIncludes(V5_FREE_PROMPT, "olmadıklarını iddia etmen değildir");
-  assertStringIncludes(V5_FREE_PROMPT, "madde numarası veya standart kodu");
-  // Dil, çünkü okuyucu Türkçe okuyor.
   assertStringIncludes(V5_FREE_PROMPT, "Türkçe karakterlerle");
-  // Ölçek, çünkü raporun toplamları buradan hesaplanıyor.
+  assertStringIncludes(V5_FREE_PROMPT, "emir kipinde yaz");
   assertStringIncludes(V5_FREE_PROMPT, "FINE-KINNEY ÖLÇEĞİ");
-  // Ve muhakemenin modele ait olduğu açıkça söyleniyor.
-  assertStringIncludes(V5_FREE_PROMPT, "mesleki muhakemeni kullan");
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "8fad913d4659c11dd3ffa428eaa0edd3066633008bccb8188d2709030aed94d4";
+  "b930621b865e299196707409bf1f2779361e8125da6fa9a6a35e145bf6d3a322";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v5-free-core-v6");
+  assertEquals(V5_PROMPT_VERSION, "v5-free-core-v7");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 
@@ -308,17 +328,6 @@ Deno.test("bitmemiş cümleler birbirine yapışmaz", () => {
   assertStringIncludes(measures[0].text, "1. Kenarlara korkuluk kurun.");
   assertStringIncludes(measures[0].text, "3. Kişisel koruyucu donanım:");
   assertEquals(measures[0].text.includes("kurun2"), false);
-});
-
-Deno.test("üslup kuralları yöntem kuralı değildir", () => {
-  // Nasıl yazılacağını söyler...
-  assertStringIncludes(V5_FREE_PROMPT, "emir kipinde yaz");
-  assertStringIncludes(V5_FREE_PROMPT, "Her cümleyi noktayla bitir");
-  assertStringIncludes(V5_FREE_PROMPT, "üslup kuralları");
-  // ...neye bakılacağını değil. İskele geri gelmedi.
-  for (const token of ["TARAMA", "TEHLİKELERİN BİRLEŞİMİ", "EN AĞIR MAKUL"]) {
-    assertEquals(V5_FREE_PROMPT.includes(token), false, token);
-  }
 });
 
 Deno.test("sektör bir kelime olarak gelir, katalog olarak değil", () => {

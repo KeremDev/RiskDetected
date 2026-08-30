@@ -30,15 +30,22 @@
 // config key.
 
 export const V5_ENGINE_MODE = "free";
-export const V5_PROMPT_VERSION = "v5-free-core-v6";
+export const V5_PROMPT_VERSION = "v5-free-core-v7";
 
 /** Fine-Kinney scales. The arithmetic stays deterministic; the values do not. */
 export const FK_PROBABILITY = [0.2, 0.5, 1, 3, 6, 10] as const;
 export const FK_FREQUENCY = [0.5, 1, 2, 3, 6, 10] as const;
 export const FK_SEVERITY = [1, 3, 7, 15, 40, 100] as const;
 
-/** Above this the report stops being read. v4's own budget is eight. */
-export const V5_MAX_FINDINGS = 8;
+/**
+ * A runaway guard, not a budget.
+ *
+ * The prompt used to cap the model at eight, and that is the model deciding
+ * which hazards a reader is allowed to know about. It now writes every hazard
+ * it has evidence for; this bound only exists so a malformed response cannot
+ * put a thousand rows through the finalize RPC.
+ */
+export const V5_MAX_FINDINGS = 24;
 export const V5_MAX_POSITIVE_CONTROLS = 4;
 
 export type V5Finding = {
@@ -53,6 +60,8 @@ export type V5Finding = {
     consequence: string;
   };
   root_cause: string;
+  /** Turkish legislation and standards the model cites for this finding. */
+  regulatory_references?: string;
   fine_kinney: {
     probability: number;
     frequency: number;
@@ -121,6 +130,7 @@ export const V5_RESPONSE_SCHEMA = {
             required: ["source", "contact_or_failure", "consequence"],
           },
           root_cause: { type: "string" },
+          regulatory_references: { type: "string" },
           fine_kinney: {
             type: "object",
             properties: {

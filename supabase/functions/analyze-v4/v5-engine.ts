@@ -26,16 +26,14 @@ function textList(value: unknown, max = 6): string[] {
     : [];
 }
 
-/**
- * Regulation, standard and article references.
- *
- * The app renders citations from an approved registry, and a model-written
- * "6331 sayılı kanun madde 5" reads to a safety officer exactly like one that
- * was checked. This is the one claim class where being wrong is worse than
- * saying nothing.
- */
-const CITES_AUTHORITY =
-  /(?:\b\d{4,5}\s*say[ıi]l[ıi]|\bmadde\s*\d|\bmd\.\s*\d|\bTS\s?EN\b|\bTSE\b|\bEN\s?\d{3}|\bISO\s?\d|\bIEC\s?\d|\bOSHA\b|\bNFPA\b|\bAPI\s?\d|y[öo]netmeli[ğg]i|\bmevzuat|\bkanun|\btebli[ğg]i|\bgenelge)/iu;
+// Citations were stripped here until the operator decided the report should
+// carry them: Turkish legislation, the regulations under it, and TS / TS EN /
+// ISO / IEC standards, written by the model into its own field and rendered as
+// the finding's "Dayanak". The prompt carries the guard that matters -- name
+// the regulation you are sure of and never invent an article number -- and a
+// wrong number is now visible in the report rather than silently deleted from
+// it. What stays below is the other claim class, which is about the
+// photograph rather than the law.
 
 /**
  * A nonconformity asserted about something the photograph cannot show.
@@ -64,10 +62,6 @@ export function sanitizeFreeText(raw: string): SanitizeResult {
   const sentences = value.split(/(?<=[.!?])\s+/u).filter(Boolean);
   const removed: string[] = [];
   const kept = sentences.filter((sentence) => {
-    if (CITES_AUTHORITY.test(sentence)) {
-      removed.push("cites_authority");
-      return false;
-    }
     if (ASSERTS_INVISIBLE_ABSENCE.test(sentence)) {
       removed.push("asserts_invisible_absence");
       return false;
@@ -167,6 +161,7 @@ export function parseV5Output(raw: string): V5PhotoOutput {
           consequence: text(path.consequence, 300),
         },
         root_cause: text(finding.root_cause, 600),
+        regulatory_references: text(finding.regulatory_references, 600),
         fine_kinney: {
           probability: Number(kinney.probability),
           frequency: Number(kinney.frequency),
@@ -238,6 +233,7 @@ export function routeV5Findings(
       const description = sanitizeFreeText(finding.description);
       const control = sanitizeFreeText(finding.immediate_control);
       const rootCause = sanitizeFreeText(finding.root_cause);
+      const references = sanitizeFreeText(finding.regulatory_references ?? "");
       const preventive = sanitizeFreeText(finding.preventive_measure);
       const steps = finding.corrective_steps.map(sanitizeFreeText);
       const training = sanitizeFreeText(finding.training_recommendation ?? "");
@@ -247,6 +243,7 @@ export function routeV5Findings(
         description,
         control,
         rootCause,
+        references,
         preventive,
         training,
         ppe,
@@ -351,11 +348,8 @@ export function routeV5Findings(
               }]
               : []),
           ],
-          // The approved-reference renderer is a v4 component keyed by
-          // mechanism, and this engine has no mechanism. Citations are left
-          // empty rather than invented; the model is forbidden from writing
-          // them and the server does not supply a substitute.
-          references_text: "",
+          // The model's own citation, rendered in the app as "Dayanak".
+          references_text: references.text,
           root_cause_text: rootCause.text,
           confidence: finding.confidence,
           ai_confidence: finding.confidence,
