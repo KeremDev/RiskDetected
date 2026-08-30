@@ -1860,6 +1860,113 @@ function bookSourceCodes(params: {
   };
 }
 
+
+/**
+ * Fraction of the smaller region that the two share, 0 when they do not meet.
+ */
+function regionOverlapRatio(
+  a: EvidenceRegion | undefined,
+  b: EvidenceRegion | undefined,
+): number {
+  if (!a || !b) return 0;
+  if (a.is_global || b.is_global) return 0;
+  const left = Math.max(a.x, b.x);
+  const top = Math.max(a.y, b.y);
+  const right = Math.min(a.x + a.width, b.x + b.width);
+  const bottom = Math.min(a.y + a.height, b.y + b.height);
+  if (right <= left || bottom <= top) return 0;
+  const intersection = (right - left) * (bottom - top);
+  const smaller = Math.min(a.width * a.height, b.width * b.height);
+  if (smaller <= 0) return 0;
+  return intersection / smaller;
+}
+
+/**
+ * Two names for one hazard, merged on geometry rather than on wording.
+ *
+ * The dedup key is built from the module and the event path text, so it only
+ * catches repetition the model phrased identically. In analysis 1adb0414 the
+ * verification pass re-found the cable the primary pass had already reported
+ * and wrote it up in its own words -- "enerji hattı ve su teması" against
+ * "Açıkta geçen seyyar kablo", asset src_cable against eng_cable -- and the
+ * report published one cable twice, both permanent, both fifteen points, the
+ * total scored as if the site had two of them.
+ *
+ * Paraphrase defeats a text key by construction, so this pass ignores the text:
+ * same photograph, same module, same mechanism, and evidence regions that
+ * mostly cover each other is one finding. The threshold is on the smaller
+ * region, because a second look tends to draw a tighter box around the thing it
+ * just confirmed. Two genuinely separate hazards of one kind -- two cable runs
+ * at opposite ends of a yard -- do not overlap and are not touched.
+ */
+const SAME_HAZARD_OVERLAP = 0.5;
+
+/** Two claims about named components merge only when they name the same ones. */
+function sameBarrierMember(a: string, b: string): boolean {
+  if (!a || !b) return true;
+  return a === b;
+}
+
+function mergeOverlappingFindings(
+  items: RoutedItem[],
+  regionOf: (item: RoutedItem) => EvidenceRegion | undefined,
+  componentOf: (item: RoutedItem) => string,
+  ledger: RoutingLedgerEntry[],
+): RoutedItem[] {
+  const kept: RoutedItem[] = [];
+  for (const item of items) {
+    const twin = item.item_class === "observed_finding" && item.is_scored
+      ? kept.find((other) =>
+        other.item_class === "observed_finding" && other.is_scored &&
+        other.category === item.category &&
+        String(other.internal_priority.mechanism_code ?? "") ===
+          String(item.internal_priority.mechanism_code ?? "") &&
+        other.source_photo_indices.some((index) =>
+          item.source_photo_indices.includes(index)
+        ) &&
+        // One rail's mid rail and its toeboard occupy the same box and fall
+        // the same way. The member is part of the claim's identity -- the
+        // reason dedupEventKey carries it -- so geometry must not overrule it.
+        sameBarrierMember(componentOf(other), componentOf(item)) &&
+        regionOverlapRatio(regionOf(other), regionOf(item)) >=
+          SAME_HAZARD_OVERLAP
+      )
+      : undefined;
+    if (!twin) {
+      kept.push(item);
+      continue;
+    }
+    const winner =
+      priority(item.item_class, item.criticality) <
+          priority(twin.item_class, twin.criticality)
+        ? item
+        : twin;
+    const loser = winner === item ? twin : item;
+    winner.source_photo_indices = [
+      ...new Set([...winner.source_photo_indices, ...loser.source_photo_indices]),
+    ].sort();
+    winner.internal_priority.merged_candidate_ids = [
+      ...new Set([
+        ...(winner.internal_priority.merged_candidate_ids as string[] ?? []),
+        ...(loser.internal_priority.merged_candidate_ids as string[] ?? []),
+        ...(loser.candidate_id ? [loser.candidate_id] : []),
+      ]),
+    ];
+    ledger.push({
+      candidate_id: loser.candidate_id,
+      from_state: "observed_finding",
+      to_state: "observed_finding",
+      reason_code: "same_region_same_mechanism_merged",
+      details: {
+        kept_candidate_id: winner.candidate_id,
+        mechanism_code: winner.internal_priority.mechanism_code,
+      },
+    });
+    if (winner === item) kept[kept.indexOf(twin)] = item;
+  }
+  return kept;
+}
+
 export function routeCandidates(params: {
   candidates: NormalizedCandidate[];
   photoOutputs: Array<{ photoIndex: number; output: ProviderPhotoOutput }>;
@@ -2364,7 +2471,30 @@ export function routeCandidates(params: {
       merged.length + 1
     } ayrı noktada aynı koşul görülmektedir.`.slice(0, 1200);
   }
-  const ordered = [...deduped.values()].sort((a, b) =>
+  const regionByCandidate = new Map(
+    params.candidates.map((candidate) =>
+      [candidate.id, candidate.evidence_region] as const
+    ),
+  );
+  const componentByCandidate = new Map(
+    params.candidates.map((candidate) =>
+      [
+        candidate.id,
+        componentsClaimedAbsent(candidate).sort().join("+"),
+      ] as const
+    ),
+  );
+  const merged = mergeOverlappingFindings(
+    [...deduped.values()],
+    (item) =>
+      item.candidate_id ? regionByCandidate.get(item.candidate_id) : undefined,
+    (item) =>
+      item.candidate_id
+        ? componentByCandidate.get(item.candidate_id) ?? ""
+        : "",
+    ledger,
+  );
+  const ordered = merged.sort((a, b) =>
     a.display_order - b.display_order || a.title.localeCompare(b.title, "tr")
   );
   // Dedup keys are semantic, so two genuinely different hazards may still

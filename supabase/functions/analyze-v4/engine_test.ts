@@ -4316,3 +4316,101 @@ Deno.test("etkinleştirilmiş dinamik modülün değerlendirilemedi kaydı korun
     true,
   );
 });
+
+Deno.test("aynı bölgede aynı mekanizma tek bulgu olur, farklı sözcüklerle yazılsa da", () => {
+  const photo = output([
+    candidate({
+      candidate_key: "p1:cand_elec_1",
+      module_id: "electrical",
+      raw_label: "Su birikintisine yakın elektrik kablosu",
+      asset_ref: "src_cable",
+      person_ref: undefined,
+      affirmative_cues: ["Zeminde açıkta duran kablo su birikintisine değiyor"],
+      evidence_region: { x: 0.65, y: 0.63, width: 0.22, height: 0.08 },
+      event_path: {
+        source: "enerji hattı ve su teması",
+        contact_or_failure: "kablo izolasyon hasarı ve suya akım kaçağı",
+        consequence: "elektrik çarpması ve yaralanma",
+      },
+      potential_consequence: "permanent",
+    }),
+    candidate({
+      candidate_key: "p1:cand_electrical_cable",
+      module_id: "electrical",
+      raw_label: "Su birikintisi yakınından geçen elektrik kablosu",
+      asset_ref: "eng_cable",
+      person_ref: undefined,
+      affirmative_cues: ["Açıkta geçen seyyar kablo su birikintisinin kenarında"],
+      evidence_region: { x: 0.73, y: 0.65, width: 0.15, height: 0.1 },
+      event_path: {
+        source: "Açıkta geçen seyyar kablo",
+        contact_or_failure: "Su teması ile elektrik kaçağı",
+        consequence: "Elektrik çarpması",
+      },
+      potential_consequence: "permanent",
+    }),
+  ]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  const electrical = routed.items.filter((item) =>
+    item.item_class === "observed_finding" &&
+    item.internal_priority.mechanism_code === "electrical_contact_arc"
+  );
+  assertEquals(electrical.length, 1);
+  assertEquals(
+    routed.ledger.some((entry) =>
+      entry.reason_code === "same_region_same_mechanism_merged"
+    ),
+    true,
+  );
+});
+
+Deno.test("aynı türden ama ayrı yerdeki iki tehlike birleşmez", () => {
+  const photo = output([
+    candidate({
+      candidate_key: "p1:cable_left",
+      module_id: "electrical",
+      raw_label: "Sol kenarda su birikintisine değen kablo",
+      asset_ref: "cable_left",
+      person_ref: undefined,
+      affirmative_cues: ["Sol kenarda zeminde kablo ve su teması"],
+      evidence_region: { x: 0.05, y: 0.7, width: 0.12, height: 0.08 },
+      event_path: {
+        source: "Sol kenardaki kablo",
+        contact_or_failure: "Su teması",
+        consequence: "Elektrik çarpması",
+      },
+      potential_consequence: "permanent",
+    }),
+    candidate({
+      candidate_key: "p1:cable_right",
+      module_id: "electrical",
+      raw_label: "Sağ kenarda su birikintisine değen kablo",
+      asset_ref: "cable_right",
+      person_ref: undefined,
+      affirmative_cues: ["Sağ kenarda zeminde kablo ve su teması"],
+      evidence_region: { x: 0.8, y: 0.7, width: 0.12, height: 0.08 },
+      event_path: {
+        source: "Sağ kenardaki kablo",
+        contact_or_failure: "Su teması",
+        consequence: "Elektrik çarpması",
+      },
+      potential_consequence: "permanent",
+    }),
+  ]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  assertEquals(
+    routed.items.filter((item) =>
+      item.item_class === "observed_finding" &&
+      item.internal_priority.mechanism_code === "electrical_contact_arc"
+    ).length,
+    2,
+  );
+});
