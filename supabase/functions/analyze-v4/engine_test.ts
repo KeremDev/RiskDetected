@@ -4133,3 +4133,60 @@ Deno.test("kısa diakritiksiz etiket yanlış alarm vermez", () => {
   })]);
   assertEquals(outputLanguageFailure(photo, "tr"), null);
 });
+
+// --------------------------------------------------------------------------
+// 8ca6d430 -- one hazard, several modules
+// --------------------------------------------------------------------------
+
+Deno.test("yüksekte çalışma adayı düşen cisim satırını da kapatır", () => {
+  // Korumasız kenardaki işçi aynı anda work_at_height, falls_falling_objects ve
+  // people_exposure. Model adaya tek module_id verebiliyor; birebir eşitlik
+  // istemek çözülemez bir kısıttı ve üç prompt sürümü de buna takıldı.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "work_at_height",
+    raw_label: "Korumasız döşeme kenarında çalışma",
+  })]);
+  photo.module_coverage = photo.module_coverage.filter((row) =>
+    !["work_at_height", "falls_falling_objects", "people_exposure"].includes(
+      row.module_id,
+    )
+  );
+  for (const moduleID of ["work_at_height", "falls_falling_objects", "people_exposure"]) {
+    photo.module_coverage.push({
+      module_id: moduleID as typeof photo.module_coverage[number]["module_id"],
+      activated_by: ["person_edge"],
+      outcome: "finding_present",
+      entity_refs: ["person_edge"],
+      candidate_keys: ["C1"],
+      note: "Kenarda korumasız çalışan işçi.",
+    });
+  }
+  const issues = coverageValidationIssues(photo, CORE_MODULE_IDS);
+  assertEquals(
+    issues.filter((issue) => issue.startsWith("finding_without_candidate")),
+    [],
+  );
+});
+
+Deno.test("ilgisiz modül hâlâ kendi adayını ister", () => {
+  // Yakınlık listesi bir kapı değil, bir eşleme. Kimyasal bulgusunu yüksekte
+  // çalışma adayı kapatamaz.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "work_at_height",
+  })]);
+  photo.module_coverage = photo.module_coverage.filter((row) =>
+    row.module_id !== "machinery"
+  );
+  photo.module_coverage.push({
+    module_id: "machinery",
+    activated_by: ["makine"],
+    outcome: "finding_present",
+    entity_refs: ["makine"],
+    candidate_keys: ["C1"],
+    note: "Makine koruyucusu.",
+  });
+  const issues = coverageValidationIssues(photo, CORE_MODULE_IDS);
+  assertStringIncludes(issues.join(","), "finding_without_candidate:machinery");
+});

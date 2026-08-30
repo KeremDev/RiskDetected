@@ -215,6 +215,41 @@ export function coverageValidationIssues(
   for (const moduleID of expectedCoverageModules(output, requiredModules)) {
     if (!occurrences.has(moduleID)) issues.push(`missing_module:${moduleID}`);
   }
+/**
+ * Modules whose finding_present a candidate from another module can close.
+ *
+ * One physical hazard belongs to several of these at once. A worker at an
+ * unguarded slab edge is work_at_height by task, falls_falling_objects by
+ * mechanism and people_exposure because a person is standing in it. The model
+ * can only give the candidate one module_id, so demanding exact equality asked
+ * it to solve something unsolvable: bind the candidate to one module and every
+ * other row naming the same hazard is rejected.
+ *
+ * That is what three successive Gemini 3 prompt versions kept failing at, each
+ * in a different way -- core-v1 downgraded the extra rows to not_assessable,
+ * core-v2 closed them empty, core-v3 wrote finding_present without a binding.
+ * The same four modules every time: access_egress, energy,
+ * falls_falling_objects, people_exposure. The prompt was never the problem.
+ *
+ * The pairs mirror the ones imageAnswersThisModule already uses to drop a
+ * contradictory not_assessable row, so the two places now agree about which
+ * modules share a hazard. people_exposure takes any module, because any hazard
+ * with a person in it is that module's subject.
+ */
+const COVERAGE_MODULE_AFFINITY: Record<string, readonly string[] | "any"> = {
+  falls_falling_objects: ["work_at_height"],
+  work_at_height: ["falls_falling_objects"],
+  access_egress: ["housekeeping_physical_contact", "work_at_height"],
+  energy: ["electrical"],
+  people_exposure: "any",
+};
+
+function acceptedCandidateModules(
+  moduleID: string,
+): readonly string[] | "any" {
+  return COVERAGE_MODULE_AFFINITY[moduleID] ?? [];
+}
+
   const candidateModules = new Map(
     output.candidates.map((candidate) => [
       candidate.candidate_key,
@@ -229,10 +264,14 @@ export function coverageValidationIssues(
   );
   for (const coverage of output.module_coverage) {
     if (coverage.outcome === "finding_present") {
+      const accepted = acceptedCandidateModules(coverage.module_id);
       if (
-        !coverage.candidate_keys.some((key) =>
-          candidateModules.get(key) === coverage.module_id
-        )
+        !coverage.candidate_keys.some((key) => {
+          const moduleID = candidateModules.get(key);
+          return moduleID !== undefined &&
+            (moduleID === coverage.module_id || accepted === "any" ||
+              accepted.includes(moduleID));
+        })
       ) issues.push(`finding_without_candidate:${coverage.module_id}`);
     } else if (coverage.outcome === "positive_control_present") {
       if (
