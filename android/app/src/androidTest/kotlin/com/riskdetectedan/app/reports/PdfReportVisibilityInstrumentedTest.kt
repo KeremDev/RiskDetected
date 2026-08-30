@@ -1,8 +1,8 @@
 package com.riskdetectedan.app.reports
 
 import android.content.Context
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.riskdetectedan.core.data.analysis.Finding
 import com.riskdetectedan.core.data.reports.PdfReportGenerator
 import com.riskdetectedan.core.data.reports.PdfReportInput
@@ -15,7 +15,7 @@ import java.io.File
 class PdfReportVisibilityInstrumentedTest {
     @Test
     fun standardAndRiskAnalysisPdfsRenderWithoutConfidenceCopy() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
+        val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
         val generator = PdfReportGenerator(context)
         val finding = Finding(
             id = "finding-1",
@@ -36,7 +36,7 @@ class PdfReportVisibilityInstrumentedTest {
             m5Score = 20,
             m5Band = "critical",
         )
-        val outputDir = File(context.getExternalFilesDir(null), "pdf-qa").apply { mkdirs() }
+        val outputDir = File(context.filesDir, "pdf-qa").apply { mkdirs() }
 
         listOf("standard", "risk_analysis").forEach { kind ->
             val generated = generator.generate(

@@ -5,6 +5,8 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.time.Instant
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,6 +34,7 @@ private const val SOURCE = "in_app"
 private const val VARIANT_ID = "android_default_v1"
 
 enum class PaywallEventName(val wireValue: String) {
+    EntryTap("entry_tap"),
     View("view"),
     Close("close"),
     CtaTap("cta_tap"),
@@ -42,6 +45,18 @@ enum class PaywallEventName(val wireValue: String) {
     PurchaseFailed("purchase_failed"),
     RestoreTap("restore_tap"),
 }
+
+@Serializable
+data class PaywallEntryAttribution(
+    @SerialName("entry_point") val entryPoint: String,
+    @SerialName("entry_surface") val entrySurface: String,
+    @SerialName("entry_component") val entryComponent: String,
+    @SerialName("entry_target_tier") val entryTargetTier: SubscriptionTier? = null,
+    @SerialName("analysis_id") val analysisId: String? = null,
+    @SerialName("result_section") val resultSection: String? = null,
+    @SerialName("item_id") val itemId: String? = null,
+    val attributes: Map<String, String> = emptyMap(),
+)
 
 @Serializable
 data class PaywallEventMetadata(
@@ -65,11 +80,23 @@ private data class PaywallEventPayload(
     @SerialName("selected_tier") val selectedTier: SubscriptionTier? = null,
     val billing: String? = null,
     @SerialName("product_identifier") val productIdentifier: String? = null,
+    @SerialName("client_occurred_at") val clientOccurredAt: String,
+    @SerialName("app_session_id") val appSessionId: String,
+    @SerialName("entry_point") val entryPoint: String? = null,
+    @SerialName("entry_surface") val entrySurface: String? = null,
+    @SerialName("entry_component") val entryComponent: String? = null,
+    @SerialName("entry_target_tier") val entryTargetTier: SubscriptionTier? = null,
+    @SerialName("analysis_id") val analysisId: String? = null,
+    @SerialName("result_section") val resultSection: String? = null,
+    @SerialName("item_id") val itemId: String? = null,
+    @SerialName("entry_context") val entryContext: Map<String, String> = emptyMap(),
     val metadata: PaywallEventMetadata,
 )
 
 @Singleton
 class PaywallEventRepository @Inject constructor(private val client: SupabaseClient) {
+    private val appSessionId = UUID.randomUUID().toString()
+
     suspend fun record(
         event: PaywallEventName,
         userId: String,
@@ -79,6 +106,7 @@ class PaywallEventRepository @Inject constructor(private val client: SupabaseCli
         productIdentifier: String?,
         metadata: PaywallEventMetadata,
         source: String = SOURCE,
+        attribution: PaywallEntryAttribution? = null,
     ) {
         try {
             client.postgrest.from("paywall_events").insert(
@@ -91,6 +119,16 @@ class PaywallEventRepository @Inject constructor(private val client: SupabaseCli
                     selectedTier = selectedTier,
                     billing = billing,
                     productIdentifier = productIdentifier,
+                    clientOccurredAt = Instant.now().toString(),
+                    appSessionId = appSessionId,
+                    entryPoint = attribution?.entryPoint,
+                    entrySurface = attribution?.entrySurface,
+                    entryComponent = attribution?.entryComponent,
+                    entryTargetTier = attribution?.entryTargetTier,
+                    analysisId = attribution?.analysisId,
+                    resultSection = attribution?.resultSection,
+                    itemId = attribution?.itemId,
+                    entryContext = attribution?.attributes.orEmpty(),
                     metadata = metadata,
                 ),
             )

@@ -91,6 +91,7 @@ import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.RiskLevel
 import com.riskdetectedan.core.designsystem.riskLevelFromRaw
 import com.riskdetectedan.core.designsystem.toTextStyle
+import com.riskdetectedan.core.designsystem.rdAnalysisCanvasTitle
 
 /**
  * Sector picker + full submit flow: create `analyses` row -> upload photo -> call `analyze`
@@ -117,6 +118,7 @@ fun AnalysisScreen(
     onOpenCompanies: () -> Unit = {},
     onUpgrade: () -> Unit = {},
     onUpgradeTier: (SubscriptionTier) -> Unit = { onUpgrade() },
+    onUpgradeTierAt: (SubscriptionTier, String) -> Unit = { tier, _ -> onUpgradeTier(tier) },
     onResultHubUpgrade: (SubscriptionTier, String, AnalysisResultSectionId, String) -> Unit =
         { tier, _, _, _ -> onUpgradeTier(tier) },
     viewModel: AnalysisViewModel = hiltViewModel(),
@@ -164,6 +166,7 @@ fun AnalysisScreen(
         val findings by viewModel.findings.collectAsState()
         val deleteError by viewModel.deleteError.collectAsState()
         val updateError by viewModel.updateError.collectAsState()
+        val resultFeedbackError by viewModel.resultFeedbackError.collectAsState()
         IosParityResultView(
             analysisId = completed.analysisId,
             findings = findings,
@@ -181,6 +184,7 @@ fun AnalysisScreen(
             onUpdate = { finding, patch -> viewModel.updateFinding(completed.analysisId, finding, patch) },
             onOpenCompanies = onOpenCompanies,
             onUpgradeTier = onUpgradeTier,
+            onUpgradeTierAt = onUpgradeTierAt,
             onResultHubUpgrade = { section ->
                 onResultHubUpgrade(
                     SubscriptionTier.Plus,
@@ -189,8 +193,8 @@ fun AnalysisScreen(
                     viewModel.currentResultHubFunnelSessionId(),
                 )
             },
-            onFeedback = { section, item, reaction, reason ->
-                viewModel.setResultFeedback(completed.analysisId, section, item, reaction, reason)
+            onFeedback = { section, item, reaction, reason, note ->
+                viewModel.setResultFeedback(completed.analysisId, section, item, reaction, reason, note)
             },
             onResultEvent = { name, section, itemId ->
                 viewModel.recordResultEvent(completed.analysisId, name, section, itemId)
@@ -227,6 +231,39 @@ fun AnalysisScreen(
                     TextButton(onClick = viewModel::clearUpdateError) { Text(stringResource(RdR.string.rd_tamam)) }
                 },
             )
+        }
+        resultFeedbackError?.let { error ->
+            AlertDialog(
+                onDismissRequest = viewModel::clearResultFeedbackError,
+                title = { Text(stringResource(RdR.string.rd_geri_bildirim_gonderilemedi)) },
+                text = { Text(error.message) },
+                confirmButton = {
+                    TextButton(onClick = viewModel::clearResultFeedbackError) { Text(stringResource(RdR.string.rd_tamam)) }
+                },
+            )
+        }
+        return
+    }
+
+    if (state is CreateAnalysisUiState.LoadingCompletedResult) {
+        Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
+            RdScreenHeader(
+                title = stringResource(RdR.string.rd_analiz_sonucu),
+                onBack = onBack,
+            )
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(RdSpacing.sm),
+                ) {
+                    CircularProgressIndicator(color = colors.greenDark)
+                    Text(
+                        stringResource(RdR.string.rd_sonuc_hazirlaniyor),
+                        style = RdFontStyle.Footnote.toTextStyle(),
+                        color = colors.slate,
+                    )
+                }
+            }
         }
         return
     }
@@ -310,6 +347,7 @@ fun AnalysisScreen(
                 is CreateAnalysisUiState.Submitting -> LabeledProgress(stringResource(RdR.string.rd_analiz_gonderiliyor))
                 is CreateAnalysisUiState.Polling -> LabeledProgress(stringResource(RdR.string.rd_ai_analiz_ediyor))
                 is CreateAnalysisUiState.Finalizing -> LabeledProgress(stringResource(RdR.string.rd_sonuc_hazirlaniyor))
+                is CreateAnalysisUiState.LoadingCompletedResult -> Unit // handled above, returns early
                 is CreateAnalysisUiState.Completed -> Unit // handled above, returns early
                 is CreateAnalysisUiState.CreatedWithoutPhoto ->
                     Text(
@@ -567,7 +605,7 @@ private fun ResultMetaCard(
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(summary?.title ?: stringResource(RdR.string.rd_analiz_sonucu), style = RdFontStyle.Title3.toTextStyle(), color = colors.black)
                 val canvasLabel = summary?.canvas?.let { canvasId ->
-                    AnalysisCanvas.all.firstOrNull { it.id == canvasId }?.title ?: canvasId
+                    rdAnalysisCanvasTitle(canvasId, AnalysisCanvas.all.firstOrNull { it.id == canvasId }?.title ?: canvasId)
                 }
                 Text(
                     listOfNotNull(summary?.createdAt?.take(16)?.replace('T', ' '), canvasLabel).joinToString(" · "),

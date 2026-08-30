@@ -25,7 +25,7 @@ select is(
 );
 select is(
   (select router_version from private.analysis_v4_configs where is_active),
-  'claim-routing-v27','active v4 router version is pinned'
+  'claim-routing-v37','active v4 router version is pinned'
 );
 select is(
   (select coverage_version from private.analysis_v4_configs where is_active),

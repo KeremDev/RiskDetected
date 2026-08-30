@@ -13,6 +13,7 @@ import com.riskdetectedan.core.data.company.Company
 import com.riskdetectedan.core.data.error.AppErrorMessage
 import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.profile.ProfileRepository
+import com.riskdetectedan.core.data.profile.resolvedLocalizationContext
 import com.riskdetectedan.core.data.profile.UserProfile
 import com.riskdetectedan.core.data.release.AndroidRuntimeGateName
 import com.riskdetectedan.core.data.release.ReleasePolicyRepository
@@ -45,6 +46,9 @@ data class ResultReportRequest(
     val companyId: String?,
     val findings: List<Finding>,
     val coverPhotoBytes: ByteArray?,
+    val photoBytes: List<ByteArray> = emptyList(),
+    val analysisSummary: String? = null,
+    val analysisSectorLabel: String? = null,
     val companyNameOverride: String? = null,
     val companyInfoOverride: String? = null,
     val companyLogoOverrideBytes: ByteArray? = null,
@@ -232,6 +236,7 @@ class ResultReportViewModel @Inject constructor(
         }
 
         val profile = (profileRepository.fetchProfile(userId) as? RdResult.Success)?.value
+        val localization = profile.resolvedLocalizationContext()
         val company = request.companyId?.let { companyId ->
             (companyRepository.listCompanies(includeArchived = true) as? RdResult.Success)
                 ?.value?.firstOrNull { it.id == companyId }
@@ -243,6 +248,7 @@ class ResultReportViewModel @Inject constructor(
             withContext(Dispatchers.Default) {
                 pdfReportGenerator.generate(
                     PdfReportInput(
+                        analysisId = request.analysisId,
                         kind = kind,
                         method = method,
                         title = request.title,
@@ -261,6 +267,10 @@ class ResultReportViewModel @Inject constructor(
                         certificateNumber = request.certificateNumberOverride?.takeIf { it.isNotBlank() }
                             ?: profile?.certificateNumber,
                         coverPhotoBytes = request.coverPhotoBytes,
+                        coverPhotoBytesList = request.photoBytes,
+                        analysisSummary = request.analysisSummary,
+                        analysisSectorLabel = request.analysisSectorLabel,
+                        languageCode = localization.appLanguage,
                     ),
                 )
             }
@@ -281,6 +291,7 @@ class ResultReportViewModel @Inject constructor(
                 title = request.title,
                 pageCount = generated.pageCount,
                 companyId = request.companyId,
+                localization = localization,
                 exportIntentId = request.exportIntentId,
                 contentScope = contentScope,
                 selectedItemKeys = request.selectedItemKeys.takeIf { request.contentScope != null },
@@ -299,6 +310,7 @@ class ResultReportViewModel @Inject constructor(
     }
 
     private suspend fun generateExcel(request: ResultReportRequest, method: String): RdResult<ResultReportFile> {
+        val localization = _setup.value.profile.resolvedLocalizationContext()
         val report = when (
             val generated = reportsRepository.generateExcelReport(
                 analysisId = request.analysisId,
@@ -306,6 +318,7 @@ class ResultReportViewModel @Inject constructor(
                 reportKind = request.contentScope?.wireValue() ?: "risk_analysis",
                 exportIntentId = request.exportIntentId,
                 companyId = request.companyId,
+                localization = localization,
                 companyNameOverride = request.companyNameOverride,
                 companyInfoOverride = request.companyInfoOverride,
                 preparedByOverride = request.preparedByOverride,
@@ -334,6 +347,7 @@ class ResultReportViewModel @Inject constructor(
     private fun AnalysisResultSectionId.wireValue(): String = when (this) {
         AnalysisResultSectionId.RiskAnalysis -> "risk_analysis"
         AnalysisResultSectionId.ExpertRecommendations -> "expert_recommendations"
+        AnalysisResultSectionId.TrainingRecommendations -> "training_recommendations"
         AnalysisResultSectionId.ApprovedNotebook -> "approved_notebook"
     }
 }

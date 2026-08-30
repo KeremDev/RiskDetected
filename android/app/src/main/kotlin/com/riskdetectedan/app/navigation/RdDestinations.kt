@@ -71,4 +71,6 @@ import kotlinx.serialization.Serializable
     val resultAnalysisId: String? = null,
     val resultSection: String? = null,
     val resultFunnelSessionId: String? = null,
+    val entryPoint: String? = null,
+    val entryItemId: String? = null,
 )

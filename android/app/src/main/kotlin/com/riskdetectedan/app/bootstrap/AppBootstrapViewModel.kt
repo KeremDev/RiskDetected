@@ -48,7 +48,10 @@ class AppBootstrapViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             val freshInstall = store.initializeInstall()
-            authRepository.awaitInitialization()
+            // ReleaseGate owns the one Supabase initialization wait before this navigation graph
+            // is composed. Waiting a second time here can strand a restored release session in
+            // Initializing on supabase-kt; read the restored identity immediately and keep the
+            // flow below as the authority for the eventual refresh/sign-out result.
             if (freshInstall && authRepository.currentUserId != null) {
                 authRepository.clearLocalSession()
             }
@@ -79,4 +82,5 @@ class AppBootstrapViewModel @Inject constructor(
         store.markOnboardingCompleted()
         _state.value = BootstrapState.Auth
     }
+
 }

@@ -54,3 +54,24 @@ enum class OnboardingPlan(val id: String, val label: String) {
     Yearly("yearly", "Yıllık"),
     Monthly("monthly", "Aylık"),
 }
+
+/** English onboarding branch, matching iOS `OBProfessionalRole`. */
+enum class OnboardingProfessionalRole(val id: String) {
+    SafetyProfessional("safety_professional"),
+    SafetyManager("hse_ohs_whs_manager"),
+    SiteManager("site_manager"),
+    Engineer("engineer"),
+    Supervisor("supervisor"),
+    Consultant("consultant"),
+    EmployerOwner("employer_owner"),
+    Other("other"),
+}
+
+/** English terminology profiles from the generated cross-platform safety-profile manifest. */
+enum class OnboardingSafetyProfile(val id: String) {
+    International("en-intl-generic-v1"),
+    UnitedKingdom("en-gb-generic-v1"),
+    UnitedStates("en-us-generic-v1"),
+    Australia("en-au-generic-v1"),
+    Canada("en-ca-generic-v1"),
+}

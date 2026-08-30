@@ -117,6 +117,7 @@ data class AnalysisResultSummary(
     @SerialName("analysis_sector") val analysisSector: String? = null,
     @SerialName("company_id") val companyId: String? = null,
     @SerialName("primary_method") val primaryMethod: String? = null,
+    @SerialName("ai_summary") val aiSummary: String? = null,
 )
 
 /** Mirrors `functionErrorPayload(from:)`'s decode target exactly — the edge function's real
@@ -157,6 +158,7 @@ class AnalysisRepository @Inject constructor(
                     "analysis_sector",
                     "company_id",
                     "primary_method",
+                    "ai_summary",
                 ),
             ) {
                 filter { eq("id", analysisId) }
@@ -347,7 +349,10 @@ class AnalysisRepository @Inject constructor(
                         delay(1_000)
                         continue
                     }
-                    val fallback = "Analiz isteği sunucuya gönderilemedi. Ağ bağlantısı kesildi veya istek zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene."
+                    val fallback = localized(
+                        "Analiz isteği sunucuya gönderilemedi. Ağ bağlantısı kesildi veya istek zaman aşımına uğradı. Lütfen bağlantını kontrol edip tekrar dene.",
+                        "The analysis request could not be sent to the server. The connection was lost or the request timed out. Check your connection and try again.",
+                    )
                     return RdResult.Failure("network_failed", appendSupportId(supportId, fallback), t)
                 }
 
@@ -369,20 +374,27 @@ class AnalysisRepository @Inject constructor(
                 val errorCode = payload.code ?: ""
 
                 if (code == 429 &&
-                    (msg.contains("günlük kota", ignoreCase = true) || msg.contains("analiz/gün", ignoreCase = true) || errorCode == "quota_exceeded")
+                    (msg.contains("günlük kota", ignoreCase = true) ||
+                        msg.contains("analiz/gün", ignoreCase = true) ||
+                        msg.contains("daily quota", ignoreCase = true) ||
+                        msg.contains("analysis/day", ignoreCase = true) ||
+                        errorCode == "quota_exceeded")
                 ) {
-                    val fallback = msg.ifEmpty { "Analiz kotan doldu." }
+                    val fallback = msg.ifEmpty { localized("Analiz kotan doldu.", "Your analysis quota is exhausted.") }
                     return RdResult.Failure("quota_exceeded", appendSupportId(payload.supportId, fallback), t)
                 }
                 if (code == 409) {
-                    return RdResult.Failure("already_completed", "Bu analiz zaten tamamlanmış.", t)
+                    return RdResult.Failure("already_completed", localized("Bu analiz zaten tamamlanmış.", "This analysis has already been completed."), t)
                 }
                 if (errorCode == "PHOTO_LIMIT_EXCEEDED") {
-                    val fallback = msg.ifEmpty { "Bu plan için fotoğraf limiti aşıldı." }
+                    val fallback = msg.ifEmpty { localized("Bu plan için fotoğraf limiti aşıldı.", "The photo limit for this plan was exceeded.") }
                     return RdResult.Failure("photo_limit_exceeded", appendSupportId(payload.supportId, fallback), t)
                 }
                 if (errorCode == "OUTPUT_LANGUAGE_CONTRACT_FAILED") {
-                    val fallback = "Analiz, seçilen çıktı diliyle güvenli biçimde tamamlanamadı. Lütfen tekrar dene."
+                    val fallback = localized(
+                        "Analiz, seçilen çıktı diliyle güvenli biçimde tamamlanamadı. Lütfen tekrar dene.",
+                        "The analysis could not be completed safely in the selected output language. Please try again.",
+                    )
                     return RdResult.Failure("output_language_contract_failed", appendSupportId(payload.supportId, fallback), t)
                 }
 
@@ -394,8 +406,8 @@ class AnalysisRepository @Inject constructor(
 
                 val messageWithSupport = appendSupportId(payload.supportId, msg)
                 val finalMessage = when (code) {
-                    429 -> messageWithSupport.ifEmpty { appendSupportId(payload.supportId, "Gemini kotası doldu. Lütfen daha sonra tekrar dene.") }
-                    503 -> messageWithSupport.ifEmpty { appendSupportId(payload.supportId, "Gemini modeli şu anda yoğun. Biraz sonra tekrar dene.") }
+                    429 -> messageWithSupport.ifEmpty { appendSupportId(payload.supportId, localized("Gemini kotası doldu. Lütfen daha sonra tekrar dene.", "The Gemini quota is exhausted. Please try again later.")) }
+                    503 -> messageWithSupport.ifEmpty { appendSupportId(payload.supportId, localized("Gemini modeli şu anda yoğun. Biraz sonra tekrar dene.", "The Gemini model is currently busy. Please try again shortly.")) }
                     else -> messageWithSupport.ifEmpty { appendSupportId(payload.supportId, "HTTP $code") }
                 }
                 return RdResult.Failure("ai_failed", finalMessage, t)
@@ -419,10 +431,14 @@ class AnalysisRepository @Inject constructor(
      * carries one (idempotent across the retry loop's repeated classification passes). */
     private fun appendSupportId(supportId: String?, message: String): String {
         val clean = message.trim()
-        if (clean.contains("destek kodu", ignoreCase = true)) return clean
+        if (clean.contains("destek kodu", ignoreCase = true) || clean.contains("support code", ignoreCase = true)) return clean
         val id = supportId ?: return clean
-        return "$clean\nDestek kodu: $id"
+        val label = if (RdClientMetadata.APP_LANGUAGE == "en") "Support code" else "Destek kodu"
+        return "$clean\n$label: $id"
     }
+
+    private fun localized(tr: String, en: String): String =
+        if (RdClientMetadata.APP_LANGUAGE == "en") en else tr
 
     /**
      * Mirrors the polling loop inside AnalysisService.swift's `waitForCompletedResult` — same

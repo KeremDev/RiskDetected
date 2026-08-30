@@ -46,7 +46,24 @@ class PaywallDesignPricingTest {
     }
 
     @Test fun `annual price is shown as an effective monthly price`() {
-        assertEquals("₺208,33", PaywallDesignPricing.monthlyEquivalent(2_499_990_000L, "TRY"))
+        assertEquals(
+            "₺208,33",
+            PaywallDesignPricing.monthlyEquivalent(2_499_990_000L, "TRY", java.util.Locale.forLanguageTag("tr-TR")),
+        )
+    }
+
+    @Test fun `English store price uses the active locale currency format`() {
+        assertEquals(
+            "\$10.00",
+            PaywallDesignPricing.monthlyEquivalent(120_000_000L, "USD", java.util.Locale.US),
+        )
+    }
+
+    @Test fun `ISO currency code is separated from the amount`() {
+        assertEquals(
+            "TRY\u00A0208.33",
+            PaywallDesignPricing.monthlyEquivalent(2_499_990_000L, "TRY", java.util.Locale.US),
+        )
     }
 
     @Test fun `invalid store currency fails closed`() {

@@ -161,7 +161,7 @@ private fun LegalUpdateDialog(
         title = { Text(stringResource(RdR.string.rd_hukuki_metinler_guncellendi)) },
         text = {
             Column {
-                Text(current.policy.messageTr)
+                Text(current.policy.localizedMessage)
                 TextButton(onClick = { showDocuments = true }) {
                     Text(stringResource(RdR.string.rd_guncel_metinleri_incele))
                 }

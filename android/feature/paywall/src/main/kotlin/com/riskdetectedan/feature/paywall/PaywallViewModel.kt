@@ -18,6 +18,7 @@ import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.paywall.PaywallEventMetadata
 import com.riskdetectedan.core.data.paywall.PaywallEventName
 import com.riskdetectedan.core.data.paywall.PaywallEventRepository
+import com.riskdetectedan.core.data.paywall.PaywallEntryAttribution
 import com.riskdetectedan.core.data.profile.ProfileRepository
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.data.release.AndroidRuntimeGateName
@@ -65,6 +66,53 @@ internal fun selectionIsUnavailableAsCurrentOrLower(
 enum class PaywallBilling(val wireValue: String) {
     Monthly("monthly"),
     Yearly("yearly"),
+}
+
+internal fun String?.resultPromotionEntryPoint(): String? = when (this) {
+    "risk_analysis" -> "result_hub_risk_analysis_promotion"
+    "expert_recommendations" -> "result_hub_expert_advice_promotion"
+    "training_recommendations" -> "result_hub_training_promotion"
+    "approved_notebook" -> "result_hub_approved_notebook_promotion"
+    else -> null
+}
+
+internal fun paywallEntrySurface(entryPoint: String): String = when {
+    entryPoint.startsWith("home_") || entryPoint == "quick_scan_quota_alert" -> "home"
+    entryPoint.startsWith("analyses_") -> "analyses"
+    entryPoint.startsWith("reports_") -> "reports"
+    entryPoint.startsWith("profile_") -> "profile"
+    entryPoint.startsWith("finding_detail_") -> "finding_detail"
+    entryPoint == "result_hub_expert_advice_promotion" -> "expert_advice"
+    entryPoint == "result_hub_training_promotion" -> "training_recommendations"
+    entryPoint == "result_hub_approved_notebook_promotion" -> "approved_notebook"
+    entryPoint.startsWith("result_") -> "analysis_results"
+    entryPoint == "onboarding_flow" -> "onboarding"
+    else -> "unknown"
+}
+
+internal fun paywallEntryComponent(entryPoint: String): String = when {
+    entryPoint.endsWith("header_upgrade") -> "header_upgrade_cta"
+    entryPoint.endsWith("profile_menu_upgrade") -> "header_profile_menu_upgrade"
+    entryPoint.contains("quota_alert") -> "quota_alert"
+    entryPoint.contains("canvas_locked") -> "analysis_focus_lock"
+    entryPoint.contains("photo_upload_quota") -> "photo_upload_quota_lock"
+    entryPoint.contains("quota_hint") -> "quota_status_card"
+    entryPoint.contains("analysis_start_quota") -> "analysis_start_quota_gate"
+    entryPoint.contains("quick_scan_quota") -> "quick_scan_quota_gate"
+    entryPoint.contains("photo_tray_locked") -> "photo_tray_locked_slot"
+    entryPoint.contains("photo_limit") -> "photo_limit_gate"
+    entryPoint.endsWith("company_picker") -> "company_picker_lock"
+    entryPoint.endsWith("upsell_card") -> "plan_upsell_card"
+    entryPoint.contains("locked_report_options") -> "report_options_lock"
+    entryPoint.startsWith("result_hub_") -> "result_membership_promotion"
+    entryPoint == "result_summary_upgrade_hint" -> "result_summary_hint"
+    entryPoint == "result_confidence_chip" -> "confidence_chip"
+    entryPoint == "result_finding_locked_feature" -> "finding_card_locked_feature"
+    entryPoint == "result_locked_finding_preview" -> "locked_finding_preview"
+    entryPoint.contains("regulatory_references") -> "regulatory_references_lock"
+    entryPoint.startsWith("finding_detail_") -> "finding_detail_membership_promotion"
+    entryPoint == "onboarding_flow" -> "onboarding_paywall"
+    else -> "unknown"
 }
 
 /**
@@ -120,18 +168,42 @@ class PaywallViewModel @Inject constructor(
     private var funnelSessionId = UUID.randomUUID().toString()
     private var resultHubAnalysisId: String? = null
     private var resultHubSection: AnalysisResultSectionId? = null
+    private var entryAttribution: PaywallEntryAttribution? = null
     private var didBegin = false
 
     fun begin(
         resultAnalysisId: String? = null,
         resultSection: String? = null,
         inheritedFunnelSessionId: String? = null,
+        entryPoint: String? = null,
+        entryTargetTier: String? = null,
+        entryItemId: String? = null,
     ) {
         if (didBegin) return
         didBegin = true
         funnelSessionId = inheritedFunnelSessionId?.takeIf { it.isNotBlank() } ?: funnelSessionId
         resultHubAnalysisId = resultAnalysisId?.takeIf { it.isNotBlank() }
         resultHubSection = resultSection.toResultSectionOrNull()
+        val resolvedEntryPoint = entryPoint?.takeIf(String::isNotBlank)
+            ?: resultSection.resultPromotionEntryPoint()
+            ?: "unknown"
+        entryAttribution = PaywallEntryAttribution(
+            entryPoint = resolvedEntryPoint,
+            entrySurface = paywallEntrySurface(resolvedEntryPoint),
+            entryComponent = paywallEntryComponent(resolvedEntryPoint),
+            entryTargetTier = entryTargetTier.toSubscriptionTierOrNull(),
+            analysisId = resultHubAnalysisId,
+            resultSection = resultSection?.takeIf(String::isNotBlank),
+            itemId = entryItemId?.takeIf(String::isNotBlank),
+            attributes = mapOf("client_platform" to "android"),
+        )
+        authRepository.currentUserId?.let { userId ->
+            recordEvent(
+                userId = userId,
+                event = PaywallEventName.EntryTap,
+                selectedTier = entryAttribution?.entryTargetTier,
+            )
+        }
         recordResultHubEvent("paywall_viewed")
         load()
     }
@@ -387,6 +459,7 @@ class PaywallViewModel @Inject constructor(
                     selectedPackageId = billingPackage?.id,
                     purchaseError = purchaseError,
                 ),
+                attribution = entryAttribution,
             )
         }
     }
@@ -407,7 +480,15 @@ class PaywallViewModel @Inject constructor(
     private fun String?.toResultSectionOrNull(): AnalysisResultSectionId? = when (this) {
         "risk_analysis" -> AnalysisResultSectionId.RiskAnalysis
         "expert_recommendations" -> AnalysisResultSectionId.ExpertRecommendations
+        "training_recommendations" -> AnalysisResultSectionId.TrainingRecommendations
         "approved_notebook" -> AnalysisResultSectionId.ApprovedNotebook
+        else -> null
+    }
+
+    private fun String?.toSubscriptionTierOrNull(): SubscriptionTier? = when (this?.lowercase()) {
+        "free" -> SubscriptionTier.Free
+        "plus" -> SubscriptionTier.Plus
+        "pro" -> SubscriptionTier.Pro
         else -> null
     }
 

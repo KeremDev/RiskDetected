@@ -29,6 +29,7 @@ import com.riskdetectedan.feature.profile.DataManagementScreen
 import com.riskdetectedan.feature.profile.SupportScreen
 import com.riskdetectedan.feature.reports.ReportsScreen
 import com.riskdetectedan.core.designsystem.RiskDetectedLightOnlyTheme
+import kotlinx.serialization.ExperimentalSerializationApi
 
 /**
  * Root routing mirrors AppState.bootstrap/finishOnboarding: Splash resolves persisted onboarding
@@ -45,6 +46,7 @@ import com.riskdetectedan.core.designsystem.RiskDetectedLightOnlyTheme
  * including the tab bar).
  */
 @Composable
+@OptIn(ExperimentalSerializationApi::class)
 fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
     val navController = rememberNavController()
     val bootstrapState by viewModel.state.collectAsState()
@@ -60,9 +62,27 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                 popUpTo(0) { inclusive = true }
                 launchSingleTop = true
             }
-            BootstrapState.Main -> navController.navigate(MainShell) {
-                popUpTo(0) { inclusive = true }
-                launchSingleTop = true
+            BootstrapState.Main -> {
+                val destination = navController.currentDestination
+                val currentRoute = destination?.route
+                // Navigation Compose builds type-safe route names from the serializer descriptor.
+                // Kotlin qualifiedName can be obfuscated in a minified release while the
+                // descriptor remains stable, which made Splash look like a restored app route
+                // and stranded release builds on the logo screen.
+                val bootstrapRoutes = setOf(
+                    Splash.serializer().descriptor.serialName,
+                    Onboarding.serializer().descriptor.serialName,
+                    Auth.serializer().descriptor.serialName,
+                )
+                val restoredAuthenticatedRoute = destination != null &&
+                    currentRoute !in bootstrapRoutes
+                // rememberNavController restores its complete back stack after activity/process
+                // recreation. Do not replace that restored Analysis/Result/Profile/etc. route
+                // with MainShell merely because bootstrap resolved the persisted session again.
+                if (!restoredAuthenticatedRoute) navController.navigate(MainShell) {
+                    popUpTo(0) { inclusive = true }
+                    launchSingleTop = true
+                }
             }
             // ReleaseGate and the legal service render these blocking layers above this graph.
             BootstrapState.UpdateBlocked, BootstrapState.LegalBlocked -> Unit
@@ -158,8 +178,15 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                 preSelectedSectorId = args.sectorId,
                 onBack = { navController.popBackStack() },
                 onOpenCompanies = { navController.navigate(Companies) },
-                onUpgrade = { navController.navigate(Paywall) },
-                onUpgradeTier = { tier -> navController.navigate(PaywallForTier(tier.name.lowercase())) },
+                onUpgrade = {
+                    navController.navigate(PaywallForTier(tier = "plus", entryPoint = "result_locked_report_options"))
+                },
+                onUpgradeTier = { tier ->
+                    navController.navigate(PaywallForTier(tier.name.lowercase(), entryPoint = "result_finding_locked_feature"))
+                },
+                onUpgradeTierAt = { tier, entryPoint ->
+                    navController.navigate(PaywallForTier(tier.name.lowercase(), entryPoint = entryPoint))
+                },
                 onResultHubUpgrade = { tier, analysisId, section, funnelSessionId ->
                     navController.navigate(
                         PaywallForTier(
@@ -186,8 +213,15 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                 completedAnalysisId = args.analysisId,
                 onBack = { navController.popBackStack() },
                 onOpenCompanies = { navController.navigate(Companies) },
-                onUpgrade = { navController.navigate(Paywall) },
-                onUpgradeTier = { tier -> navController.navigate(PaywallForTier(tier.name.lowercase())) },
+                onUpgrade = {
+                    navController.navigate(PaywallForTier(tier = "plus", entryPoint = "result_locked_report_options"))
+                },
+                onUpgradeTier = { tier ->
+                    navController.navigate(PaywallForTier(tier.name.lowercase(), entryPoint = "result_finding_locked_feature"))
+                },
+                onUpgradeTierAt = { tier, entryPoint ->
+                    navController.navigate(PaywallForTier(tier.name.lowercase(), entryPoint = entryPoint))
+                },
                 onResultHubUpgrade = { tier, analysisId, section, funnelSessionId ->
                     navController.navigate(
                         PaywallForTier(
@@ -216,7 +250,7 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
         composable<Paywall> {
             // InAppPaywallView.swift pins both its surface and legal sheet to light mode.
             RiskDetectedLightOnlyTheme {
-                PaywallScreen(onBack = { navController.popBackStack() })
+                PaywallScreen(onBack = { navController.popBackStack() }, entryPoint = "unknown")
             }
         }
         composable<PaywallForTier> { backStackEntry ->
@@ -228,6 +262,9 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                     resultAnalysisId = args.resultAnalysisId,
                     resultSection = args.resultSection,
                     resultFunnelSessionId = args.resultFunnelSessionId,
+                    entryPoint = args.entryPoint,
+                    entryTargetTier = args.tier,
+                    entryItemId = args.entryItemId,
                 )
             }
         }
@@ -238,5 +275,6 @@ private val com.riskdetectedan.core.data.analysis.AnalysisResultSectionId.wireVa
     get() = when (this) {
         com.riskdetectedan.core.data.analysis.AnalysisResultSectionId.RiskAnalysis -> "risk_analysis"
         com.riskdetectedan.core.data.analysis.AnalysisResultSectionId.ExpertRecommendations -> "expert_recommendations"
+        com.riskdetectedan.core.data.analysis.AnalysisResultSectionId.TrainingRecommendations -> "training_recommendations"
         com.riskdetectedan.core.data.analysis.AnalysisResultSectionId.ApprovedNotebook -> "approved_notebook"
     }

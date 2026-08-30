@@ -1,5 +1,7 @@
 package com.riskdetectedan.core.data.profile
 
+import com.riskdetectedan.core.common.RdClientMetadata
+import com.riskdetectedan.core.common.RdLocalizationContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -41,7 +43,8 @@ data class UserProfile(
     val isPaid: Boolean get() = tier.isPaid
 
     val displayName: String
-        get() = fullName ?: email?.substringBefore("@") ?: "Kullanıcı"
+        get() = fullName ?: email?.substringBefore("@")
+            ?: if (RdClientMetadata.APP_LANGUAGE == "en") "User" else "Kullanıcı"
 
     val displayInitials: String
         get() = when {
@@ -67,4 +70,34 @@ enum class SubscriptionTier {
     /** Mirrors SubscriptionTier.includes(_:) — tier-gate check (e.g. "does this user's tier
      * unlock this AnalysisCanvas's minTier"). */
     fun includes(required: SubscriptionTier): Boolean = rank >= required.rank
+}
+
+/** Resolves the account's persisted safety/localization choice over the device fallback. */
+fun UserProfile?.resolvedLocalizationContext(): RdLocalizationContext {
+    val device = RdClientMetadata.localization()
+    val selected = this?.safetyProfileId?.let(RdClientMetadata::localizationForSafetyProfile)
+    return RdLocalizationContext(
+        appLanguage = this?.appLanguage?.takeIf { it == "tr" || it == "en" }
+            ?: selected?.appLanguage
+            ?: device.appLanguage,
+        contentLocale = this?.preferredContentLocale
+            ?: selected?.contentLocale
+            ?: device.contentLocale,
+        workJurisdictionCountry = this?.workJurisdictionCountry
+            ?: selected?.workJurisdictionCountry
+            ?: device.workJurisdictionCountry,
+        safetyProfileId = this?.safetyProfileId
+            ?: selected?.safetyProfileId
+            ?: device.safetyProfileId,
+        safetyProfileVersion = this?.safetyProfileVersion
+            ?: selected?.safetyProfileVersion
+            ?: device.safetyProfileVersion,
+        defaultRiskMethod = this?.preferredMethod
+            ?.takeIf { it == "fine_kinney" || it == "matrix_5x5" }
+            ?: selected?.defaultRiskMethod
+            ?: device.defaultRiskMethod,
+        legalDocumentSetId = this?.legalDocumentSetId
+            ?: selected?.legalDocumentSetId
+            ?: device.legalDocumentSetId,
+    )
 }

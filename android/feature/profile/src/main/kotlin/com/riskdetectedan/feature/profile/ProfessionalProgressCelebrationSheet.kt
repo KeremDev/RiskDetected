@@ -102,9 +102,9 @@ fun ProfessionalProgressCelebrationSheet(badge: ProfessionalProgressBadge, onClo
                 Text(stringResource(RdR.string.rd_tebrikler), style = RdFontStyle.Footnote.toTextStyle(), color = colors.greenDark)
             }
             Spacer(Modifier.height(9.dp))
-            Text(badge.title, style = RdFontStyle.Title2.toTextStyle(), color = colors.black, textAlign = TextAlign.Center)
+            Text(badge.localizedTitle, style = RdFontStyle.Title2.toTextStyle(), color = colors.black, textAlign = TextAlign.Center)
             Spacer(Modifier.height(9.dp))
-            Text(badge.subtitle, style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate, textAlign = TextAlign.Center)
+            Text(badge.localizedSubtitle, style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate, textAlign = TextAlign.Center)
             Spacer(Modifier.height(RdSpacing.sm))
             RdPrimaryButton(text = stringResource(RdR.string.rd_tamam), onClick = onClose, style = RdButtonStyle.Green, showArrow = false)
         }

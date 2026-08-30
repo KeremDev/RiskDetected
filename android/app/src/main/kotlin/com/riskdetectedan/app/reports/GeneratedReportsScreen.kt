@@ -125,7 +125,7 @@ private fun isSameIsoWeek(createdAt: String?): Boolean {
     return try {
         val date = OffsetDateTime.parse(raw)
         val now = OffsetDateTime.now()
-        val weekFields = WeekFields.of(Locale.forLanguageTag("tr-TR"))
+        val weekFields = WeekFields.of(Locale.getDefault())
         date.get(weekFields.weekBasedYear()) == now.get(weekFields.weekBasedYear()) &&
             date.get(weekFields.weekOfWeekBasedYear()) == now.get(weekFields.weekOfWeekBasedYear())
     } catch (_: Throwable) {
@@ -153,7 +153,7 @@ private fun reportSearchText(report: Report): String = listOfNotNull(
 ).joinToString(" ").let(::normalizeReportSearch)
 
 private fun normalizeReportSearch(value: String): String = Normalizer
-    .normalize(value.trim().lowercase(Locale.forLanguageTag("tr-TR")).replace('ı', 'i'), Normalizer.Form.NFD)
+    .normalize(value.trim().lowercase(Locale.getDefault()).replace('ı', 'i'), Normalizer.Form.NFD)
     .replace(Regex("\\p{Mn}+"), "")
 
 /**
@@ -164,7 +164,7 @@ private fun normalizeReportSearch(value: String): String = Normalizer
 @Composable
 fun GeneratedReportsScreen(
     focusedReportId: String? = null,
-    onUpgrade: () -> Unit = {},
+    onUpgrade: (entryPoint: String) -> Unit = {},
     embeddedInMainShell: Boolean = false,
     viewModel: GeneratedReportsViewModel = hiltViewModel(),
     historyViewModel: HistoryViewModel = hiltViewModel(),
@@ -285,7 +285,7 @@ fun GeneratedReportsScreen(
                 }
 
                 if (userTier == SubscriptionTier.Free) {
-                    item { ReportPlanUpsell(onUpgrade) }
+                    item { ReportPlanUpsell { onUpgrade("reports_upsell_card") } }
                 }
 
                 when {
@@ -415,9 +415,9 @@ fun GeneratedReportsScreen(
                 selectedAnalysis = null
                 historyViewModel.clearReportPreview()
             },
-            onUpgrade = {
+            onUpgrade = { entryPoint ->
                 selectedAnalysis = null
-                onUpgrade()
+                onUpgrade(entryPoint)
             },
             onGenerate = { kind, method, format, companyId, preparedBy, preparedTitle, certificateNumber ->
                 selectedAnalysis = null
@@ -788,7 +788,7 @@ private fun ReportSourceSheet(
     freeRiskTrialAvailable: Boolean,
     reportQuotaExhausted: Boolean,
     onDismiss: () -> Unit,
-    onUpgrade: () -> Unit,
+    onUpgrade: (entryPoint: String) -> Unit,
     onGenerate: (ReportKind, ReportMethod, ReportFormat, String?, String, String, String) -> Unit,
 ) {
     val colors = RdTheme.colors
@@ -809,7 +809,7 @@ private fun ReportSourceSheet(
         ReportKind.RiskAnalysis -> riskOptionLocked
     }
     val handleLockedAction: () -> Unit = {
-        if (tier == SubscriptionTier.Pro) onDismiss() else onUpgrade()
+        if (tier == SubscriptionTier.Pro) onDismiss() else onUpgrade("reports_locked_report_options")
     }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
@@ -871,7 +871,7 @@ private fun ReportSourceSheet(
                             ReportCompanyChoice(
                                 selectedCompany = selectedCompany,
                                 onClick = {
-                                    if (tier == SubscriptionTier.Free) onUpgrade() else showCompanyPicker = true
+                                    if (tier == SubscriptionTier.Free) onUpgrade("reports_company_picker") else showCompanyPicker = true
                                 },
                             )
                         }

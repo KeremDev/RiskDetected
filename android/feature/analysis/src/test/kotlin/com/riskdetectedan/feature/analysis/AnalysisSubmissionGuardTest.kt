@@ -15,6 +15,7 @@ class AnalysisSubmissionGuardTest {
         assertFalse(AnalysisSubmissionGuard.canStart(CreateAnalysisUiState.Submitting))
         assertFalse(AnalysisSubmissionGuard.canStart(CreateAnalysisUiState.Polling("analysis-id")))
         assertFalse(AnalysisSubmissionGuard.canStart(CreateAnalysisUiState.Finalizing("analysis-id")))
+        assertFalse(AnalysisSubmissionGuard.canStart(CreateAnalysisUiState.LoadingCompletedResult("analysis-id")))
         assertFalse(AnalysisSubmissionGuard.canStart(CreateAnalysisUiState.Completed("analysis-id", emptyList())))
     }
 

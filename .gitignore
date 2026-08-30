@@ -62,6 +62,9 @@ output/snapshot-previews/
 # Local tool caches / evidence dumps (large, machine-specific, not source)
 tmp/
 .derivedData/
+.derivedData-*/
+.codex-qa/
+**/.codex-qa/
 .playwright-cli/
 .asc/
 android/.kotlin/

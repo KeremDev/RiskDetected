@@ -1,13 +1,18 @@
 package com.riskdetectedan.core.data.company
 
+import com.riskdetectedan.core.common.RdClientMetadata
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /** Kotlin mirror of App/Models/Company.swift's CompanyHazardClass — same raw values. */
-enum class CompanyHazardClass(val id: String, val title: String) {
-    Low("low", "Az Tehlikeli"),
-    Medium("medium", "Tehlikeli"),
-    High("high", "Çok Tehlikeli"),
+enum class CompanyHazardClass(val id: String, private val titleTr: String, private val titleEn: String) {
+    Low("low", "Az Tehlikeli", "Low Hazard"),
+    Medium("medium", "Tehlikeli", "Hazardous"),
+    High("high", "Çok Tehlikeli", "Very Hazardous"),
+    ;
+
+    val title: String
+        get() = if (RdClientMetadata.APP_LANGUAGE == "en") titleEn else titleTr
 }
 
 /** Kotlin mirror of App/Models/Company.swift's Company — same table (`companies`), same columns. */

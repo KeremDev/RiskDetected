@@ -29,6 +29,8 @@ data class HistoryItem(
     @SerialName("highest_band_m5") val highestBandM5: String? = null,
     @SerialName("company_id") val companyId: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("analysis_sector") val analysisSector: String? = null,
+    @SerialName("ai_summary") val aiSummary: String? = null,
 ) {
     /** Same fallback order as HistoryItem.swift's init(row:): highestBandFK ?? highestBandM5 ?? "unknown". */
     val riskBand: String get() = highestBandFk ?: highestBandM5 ?: "unknown"

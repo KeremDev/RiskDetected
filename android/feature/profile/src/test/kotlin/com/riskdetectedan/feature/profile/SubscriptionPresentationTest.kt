@@ -1,5 +1,6 @@
 package com.riskdetectedan.feature.profile
 
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -18,8 +19,10 @@ class SubscriptionPresentationTest {
     }
 
     @Test
-    fun renewalDateUsesIstanbulTurkishLongDate() {
-        assertEquals("10 Ağustos 2026", formatSubscriptionRenewal("2026-08-10T09:00:00Z"))
+    fun renewalDateUsesIstanbulLocalizedLongDate() {
+        val raw = "2026-08-10T09:00:00Z"
+        assertEquals("10 Ağustos 2026", formatSubscriptionRenewal(raw, Locale.forLanguageTag("tr-TR")))
+        assertEquals("August 10, 2026", formatSubscriptionRenewal(raw, Locale.US))
         assertNull(formatSubscriptionRenewal("not-a-date"))
     }
 }

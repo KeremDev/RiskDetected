@@ -58,6 +58,9 @@ fun PaywallScreen(
     resultAnalysisId: String? = null,
     resultSection: String? = null,
     resultFunnelSessionId: String? = null,
+    entryPoint: String? = null,
+    entryTargetTier: String? = null,
+    entryItemId: String? = null,
     viewModel: PaywallViewModel = hiltViewModel(),
 ) {
     val colors = RdTheme.colors
@@ -72,11 +75,14 @@ fun PaywallScreen(
     var legalDocumentKind by remember { mutableStateOf<String?>(null) }
     var didApplyInitialPlan by remember(initialPlan) { mutableStateOf(false) }
 
-    LaunchedEffect(resultAnalysisId, resultSection, resultFunnelSessionId) {
+    LaunchedEffect(resultAnalysisId, resultSection, resultFunnelSessionId, entryPoint, entryTargetTier, entryItemId) {
         viewModel.begin(
             resultAnalysisId = resultAnalysisId,
             resultSection = resultSection,
             inheritedFunnelSessionId = resultFunnelSessionId,
+            entryPoint = entryPoint,
+            entryTargetTier = entryTargetTier,
+            entryItemId = entryItemId,
         )
     }
 

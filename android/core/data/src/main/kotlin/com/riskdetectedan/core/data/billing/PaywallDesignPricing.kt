@@ -46,20 +46,31 @@ object PaywallDesignPricing {
     }
 
     /** Yıllık paketin aylığa bölünmüş, mağazanın kendi para biriminde biçimlenmiş karşılığı. */
-    fun monthlyEquivalent(billingPackage: BillingPackage?): String? {
+    fun monthlyEquivalent(billingPackage: BillingPackage?, locale: Locale = Locale.getDefault()): String? {
         val micros = billingPackage?.priceAmountMicros ?: return null
         val currencyCode = billingPackage.currencyCode?.takeIf { it.isNotBlank() } ?: return null
-        return monthlyEquivalent(micros, currencyCode)
+        return monthlyEquivalent(micros, currencyCode, locale)
     }
 
-    fun monthlyEquivalent(priceAmountMicros: Long, currencyCode: String): String? {
+    fun monthlyEquivalent(
+        priceAmountMicros: Long,
+        currencyCode: String,
+        locale: Locale = Locale.getDefault(),
+    ): String? {
         if (priceAmountMicros < 0 || currencyCode.isBlank()) return null
         return runCatching {
-            NumberFormat.getCurrencyInstance(Locale.forLanguageTag("tr-TR")).apply {
+            val formatted = NumberFormat.getCurrencyInstance(locale).apply {
                 currency = Currency.getInstance(currencyCode)
                 maximumFractionDigits = 2
                 minimumFractionDigits = 2
             }.format(priceAmountMicros / 1_000_000.0 / 12.0)
+            // Some locale/currency pairs (for example en-US + TRY) are emitted as
+            // `TRY208.33`. Google Play's own formatted prices separate the ISO code from
+            // the amount; keep the derived monthly equivalent equally readable.
+            ISO_CURRENCY_CODE_TOUCHING_AMOUNT.find(formatted)?.let { prefix ->
+                val insertionIndex = prefix.range.last + 1
+                formatted.replaceRange(insertionIndex, insertionIndex, "\u00A0")
+            } ?: formatted
         }.getOrNull()
     }
 
@@ -87,6 +98,8 @@ object PaywallDesignPricing {
 
     private val YEARLY_TOKENS = listOf("annual", "yearly", "year", "yillik", "yıllık")
     private val MONTHLY_TOKENS = listOf("monthly", "month", "aylik", "aylık")
+
+    private val ISO_CURRENCY_CODE_TOUCHING_AMOUNT = Regex("^[A-Z]{3}(?=\\d)")
 
     private val ISO_PERIOD =
         Regex("""^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?$""")

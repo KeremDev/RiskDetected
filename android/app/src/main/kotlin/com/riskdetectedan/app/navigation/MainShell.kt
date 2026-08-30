@@ -127,9 +127,12 @@ fun MainShellScreen(
                 },
                 onResumeAnalysis = { navController.navigate(Analysis(resume = true)) },
                 onHistory = { selectTab(RdTab.Analyses) },
+                onOpenAnalysis = { analysisId -> navController.navigate(AnalysisResult(analysisId)) },
                 onReports = { selectTab(RdTab.Reports) },
                 onProfile = { selectTab(RdTab.Profile) },
-                onUpgrade = { navController.navigate(Paywall) },
+                onUpgrade = { entryPoint ->
+                    navController.navigate(PaywallForTier(tier = "plus", entryPoint = entryPoint))
+                },
                 quickScanRequestKey = quickScanRequestKey,
                 onQuickScanRequestConsumed = { consumedKey ->
                     if (quickScanRequestKey == consumedKey) quickScanRequestKey = 0
@@ -140,7 +143,9 @@ fun MainShellScreen(
                     profile = headerProfile,
                     onLogo = { selectTab(RdTab.Home) },
                     onProfile = { selectTab(RdTab.Profile) },
-                    onUpgradeTier = { tier -> navController.navigate(PaywallForTier(tier.name.lowercase())) },
+                    onUpgradeTier = { tier ->
+                        navController.navigate(PaywallForTier(tier.name.lowercase(), entryPoint = "analyses_header_upgrade"))
+                    },
                 )
                 Box(Modifier.weight(1f)) {
                     ReportsScreen(
@@ -156,13 +161,17 @@ fun MainShellScreen(
                     profile = headerProfile,
                     onLogo = { selectTab(RdTab.Home) },
                     onProfile = { selectTab(RdTab.Profile) },
-                    onUpgradeTier = { tier -> navController.navigate(PaywallForTier(tier.name.lowercase())) },
+                    onUpgradeTier = { tier ->
+                        navController.navigate(PaywallForTier(tier.name.lowercase(), entryPoint = "reports_header_upgrade"))
+                    },
                     bottomPadding = 10.dp,
                 )
                 Box(Modifier.weight(1f)) {
                     GeneratedReportsScreen(
                         focusedReportId = focusedReportId,
-                        onUpgrade = { navController.navigate(Paywall) },
+                        onUpgrade = { entryPoint ->
+                            navController.navigate(PaywallForTier(tier = "plus", entryPoint = entryPoint))
+                        },
                         embeddedInMainShell = true,
                     )
                 }
@@ -177,7 +186,9 @@ fun MainShellScreen(
                 onAppearanceSettings = { navController.navigate(AppearanceSettings) },
                 onDataManagement = { navController.navigate(DataManagement) },
                 onDeleteAccount = { navController.navigate(DeleteAccount) },
-                onPaywall = { navController.navigate(Paywall) },
+                onPaywall = {
+                    navController.navigate(PaywallForTier(tier = "plus", entryPoint = "profile_upsell_card"))
+                },
             )
         }
 

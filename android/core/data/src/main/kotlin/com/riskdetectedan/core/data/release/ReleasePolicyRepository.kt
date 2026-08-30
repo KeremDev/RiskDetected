@@ -128,6 +128,7 @@ data class AndroidLegalPolicy(
     @SerialName("manifest_checksum") val manifestChecksum: String = "",
     @SerialName("policy_version") val policyVersion: String = "",
     @SerialName("message_tr") val messageTr: String = "",
+    @SerialName("message_en") val messageEn: String = "",
     val documents: List<AndroidLegalDocumentPolicy> = emptyList(),
 ) {
     val requiresAcknowledgement: Boolean
@@ -141,6 +142,13 @@ data class AndroidLegalPolicy(
 
     val identity: String
         get() = listOf(policyVersion, documentSetId, manifestChecksum).joinToString("|")
+
+    val localizedMessage: String
+        get() = if (RdClientMetadata.APP_LANGUAGE == "en") {
+            messageEn.ifBlank { messageTr }
+        } else {
+            messageTr
+        }
 }
 
 data class ReleasePolicySnapshot(

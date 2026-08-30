@@ -44,6 +44,7 @@ import com.riskdetectedan.core.designsystem.RiskDetectedLightOnlyTheme
 import com.riskdetectedan.core.designsystem.LocalRdConfettiSnapshotElapsedMillis
 import com.riskdetectedan.app.home.SectorPickerSheet
 import com.riskdetectedan.app.home.PhotoTraySheet
+import com.riskdetectedan.app.home.HomeStartScanButton
 import com.riskdetectedan.app.reports.ExcelGenerationOverlayParityPreviewSurface
 import com.riskdetectedan.app.reports.GeneratedReportsParityPreviewSurface
 import com.riskdetectedan.app.reports.ReportSourceSheetParityPreviewSurface
@@ -85,7 +86,7 @@ import org.robolectric.annotation.GraphicsMode
 @Config(
     application = Application::class,
     sdk = [35],
-    qualifiers = "w393dp-h852dp-xxhdpi",
+    qualifiers = "tr-rTR-w393dp-h852dp-xxhdpi",
 )
 class OnboardingGoldenTest {
 
@@ -167,6 +168,44 @@ class OnboardingGoldenTest {
             }
         }
 
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun sector_grid_font_scale_1_3_keeps_subtitles_visible() {
+        composeRule.setContent {
+            RiskDetectedTheme(darkTheme = false) {
+                val density = LocalDensity.current
+                CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 1.3f)) {
+                    OBSectorScreen(
+                        selected = emptyList(),
+                        onToggle = {},
+                        onNext = {},
+                        onBack = {},
+                    )
+                }
+            }
+        }
+
+        composeRule.onNodeWithText("Şantiye, yapı, hafriyat").assertIsDisplayed()
+        composeRule.onNodeWithText("Fabrika, atölye, üretim hattı").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun home_start_scan_button_has_both_ios_icons_light() {
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                Box(Modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
+                    HomeStartScanButton(onClick = {})
+                }
+            }
+        }
+
+        // The clickable button intentionally merges descendants for accessibility, so inspect
+        // the unmerged tree to guard the two decorative iOS-parity icons independently.
+        composeRule.onNodeWithTag("home_start_scan_sparkles", useUnmergedTree = true).assertIsDisplayed()
+        composeRule.onNodeWithTag("home_start_scan_action_icon", useUnmergedTree = true).assertIsDisplayed()
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
 
@@ -389,6 +428,35 @@ class OnboardingGoldenTest {
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
 
+    @Test
+    @Config(
+        application = Application::class,
+        sdk = [35],
+        qualifiers = "en-rUS-w393dp-h852dp-xxhdpi",
+    )
+    fun paywall_uses_complete_english_resources() {
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                PaywallParityPreviewSurface(
+                    plan = PaywallPlan.Plus,
+                    billing = PaywallBilling.Yearly,
+                    formattedPrice = "\$119.99",
+                    monthlyEquivalent = "\$9.99",
+                    trialDays = 7,
+                    discountPercent = 17,
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("How does the free trial work?").assertIsDisplayed()
+        composeRule.onNodeWithText("Start free trial").assertIsDisplayed()
+        composeRule.onNodeWithText("17% off").assertIsDisplayed()
+        assertEquals(
+            0,
+            composeRule.onAllNodesWithText("Ücretsiz Deneme Nasıl Çalışır?").fetchSemanticsNodes().size,
+        )
+    }
+
     /**
      * Şerit etiketlerinin ikonları sürekli aktığı için paywall goldenlarında aynı anda
      * yalnızca ilk üçü görünüyor. Bu kare on bir çizgisel ikonun tamamını sabit bir
@@ -445,8 +513,8 @@ class OnboardingGoldenTest {
 
         composeRule.onNodeWithText("PRO").assertIsDisplayed()
         // PRO ekranında deneme anlatımı yok; PLUS ile karşılaştırma tablosu gösterilir.
-        // "Odaklı Analiz" hem karşılaştırma satırında hem de akan şeridin iki
-        // kopyasında geçiyor; tablodaki satır için ilk düğüm yeterli.
+        // "Odaklı Analiz" hem karşılaştırma satırında hem de akan şeritte geçiyor;
+        // tablodaki satır için ilk düğüm yeterli.
         composeRule.onAllNodesWithText("Odaklı Analiz")[0].assertIsDisplayed()
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
@@ -637,7 +705,7 @@ class OnboardingGoldenTest {
     }
 
     @Test
-    @Config(application = Application::class, sdk = [35], qualifiers = "w320dp-h640dp-xhdpi")
+    @Config(application = Application::class, sdk = [35], qualifiers = "tr-rTR-w320dp-h640dp-xhdpi")
     fun profile_small_font_scale_1_3_light() {
         composeRule.setContent {
             RiskDetectedTheme(darkTheme = false) {

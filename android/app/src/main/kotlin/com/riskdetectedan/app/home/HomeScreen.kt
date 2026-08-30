@@ -56,6 +56,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.app.R
@@ -114,9 +115,10 @@ fun HomeScreen(
     onStartAnalysis: (canvasIds: List<String>, analysisMode: String, photoPaths: List<String>, sectorId: String?) -> Unit = { _, _, _, _ -> },
     onResumeAnalysis: () -> Unit = {},
     onHistory: () -> Unit = {},
+    onOpenAnalysis: (String) -> Unit = {},
     onReports: () -> Unit = {},
     onProfile: () -> Unit = {},
-    onUpgrade: () -> Unit = {},
+    onUpgrade: (entryPoint: String) -> Unit = {},
     quickScanRequestKey: Int = 0,
     onQuickScanRequestConsumed: (Int) -> Unit = {},
     viewModel: HistoryViewModel = hiltViewModel(),
@@ -184,7 +186,10 @@ fun HomeScreen(
     var selectedSector by remember { mutableStateOf<AnalysisSector?>(null) }
     val canvasSheetState = rememberModalBottomSheetState()
     val traySheetState = rememberModalBottomSheetState()
-    val sectorSheetState = rememberModalBottomSheetState()
+    // Material's default partially-expanded anchor opened this flow at roughly half height,
+    // leaving the iOS-parity Continue button below the fold until the user dragged the sheet.
+    // iOS presents this picker at a fixed 600pt detent, so enter directly at the expanded anchor.
+    val sectorSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     // Real port of `appendPickedPhotos(images, shouldAnnotate: true, ...)` — every gallery-picked
     // photo queues through Annotate before it lands in the tray, same as a freshly captured one
@@ -213,7 +218,7 @@ fun HomeScreen(
     /** Real port of `beginPreAnalysisSelection()` — the real order is sector sheet *first*, then
      * [CanvasSheet] (see [SectorPickerSheet]'s doc comment for why this used to be reversed). */
     fun beginPreAnalysisSelection() {
-        if (isFreeQuotaExhausted) onUpgrade() else showSectorSheet = true
+        if (isFreeQuotaExhausted) onUpgrade("home_analysis_start_quota") else showSectorSheet = true
     }
 
     // Live iOS MainTabView always routes the center action back through Home. Empty drafts open
@@ -230,7 +235,7 @@ fun HomeScreen(
                 hasPhotos = trayPhotoPaths.isNotEmpty(),
             )
         ) {
-            QuickScanDecision.Upgrade -> onUpgrade()
+            QuickScanDecision.Upgrade -> onUpgrade("home_quick_scan_quota")
             QuickScanDecision.OpenPhotoTray -> showPhotoTray = true
             QuickScanDecision.SelectSector -> showSectorSheet = true
         }
@@ -249,7 +254,7 @@ fun HomeScreen(
             profile = fetchedProfile,
             onLogo = {},
             onProfile = onProfile,
-            onUpgradeTier = { onUpgrade() },
+            onUpgradeTier = { onUpgrade("home_header_upgrade") },
             horizontalPadding = 0.dp,
             topPadding = 0.dp,
             bottomPadding = 0.dp,
@@ -263,7 +268,7 @@ fun HomeScreen(
         if (progress != null) Spacer(Modifier.height(12.dp))
 
         if (isFreeQuotaExhausted && trayPhotoPaths.isEmpty()) {
-            LockedPhotoUploadCard(onClick = onUpgrade)
+            LockedPhotoUploadCard(onClick = { onUpgrade("home_photo_upload_quota") })
         } else {
             PhotoUploadCard(
                 photoPaths = trayPhotoPaths,
@@ -275,50 +280,21 @@ fun HomeScreen(
 
         if (quota != null && !userTier.isPaid) {
             Spacer(Modifier.height(10.dp))
-            FreeQuotaHint(quota = quota!!, onClick = { if (quota!!.isExhausted) onUpgrade() })
+            FreeQuotaHint(quota = quota!!, onClick = { if (quota!!.isExhausted) onUpgrade("home_quota_hint") })
         }
 
         Spacer(Modifier.height(14.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .shadow(elevation = 10.dp, shape = RoundedCornerShape(RdRadius.xl), ambientColor = colors.cta.copy(alpha = 0.18f), spotColor = colors.cta.copy(alpha = 0.18f))
-                .clip(RoundedCornerShape(RdRadius.xl))
-                .background(colors.cta)
-                .clickable {
-                    if (isFreeQuotaExhausted) {
-                        onUpgrade()
-                    } else if (trayPhotoPaths.isEmpty()) {
-                        showPhotoTray = true
-                    } else {
-                        beginPreAnalysisSelection()
-                    }
+        HomeStartScanButton(
+            onClick = {
+                if (isFreeQuotaExhausted) {
+                    onUpgrade("home_analysis_start_quota")
+                } else if (trayPhotoPaths.isEmpty()) {
+                    showPhotoTray = true
+                } else {
+                    beginPreAnalysisSelection()
                 }
-                .padding(horizontal = RdSpacing.md),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                stringResource(RdR.string.rd_taramayi_baslat),
-                style = RdFontStyle.Callout.toTextStyle(),
-                color = androidx.compose.ui.graphics.Color.White,
-            )
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .size(38.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(androidx.compose.ui.graphics.Color.White),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Filled.Send,
-                    contentDescription = null,
-                    tint = colors.cta,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-        }
+            },
+        )
 
         progress?.let { summary ->
             Spacer(Modifier.height(18.dp))
@@ -355,7 +331,11 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     recentItems.forEach { item ->
-                        RecentAnalysisRingCard(item = item, photoPath = recentPhotoPaths[item.id], onClick = onHistory)
+                        RecentAnalysisRingCard(
+                            item = item,
+                            photoPath = recentPhotoPaths[item.id],
+                            onClick = { onOpenAnalysis(item.id) },
+                        )
                     }
                 }
             }
@@ -424,7 +404,7 @@ fun HomeScreen(
                 onDismiss = { showCanvasSheet = false },
                 onUpgradeRequested = {
                     showCanvasSheet = false
-                    onUpgrade()
+                    onUpgrade("home_canvas_locked_focus")
                 },
             )
         }
@@ -448,7 +428,7 @@ fun HomeScreen(
                 onMove = photoTrayViewModel::movePhoto,
                 onLockedSlot = {
                     showPhotoTray = false
-                    onUpgrade()
+                    onUpgrade("home_photo_tray_locked_slot")
                 },
                 onStartAnalysis = {
                     // Mirrors continueFromPhotoTrayToAnalysis() -> beginPreAnalysisSelection():
@@ -466,6 +446,68 @@ fun HomeScreen(
             ModalBottomSheet(onDismissRequest = { showTitlesSheet = false }, sheetState = titlesSheetState) {
                 ProfessionalTitlesSheet(progress = summary)
             }
+        }
+    }
+}
+
+/**
+ * iOS `RDButton(style: .detect, icon: "sparkles")` parity: the center label includes the
+ * leading sparkle while the white action capsule keeps its paper-plane icon at the trailing
+ * edge. Keeping this as a small surface also lets visual tests catch either icon disappearing.
+ */
+@Composable
+internal fun HomeStartScanButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = RdTheme.colors
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .shadow(
+                elevation = 10.dp,
+                shape = RoundedCornerShape(RdRadius.xl),
+                ambientColor = colors.cta.copy(alpha = 0.18f),
+                spotColor = colors.cta.copy(alpha = 0.18f),
+            )
+            .clip(RoundedCornerShape(RdRadius.xl))
+            .background(colors.cta)
+            .clickable(onClick = onClick)
+            .padding(horizontal = RdSpacing.md)
+            .testTag("home_start_scan_button"),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Filled.AutoAwesome,
+                contentDescription = null,
+                tint = androidx.compose.ui.graphics.Color.White,
+                modifier = Modifier.size(17.dp).testTag("home_start_scan_sparkles"),
+            )
+            Text(
+                stringResource(RdR.string.rd_taramayi_baslat),
+                style = RdFontStyle.Callout.toTextStyle(),
+                color = androidx.compose.ui.graphics.Color.White,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .size(38.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(androidx.compose.ui.graphics.Color.White),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.Send,
+                contentDescription = null,
+                tint = colors.cta,
+                modifier = Modifier.size(20.dp).testTag("home_start_scan_action_icon"),
+            )
         }
     }
 }

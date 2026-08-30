@@ -1,6 +1,7 @@
 package com.riskdetectedan.core.data.progress
 
 import com.riskdetectedan.core.common.RdResult
+import com.riskdetectedan.core.common.RdClientMetadata
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
@@ -121,6 +122,58 @@ data class ProfessionalProgressBadge(
     @SerialName("seen_at") val seenAt: String? = null,
 ) {
     val isSeen: Boolean get() = seenAt != null
+
+    /** Badge rows predate the global-localization contract and therefore contain Turkish copy.
+     * Resolve the stable server key on-device so an English Android session never renders that
+     * legacy Turkish payload. Unknown future badges deliberately fall back to the server value. */
+    val localizedTitle: String
+        get() = if (RdClientMetadata.APP_LANGUAGE == "en") englishCopy()?.first ?: title else title
+
+    val localizedSubtitle: String
+        get() = if (RdClientMetadata.APP_LANGUAGE == "en") englishCopy()?.second ?: subtitle else subtitle
+
+    private fun englishCopy(): Pair<String, String>? = when (badgeKey) {
+        "reports:1" -> "First Step" to
+            "You created your first report. Your professional tracking journey has begun."
+        "reports:10" -> "Steady Start" to
+            "You reached 10 reports. Your reporting discipline is getting stronger."
+        "reports:25" -> "Consistent Professional" to
+            "You built a regular tracking habit with 25 reports."
+        "reports:50" -> "Experienced Observer" to
+            "Fifty reports represent a strong body of field observation."
+        "reports:100" -> "Hundred Report Club" to
+            "Your 100th report is a significant professional milestone."
+        "reports:250" -> "Field Veteran" to
+            "You reached 250 reports. Your professional track record is growing deeper."
+        "reports:500" -> "Senior Field Leader" to
+            "Five hundred reports demonstrate sustained field discipline."
+        "reports:1000" -> "Thousand Report Master" to
+            "You reached 1,000 reports. This is a major professional archive."
+        "competency:3" -> "Versatile Perspective" to
+            "You documented risks across 3 competency areas."
+        "competency:5" -> "Broad-Spectrum Specialist" to
+            "You built experience across 5 different competency areas."
+        "competency:8" -> "Comprehensive Analyst" to
+            "You made 8 different competency areas visible."
+        "competency:11" -> "Full-Spectrum Analyst" to
+            "You built a track record across all 11 competency areas."
+        "risk:first_high" -> "Decisive Action" to
+            "You completed your first high- or critical-risk analysis and made a difficult issue visible."
+        "report_kind:first_risk_analysis" -> "Risk Assessment Report" to
+            "You archived your first detailed risk assessment report."
+        "active_days:30" -> "One-Month Journey" to
+            "You created analyses or reports on 30 different active days."
+        "active_days:90" -> "Three Months of Consistency" to
+            "You established a professional tracking record across 90 active days."
+        "active_days:365" -> "A Year of Experience" to
+            "You built an active RiskDetected track record spanning a full year."
+        else -> if (badgeKey.startsWith("onboarding_area:first_report:")) {
+            "First Report in Your Selected Field" to
+                "You created your first report in a competency area selected during onboarding."
+        } else {
+            null
+        }
+    }
 }
 
 @Serializable
@@ -194,7 +247,7 @@ data class ProfessionalProgressSummary(
             val current = weeklySummary?.takeIf { it.weekStart.take(10) == currentWeekStartIso() }
             if (current == null) {
                 return ProfessionalProgressWeeklyTracking(
-                    title = "Haftalık Takip",
+                    title = localized("Haftalık Takip", "Weekly Tracking"),
                     body = weeklyTrackingBody(reports = 0, analyses = 0),
                     reportsCount = 0,
                     analysesCount = 0,
@@ -204,9 +257,17 @@ data class ProfessionalProgressSummary(
             }
             val topCompetency = ProfessionalProgressCompetency.fromKey(current.topCompetencyKey)
             return ProfessionalProgressWeeklyTracking(
-                title = current.messageTitle ?: "Haftalık Takip",
-                body = current.messageBody
-                    ?: weeklyTrackingBody(reports = current.reportsCount, analyses = current.analysesCount),
+                title = if (RdClientMetadata.APP_LANGUAGE == "en") {
+                    "Weekly Tracking"
+                } else {
+                    current.messageTitle ?: "Haftalık Takip"
+                },
+                body = if (RdClientMetadata.APP_LANGUAGE == "en") {
+                    weeklyTrackingBody(reports = current.reportsCount, analyses = current.analysesCount)
+                } else {
+                    current.messageBody
+                        ?: weeklyTrackingBody(reports = current.reportsCount, analyses = current.analysesCount)
+                },
                 reportsCount = current.reportsCount,
                 analysesCount = current.analysesCount,
                 findingsCount = current.findingsCount,
@@ -215,11 +276,14 @@ data class ProfessionalProgressSummary(
         }
 
     private fun weeklyTrackingBody(reports: Int, analyses: Int): String = when {
-        reports == 0 && analyses == 0 -> "Bu hafta ilk analizini başlat. 😔"
-        reports == 0 -> "$analyses analiz tamamladın. Şimdi rapora dönüştür."
-        reports == 1 -> "İlk rapor tamam. Devam et."
-        else -> "Bu hafta $reports rapor tamamladın. 💪"
+        reports == 0 && analyses == 0 -> localized("Bu hafta ilk analizini başlat. 😔", "Start your first analysis this week. 😔")
+        reports == 0 -> localized("$analyses analiz tamamladın. Şimdi rapora dönüştür.", "You completed $analyses analyses. Now turn them into a report.")
+        reports == 1 -> localized("İlk rapor tamam. Devam et.", "First report complete. Keep going.")
+        else -> localized("Bu hafta $reports rapor tamamladın. 💪", "You completed $reports reports this week. 💪")
     }
+
+    private fun localized(tr: String, en: String): String =
+        if (RdClientMetadata.APP_LANGUAGE == "en") en else tr
 
     private companion object {
         /** Matches `Calendar(identifier: .iso8601)`'s week-of-year start (Monday), same

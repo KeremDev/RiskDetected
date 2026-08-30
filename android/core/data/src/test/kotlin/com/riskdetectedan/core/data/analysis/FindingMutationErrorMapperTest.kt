@@ -1,9 +1,24 @@
 package com.riskdetectedan.core.data.analysis
 
 import org.junit.Assert.assertEquals
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
+import java.util.Locale
 
 class FindingMutationErrorMapperTest {
+    private lateinit var originalLocale: Locale
+
+    @Before
+    fun useTurkishLocale() {
+        originalLocale = Locale.getDefault()
+        Locale.setDefault(Locale.forLanguageTag("tr-TR"))
+    }
+
+    @After
+    fun restoreLocale() {
+        Locale.setDefault(originalLocale)
+    }
     @Test
     fun `decodes edge function error and keeps support id`() {
         val failure = FindingMutationErrorMapper.decode(

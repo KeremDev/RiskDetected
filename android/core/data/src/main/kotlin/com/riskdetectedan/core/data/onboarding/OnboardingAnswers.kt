@@ -1,5 +1,6 @@
 package com.riskdetectedan.core.data.onboarding
 
+import com.riskdetectedan.core.common.RdClientMetadata
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -9,11 +10,8 @@ data class OnboardingAnswerChoice(val value: String, val label: String)
 
 /**
  * Kotlin mirror of App/Models/OnboardingAnswers.swift's OnboardingAnswersDraft — same fields,
- * same defaults (onboardingVersion "v2"). appLanguage is always "tr" for now: Android has no
- * localization-gate infrastructure yet (see RdClientMetadata.capabilities'
- * global_localization_wave1 = false), so the English branch of the RPC contract
- * (OnboardingAnswersService.swift's post-upsert `profiles` update for English users) is
- * deliberately not ported — it would be dead code until Android has that gate.
+ * same defaults (onboardingVersion "v2"). Locale and safety-profile defaults are resolved from
+ * the active Android locale so onboarding, analysis and reporting use one coherent contract.
  */
 @Serializable
 data class OnboardingAnswersDraft(
@@ -21,8 +19,8 @@ data class OnboardingAnswersDraft(
     val certificateClass: OnboardingAnswerChoice? = null,
     val hazardClasses: List<OnboardingAnswerChoice> = emptyList(),
     val professionalRole: OnboardingAnswerChoice? = null,
-    val safetyProfileId: String? = null,
-    val appLanguage: String = "tr",
+    val safetyProfileId: String? = RdClientMetadata.SAFETY_PROFILE_ID,
+    val appLanguage: String = RdClientMetadata.APP_LANGUAGE,
     val sectors: List<OnboardingAnswerChoice> = emptyList(),
     val auditFrequency: OnboardingAnswerChoice? = null,
     val selectedPlan: OnboardingAnswerChoice? = null,

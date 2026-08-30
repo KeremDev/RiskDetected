@@ -378,10 +378,16 @@ private fun LoginOptionButton(
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp)
-            .shadow(elevation = 8.dp, shape = shape, clip = false)
+            .shadow(
+                elevation = 8.dp,
+                shape = shape,
+                clip = false,
+                ambientColor = colors.onyx.copy(alpha = 0.08f),
+                spotColor = colors.onyx.copy(alpha = 0.08f),
+            )
             .clip(shape)
             .background(colors.white)
-            .border(1.5.dp, colors.onyx, shape)
+            .border(1.5.dp, colors.line, shape)
             .clickable(enabled = enabled, onClick = onClick)
             .alpha(if (enabled) 1f else 0.75f)
             .padding(horizontal = 18.dp),
@@ -437,6 +443,7 @@ private fun GoogleProviderWordmark(localizedTitle: String) {
 @Composable
 private fun StandaloneLegalNotice(onOpenDocument: (String) -> Unit) {
     val colors = RdTheme.colors
+    val isEnglish = RdAppLanguage.current() == RdAppLanguage.English
     val annotated = buildAnnotatedString {
         append(stringResource(RdR.string.rd_auth_legal_standalone_prefix))
         append(" ")
@@ -450,10 +457,15 @@ private fun StandaloneLegalNotice(onOpenDocument: (String) -> Unit) {
         legalLink(stringResource(RdR.string.rd_hizmet_sartlarimiz), "terms")
         append(", ")
         legalLink(stringResource(RdR.string.rd_gizlilik_politikamiz), "privacy")
-        append(", ")
-        legalLink(stringResource(RdR.string.rd_kvkk_aydinlatma_metnini), "kvkk")
-        append(" ve ")
-        legalLink(stringResource(RdR.string.rd_acik_riza_beyanini), "consent")
+        if (isEnglish) {
+            append(", and ")
+            legalLink(stringResource(RdR.string.rd_ai_data_processing_notice), "consent")
+        } else {
+            append(", ")
+            legalLink(stringResource(RdR.string.rd_kvkk_aydinlatma_metnini), "kvkk")
+            append(" ve ")
+            legalLink(stringResource(RdR.string.rd_acik_riza_beyanini), "consent")
+        }
         append(" ")
         append(stringResource(RdR.string.rd_auth_legal_standalone_suffix))
     }
@@ -1031,9 +1043,4 @@ private fun OtpDigitInput(value: String, onValueChange: (String) -> Unit) {
     }
 }
 
-/**
- * TODO(Faz 3 localization): resolve from the real per-app-language setting once Android's
- * localization pipeline exists (master §23.1) — mirrors RDLanguage.current on iOS. Hardcoded
- * to Turkish for now, matching this screen's hardcoded copy strings.
- */
-private fun resolveAppLanguage(): RdAppLanguage = RdAppLanguage.Turkish
+private fun resolveAppLanguage(): RdAppLanguage = RdAppLanguage.current()

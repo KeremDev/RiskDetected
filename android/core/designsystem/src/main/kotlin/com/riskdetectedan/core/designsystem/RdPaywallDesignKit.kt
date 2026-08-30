@@ -6,14 +6,11 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import androidx.compose.foundation.Canvas
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.MarqueeAnimationMode
+import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -21,6 +18,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -44,7 +42,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
@@ -69,9 +66,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.stringResource
@@ -199,7 +194,7 @@ internal fun rdPaywallText(
     fontSize = size.sp,
     fontWeight = weight,
     color = color,
-    fontFamily = FontFamily.SansSerif,
+    fontFamily = RdFontFamily,
     letterSpacing = letterSpacing.sp,
     lineHeight = if (lineHeightMultiple == null) TextStyle.Default.lineHeight else (size * lineHeightMultiple).sp,
     lineHeightStyle = LineHeightStyle(
@@ -928,11 +923,9 @@ private fun Path.targetGlyph() {
 
 /**
  * Zaman çizelgesinin altındaki sürekli sola kayan özellik etiketleri (iOS'taki
- * `PaywallDesignFeatureMarquee` karşılığı). Şerit iki özdeş kopyadan oluşur; ilk kopya
- * tam genişliği kadar kayınca başa döner, böylece dikiş yeri görünmez.
- *
- * İçerik ekrandan geniş olduğu için ölçüyü `Box` verir, satır `offset` ile yalnızca çizilir;
- * aksi halde kendi genişliğini ebeveyne dayatıp sayfayı yana kaydırırdı.
+ * `PaywallDesignFeatureMarquee` karşılığı). Compose'un marquee ölçüm düğümü içeriği sınırsız
+ * genişlikte ölçüp tekrar kopyasını tam bitiş noktasına yerleştirir; böylece elle ölçülen bir
+ * satırın yanlış genişliğe kilitlenip şeridi boş bırakması veya döngü başında sıçraması önlenir.
  */
 @Composable
 fun RdPaywallDesignFeatureMarquee(
@@ -942,16 +935,9 @@ fun RdPaywallDesignFeatureMarquee(
 ) {
     val spacing = 8.dp
     val animationsEnabled = rememberSystemAnimationsEnabled()
-    var rowWidthPx by remember { mutableIntStateOf(0) }
-    val density = LocalDensity.current
-    val spacingPx = with(density) { spacing.roundToPx() }
-    val travelPx = rowWidthPx + spacingPx
+    val visibleFeatures = remember(features) { features.filter { it.title.isNotBlank() } }
 
-    // Saniyede ~34dp: okunacak kadar yavaş, duruyor izlenimi vermeyecek kadar canlı.
-    val durationMillis = remember(travelPx) {
-        val travelDp = with(density) { travelPx.toDp().value }
-        ((travelDp / 34f) * 1000f).toInt().coerceAtLeast(6_000)
-    }
+    if (visibleFeatures.isEmpty()) return
 
     Box(
         modifier = modifier
@@ -967,37 +953,49 @@ fun RdPaywallDesignFeatureMarquee(
                 horizontalArrangement = Arrangement.spacedBy(spacing),
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
             ) {
-                features.forEach { MarqueeChip(it, accent) }
+                visibleFeatures.forEach { MarqueeChip(it, accent) }
             }
         } else {
-            val transition = rememberInfiniteTransition(label = "paywall-feature-marquee")
-            val progress by transition.animateFloat(
-                initialValue = 0f,
-                targetValue = 1f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(durationMillis, easing = LinearEasing),
-                    repeatMode = RepeatMode.Restart,
-                ),
-                label = "paywall-feature-marquee-offset",
-            )
-
             Row(
                 horizontalArrangement = Arrangement.spacedBy(spacing),
-                modifier = Modifier.offset { IntOffset(-(progress * travelPx).toInt(), 0) },
+                modifier = Modifier.basicMarquee(
+                    iterations = Int.MAX_VALUE,
+                    animationMode = MarqueeAnimationMode.Immediately,
+                    repeatDelayMillis = 0,
+                    initialDelayMillis = 0,
+                    spacing = MarqueeSpacing(spacing),
+                    velocity = 34.dp,
+                ),
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(spacing),
-                    modifier = Modifier.onSizeChanged { rowWidthPx = it.width },
-                ) {
-                    features.forEach { MarqueeChip(it, accent) }
-                }
-                // İkinci kopya yalnızca görsel süreklilik için.
-                Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
-                    features.forEach { MarqueeChip(it, accent) }
-                }
+                visibleFeatures.forEach { MarqueeChip(it, accent) }
             }
+
+            // Kırpılan kapsülün yalnız ikonu görünerek "boş etiket" sanılmaması için giriş ve
+            // çıkış kenarlarını yüzey rengine yumuşakça erit.
+            MarqueeEdgeScrim(start = true)
+            MarqueeEdgeScrim(start = false)
         }
     }
+}
+
+@Composable
+private fun BoxScope.MarqueeEdgeScrim(start: Boolean) {
+    val surface = RdPaywallDesignColor.Surface
+    Box(
+        modifier = Modifier
+            .align(if (start) Alignment.CenterStart else Alignment.CenterEnd)
+            .fillMaxHeight()
+            .width(28.dp)
+            .background(
+                Brush.horizontalGradient(
+                    if (start) {
+                        listOf(surface, surface.copy(alpha = 0f))
+                    } else {
+                        listOf(surface.copy(alpha = 0f), surface)
+                    },
+                ),
+            ),
+    )
 }
 
 /**

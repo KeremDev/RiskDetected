@@ -1,6 +1,7 @@
 package com.riskdetectedan.core.data.auth
 
 import com.riskdetectedan.core.common.RdResult
+import com.riskdetectedan.core.common.RdClientMetadata
 import com.riskdetectedan.core.data.notifications.DeviceTokenRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.OtpType
@@ -54,6 +55,11 @@ private data class FirstSeenDeviceRegionParams(@SerialName("p_region_code") val 
 enum class RdAppLanguage(val code: String, val contentLocale: String) {
     Turkish("tr", "tr-TR"),
     English("en", "en-001"),
+    ;
+
+    companion object {
+        fun current(): RdAppLanguage = if (RdClientMetadata.APP_LANGUAGE == "en") English else Turkish
+    }
 }
 
 @Singleton

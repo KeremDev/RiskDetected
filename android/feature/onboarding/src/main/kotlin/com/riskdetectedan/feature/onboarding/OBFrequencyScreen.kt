@@ -47,7 +47,7 @@ internal fun frequencyLabel(frequency: OnboardingFrequency): String {
 }
 
 @Composable
-private fun frequencyTitle(frequency: OnboardingFrequency): String = stringResource(
+internal fun frequencyTitle(frequency: OnboardingFrequency): String = stringResource(
     when (frequency) {
         OnboardingFrequency.One -> RdR.string.rd_frequency_one_title
         OnboardingFrequency.TwoToFive -> RdR.string.rd_frequency_standard_title

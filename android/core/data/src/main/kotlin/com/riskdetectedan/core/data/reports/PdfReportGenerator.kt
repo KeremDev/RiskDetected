@@ -13,18 +13,17 @@ import android.text.StaticLayout
 import android.text.TextPaint
 import com.riskdetectedan.core.data.R
 import com.riskdetectedan.core.data.analysis.Finding
-import com.riskdetectedan.core.data.analysis.FineKinneyValues
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.ByteArrayOutputStream
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** What [PdfReportGenerator] needs to lay out a report — deliberately not a 1:1 port of
- * `PDFReportService.ReportInput` (which carries live `UIImage`/`AnalysisResultBundle` objects);
- * this repo's report-generation call site (`ReportsRepository.generatePdfReport`) resolves those
- * down to plain bytes/strings first, keeping this generator itself free of any network/Storage
- * dependency — pure rendering, easy to test in isolation. */
+/** Plain-value mirror of `PDFReportService.ReportInput`. Call sites resolve platform image and
+ * backend objects into bytes/strings before rendering so the iOS and Android layout contracts can
+ * remain equivalent while this generator stays deterministic and testable. */
 data class PdfReportInput(
+    val analysisId: String = "",
     val kind: String, // "standard" | "risk_analysis" — matches PDFReportKind's rawValue exactly
     val method: String, // "fine_kinney" | "matrix_5x5" — matches RiskMethodWire
     val title: String,
@@ -38,6 +37,10 @@ data class PdfReportInput(
     val preparedByTitle: String?,
     val certificateNumber: String?,
     val coverPhotoBytes: ByteArray?,
+    val coverPhotoBytesList: List<ByteArray> = emptyList(),
+    val analysisSummary: String? = null,
+    val analysisSectorLabel: String? = null,
+    val languageCode: String = "tr",
 )
 
 data class GeneratedPdf(
@@ -54,11 +57,7 @@ internal enum class PdfReportSection {
 
 internal fun pdfReportSectionOrder(kind: String): List<PdfReportSection> =
     if (kind == "risk_analysis") {
-        // The company/preparer cover is required for a risk-assessment document too. Omitting
-        // it meant the selected company's logo, address and responsible-party context were
-        // captured in the report snapshot but never visible in the exported PDF.
         listOf(
-            PdfReportSection.Cover,
             PdfReportSection.MethodReference,
             PdfReportSection.RiskAssessmentTable,
         )
@@ -66,33 +65,23 @@ internal fun pdfReportSectionOrder(kind: String): List<PdfReportSection> =
         listOf(PdfReportSection.Cover, PdfReportSection.FindingDetails)
     }
 
-/**
- * Real on-device PDF report generator (DEC-09) — Android's `android.graphics.pdf.PdfDocument`
- * counterpart to `PDFReportService.swift`. That file is 1642 lines of hand-tuned Core Graphics
- * drawing (per-method risk-assessment tables with color-coded score grids, a full Fine-Kinney/
- * 5x5-Matrix reference-legend page, cover-image collages, page chrome with running headers).
- * This port keeps the same real *structure* — cover page, finding-detail pages, and (for
- * `kind="risk_analysis"`) a real risk-assessment table + method reference page — with the same
- * real data throughout (no placeholder text anywhere), but does not attempt byte-identical
- * layout/typography replication of every table cell and gradient; same "structure real,
- * decoration reasonably matched, not pixel-identical" policy this whole visual pass has used
- * since Home's rebuild. Per-finding source-photo associations and field-verification state are
- * retained as visible report metadata; the primary source image remains the cover photograph.
- */
+/** Android counterpart to the current `PDFReportService.swift` contract: A4 landscape, identical
+ * standard-report page order, identical risk-report page order, matching method references,
+ * assessment columns, band colours, photo collage, audit metadata and pagination rules. */
 @Singleton
 class PdfReportGenerator @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
     private companion object {
         const val TABLE_BODY_MAX_LINES = 18
-        const val TABLE_TEXT_SIZE = 15f
+        const val TABLE_TEXT_SIZE = 7f
     }
 
-    // A4 at ~150dpi — sharp enough for on-screen PDF viewers/printing without an unreasonably
-    // large file for a text-heavy document.
-    private val PAGE_WIDTH = 1240
-    private val PAGE_HEIGHT = 1754
-    private val MARGIN = 60f
+    // Same A4 landscape coordinate system as PDFReportService.swift (72 dpi / PDF points).
+    // Text and vector shapes stay sharp in PDF; source photos retain their own raster detail.
+    private val PAGE_WIDTH = 842
+    private val PAGE_HEIGHT = 595
+    private val MARGIN = 42f
 
     private val COLOR_ONYX = Color.parseColor("#1A1D1F")
     private val COLOR_SLATE = Color.parseColor("#64748B")
@@ -124,15 +113,15 @@ class PdfReportGenerator @Inject constructor(
 
     fun generate(input: PdfReportInput): GeneratedPdf {
         val document = PdfDocument()
-        var nextPageNumber = 1
-
-        pdfReportSectionOrder(input.kind).forEach { section ->
-            nextPageNumber = when (section) {
-                PdfReportSection.Cover -> drawCoverPage(document, input, nextPageNumber)
-                PdfReportSection.FindingDetails -> drawFindingPages(document, input, nextPageNumber)
-                PdfReportSection.MethodReference -> drawRiskMethodReferencePage(document, input, nextPageNumber)
-                PdfReportSection.RiskAssessmentTable -> drawRiskAssessmentTablePages(document, input, nextPageNumber)
-            }
+        val nextPageNumber = if (input.kind == "risk_analysis") {
+            val pages = paginateRiskAssessmentRows(input)
+            val totalPages = 1 + pages.size
+            drawRiskMethodReferencePage(document, input, startPage = 1, totalPages = totalPages)
+            drawRiskAssessmentTablePages(document, input, startPage = 2, pages = pages, totalPages = totalPages)
+        } else {
+            val totalPages = standardTotalPageCount(input)
+            drawCoverPage(document, input, startPage = 1, totalPages = totalPages)
+            drawFindingPages(document, input, startPage = 2, totalPages = totalPages)
         }
 
         val output = ByteArrayOutputStream()
@@ -149,341 +138,644 @@ class PdfReportGenerator @Inject constructor(
         return document.startPage(info)
     }
 
-    private fun drawFooter(canvas: Canvas, pageNumber: Int) {
-        val paint = TextPaint().apply { color = COLOR_SLATE; textSize = 20f; textAlign = Paint.Align.CENTER }
-        canvas.drawText("$pageNumber", PAGE_WIDTH / 2f, PAGE_HEIGHT - 30f, paint)
-    }
-
-    private fun drawCoverPage(document: PdfDocument, input: PdfReportInput, startPage: Int): Int {
+    private fun drawCoverPage(document: PdfDocument, input: PdfReportInput, startPage: Int, totalPages: Int): Int {
         val page = newPage(document, startPage)
         val canvas = page.canvas
-        var y = MARGIN + 20f
+        drawStandardChrome(canvas, input, context.getString(R.string.rd_pdf_standard_report), startPage, totalPages)
 
-        // Wordmark
-        val brand = TextPaint().apply { color = COLOR_ONYX; textSize = 34f; isFakeBoldText = true }
-        canvas.drawText(context.getString(R.string.rd_pdf_brand), MARGIN, y, brand)
-        y += 30f
-        val tagline = TextPaint().apply { color = COLOR_SLATE; textSize = 18f }
-        canvas.drawText(context.getString(R.string.rd_pdf_tagline), MARGIN, y, tagline)
-        y += 70f
+        drawTextRect(canvas, input.title, RectF(42f, 92f, 482f, 128f), 24f, COLOR_ONYX, bold = true)
+        val meta = buildList {
+            add(input.createdAt?.take(10) ?: "—")
+            input.analysisSectorLabel?.takeIf(String::isNotBlank)?.let { add("${copy(input, "Analiz kapsamı", "Analysis scope")}: $it") }
+            add("${copy(input, "Analiz odağı", "Analysis focus")}: ${input.canvasLabel}")
+            add(context.getString(R.string.rd_pdf_finding_count, input.findings.size))
+        }.joinToString(" · ")
+        drawTextRect(canvas, meta, RectF(42f, 130f, 562f, 156f), 12f, COLOR_SLATE, bold = true)
+        drawSummaryCards(canvas, input, 42f, 180f)
 
-        canvas.drawLine(MARGIN, y, PAGE_WIDTH - MARGIN, y, Paint().apply { color = COLOR_LINE; strokeWidth = 2f })
-        y += 60f
+        val photos = (input.coverPhotoBytesList.ifEmpty { listOfNotNull(input.coverPhotoBytes) }).take(5)
+            .mapNotNull { bytes -> runCatching { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }.getOrNull() }
+        if (photos.isNotEmpty()) drawCoverImages(canvas, photos, RectF(548f, 92f, 800f, 270f))
+        else drawPlaceholder(canvas, RectF(548f, 92f, 800f, 270f), copy(input, "Fotoğraf", "Photo"))
 
-        // Report title
-        val title = TextPaint().apply { color = COLOR_ONYX; textSize = 40f; isFakeBoldText = true }
-        y = drawWrapped(canvas, context.getString(if (input.kind == "risk_analysis") R.string.rd_pdf_risk_report else R.string.rd_pdf_standard_report), MARGIN, y, PAGE_WIDTH - 2 * MARGIN, title) + 12f
-        val subtitle = TextPaint().apply { color = COLOR_SLATE; textSize = 22f }
-        y = drawWrapped(canvas, input.title, MARGIN, y, PAGE_WIDTH - 2 * MARGIN, subtitle) + 50f
+        drawRoundedRect(canvas, RectF(42f, 340f, 800f, 426f), 10f, Color.WHITE, COLOR_LINE, 1f)
+        drawTextRect(canvas, copy(input, "Uygunsuzluk Özeti", "Finding Summary"), RectF(56f, 351f, 280f, 371f), 11f, COLOR_SLATE, bold = true)
+        val summary = input.analysisSummary?.trim().takeUnless { it.isNullOrEmpty() }
+            ?: copy(
+                input,
+                "${input.findings.size} bulgu tespit edildi. Bulgular ${methodName(input)} metoduna göre önceliklendirilmiştir.",
+                "${input.findings.size} findings were identified and prioritised using the ${methodName(input)} method.",
+            )
+        drawTextRect(canvas, summary, RectF(56f, 375f, 786f, 415f), 10f, COLOR_ONYX)
 
-        // Company block (logo + name/address)
-        input.companyLogoBytes?.let { bytes ->
-            val bitmap = runCatching { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }.getOrNull()
-            if (bitmap != null) {
-                val logoRect = RectF(MARGIN, y, MARGIN + 120f, y + 120f)
-                drawBitmapFit(canvas, bitmap, logoRect)
-            }
-        }
-        val companyTextX = if (input.companyLogoBytes != null) MARGIN + 140f else MARGIN
-        if (!input.companyName.isNullOrBlank()) {
-            val companyPaint = TextPaint().apply { color = COLOR_ONYX; textSize = 24f; isFakeBoldText = true }
-            canvas.drawText(input.companyName, companyTextX, y + 30f, companyPaint)
-            input.companyAddress?.takeIf { it.isNotBlank() }?.let {
-                val addrPaint = TextPaint().apply { color = COLOR_SLATE; textSize = 18f }
-                drawWrapped(canvas, it, companyTextX, y + 60f, PAGE_WIDTH - MARGIN - companyTextX, addrPaint)
-            }
-            y += 140f
-        }
+        val credential = listOfNotNull(
+            input.preparedByTitle?.takeIf(String::isNotBlank),
+            input.certificateNumber?.takeIf(String::isNotBlank)?.let { "${copy(input, "Belge no", "Certificate no.")}: $it" },
+        ).joinToString(" · ")
+        val company = listOfNotNull(
+            input.companyName?.takeIf(String::isNotBlank)?.let { "${copy(input, "Firma", "Company")}: $it" },
+            input.companyAddress?.takeIf(String::isNotBlank),
+        ).joinToString(" · ")
+        val footer = listOf(
+            "${copy(input, "Hazırlayan", "Prepared by")}: ${input.preparedByName}",
+            credential.ifBlank { copy(input, "İSG Uzmanı", "Safety professional") },
+            company,
+            "${copy(input, "Doküman No", "Document no.")}: #${documentNumber(input)}",
+        ).filter(String::isNotBlank).joinToString(" · ")
+        drawTextRect(canvas, footer, RectF(42f, 448f, 800f, 470f), 9.5f, COLOR_SLATE)
+        drawTextRect(canvas, reportDisclaimer(input), RectF(42f, 472f, 800f, 491f), 7.2f, COLOR_SLATE, align = Paint.Align.CENTER)
+        drawMethodLegend(canvas, input, RectF(42f, 496f, 800f, 544f))
 
-        // Info rows
-        val rows = listOfNotNull(
-            context.getString(R.string.rd_pdf_prepared_by) to input.preparedByName,
-            input.preparedByTitle?.takeIf { it.isNotBlank() }?.let { context.getString(R.string.rd_pdf_title) to it },
-            input.certificateNumber?.takeIf { it.isNotBlank() }?.let { context.getString(R.string.rd_pdf_certificate_number) to it },
-            context.getString(R.string.rd_pdf_analysis_focus) to input.canvasLabel,
-            context.getString(R.string.rd_pdf_method) to context.getString(if (input.method == "matrix_5x5") R.string.rd_pdf_matrix_method else R.string.rd_pdf_fine_kinney_method),
-            context.getString(R.string.rd_pdf_date) to (input.createdAt?.take(10) ?: "—"),
-        )
-        val labelPaint = TextPaint().apply { color = COLOR_SLATE; textSize = 18f }
-        val valuePaint = TextPaint().apply { color = COLOR_ONYX; textSize = 18f; isFakeBoldText = true }
-        rows.forEach { (label, value) ->
-            canvas.drawText(label, MARGIN, y, labelPaint)
-            canvas.drawText(value, MARGIN + 220f, y, valuePaint)
-            y += 34f
-        }
-        y += 30f
-
-        // Summary counts by band
-        val counts = input.findings.filter { it.isScored }.groupingBy { it.fkBand.ifBlank { it.m5Band } }.eachCount()
-        val summaryPaint = TextPaint().apply { color = COLOR_ONYX; textSize = 22f; isFakeBoldText = true }
-        canvas.drawText(context.getString(R.string.rd_pdf_finding_count, input.findings.size), MARGIN, y, summaryPaint)
-        y += 40f
-        var chipX = MARGIN
-        listOf("critical", "high", "medium", "low").forEach { band ->
-            val count = counts[band] ?: 0
-            if (count > 0) {
-                val chipPaint = Paint().apply { color = bandColor(band) }
-                canvas.drawRoundRect(RectF(chipX, y - 26f, chipX + 130f, y + 4f), 8f, 8f, chipPaint)
-                val chipText = TextPaint().apply { color = COLOR_WHITE; textSize = 16f; isFakeBoldText = true; textAlign = Paint.Align.CENTER }
-                canvas.drawText(context.getString(R.string.rd_pdf_band_count, bandLabel(band), count), chipX + 65f, y - 6f, chipText)
-                chipX += 150f
-            }
-        }
-        y += 50f
-
-        input.coverPhotoBytes?.let { bytes ->
-            val bitmap = runCatching { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }.getOrNull()
-            if (bitmap != null) {
-                val photoRect = RectF(MARGIN, y, PAGE_WIDTH - MARGIN, minOf(y + 500f, PAGE_HEIGHT - 100f))
-                drawBitmapFit(canvas, bitmap, photoRect, cropToFill = true)
-            }
-        }
-
-        drawFooter(canvas, startPage)
         document.finishPage(page)
         return startPage + 1
     }
 
-    private fun drawFindingPages(document: PdfDocument, input: PdfReportInput, startPage: Int): Int {
+    private fun drawFindingPages(document: PdfDocument, input: PdfReportInput, startPage: Int, totalPages: Int): Int {
         if (input.findings.isEmpty()) return startPage
         var pageNumber = startPage
         var page = newPage(document, pageNumber)
         var canvas = page.canvas
-        var y = MARGIN
+        var y = 122f
 
         fun header() {
-            val h = TextPaint().apply { color = COLOR_ONYX; textSize = 26f; isFakeBoldText = true }
-            canvas.drawText(context.getString(R.string.rd_pdf_finding_details), MARGIN, y, h)
-            y += 50f
+            drawStandardChrome(canvas, input, context.getString(R.string.rd_pdf_finding_details), pageNumber, totalPages)
+            drawStandardTableHeader(canvas, input)
+            y = 122f
         }
         header()
 
         input.findings.forEachIndexed { index, finding ->
-            val band = finding.fkBand.ifBlank { finding.m5Band }
-            val score = finding.fkScore ?: finding.m5Score?.toDouble()
-
-            // Estimate this block's height and start a new page if it won't fit.
-            val estimatedHeight = 220f + (finding.description?.let { estimateWrappedHeight(it, PAGE_WIDTH - 2 * MARGIN, 18f) } ?: 0f)
-            if (y + estimatedHeight > PAGE_HEIGHT - MARGIN) {
-                drawFooter(canvas, pageNumber)
+            val rowHeight = standardFindingRowHeight(finding, input)
+            if (y > 122f && y + rowHeight > 553f) {
                 document.finishPage(page)
                 pageNumber += 1
                 page = newPage(document, pageNumber)
                 canvas = page.canvas
-                y = MARGIN
                 header()
             }
-
-            val titlePaint = TextPaint().apply { color = COLOR_ONYX; textSize = 22f; isFakeBoldText = true }
-            canvas.drawText(context.getString(R.string.rd_pdf_finding_title, index + 1, finding.title), MARGIN, y, titlePaint)
-
-            if (finding.isScored) {
-                val chipPaint = Paint().apply { color = bandColor(band) }
-                val chipLabel = "${bandLabel(band)}${score?.let { context.getString(R.string.rd_pdf_score_suffix, it) } ?: ""}"
-                val chipWidth = 40f + chipLabel.length * 11f
-                canvas.drawRoundRect(RectF(PAGE_WIDTH - MARGIN - chipWidth, y - 28f, PAGE_WIDTH - MARGIN, y + 4f), 8f, 8f, chipPaint)
-                val chipText = TextPaint().apply { color = COLOR_WHITE; textSize = 16f; isFakeBoldText = true; textAlign = Paint.Align.CENTER }
-                canvas.drawText(chipLabel, PAGE_WIDTH - MARGIN - chipWidth / 2f, y - 8f, chipText)
-            }
-            y += 34f
-
-            finding.category?.takeIf { it.isNotBlank() }?.let {
-                val catPaint = TextPaint().apply { color = COLOR_SLATE; textSize = 16f }
-                canvas.drawText(it, MARGIN, y, catPaint)
-                y += 28f
-            }
-            val sourcePhotoMeta = buildList {
-                if (finding.sourcePhotoIndices.isNotEmpty()) {
-                    add(context.getString(R.string.rd_pdf_source_photos, finding.sourcePhotoIndices.joinToString(", ")))
-                }
-            }.joinToString(" · ")
-            if (sourcePhotoMeta.isNotBlank()) {
-                val metaPaint = TextPaint().apply { color = COLOR_SLATE; textSize = 15f }
-                y = drawWrapped(canvas, sourcePhotoMeta, MARGIN, y, PAGE_WIDTH - 2 * MARGIN, metaPaint) + 10f
-            }
-            finding.description?.takeIf { it.isNotBlank() }?.let {
-                val descPaint = TextPaint().apply { color = COLOR_ONYX; textSize = 18f }
-                y = drawWrapped(canvas, it, MARGIN, y, PAGE_WIDTH - 2 * MARGIN, descPaint) + 16f
-            }
-            finding.rootCauseText?.takeIf { it.isNotBlank() }?.let {
-                val labelPaint = TextPaint().apply { color = COLOR_SLATE; textSize = 15f; isFakeBoldText = true }
-                canvas.drawText(context.getString(R.string.rd_pdf_root_cause), MARGIN, y, labelPaint)
-                y += 22f
-                val bodyPaint = TextPaint().apply { color = COLOR_ONYX; textSize = 17f }
-                y = drawWrapped(canvas, it, MARGIN, y, PAGE_WIDTH - 2 * MARGIN, bodyPaint) + 16f
-            }
-            val measures = finding.recommendedMeasures
-            if (!measures.isNullOrEmpty()) {
-                val labelPaint = TextPaint().apply { color = COLOR_SLATE; textSize = 15f; isFakeBoldText = true }
-                canvas.drawText(context.getString(R.string.rd_pdf_measures), MARGIN, y, labelPaint)
-                y += 22f
-                val bodyPaint = TextPaint().apply { color = COLOR_ONYX; textSize = 17f }
-                measures.forEach { measure ->
-                    val kindLabel = context.getString(if (measure.kind == "preventive") R.string.rd_pdf_preventive else R.string.rd_pdf_corrective)
-                    // iOS intentionally ignores the model-provided title for the two known
-                    // measure kinds and renders the canonical kind label once. The AI commonly
-                    // returns that same label as `title` ("Düzeltici Önlem" / "Önleyici
-                    // Kontrol"), so concatenating both produced duplicated report copy.
-                    y = drawWrapped(canvas, context.getString(R.string.rd_pdf_measure_row, kindLabel, measure.text), MARGIN, y, PAGE_WIDTH - 2 * MARGIN, bodyPaint) + 8f
-                }
-                y += 8f
-            } else {
-                finding.recommendedAction?.takeIf { it.isNotBlank() }?.let {
-                    val labelPaint = TextPaint().apply { color = COLOR_SLATE; textSize = 15f; isFakeBoldText = true }
-                    canvas.drawText(context.getString(R.string.rd_pdf_recommended_action), MARGIN, y, labelPaint)
-                    y += 22f
-                    val bodyPaint = TextPaint().apply { color = COLOR_ONYX; textSize = 17f }
-                    y = drawWrapped(canvas, it, MARGIN, y, PAGE_WIDTH - 2 * MARGIN, bodyPaint) + 16f
-                }
-            }
-
-            canvas.drawLine(MARGIN, y, PAGE_WIDTH - MARGIN, y, Paint().apply { color = COLOR_LINE; strokeWidth = 1.5f })
-            y += 36f
+            drawStandardFindingRow(canvas, input, finding, index + 1, y, rowHeight)
+            y += rowHeight + 8f
         }
 
-        drawFooter(canvas, pageNumber)
         document.finishPage(page)
         return pageNumber + 1
     }
 
     /** First page of the iOS risk-analysis contract: selected method and its scoring reference. */
-    private fun drawRiskMethodReferencePage(document: PdfDocument, input: PdfReportInput, startPage: Int): Int {
-        var pageNumber = startPage
-        val page = newPage(document, pageNumber)
+    private fun drawRiskMethodReferencePage(document: PdfDocument, input: PdfReportInput, startPage: Int, totalPages: Int): Int {
+        val page = newPage(document, startPage)
         val canvas = page.canvas
-        var y = MARGIN
-
         val isMatrix = input.method == "matrix_5x5"
-        val title = TextPaint().apply { color = COLOR_ONYX; textSize = 30f; isFakeBoldText = true }
-        canvas.drawText(
-            context.getString(if (isMatrix) R.string.rd_pdf_matrix_reference else R.string.rd_pdf_fine_kinney_reference),
-            MARGIN,
-            y,
-            title,
-        )
-        y += 60f
-
-        val metaPaint = TextPaint().apply { color = COLOR_SLATE; textSize = 18f }
-        val company = input.companyName?.takeIf { it.isNotBlank() } ?: "—"
-        y = drawWrapped(
-            canvas,
-            context.getString(R.string.rd_pdf_reference_metadata, input.title, company, input.preparedByName),
-            MARGIN,
-            y,
-            PAGE_WIDTH - 2 * MARGIN,
-            metaPaint,
-        ) + 50f
-
-        val bodyPaint = TextPaint().apply { color = COLOR_ONYX; textSize = 20f }
-        val legendText = if (isMatrix) {
-            context.getString(R.string.rd_pdf_matrix_legend)
+        val title = if (isMatrix) {
+            copy(input, "5x5 L-TİPİ MATRİS REFERANS TABLOSU", "5×5 L-TYPE MATRIX REFERENCE TABLE")
         } else {
-            val p = FineKinneyValues.PROBABILITY.joinToString(", ")
-            val f = FineKinneyValues.FREQUENCY.joinToString(", ")
-            val s = FineKinneyValues.SEVERITY.joinToString(", ")
-            context.getString(R.string.rd_pdf_fine_kinney_legend, p, f, s)
+            copy(input, "FINE-KINNEY METODU REFERANS TABLOSU", "FINE-KINNEY METHOD REFERENCE TABLE")
         }
-        drawWrapped(canvas, legendText, MARGIN, y, PAGE_WIDTH - 2 * MARGIN, bodyPaint)
-
-        drawFooter(canvas, pageNumber)
+        drawRiskChrome(canvas, input, title, startPage, totalPages)
+        if (isMatrix) drawMatrixReference(canvas, input, 32f, 82f) else drawFineKinneyReference(canvas, input, 32f, 82f)
+        drawRiskInfoStrip(canvas, input, RectF(32f, 520f, 810f, 562f))
         document.finishPage(page)
-        return pageNumber + 1
+        return startPage + 1
     }
 
     /** Remaining pages of the iOS risk-analysis contract: assessment rows and audit context. */
-    private fun drawRiskAssessmentTablePages(document: PdfDocument, input: PdfReportInput, startPage: Int): Int {
+    private fun drawRiskAssessmentTablePages(
+        document: PdfDocument,
+        input: PdfReportInput,
+        startPage: Int,
+        pages: List<List<PdfAssessmentRow>>,
+        totalPages: Int,
+    ): Int {
+        if (pages.isEmpty()) return startPage
         var pageNumber = startPage
-        var page = newPage(document, pageNumber)
-        var canvas = page.canvas
-        var y = MARGIN
-
-        val header = TextPaint().apply { color = COLOR_ONYX; textSize = 26f; isFakeBoldText = true }
-        canvas.drawText(context.getString(R.string.rd_pdf_risk_table), MARGIN, y, header)
-        y += 50f
-
-        val isMatrix = input.method == "matrix_5x5"
-        val headers = if (isMatrix) {
-            listOf(
-                context.getString(R.string.rd_pdf_column_number),
-                context.getString(R.string.rd_pdf_column_finding),
-                context.getString(R.string.rd_pdf_column_probability),
-                context.getString(R.string.rd_pdf_column_severity),
-                context.getString(R.string.rd_pdf_column_score),
-                context.getString(R.string.rd_pdf_column_level),
-                context.getString(R.string.rd_pdf_column_controls),
-                context.getString(R.string.rd_pdf_column_references),
-            )
-        } else {
-            listOf(
-                context.getString(R.string.rd_pdf_column_number),
-                context.getString(R.string.rd_pdf_column_finding),
-                "O",
-                "F",
-                "Ş",
-                context.getString(R.string.rd_pdf_column_score),
-                context.getString(R.string.rd_pdf_column_level),
-                context.getString(R.string.rd_pdf_column_controls),
-                context.getString(R.string.rd_pdf_column_references),
-            )
-        }
-        val widths = if (isMatrix) {
-            listOf(0.04f, 0.24f, 0.07f, 0.07f, 0.08f, 0.10f, 0.25f, 0.15f)
-        } else {
-            listOf(0.04f, 0.20f, 0.055f, 0.055f, 0.055f, 0.075f, 0.10f, 0.265f, 0.155f)
-        }
-        val tableWidth = PAGE_WIDTH - 2 * MARGIN
-        y = drawTableRow(canvas, MARGIN, y, tableWidth, widths, headers, isHeader = true)
-
-        input.findings.forEachIndexed { index, finding ->
-            val findingText = listOfNotNull(finding.title, finding.description?.takeIf { it.isNotBlank() })
-                .joinToString("\n")
-            val controls = buildList {
-                finding.recommendedMeasures.orEmpty().filter { it.text.isNotBlank() }.forEach { add(it.text) }
-                if (isEmpty()) finding.recommendedAction?.takeIf { it.isNotBlank() }?.let(::add)
-                finding.rootCauseText?.takeIf { it.isNotBlank() }?.let {
-                    add(context.getString(R.string.rd_pdf_root_cause_row, it))
-                }
-            }.joinToString("\n")
-            val references = finding.referencesText?.takeIf { it.isNotBlank() } ?: "—"
-            val band = if (isMatrix) finding.m5Band else finding.fkBand
-            val score = if (isMatrix) finding.m5Score?.toString() else finding.fkScore?.let { "%.1f".format(it) }
-            val values = if (isMatrix) {
-                listOf(
-                    "${index + 1}", findingText,
-                    finding.m5Probability?.toString() ?: "—",
-                    finding.m5Severity?.toString() ?: "—",
-                    score ?: "—", bandLabel(band), controls, references,
-                )
+        pages.forEach { rows ->
+            val page = newPage(document, pageNumber)
+            val canvas = page.canvas
+            val methodTitle = if (input.method == "matrix_5x5") {
+                copy(input, "TEHLİKE VE RİSK DEĞERLENDİRME FORMU (5x5 L-TİPİ)", "HAZARD AND RISK ASSESSMENT FORM (5×5 L-TYPE)")
             } else {
-                listOf(
-                    "${index + 1}", findingText,
-                    finding.fkProbability?.let { "%.1f".format(it) } ?: "—",
-                    finding.fkFrequency?.let { "%.1f".format(it) } ?: "—",
-                    finding.fkSeverity?.let { "%.1f".format(it) } ?: "—",
-                    score ?: "—", bandLabel(band), controls, references,
-                )
+                copy(input, "TEHLİKE VE RİSK DEĞERLENDİRME FORMU (FINE-KINNEY)", "HAZARD AND RISK ASSESSMENT FORM (FINE-KINNEY)")
             }
-            val estimatedRowHeight = estimateTableRowHeight(
-                totalWidth = tableWidth,
-                weights = widths,
-                values = values,
-            )
-            if (y + estimatedRowHeight > PAGE_HEIGHT - MARGIN - 30f) {
-                drawFooter(canvas, pageNumber)
-                document.finishPage(page)
-                pageNumber += 1
-                page = newPage(document, pageNumber)
-                canvas = page.canvas
-                y = MARGIN
-                y = drawTableRow(canvas, MARGIN, y, tableWidth, widths, headers, isHeader = true)
-            }
-            y = drawTableRow(canvas, MARGIN, y, tableWidth, widths, values, isHeader = false, bandForRow = band)
+            drawRiskChrome(canvas, input, methodTitle, pageNumber, totalPages)
+            drawRiskAssessmentTable(canvas, input, rows)
+            document.finishPage(page)
+            pageNumber += 1
         }
-
-        drawFooter(canvas, pageNumber)
-        document.finishPage(page)
-        return pageNumber + 1
+        return pageNumber
     }
+
+    private data class PdfAssessmentRow(val ordinal: Int, val finding: Finding, val height: Float)
+
+    private fun copy(input: PdfReportInput, tr: String, en: String): String =
+        if (input.languageCode.lowercase().startsWith("en")) en else tr
+
+    private fun methodName(input: PdfReportInput): String =
+        if (input.method == "matrix_5x5") context.getString(R.string.rd_pdf_matrix_method)
+        else context.getString(R.string.rd_pdf_fine_kinney_method)
+
+    private fun documentNumber(input: PdfReportInput): String = input.analysisId
+        .replace("-", "")
+        .take(8)
+        .uppercase(Locale.US)
+        .ifBlank { "REPORT" }
+
+    private fun drawStandardChrome(
+        canvas: Canvas,
+        input: PdfReportInput,
+        title: String,
+        page: Int,
+        totalPages: Int,
+    ) {
+        canvas.drawColor(Color.parseColor("#FBFCFA"))
+        drawReportLogo(canvas, input, RectF(42f, 26f, 162f, 60f))
+        if (input.companyLogoBytes == null && !input.companyName.isNullOrBlank()) {
+            drawTextRect(canvas, input.companyName, RectF(172f, 32f, 282f, 52f), 10f, COLOR_SLATE, bold = true)
+        }
+        drawTextRect(canvas, title, RectF(220f, 31f, 580f, 54f), 13f, COLOR_SLATE, bold = true, align = Paint.Align.CENTER)
+        drawTextRect(
+            canvas,
+            "${copy(input, "Sayfa", "Page")} $page/$totalPages",
+            RectF(660f, 31f, 800f, 54f),
+            10f,
+            COLOR_SLATE,
+            align = Paint.Align.RIGHT,
+        )
+        canvas.drawRect(RectF(42f, 70f, 800f, 72f), Paint().apply { color = COLOR_ONYX })
+    }
+
+    private fun drawRiskChrome(
+        canvas: Canvas,
+        input: PdfReportInput,
+        title: String,
+        page: Int,
+        totalPages: Int,
+    ) {
+        canvas.drawColor(Color.WHITE)
+        drawRoundedRect(canvas, RectF(32f, 24f, 810f, 66f), 0f, Color.WHITE, COLOR_ONYX, 1.4f)
+        drawTextRect(canvas, title, RectF(44f, 35f, 798f, 55f), 13f, COLOR_ONYX, bold = true, align = Paint.Align.CENTER)
+        drawReportLogo(canvas, input, RectF(40f, 29f, 144f, 57f))
+        drawTextRect(
+            canvas,
+            "${copy(input, "Sayfa", "Page")} $page/$totalPages",
+            RectF(716f, 37f, 806f, 53f),
+            8f,
+            COLOR_SLATE,
+            align = Paint.Align.RIGHT,
+        )
+    }
+
+    private fun drawReportLogo(canvas: Canvas, input: PdfReportInput, rect: RectF) {
+        val logo = input.companyLogoBytes?.let { runCatching { BitmapFactory.decodeByteArray(it, 0, it.size) }.getOrNull() }
+        if (logo != null) drawBitmapFit(canvas, logo, rect) else {
+            drawTextRect(canvas, context.getString(R.string.rd_pdf_brand), rect, 20f, COLOR_ONYX, bold = true)
+        }
+    }
+
+    private fun drawSummaryCards(canvas: Canvas, input: PdfReportInput, x: Float, y: Float) {
+        val width = 110f
+        val gap = 10f
+        listOf("critical", "high", "medium", "low").forEachIndexed { index, band ->
+            val count = input.findings.count { finding ->
+                val raw = if (input.method == "matrix_5x5") finding.m5Band else finding.fkBand
+                raw.equals(band, ignoreCase = true)
+            }
+            val rect = RectF(x + index * (width + gap), y, x + index * (width + gap) + width, y + 72f)
+            drawRoundedRect(canvas, rect, 12f, tintColor(bandColor(band), .12f), Color.TRANSPARENT, 0f)
+            drawTextRect(canvas, count.toString(), RectF(rect.left + 12f, rect.top + 8f, rect.right - 8f, rect.top + 37f), 24f, bandColor(band), bold = true)
+            drawTextRect(canvas, bandLabel(band).uppercase(), RectF(rect.left + 12f, rect.top + 42f, rect.right - 8f, rect.bottom - 7f), 10f, bandColor(band), bold = true)
+        }
+    }
+
+    private fun drawCoverImages(canvas: Canvas, images: List<Bitmap>, rect: RectF) {
+        if (images.size == 1) {
+            drawBitmapFit(canvas, images.first(), rect, cropToFill = true)
+            return
+        }
+        val visible = images.take(5)
+        val gap = 6f
+        val columns = if (visible.size <= 2) visible.size else 3
+        val rows = kotlin.math.ceil(visible.size.toDouble() / columns).toInt()
+        val cellWidth = (rect.width() - (columns - 1) * gap) / columns
+        val cellHeight = (rect.height() - (rows - 1) * gap) / rows
+        visible.forEachIndexed { index, bitmap ->
+            val column = index % columns
+            val row = index / columns
+            val cell = RectF(
+                rect.left + column * (cellWidth + gap),
+                rect.top + row * (cellHeight + gap),
+                rect.left + column * (cellWidth + gap) + cellWidth,
+                rect.top + row * (cellHeight + gap) + cellHeight,
+            )
+            drawBitmapFit(canvas, bitmap, cell, cropToFill = true)
+            drawTextRect(canvas, (index + 1).toString(), RectF(cell.left + 6f, cell.top + 4f, cell.left + 28f, cell.top + 20f), 9f, Color.WHITE, bold = true, align = Paint.Align.CENTER)
+        }
+    }
+
+    private fun drawPlaceholder(canvas: Canvas, rect: RectF, label: String) {
+        drawRoundedRect(canvas, rect, 14f, Color.parseColor("#F1F3F2"), Color.TRANSPARENT, 0f)
+        drawTextRect(canvas, label.uppercase(), rect, 10f, COLOR_SLATE, bold = true, align = Paint.Align.CENTER)
+    }
+
+    private fun drawMethodLegend(canvas: Canvas, input: PdfReportInput, rect: RectF) {
+        drawRoundedRect(canvas, rect, 10f, Color.WHITE, COLOR_LINE, 1f)
+        val scored = input.findings.filter(Finding::isScored)
+        val values = scored.mapNotNull { if (input.method == "matrix_5x5") it.m5Score?.toDouble() else it.fkScore }
+        drawTextRect(canvas, copy(input, "Metodoloji", "Methodology"), RectF(rect.left + 14f, rect.top + 6f, rect.left + 134f, rect.top + 23f), 11f, COLOR_SLATE, bold = true)
+        drawTextRect(canvas, "${methodName(input)} · R = ${if (input.method == "matrix_5x5") "O × Ş" else "O × F × Ş"}", RectF(rect.left + 14f, rect.top + 24f, rect.left + 300f, rect.bottom - 5f), 11f, COLOR_ONYX)
+        drawTextRect(canvas, "${copy(input, "En yüksek", "Highest")}: ${scoreText(values.maxOrNull() ?: 0.0)}", RectF(rect.left + 340f, rect.top + 14f, rect.left + 500f, rect.bottom - 4f), 12f, COLOR_ONYX, bold = true)
+        drawTextRect(canvas, "${copy(input, "Toplam", "Total")}: ${scoreText(values.sum())}", RectF(rect.left + 520f, rect.top + 14f, rect.right - 14f, rect.bottom - 4f), 12f, COLOR_ONYX, bold = true)
+    }
+
+    private fun reportDisclaimer(input: PdfReportInput): String = copy(
+        input,
+        "Bu rapor saha güvenliği değerlendirmesini destekler; yetkili kişi değerlendirmesinin yerine geçmez ve mevzuata uygunluk kararı oluşturmaz.",
+        "This report supports a safety review; it does not replace assessment by a competent person or determine legal compliance.",
+    )
+
+    private fun standardTotalPageCount(input: PdfReportInput): Int {
+        if (input.findings.isEmpty()) return 1
+        var pages = 2
+        var y = 122f
+        input.findings.forEach { finding ->
+            val height = standardFindingRowHeight(finding, input)
+            if (y > 122f && y + height > 553f) {
+                pages += 1
+                y = 122f
+            }
+            y += height + 8f
+        }
+        return pages
+    }
+
+    private fun drawStandardTableHeader(canvas: Canvas, input: PdfReportInput) {
+        drawTextRect(canvas, "#", RectF(42f, 91f, 70f, 111f), 9f, COLOR_SLATE, bold = true)
+        drawTextRect(canvas, copy(input, "RİSK / KANIT", "RISK / EVIDENCE"), RectF(78f, 91f, 378f, 111f), 9f, COLOR_SLATE, bold = true)
+        drawTextRect(canvas, copy(input, "SKOR", "SCORE"), RectF(414f, 91f, 484f, 111f), 9f, COLOR_SLATE, bold = true)
+        drawTextRect(canvas, copy(input, "ÖNLEM / KONTROL TEDBİRLERİ", "ACTION / CONTROL MEASURES"), RectF(504f, 91f, 800f, 111f), 8.2f, COLOR_SLATE, bold = true)
+        canvas.drawRect(RectF(42f, 114f, 800f, 115f), Paint().apply { color = COLOR_LINE })
+    }
+
+    private fun standardFindingRowHeight(finding: Finding, input: PdfReportInput): Float {
+        val titleHeight = measuredHeight(finding.title, 302f, 12f, bold = true).coerceAtLeast(18f)
+        val descriptionHeight = measuredHeight(finding.description.orEmpty(), 302f, 9f)
+        val actionHeight = measuredHeight(actionText(finding, input), 296f, 10f)
+        return maxOf(82f, 10f + titleHeight + 7f + descriptionHeight + 12f, 24f + actionHeight).coerceAtMost(431f)
+    }
+
+    private fun drawStandardFindingRow(
+        canvas: Canvas,
+        input: PdfReportInput,
+        finding: Finding,
+        ordinal: Int,
+        y: Float,
+        height: Float,
+    ) {
+        drawRoundedRect(canvas, RectF(42f, y, 800f, y + height), 10f, Color.WHITE, COLOR_LINE, 1f)
+        drawTextRect(canvas, ordinal.toString(), RectF(54f, y + 10f, 78f, y + 32f), 12f, COLOR_ONYX, bold = true)
+        val titleHeight = measuredHeight(finding.title, 302f, 12f, bold = true).coerceAtLeast(18f)
+        drawTextRect(canvas, finding.title, RectF(90f, y + 9f, 392f, y + 9f + titleHeight), 12f, COLOR_ONYX, bold = true)
+        drawTextRect(canvas, finding.description.orEmpty(), RectF(90f, y + 16f + titleHeight, 392f, y + height - 12f), 9f, COLOR_SLATE)
+        if (finding.isScored) {
+            val band = if (input.method == "matrix_5x5") finding.m5Band else finding.fkBand
+            val score = if (input.method == "matrix_5x5") finding.m5Score?.toDouble() else finding.fkScore
+            drawRoundedRect(canvas, RectF(412f, y + 14f, 482f, y + 48f), 8f, bandColor(band), Color.TRANSPARENT, 0f)
+            drawTextRect(canvas, scoreText(score ?: 0.0), RectF(412f, y + 19f, 482f, y + 42f), 16f, Color.WHITE, bold = true, align = Paint.Align.CENTER)
+            drawTextRect(canvas, bandLabel(band), RectF(402f, y + 52f, 492f, y + 69f), 8f, bandColor(band), bold = true, align = Paint.Align.CENTER)
+        } else {
+            drawTextRect(canvas, copy(input, "Saha teyidi", "Field verification"), RectF(402f, y + 22f, 492f, y + 48f), 9f, COLOR_SLATE, bold = true, align = Paint.Align.CENTER)
+        }
+        drawTextRect(canvas, actionText(finding, input), RectF(504f, y + 12f, 788f, y + height - 12f), 10f, COLOR_ONYX)
+    }
+
+    private fun actionText(finding: Finding, input: PdfReportInput): String {
+        val measures = finding.recommendedMeasures.orEmpty().filter { it.text.isNotBlank() }
+        val measureText = if (measures.isEmpty()) finding.recommendedAction.orEmpty().trim() else measures.joinToString("\n") { measure ->
+            val label = when (measure.kind.lowercase()) {
+                "preventive" -> copy(input, "Önleyici Kontrol", "Preventive control")
+                "corrective" -> copy(input, "Düzeltici Önlem", "Corrective action")
+                else -> measure.title?.takeIf(String::isNotBlank) ?: copy(input, "Kontrol Tedbiri", "Control measure")
+            }
+            "$label: ${measure.text}"
+        }
+        val root = finding.rootCauseText.orEmpty().trim()
+        return listOf(measureText, root.takeIf(String::isNotBlank)?.let { "${copy(input, "Kök neden", "Root cause")}: $it" }.orEmpty())
+            .filter(String::isNotBlank).joinToString("\n\n")
+    }
+
+    private fun drawRiskInfoStrip(canvas: Canvas, input: PdfReportInput, rect: RectF) {
+        drawRoundedRect(canvas, rect, 0f, Color.parseColor("#F1F3F2"), COLOR_ONYX, 1f)
+        val unspecified = copy(input, "Belirtilmedi", "Not provided")
+        val left = buildString {
+            input.analysisSectorLabel?.takeIf(String::isNotBlank)?.let { append("${copy(input, "Analiz kapsamı", "Analysis scope")}: $it\n") }
+            append("${copy(input, "Analiz", "Analysis")}: ${input.title}\n")
+            append("${copy(input, "Firma", "Company")}: ${input.companyName ?: unspecified}\n")
+            append("${copy(input, "Firma bilgisi", "Company details")}: ${input.companyAddress ?: unspecified}")
+        }
+        drawTextRect(canvas, left, RectF(rect.left + 10f, rect.top + 4f, rect.left + 270f, rect.bottom - 2f), 7.4f, COLOR_SLATE, bold = true)
+        val middle = "${copy(input, "Hazırlayan", "Prepared by")}: ${input.preparedByName}\n${copy(input, "Ünvan", "Title")}: ${input.preparedByTitle ?: unspecified}\n${copy(input, "Belge No", "Certificate no.")}: ${input.certificateNumber ?: unspecified}"
+        drawTextRect(canvas, middle, RectF(rect.left + 294f, rect.top + 4f, rect.left + 514f, rect.bottom - 2f), 7.4f, COLOR_SLATE, bold = true)
+        val right = "${copy(input, "Tarih", "Date")}: ${input.createdAt?.take(10) ?: unspecified}\n${copy(input, "Doküman No", "Document no.")}: #${documentNumber(input)}"
+        drawTextRect(canvas, right, RectF(rect.left + 548f, rect.top + 8f, rect.right - 10f, rect.bottom - 4f), 7.4f, COLOR_ONYX, bold = true, align = Paint.Align.RIGHT)
+    }
+
+    private fun riskTableWidths(input: PdfReportInput): List<Float> {
+        val includesRegulatory = input.findings.any { !it.referencesText.isNullOrBlank() }
+        return if (input.method == "matrix_5x5") {
+            if (includesRegulatory) listOf(22f, 58f, 132f, 66f, 26f, 26f, 38f, 56f, 170f, 130f, 54f)
+            else listOf(22f, 58f, 132f, 66f, 26f, 26f, 38f, 56f, 300f, 54f)
+        } else {
+            if (includesRegulatory) listOf(22f, 54f, 130f, 62f, 24f, 24f, 24f, 38f, 58f, 168f, 140f, 58f)
+            else listOf(22f, 54f, 130f, 62f, 24f, 24f, 24f, 38f, 58f, 308f, 58f)
+        }
+    }
+
+    private fun riskHeaders(input: PdfReportInput): List<String> {
+        val regulatory = input.findings.any { !it.referencesText.isNullOrBlank() }
+        val en = input.languageCode.startsWith("en")
+        return if (input.method == "matrix_5x5") {
+            buildList {
+                addAll(if (en) listOf("No.", "Activity\narea", "Hazardous condition / behaviour", "Risk", "P", "S", "R", "Risk\nband", "Control measures") else listOf("No", "Faaliyet\nAlanı", "Tehlikeli durum / davranış", "Risk", "O", "Ş", "R", "Risk\nderecesi", "Önlem / kontrol tedbirleri"))
+                if (regulatory) add(if (en) "Regulation" else "Mevzuat")
+                add(if (en) "Due" else "Termin")
+            }
+        } else buildList {
+            addAll(if (en) listOf("No.", "Activity\narea", "Hazardous condition / behaviour", "Risk", "P", "F", "S", "R", "Risk\nband", "Control measures") else listOf("No", "Faaliyet\nAlanı", "Tehlikeli durum / davranış", "Risk", "O", "F", "Ş", "R", "Risk\nderecesi", "Önlem / kontrol tedbirleri"))
+            if (regulatory) add(if (en) "Regulation" else "Mevzuat")
+            add(if (en) "Due" else "Termin")
+        }
+    }
+
+    private fun riskValues(input: PdfReportInput, finding: Finding, ordinal: Int): List<String> {
+        val regulatory = input.findings.any { !it.referencesText.isNullOrBlank() }
+        val values = mutableListOf(
+            ordinal.toString(),
+            input.canvasLabel,
+            "${finding.title}\n${finding.description.orEmpty()}",
+            finding.category.orEmpty(),
+        )
+        val band: String
+        if (input.method == "matrix_5x5") {
+            values += finding.m5Probability?.toString() ?: "—"
+            values += finding.m5Severity?.toString() ?: "—"
+            values += finding.m5Score?.toString() ?: "—"
+            band = finding.m5Band
+        } else {
+            values += scoreText(finding.fkProbability ?: 0.0)
+            values += scoreText(finding.fkFrequency ?: 0.0)
+            values += scoreText(finding.fkSeverity ?: 0.0)
+            values += scoreText(finding.fkScore ?: 0.0)
+            band = finding.fkBand
+        }
+        values += bandLabel(band)
+        values += actionText(finding, input)
+        if (regulatory) values += finding.referencesText.orEmpty()
+        values += suggestedDue(input, band)
+        return values
+    }
+
+    private fun suggestedDue(input: PdfReportInput, band: String): String = when (band.lowercase()) {
+        "critical" -> copy(input, "Hemen / 1 hafta", "Immediate / 1 week")
+        "high" -> copy(input, "1-3 ay", "1–3 months")
+        "medium" -> copy(input, "6 ay", "6 months")
+        else -> copy(input, "1 yıl / kontrol", "1 year / review")
+    }
+
+    private fun paginateRiskAssessmentRows(input: PdfReportInput): List<List<PdfAssessmentRow>> {
+        val findings = input.findings.filter(Finding::isScored)
+        if (findings.isEmpty()) return emptyList()
+        val widths = riskTableWidths(input)
+        val available = PAGE_HEIGHT - 82f - 44f - 32f
+        val pages = mutableListOf<MutableList<PdfAssessmentRow>>()
+        var current = mutableListOf<PdfAssessmentRow>()
+        var used = 0f
+        findings.forEachIndexed { index, finding ->
+            val height = estimateAbsoluteRowHeight(widths, riskValues(input, finding, index + 1)).coerceAtMost(available)
+            if (current.isNotEmpty() && used + height > available) {
+                pages += current
+                current = mutableListOf()
+                used = 0f
+            }
+            current += PdfAssessmentRow(index + 1, finding, height)
+            used += height
+        }
+        if (current.isNotEmpty()) pages += current
+        return pages
+    }
+
+    private fun drawRiskAssessmentTable(canvas: Canvas, input: PdfReportInput, rows: List<PdfAssessmentRow>) {
+        val widths = riskTableWidths(input)
+        drawAbsoluteTableRow(canvas, 32f, 82f, widths, riskHeaders(input), 44f, header = true)
+        var y = 126f
+        rows.forEach { row ->
+            val band = if (input.method == "matrix_5x5") row.finding.m5Band else row.finding.fkBand
+            val values = riskValues(input, row.finding, row.ordinal)
+            val scoreColumn = if (input.method == "matrix_5x5") 6 else 7
+            val bandColumn = scoreColumn + 1
+            drawAbsoluteTableRow(canvas, 32f, y, widths, values, row.height, band = band, scoreColumn = scoreColumn, bandColumn = bandColumn)
+            y += row.height
+        }
+    }
+
+    private fun drawAbsoluteTableRow(
+        canvas: Canvas,
+        x: Float,
+        y: Float,
+        widths: List<Float>,
+        values: List<String>,
+        height: Float,
+        header: Boolean = false,
+        band: String? = null,
+        scoreColumn: Int = -1,
+        bandColumn: Int = -1,
+    ) {
+        var left = x
+        widths.forEachIndexed { index, width ->
+            val emphasized = !header && (index == scoreColumn || index == bandColumn)
+            val fill = when {
+                header -> Color.parseColor("#345A86")
+                emphasized -> bandColor(band.orEmpty())
+                else -> Color.WHITE
+            }
+            canvas.drawRect(RectF(left, y, left + width, y + height), Paint().apply { color = fill })
+            canvas.drawRect(RectF(left, y, left + width, y + height), Paint().apply { color = COLOR_ONYX; style = Paint.Style.STROKE; strokeWidth = .55f })
+            drawTextRect(
+                canvas,
+                values.getOrElse(index) { "" },
+                RectF(left + 4f, y + if (header) 8f else 6f, left + width - 4f, y + height - 5f),
+                if (header) 7f else if (emphasized) 7.5f else 6.8f,
+                if (header || emphasized) Color.WHITE else COLOR_ONYX,
+                bold = header || emphasized || index == 0,
+                align = if (index <= 1 || emphasized) Paint.Align.CENTER else Paint.Align.LEFT,
+                maxLines = if (header) 3 else TABLE_BODY_MAX_LINES,
+            )
+            left += width
+        }
+    }
+
+    private fun estimateAbsoluteRowHeight(widths: List<Float>, values: List<String>): Float = values.mapIndexed { index, value ->
+        measuredHeight(value, (widths.getOrElse(index) { widths.last() } - 8f).coerceAtLeast(1f), 6.8f)
+    }.maxOrNull()?.plus(14f)?.coerceAtLeast(34f) ?: 34f
+
+    private fun drawFineKinneyReference(canvas: Canvas, input: PdfReportInput, x: Float, y: Float) {
+        val en = input.languageCode.startsWith("en")
+        val probability = if (en) listOf(
+            listOf("10", "Expected; near certain"), listOf("6", "High; quite possible"), listOf("3", "Possible"), listOf("1", "Possible but unlikely"), listOf("0.5", "Unexpected but possible"), listOf("0.2", "Not expected"),
+        ) else listOf(
+            listOf("10", "Beklenir, kesin"), listOf("6", "Yüksek, oldukça mümkün"), listOf("3", "Olası"), listOf("1", "Mümkün fakat düşük"), listOf("0.5", "Beklenmez fakat mümkün"), listOf("0.2", "Beklenmez"),
+        )
+        val frequency = if (en) listOf(
+            listOf("10", "Almost continuous / several times per hour"), listOf("6", "Frequent / once or several times per day"), listOf("3", "Occasional / several times per week"), listOf("2", "Infrequent / several times per month"), listOf("1", "Rare / several times per year"), listOf("0.5", "Very rare / once per year or less"),
+        ) else listOf(
+            listOf("10", "Hemen hemen sürekli / saatte birkaç defa"), listOf("6", "Sık / günde bir veya birkaç defa"), listOf("3", "Ara sıra / haftada birkaç defa"), listOf("2", "Sık değil / ayda birkaç defa"), listOf("1", "Seyrek / yılda birkaç defa"), listOf("0.5", "Çok seyrek / yılda bir veya daha az"),
+        )
+        val severity = if (en) listOf(
+            listOf("100", "Multiple fatalities / environmental disaster"), listOf("40", "Fatality / serious environmental harm"), listOf("15", "Permanent injury or work loss"), listOf("7", "Significant injury / external first aid"), listOf("3", "Minor injury / on-site first aid"), listOf("1", "Near miss / no environmental harm"),
+        ) else listOf(
+            listOf("100", "Birden fazla ölümlü kaza / çevresel felaket"), listOf("40", "Ölümlü kaza / ciddi çevresel zarar"), listOf("15", "Kalıcı hasar veya iş kaybı"), listOf("7", "Önemli yaralanma / dış ilk yardım"), listOf("3", "Küçük yaralanma / iç ilk yardım"), listOf("1", "Ucuz atlatma / çevresel zarar yok"),
+        )
+        val value = copy(input, "Değer", "Value")
+        drawReferenceTable(canvas, copy(input, "OLASILIK (O)", "PROBABILITY (P)"), listOf(value, copy(input, "Zararın gerçekleşme olasılığı", "Likelihood of harm")), probability, RectF(x, y, x + 246f, y + 212f))
+        drawReferenceTable(canvas, copy(input, "FREKANS (F)", "FREQUENCY (F)"), listOf(value, copy(input, "Tehlikeye maruz kalma tekrarı", "Exposure frequency")), frequency, RectF(x + 264f, y, x + 510f, y + 212f))
+        drawReferenceTable(canvas, copy(input, "ŞİDDET (Ş)", "SEVERITY (S)"), listOf(value, copy(input, "İnsan/çevre üzerinde tahmini zarar", "Estimated harm to people/environment")), severity, RectF(x + 528f, y, x + 774f, y + 212f))
+        val riskRows = if (en) listOf(
+            listOf("1801 ≤ R", "Intolerable", "Stop work immediately; consider isolating the area.", "Immediate / 1 week"), listOf("401 ≤ R < 1801", "Act as soon as possible", "Restrict activity until risk is reduced.", "Less than 1 month"), listOf("201 ≤ R < 401", "Substantial risk", "Take urgent action and monitor the activity.", "1–3 months"), listOf("71 ≤ R < 201", "Significant risk", "Start a corrective action plan.", "6 months"), listOf("21 ≤ R < 71", "Possible risk", "Maintain and monitor controls.", "1 year"), listOf("R < 21", "Minor risk", "Additional controls may not be required.", "Review"),
+        ) else listOf(
+            listOf("1801 ≤ R", "Tolerans gösterilemez", "İş derhal durdurulur; tesis/çevre kapatılması düşünülebilir.", "Hemen / 1 hafta"), listOf("401 ≤ R < 1801", "En kısa sürede giderilecek", "Risk kabul edilebilir seviyeye düşene kadar faaliyet kısıtlanır.", "1 aydan kısa"), listOf("201 ≤ R < 401", "Esaslı risk", "Acil önlem alınır ve faaliyet izlenir.", "1-3 ay"), listOf("71 ≤ R < 201", "Önemli risk", "Düzeltici faaliyet planı başlatılır.", "6 ay"), listOf("21 ≤ R < 71", "Olası risk", "Kontroller sürdürülür ve izlenir.", "1 yıl"), listOf("R < 21", "Önemsiz risk", "İlave kontrole gerek olmayabilir.", "Kontrol"),
+        )
+        drawReferenceTable(
+            canvas,
+            copy(input, "RİSK DEĞERİ (R = O x F x Ş)", "RISK VALUE (R = P × F × S)"),
+            listOf(copy(input, "Risk değeri", "Risk value"), copy(input, "Risk adı", "Risk band"), copy(input, "Eylem", "Action"), copy(input, "Termin", "Due")),
+            riskRows,
+            RectF(x, y + 244f, x + 774f, y + 422f),
+            rowColors = listOf("critical", "critical", "high", "medium", "low", "low"),
+        )
+    }
+
+    private fun drawMatrixReference(canvas: Canvas, input: PdfReportInput, x: Float, y: Float) {
+        val en = input.languageCode.startsWith("en")
+        val probability = if (en) listOf(listOf("1", "Very unlikely"), listOf("2", "Unlikely"), listOf("3", "Possible"), listOf("4", "Likely"), listOf("5", "Very likely"))
+        else listOf(listOf("1", "Gerçekleşme ihtimali çok az"), listOf("2", "Gerçekleşme ihtimali az"), listOf("3", "Gerçekleşme ihtimali var"), listOf("4", "Gerçekleşme ihtimali yüksek"), listOf("5", "Gerçekleşme ihtimali çok yüksek"))
+        val severity = if (en) listOf(listOf("1", "Minor injury / no lost time"), listOf("2", "Minor injury requiring first aid"), listOf("3", "Lost time or treatment required"), listOf("4", "Long-term absence / serious injury"), listOf("5", "Permanent disability or fatality"))
+        else listOf(listOf("1", "Hafif yaralanmalar / iş günü kaybı yok"), listOf("2", "İlk yardım gerektiren küçük yaralanma"), listOf("3", "İş günü kaybı veya tedavi gerektiren yaralanma"), listOf("4", "Uzun süreli kayıp / ağır yaralanma"), listOf("5", "Kalıcı iş göremezlik veya ölüm"))
+        drawReferenceTable(canvas, copy(input, "OLASILIK (O)", "PROBABILITY (P)"), listOf(copy(input, "Derece", "Rating"), copy(input, "Tanım", "Description")), probability, RectF(x, y, x + 360f, y + 162f))
+        drawReferenceTable(canvas, copy(input, "ŞİDDET (Ş)", "SEVERITY (S)"), listOf(copy(input, "Derece", "Rating"), copy(input, "Tanım", "Description")), severity, RectF(x + 392f, y, x + 774f, y + 162f))
+        val matrix = RectF(x + 74f, y + 214f, x + 694f, y + 446f)
+        drawTextRect(canvas, copy(input, "5x5 Risk Matrisi - R = O x Ş", "5×5 Risk Matrix — R = P × S"), RectF(matrix.left, matrix.top - 28f, matrix.right, matrix.top - 8f), 12f, COLOR_ONYX, bold = true, align = Paint.Align.CENTER)
+        val cellW = matrix.width() / 6f
+        val cellH = matrix.height() / 6f
+        for (row in 0..5) for (column in 0..5) {
+            val cell = RectF(matrix.left + column * cellW, matrix.top + row * cellH, matrix.left + (column + 1) * cellW, matrix.top + (row + 1) * cellH)
+            val score = row * column
+            val fill = if (row == 0 || column == 0) Color.parseColor("#F1F3F2") else matrixColor(score)
+            drawRoundedRect(canvas, cell, 0f, fill, if (row == 0 || column == 0) COLOR_LINE else Color.WHITE, 1f)
+            val label = when {
+                row == 0 && column == 0 -> copy(input, "O / Ş", "P / S")
+                row == 0 -> column.toString()
+                column == 0 -> row.toString()
+                else -> score.toString()
+            }
+            drawTextRect(canvas, label, cell, if (row == 0 || column == 0) 9f else 10f, COLOR_ONYX, bold = true, align = Paint.Align.CENTER)
+        }
+    }
+
+    private fun drawReferenceTable(
+        canvas: Canvas,
+        title: String,
+        columns: List<String>,
+        rows: List<List<String>>,
+        rect: RectF,
+        rowColors: List<String> = emptyList(),
+    ) {
+        drawTextRect(canvas, title, RectF(rect.left, rect.top, rect.right, rect.top + 20f), 10f, COLOR_ONYX, bold = true, align = Paint.Align.CENTER)
+        val tableTop = rect.top + 24f
+        val rowHeight = (rect.bottom - tableTop) / (rows.size + 1)
+        val firstColumn = if (columns.size == 2) rect.width() * .25f else rect.width() * .18f
+        val remaining = rect.width() - firstColumn
+        val widths = listOf(firstColumn) + List(columns.size - 1) { remaining / (columns.size - 1) }
+        drawAbsoluteTableRow(canvas, rect.left, tableTop, widths, columns, rowHeight, header = true)
+        var y = tableTop + rowHeight
+        rows.forEachIndexed { index, values ->
+            val fillBand = rowColors.getOrNull(index)
+            var left = rect.left
+            widths.forEachIndexed { column, width ->
+                val fill = fillBand?.let { tintColor(bandColor(it), .14f) } ?: Color.WHITE
+                drawRoundedRect(canvas, RectF(left, y, left + width, y + rowHeight), 0f, fill, COLOR_LINE, .6f)
+                drawTextRect(canvas, values.getOrElse(column) { "" }, RectF(left + 3f, y + 3f, left + width - 3f, y + rowHeight - 3f), if (columns.size > 2) 6.2f else 7f, COLOR_ONYX, bold = column == 0, align = if (column == 0) Paint.Align.CENTER else Paint.Align.LEFT, maxLines = 4)
+                left += width
+            }
+            y += rowHeight
+        }
+    }
+
+    private fun matrixColor(score: Int): Int = when {
+        score >= 15 -> Color.parseColor("#F0736A")
+        score >= 10 -> Color.parseColor("#F0A55C")
+        score >= 5 -> Color.parseColor("#F2D56B")
+        else -> Color.parseColor("#8BCB95")
+    }
+
+    private fun scoreText(value: Double): String = if (value % 1.0 == 0.0) value.toInt().toString()
+    else String.format(Locale.US, "%.1f", value)
+
+    private fun measuredHeight(text: String, width: Float, size: Float, bold: Boolean = false): Float {
+        val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = size; isFakeBoldText = bold }
+        return StaticLayout.Builder.obtain(text, 0, text.length, paint, width.coerceAtLeast(1f).toInt())
+            .setLineSpacing(1f, 1f).build().height.toFloat()
+    }
+
+    private fun drawTextRect(
+        canvas: Canvas,
+        text: String,
+        rect: RectF,
+        size: Float,
+        color: Int,
+        bold: Boolean = false,
+        align: Paint.Align = Paint.Align.LEFT,
+        maxLines: Int = Int.MAX_VALUE,
+    ) {
+        if (text.isEmpty() || rect.width() <= 0f || rect.height() <= 0f) return
+        val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+            this.textSize = size
+            this.color = color
+            isFakeBoldText = bold
+            textAlign = Paint.Align.LEFT
+        }
+        val alignment = when (align) {
+            Paint.Align.CENTER -> Layout.Alignment.ALIGN_CENTER
+            Paint.Align.RIGHT -> Layout.Alignment.ALIGN_OPPOSITE
+            else -> Layout.Alignment.ALIGN_NORMAL
+        }
+        val layout = StaticLayout.Builder.obtain(text, 0, text.length, paint, rect.width().toInt())
+            .setAlignment(alignment)
+            .setLineSpacing(1f, 1f)
+            .setMaxLines(maxLines)
+            .setEllipsize(android.text.TextUtils.TruncateAt.END)
+            .build()
+        canvas.save()
+        canvas.clipRect(rect)
+        val verticalOffset = if (layout.height < rect.height()) ((rect.height() - layout.height) / 2f).coerceAtLeast(0f) else 0f
+        canvas.translate(rect.left, rect.top + verticalOffset)
+        layout.draw(canvas)
+        canvas.restore()
+    }
+
+    private fun drawRoundedRect(canvas: Canvas, rect: RectF, radius: Float, fill: Int, stroke: Int, strokeWidth: Float) {
+        canvas.drawRoundRect(rect, radius, radius, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = fill; style = Paint.Style.FILL })
+        if (strokeWidth > 0f && stroke != Color.TRANSPARENT) canvas.drawRoundRect(
+            rect,
+            radius,
+            radius,
+            Paint(Paint.ANTI_ALIAS_FLAG).apply { color = stroke; style = Paint.Style.STROKE; this.strokeWidth = strokeWidth },
+        )
+    }
+
+    private fun tintColor(color: Int, alpha: Float): Int = Color.argb(
+        (255 * alpha).toInt(),
+        Color.red(color),
+        Color.green(color),
+        Color.blue(color),
+    )
 
     private fun drawTableRow(
         canvas: Canvas,

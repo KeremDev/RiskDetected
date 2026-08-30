@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +40,7 @@ import com.riskdetectedan.core.designsystem.RdSelectionCounter
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.RdTopBar
+import com.riskdetectedan.core.designsystem.toTextStyle
 
 enum class RdPickerLayout { List, Grid }
 
@@ -85,6 +87,7 @@ fun <T> OnboardingChoiceScreen(
     itemIconTint: (T) -> Color? = { null },
     itemIconBackground: (T) -> Color? = { null },
     itemTitleStyle: RdFontStyle = RdFontStyle.Callout,
+    footerNote: String? = null,
 ) {
     val resolvedContinueLabel = continueLabel ?: stringResource(RdR.string.rd_devam)
     val resolvedSelectionCounterSuffix = selectionCounterSuffix ?: stringResource(RdR.string.rd_secildi)
@@ -163,6 +166,15 @@ fun <T> OnboardingChoiceScreen(
                 count = items.count(isSelected),
                     suffix = resolvedSelectionCounterSuffix,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = RdSpacing.lg),
+            )
+        }
+
+        if (footerNote != null) {
+            Text(
+                text = footerNote,
+                style = RdFontStyle.Caption.toTextStyle(),
+                color = RdTheme.colors.slate,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = RdSpacing.lg, vertical = RdSpacing.xs),
             )
         }
 

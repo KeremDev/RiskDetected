@@ -137,7 +137,7 @@ internal fun filterHistoryItems(
 
 /** Lets Turkish users find “İnşaat” with either a Turkish keyboard or plain “Insaat”. */
 internal fun normalizeSearch(value: String): String = Normalizer
-    .normalize(value.trim().lowercase(Locale.forLanguageTag("tr-TR")).replace('ı', 'i'), Normalizer.Form.NFD)
+    .normalize(value.trim().lowercase(Locale.getDefault()).replace('ı', 'i'), Normalizer.Form.NFD)
     .replace(Regex("\\p{Mn}+"), "")
 
 /** Port of the analysis history list (2026-08-08 visual pass, Faz J of the core-flow redesign —

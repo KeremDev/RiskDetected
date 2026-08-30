@@ -16,8 +16,19 @@ import javax.inject.Singleton
 enum class AnalysisResultSectionId {
     @SerialName("risk_analysis") RiskAnalysis,
     @SerialName("expert_recommendations") ExpertRecommendations,
+    @SerialName("training_recommendations") TrainingRecommendations,
     @SerialName("approved_notebook") ApprovedNotebook,
 }
+
+internal fun AnalysisResultSectionId.feedbackTargetKind(): String = when (this) {
+    AnalysisResultSectionId.ApprovedNotebook -> "notebook_entry"
+    AnalysisResultSectionId.TrainingRecommendations -> "training_card"
+    AnalysisResultSectionId.RiskAnalysis,
+    AnalysisResultSectionId.ExpertRecommendations -> "finding"
+}
+
+internal fun sanitizeResultFeedbackNote(note: String?): String? =
+    note?.trim()?.take(1000)?.takeIf(String::isNotBlank)
 
 @Serializable
 enum class AnalysisResultAccess { @SerialName("full") Full, @SerialName("teaser") Teaser }
@@ -29,7 +40,9 @@ enum class AnalysisItemReaction { @SerialName("none") None, @SerialName("like") 
 data class AnalysisResultHubResponse(
     val enabled: Boolean = false,
     @SerialName("contract_version") val contractVersion: String = "analysis-result-sections-v1",
+    @SerialName("ui_version") val uiVersion: String? = null,
     @SerialName("analysis_id") val analysisId: String? = null,
+    @SerialName("analysis_edit_version") val analysisEditVersion: Int? = null,
     val tier: String? = null,
     val language: String? = null,
     val disclaimers: AnalysisResultDisclaimers? = null,
@@ -47,6 +60,7 @@ data class AnalysisResultSection(
     val count: Int,
     @SerialName("can_edit") val canEdit: Boolean = false,
     @SerialName("can_report") val canReport: Boolean = false,
+    @SerialName("observation_basis") val observationBasis: String? = null,
     val items: List<AnalysisResultHubItem> = emptyList(),
 )
 
@@ -54,9 +68,17 @@ data class AnalysisResultSection(
 data class AnalysisResultHubItem(
     val id: String,
     @SerialName("analysis_id") val analysisId: String? = null,
+    @SerialName("catalog_code") val catalogCode: String? = null,
     val ordinal: Int? = null,
     val title: String? = null,
     val category: String? = null,
+    @SerialName("category_label") val categoryLabel: String? = null,
+    @SerialName("audience_label") val audienceLabel: String? = null,
+    val text: String? = null,
+    @SerialName("group_code") val groupCode: String? = null,
+    @SerialName("duration_label") val durationLabel: String? = null,
+    @SerialName("duration_value") val durationValue: String? = null,
+    @SerialName("duration_note") val durationNote: String? = null,
     val description: String? = null,
     @SerialName("recommended_action") val recommendedAction: String? = null,
     @SerialName("recommended_measures") val recommendedMeasures: List<FindingMeasure>? = null,
@@ -86,8 +108,13 @@ data class AnalysisResultHubItem(
     @SerialName("is_user_edited") val isUserEdited: Boolean = false,
     @SerialName("is_stale") val isStale: Boolean = false,
 ) {
-    val displayTitle: String get() = title?.takeIf(String::isNotBlank) ?: findingText?.takeIf(String::isNotBlank) ?: "Kayıt"
-    val displayBody: String get() = description?.takeIf(String::isNotBlank) ?: recommendationText.orEmpty()
+    val displayTitle: String
+        get() = title?.takeIf(String::isNotBlank)
+            ?: findingText?.takeIf(String::isNotBlank)
+            ?: if (RdClientMetadata.APP_LANGUAGE == "en") "Record" else "Kayıt"
+    val displayBody: String get() = description?.takeIf(String::isNotBlank)
+        ?: text?.takeIf(String::isNotBlank)
+        ?: recommendationText.orEmpty()
 
     fun toFinding(fallbackAnalysisId: String): Finding = Finding(
         id = id,
@@ -131,7 +158,7 @@ data class AnalysisReportIntent(
 private data class ResultHubBody(
     val action: String,
     @SerialName("analysis_id") val analysisId: String,
-    val language: String = "tr",
+    val language: String = RdClientMetadata.APP_LANGUAGE,
     @SerialName("client_capabilities") val clientCapabilities: Map<String, Boolean>,
     @SerialName("client_platform") val clientPlatform: String,
     @SerialName("client_app_version") val clientAppVersion: String,
@@ -144,6 +171,7 @@ private data class ResultHubBody(
     @SerialName("target_key") val targetKey: String? = null,
     val rating: Int? = null,
     @SerialName("reason_code") val reasonCode: String? = null,
+    val note: String? = null,
     @SerialName("client_event_id") val clientEventId: String? = null,
     @SerialName("funnel_session_id") val funnelSessionId: String? = null,
     @SerialName("event_name") val eventName: String? = null,
@@ -184,15 +212,17 @@ class AnalysisResultHubRepository @Inject constructor(
         item: AnalysisResultHubItem,
         reaction: AnalysisItemReaction,
         reasonCode: String? = null,
+        note: String? = null,
     ): RdResult<Unit> = try {
         client.functions.invoke(
             "analysis-result-sections",
             body = body("feedback", analysisId).copy(
                 section = section,
-                targetKind = if (section == AnalysisResultSectionId.ApprovedNotebook) "notebook_entry" else "finding",
+                targetKind = section.feedbackTargetKind(),
                 targetKey = item.id,
                 rating = when (reaction) { AnalysisItemReaction.Like -> 1; AnalysisItemReaction.Dislike -> -1; AnalysisItemReaction.None -> 0 },
                 reasonCode = reasonCode,
+                note = sanitizeResultFeedbackNote(note),
             ),
         ).body<ResultHubAck>()
         RdResult.Success(Unit)

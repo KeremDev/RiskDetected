@@ -5,7 +5,10 @@ import com.riskdetectedan.core.data.billing.PurchaseErrorKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
+import java.util.Locale
 
 /**
  * Pure logic, no Android framework dependency — first real JVM unit test in this module (every
@@ -13,6 +16,18 @@ import org.junit.Test
  * they all touch Context/Supabase/RevenueCat; this classifier touches neither).
  */
 class AppErrorMessageTest {
+    private lateinit var originalLocale: Locale
+
+    @Before
+    fun useTurkishBaseLocale() {
+        originalLocale = Locale.getDefault()
+        Locale.setDefault(Locale.forLanguageTag("tr-TR"))
+    }
+
+    @After
+    fun restoreLocale() {
+        Locale.setDefault(originalLocale)
+    }
 
     @Test
     fun `pending Google Play payment keeps entitlement closed and explains automatic activation`() {
@@ -174,5 +189,35 @@ class AppErrorMessageTest {
         val result = AppErrorMessages.make("")
         assertEquals(AppErrorCategory.Unknown, result.category)
         assertTrue(Regex("RD-[A-Z0-9]{8}").matches(result.supportID))
+    }
+
+    @Test
+    fun `english purchase errors and support footer never leak Turkish copy`() {
+        Locale.setDefault(Locale.forLanguageTag("en-US"))
+        val result = AppErrorMessages.makePurchase(
+            PurchaseErrorClassification(
+                kind = PurchaseErrorKind.PaymentPending,
+                rawMessage = "PaymentPendingError",
+                codeName = "PaymentPendingError",
+            ),
+        )
+
+        assertEquals("The purchase is pending on Google Play.", result.message)
+        assertTrue(result.fullText.contains("What you can do:"))
+        assertTrue(result.fullText.contains("Support code:"))
+        assertFalse(result.fullText.contains("Ne yapabilirsin"))
+    }
+
+    @Test
+    fun `english report and analysis failures are localized while classification stays stable`() {
+        Locale.setDefault(Locale.forLanguageTag("en-GB"))
+
+        val quota = AppErrorMessages.make("report_quota_exceeded")
+        val ai = AppErrorMessages.make("output_language_contract_failed")
+
+        assertEquals(AppErrorCategory.QuotaExceeded, quota.category)
+        assertEquals("Report limit reached", quota.title)
+        assertEquals(AppErrorCategory.AiInvalidResponse, ai.category)
+        assertEquals("AI response could not be processed", ai.title)
     }
 }

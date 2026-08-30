@@ -62,6 +62,7 @@ import com.riskdetectedan.core.designsystem.RdPrimaryButton
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.toTextStyle
+import com.riskdetectedan.core.designsystem.rdAnalysisCanvasTitle
 
 /**
  * Port of App/Views/Home/CanvasSheet.swift (Faz N of the core-flow-full-parity roadmap) — the
@@ -202,7 +203,7 @@ private fun CanvasCard(canvas: AnalysisCanvas, isActive: Boolean, isLocked: Bool
                 Icon(canvasIcon(canvas.icon), contentDescription = null, tint = iconTint, modifier = Modifier.size(14.dp))
             }
             Spacer(Modifier.height(7.dp))
-            Text(canvas.title, style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 11.sp), color = textColor, maxLines = 2)
+            Text(rdAnalysisCanvasTitle(canvas.id, canvas.title), style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 11.sp), color = textColor, maxLines = 2)
         }
 
         if (canvas.isPaid) {

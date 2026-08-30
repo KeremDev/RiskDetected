@@ -2,6 +2,7 @@ package com.riskdetectedan.core.data.reports
 
 import com.riskdetectedan.core.common.RdClientMetadata
 import com.riskdetectedan.core.common.RdEnvironmentConfig
+import com.riskdetectedan.core.common.RdLocalizationContext
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import io.github.jan.supabase.SupabaseClient
@@ -216,7 +217,8 @@ class ReportsRepository @Inject constructor(
         reportKind: String = "risk_analysis",
         exportIntentId: String? = null,
         companyId: String? = null,
-        reportLanguage: String = "tr",
+        localization: RdLocalizationContext = RdClientMetadata.localization(),
+        reportLanguage: String = localization.appLanguage,
         companyNameOverride: String? = null,
         companyInfoOverride: String? = null,
         preparedByOverride: String? = null,
@@ -248,11 +250,11 @@ class ReportsRepository @Inject constructor(
                 clientPlatform = RdClientMetadata.PLATFORM,
                 apiContractVersion = RdClientMetadata.API_CONTRACT_VERSION,
                 clientCapabilities = RdClientMetadata.capabilities,
-                appLanguage = RdClientMetadata.APP_LANGUAGE,
-                contentLocale = RdClientMetadata.CONTENT_LOCALE,
-                workJurisdictionCountry = RdClientMetadata.WORK_JURISDICTION_COUNTRY,
-                safetyProfileId = RdClientMetadata.SAFETY_PROFILE_ID,
-                safetyProfileVersion = RdClientMetadata.SAFETY_PROFILE_VERSION,
+                appLanguage = localization.appLanguage,
+                contentLocale = localization.contentLocale,
+                workJurisdictionCountry = localization.workJurisdictionCountry,
+                safetyProfileId = localization.safetyProfileId,
+                safetyProfileVersion = localization.safetyProfileVersion,
             ),
         ).body<GenerateExcelReportResult>()
 
@@ -317,7 +319,8 @@ class ReportsRepository @Inject constructor(
         title: String,
         pageCount: Int,
         companyId: String? = null,
-        reportLanguage: String = "tr",
+        localization: RdLocalizationContext = RdClientMetadata.localization(),
+        reportLanguage: String = localization.appLanguage,
         exportIntentId: String? = null,
         contentScope: String? = null,
         selectedItemKeys: List<String>? = null,
@@ -353,11 +356,11 @@ class ReportsRepository @Inject constructor(
                     clientPlatform = RdClientMetadata.PLATFORM,
                     apiContractVersion = RdClientMetadata.API_CONTRACT_VERSION,
                     clientCapabilities = RdClientMetadata.capabilities,
-                    appLanguage = RdClientMetadata.APP_LANGUAGE,
-                    contentLocale = RdClientMetadata.CONTENT_LOCALE,
-                    workJurisdictionCountry = RdClientMetadata.WORK_JURISDICTION_COUNTRY,
-                    safetyProfileId = RdClientMetadata.SAFETY_PROFILE_ID,
-                    safetyProfileVersion = RdClientMetadata.SAFETY_PROFILE_VERSION,
+                    appLanguage = localization.appLanguage,
+                    contentLocale = localization.contentLocale,
+                    workJurisdictionCountry = localization.workJurisdictionCountry,
+                    safetyProfileId = localization.safetyProfileId,
+                    safetyProfileVersion = localization.safetyProfileVersion,
                     requestId = requestId,
                     supportId = supportId,
                     exportIntentId = exportIntentId,

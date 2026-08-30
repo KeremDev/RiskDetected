@@ -1,0 +1,7 @@
+Based on feedback from our closed testing group, we made further improvements.
+
+• The analysis sector picker now opens fully with Continue visible
+• The Home Start Scan action now matches the iOS icon layout
+• Clipped onboarding sector descriptions were fixed
+• Analysis routing, finding actions, details, and report screens were improved
+• Profile, paywall, localization, performance, and stability refinements

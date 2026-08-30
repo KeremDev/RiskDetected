@@ -32,6 +32,7 @@ import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.data.release.AndroidRuntimeGateName
 import com.riskdetectedan.core.data.release.ReleasePolicyRepository
 import com.riskdetectedan.core.designsystem.R as RdR
+import com.riskdetectedan.core.designsystem.rdAnalysisSectorTitleResource
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -51,6 +52,7 @@ sealed interface CreateAnalysisUiState {
     data object Submitting : CreateAnalysisUiState
     data class Polling(val analysisId: String) : CreateAnalysisUiState
     data class Finalizing(val analysisId: String) : CreateAnalysisUiState
+    data class LoadingCompletedResult(val analysisId: String) : CreateAnalysisUiState
     data class Completed(val analysisId: String, val findings: List<Finding>) : CreateAnalysisUiState
     data class CreatedWithoutPhoto(val analysisId: String) : CreateAnalysisUiState
     data class Failed(val error: AppErrorMessage) : CreateAnalysisUiState
@@ -96,6 +98,9 @@ class AnalysisViewModel @Inject constructor(
 
     private val _updateError = MutableStateFlow<AppErrorMessage?>(null)
     val updateError: StateFlow<AppErrorMessage?> = _updateError.asStateFlow()
+
+    private val _resultFeedbackError = MutableStateFlow<AppErrorMessage?>(null)
+    val resultFeedbackError: StateFlow<AppErrorMessage?> = _resultFeedbackError.asStateFlow()
 
     private val _capabilities = MutableStateFlow(PlanCapabilities.forTier(SubscriptionTier.Free))
     val capabilities: StateFlow<PlanCapabilities> = _capabilities.asStateFlow()
@@ -178,6 +183,24 @@ class AnalysisViewModel @Inject constructor(
             val riskMethod = profile?.preferredMethod
                 ?.takeIf { it == "fine_kinney" || it == "matrix_5x5" }
                 ?: RdClientMetadata.DEFAULT_RISK_METHOD
+            val selectedLocalization = profile?.safetyProfileId
+                ?.let(RdClientMetadata::localizationForSafetyProfile)
+            val submissionAppLanguage = profile?.appLanguage
+                ?.takeIf { it == "tr" || it == "en" }
+                ?: selectedLocalization?.appLanguage
+                ?: RdClientMetadata.APP_LANGUAGE
+            val submissionOutputLocale = profile?.preferredContentLocale
+                ?: selectedLocalization?.contentLocale
+                ?: RdClientMetadata.CONTENT_LOCALE
+            val submissionCountry = profile?.workJurisdictionCountry
+                ?: selectedLocalization?.workJurisdictionCountry
+                ?: RdClientMetadata.WORK_JURISDICTION_COUNTRY
+            val submissionSafetyProfileId = profile?.safetyProfileId
+                ?: selectedLocalization?.safetyProfileId
+                ?: RdClientMetadata.SAFETY_PROFILE_ID
+            val submissionSafetyProfileVersion = profile?.safetyProfileVersion
+                ?: selectedLocalization?.safetyProfileVersion
+                ?: RdClientMetadata.SAFETY_PROFILE_VERSION
             if (analysisMode == "detailed" && !capabilities.canUseDetailedAnalysis) {
                 _state.value = CreateAnalysisUiState.Failed(
                     AppErrorMessages.make(
@@ -215,7 +238,11 @@ class AnalysisViewModel @Inject constructor(
                 ).also(inFlightStore::savePending)
             val request = CreateAnalysisRequest(
                 userId = userId,
-                title = sector?.titleTr ?: context.getString(RdR.string.rd_adsiz_analiz),
+                title = sector?.let { selectedSector ->
+                    rdAnalysisSectorTitleResource(selectedSector.id)
+                        ?.let(context::getString)
+                        ?: selectedSector.titleTr
+                } ?: context.getString(RdR.string.rd_adsiz_analiz),
                 canvas = canvas,
                 sector = sector,
                 clientSubmissionId = pendingSubmission.submissionId,
@@ -285,6 +312,12 @@ class AnalysisViewModel @Inject constructor(
                     analysisMode = analysisMode,
                     sector = sector,
                     photoPaths = uploadedPaths,
+                    appLanguage = submissionAppLanguage,
+                    outputLanguage = submissionAppLanguage,
+                    outputLocale = submissionOutputLocale,
+                    workJurisdictionCountry = submissionCountry,
+                    safetyProfileId = submissionSafetyProfileId,
+                    safetyProfileVersion = submissionSafetyProfileVersion,
                     riskMethod = riskMethod,
                 )
             ) {
@@ -420,7 +453,10 @@ class AnalysisViewModel @Inject constructor(
         item: AnalysisResultHubItem,
         reaction: AnalysisItemReaction,
         reasonCode: String? = null,
+        note: String? = null,
     ) {
+        val previousReaction = item.userReaction
+        _resultFeedbackError.value = null
         _resultHub.value = _resultHub.value?.copy(
             sections = _resultHub.value?.sections.orEmpty().map { current ->
                 if (current.id != section) current else current.copy(
@@ -429,15 +465,39 @@ class AnalysisViewModel @Inject constructor(
             },
         )
         viewModelScope.launch {
-            resultHubRepository.setFeedback(analysisId, section, item, reaction, reasonCode)
-            resultHubRepository.recordEvent(
-                analysisId = analysisId,
-                name = if (reaction == AnalysisItemReaction.None) "result_feedback_cleared" else "result_feedback_set",
-                section = section,
-                funnelSessionId = resultHubFunnelSessionId,
-                itemId = item.id,
-            )
+            when (val result = resultHubRepository.setFeedback(analysisId, section, item, reaction, reasonCode, note)) {
+                is RdResult.Success -> resultHubRepository.recordEvent(
+                    analysisId = analysisId,
+                    name = if (reaction == AnalysisItemReaction.None) "result_feedback_cleared" else "result_feedback_set",
+                    section = section,
+                    funnelSessionId = resultHubFunnelSessionId,
+                    itemId = item.id,
+                )
+                is RdResult.Failure -> {
+                    _resultHub.value = _resultHub.value?.copy(
+                        sections = _resultHub.value?.sections.orEmpty().map { current ->
+                            if (current.id != section) current else current.copy(
+                                items = current.items.map { currentItem ->
+                                    if (currentItem.id == item.id && currentItem.userReaction == reaction) {
+                                        currentItem.copy(userReaction = previousReaction)
+                                    } else {
+                                        currentItem
+                                    }
+                                },
+                            )
+                        },
+                    )
+                    _resultFeedbackError.value = AppErrorMessages.make(
+                        context.getString(RdR.string.rd_geri_bildirim_tekrar_dene),
+                        context = context.getString(RdR.string.rd_geri_bildirim_gonderilemedi),
+                    )
+                }
+            }
         }
+    }
+
+    fun clearResultFeedbackError() {
+        _resultFeedbackError.value = null
     }
 
     fun recordResultEvent(
@@ -488,16 +548,15 @@ class AnalysisViewModel @Inject constructor(
     fun openCompletedAnalysis(analysisId: String) {
         val current = _state.value
         if ((current as? CreateAnalysisUiState.Completed)?.analysisId == analysisId ||
-            (current as? CreateAnalysisUiState.Finalizing)?.analysisId == analysisId
+            (current as? CreateAnalysisUiState.LoadingCompletedResult)?.analysisId == analysisId
         ) return
         val userId = authRepository.currentUserId ?: return
-        _state.value = CreateAnalysisUiState.Finalizing(analysisId)
+        _state.value = CreateAnalysisUiState.LoadingCompletedResult(analysisId)
         viewModelScope.launch {
             _capabilities.value = resolveCapabilities(userId)
             val findings = (findingsRepository.fetchFindings(analysisId) as? RdResult.Success)?.value.orEmpty()
             _findings.value = findings
             loadResultContext(analysisId)
-            delay(520)
             _state.value = CreateAnalysisUiState.Completed(analysisId, findings)
         }
     }
@@ -568,13 +627,6 @@ class AnalysisViewModel @Inject constructor(
      * [deleteError] on failure (e.g. `finding_version_conflict` if it was already edited
      * elsewhere) — no auto-retry, matches the edge function's "reload and try again" message. */
     fun deleteFinding(analysisId: String, finding: Finding) {
-        if (!_capabilities.value.canEditAIFindings) {
-            _deleteError.value = AppErrorMessages.make(
-                context.getString(RdR.string.rd_bulgu_duzenleme_kapali),
-                context = context.getString(RdR.string.rd_bulgu_silinemedi),
-            )
-            return
-        }
         viewModelScope.launch {
             when (
                 val result = findingsRepository.deleteFinding(
@@ -604,13 +656,6 @@ class AnalysisViewModel @Inject constructor(
      * `finding_version`/recomputes the analysis rollup, and trusting a locally-guessed new
      * version would risk a spurious `finding_version_conflict` on the *next* edit. */
     fun updateFinding(analysisId: String, finding: Finding, patch: FindingPatch) {
-        if (!_capabilities.value.canEditAIFindings) {
-            _updateError.value = AppErrorMessages.make(
-                context.getString(RdR.string.rd_bulgu_duzenleme_kapali),
-                context = context.getString(RdR.string.rd_bulgu_kaydedilemedi),
-            )
-            return
-        }
         viewModelScope.launch {
             when (
                 val result = findingsRepository.updateFinding(
