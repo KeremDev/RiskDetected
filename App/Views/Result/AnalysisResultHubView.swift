@@ -142,6 +142,13 @@ struct AnalysisResultHubView: View {
     }
     private var isFreeTier: Bool { (hub.tier ?? "").lowercased() == "free" }
     private var isPlusTier: Bool { (hub.tier ?? "").lowercased() == "plus" }
+    private var membershipTier: SubscriptionTier {
+        switch (hub.tier ?? "").lowercased() {
+        case "pro": return .pro
+        case "plus": return .plus
+        default: return .free
+        }
+    }
     private var reportSheetDetents: Set<PresentationDetent> {
         if selectedSection != .riskAnalysis {
             return [ReferenceReportSheetLayout.nonRiskDetent]
@@ -241,6 +248,7 @@ struct AnalysisResultHubView: View {
                 selectedCount: selectedIDs.count,
                 totalCount: activeSection.count,
                 isFreeTier: isFreeTier,
+                accessTier: membershipTier,
                 canReport: activeSection.canReport,
                 freeRiskAnalysisTrialRemaining: freeRiskAnalysisTrialRemaining,
                 method: $method,
@@ -324,6 +332,7 @@ struct AnalysisResultHubView: View {
 
     private func sectionTab(_ section: AnalysisResultSection, width: CGFloat) -> some View {
         let selected = selectedSection == section.id
+        let tabSurface = selected ? Color.rdResultElevatedSurface : Color.rdResultSurface
         return Button {
             withAnimation(.easeOut(duration: 0.18)) { selectedSection = section.id }
             Task {
@@ -348,15 +357,15 @@ struct AnalysisResultHubView: View {
             VStack(spacing: 5) {
                 Image(systemName: sectionIcon(section.id))
                     .font(RDTypography.font(size: 20, weight: .regular))
-                    .foregroundStyle(selected ? sectionAccentColor(section.id) : Color.black)
+                    .foregroundStyle(selected ? sectionAccentColor(section.id) : Color.rdResultPrimaryText)
                 Text(section.id.compactTitle(language: language))
                     .font(referenceFont(11.5, .heavy))
-                    .foregroundStyle(Color.black)
+                    .foregroundStyle(Color.rdResultPrimaryText)
                     .lineLimit(1)
                     .minimumScaleFactor(0.68)
                 Text("\(section.count) \(section.id.countLabel(language: language, count: section.count))")
                     .font(referenceFont(10, .semibold))
-                    .foregroundStyle(Color.black.opacity(0.58))
+                    .foregroundStyle(Color.rdResultSecondaryText)
                     .lineLimit(1)
             }
             .frame(width: width, height: selected ? 84 : 72)
@@ -364,11 +373,11 @@ struct AnalysisResultHubView: View {
                 Group {
                     if selected {
                         ConnectedTabFill(cornerRadius: 8)
-                            .fill(Color.white)
+                            .fill(tabSurface)
                     }
                     else {
                         RoundedRectangle(cornerRadius: 6)
-                            .fill(Color.white)
+                            .fill(tabSurface)
                     }
                 }
             )
@@ -384,7 +393,7 @@ struct AnalysisResultHubView: View {
             .overlay(alignment: .bottom) {
                 if selected {
                     Rectangle()
-                        .fill(Color.white)
+                        .fill(tabSurface)
                         .frame(height: 2.5)
                 }
             }
@@ -522,12 +531,17 @@ struct AnalysisResultHubView: View {
     private var trainingContent: some View {
         let groups = trainingGroups
         let active = activeTrainingGroup(in: groups)
-        let items = groups.first(where: { $0.code == active })?.items ?? []
+        // `nil` is the deliberate "All" state. Keeping it as the default
+        // means the screen never opens on an arbitrary first category and the
+        // user sees the complete training plan immediately.
+        let items = active.flatMap { code in
+            groups.first(where: { $0.code == code })?.items
+        } ?? activeSection.items
         let promotionInsertionIndex = min(1, max(0, items.count - 1))
 
         return VStack(spacing: 0) {
             nonRiskSummary.padding(.top, 12)
-            if groups.count > 1 {
+            if !groups.isEmpty {
                 trainingGroupFilter(groups: groups, active: active)
                     .padding(.top, 14)
             }
@@ -576,62 +590,138 @@ struct AnalysisResultHubView: View {
         }
     }
 
-    /// Seçili grup, yoksa ilk grup.
-    ///
-    /// Seçim boşta kalırsa liste de boş kalırdı; ilk gruba düşmek kullanıcının
-    /// hiçbir şey görmediği bir durum bırakmıyor.
-    private func activeTrainingGroup(in groups: [TrainingGroup]) -> String {
+    /// Seçili ve hâlâ geçerli grup. `nil`, tüm eğitimleri gösterir.
+    private func activeTrainingGroup(in groups: [TrainingGroup]) -> String? {
         if let selected = selectedTrainingGroup,
            groups.contains(where: { $0.code == selected }) {
             return selected
         }
-        return groups.first?.code ?? ""
+        return nil
     }
 
     private func trainingGroupFilter(
         groups: [TrainingGroup],
-        active: String
+        active: String?
     ) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
+                trainingGroupChip(
+                    label: copy(
+                        "analysis.result_hub.training.group.all",
+                        "Tümü",
+                        "All"
+                    ),
+                    icon: "square.grid.2x2.fill",
+                    count: activeSection.items.count,
+                    selected: active == nil,
+                    accessibilityID: "result.hub.training.group.all"
+                ) {
+                    selectedTrainingGroup = nil
+                }
+
                 ForEach(groups, id: \.code) { group in
                     let selected = group.code == active
-                    Button {
-                        withAnimation(.easeOut(duration: 0.16)) {
-                            selectedTrainingGroup = group.code
-                        }
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: group.icon)
-                                .font(RDTypography.font(size: 11, weight: .semibold))
-                            Text(group.label)
-                                .font(referenceFont(11.5, selected ? .heavy : .semibold))
-                                .lineLimit(1)
-                            // Kaç kart olduğu görünmezse, kullanıcı seçtiği
-                            // grubun dışında başka öneri kalmadığını sanır.
-                            Text("\(group.items.count)")
-                                .font(referenceFont(10, .heavy))
-                                .foregroundStyle(selected ? Color.white.opacity(0.85) : muted)
-                        }
-                        .foregroundStyle(selected ? .white : ink)
-                        .padding(.horizontal, 12)
-                        .frame(height: 34)
-                        .background(selected ? activeAccent : Color.rdResultSurface)
-                        .clipShape(Capsule())
-                        .overlay(
-                            Capsule().stroke(
-                                selected ? .clear : Color.rdResultLine,
-                                lineWidth: 1
-                            )
-                        )
+                    trainingGroupChip(
+                        label: group.label,
+                        icon: group.icon,
+                        count: group.items.count,
+                        selected: selected,
+                        accessibilityID: "result.hub.training.group.\(group.code)"
+                    ) {
+                        selectedTrainingGroup = group.code
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("result.hub.training.group.\(group.code)")
-                    .accessibilityAddTraits(selected ? [.isSelected] : [])
                 }
             }
             .padding(.horizontal, 16)
         }
+    }
+
+    /// Yatay eğitim filtresindeki okunaklı, yüksek kontrastlı kategori rozeti.
+    ///
+    /// Dark modda yalnızca ince gri bir çizgiyle ayrılan eski etiketler kart
+    /// yüzeyinde kayboluyordu. Mor ikon yuvası ve sayaç rozeti seçili olmayan
+    /// durumda da kategorileri görünür tutuyor; seçim ise bölümün kendi
+    /// gradyanını kullanarak netleşiyor.
+    private func trainingGroupChip(
+        label: String,
+        icon: String,
+        count: Int,
+        selected: Bool,
+        accessibilityID: String,
+        onSelect: @escaping () -> Void
+    ) -> some View {
+        Button {
+            withAnimation(.easeOut(duration: 0.16)) {
+                onSelect()
+            }
+        } label: {
+            HStack(spacing: 7) {
+                Image(systemName: icon)
+                    .font(RDTypography.font(size: 10.5, weight: .bold))
+                    .foregroundStyle(selected ? Color.white : Color.rdSectionTrainingAccent)
+                    .frame(width: 24, height: 24)
+                    .background(
+                        selected
+                            ? Color.white.opacity(0.18)
+                            : Color.rdSectionTrainingTint
+                    )
+                    .clipShape(Circle())
+
+                Text(label)
+                    .font(referenceFont(11.5, selected ? .heavy : .bold))
+                    .lineLimit(1)
+
+                // The count is a distinct badge so it remains legible over
+                // both the dark surface and the selected purple gradient.
+                Text("\(count)")
+                    .font(referenceFont(9.5, .heavy))
+                    .foregroundStyle(selected ? Color.white : Color.rdSectionTrainingStrong)
+                    .padding(.horizontal, 6)
+                    .frame(minHeight: 20)
+                    .background(
+                        selected
+                            ? Color.white.opacity(0.18)
+                            : Color.rdSectionTrainingTint
+                    )
+                    .clipShape(Capsule())
+            }
+            .foregroundStyle(selected ? Color.white : ink)
+            .padding(.leading, 7)
+            .padding(.trailing, 9)
+            .frame(height: 40)
+            .background {
+                if selected {
+                    LinearGradient(
+                        colors: [.rdSectionTrainingStart, .rdSectionTrainingAccent],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                } else {
+                    Color.rdResultElevatedSurface
+                }
+            }
+            .clipShape(Capsule())
+            .overlay {
+                Capsule().stroke(
+                    selected
+                        ? Color.white.opacity(0.16)
+                        : Color.rdSectionTrainingAccent.opacity(0.68),
+                    lineWidth: selected ? 1 : 1.25
+                )
+            }
+            .shadow(
+                color: selected
+                    ? Color.rdSectionTrainingAccent.opacity(0.28)
+                    : Color.black.opacity(0.08),
+                radius: selected ? 5 : 2,
+                x: 0,
+                y: 2
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(accessibilityID)
+        .accessibilityLabel("\(label), \(count)")
+        .accessibilityAddTraits(selected ? [.isSelected] : [])
     }
 
     /// Eğitim kartı.
@@ -3034,6 +3124,7 @@ private struct ReferenceReportSheet: View {
     let selectedCount: Int
     let totalCount: Int
     let isFreeTier: Bool
+    let accessTier: SubscriptionTier
     let canReport: Bool
     let freeRiskAnalysisTrialRemaining: Int
     @Binding var method: RiskMethod
@@ -3047,6 +3138,7 @@ private struct ReferenceReportSheet: View {
     let onGenerate: () -> Void
 
     @State private var companyPickerPresented = false
+    @State private var companyCreatorPresented = false
 
     private let green = Color.rdResultGreen
     private let greenDark = Color.rdResultGreenDark
@@ -3171,6 +3263,21 @@ private struct ReferenceReportSheet: View {
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $companyCreatorPresented) {
+            CompanyPickerSheet(
+                title: copy("analysis.result_hub.v2.firma.ekle.703fd054", "Firma ekle", "Add company"),
+                accessTier: accessTier,
+                selectedCompanyID: selectedCompany?.id,
+                allowNoCompany: true,
+                startsInCreateMode: true,
+                onSelect: { company in
+                    selectedCompany = company
+                },
+                onPaywall: onUpgrade
+            )
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
     }
 
     private func updatePreferredHeight(
@@ -3258,9 +3365,9 @@ private struct ReferenceReportSheet: View {
                     fieldTitle(copy("analysis.result_hub.v2.firma.90198323", "FİRMA", "COMPANY"))
                     Spacer()
                     Button {
-                        companyPickerPresented = true
+                        companyCreatorPresented = true
                     } label: {
-                        Text(copy("analysis.result_hub.v2.firma.ekle.703fd054", "Firma ekle", "Select company"))
+                        Text(copy("analysis.result_hub.v2.firma.ekle.703fd054", "Firma ekle", "Add company"))
                             .font(RDTypography.font(9.5, .heavy))
                             .foregroundStyle(greenDark)
                     }

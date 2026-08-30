@@ -220,11 +220,11 @@ struct AuthView: View {
             HStack(spacing: 10) {
                 Image(systemName: "envelope.fill")
                     .font(RDTypography.font(size: RDFontScale.size(17), weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdGreenDark)
+                    .foregroundStyle(Color.rdGreen)
 
                 Text(localizedTitle)
                     .font(RDTypography.font(size: RDFontScale.size(17), weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdOnyx)
+                    .foregroundStyle(Color.rdBlack)
                     .lineLimit(1)
                     .minimumScaleFactor(0.82)
             }
@@ -234,7 +234,7 @@ struct AuthView: View {
             .background(Color.rdWhite.opacity(0.98))
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.rdOnyx, lineWidth: 1.5)
+                    .stroke(Color.rdLine, lineWidth: 1.5)
             )
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .shadow(color: Color.rdOnyx.opacity(0.08), radius: 8, x: 0, y: 4)
@@ -272,7 +272,7 @@ struct AuthView: View {
             .background(Color.rdWhite)
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(Color.rdOnyx, lineWidth: 1.5)
+                    .stroke(Color.rdLine, lineWidth: 1.5)
             )
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .shadow(color: Color.rdOnyx.opacity(0.08), radius: 8, x: 0, y: 4)
@@ -715,14 +715,14 @@ private struct GoogleWordmark: View {
     private var localizedText: Text {
         let title = Self.localizedTitle
         guard let range = title.range(of: "Google", options: [.caseInsensitive]) else {
-            return Text(title).foregroundColor(Color.rdOnyx)
+            return Text(title).foregroundColor(Color.rdBlack)
         }
 
         let prefix = String(title[..<range.lowerBound])
         let suffix = String(title[range.upperBound...])
-        return Text(prefix).foregroundColor(Color.rdOnyx)
+        return Text(prefix).foregroundColor(Color.rdBlack)
             + googleBrandText
-            + Text(suffix).foregroundColor(Color.rdOnyx)
+            + Text(suffix).foregroundColor(Color.rdBlack)
     }
 
     private var googleBrandText: Text {

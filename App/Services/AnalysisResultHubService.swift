@@ -6,6 +6,10 @@ final class AnalysisResultHubService {
     static let shared = AnalysisResultHubService()
     private let functions = SupabaseService.shared.functions
 
+    private enum ReadinessError: Error {
+        case exhausted
+    }
+
     private struct BaseBody: Encodable {
         let action: String
         let analysis_id: String
@@ -35,6 +39,49 @@ final class AnalysisResultHubService {
                 client_app_build: AppClientMetadata.appBuild
             ))
         )
+    }
+
+    /// The analysis job and the result-hub projection complete in separate
+    /// backend transactions. A newly completed analysis can therefore be
+    /// observable a fraction of a second before its hub projection is ready.
+    /// Keep that eventual-consistency window as a loading state instead of
+    /// surfacing a false failure to the user.
+    func loadWhenReady(
+        analysisID: UUID,
+        language: RDLanguage,
+        maximumAttempts: Int = 5
+    ) async throws -> AnalysisResultHubResponse {
+        let attemptCount = max(1, maximumAttempts)
+        let retryDelays: [UInt64] = [300_000_000, 600_000_000, 1_000_000_000, 1_600_000_000]
+        var lastDisabledResponse: AnalysisResultHubResponse?
+        var lastError: Error?
+
+        for attempt in 0..<attemptCount {
+            try Task.checkCancellation()
+            do {
+                let response = try await load(analysisID: analysisID, language: language)
+                if response.enabled {
+                    return response
+                }
+                lastDisabledResponse = response
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                lastError = error
+            }
+
+            guard attempt < attemptCount - 1 else { break }
+            let delay = retryDelays[min(attempt, retryDelays.count - 1)]
+            try await Task.sleep(nanoseconds: delay)
+        }
+
+        if let lastDisabledResponse {
+            return lastDisabledResponse
+        }
+        if let lastError {
+            throw lastError
+        }
+        throw ReadinessError.exhausted
     }
 
     func setFeedback(

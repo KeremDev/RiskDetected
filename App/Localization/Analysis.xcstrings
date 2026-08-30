@@ -6757,6 +6757,24 @@
         }
       }
     },
+    "analysis.result_hub.training.group.all": {
+      "comment": "Training result category filter; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tümü"
+          }
+        }
+      }
+    },
     "analysis.result_hub.training.group.emergency_and_rescue": {
       "comment": "RiskDetected 2.0 result UI copy; placeholders: none; review: release migration",
       "extractionState": "manual",
@@ -7916,7 +7934,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Select company"
+            "value": "Add company"
           }
         },
         "tr": {

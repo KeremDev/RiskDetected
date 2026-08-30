@@ -15,6 +15,7 @@ struct CompanyPickerSheet: View {
     var selectedCompanyID: UUID?
     var allowNoCompany: Bool = true
     var allowsSelection: Bool = true
+    var startsInCreateMode: Bool = false
     var onSelect: (Company?) -> Void
     var onPaywall: () -> Void
 
@@ -26,6 +27,7 @@ struct CompanyPickerSheet: View {
     @State private var editorLogoImage: UIImage?
     @State private var isEditorPresented = false
     @State private var pendingArchive: Company?
+    @State private var didAutoPresentCreateMode = false
     #if DEBUG
     @State private var fixtureCompanies: [Company] = []
     #endif
@@ -57,7 +59,12 @@ struct CompanyPickerSheet: View {
                 }
             }
         }
-        .task { await loadCompanies() }
+        .task {
+            await loadCompanies()
+            guard startsInCreateMode, accessTier.isPaid, !didAutoPresentCreateMode else { return }
+            didAutoPresentCreateMode = true
+            presentEditor(CompanyDraft())
+        }
         .sheet(isPresented: $isEditorPresented) {
             CompanyEditorSheet(
                 draft: editorDraft,

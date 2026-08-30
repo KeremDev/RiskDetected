@@ -772,7 +772,7 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
       }
     }
   }
-  assert.equal(rows.length, 2_360, "Turkish localized-unit count");
+  assert.equal(rows.length, 2_361, "Turkish localized-unit count");
   assert.equal(
     createHash("sha256").update(rows.join("\n")).digest("hex"),
     // 2026-08-19: "Fine-Kinney" dort anahtarda makine cevirisiyle "Ince Kinney"
@@ -791,7 +791,8 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
     // 2026-08-20: paywall 7. gun aciklamasi ekranda yer kazanmak icin tek satira indi.
     // 2026-08-30: yeni sonuc merkezi ve bulgu detay ekranlarindaki kullanici
     // metinleri Analysis kataloguna tasindi; rapor saha-dogrulamasi etiketi eklendi.
-    "74fde0dd58c6f09aa9dedb710eabb0fda7cf03f7c06f9068b332f86c3627eab3",
+    // 2026-08-30: egitim onerileri filtresine varsayilan "Tumu" secenegi eklendi.
+    "ff65d442afed2c81e4c3cf160ec9d377e1ff7e64bf31819eeed4fff8d70a0cc9",
     "Turkish catalog snapshot changed",
   );
   assert.equal(

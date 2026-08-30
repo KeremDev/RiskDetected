@@ -9,6 +9,7 @@ struct CanvasSheet: View {
     var onUpgradeRequested: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
 
     private let rows: [GridItem] = Array(
         repeating: GridItem(.fixed(82), spacing: 8),
@@ -75,6 +76,9 @@ struct CanvasSheet: View {
             RDButton(
                 title: RDLocalization.string("analysis.canvas.sheet.onayla.ve.devam.et.8d924a02", table: .analysis, fallback: "Onayla ve devam et"),
                 style: .primary,
+                backgroundOverride: Color.rdCTA,
+                foregroundOverride: .white,
+                shadowOverride: colorScheme == .dark ? Color.rdGreen.opacity(0.22) : .clear,
                 a11yID: "canvas_sheet.confirm"
             ) {
                 onConfirm()

@@ -198,6 +198,7 @@ struct ResultView: View {
     @State private var expandedPhotoPreview: ResultPhotoPreview?
     @State private var resultHub: AnalysisResultHubResponse?
     @State private var resultHubLoadError: String?
+    @State private var resultHubLoadRequestID = UUID()
     @State private var resultHubPaywallContext: AnalysisResultPaywallContext?
     private var preferredModalColorScheme: ColorScheme {
         app.themePreference.colorScheme ?? colorScheme
@@ -519,6 +520,7 @@ struct ResultView: View {
             pendingDeleteFindingRow = nil
             resultHub = nil
             resultHubLoadError = nil
+            resultHubLoadRequestID = UUID()
 #if DEBUG
             didOpenUITestFindingEditor = false
 #endif
@@ -1380,27 +1382,36 @@ struct ResultView: View {
     private func loadResultHubIfNeeded() async {
         guard let analysisID = currentBundle?.analysis.id else {
             resultHub = nil
-            resultHubLoadError = "analysis_missing"
+            resultHubLoadError = nil
             return
         }
+        let requestID = UUID()
+        resultHubLoadRequestID = requestID
         resultHubLoadError = nil
         do {
-            async let responseTask = AnalysisResultHubService.shared.load(
+            async let responseTask = AnalysisResultHubService.shared.loadWhenReady(
                 analysisID: analysisID,
                 language: analysisOutputLanguage
             )
             async let trialStateTask: Void = refreshFreeRiskAnalysisTrialState()
             let (response, _) = try await (responseTask, trialStateTask)
+            guard resultHubLoadRequestID == requestID, !Task.isCancelled else { return }
             guard response.enabled else {
-                resultHub = nil
-                resultHubLoadError = response.reason ?? "result_hub_unavailable"
+                if resultHub == nil {
+                    resultHubLoadError = response.reason ?? "result_hub_unavailable"
+                }
                 Self.logger.error("Result hub unavailable analysis=\(analysisID.uuidString, privacy: .private(mask: .hash)) reason=\(response.reason ?? "unknown", privacy: .public)")
                 return
             }
             resultHub = response
+            resultHubLoadError = nil
+        } catch is CancellationError {
+            return
         } catch {
-            resultHub = nil
-            resultHubLoadError = error.localizedDescription
+            guard resultHubLoadRequestID == requestID, !Task.isCancelled else { return }
+            if resultHub == nil {
+                resultHubLoadError = error.localizedDescription
+            }
             Self.logger.warning("Result hub load failed analysis=\(analysisID.uuidString, privacy: .private(mask: .hash)) error=\(error.localizedDescription, privacy: .public)")
         }
     }

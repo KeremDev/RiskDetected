@@ -1,7 +1,7 @@
-RiskDetected 2.0.0 (build 87) introduces the V4 analysis engine and redesigned result/report flows. It adds no permissions, external services, or declared data categories.
+RiskDetected 2.0.0 (build 88) introduces the V4 analysis engine and redesigned result/report flows. It adds no permissions, external services, or declared data categories.
 
 Changes in this build:
-- All new iOS build-87 analyses use V4. The route is pinned at creation and never silently falls back to an older engine.
+- All new iOS build-88 analyses use V4. The route is pinned at creation and never silently falls back to an older engine.
 - Risk Analysis, Expert Guidance, Approved Notebook, and Training Recommendations share a new result hub with explicit empty, single, and multiple-finding states.
 - Finding details include evidence, corrective action, preventive action, and regulatory references when available. Like/dislike feedback and optional reasons persist.
 - PDF/Excel exports preserve the selected section and full expert content. Single-finding download/share and archive tracking are supported.
