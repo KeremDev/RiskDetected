@@ -30,7 +30,7 @@
 // config key.
 
 export const V5_ENGINE_MODE = "free";
-export const V5_PROMPT_VERSION = "v7-free-core-multidisciplinary-v8";
+export const V5_PROMPT_VERSION = "v7-free-core-multidisciplinary-v9";
 
 /** Fine-Kinney scales. The arithmetic stays deterministic; the values do not. */
 export const FK_PROBABILITY = [0.2, 0.5, 1, 3, 6, 10] as const;
@@ -131,7 +131,7 @@ export type V5PhotoOutput = {
   layer_scan: V5LayerScan[];
 };
 
-export const V5_SCAN_LAYER_COUNT = 18;
+export const V5_SCAN_LAYER_COUNT = 19;
 
 const regionSchema = {
   type: "object",

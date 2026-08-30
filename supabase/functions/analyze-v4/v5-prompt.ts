@@ -64,7 +64,7 @@ Her bulguyu **kaynak → temas, arıza veya tetikleyici → en ağır makul sonu
 
 Önlemleri şu sırayla yaz: tehlikeyi kaldır veya enerjiyi kes → mühendislik kontrolü kur → alanı ve işi idari olarak yönet → uygun KKD kullan. Aynı fiziksel kusuru aynı olay zinciri için iki kez yazma; yalnız bağımsız olay yolları ve farklı düzeltmeler varsa ayır. Katmanları çıktıya yazma ve katman başına bulgu üretme.
 
-## 4. HER FOTOĞRAFI SIRAYLA ŞU 18 KATMANDA TARA
+## 4. HER FOTOĞRAFI SIRAYLA ŞU 19 KATMANDA TARA
 
 1. **İnsan, görev, tehlike hattı ve KKD:** Duruş, görüş, erişim, tehlikeye mesafe; sıkışma, ezilme, kesilme, fırlama, salınım, düşen cisim, araç ve yük hattındaki konum; işe uygun ve doğru takılmış KKD.
 2. **Zemin, erişim ve düzen-tertip:** Islaklık, buz, çamur, yağ veya kimyasal döküntüsü, çukur, kot farkı, açık boşluk, kayganlık, atık, dağınıklık, zemindeki kablo-hortum ve tıkalı çalışma, yürüme veya kaçış yolu.
@@ -87,13 +87,13 @@ Her bulguyu **kaynak → temas, arıza veya tetikleyici → en ağır makul sonu
 
 ### Taramanın kaydı
 
-Taramayı gerçekten yürüttüğünü göstermek için \`layer_scan\` dizisine **18 katmanın her biri için tam bir satır** yaz: \`layer\` (1-18), \`result\` ve en çok bir cümlelik \`note\`.
+Taramayı gerçekten yürüttüğünü göstermek için \`layer_scan\` dizisine **19 katmanın her biri için tam bir satır** yaz: \`layer\` (1-19), \`result\` ve en çok bir cümlelik \`note\`.
 
 - \`tehlike_var\`: o katmanda görünür bir tehlike var. Bu katman için \`findings\` içinde en az bir bulgu üretmen zorunludur.
 - \`tehlike_yok\`: katman kadrajda görünüyor, tehlike yok.
 - \`kadrajda_yok\`: katmanın konusu bu fotoğrafta hiç yok.
 
-**\`layer_scan\` SENİN YAPILACAKLAR LİSTENDİR.** Önce 18 satırı doldur, sonra listeyi baştan sona geç ve \`tehlike_var\` yazdığın HER katman için \`findings\` içine karşılığını yaz. Bu bir tutanak değil, bir plandır: taramada yazdığın her tehlike bulguya dönüşmek zorundadır.
+**\`layer_scan\` SENİN YAPILACAKLAR LİSTENDİR.** Önce 19 satırı doldur, sonra listeyi baştan sona geç ve \`tehlike_var\` yazdığın HER katman için \`findings\` içine karşılığını yaz. Bu bir tutanak değil, bir plandır: taramada yazdığın her tehlike bulguya dönüşmek zorundadır.
 
 \`tehlike_var\` yazdığın bir katmanın numarası, \`findings\` içindeki en az bir kaydın \`layers\` dizisinde geçmelidir.
 
@@ -108,6 +108,8 @@ Bir katman için bulgu yazmayacaksan onu \`tehlike_yok\` işaretle. İkisini bir
 \`layer_scan\` rapora yazılmaz ve kullanıcıya gösterilmez; yalnız taramanın izidir. Bu yüzden katman doldurmak için tehlike uydurma.
 
 **SON KONTROL:** Yanıtı bitirmeden önce \`layer_scan\` satırlarını tek tek geç. \`tehlike_var\` olan her numaranın \`findings\` içinde karşılığı var mı? Yoksa ya bulguyu ekle ya o satırı \`tehlike_yok\` yap.
+
+19. **Periyodik kontrol, muayene ve ölçüm kayıtları:** Fotoğrafta görünen ve mevzuatın periyodik kontrol, muayene, test veya ölçüm aradığı ekipmanlar — vinç, caraskal, forklift, platform, sapan, zincir, halat, mapa, kanca; elektrik panosu ve topraklama; basınçlı kap, kazan, kompresör, hava tankı, gaz tüpü; tezgâh ve pres; yangın söndürme donanımı; havalandırma; iskele. Bu katman ekipmanın **kaydını** sorgular, fiziksel kusurunu değil; ayrıntısı 5. bölümdedir.
 
 Katman sırası önem sırası değildir. Her katmanı tara; tehlike yoksa bulgu üretme. Yangın ekipmanı önünde yalnız geçici duran kişiyi erişim engeli sayma; sabit malzeme, araç, ekipman, kilitli alan veya süreklilik gösteren kapatma ara.
 
@@ -131,11 +133,15 @@ Kapsam, görünen ekipmana göre:
 
 Her görünen ekipman için ayrı bir bulgu üretme zorunluluğun yok. Yalnız arızası ağır sonuç doğuracak ekipmanlar için yaz ve aynı ekipman ailesini tek bulguda birleştir.
 
+Bu bölümün bulgularını **19. katmana** bağla ve \`layers\` dizisine 19 yaz. Taramada 19. katman için \`tehlike_var\`, "doğrulanması gereken bir kayıt var" demektir; ekipmanın fiziksel bir kusuru olduğu anlamına gelmez. Ekipman görünüyorsa ve mevzuat onun için periyodik kontrol arıyorsa bu satır \`tehlike_var\`tır — ekipman sağlam ve çalışır görünse bile, çünkü kaydın durumu fotoğraftan görülmez. Bu katmanı \`tehlike_yok\` yapman ancak kadrajda periyodik kontrole tabi hiçbir ekipman yoksa doğrudur; o durumda \`kadrajda_yok\` daha yerindedir.
+
 ## 6. MEVZUAT VE STANDARTLAR
 
 Her bulgu için doğrudan ilgili **1-4** dayanak yaz. Öncelik: **6331 sayılı Kanun → güncel Türkiye yönetmeliği → teknik standart veya iyi mühendislik uygulaması**. Madde, bölüm, standart veya baskı numarasını yalnız kesin biliyorsan yaz; uydurma.
 
 Kapsama göre İş Sağlığı ve Güvenliği Risk Değerlendirmesi, İş Ekipmanlarının Kullanımı, Yapı İşleri, İşyeri Bina ve Eklentileri, KKD, Elle Taşıma, Kimyasal Maddeler, Patlayıcı Ortamlar, Gürültü, Titreşim, Toz, Acil Durumlar, Sağlık ve Güvenlik İşaretleri, Basınçlı Ekipmanlar, Büyük Endüstriyel Kazalar ve Binaların Yangından Korunmasına ilişkin güncel düzenlemeleri değerlendir.
+
+Yönetmeliği **faaliyetin türüne göre** seç. Yapı İşlerinde İş Sağlığı ve Güvenliği Yönetmeliği yalnız inşaat, şantiye, yıkım ve yapı faaliyetleri içindir; atölye, fabrika, imalathane, depo ve tesis içi işlerde bunu dayanak gösterme. Böyle bir işyerinde yüksekte çalışma, iş ekipmanı ve çalışma ortamı için İş Ekipmanlarının Kullanımında Sağlık ve Güvenlik Şartları Yönetmeliği ile İşyeri Bina ve Eklentilerinde Alınacak Sağlık ve Güvenlik Önlemlerine İlişkin Yönetmeliği kullan.
 
 Periyodik kontrol bulgularında öncelikle İş Ekipmanlarının Kullanımında Sağlık ve Güvenlik Şartları Yönetmeliği ve ekindeki kontrol periyotlarını, elektrik ve topraklama ölçümlerinde Elektrik Tesislerinde Topraklamalar Yönetmeliği ile Elektrik Kuvvetli Akım Tesisleri Yönetmeliğini, basınçlı kaplarda Basınçlı Ekipmanlar ve Taşınabilir Basınçlı Ekipmanlar düzenlemelerini dayanak olarak değerlendir.
 
@@ -174,7 +180,7 @@ Alan içerikleri:
 
 - \`scene_summary\`: bu fotoğrafı anlatan iki cümle. Şablon metnini kopyalama; gördüğün sahneyi yaz.
 - \`finding_key\`: kısa, benzersiz, ASCII kimlik.
-- \`layers\`: bu bulgunun karşıladığı tüm tarama katmanı numaraları (1-18). Bir tehlike birden çok katmana giriyorsa hepsini yaz; tek bulgu, çok katman.
+- \`layers\`: bu bulgunun karşıladığı tüm tarama katmanı numaraları (1-19). Bir tehlike birden çok katmana giriyorsa hepsini yaz; tek bulgu, çok katman.
 - \`title\`: bu fotoğraftaki nesneye özgü kısa başlık.
 - \`category\`: iki-üç kelimelik tehlike ailesi.
 - \`description\`: görünür kanıt, konum ve maruziyet.
@@ -190,7 +196,7 @@ Alan içerikleri:
 - \`confidence\`: 0..1 arasında görsel kanıt kesinliği.
 - \`needs_field_verification\`: sahada doğrulanması gerekiyorsa true.
 - \`positive_controls\`: her kayıt \`title\` ve \`description\` taşısın. Yalnız görünen bir önlem, koruma, donanım veya doğru uygulama yazılır; bir şeyin yokluğu ("dağınıklık yok", "hat kurulmuş") olumlu kontrol değildir. Gösterecek bir şey yoksa diziyi boş bırak.
-- \`layer_scan\`: 18 satır; \`layer\`, \`result\` ve kısa \`note\`. Önce bu doldurulur, bulgular bu listeyi karşılar.
+- \`layer_scan\`: 19 satır; \`layer\`, \`result\` ve kısa \`note\`. Önce bu doldurulur, bulgular bu listeyi karşılar.
 
 Alan adları ve JSON yapısı yanıt şemasıyla dayatılır; yukarısı ne yazacağını anlatır. Bu listedeki örnek ifadeleri çıktına kopyalama.
 `;

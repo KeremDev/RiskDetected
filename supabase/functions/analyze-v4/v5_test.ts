@@ -235,11 +235,15 @@ Deno.test("yayımlanacak metni kalmayan bulgu düşer ve iz bırakır", () => {
   });
 });
 
-Deno.test("on sekiz katman ve disiplin kurulu istemde", () => {
-  assertStringIncludes(V5_FREE_PROMPT, "ŞU 18 KATMANDA TARA");
+Deno.test("on dokuz katman ve disiplin kurulu istemde", () => {
+  assertStringIncludes(V5_FREE_PROMPT, "ŞU 19 KATMANDA TARA");
   assertStringIncludes(V5_FREE_PROMPT, "çok disiplinli sanal denetim kurulu");
   assertStringIncludes(V5_FREE_PROMPT, "Tank, silo, IBC ve transfer");
   assertStringIncludes(V5_FREE_PROMPT, "Proses güvenliği ve büyük kaza");
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    "Periyodik kontrol, muayene ve ölçüm kayıtları",
+  );
   // Katman rapora yazılmaz, katman başına bulgu istenmez.
   assertStringIncludes(
     V5_FREE_PROMPT,
@@ -321,10 +325,10 @@ Deno.test("köşe kutusu depolanan biçime çevrilir", () => {
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "0de53fc81e9c4117b3e5173ad1e51f1f8a352771a3d2ebb3cc67e6716ba7fc5d";
+  "797ffc6957263e0d30716488757f13d81fcd42c8b5398d9558b8d91f14e5dcd0";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v8");
+  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v9");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 
@@ -474,7 +478,7 @@ Deno.test("18 katmanın taranması şemayla zorunlu, raporla değil", () => {
     "tehlike_yok",
     "kadrajda_yok",
   ]);
-  assertEquals(V5_SCAN_LAYER_COUNT, 18);
+  assertEquals(V5_SCAN_LAYER_COUNT, 19);
   // Ama rapora hiç ulaşmaz: v4'ün kapsam matrisi tam olarak bunu yayımladığı
   // için bir raporun on dört maddesinin dokuzu "değerlendirilemedi" olmuştu.
   assertStringIncludes(
@@ -597,4 +601,38 @@ Deno.test("katman birleştirme yalnız aynı fiziksel tehlike için serbest", ()
   assertStringIncludes(V5_FREE_PROMPT, "Şüphedeysen ayır");
   // Bağlama kuralı duruyor; kaldırılan yalnız serbest birleştirme izni.
   assertStringIncludes(V5_FREE_PROMPT, "dizisinde geçmelidir");
+});
+
+Deno.test("kayıt sorusu kendi katmanıdır, şansa bırakılmaz", () => {
+  // Analiz 5fe50d0f: vinç, zincir ve sapanlar kadrajdayken katman 6
+  // "tehlike_yok — ekipmanlar çalışır durumdadır" geldi ve periyodik kontrol
+  // bulgusu hiç üretilmedi. 5. bölüm taramanın dışında kaldığı için ancak
+  // model tesadüfen hatırlarsa çalışıyordu.
+  assertStringIncludes(V5_FREE_PROMPT, "19. **Periyodik kontrol");
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    "Bu bölümün bulgularını **19. katmana** bağla",
+  );
+  // Kayıt sorusu, ekipmanın sağlam görünmesiyle kapanmaz.
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    "ekipman sağlam ve çalışır görünse bile",
+  );
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    "ekipmanın fiziksel bir kusuru olduğu anlamına gelmez",
+  );
+});
+
+Deno.test("mevzuat faaliyet türüne göre seçilir", () => {
+  // Üç koşu üst üste bir imalat atölyesine Yapı İşleri Yönetmeliği
+  // gösterildi -- 5fe50d0f'de iki bulguda birden, madde numarasıyla.
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    "Yapı İşlerinde İş Sağlığı ve Güvenliği Yönetmeliği yalnız inşaat, şantiye, yıkım ve yapı faaliyetleri içindir",
+  );
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    "atölye, fabrika, imalathane, depo ve tesis içi işlerde bunu dayanak gösterme",
+  );
 });
