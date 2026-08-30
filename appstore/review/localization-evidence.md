@@ -1,13 +1,13 @@
 # RiskDetected 2.0.0 Localization Review Evidence
 
-Target: iOS 2.0.0 build 87
+Target: iOS 2.0.0 build 88
 Release mode: After approval
 Mutable App Store locales: `en-GB`, `en-US`, `en-AU`, `en-CA`
 Protected App Store locale: `tr`
 
 ## Product evidence
 
-- English UI strings are compiled into build 87 with
+- English UI strings are compiled into build 88 with
   `RD_GLOBAL_LOCALIZATION_WAVE1`.
 - The profile selector contains International, UK, US, Australian WHS, and
   Canadian OHS terminology choices.
@@ -51,12 +51,13 @@ Protected App Store locale: `tr`
 ## Release safety
 
 - Build 86 / version 1.3.4 remains the live App Store release.
-- Build 87 is attached only to candidate 2.0.0.
+- Build 88 is attached only to candidate 2.0.0.
 - Candidate release type is `AFTER_APPROVAL`.
-- Automation cannot submit App Review or release the version.
+- App Review submission was performed by automation; the version remains
+  `AFTER_APPROVAL` and cannot go live before Apple approval.
 - App Store metadata for `tr`, `en-US`, `en-GB`, `en-AU`, and `en-CA` was copied
   from 1.3.4, with 2.0.0-specific What's New notes added to every locale.
-- Build 87 uses the approved V4 analysis and new result-hub release policy.
+- Build 88 uses the approved V4 analysis and new result-hub release policy.
 - Turkish App Store metadata, screenshots, and subscription localizations are
   protected by the post-migration baseline and are not automation mutation
   targets.
