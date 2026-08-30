@@ -6,6 +6,7 @@ import {
   V5_MAX_FINDINGS,
   V5_MAX_POSITIVE_CONTROLS,
   type V5Finding,
+  type V5LayerScan,
   type V5PhotoOutput,
 } from "./v5-contracts.ts";
 
@@ -226,6 +227,15 @@ export function parseV5Output(raw: string): V5PhotoOutput {
         needs_field_verification: finding.needs_field_verification === true,
       } satisfies V5Finding;
     }),
+    layer_scan: (Array.isArray(envelope.layer_scan) ? envelope.layer_scan : [])
+      .slice(0, 32).map((entry) => {
+        const row = (entry ?? {}) as Record<string, unknown>;
+        return {
+          layer: Number(row.layer),
+          result: String(row.result ?? ""),
+          note: text(row.note, 200),
+        } as V5LayerScan;
+      }).filter((row) => Number.isFinite(row.layer)),
     positive_controls:
       (Array.isArray(envelope.positive_controls)
         ? envelope.positive_controls
@@ -281,7 +291,9 @@ export function routeV5Findings(
         true,
       );
       const preventive = sanitizeFreeText(finding.preventive_measure);
-      const steps = finding.corrective_steps.map((step) => sanitizeFreeText(step));
+      const steps = finding.corrective_steps.map((step) =>
+        sanitizeFreeText(step)
+      );
       const training = sanitizeFreeText(finding.training_recommendation ?? "");
       const ppe = sanitizeFreeText(finding.ppe_recommendation ?? "");
       const removed = [

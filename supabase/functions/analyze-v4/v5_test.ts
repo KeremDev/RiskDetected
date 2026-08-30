@@ -4,8 +4,8 @@ import {
 } from "https://deno.land/std@0.208.0/testing/asserts.ts";
 import {
   bandsFor,
-  looksLikePlaceholder,
   criticalityForSeverity,
+  looksLikePlaceholder,
   parseV5Output,
   routeV5Findings,
   sanitizeFreeText,
@@ -16,6 +16,7 @@ import {
   V5_MAX_FINDINGS,
   V5_PROMPT_VERSION,
   V5_RESPONSE_SCHEMA,
+  V5_SCAN_LAYER_COUNT,
 } from "./v5-contracts.ts";
 import { buildV5Prompt, V5_FREE_PROMPT } from "./v5-prompt.ts";
 import { computeV5PromptSHA256 } from "./prompt-integrity.ts";
@@ -54,6 +55,7 @@ function finding(overrides: Record<string, unknown> = {}) {
 function envelope(findings: unknown[], positives: unknown[] = []) {
   return JSON.stringify({
     scene_summary: "Şantiye sahnesi.",
+    layer_scan: [{ layer: 3, result: "tehlike_var", note: "Açık kenar." }],
     positive_controls: positives,
     findings,
   });
@@ -317,10 +319,10 @@ Deno.test("köşe kutusu depolanan biçime çevrilir", () => {
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "def328a9ec6b610d52ca706c26b3c83bfd4cf89c8866eb184956878320311dc5";
+  "cf8cb59f56daa17572c4890ecc2d07f9c7af45ddaf2a479d82e1028e22d4273e";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v3");
+  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v4");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 
@@ -414,7 +416,10 @@ Deno.test("istemde kopyalanacak JSON iskeleti kalmadı", () => {
   // ve bu analiz özeti olarak okuyucuya gitti. Yanıt şeması yapıyı zaten
   // dayatıyor; örnek yalnız kopyalanacak bir kalıp sağlıyordu.
   assertEquals(V5_FREE_PROMPT.includes("Tam iki cümle."), false);
-  assertEquals(V5_FREE_PROMPT.includes("kisa_benzersiz_ascii_kimlik_01"), false);
+  assertEquals(
+    V5_FREE_PROMPT.includes("kisa_benzersiz_ascii_kimlik_01"),
+    false,
+  );
   assertEquals(V5_FREE_PROMPT.includes("Fotoğrafa dayalı gerekçe."), false);
   assertEquals(V5_FREE_PROMPT.includes("```json"), false);
   // Alanlar hâlâ anlatılıyor, kalıp verilmeden.
@@ -425,7 +430,10 @@ Deno.test("istemde kopyalanacak JSON iskeleti kalmadı", () => {
 Deno.test("yer tutucu metin okuyucuya ulaşmadan yakalanır", () => {
   assertEquals(looksLikePlaceholder("Tam iki cümle."), true);
   assertEquals(looksLikePlaceholder("  Kısa başlık.  "), true);
-  assertEquals(looksLikePlaceholder("Görünür kanıt, konum ve maruziyet."), true);
+  assertEquals(
+    looksLikePlaceholder("Görünür kanıt, konum ve maruziyet."),
+    true,
+  );
   assertEquals(
     looksLikePlaceholder(
       "Şantiye sahasında bir işçi omzunda profil taşıyor. Arka planda üst katta çalışma sürüyor.",
@@ -451,4 +459,48 @@ Deno.test("her dayanak kendi satırında durur", () => {
   // çıkıyordu: iki ayrı dayanak, yanlış maddeyi işaret eden tek cümle.
   assertEquals(text.split("\n").length, 2);
   assertStringIncludes(text, "Kanunu madde 4.\nMevzuat — Elle Taşıma");
+});
+
+Deno.test("18 katmanın taranması şemayla zorunlu, raporla değil", () => {
+  const schema = V5_RESPONSE_SCHEMA as unknown as Record<string, any>;
+  // Şema dizini zorunlu kılar: "tara" bir öneriydi ve model onu sessizce
+  // atlıyordu -- analiz 5e90f22d'de 18 katmandan 2 ön plan bulgusu çıktı.
+  assertEquals((schema.required as string[]).includes("layer_scan"), true);
+  const row = schema.properties.layer_scan.items;
+  assertEquals(row.properties.result.enum, [
+    "tehlike_var",
+    "tehlike_yok",
+    "kadrajda_yok",
+  ]);
+  assertEquals(V5_SCAN_LAYER_COUNT, 18);
+  // Ama rapora hiç ulaşmaz: v4'ün kapsam matrisi tam olarak bunu yayımladığı
+  // için bir raporun on dört maddesinin dokuzu "değerlendirilemedi" olmuştu.
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    "rapora yazılmaz ve kullanıcıya gösterilmez",
+  );
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    "en az bir bulgu üretmen zorunludur",
+  );
+  assertStringIncludes(V5_FREE_PROMPT, "katman doldurmak için tehlike uydurma");
+});
+
+Deno.test("katman izi ayrıştırılır ve bulguya dönüşmez", () => {
+  const raw = JSON.stringify({
+    scene_summary: "Şantiye sahnesi.",
+    layer_scan: [
+      { layer: 3, result: "tehlike_var", note: "Açık döşeme kenarı." },
+      { layer: 11, result: "kadrajda_yok", note: "Kazı görünmüyor." },
+    ],
+    positive_controls: [],
+    findings: [finding()],
+  });
+  const output = parseV5Output(raw);
+  assertEquals(output.layer_scan.length, 2);
+  assertEquals(output.layer_scan[0].result, "tehlike_var");
+  const routed = routeV5Findings([{ photoIndex: 1, output }]);
+  // Tek bulgu; katman satırları madde üretmedi.
+  assertEquals(routed.items.length, 1);
+  assertEquals(routed.items[0].item_class, "observed_finding");
 });

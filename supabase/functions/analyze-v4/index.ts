@@ -828,6 +828,11 @@ serve(async (req) => {
       const v5PromptSHA = await assertV5PromptIntegrity(
         engineConfig.v5_prompt_sha256,
       );
+      const freeThinkingLevel =
+        typeof engineConfig.v5_gemini_thinking_level === "string"
+          ? engineConfig.v5_gemini_thinking_level as typeof config
+            .geminiThinkingLevel
+          : config.geminiThinkingLevel;
       const outputs = await Promise.all(photos.map(async (photo) => {
         const attemptID = crypto.randomUUID();
         const prompt = buildV5Prompt({
@@ -862,7 +867,11 @@ serve(async (req) => {
             mimeType: photo.mimeType,
             timeoutMs: 110_000,
             thinkingBudget: config.geminiThinkingBudget,
-            thinkingLevel: config.geminiThinkingLevel,
+            // An eighteen-layer sweep is a reasoning task. At MEDIUM the model
+            // spent 1616 thinking tokens and returned two foreground findings
+            // out of eighteen layers; the contract engine's default was tuned
+            // for a much shorter contract.
+            thinkingLevel: freeThinkingLevel,
             maxOutputTokens: config.maxProviderOutputTokens,
             serviceTier: config.requestedServiceTier,
           }, V5_RESPONSE_SCHEMA);
@@ -958,6 +967,12 @@ serve(async (req) => {
             scene_summary: entry.output.scene_summary,
             finding_count: entry.output.findings.length,
             positive_control_count: entry.output.positive_controls.length,
+            // Internal only. The traversal is auditable here and reaches no
+            // reader, which is the whole difference from v4's coverage matrix.
+            layer_scan: entry.output.layer_scan,
+            layers_with_hazard: entry.output.layer_scan.filter((row) =>
+              row.result === "tehlike_var"
+            ).map((row) => row.layer),
           })),
           candidate_counts: {
             raw: routedFree.candidates.length,

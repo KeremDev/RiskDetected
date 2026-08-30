@@ -30,7 +30,7 @@
 // config key.
 
 export const V5_ENGINE_MODE = "free";
-export const V5_PROMPT_VERSION = "v7-free-core-multidisciplinary-v3";
+export const V5_PROMPT_VERSION = "v7-free-core-multidisciplinary-v4";
 
 /** Fine-Kinney scales. The arithmetic stays deterministic; the values do not. */
 export const FK_PROBABILITY = [0.2, 0.5, 1, 3, 6, 10] as const;
@@ -86,11 +86,35 @@ export type V5PositiveControl = {
   description: string;
 };
 
+/**
+ * One line per scan layer, for the model rather than the reader.
+ *
+ * "Tara" is a suggestion a model can silently skip, and in analyses 6f72a303
+ * and 5e90f22d it did: two foreground findings out of eighteen layers, with
+ * work at height (layer 3) and water-plus-electricity (layer 5) untouched on a
+ * photograph where every earlier version had scored the fall as fatal.
+ *
+ * The oldest engine forced the walk by making the layer array a required part
+ * of the response, and that is what worked. The difference here is where it
+ * goes: v4 published those rows and a report spent nine of fourteen items
+ * saying a construction site could not be assessed for biosecurity. This array
+ * never becomes an item. It lands in the quality trace, where it makes the
+ * traversal auditable and nothing else.
+ */
+export type V5LayerScan = {
+  layer: number;
+  result: "tehlike_var" | "tehlike_yok" | "kadrajda_yok";
+  note: string;
+};
+
 export type V5PhotoOutput = {
   scene_summary: string;
   findings: V5Finding[];
   positive_controls: V5PositiveControl[];
+  layer_scan: V5LayerScan[];
 };
+
+export const V5_SCAN_LAYER_COUNT = 18;
 
 const regionSchema = {
   type: "object",
@@ -107,6 +131,21 @@ export const V5_RESPONSE_SCHEMA = {
   type: "object",
   properties: {
     scene_summary: { type: "string" },
+    layer_scan: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          layer: { type: "number" },
+          result: {
+            type: "string",
+            enum: ["tehlike_var", "tehlike_yok", "kadrajda_yok"],
+          },
+          note: { type: "string" },
+        },
+        required: ["layer", "result", "note"],
+      },
+    },
     positive_controls: {
       type: "array",
       items: {
@@ -167,5 +206,5 @@ export const V5_RESPONSE_SCHEMA = {
       },
     },
   },
-  required: ["scene_summary", "positive_controls", "findings"],
+  required: ["scene_summary", "layer_scan", "positive_controls", "findings"],
 };

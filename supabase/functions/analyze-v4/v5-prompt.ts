@@ -85,7 +85,17 @@ Her bulguyu **kaynak → temas, arıza veya tetikleyici → en ağır makul sonu
 17. **Ergonomi, insan faktörleri ve iş organizasyonu:** Ağır elle kaldırma, görüşü kapatan yük, bükülme, uzanma, dönüş, tekrar, uygunsuz çalışma yüksekliği, statik duruş, kontrol-etiket karmaşası, görüş-iletişim sorunu, alan sıkışıklığı ve eşzamanlı işlerin insan hatası potansiyeli.
 18. **Acil durum, çevre, işaretleme, Natech ve üçüncü kişiler:** Acil çıkış, toplanma yönü, ilk yardım, göz-acil duş, acil durdurma, bariyer ve işaretler; atık, dökülme, drenaj ve çevresel yayılım; yağmur, sel, rüzgâr, yıldırım, sıcaklık, şev-zemin etkisi ile ziyaretçi ve halk maruziyeti.
 
-Katman sırası önem sırası değildir. Her katmanı tara; tehlike yoksa satır üretme. Yangın ekipmanı önünde yalnız geçici duran kişiyi erişim engeli sayma; sabit malzeme, araç, ekipman, kilitli alan veya süreklilik gösteren kapatma ara.
+### Taramanın kaydı
+
+Taramayı gerçekten yürüttüğünü göstermek için \`layer_scan\` dizisine **18 katmanın her biri için tam bir satır** yaz: \`layer\` (1-18), \`result\` ve en çok bir cümlelik \`note\`.
+
+- \`tehlike_var\`: o katmanda görünür bir tehlike var. Bu katman için \`findings\` içinde en az bir bulgu üretmen zorunludur.
+- \`tehlike_yok\`: katman kadrajda görünüyor, tehlike yok.
+- \`kadrajda_yok\`: katmanın konusu bu fotoğrafta hiç yok.
+
+\`layer_scan\` rapora yazılmaz ve kullanıcıya gösterilmez; yalnız taramanın izidir. Bu yüzden katman doldurmak için tehlike uydurma, ama gördüğün bir tehlikeyi de \`tehlike_yok\` diyerek geçme. Önce 18 satırı doldur, sonra bulguları yaz.
+
+Katman sırası önem sırası değildir. Her katmanı tara; tehlike yoksa bulgu üretme. Yangın ekipmanı önünde yalnız geçici duran kişiyi erişim engeli sayma; sabit malzeme, araç, ekipman, kilitli alan veya süreklilik gösteren kapatma ara.
 
 Bir tehlike birden çok katmana giriyorsa tek bulgu yaz ve onu katmanına göre değil sonucuna göre değerlendir: ıslak zeminde duran bir kablo düzen-tertip bulgusu değil elektrik bulgusudur ve sonucu takılma değil elektrik çarpmasıdır.
 
@@ -165,6 +175,7 @@ Alan içerikleri:
 - \`confidence\`: 0..1 arasında görsel kanıt kesinliği.
 - \`needs_field_verification\`: sahada doğrulanması gerekiyorsa true.
 - \`positive_controls\`: her kayıt \`title\` ve \`description\` taşısın.
+- \`layer_scan\`: 18 satır; \`layer\`, \`result\` ve kısa \`note\`.
 
 Alan adları ve JSON yapısı yanıt şemasıyla dayatılır; yukarısı ne yazacağını anlatır. Bu listedeki örnek ifadeleri çıktına kopyalama.
 `;
