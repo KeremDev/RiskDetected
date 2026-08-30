@@ -12,7 +12,10 @@ import {
   type V4ModuleID,
 } from "./contracts.ts";
 import { coverageValidationIssues } from "./dynamic-modules.ts";
-import { V4_COVERAGE_REPAIR_COMMON } from "./prompt.ts";
+import {
+  V4_COVERAGE_REPAIR_COMMON,
+  V4_GEMINI3_THRESHOLD_ADDENDUM,
+} from "./prompt.ts";
 
 export type V4ProviderUsage = {
   inputTokens: number;
@@ -245,6 +248,22 @@ function parseOutput(
   return output;
 }
 
+/**
+ * The prompt the model actually receives.
+ *
+ * Gemini 3 gets the threshold addendum appended; 2.5 gets exactly the bytes it
+ * has always had, which is what keeps its measured baseline comparable. Applied
+ * here rather than at the call sites so the primary pass, the coverage repair,
+ * the targeted reinspection and the verification pass all agree -- a threshold
+ * that held for one call and not the next would produce candidates the second
+ * look then dropped.
+ */
+function promptFor(model: string, prompt: string): string {
+  return isGemini3(model)
+    ? `${prompt}\n${V4_GEMINI3_THRESHOLD_ADDENDUM}`
+    : prompt;
+}
+
 /** Gemini 3 and later: the thinking enum, no temperature, ultra-high media. */
 function isGemini3(model: string): boolean {
   return /gemini-3(?:\.|-)/u.test(model.trim().toLowerCase());
@@ -339,7 +358,7 @@ export async function callV4Gemini(params: {
         contents: [{
           role: "user",
           parts: [
-            { text: params.prompt },
+            { text: promptFor(params.model, params.prompt) },
             imagePart(params.model, params.mimeType, params.imageData),
           ],
         }],

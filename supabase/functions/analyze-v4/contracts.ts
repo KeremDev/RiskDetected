@@ -2,6 +2,15 @@ export const V4_ENGINE_VERSION = "vnext-v4";
 export const V4_PROVIDER_CONTRACT_VERSION = "visual-claim-candidate-v1";
 export const V4_DOMAIN_SCHEMA_VERSION = "safety-claim-v4.0";
 export const V4_PROMPT_VERSION = "v4-vision-core-v10";
+/**
+ * Appended for the Gemini 3 family only; 2.5 never sees it.
+ *
+ * Versioned separately so the base bundle stays byte-identical and the
+ * gemini-2.5-flash path -- five measured runs of it -- keeps the SHA it was
+ * measured on. Bump this constant FIRST, then read the addendum hash from
+ * prompt_integrity_test.ts, exactly as for the base bundle.
+ */
+export const V4_GEMINI3_PROMPT_VERSION = "v4-gemini3-threshold-v1";
 export const V4_ROUTER_VERSION = "claim-routing-v30";
 export const V4_COVERAGE_VERSION = "critical-coverage-v3";
 export const V4_ASSURANCE_VERSION = "assurance-topic-v2";

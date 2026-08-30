@@ -1,6 +1,10 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/testing/asserts.ts";
-import { computeV4PromptSHA256 } from "./prompt-integrity.ts";
 import {
+  computeV4Gemini3AddendumSHA256,
+  computeV4PromptSHA256,
+} from "./prompt-integrity.ts";
+import {
+  V4_GEMINI3_PROMPT_VERSION,
   V4_PROMPT_VERSION,
   V4_PROVIDER_CONTRACT_VERSION,
 } from "./contracts.ts";
@@ -17,4 +21,18 @@ Deno.test("v4 prompt/schema bundle cannot change without versioned SHA update", 
   assertEquals(V4_PROMPT_VERSION, "v4-vision-core-v10");
   assertEquals(V4_PROVIDER_CONTRACT_VERSION, "visual-claim-candidate-v1");
   assertEquals(await computeV4PromptSHA256(), RELEASED_PROMPT_SHA256);
+});
+
+// The Gemini 3 addendum is hashed separately, so the base bundle -- and the
+// gemini-2.5-flash path measured under it -- stays byte-identical. Same rule as
+// above: bump V4_GEMINI3_PROMPT_VERSION first, then read the hash.
+const RELEASED_GEMINI3_ADDENDUM_SHA256 =
+  "59ab8abb632063c1e890a7b4cea251da4c208f7e61ee24805208b08f74bceb69";
+
+Deno.test("Gemini 3 eşik eki sürüm bumpı olmadan değişemez", async () => {
+  assertEquals(V4_GEMINI3_PROMPT_VERSION, "v4-gemini3-threshold-v1");
+  assertEquals(
+    await computeV4Gemini3AddendumSHA256(),
+    RELEASED_GEMINI3_ADDENDUM_SHA256,
+  );
 });

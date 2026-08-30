@@ -1,6 +1,7 @@
 import {
   CORE_MODULE_IDS,
   DYNAMIC_MODULE_IDS,
+  V4_GEMINI3_PROMPT_VERSION,
   V4_PROMPT_VERSION,
 } from "./contracts.ts";
 
@@ -113,3 +114,40 @@ ${
 
 JSON sözleşmesine tam uy. Başka metin ekleme.`;
 }
+
+/**
+ * The candidate threshold, for Gemini 3 models only.
+ *
+ * gemini-3.7-flash returned zero candidates on a workshop whose floor carries
+ * cardboard, pallets, drums and equipment, and its own coverage note said why:
+ * "Kenar kısımlarda depolanan malzemeler bulunmakla birlikte ana yürüme yolu
+ * üzerinde kritik takılma/çarpma engeli bulunmamaktadır." It saw the clutter,
+ * judged it not critical, and filtered it out before emitting anything.
+ *
+ * That judgement is not the model's to make. The architecture splits the work:
+ * the model reports what is physically visible, the router decides class,
+ * severity and whether it scores. gemini-2.5-flash happens to report first and
+ * judge later, which is why it finds this clutter in four runs out of four; the
+ * Gemini 3 models apply their own actionability bar first. The addendum takes
+ * that decision back rather than lowering any evidence bar -- the last section
+ * says so explicitly, because the failure mode in the other direction is the
+ * fabricated hook latch that cost this engine three router versions.
+ */
+export const V4_GEMINI3_THRESHOLD_ADDENDUM = `
+EK SÖZLEŞME — ADAY EŞİĞİ (SÜRÜM: ${V4_GEMINI3_PROMPT_VERSION})
+
+Bu ek, önem kararını senden alır. Görünürlük kuralları aynen yürürlüktedir; değişen tek şey, gördüğün bir koşulun kayda değer olup olmadığına senin karar vermemendir.
+
+- Aday üretmek bir suçlama değildir. Şiddet, olasılık, risk bandı ve maddenin rapora skorlu girip girmeyeceği sonraki aşamada belirlenir. Sen yalnız görülen fiziksel koşulu ve olay yolunu bildirirsin.
+- "Kritik değil", "önemsiz", "ana geçiş açık", "kenarda kalıyor", "acil müdahale gerektirmez" gibi gerekçelerle adayı elemek yasaktır. Böyle bir gerekçe kuruyorsan o koşulu zaten görmüşsündür: adayı üret, gerekçeyi counter_cues alanına yaz.
+- no_actionable_issue_visible sonucu "o türden bir şey görmedim" demektir; "gördüm ama önemli bulmadım" demek değildir. Gördüysen finding_present kullan ve adayı bağla.
+- Bir koşul için hem "mevcut" hem "kritik değil" yazıyorsan çelişkidesin. Cümlenin birinci yarısı adaydır.
+
+ÖZELLİKLE ATLANAN KALEMLER
+- Zeminde, raf önünde, makine çevresinde veya geçiş kenarında duran malzeme, palet, karton, varil, hortum ve ekipman: ana koridor açık olsa dahi housekeeping_physical_contact adayı üret. Ortamda kişi görünmemesi de eleme gerekçesi değildir.
+- Rafta veya istifte kenardan taşan, sabitlenmemiş veya dengesiz duran yük: falls_falling_objects adayı üret.
+- Görünür raf, palet veya istif varsa logistics modülünü etkinleştir ve bir sonuçla kapat.
+
+DEĞİŞMEYEN
+- Bu ek kanıt eşiğini düşürmez. Göremediğin bir parçanın yokluğunu iddia etme; kareye göre çok küçük kalan bir bileşen hakkında ne var ne yok hüküm verme; belge, ölçüm, kapasite ve periyodik kontrol hakkında konuşma. Bu kuralların tamamı aynen geçerlidir.
+`;

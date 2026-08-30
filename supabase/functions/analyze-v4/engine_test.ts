@@ -3749,3 +3749,28 @@ Deno.test("Gemini 3.7 Flash isteği Gemini 3 şeklini alır", async () => {
     "media_resolution_ultra_high",
   );
 });
+
+Deno.test("Gemini 3 istemine eşik eki eklenir", async () => {
+  const sent = await captureGeminiBody("gemini-3.7-flash");
+  const contents = sent.contents as Array<Record<string, unknown>>;
+  const parts = contents[0].parts as Array<Record<string, unknown>>;
+  const text = String(parts[0].text);
+  assertStringIncludes(text, "EK SÖZLEŞME — ADAY EŞİĞİ");
+  assertStringIncludes(text, "v4-gemini3-threshold-v1");
+  // Kanıt eşiği düşürülmüyor; ek bunu kendi içinde söylemeli.
+  assertStringIncludes(text, "Bu ek kanıt eşiğini düşürmez");
+});
+
+Deno.test("Gemini 2.5 istemi ek almaz", async () => {
+  const sent = await captureGeminiBody("gemini-2.5-flash");
+  const contents = sent.contents as Array<Record<string, unknown>>;
+  const parts = contents[0].parts as Array<Record<string, unknown>>;
+  assertEquals(String(parts[0].text).includes("EK SÖZLEŞME"), false);
+});
+
+Deno.test("3.5 Flash Lite de eki alır", async () => {
+  const sent = await captureGeminiBody("gemini-3.5-flash-lite");
+  const contents = sent.contents as Array<Record<string, unknown>>;
+  const parts = contents[0].parts as Array<Record<string, unknown>>;
+  assertStringIncludes(String(parts[0].text), "EK SÖZLEŞME — ADAY EŞİĞİ");
+});

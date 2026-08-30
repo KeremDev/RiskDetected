@@ -1,6 +1,7 @@
 import { V4_PROVIDER_RESPONSE_SCHEMA } from "./contracts.ts";
 import {
   V4_COVERAGE_REPAIR_COMMON,
+  V4_GEMINI3_THRESHOLD_ADDENDUM,
   V4_PROMPT_COMMON,
   V4_TARGETED_PROMPT_COMMON,
 } from "./prompt.ts";
@@ -47,4 +48,15 @@ export async function assertV4PromptIntegrity(
     throw new Error(`v4_prompt_integrity_mismatch:${actual}`);
   }
   return actual;
+}
+
+/**
+ * The Gemini 3 addendum, hashed on its own.
+ *
+ * Deliberately not folded into the base bundle: gemini-2.5-flash never receives
+ * this text, and mixing it in would move the SHA that five measured 2.5 runs
+ * were made under, for a change that cannot affect them.
+ */
+export async function computeV4Gemini3AddendumSHA256(): Promise<string> {
+  return await sha256Text(V4_GEMINI3_THRESHOLD_ADDENDUM.trim());
 }
