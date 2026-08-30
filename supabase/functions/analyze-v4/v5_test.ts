@@ -3,9 +3,11 @@ import {
   assertStringIncludes,
 } from "https://deno.land/std@0.208.0/testing/asserts.ts";
 import {
+  applySplitFindings,
   bandsFor,
   criticalityForSeverity,
   looksLikePlaceholder,
+  packedFindings,
   parseV5Output,
   recordsFindingsAbsorbingHazards,
   routeV5Findings,
@@ -20,7 +22,11 @@ import {
   V5_RESPONSE_SCHEMA,
   V5_SCAN_LAYER_COUNT,
 } from "./v5-contracts.ts";
-import { buildV5Prompt, V5_FREE_PROMPT } from "./v5-prompt.ts";
+import {
+  buildV5Prompt,
+  buildV5SplitPrompt,
+  V5_FREE_PROMPT,
+} from "./v5-prompt.ts";
 import { computeV5PromptSHA256 } from "./prompt-integrity.ts";
 import { V4_PROMPT_COMMON } from "./prompt.ts";
 
@@ -326,10 +332,10 @@ Deno.test("köşe kutusu depolanan biçime çevrilir", () => {
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "048bfc2be7c64c4f4916eff0e73f06c041e1016c34ec8c749dbe2825a40a522f";
+  "de5eb1ac407ba203809c18fb240b42d0c0ca82ecaad6249bb3f1c6f71d5f116c";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v12");
+  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v13");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 
@@ -694,4 +700,78 @@ Deno.test("alan bütçeleri kısılmadı", () => {
   assertStringIncludes(V5_FREE_PROMPT, "2-5 somut adım olsun");
   assertEquals(V5_FREE_PROMPT.includes("iki cümleyi geçme"), false);
   assertEquals(V5_FREE_PROMPT.includes("bulgu sayısından kısma"), false);
+});
+
+Deno.test("birleştirilmiş bulgular tespit edilir", () => {
+  const raw = JSON.stringify({
+    scene_summary: "Atölye.",
+    layer_scan: [
+      { layer: 1, result: "tehlike_var", note: "Güvensiz pozisyon." },
+      { layer: 3, result: "tehlike_var", note: "Korkuluksuz kenar." },
+      { layer: 17, result: "tehlike_var", note: "Diz çökme." },
+      { layer: 19, result: "tehlike_var", note: "Vinç kaydı." },
+      { layer: 8, result: "kadrajda_yok", note: "Araç yok." },
+    ],
+    positive_controls: [],
+    findings: [
+      finding({ finding_key: "paket", layers: [1, 3, 17] }),
+      finding({ finding_key: "temiz", layers: [19] }),
+    ],
+  });
+  const output = parseV5Output(raw);
+  assertEquals(packedFindings(output).map((f) => f.finding_key), ["paket"]);
+});
+
+Deno.test("ayırma geçişi yalnız gerçekten ayırdıysa uygulanır", () => {
+  const base = parseV5Output(JSON.stringify({
+    scene_summary: "Atölye.",
+    layer_scan: [
+      { layer: 3, result: "tehlike_var", note: "Korkuluksuz kenar." },
+      { layer: 17, result: "tehlike_var", note: "Diz çökme." },
+    ],
+    positive_controls: [],
+    findings: [finding({ finding_key: "paket", layers: [3, 17] })],
+  }));
+
+  // İkinci çağrı gerçekten ayırdı: paketin yerini alır.
+  const good = applySplitFindings(base, [
+    finding({ finding_key: "dusme", layers: [3] }),
+    finding({ finding_key: "ergonomi", layers: [17] }),
+  ]);
+  assertEquals(good.applied, true);
+  assertEquals(good.output.findings.length, 2);
+  assertEquals(
+    good.output.findings.some((f) => f.finding_key === "paket"),
+    false,
+  );
+
+  // İkinci çağrı yine paketledi: birincil yanıt olduğu gibi kalır.
+  const bad = applySplitFindings(base, [
+    finding({ finding_key: "yine_paket", layers: [3, 17] }),
+  ]);
+  assertEquals(bad.applied, false);
+  assertEquals(bad.reason, "split_not_larger");
+  assertEquals(bad.output.findings[0].finding_key, "paket");
+});
+
+Deno.test("ayırma istemi görevi söyler, yeni tehlike istemez", () => {
+  const prompt = buildV5SplitPrompt({
+    photoIndex: 1,
+    photoCount: 1,
+    outputLanguage: "tr",
+    sectorID: "manufacturing",
+    packed: [{
+      title: "Tank Üzerinde Düşme Riski",
+      layers: [3, 17],
+      description: "İşçi kavisli yüzeyde diz çökmüş.",
+    }],
+    scanNotes: [{ layer: 3, note: "Korkuluksuz kenar." }],
+  });
+  assertStringIncludes(prompt, "BİRLEŞTİRİLMİŞ BULGULARI AYIR");
+  assertStringIncludes(prompt, "Tank Üzerinde Düşme Riski");
+  assertStringIncludes(prompt, "Katman 3: Korkuluksuz kenar.");
+  assertStringIncludes(prompt, "yeni tehlike ekleme");
+  // Çekirdek kurallar taşınır; ayrılan bulgular aynı sözleşmeye uyar.
+  assertStringIncludes(prompt, "FINE-KINNEY");
+  assertStringIncludes(prompt, "MEVZUAT VE STANDARTLAR");
 });

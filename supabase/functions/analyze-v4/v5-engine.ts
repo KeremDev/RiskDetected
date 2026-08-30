@@ -296,6 +296,77 @@ export function recordsFindingsAbsorbingHazards(
     .map((finding) => finding.finding_key);
 }
 
+/**
+ * Findings that carry more than one hazard layer.
+ *
+ * Seven rounds of prompt rules could not move the model off roughly 3200
+ * visible tokens and four findings: it satisfied each rule by packing layers
+ * together, and when packing was forbidden it marked fewer layers hazardous
+ * instead. Analysis c6cbe445 settled that nothing truncates it -- finishReason
+ * STOP, 3295 tokens of a 32768 budget -- and analysis 2e350e22 ruled out
+ * thinking competing for the same budget, since MEDIUM produced less of both.
+ *
+ * What is left is a length prior no instruction reaches, so the second look is
+ * structural. These are the findings a follow-up call is asked to split, and
+ * it only runs when there are any.
+ */
+export function packedFindings(output: V5PhotoOutput): V5Finding[] {
+  const hazardLayers = new Set(
+    output.layer_scan.filter((row) => row.result === "tehlike_var").map((row) =>
+      row.layer
+    ),
+  );
+  return output.findings.filter((finding) =>
+    finding.layers.filter((layer) => hazardLayers.has(layer)).length > 1
+  );
+}
+
+/**
+ * Replaces packed findings with the split ones, keeping everything else.
+ *
+ * Guarded rather than trusted: the replacement must produce more findings than
+ * it replaced and every one of them must answer a single hazard layer.
+ * Otherwise the primary output stands, because a second call that packs again
+ * has told us nothing and must not cost the reader the first answer.
+ */
+export function applySplitFindings(
+  output: V5PhotoOutput,
+  split: V5Finding[],
+): { output: V5PhotoOutput; applied: boolean; reason: string } {
+  const packed = packedFindings(output);
+  if (packed.length === 0) {
+    return { output, applied: false, reason: "no_packed" };
+  }
+  const hazardLayers = new Set(
+    output.layer_scan.filter((row) => row.result === "tehlike_var").map((row) =>
+      row.layer
+    ),
+  );
+  const covered = new Set(packed.flatMap((finding) => finding.layers));
+  const usable = split.filter((finding) =>
+    finding.title.trim() && finding.immediate_control.trim() &&
+    finding.layers.filter((layer) => hazardLayers.has(layer)).length === 1 &&
+    finding.layers.some((layer) => covered.has(layer))
+  );
+  if (usable.length <= packed.length) {
+    return { output, applied: false, reason: "split_not_larger" };
+  }
+  const packedKeys = new Set(packed.map((finding) => finding.finding_key));
+  return {
+    output: {
+      ...output,
+      findings: [
+        ...output.findings.filter((finding) =>
+          !packedKeys.has(finding.finding_key)
+        ),
+        ...usable,
+      ],
+    },
+    applied: true,
+    reason: `split_${packed.length}_into_${usable.length}`,
+  };
+}
+
 export type V5Routed = {
   candidates: Record<string, unknown>[];
   items: RoutedItem[];

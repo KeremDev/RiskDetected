@@ -40,14 +40,16 @@ import {
   sha256Text,
 } from "./prompt-integrity.ts";
 import { sendStructuredGemini } from "./provider.ts";
-import { buildV5Prompt } from "./v5-prompt.ts";
+import { buildV5Prompt, buildV5SplitPrompt } from "./v5-prompt.ts";
 import {
   V5_ENGINE_MODE,
   V5_PROMPT_VERSION,
   V5_RESPONSE_SCHEMA,
 } from "./v5-contracts.ts";
 import {
+  applySplitFindings,
   looksLikePlaceholder,
+  packedFindings,
   parseV5Output,
   recordsFindingsAbsorbingHazards,
   routeV5Findings,
@@ -951,6 +953,96 @@ serve(async (req) => {
         }
       }));
 
+      // The follow-up call, only where the primary answer packed hazards into
+      // one record. Seven rounds of prompt rules did not move the model off
+      // ~3200 tokens and four findings; c6cbe445 proved nothing truncates it
+      // and 2e350e22 ruled out thinking competing for the budget. A length
+      // prior no instruction reaches needs a second call, not an eighth rule.
+      const splitOutcomes: Array<Record<string, unknown>> = [];
+      for (let index = 0; index < outputs.length; index += 1) {
+        const entry = outputs[index];
+        const packed = packedFindings(entry.output);
+        if (packed.length === 0) continue;
+        const photo = photos.find((item) =>
+          item.photoIndex === entry.photoIndex
+        );
+        if (!photo) continue;
+        const hazardNotes = entry.output.layer_scan.filter((row) =>
+          row.result === "tehlike_var" &&
+          packed.some((finding) => finding.layers.includes(row.layer))
+        ).map((row) => ({ layer: row.layer, note: row.note }));
+        const attemptID = crypto.randomUUID();
+        const telemetry = {
+          attemptID,
+          userID,
+          engineRunID: engineRunID!,
+          photoRunID: null,
+          kind: "targeted_reinspection" as const,
+          number: 1,
+          model: config.primaryModel,
+          computeProfile: config.computeProfile,
+          providerPool: config.providerPool,
+          requestedTier: config.requestedServiceTier,
+          promptSHA256: v5PromptSHA,
+          promptBundleSHA256: v5PromptSHA,
+          maxOutputTokens: freeMaxOutputTokens,
+        };
+        try {
+          const second = await sendStructuredGemini({
+            apiKey: key,
+            model: config.primaryModel,
+            prompt: buildV5SplitPrompt({
+              photoIndex: entry.photoIndex,
+              photoCount: photos.length,
+              outputLanguage: language,
+              sectorID,
+              packed: packed.map((finding) => ({
+                title: finding.title,
+                layers: finding.layers,
+                description: finding.description,
+              })),
+              scanNotes: hazardNotes,
+            }),
+            imageData: photo.base64,
+            mimeType: photo.mimeType,
+            timeoutMs: 110_000,
+            thinkingBudget: config.geminiThinkingBudget,
+            thinkingLevel: freeThinkingLevel,
+            maxOutputTokens: freeMaxOutputTokens,
+            serviceTier: config.requestedServiceTier,
+          }, V5_RESPONSE_SCHEMA);
+          await recordAttempt(supabase, {
+            ...telemetry,
+            state: "persisted",
+            result: {
+              ...second,
+              requestedServiceTier: config.requestedServiceTier,
+            },
+          });
+          const applied = applySplitFindings(
+            entry.output,
+            parseV5Output(second.text).findings,
+          );
+          outputs[index] = { ...entry, output: applied.output };
+          splitOutcomes.push({
+            photo_index: entry.photoIndex,
+            packed_titles: packed.map((finding) => finding.title),
+            applied: applied.applied,
+            reason: applied.reason,
+            finish_reason: second.finishReason,
+          });
+        } catch (error) {
+          // A failed split leaves the primary answer standing. It is a
+          // second opinion, not a dependency.
+          splitOutcomes.push({
+            photo_index: entry.photoIndex,
+            applied: false,
+            reason: "split_call_failed",
+            detail: safe(error instanceof Error ? error.message : error, 200),
+          });
+        }
+      }
+
       const routedFree = routeV5Findings(
         outputs.map((entry) => ({
           photoIndex: entry.photoIndex,
@@ -1044,6 +1136,7 @@ serve(async (req) => {
             cost_usd: sum((usage) => usage.costUSD),
           },
           v5_free: {
+            split_pass: splitOutcomes,
             sanitized_removals: routedFree.sanitizedCount,
             scale_snaps: routedFree.snappedCount,
             dropped_findings: routedFree.droppedFindings,
@@ -1060,6 +1153,12 @@ serve(async (req) => {
                 recordsFindingsAbsorbingHazards(entry.output).length > 0
               )
               ? ["v5_records_finding_absorbed_hazard"]
+              : []),
+            ...(splitOutcomes.some((entry) => entry.applied === true)
+              ? ["v5_split_pass_applied"]
+              : []),
+            ...(splitOutcomes.some((entry) => entry.applied === false)
+              ? ["v5_split_pass_rejected"]
               : []),
             ...(visibleFree.length === 0 ? ["no_visible_items"] : []),
             ...(routedFree.sanitizedCount > 0 ? ["v5_text_sanitized"] : []),

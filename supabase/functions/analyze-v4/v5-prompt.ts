@@ -274,3 +274,52 @@ export function buildV5Prompt(params: {
     "**SON TALİMAT:** Kanıtı olan her tehlikeyi yaz; sayıyı azaltmak için bulgu atlama ve aynı tehlikeyi iki kez yazma. JSON sözleşmesine tam uy ve başka metin ekleme.",
   ].filter((line) => line !== "").join("\n");
 }
+
+/**
+ * The follow-up call, sent only when the primary answer packed hazards.
+ *
+ * It carries the whole core prompt, because the split findings have to obey
+ * the same evidence rules, the same Fine-Kinney scale, the same regulation
+ * choice and the same house style as the ones written in the first pass. What
+ * changes is the task: not "analyse this photograph" but "these specific
+ * hazards were written as one record; write them separately".
+ */
+export function buildV5SplitPrompt(params: {
+  photoIndex: number;
+  photoCount: number;
+  outputLanguage: string;
+  sectorID: string | null;
+  packed: Array<{ title: string; layers: number[]; description: string }>;
+  scanNotes: Array<{ layer: number; note: string }>;
+}): string {
+  const packedBlock = params.packed.map((entry, index) =>
+    `${index + 1}. "${entry.title}" — katmanlar: ${
+      entry.layers.join(", ")
+    }\n   ${entry.description}`
+  ).join("\n");
+  const notesBlock = params.scanNotes.map((entry) =>
+    `- Katman ${entry.layer}: ${entry.note}`
+  ).join("\n");
+  return [
+    V5_FREE_PROMPT,
+    "## 9. BAĞLAM",
+    "",
+    `- Fotoğraf: ${params.photoIndex}/${params.photoCount}.`,
+    `- Çıktı dili: ${params.outputLanguage}.`,
+    v5SectorLine(params.sectorID),
+    "",
+    "## 10. BU ÇAĞRININ GÖREVİ: BİRLEŞTİRİLMİŞ BULGULARI AYIR",
+    "",
+    "Bu fotoğrafı az önce inceledin. Aşağıdaki kayıtların her biri birden çok tehlikeyi tek bulguda topladı:",
+    "",
+    packedBlock,
+    "",
+    "İlgili tarama notların:",
+    "",
+    notesBlock,
+    "",
+    "Bu tehlikeleri **ayrı ayrı** yeniden yaz. Her bulgu tek bir katman numarası taşısın: \`layers\` dizisinde tam bir sayı olsun. Her birinin kendi olay yolu, kendi Fine-Kinney değerleri ve kendi önlemi olacak — birleşik kayıtta gizlenen ağır sonuç böylece görünür olur.",
+    "",
+    "Yalnız \`findings\` dizisini doldur; \`scene_summary\`, \`layer_scan\` ve \`positive_controls\` boş kalabilir. Yukarıdaki listede olmayan yeni tehlike ekleme; işin bunları ayırmak, yenisini aramak değil.",
+  ].filter((line) => line !== "").join("\n");
+}
