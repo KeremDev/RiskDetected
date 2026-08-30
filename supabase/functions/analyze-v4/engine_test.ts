@@ -3880,3 +3880,31 @@ Deno.test("saplanma ve zemin dağınıklığı ayrı maddeler kalır", () => {
   const scored = routed.items.filter((item) => item.is_scored);
   assertEquals(scored.length, 2);
 });
+
+Deno.test("yayımlanmış düşme bulgusu düşen cisim modülünü de cevaplar", () => {
+  // 4492df2f: korumasız döşeme kenarında ölümcül düşme yayımlandı, üç madde
+  // sonra "Düşme ve düşen cisim değerlendirilemedi" yazdı. Model bu modülü
+  // person_roof_edge ve region_upper_slab üzerinden etkinleştirmiş, adayını
+  // work_at_height'e bağlamış, satır boşta kalmıştı.
+  const photo = output([candidate()]);
+  photo.module_coverage.push({
+    module_id: "falls_falling_objects",
+    activated_by: ["person_roof_edge", "region_upper_slab"],
+    outcome: "not_assessable_due_to_image",
+    entity_refs: ["person_roof_edge"],
+    candidate_keys: [],
+    note: "Bağlı görsel aday bulunamadı; olumlu tehlike varsayılmadı.",
+  });
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  assertEquals(
+    routed.items.some((item) =>
+      item.item_class === "not_assessable" &&
+      String(item.title).includes("Düşme")
+    ),
+    false,
+  );
+});

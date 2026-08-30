@@ -2333,6 +2333,18 @@ function imageAnswersThisModule(
   if (moduleID === "work_at_height" && mechanisms.has("fall_from_height")) {
     return "fall_from_height_finding_published";
   }
+  // Analysis 4492df2f published a fatal fall from an unprotected slab edge and,
+  // three items later, "Düşme ve düşen cisim değerlendirilemedi". The model had
+  // activated this module on person_roof_edge and region_upper_slab -- the very
+  // entities behind that finding -- and then bound its candidate to
+  // work_at_height instead, leaving this row with nothing attached. The two
+  // modules divide one hazard between them; a published fall answers both.
+  if (
+    moduleID === "falls_falling_objects" &&
+    (mechanisms.has("fall_from_height") || mechanisms.has("falling_object"))
+  ) {
+    return "fall_finding_published";
+  }
   if (
     moduleID === "access_egress" &&
     (mechanisms.has("fall_from_height") || mechanisms.has("fall_same_level"))
