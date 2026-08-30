@@ -1,8 +1,8 @@
 # RiskDetected 2.0.0 Localization Review Evidence
 
-Target: iOS 2.0.0 build 87  
-Release mode: After approval  
-Mutable App Store locales: `en-GB`, `en-US`, `en-AU`, `en-CA`  
+Target: iOS 2.0.0 build 87
+Release mode: After approval
+Mutable App Store locales: `en-GB`, `en-US`, `en-AU`, `en-CA`
 Protected App Store locale: `tr`
 
 ## Product evidence
