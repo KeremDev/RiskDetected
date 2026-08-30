@@ -366,6 +366,8 @@ export type StructuredGeminiCall = {
 
 export type StructuredGeminiResponse = {
   text: string;
+  /** MAX_TOKENS here means the JSON was cut off, not that it was malformed. */
+  finishReason: string;
   usage: V4ProviderUsage;
   providerRequestID: string | null;
   durationMs: number;
@@ -509,6 +511,7 @@ export async function sendStructuredGemini(
   }
   return {
     text,
+    finishReason,
     usage,
     providerRequestID: requestID,
     durationMs,

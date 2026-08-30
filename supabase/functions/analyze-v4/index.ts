@@ -829,6 +829,11 @@ serve(async (req) => {
       const v5PromptSHA = await assertV5PromptIntegrity(
         engineConfig.v5_prompt_sha256,
       );
+      // Thinking is billed against this cap too, so an eighteen-layer sweep at
+      // HIGH needs far more headroom than the contract engine's 12288.
+      const freeMaxOutputTokens = Number(
+        engineConfig.v5_max_output_tokens ?? config.maxProviderOutputTokens,
+      );
       const freeThinkingLevel =
         typeof engineConfig.v5_gemini_thinking_level === "string"
           ? engineConfig.v5_gemini_thinking_level as typeof config
@@ -856,7 +861,7 @@ serve(async (req) => {
           requestedTier: config.requestedServiceTier,
           promptSHA256: v5PromptSHA,
           promptBundleSHA256: v5PromptSHA,
-          maxOutputTokens: config.maxProviderOutputTokens,
+          maxOutputTokens: freeMaxOutputTokens,
         };
         let response;
         try {
@@ -873,7 +878,7 @@ serve(async (req) => {
             // out of eighteen layers; the contract engine's default was tuned
             // for a much shorter contract.
             thinkingLevel: freeThinkingLevel,
-            maxOutputTokens: config.maxProviderOutputTokens,
+            maxOutputTokens: freeMaxOutputTokens,
             serviceTier: config.requestedServiceTier,
           }, V5_RESPONSE_SCHEMA);
         } catch (error) {
@@ -908,9 +913,20 @@ serve(async (req) => {
           // The call was made and billed, so the usage travels with the
           // failure. v4 lost exactly this twice and could not say afterwards
           // whether a schema rejection had cost anything.
+          //
+          // Truncation is not malformed output and must not be filed as such.
+          // Thinking counts against maxOutputTokens: in analysis 58cbe261 the
+          // model spent 10577 reasoning tokens of a 12288 budget and the JSON
+          // was cut at 1694 visible tokens, which surfaced as
+          // v5_output_not_json and read like a contract failure.
+          const truncated = response.finishReason === "MAX_TOKENS" ||
+            response.usage.reasoningTokens + response.usage.outputTokens >=
+              freeMaxOutputTokens - 64;
           const providerError = new V4ProviderError(
-            error instanceof Error ? error.message : "v5_schema_invalid",
-            "v5_schema_invalid",
+            `${
+              error instanceof Error ? error.message : "v5_schema_invalid"
+            }:finish=${response.finishReason}:think=${response.usage.reasoningTokens}:out=${response.usage.outputTokens}:cap=${freeMaxOutputTokens}`,
+            truncated ? "v5_output_truncated" : "v5_schema_invalid",
             response.httpStatus,
             response.durationMs,
             true,
