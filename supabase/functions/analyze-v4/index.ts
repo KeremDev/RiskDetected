@@ -1059,8 +1059,14 @@ serve(async (req) => {
           output: entry.output,
         })),
       );
+      // Scored site findings. Assurance items are published too -- the hub
+      // routes them to Uzman Görüşü -- but they are not what "no visible items"
+      // is asking about, and they carry no score.
       const visibleFree = routedFree.items.filter((item) =>
         item.item_class === "observed_finding"
+      );
+      const assuranceFree = routedFree.items.filter((item) =>
+        item.item_class === "assurance_requirement"
       );
       // A summary that came out of the prompt rather than the photograph must
       // not reach the reader; the generic fallback is more honest.
@@ -1120,8 +1126,9 @@ serve(async (req) => {
           },
           routing_counts: {
             observed_finding: visibleFree.length,
-            positive_control: routedFree.items.length - visibleFree.length,
-            assurance_requirement: 0,
+            positive_control: routedFree.items.length - visibleFree.length -
+              assuranceFree.length,
+            assurance_requirement: assuranceFree.length,
             verification_request: 0,
             not_assessable: 0,
           },
@@ -1151,6 +1158,19 @@ serve(async (req) => {
             cost_usd: sum((usage) => usage.costUSD),
           },
           v5_free: {
+            // What the model said it saw, what the registry could speak about,
+            // and what it could not. The last list is the registry's work
+            // queue: a family that keeps appearing there is the next entry to
+            // write.
+            observed_assets: [
+              ...new Set(
+                outputs.flatMap((entry) => entry.output.observed_assets ?? []),
+              ),
+            ].sort(),
+            expert_cards: routedFree.expertCardCount,
+            expert_families_without_entry:
+              routedFree.expertFamiliesWithoutEntry,
+            records_findings_superseded: routedFree.recordsFindingsSuperseded,
             split_pass_enabled: splitPassEnabled,
             split_pass: splitOutcomes,
             // Recorded whether or not the split ran, so a single-request run

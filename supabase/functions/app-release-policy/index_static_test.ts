@@ -37,7 +37,12 @@ Deno.test("app-release-policy returns sanitized public release policy", async ()
   assertStringIncludes(source, 'if (platform !== "android") return null');
   assertStringIncludes(source, 'action: "update_app"');
   assertStringIncludes(source, 'requiresAcknowledgement ? "accept" : "none"');
-  assertStringIncludes(source, "sanitizeAndroidLegalPolicy(data.value)");
+  assertStringIncludes(
+    source,
+    "sanitizeAndroidLegalPolicy(data.value, fallback)",
+  );
+  assertStringIncludes(source, '"android_legal_policy_en"');
+  assertStringIncludes(source, "DEFAULT_ANDROID_LEGAL_POLICY_EN");
   assertStringIncludes(source, "hard_update_required");
   assertStringIncludes(source, "soft_update_available");
   assertStringIncludes(source, "cleanURL(");

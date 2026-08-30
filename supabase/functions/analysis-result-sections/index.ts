@@ -18,7 +18,6 @@ import {
 import {
   APPROVED_NOTEBOOK_PROJECTION_VERSION,
   APPROVED_NOTEBOOK_TEMPLATE_TR,
-  firstSentenceTeaser,
   projectApprovedNotebookEntries,
   type ProjectorFinding,
   type ResultHubLanguage,
@@ -123,7 +122,7 @@ type Body = {
   mutation?: "edit" | "suppress" | "restore" | "reset";
   finding_text?: string;
   recommendation_text?: string;
-  target_kind?: "finding" | "notebook_entry";
+  target_kind?: "finding" | "notebook_entry" | "training_card";
   target_key?: string;
   section?: ResultHubSection;
   rating?: number;
@@ -607,6 +606,14 @@ async function handleFeedback(context: Context) {
   const rating = Math.round(Number(context.body.rating ?? 0));
   if (!section || !targetKind || !targetKey || ![-1, 0, 1].includes(rating)) {
     return json(400, { error: "invalid_feedback" });
+  }
+  const expectedTargetKind = section === "approved_notebook"
+    ? "notebook_entry"
+    : section === "training_recommendations"
+    ? "training_card"
+    : "finding";
+  if (targetKind !== expectedTargetKind) {
+    return json(400, { error: "invalid_feedback_target_kind" });
   }
   if (section !== "risk_analysis" && !isPaidTier(context.tier)) {
     return json(403, { error: "premium_required" });

@@ -143,6 +143,29 @@ Her görünen ekipman için ayrı bir bulgu üretme zorunluluğun yok. Yalnız a
 
 Bu bölümün bulgularını **19. katmana** bağla ve \`layers\` dizisine 19 yaz. Taramada 19. katman için \`tehlike_var\`, "doğrulanması gereken bir kayıt var" demektir; ekipmanın fiziksel bir kusuru olduğu anlamına gelmez. Ekipman görünüyorsa ve mevzuat onun için periyodik kontrol arıyorsa bu satır \`tehlike_var\`tır — ekipman sağlam ve çalışır görünse bile, çünkü kaydın durumu fotoğraftan görülmez. Bu katmanı \`tehlike_yok\` yapman ancak kadrajda periyodik kontrole tabi hiçbir ekipman yoksa doğrudur; o durumda \`kadrajda_yok\` daha yerindedir.
 
+## 5.1 GÖRÜLEN EKİPMAN AİLELERİ
+
+\`observed_assets\` alanına, kadrajda **gördüğün** ekipmanların kodlarını yaz. Bu
+bir tehlike listesi değildir; sahada ne bulunduğunun envanteridir. Ekipman
+sağlam, korumalı ve doğru kullanılıyor olsa bile kodunu yazarsın.
+
+Geçerli kodlar yalnız şunlardır:
+
+\`overhead_crane\` köprülü vinç · \`mobile_crane\` mobil vinç · \`hoist\` caraskal ·
+\`lifting_accessory\` sapan, zincir, halat, mapa, kanca · \`forklift\` forklift ·
+\`mewp\` yükseltilebilir çalışma platformu · \`earthmoving_equipment\` iş makinesi ·
+\`storage_tank\` atmosferik depolama tankı · \`pressure_vessel\` basınçlı kap, hava
+tankı · \`process_piping\` proses borulaması · \`boiler\` kazan · \`compressor\`
+kompresör · \`gas_cylinder\` basınçlı gaz tüpü · \`electrical_panel\` elektrik
+panosu, dağıtım tablosu · \`earthing_system\` gövdesi topraklanması gereken
+elektrikli ekipman · \`welding_machine\` kaynak makinesi · \`machine_tool\` tezgâh,
+pres, torna · \`fire_equipment\` söndürücü, dolap, hidrant · \`ventilation_system\`
+havalandırma, duman emiş · \`scaffold\` iskele · \`ladder\` merdiven ·
+\`conveyor\` konveyör.
+
+Emin olmadığın kodu yazma. Listede karşılığı olmayan ekipmanı zorlama; dizi boş
+kalabilir.
+
 ## 6. MEVZUAT VE STANDARTLAR
 
 Her bulgu için doğrudan ilgili **1-4** dayanak yaz. Öncelik: **6331 sayılı Kanun → güncel Türkiye yönetmeliği → teknik standart veya iyi mühendislik uygulaması**. Madde, bölüm, standart veya baskı numarasını yalnız kesin biliyorsan yaz; uydurma.
@@ -205,6 +228,7 @@ Alan içerikleri:
 - \`needs_field_verification\`: sahada doğrulanması gerekiyorsa true.
 - \`positive_controls\`: her kayıt \`title\` ve \`description\` taşısın. Yalnız görünen bir önlem, koruma, donanım veya doğru uygulama yazılır; bir şeyin yokluğu ("dağınıklık yok", "hat kurulmuş") olumlu kontrol değildir. Gösterecek bir şey yoksa diziyi boş bırak.
 - \`layer_scan\`: 19 satır; \`layer\`, \`result\` ve kısa \`note\`. Önce bu doldurulur, bulgular bu listeyi karşılar.
+- \`observed_assets\`: fotoğrafta **gördüğün** ekipman ailelerinin kodları. Yalnız listedeki kodlardan seç, gördüğünü yaz, görmediğini yazma. Bu alan bir tehlike beyanı değildir: ekipman kusursuz görünse de, tehlike üretmese de, kadrajdaysa kodunu yaz. Kod seçemiyorsan diziyi boş bırak.
 
 Alan adları ve JSON yapısı yanıt şemasıyla dayatılır; yukarısı ne yazacağını anlatır. Bu listedeki örnek ifadeleri çıktına kopyalama.
 `;

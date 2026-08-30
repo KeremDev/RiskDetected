@@ -41,6 +41,16 @@ Deno.test("feedback identifiers are canonicalized before lookup and persistence"
   assertStringIncludes(source, "p_target_key: targetKey");
 });
 
+Deno.test("feedback validates the target kind for all four result sections", () => {
+  assertStringIncludes(
+    source,
+    'target_kind?: "finding" | "notebook_entry" | "training_card"',
+  );
+  assertStringIncludes(source, 'section === "training_recommendations"');
+  assertStringIncludes(source, '? "training_card"');
+  assertStringIncludes(source, 'error: "invalid_feedback_target_kind"');
+});
+
 Deno.test("result endpoint adds no model call", () => {
   const providerMarkers = [
     "generativelanguage.googleapis.com",

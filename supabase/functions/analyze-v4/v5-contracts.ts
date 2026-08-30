@@ -29,8 +29,10 @@
 // the report and the score totals are untouched, and the switch back is one
 // config key.
 
+import { EXPERT_ASSET_FAMILIES } from "./v5-taxonomy.ts";
+
 export const V5_ENGINE_MODE = "free";
-export const V5_PROMPT_VERSION = "v7-free-core-multidisciplinary-v13";
+export const V5_PROMPT_VERSION = "v7-free-core-multidisciplinary-v14";
 
 /** Fine-Kinney scales. The arithmetic stays deterministic; the values do not. */
 export const FK_PROBABILITY = [0.2, 0.5, 1, 3, 6, 10] as const;
@@ -129,6 +131,22 @@ export type V5PhotoOutput = {
   findings: V5Finding[];
   positive_controls: V5PositiveControl[];
   layer_scan: V5LayerScan[];
+  /**
+   * Equipment families visible in the photograph, from a closed list.
+   *
+   * The one classification this engine asks for, and deliberately the only
+   * one. It is a perception question -- what is in frame -- not a judgement:
+   * the hazard, the severity, the control and every sentence of the finding
+   * stay the model's own.
+   *
+   * It exists because the expert section speaks in standards. "Bu tankın API
+   * 653 kapsamında et kalınlığı ultrasonik olarak ölçülmelidir" is only worth
+   * reading because the 653 was chosen by a registry rather than a language
+   * model, and the registry needs to know it is looking at a storage tank.
+   * Turkish prose cannot supply that: matching prose to a code is how a man
+   * carrying a timber became a slewing radius.
+   */
+  observed_assets: string[];
 };
 
 export const V5_SCAN_LAYER_COUNT = 19;
@@ -162,6 +180,10 @@ export const V5_RESPONSE_SCHEMA = {
         },
         required: ["layer", "result", "note"],
       },
+    },
+    observed_assets: {
+      type: "array",
+      items: { type: "string", enum: [...EXPERT_ASSET_FAMILIES] },
     },
     positive_controls: {
       type: "array",
@@ -225,5 +247,11 @@ export const V5_RESPONSE_SCHEMA = {
       },
     },
   },
-  required: ["scene_summary", "layer_scan", "findings", "positive_controls"],
+  required: [
+    "scene_summary",
+    "layer_scan",
+    "observed_assets",
+    "findings",
+    "positive_controls",
+  ],
 };

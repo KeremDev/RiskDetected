@@ -332,10 +332,10 @@ Deno.test("köşe kutusu depolanan biçime çevrilir", () => {
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "de5eb1ac407ba203809c18fb240b42d0c0ca82ecaad6249bb3f1c6f71d5f116c";
+  "17092314b40c97e3e8e4894b01096bfdcc038960be4537b12dc73f32d6e0a985";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v13");
+  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v14");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 

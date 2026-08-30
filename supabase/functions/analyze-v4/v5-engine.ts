@@ -1,4 +1,10 @@
 import type { Criticality, RoutedItem } from "./contracts.ts";
+import { expertRecommendationsFor } from "../_shared/expert-recommendations/index.ts";
+import {
+  isExpertAssetFamily,
+  V5_LAYER_BOOK_CODES,
+  V5_RECORDS_LAYER,
+} from "./v5-taxonomy.ts";
 import {
   FK_FREQUENCY,
   FK_PROBABILITY,
@@ -250,6 +256,9 @@ export function parseV5Output(raw: string): V5PhotoOutput {
             description: text(control.description, 600),
           };
         }).filter((control) => control.title && control.description),
+    observed_assets: (Array.isArray(envelope.observed_assets)
+      ? envelope.observed_assets
+      : []).map((entry) => text(entry, 64)).filter(isExpertAssetFamily),
   };
 }
 
@@ -373,7 +382,87 @@ export type V5Routed = {
   droppedFindings: Array<{ finding_key: string; reason: string }>;
   sanitizedCount: number;
   snappedCount: number;
+  /** Registry cards published into Uzman Görüşü. */
+  expertCardCount: number;
+  /** Families the model saw that the registry cannot speak about yet. */
+  expertFamiliesWithoutEntry: string[];
+  /**
+   * The model's own records findings, dropped because the registry covered the
+   * same ground in more detail.
+   */
+  recordsFindingsSuperseded: string[];
 };
+
+/**
+ * The canonical block the training catalogue and the approved-book engine read.
+ *
+ * v4 wrote this off a mechanism taxonomy the free engine does not have. The
+ * layers are the replacement: a fixed nineteen-value vocabulary, enforced by
+ * the response schema, present in every run. Without this block
+ * `adaptTrainingItems` returns an empty list and the training section is not
+ * missing rows, it is switched off -- even the three `always: true` cards never
+ * reach the reader, because the early return sits in front of them.
+ */
+function bookSourceFor(params: {
+  finding: V5Finding;
+  photoIndex: number;
+  peopleVisible: number;
+  criticality: Criticality;
+  itemClass: "observed_finding" | "assurance_requirement";
+}): Record<string, unknown> {
+  const codes = params.finding.layers
+    .map((layer) => V5_LAYER_BOOK_CODES[layer])
+    .filter(Boolean);
+  const primary = codes[0];
+  return {
+    schema: "book-source-v1",
+    // A records finding answers layer 19, which has no module of its own; it
+    // is a paperwork item and contributes nothing to what anyone is taught.
+    module_id: primary?.moduleID ?? "people_exposure",
+    item_class: params.itemClass,
+    condition_code: "free_engine_finding",
+    mechanism_code: codes.find((entry) => entry.mechanismCode)?.mechanismCode ??
+      null,
+    evidence_level: "E5",
+    criticality: params.criticality,
+    occlusion: "none",
+    asset_ref: null,
+    asset_family: null,
+    assurance_topic_id:
+      codes.find((entry) => entry.assuranceTopicID)?.assuranceTopicID ?? null,
+    barrier_components_absent: [],
+    confidence: {
+      visibility: params.finding.confidence,
+      localization: params.finding.confidence,
+      mechanism: params.finding.confidence,
+    },
+    visually_resolvable: !params.finding.needs_field_verification,
+    requires_document_or_measurement:
+      params.itemClass === "assurance_requirement",
+    accessible_event_path: true,
+    people_visible: params.peopleVisible,
+    photo_index: params.photoIndex,
+    scan_layers: params.finding.layers,
+  };
+}
+
+/**
+ * A finding that only answers layer 19 is a question about a document.
+ *
+ * It was being published as a scored site hazard: analysis 1f6c5ea2 gave
+ * "Kaldırma Ekipmanları İçin Periyodik Kontrol Doğrulaması" a Fine-Kinney score
+ * of 30 and counted it in the total. Scoring a paperwork check misstates the
+ * site's risk and files the item under the wrong section; `assurance_requirement`
+ * is the class the hub already routes to Uzman Görüşü.
+ *
+ * The prompt guarantees the shape this reads -- "kayıt doğrulaması bulguları
+ * yalnız layers: [19] taşır" -- so a finding that mixes 19 with a physical
+ * layer stays a scored finding, which is the safe direction to be wrong in.
+ */
+function isRecordsOnly(finding: V5Finding): boolean {
+  return finding.layers.length > 0 &&
+    finding.layers.every((layer) => layer === V5_RECORDS_LAYER);
+}
 
 /**
  * The model's findings become the report's findings, in its own order of
@@ -389,11 +478,29 @@ export function routeV5Findings(
 ): V5Routed {
   const candidates: Record<string, unknown>[] = [];
   const scored: Array<{ item: RoutedItem; fk: number }> = [];
+  const assurance: RoutedItem[] = [];
   const droppedFindings: Array<{ finding_key: string; reason: string }> = [];
+  const recordsFindingsSuperseded: string[] = [];
   let sanitizedCount = 0;
   let snappedCount = 0;
 
+  // The registry speaks in standards and intervals; the model's own records
+  // finding says "check the paperwork". Where the registry has something to
+  // say, publishing both is the report noise this engine exists to avoid.
+  const expert = expertRecommendationsFor(
+    outputs.flatMap((entry) => entry.output.observed_assets ?? []),
+  );
+  const registryCovered = expert.recommendations.length > 0;
+
   for (const { photoIndex, output } of outputs) {
+    // Layer 1 is the person in the hazard line. Its hazard verdict is the only
+    // people signal this engine has, and the training catalogue uses it to
+    // choose between the direct and the conditional phrasing of a card.
+    const peopleVisible = output.layer_scan.some((row) =>
+        row.layer === 1 && row.result === "tehlike_var"
+      )
+      ? 1
+      : 0;
     for (const finding of output.findings) {
       const title = sanitizeFreeText(finding.title);
       const description = sanitizeFreeText(finding.description);
@@ -435,6 +542,68 @@ export function routeV5Findings(
             : !description.text
             ? "empty_description"
             : "empty_control",
+        });
+        continue;
+      }
+
+      if (isRecordsOnly(finding)) {
+        if (registryCovered) {
+          recordsFindingsSuperseded.push(finding.finding_key);
+          continue;
+        }
+        assurance.push({
+          id: crypto.randomUUID(),
+          item_class: "assurance_requirement",
+          is_scored: false,
+          criticality: "ordinary",
+          ordinal: 0,
+          title: title.text.slice(0, 200),
+          category: finding.category || "Periyodik Kontroller",
+          description: description.text,
+          recommended_action: control.text,
+          recommended_measures: [
+            ...(steps.some((entry) => entry.text)
+              ? [{
+                kind: "corrective" as const,
+                title: "Düzeltici Önlem",
+                text: steps.map((entry) => entry.text).filter(Boolean).map((
+                  line,
+                  index,
+                ) => `${index + 1}. ${endSentence(line)}`).join("\n"),
+              }]
+              : []),
+            ...(preventive.text
+              ? [{
+                kind: "preventive" as const,
+                title: "Önleyici Kontrol",
+                text: endSentence(preventive.text),
+              }]
+              : []),
+          ],
+          references_text: references.text,
+          root_cause_text: rootCause.text,
+          confidence: finding.confidence,
+          ai_confidence: finding.confidence,
+          // A record nobody can see from a photograph is always a field check.
+          needs_field_verification: true,
+          source_photo_indices: [photoIndex],
+          display_group: "assurance_requirement",
+          display_order: 0,
+          internal_priority: {
+            engine_mode: "free",
+            finding_key: finding.finding_key,
+            scan_layers: finding.layers,
+            control_source: "model",
+            sanitized: removed,
+            scale_snapped: false,
+            book_source: bookSourceFor({
+              finding,
+              photoIndex,
+              peopleVisible,
+              criticality: "ordinary",
+              itemClass: "assurance_requirement",
+            }),
+          },
         });
         continue;
       }
@@ -561,6 +730,13 @@ export function routeV5Findings(
             control_source: "model",
             sanitized: removed,
             scale_snapped: [p, f, s].some((entry) => entry.snapped),
+            book_source: bookSourceFor({
+              finding,
+              photoIndex,
+              peopleVisible,
+              criticality,
+              itemClass: "observed_finding",
+            }),
           },
         },
       });
@@ -578,6 +754,53 @@ export function routeV5Findings(
   }));
 
   let order = items.length;
+
+  // The model's own records findings, kept only where the registry was silent.
+  for (const item of assurance) {
+    order += 1;
+    items.push({ ...item, ordinal: order, display_order: order });
+  }
+
+  // The expert section proper: a paragraph per equipment family the model
+  // reported seeing, written here rather than by the model. Every standard
+  // number, interval and measurement in it is ours -- the model contributed the
+  // family code and nothing else.
+  const photoIndices = outputs.map((entry) => entry.photoIndex);
+  for (const card of expert.recommendations) {
+    order += 1;
+    items.push({
+      id: crypto.randomUUID(),
+      item_class: "assurance_requirement",
+      is_scored: false,
+      criticality: "ordinary",
+      ordinal: order,
+      title: card.title,
+      category: card.categoryLabel,
+      description: card.text,
+      recommended_action: card.action,
+      recommended_measures: [
+        { kind: "corrective", title: "Kayıt Yoksa", text: card.ifAbsent },
+        { kind: "preventive", title: "Süreklilik", text: card.ongoing },
+      ],
+      references_text: card.references,
+      // The reason this item exists is visible in the photograph and stated in
+      // the first sentence, so there is no hidden cause to name here.
+      root_cause_text: "",
+      confidence: 1,
+      ai_confidence: 1,
+      needs_field_verification: true,
+      source_photo_indices: photoIndices,
+      display_group: "assurance_requirement",
+      display_order: order,
+      internal_priority: {
+        engine_mode: "free",
+        control_source: "registry",
+        expert_family: card.family,
+        expert_class: card.recommendationClass,
+      },
+    });
+  }
+
   for (const { photoIndex, output } of outputs) {
     for (const control of output.positive_controls) {
       const description = sanitizeFreeText(control.description);
@@ -608,5 +831,14 @@ export function routeV5Findings(
     }
   }
 
-  return { candidates, items, droppedFindings, sanitizedCount, snappedCount };
+  return {
+    candidates,
+    items,
+    droppedFindings,
+    sanitizedCount,
+    snappedCount,
+    expertCardCount: expert.recommendations.length,
+    expertFamiliesWithoutEntry: expert.familiesWithoutEntry,
+    recordsFindingsSuperseded,
+  };
 }
