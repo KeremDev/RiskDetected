@@ -77,6 +77,18 @@ export function sanitizeFreeText(raw: string): SanitizeResult {
   return { text: kept.join(" ").trim(), removed };
 }
 
+/**
+ * The model does not always end a sentence, and this text gets joined to
+ * another one. Analysis 5eae6972 published "Yüksekte çalışma prosedürlerinin
+ * uygulanması ve denetlenmesi Eğitim: Yüksekte güvenli çalışma eğitimi" --
+ * two sentences run together, in the card the reader acts from.
+ */
+function endSentence(value: string): string {
+  const trimmed = value.trim().replace(/[;,\s]+$/u, "");
+  if (!trimmed) return "";
+  return /[.!?:]$/u.test(trimmed) ? trimmed : `${trimmed}.`;
+}
+
 /** Nearest allowed value. An off-scale number is a slip, not a reason to drop. */
 export function snapToScale(
   value: unknown,
@@ -304,10 +316,10 @@ export function routeV5Findings(
       const correctiveText = [
         ...steps.map((entry) => entry.text).filter(Boolean),
         ...(ppe.text ? [`Kişisel koruyucu donanım: ${ppe.text}`] : []),
-      ].map((line, index) => `${index + 1}. ${line}`).join("\n");
+      ].map((line, index) => `${index + 1}. ${endSentence(line)}`).join("\n");
       const preventiveText = [
-        preventive.text,
-        ...(training.text ? [`Eğitim: ${training.text}`] : []),
+        endSentence(preventive.text),
+        ...(training.text ? [`Eğitim: ${endSentence(training.text)}`] : []),
       ].filter(Boolean).join(" ");
 
       scored.push({

@@ -259,10 +259,10 @@ Deno.test("kalan kurallar dürüstlük, ölçek ve biçim; yöntem değil", () =
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "f83a59e32ce9dff2eeb69cff5ce3e86d68759162ff9977ace84aec86906581e0";
+  "551cb269dcae63ff368bcb85b0ee92bd8af93a7dc3d3a12449e0d181b5a30881";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v5-free-core-v4");
+  assertEquals(V5_PROMPT_VERSION, "v5-free-core-v5");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 
@@ -287,4 +287,36 @@ Deno.test("v5 şeması bulgunun tamamını ister", () => {
   // Eğitim ve KKD isteğe bağlı: her bulguda karşılığı yok.
   assertEquals(required.includes("training_recommendation"), false);
   assertEquals(required.includes("ppe_recommendation"), false);
+});
+
+Deno.test("bitmemiş cümleler birbirine yapışmaz", () => {
+  const routed = routeV5Findings([{
+    photoIndex: 1,
+    output: parseV5Output(envelope([
+      finding({
+        // Analiz 5eae6972: model noktasız bitirdi ve rapor
+        // "...denetlenmesi Eğitim: ..." diye yayımladı.
+        preventive_measure: "Yüksekte çalışma prosedürlerinin denetlenmesi",
+        training_recommendation: "Yüksekte güvenli çalışma eğitimi",
+        corrective_steps: ["Kenarlara korkuluk kurun", "Erişimi kısıtlayın"],
+        ppe_recommendation: "Paraşüt tipi emniyet kemeri",
+      }),
+    ])),
+  }]);
+  const measures = routed.items[0].recommended_measures;
+  assertStringIncludes(measures[1].text, "denetlenmesi. Eğitim:");
+  assertStringIncludes(measures[0].text, "1. Kenarlara korkuluk kurun.");
+  assertStringIncludes(measures[0].text, "3. Kişisel koruyucu donanım:");
+  assertEquals(measures[0].text.includes("kurun2"), false);
+});
+
+Deno.test("üslup kuralları yöntem kuralı değildir", () => {
+  // Nasıl yazılacağını söyler...
+  assertStringIncludes(V5_FREE_PROMPT, "emir kipinde yaz");
+  assertStringIncludes(V5_FREE_PROMPT, "Her cümleyi noktayla bitir");
+  assertStringIncludes(V5_FREE_PROMPT, "üslup kuralları");
+  // ...neye bakılacağını değil. İskele geri gelmedi.
+  for (const token of ["TARAMA", "TEHLİKELERİN BİRLEŞİMİ", "EN AĞIR MAKUL"]) {
+    assertEquals(V5_FREE_PROMPT.includes(token), false, token);
+  }
 });
