@@ -3774,3 +3774,109 @@ Deno.test("3.5 Flash Lite de eki alır", async () => {
   const parts = contents[0].parts as Array<Record<string, unknown>>;
   assertStringIncludes(String(parts[0].text), "EK SÖZLEŞME — ADAY EŞİĞİ");
 });
+
+// --------------------------------------------------------------------------
+// 4492df2f -- a slip is how you reach the rebar, not what it does to you
+// --------------------------------------------------------------------------
+
+Deno.test("kayarak sivri uca düşme saplanma sayılır, aynı seviye düşme değil", () => {
+  // 4492df2f: gerçek bir saplanma adayı -- açıkta filizler, başlıksız,
+  // criticality permanent -- contact_or_failure alanında "kayması" geçtiği için
+  // saplanma sayılmadı. Sonuç: mekanizma fall_same_level oldu, dedup anahtarı
+  // jenerik zemin anahtarına düştü, saha dağınıklığı iddiası içine karıştı ve
+  // birleşen madde saplanma başlığıyla şiddet 7'de yayımlandı. Promptun kendi
+  // çapası "saplanma en az permanent" diyor; 2.5 aynı tehlikeyi high yayımladı.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "housekeeping_physical_contact",
+    raw_label: "Açıkta kalan sivri donatı uçlarına saplanma riski",
+    affirmative_cues: [
+      "Kolon ve döşeme hizasında dikey açıkta duran donatı filizleri",
+      "Donatı uçlarında mantar/koruyucu başlık bulunmamaktadır",
+    ],
+    evidence_region: { x: 0.3, y: 0.2, width: 0.2, height: 0.2 },
+    event_path: {
+      source: "Korumasız açık donatı/filiz uçları",
+      contact_or_failure:
+        "Üst kotta çalışan kişinin kayması veya dengesini kaybetmesi sonucu sivri uçlara düşmesi",
+      consequence:
+        "Sivri metal donatı uçlarının vücuda saplanması sonucu ağır/kalıcı yaralanma",
+    },
+    potential_consequence: "permanent",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(
+    item?.internal_priority.mechanism_code,
+    "sharp_edge_contact",
+  );
+  const key = String(item?.internal_priority.dedup_key);
+  assertEquals(key.includes("ground_access_fall_same_level"), false);
+});
+
+Deno.test("çamurlu zeminde takılma hâlâ aynı seviye düşme kalır", () => {
+  // Kapının var oluş sebebi: demir çubuk yerde de yatar. Sonucu takılma olan
+  // iddia saplanmaya terfi etmemeli.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "housekeeping_physical_contact",
+    raw_label: "Zeminde dağınık demir çubuklarda takılma riski",
+    affirmative_cues: ["Yürüme güzergâhında açıkta duran demir çubuklar"],
+    evidence_region: { x: 0.1, y: 0.6, width: 0.5, height: 0.2 },
+    event_path: {
+      source: "Zemine saçılmış inşaat malzemeleri",
+      contact_or_failure: "Malzemelere takılma",
+      consequence: "Aynı seviyede düşme ve yüzeysel yaralanma",
+    },
+    potential_consequence: "ordinary",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.internal_priority.mechanism_code, "fall_same_level");
+});
+
+Deno.test("saplanma ve zemin dağınıklığı ayrı maddeler kalır", () => {
+  const photo = output([
+    candidate({
+      candidate_key: "C1",
+      module_id: "housekeeping_physical_contact",
+      raw_label: "Açıkta kalan sivri donatı uçlarına saplanma riski",
+      affirmative_cues: ["Dikey açıkta duran donatı filizleri, başlıksız"],
+      evidence_region: { x: 0.3, y: 0.2, width: 0.2, height: 0.2 },
+      event_path: {
+        source: "Açık donatı uçları",
+        contact_or_failure: "Kayma sonucu sivri uçlara düşme",
+        consequence: "Vücuda saplanma sonucu kalıcı yaralanma",
+      },
+      potential_consequence: "permanent",
+    }),
+    candidate({
+      candidate_key: "C2",
+      module_id: "housekeeping_physical_contact",
+      raw_label: "Zeminde dağınık malzemede takılma riski",
+      affirmative_cues: ["Yürüme yolunda demir çubuk ve kalıp parçaları"],
+      evidence_region: { x: 0.1, y: 0.6, width: 0.5, height: 0.2 },
+      event_path: {
+        source: "Saçılmış malzeme",
+        contact_or_failure: "Takılma",
+        consequence: "Aynı seviyede düşme",
+      },
+      potential_consequence: "ordinary",
+    }),
+  ]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  const scored = routed.items.filter((item) => item.is_scored);
+  assertEquals(scored.length, 2);
+});

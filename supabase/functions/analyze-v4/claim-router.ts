@@ -252,16 +252,36 @@ function cleanText(value: string, fallback: string): string {
 // sivri filiz veya donatı uçları" with mechanism sharp_edge_contact. The event
 // path already separates them: one ends in saplanma, the other in a same-level
 // fall.
+const IMPALEMENT_HARM =
+  /(?:saplan|delin|batma|kesik|yırtıl|yirtil|impale|puncture|laceration)/u;
+const SAME_LEVEL_PATH =
+  /(?:aynı seviyede düşme|ayni seviyede dusme|takıl|takil|kayma|slip|trip)/u;
+
 function impalementIntent(candidate: NormalizedCandidate): boolean {
+  const consequence = candidate.event_path.consequence.toLocaleLowerCase(
+    "tr-TR",
+  );
+  // The consequence decides, and it is read before the exclusion.
+  //
+  // Analysis 4492df2f raised a genuine impalement claim -- protruding starter
+  // bars, no caps, criticality permanent -- whose contact_or_failure read
+  // "kişinin KAYMASI veya dengesini kaybetmesi sonucu sivri uçlara düşmesi".
+  // The slip is how the person reaches the rebar, not what the rebar does to
+  // them, and the consequence said so outright: "sivri uçların vücuda
+  // SAPLANMASI". Scanning the whole path for slip words vetoed it anyway.
+  //
+  // The cost was not cosmetic. Without impalement the mechanism resolved to
+  // fall_same_level, which meant the dedup key collapsed to the generic
+  // ground-access one, the site-clutter claim merged into it, and the merged
+  // item published under an impalement title at severity 7 -- capped by the
+  // same-level policy -- where the prompt's own anchor says impalement is at
+  // least permanent. gemini-2.5-flash published the same hazard at band high.
+  if (IMPALEMENT_HARM.test(consequence)) return true;
   const path = `${candidate.event_path.source} ${
     candidate.event_path.contact_or_failure
-  } ${candidate.event_path.consequence}`.toLocaleLowerCase("tr-TR");
-  if (
-    /(?:aynı seviyede düşme|ayni seviyede dusme|takıl|takil|kayma|slip|trip)/u
-      .test(path)
-  ) return false;
-  return /(?:saplan|delin|batma|kesik|yırtıl|yirtil|impale|puncture|laceration)/u
-    .test(path) ||
+  } ${consequence}`.toLocaleLowerCase("tr-TR");
+  if (SAME_LEVEL_PATH.test(path)) return false;
+  return IMPALEMENT_HARM.test(path) ||
     /(?:çıkıntı|cikinti|sivri|keskin|protrud|sharp)/u.test(path);
 }
 
