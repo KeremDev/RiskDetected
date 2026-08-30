@@ -30,7 +30,7 @@
 // config key.
 
 export const V5_ENGINE_MODE = "free";
-export const V5_PROMPT_VERSION = "v7-free-core-multidisciplinary-v5";
+export const V5_PROMPT_VERSION = "v7-free-core-multidisciplinary-v6";
 
 /** Fine-Kinney scales. The arithmetic stays deterministic; the values do not. */
 export const FK_PROBABILITY = [0.2, 0.5, 1, 3, 6, 10] as const;
@@ -50,8 +50,17 @@ export const V5_MAX_POSITIVE_CONTROLS = 4;
 
 export type V5Finding = {
   finding_key: string;
-  /** 1-18; the scan layer this finding discharges. */
-  layer: number;
+  /**
+   * Every scan layer this finding discharges, 1-18.
+   *
+   * Plural because one hazard belongs to several layers and a single number
+   * made the audit read a covered hazard as an uncovered one. In analysis
+   * 0e48c1c8 the worker on the tank answered layer 3, and layer 1 -- the same
+   * worker, "güvensiz pozisyonda kaynak" -- was reported unanswered beside two
+   * layers that genuinely were. The oldest engine had inspection_layer_keys
+   * plural for this reason.
+   */
+  layers: number[];
   title: string;
   category: string;
   description: string;
@@ -152,7 +161,7 @@ export const V5_RESPONSE_SCHEMA = {
         type: "object",
         properties: {
           finding_key: { type: "string" },
-          layer: { type: "number" },
+          layers: { type: "array", items: { type: "number" } },
           title: { type: "string" },
           category: { type: "string" },
           description: { type: "string" },
@@ -180,7 +189,7 @@ export const V5_RESPONSE_SCHEMA = {
         },
         required: [
           "finding_key",
-          "layer",
+          "layers",
           "title",
           "category",
           "description",

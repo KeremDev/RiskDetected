@@ -26,7 +26,7 @@ import { V4_PROMPT_COMMON } from "./prompt.ts";
 function finding(overrides: Record<string, unknown> = {}) {
   return {
     finding_key: "f1",
-    layer: 3,
+    layers: [3],
     title: "Üst kat döşeme kenarında korumasız çalışma.",
     category: "Yüksekte çalışma",
     description: "İşçi açık döşeme kenarında korkuluk olmadan çalışıyor.",
@@ -321,10 +321,10 @@ Deno.test("köşe kutusu depolanan biçime çevrilir", () => {
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "4350f70979b12276cddc19c9be2ad5e2679fef285578e14019007300196a4861";
+  "11bb1000b04c996734df03555705fd39e7560841b224786b8705f394e6f2c8f8";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v5");
+  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v6");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 
@@ -514,7 +514,7 @@ Deno.test("şema bulguları kayıttan önce ister", () => {
   // yazıp bulgusuz bıraktı -- v4'ün en eski hatası, yeni bir yerde.
   assertEquals(keys.indexOf("findings") < keys.indexOf("layer_scan"), true);
   assertEquals(
-    schema.properties.findings.items.required.includes("layer"),
+    schema.properties.findings.items.required.includes("layers"),
     true,
   );
   assertStringIncludes(V5_FREE_PROMPT, "ÖNCE BULGU, SONRA KAYIT");
@@ -525,7 +525,7 @@ Deno.test("sözü tutulmayan katman ölçülür, uydurulmaz", () => {
   const raw = JSON.stringify({
     scene_summary: "Şantiye sahnesi.",
     positive_controls: [],
-    findings: [finding({ layer: 3 })],
+    findings: [finding({ layers: [3] })],
     layer_scan: [
       { layer: 3, result: "tehlike_var", note: "Açık kenar." },
       // 88a9c731'de tam olarak bu satır vardı ve karşılığı gelmedi.
@@ -538,4 +538,38 @@ Deno.test("sözü tutulmayan katman ölçülür, uydurulmaz", () => {
   // Ölçülür, ama sunucu eksik bulguyu kendisi yazmaz.
   const routed = routeV5Findings([{ photoIndex: 1, output }]);
   assertEquals(routed.items.length, 1);
+});
+
+Deno.test("bir bulgu birden çok katmanı karşılayabilir", () => {
+  // Analiz 0e48c1c8: tank üzerindeki işçi katman 3'ü karşıladı ve aynı işçi
+  // katman 1'de ("güvensiz pozisyonda kaynak") karşılıksız sayıldı. Tek sayı
+  // kapsanmış bir tehlikeyi kapsanmamış gibi okuyordu; eski motorda da bu
+  // alan çoğuldu.
+  const raw = JSON.stringify({
+    scene_summary: "Atölye sahnesi.",
+    positive_controls: [],
+    findings: [finding({ layers: [1, 3, 17] })],
+    layer_scan: [
+      { layer: 1, result: "tehlike_var", note: "Güvensiz pozisyon." },
+      { layer: 3, result: "tehlike_var", note: "Korkuluksuz çalışma." },
+      { layer: 16, result: "tehlike_var", note: "Kaynak dumanı." },
+      { layer: 17, result: "tehlike_var", note: "Diz çökme." },
+    ],
+  });
+  const output = parseV5Output(raw);
+  // 1, 3 ve 17 karşılandı; gerçekten karşılıksız olan yalnız 16.
+  assertEquals(unfulfilledHazardLayers(output), [16]);
+  const routed = routeV5Findings([{ photoIndex: 1, output }]);
+  assertEquals(routed.items[0].internal_priority.scan_layers, [1, 3, 17]);
+});
+
+Deno.test("olumlu kontrol bir önlemdir, bir yokluk değil", () => {
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    'bir şeyin yokluğu ("dağınıklık yok", "hat kurulmuş") olumlu kontrol değildir',
+  );
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    "Gösterecek bir şey yoksa diziyi boş bırak",
+  );
 });

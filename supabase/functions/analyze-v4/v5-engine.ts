@@ -202,7 +202,10 @@ export function parseV5Output(raw: string): V5PhotoOutput {
       const kinney = (finding.fine_kinney ?? {}) as Record<string, unknown>;
       return {
         finding_key: text(finding.finding_key, 120),
-        layer: Number(finding.layer),
+        layers: (Array.isArray(finding.layers) ? finding.layers : [])
+          .map((entry) => Number(entry)).filter((entry) =>
+            Number.isFinite(entry)
+          ),
         title: text(finding.title, 200),
         category: text(finding.category, 80),
         description: text(finding.description, 1600),
@@ -265,9 +268,7 @@ export function parseV5Output(raw: string): V5PhotoOutput {
  */
 export function unfulfilledHazardLayers(output: V5PhotoOutput): number[] {
   const answered = new Set(
-    output.findings.map((finding) => Number(finding.layer)).filter((layer) =>
-      Number.isFinite(layer)
-    ),
+    output.findings.flatMap((finding) => finding.layers),
   );
   return output.layer_scan
     .filter((row) => row.result === "tehlike_var" && !answered.has(row.layer))
@@ -464,7 +465,7 @@ export function routeV5Findings(
             // Which scan layer produced this. unfulfilledHazardLayers checks
             // the same binding across the whole output; this makes it
             // readable per item afterwards.
-            scan_layer: Number.isFinite(finding.layer) ? finding.layer : null,
+            scan_layers: finding.layers,
             control_source: "model",
             sanitized: removed,
             scale_snapped: [p, f, s].some((entry) => entry.snapped),
