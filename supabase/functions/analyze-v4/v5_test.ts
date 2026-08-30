@@ -212,21 +212,57 @@ Deno.test("bantlar v4 ile aynı eşikleri kullanır", () => {
   assertEquals(bandsFor(1440, 20).m5Band, "critical");
 });
 
-Deno.test("serbest istem sözleşme motorunun hiçbir parçasını taşımaz", () => {
-  assertEquals(V5_FREE_PROMPT.includes("module_coverage"), false);
-  assertEquals(V5_FREE_PROMPT.includes("candidate_key"), false);
+Deno.test("istemde yöntem talimatı kalmadı", () => {
+  // Sözleşme motorunun hiçbir parçası.
+  for (
+    const token of [
+      "module_coverage",
+      "candidate_key",
+      "condition_code",
+      "not_assessable",
+      "positive_control_present",
+    ]
+  ) {
+    assertEquals(V5_FREE_PROMPT.includes(token), false, token);
+  }
   assertEquals(V5_FREE_PROMPT.includes(V4_PROMPT_COMMON.trim()), false);
-  // Kalan üç kural.
-  assertStringIncludes(V5_FREE_PROMPT, "Yalnız fotoğrafta gördüğünü raporla");
+
+  // İki sürüm boyunca burada duran iskele de gitti. Analiz 0c4c9a03'te
+  // tarama listesi kabloyu "geçiş yolları / engel" başlığına yazdırdı ve
+  // model ıslak zemindeki kabloya takılma dedi; ardından eklenen birleşim
+  // kuralı, ilk iskeleyi yamayan ikinci iskeleydi.
+  for (
+    const token of [
+      "TARAMA",
+      "TEHLİKELERİN BİRLEŞİMİ",
+      "EN AĞIR MAKUL",
+      "su veya nem ile elektrik",
+      "yükseltilmiş yüzeyler ve kenarlar",
+      "toplu koruma sağlayan adım",
+    ]
+  ) {
+    assertEquals(V5_FREE_PROMPT.includes(token), false, token);
+  }
+});
+
+Deno.test("kalan kurallar dürüstlük, ölçek ve biçim; yöntem değil", () => {
+  // Üç dürüstlük kuralı.
+  assertStringIncludes(V5_FREE_PROMPT, "Yalnız fotoğrafta gördüğünü yaz");
+  assertStringIncludes(V5_FREE_PROMPT, "olmadıklarını iddia etmen değildir");
   assertStringIncludes(V5_FREE_PROMPT, "madde numarası veya standart kodu");
+  // Dil, çünkü okuyucu Türkçe okuyor.
   assertStringIncludes(V5_FREE_PROMPT, "Türkçe karakterlerle");
+  // Ölçek, çünkü raporun toplamları buradan hesaplanıyor.
+  assertStringIncludes(V5_FREE_PROMPT, "FINE-KINNEY ÖLÇEĞİ");
+  // Ve muhakemenin modele ait olduğu açıkça söyleniyor.
+  assertStringIncludes(V5_FREE_PROMPT, "mesleki muhakemeni kullan");
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "6f0ea1db69d4b9b6ed51219a9dbfe67b48673c95ffff48c305682e22344d1064";
+  "f83a59e32ce9dff2eeb69cff5ce3e86d68759162ff9977ace84aec86906581e0";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v5-free-core-v3");
+  assertEquals(V5_PROMPT_VERSION, "v5-free-core-v4");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 
@@ -251,29 +287,4 @@ Deno.test("v5 şeması bulgunun tamamını ister", () => {
   // Eğitim ve KKD isteğe bağlı: her bulguda karşılığı yok.
   assertEquals(required.includes("training_recommendation"), false);
   assertEquals(required.includes("ppe_recommendation"), false);
-});
-
-Deno.test("tarama sırası sözleşme değil, dikkat yönlendirmesidir", () => {
-  // Nereye bakılacağını söyler...
-  assertStringIncludes(V5_FREE_PROMPT, "TARAMA");
-  assertStringIncludes(V5_FREE_PROMPT, "enerji: elektrik hattı");
-  assertStringIncludes(V5_FREE_PROMPT, "yükseltilmiş yüzeyler ve kenarlar");
-  // ...ama her başlık için satır üretmeyi istemez. v4'ün kapsam matrisi
-  // tam olarak bunu istediği için bir raporun on dört maddesinin dokuzu
-  // "değerlendirilemedi" oldu.
-  assertStringIncludes(V5_FREE_PROMPT, "o başlığı sessizce geç");
-  assertEquals(V5_FREE_PROMPT.includes("module_coverage"), false);
-  assertEquals(V5_FREE_PROMPT.includes("not_assessable"), false);
-});
-
-Deno.test("birleşim kuralı örnek listesi değil, seçim kuralıdır", () => {
-  assertStringIncludes(V5_FREE_PROMPT, "TEHLİKELERİN BİRLEŞİMİ");
-  assertStringIncludes(V5_FREE_PROMPT, "EN AĞIR MAKUL");
-  // Analiz 0c4c9a03: model ıslak zemini bir bulguda, üzerinden geçen kabloyu
-  // başka bir bulguda gördü ve kabloya "takılma" dedi -- şiddet 3. İki koşulu
-  // ayrı ayrı görmek, birleşimini görmek değildir.
-  assertStringIncludes(V5_FREE_PROMPT, "su veya nem ile elektrik");
-  // Yine de bir katalog değil: modül yok, enum yok, zorunlu satır yok.
-  assertEquals(V5_FREE_PROMPT.includes("module"), false);
-  assertEquals(V5_FREE_PROMPT.includes("condition_code"), false);
 });
