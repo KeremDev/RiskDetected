@@ -1126,9 +1126,19 @@ serve(async (req) => {
       photo_index: result.photo.photoIndex,
       core_missing: missingCoreCoverage(result.output),
       active_modules: activatedModulesFromScene(result.output, sectorID),
+      // module_id and outcome alone are not enough to explain a published
+      // "değerlendirilemedi" line. In analysis 92788b58 excavation survived the
+      // v36 activation gate on a photograph with no excavation in it, and the
+      // matrix could not say whether it carried an entity reference, a sector
+      // signal or neither -- the third time this run of work has been slowed by
+      // a trace that recorded the verdict and dropped the reason.
       outcomes: result.output.module_coverage.map((entry) => ({
         module_id: entry.module_id,
         outcome: entry.outcome,
+        activated_by: entry.activated_by ?? [],
+        entity_refs: entry.entity_refs ?? [],
+        candidate_keys: entry.candidate_keys ?? [],
+        note: (entry.note ?? "").slice(0, 200),
       })),
       coverage_recovery: result.coverageRecovery ?? null,
     }));
