@@ -14,6 +14,7 @@ import {
   assuranceTopic,
   assuranceTopicForModule,
 } from "./assurance-topic-catalog.ts";
+import { DYNAMIC_MODULE_IDS } from "./contracts.ts";
 import { controlPlaybook, correctiveSteps } from "./control-playbook.ts";
 import { SERVER_SYNTHESIZED_COVERAGE_NOTE } from "./dynamic-modules.ts";
 import { lintControlText } from "./control-linter.ts";
@@ -2255,6 +2256,19 @@ export function routeCandidates(params: {
         });
         continue;
       }
+      if (dynamicModuleNeverActivated(coverage)) {
+        ledger.push({
+          from_state: "module_coverage",
+          to_state: "hard_reject",
+          reason_code: "dynamic_module_never_activated",
+          details: {
+            module_id: coverage.module_id,
+            photo_index: photoIndex,
+            note: (coverage.note ?? "").slice(0, 200),
+          },
+        });
+        continue;
+      }
       const refuted = imageAnswersThisModule(coverage.module_id, output, items);
       if (refuted) {
         ledger.push({
@@ -2375,6 +2389,38 @@ export function routeCandidates(params: {
   return { items: ordered, ledger, hardRejections };
 }
 
+const DYNAMIC_MODULE_SET: ReadonlySet<string> = new Set(DYNAMIC_MODULE_IDS);
+
+/**
+ * A dynamic module that nothing in the scene switched on has nothing to report.
+ *
+ * The prompt admits a dynamic module only when a visible asset, the scene or
+ * the sector signals it. In analysis 70b914d4 the model ignored that and
+ * emitted all twelve, closing ten of them not_assessable_due_to_image -- and
+ * their own notes gave the game away: "Biyogüvenlik konusu yoktur", "Kapalı
+ * alan yoktur", "Proses tesisi bulunmamaktadır". That is
+ * module_activation_false_positive wearing the wrong enum, and the router
+ * published every one of it, so nine of the report's fourteen items told a
+ * construction-site reader that combustible dust, biosecurity and hot work
+ * could not be assessed.
+ *
+ * The gate is structural rather than phrase-matched: a row carrying neither an
+ * activation signal nor a single entity reference has no evidence that the
+ * module was ever in the frame, whichever way its note is worded. Core modules
+ * are untouched -- their seven rows are the coverage guarantee the reader
+ * relies on, and "not assessable" is a real answer for them.
+ */
+function dynamicModuleNeverActivated(coverage: ModuleCoverage): boolean {
+  if (!DYNAMIC_MODULE_SET.has(coverage.module_id)) return false;
+  const signalled = (coverage.activated_by ?? []).some((value) =>
+    String(value).trim()
+  );
+  const entities = (coverage.entity_refs ?? []).some((value) =>
+    String(value).trim()
+  );
+  return !signalled && !entities;
+}
+
 /**
  * Did this very photograph already answer the module the model calls unreadable?
  *
@@ -2404,6 +2450,17 @@ function imageAnswersThisModule(
   }
   if (moduleID === "work_at_height" && mechanisms.has("fall_from_height")) {
     return "fall_from_height_finding_published";
+  }
+  // Analysis 70b914d4 published "Su birikintisi yakınından geçen elektrik
+  // kablosu" as a scored finding and, ten items later, "Tehlikeli enerji
+  // değerlendirilemedi". energy and electrical divide one subject between them:
+  // a photograph that resolved a live conductor well enough to score it has
+  // answered whether its energy was assessable.
+  if (
+    moduleID === "energy" &&
+    [...mechanisms].some((mechanism) => mechanism.startsWith("electrical"))
+  ) {
+    return "electrical_finding_published";
   }
   // Analysis 4492df2f published a fatal fall from an unprotected slab edge and,
   // three items later, "Düşme ve düşen cisim değerlendirilemedi". The model had

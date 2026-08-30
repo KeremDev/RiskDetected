@@ -4250,3 +4250,69 @@ Deno.test("önlem alanı hiç gelmezse eski davranış korunur", () => {
     "playbook:absent",
   );
 });
+
+Deno.test("hiçbir şeyin etkinleştirmediği dinamik modül rapora gürültü olarak düşmez", () => {
+  const photo = output([candidate()]);
+  photo.module_coverage = [
+    ...photo.module_coverage,
+    {
+      module_id: "biosecurity",
+      activated_by: [],
+      outcome: "not_assessable_due_to_image",
+      entity_refs: [],
+      candidate_keys: [],
+      note: "Biyogüvenlik konusu yoktur.",
+    },
+    {
+      module_id: "confined_space",
+      activated_by: [],
+      outcome: "not_assessable_due_to_image",
+      entity_refs: [],
+      candidate_keys: [],
+      note: "Kapalı alan yoktur.",
+    },
+  ];
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  assertEquals(
+    routed.items.some((item) => /Biyogüvenlik|Kapalı alan/u.test(item.title)),
+    false,
+  );
+  assertEquals(
+    routed.ledger.filter((entry) =>
+      entry.reason_code === "dynamic_module_never_activated"
+    ).length,
+    2,
+  );
+});
+
+Deno.test("etkinleştirilmiş dinamik modülün değerlendirilemedi kaydı korunur", () => {
+  const photo = output([candidate()]);
+  photo.module_coverage = [
+    ...photo.module_coverage,
+    {
+      module_id: "lifting",
+      activated_by: ["visible_asset"],
+      outcome: "not_assessable_due_to_image",
+      entity_refs: ["asset-crane-1"],
+      candidate_keys: [],
+      note: "Vinç görünüyor fakat kanca bölgesi kadraja girmiyor.",
+    },
+  ];
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  assertEquals(
+    routed.items.some((item) =>
+      item.item_class === "not_assessable" && /aldırma|Kaldırma/u.test(
+        item.title,
+      )
+    ),
+    true,
+  );
+});
