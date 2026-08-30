@@ -350,7 +350,7 @@ function imagePart(
   };
 }
 
-export async function callV4Gemini(params: {
+export type StructuredGeminiCall = {
   apiKey: string;
   model: string;
   prompt: string;
@@ -362,12 +362,31 @@ export async function callV4Gemini(params: {
   thinkingLevel: GeminiThinkingLevel;
   maxOutputTokens: number;
   serviceTier: AnalysisServiceTier;
-  requiredModules?: readonly V4ModuleID[];
-  /** Set for calls whose module_coverage is never consumed. */
-  skipCoverageContract?: boolean;
-  /** Analysis output language. A mismatch is retryable, like a schema failure. */
-  expectedLanguage?: string;
-}): Promise<V4ProviderResult> {
+};
+
+export type StructuredGeminiResponse = {
+  text: string;
+  usage: V4ProviderUsage;
+  providerRequestID: string | null;
+  durationMs: number;
+  httpStatus: number;
+  effectiveServiceTier: AnalysisServiceTier;
+};
+
+/**
+ * One structured Gemini call: request shaping, transport, usage and pricing.
+ *
+ * Extracted so a second engine can share the model-family handling -- the
+ * Gemini 3 thinking level, the per-part ultra_high media resolution, the
+ * date-gated pricing, the promptTokensDetails split that is the only way to
+ * tell whether that resolution was honoured -- without inheriting the v4
+ * candidate contract. Everything above the response schema is the same call
+ * whatever the schema asks for.
+ */
+export async function sendStructuredGemini(
+  params: StructuredGeminiCall,
+  responseSchema: unknown,
+): Promise<StructuredGeminiResponse> {
   const started = Date.now();
   let response: Response;
   try {
@@ -386,7 +405,7 @@ export async function callV4Gemini(params: {
         }],
         generationConfig: {
           responseMimeType: "application/json",
-          responseSchema: toGeminiResponseSchema(schemaFor(params.model)),
+          responseSchema: toGeminiResponseSchema(responseSchema),
           maxOutputTokens: params.maxOutputTokens,
           ...geminiSamplingConfig(params.model),
           ...geminiThinkingConfig(params.model, params),
@@ -488,6 +507,25 @@ export async function callV4Gemini(params: {
       requestID,
     );
   }
+  return {
+    text,
+    usage,
+    providerRequestID: requestID,
+    durationMs,
+    httpStatus: response.status,
+    effectiveServiceTier,
+  };
+}
+
+export async function callV4Gemini(params: StructuredGeminiCall & {
+  requiredModules?: readonly V4ModuleID[];
+  /** Set for calls whose module_coverage is never consumed. */
+  skipCoverageContract?: boolean;
+  /** Analysis output language. A mismatch is retryable, like a schema failure. */
+  expectedLanguage?: string;
+}): Promise<V4ProviderResult> {
+  const { text, usage, providerRequestID: requestID, durationMs, httpStatus, effectiveServiceTier } =
+    await sendStructuredGemini(params, schemaFor(params.model));
   try {
     const parsed = parseOutput(
       text,
@@ -505,7 +543,7 @@ export async function callV4Gemini(params: {
       throw new V4ProviderError(
         languageFailure,
         "provider_output_language_invalid",
-        response.status,
+        httpStatus,
         durationMs,
         true,
         usage,
@@ -519,7 +557,7 @@ export async function callV4Gemini(params: {
       output: parsed,
       providerRequestID: requestID,
       durationMs,
-      httpStatus: response.status,
+      httpStatus: httpStatus,
       requestedServiceTier: params.serviceTier,
       effectiveServiceTier,
       usage,
@@ -534,7 +572,7 @@ export async function callV4Gemini(params: {
     throw new V4ProviderError(
       error instanceof Error ? error.message : "provider_schema_invalid",
       "provider_schema_invalid",
-      response.status,
+      httpStatus,
       durationMs,
       true,
       usage,

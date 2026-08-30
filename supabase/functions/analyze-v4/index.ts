@@ -34,7 +34,19 @@ import {
   recoverCoverageDeterministically,
 } from "./dynamic-modules.ts";
 import { normalizeCandidates } from "./evidence-normalizer.ts";
-import { assertV4PromptIntegrity, sha256Text } from "./prompt-integrity.ts";
+import {
+  assertV4PromptIntegrity,
+  assertV5PromptIntegrity,
+  sha256Text,
+} from "./prompt-integrity.ts";
+import { sendStructuredGemini } from "./provider.ts";
+import { buildV5Prompt } from "./v5-prompt.ts";
+import {
+  V5_ENGINE_MODE,
+  V5_PROMPT_VERSION,
+  V5_RESPONSE_SCHEMA,
+} from "./v5-contracts.ts";
+import { parseV5Output, routeV5Findings } from "./v5-engine.ts";
 import { buildV4PhotoPrompt, V4_PROMPT_COMMON } from "./prompt.ts";
 import {
   reconcileVerificationPass,
@@ -165,7 +177,11 @@ async function recordAttempt(supabase: any, params: {
   number: number;
   model: string;
   state: "persisted" | "failed";
-  result?: V4ProviderResult;
+  /**
+   * Only usage, ids and timings are read here, so the free engine's
+   * schema-agnostic response satisfies this without carrying a v4 output.
+   */
+  result?: Omit<V4ProviderResult, "output"> & { output?: unknown };
   error?: V4ProviderError;
   computeProfile: string;
   providerPool: string;
@@ -800,6 +816,213 @@ serve(async (req) => {
     const language = typeof analysis.output_language === "string"
       ? analysis.output_language
       : "tr";
+    // The free engine. One call per photograph, the model's own assessment,
+    // and the same finalize RPC -- so the app, the report and the score totals
+    // are untouched and the way back is one config key. See v5-contracts.ts
+    // for why it exists.
+    if (String(engineConfig.engine_mode ?? "contract") === V5_ENGINE_MODE) {
+      const v5PromptSHA = await assertV5PromptIntegrity(
+        engineConfig.v5_prompt_sha256,
+      );
+      const outputs = await Promise.all(photos.map(async (photo) => {
+        const attemptID = crypto.randomUUID();
+        const prompt = buildV5Prompt({
+          photoIndex: photo.photoIndex,
+          photoCount: photos.length,
+          outputLanguage: language,
+          sectorBlock: sectorPrompt(sectorID),
+          analysisContext: String(analysis.canvas ?? "general"),
+        });
+        const telemetry = {
+          attemptID,
+          userID,
+          engineRunID: engineRunID!,
+          photoRunID: null,
+          kind: "primary" as const,
+          number: 1,
+          model: config.primaryModel,
+          computeProfile: config.computeProfile,
+          providerPool: config.providerPool,
+          requestedTier: config.requestedServiceTier,
+          promptSHA256: v5PromptSHA,
+          promptBundleSHA256: v5PromptSHA,
+          maxOutputTokens: config.maxProviderOutputTokens,
+        };
+        let response;
+        try {
+          response = await sendStructuredGemini({
+            apiKey: key,
+            model: config.primaryModel,
+            prompt,
+            imageData: photo.base64,
+            mimeType: photo.mimeType,
+            timeoutMs: 110_000,
+            thinkingBudget: config.geminiThinkingBudget,
+            thinkingLevel: config.geminiThinkingLevel,
+            maxOutputTokens: config.maxProviderOutputTokens,
+            serviceTier: config.requestedServiceTier,
+          }, V5_RESPONSE_SCHEMA);
+        } catch (error) {
+          const providerError = error instanceof V4ProviderError
+            ? error
+            : new V4ProviderError(
+              error instanceof Error ? error.message : "v5_provider_failed",
+              "v5_provider_failed",
+              null,
+              0,
+              false,
+            );
+          await recordAttempt(supabase, {
+            ...telemetry,
+            state: "failed",
+            error: providerError,
+          });
+          throw providerError;
+        }
+        try {
+          const output = parseV5Output(response.text);
+          await recordAttempt(supabase, {
+            ...telemetry,
+            state: "persisted",
+            result: {
+              ...response,
+              requestedServiceTier: config.requestedServiceTier,
+            },
+          });
+          return { photoIndex: photo.photoIndex, output, usage: response.usage };
+        } catch (error) {
+          // The call was made and billed, so the usage travels with the
+          // failure. v4 lost exactly this twice and could not say afterwards
+          // whether a schema rejection had cost anything.
+          const providerError = new V4ProviderError(
+            error instanceof Error ? error.message : "v5_schema_invalid",
+            "v5_schema_invalid",
+            response.httpStatus,
+            response.durationMs,
+            true,
+            response.usage,
+            response.providerRequestID,
+            [],
+            null,
+            response.effectiveServiceTier,
+          );
+          await recordAttempt(supabase, {
+            ...telemetry,
+            state: "failed",
+            error: providerError,
+          });
+          throw providerError;
+        }
+      }));
+
+      const routedFree = routeV5Findings(
+        outputs.map((entry) => ({
+          photoIndex: entry.photoIndex,
+          output: entry.output,
+        })),
+      );
+      const visibleFree = routedFree.items.filter((item) =>
+        item.item_class === "observed_finding"
+      );
+      const sum = (pick: (usage: V4ProviderResult["usage"]) => number) =>
+        outputs.reduce((total, entry) => total + pick(entry.usage), 0);
+      const freeBundle = {
+        candidates: routedFree.candidates,
+        items: routedFree.items,
+        routing_ledger: routedFree.droppedFindings.map((entry) => ({
+          from_state: "v5_finding",
+          to_state: "hard_reject",
+          reason_code: `v5_${entry.reason}`,
+          details: { finding_key: entry.finding_key },
+        })),
+        hard_rejections: [],
+        quality_trace: {
+          prompt_sha256: v5PromptSHA,
+          version_snapshot: {
+            engine: V4_ENGINE_VERSION,
+            engine_mode: V5_ENGINE_MODE,
+            prompt: V5_PROMPT_VERSION,
+            router: "v5-free-router-v1",
+          },
+          photo_coverage_matrix: outputs.map((entry) => ({
+            photo_index: entry.photoIndex,
+            scene_summary: entry.output.scene_summary,
+            finding_count: entry.output.findings.length,
+            positive_control_count: entry.output.positive_controls.length,
+          })),
+          candidate_counts: {
+            raw: routedFree.candidates.length,
+            critical: routedFree.candidates.filter((candidate) =>
+              ["fatal", "permanent"].includes(String(candidate.criticality))
+            ).length,
+          },
+          routing_counts: {
+            observed_finding: visibleFree.length,
+            positive_control: routedFree.items.length - visibleFree.length,
+            assurance_requirement: 0,
+            verification_request: 0,
+            not_assessable: 0,
+          },
+          critical_silent_drop_count: 0,
+          provider_usage: {
+            compute_profile: config.computeProfile,
+            photo_count: photos.length,
+            thinking_budget: config.geminiThinkingBudget,
+            input_tokens: sum((usage) => usage.inputTokens),
+            visible_output_tokens: sum((usage) => usage.outputTokens),
+            thinking_tokens: sum((usage) => usage.reasoningTokens),
+            cost_usd: sum((usage) => usage.costUSD),
+          },
+          v5_free: {
+            sanitized_removals: routedFree.sanitizedCount,
+            scale_snaps: routedFree.snappedCount,
+            dropped_findings: routedFree.droppedFindings,
+          },
+          quality_flags: [
+            "engine_mode_free",
+            ...(visibleFree.length === 0 ? ["no_visible_items"] : []),
+            ...(routedFree.sanitizedCount > 0 ? ["v5_text_sanitized"] : []),
+            ...(routedFree.snappedCount > 0 ? ["v5_scale_snapped"] : []),
+          ],
+        },
+        analysis_result: {
+          status_message: `Analiz tamamlandı. Destek kodu: ${supportID}`,
+          ai_summary: outputs[0]?.output.scene_summary ||
+            (visibleFree.length > 0
+              ? `${visibleFree.length} bulgu raporlandı.`
+              : "Görüntüde kullanıcıya gösterilecek yeterli kanıt bulunamadı."),
+          duration_ms: Date.now() - started,
+        },
+      };
+      const { data: freeFinal, error: freeError } = await supabase.rpc(
+        "finalize_analysis_result_v4",
+        {
+          p_user_id: userID,
+          p_analysis_id: analysisID,
+          p_msg_id: msgID,
+          p_generation: generation,
+          p_claim_token: claimToken,
+          p_engine_run_id: engineRunID,
+          p_bundle: freeBundle,
+        },
+      );
+      if (freeError || freeFinal?.ok !== true) {
+        throw new Error(
+          `v5_finalize_failed:${safe(freeError?.message ?? freeFinal?.state)}`,
+        );
+      }
+      return json(200, {
+        ok: true,
+        status: "completed",
+        code: "completed",
+        engine: V4_ENGINE_VERSION,
+        engine_mode: V5_ENGINE_MODE,
+        finding_count: freeFinal.finding_count,
+        request_id: requestID,
+        support_id: supportID,
+      });
+    }
+
     const savedRuns: Record<string, unknown>[] = Array.isArray(begin.photo_runs)
       ? begin.photo_runs.map(record)
       : [];

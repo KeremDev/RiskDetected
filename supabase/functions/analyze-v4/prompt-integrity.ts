@@ -2,6 +2,8 @@ import {
   V4_GEMINI3_RESPONSE_SCHEMA,
   V4_PROVIDER_RESPONSE_SCHEMA,
 } from "./contracts.ts";
+import { V5_RESPONSE_SCHEMA } from "./v5-contracts.ts";
+import { V5_FREE_PROMPT } from "./v5-prompt.ts";
 import {
   V4_COVERAGE_REPAIR_COMMON,
   V4_GEMINI3_OUTPUT_LANGUAGE_LINE,
@@ -67,4 +69,27 @@ export async function computeV4Gemini3PromptSHA256(): Promise<string> {
       V4_GEMINI3_OUTPUT_LANGUAGE_LINE.trim()
     }\n---SCHEMA---\n${stable(V4_GEMINI3_RESPONSE_SCHEMA)}`,
   );
+}
+
+/**
+ * The free engine's prompt and schema, hashed together and on their own.
+ *
+ * Same rule as the other two bundles: bump V5_PROMPT_VERSION first, then read
+ * the hash from the test. Kept separate so neither the 2.5 baseline nor the
+ * Gemini 3 contract core moves when this engine changes.
+ */
+export async function computeV5PromptSHA256(): Promise<string> {
+  return await sha256Text(
+    `${V5_FREE_PROMPT.trim()}\n---SCHEMA---\n${stable(V5_RESPONSE_SCHEMA)}`,
+  );
+}
+
+export async function assertV5PromptIntegrity(
+  expected: unknown,
+): Promise<string> {
+  const actual = await computeV5PromptSHA256();
+  if (typeof expected !== "string" || expected !== actual) {
+    throw new Error(`v5_prompt_integrity_mismatch:${actual}`);
+  }
+  return actual;
 }
