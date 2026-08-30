@@ -375,6 +375,28 @@ export async function callV4Gemini(params: {
   }
   const envelope = object(JSON.parse(body));
   const metadata = object(envelope.usageMetadata);
+  // Google reports the prompt split by modality, and it is the only way to tell
+  // whether a media_resolution setting actually applied: an image is 1120
+  // tokens at Gemini 3's default and 2240 at ultra_high. Without this the two
+  // are indistinguishable from the total, because a model change moves the text
+  // tokens at the same time -- which is exactly how the first flash-lite run
+  // left us unable to say whether the per-part field had been honoured or
+  // silently dropped.
+  const imageTokens = (Array.isArray(metadata.promptTokensDetails)
+    ? metadata.promptTokensDetails
+    : [])
+    .map(object)
+    .filter((entry) => String(entry.modality ?? "").toUpperCase() === "IMAGE")
+    .reduce((total, entry) => total + count(entry.tokenCount), 0);
+  console.log(
+    "v4 gemini usage",
+    JSON.stringify({
+      model: params.model,
+      prompt_tokens: count(metadata.promptTokenCount),
+      image_tokens: imageTokens,
+      thoughts_tokens: count(metadata.thoughtsTokenCount),
+    }),
+  );
   const baseUsage = {
     inputTokens: count(metadata.promptTokenCount),
     outputTokens: count(metadata.candidatesTokenCount),
