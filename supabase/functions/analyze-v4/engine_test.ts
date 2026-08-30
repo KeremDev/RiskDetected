@@ -3732,3 +3732,20 @@ Deno.test("Gemini 2.5 isteği eskisi gibi kalır", async () => {
   const image = parts.find((part) => "inlineData" in part);
   assertEquals("mediaResolution" in (image ?? {}), false);
 });
+
+Deno.test("Gemini 3.7 Flash isteği Gemini 3 şeklini alır", async () => {
+  const sent = await captureGeminiBody("gemini-3.7-flash");
+  const config = sent.generationConfig as Record<string, unknown>;
+  const thinking = config.thinkingConfig as Record<string, unknown>;
+  assertEquals(thinking.thinkingLevel, "MEDIUM");
+  assertEquals("thinkingBudget" in thinking, false);
+  assertEquals("temperature" in config, false);
+  assertEquals("mediaResolution" in config, false);
+  const contents = sent.contents as Array<Record<string, unknown>>;
+  const parts = contents[0].parts as Array<Record<string, unknown>>;
+  const image = parts.find((part) => "inlineData" in part);
+  assertEquals(
+    (image?.mediaResolution as Record<string, unknown>)?.level,
+    "media_resolution_ultra_high",
+  );
+});

@@ -119,10 +119,18 @@ function geminiCost(
   // not a cost saving -- and gemini-3.5-flash is five times the input price.
   // Matching on "2.5-flash-lite" alone would have priced all three the same.
   const name = model.trim().toLowerCase();
+  // gemini-3.7-flash launched on introductory rates that double on 2027-01-01.
+  // A hardcoded 0.75 would keep reporting half the real cost from that morning
+  // onward, silently and on every run, so the date decides.
+  const introOver = Date.now() >= Date.parse("2027-01-01T00:00:00Z");
   const rates = name.includes("2.5-flash-lite")
     ? { input: 0.10, cachedInput: 0.01, output: 0.40 }
     : name.includes("3.5-flash-lite")
     ? { input: 0.30, cachedInput: 0.03, output: 2.50 }
+    : name.includes("3.7-flash")
+    ? (introOver
+      ? { input: 1.50, cachedInput: 0.15, output: 7.50 }
+      : { input: 0.75, cachedInput: 0.075, output: 3.75 })
     : name.includes("3.5-flash")
     ? { input: 1.50, cachedInput: 0.15, output: 9.00 }
     : { input: 0.30, cachedInput: 0.03, output: 2.50 };
