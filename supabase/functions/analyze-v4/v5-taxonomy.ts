@@ -108,18 +108,24 @@ export const V5_LAYER_BOOK_CODES: Record<number, V5LayerBookCodes> = {
   },
   15: {
     moduleID: "confined_space",
-    mechanismCode: null,
+    mechanismCode: "confined_space_atmosphere_entrapment",
     assuranceTopicID: "confined_space_controls",
   },
+  // Was chemical_contact_release/chemical_identity_and_exposure -- the same
+  // pair layer 10 uses. That made a noise or dust hazard fire the chemical-spill
+  // training card, or nothing, depending on which finding got there first. The
+  // operator's revision gives layer 16 its own vocabulary rather than sharing
+  // layer 10's, so TRN-HYG-001 (added for noise/vibration/dust) can be matched
+  // without also matching a leak.
   16: {
     moduleID: "chemical",
-    mechanismCode: "chemical_contact_release",
-    assuranceTopicID: "chemical_identity_and_exposure",
+    mechanismCode: "noise_vibration_dust_exposure",
+    assuranceTopicID: "occupational_hygiene_controls",
   },
   17: {
     moduleID: "people_exposure",
-    mechanismCode: null,
-    assuranceTopicID: null,
+    mechanismCode: "manual_handling_overexertion",
+    assuranceTopicID: "ergonomic_risk_controls",
   },
   18: {
     moduleID: "fire_explosion_release",

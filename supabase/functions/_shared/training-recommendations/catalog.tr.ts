@@ -396,6 +396,63 @@ export const TRAINING_CATALOG: Record<string, TrainingCatalogEntry> = {
     conditionalContext: "Bu işyerinde",
     mergeKey: "first_aid_awareness",
   },
+
+  // --- Layers 15, 16, 17: the three the catalogue had no card for -----------
+  // Before these existed, a hazard on layer 15/16/17 produced a scored finding
+  // with no corresponding training row -- the section simply had nothing to
+  // say about kapalı alan, gürültü/titreşim/toz or elle taşıma, even though the
+  // scan itself was already flagging them.
+  "TRN-CFS-001": {
+    code: "TRN-CFS-001",
+    title: "Kapalı Alanlarda Güvenli Çalışma, Gözcülük ve Kurtarma",
+    recommendationClass: "task_specific_practical_training",
+    groupCode: "task_and_equipment",
+    audiences: ["confined_space_entrants", "rescue_team"],
+    topics: [
+      "giriş izni ve pozitif izolasyon",
+      "atmosfer ölçümü ve sürekli izleme",
+      "havalandırma ve oksijenle havalandırma yasağı",
+      "gözcülük ve iletişim",
+      "girişsiz kurtarma",
+    ],
+    directContext: "Tank, silo, kuyu, menhol veya kanal gibi kapalı alanlarda",
+    conditionalContext: "Tank, silo, kuyu, menhol veya kanal gibi kapalı alanlarda",
+    mergeKey: "confined_space",
+  },
+  "TRN-HYG-001": {
+    code: "TRN-HYG-001",
+    title: "Gürültü, Titreşim ve Toz Maruziyetinden Korunma",
+    recommendationClass: "task_specific_practical_training",
+    groupCode: "task_and_equipment",
+    audiences: ["all_employees", "supervisors"],
+    topics: [
+      "gürültü ve titreşim eylem/sınır değerleri",
+      "gürültü kontrol hiyerarşisi",
+      "kaynağında ıslak yöntem ve yerel emiş",
+      "solunum koruyucu seçimi ve yüz uyum testi",
+      "erken belirti bildirimi",
+    ],
+    directContext: "Gürültülü, titreşimli veya tozlu bu çalışma alanında",
+    conditionalContext: "Gürültülü, titreşimli veya tozlu bu çalışma alanında",
+    mergeKey: "occupational_hygiene",
+  },
+  "TRN-ERG-001": {
+    code: "TRN-ERG-001",
+    title: "Elle Taşıma, Zorlama ve İşe Uygun Ergonomi",
+    recommendationClass: "task_specific_practical_training",
+    groupCode: "task_and_equipment",
+    audiences: ["all_employees", "supervisors"],
+    topics: [
+      "görev-yük-ortam değerlendirmesi",
+      "taşıma işini azaltan mekanik yardımcılar",
+      "kaldırma ve indirme tekniği",
+      "itme-çekme ve taşıma düzeni",
+      "erken kas-iskelet belirtisi bildirimi",
+    ],
+    directContext: "Elle taşıma veya tekrarlı kaldırma gerektiren bu görevde",
+    conditionalContext: "Elle taşıma veya tekrarlı kaldırma gerektiren bu görevde",
+    mergeKey: "manual_handling_ergonomics",
+  },
 };
 
 /**
@@ -471,6 +528,25 @@ export const TRAINING_RULES: TrainingRule[] = [
       "hose_assembly_integrity",
     ],
     equipment: ["tank"],
+    directWhenPeopleVisible: true,
+  },
+
+  {
+    entry: "TRN-CFS-001",
+    mechanisms: ["confined_space_atmosphere_entrapment"],
+    assuranceTopics: ["confined_space_controls"],
+    directWhenPeopleVisible: true,
+  },
+  {
+    entry: "TRN-HYG-001",
+    mechanisms: ["noise_vibration_dust_exposure"],
+    assuranceTopics: ["occupational_hygiene_controls"],
+    directWhenPeopleVisible: true,
+  },
+  {
+    entry: "TRN-ERG-001",
+    mechanisms: ["manual_handling_overexertion"],
+    assuranceTopics: ["ergonomic_risk_controls"],
     directWhenPeopleVisible: true,
   },
 

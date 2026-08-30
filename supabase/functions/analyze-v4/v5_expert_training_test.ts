@@ -97,7 +97,7 @@ Deno.test("uzman kartı gözlem, gereklilik ve dayanak taşır", () => {
   const card = built.recommendations[0];
   // The number is the point: a registry chose it, not a language model.
   assertStringIncludes(card.text, "API 653");
-  assertStringIncludes(card.text, "et kalınlığı");
+  assertStringIncludes(card.text, "kalınlık");
   assertStringIncludes(card.references, "API 653");
   // One reference per line, so an article never attaches to the wrong source.
   assert(card.references.split("\n").length >= 2);
@@ -121,13 +121,27 @@ Deno.test("her kayıt cümlesi noktayla biter ve boş kalmaz", () => {
 });
 
 Deno.test("kayıt defterinde karşılığı olmayan aile uydurulmaz, sayılır", () => {
+  // All 22 EXPERT_ASSET_FAMILIES now have a registry entry; this exercises the
+  // missing-entry path with a family the registry has never heard of, which is
+  // what happens the day a 23rd family is added to the enum before its card is
+  // written.
   const built = expertRecommendationsFor([
     "storage_tank",
-    "conveyor",
+    "unmapped_future_family",
     "storage_tank",
   ]);
   assertEquals(built.recommendations.length, 1);
-  assertEquals(built.familiesWithoutEntry, ["conveyor"]);
+  assertEquals(built.familiesWithoutEntry, ["unmapped_future_family"]);
+});
+
+Deno.test("kapalı listedeki 22 ailenin tamamı kayıt defterinde", () => {
+  for (const family of EXPERT_ASSET_FAMILIES) {
+    assert(EXPERT_REGISTRY[family], `${family} için kayıt yok`);
+  }
+  assertEquals(
+    Object.keys(EXPERT_REGISTRY).length,
+    EXPERT_ASSET_FAMILIES.length,
+  );
 });
 
 // --------------------------------------------------------------------------
@@ -245,6 +259,70 @@ Deno.test("her katman geçerli bir kitap koduna eşlenir", () => {
   }
   // Layer 19 asks about a record, which teaches nobody anything.
   assertEquals(V5_LAYER_BOOK_CODES[19], undefined);
+});
+
+// --------------------------------------------------------------------------
+// The operator's revision -- three layers the catalogue had no card for
+// --------------------------------------------------------------------------
+
+Deno.test("katman 15/16/17 kendi mekanizma kodunu taşır, katman 10'u paylaşmaz", () => {
+  assertEquals(
+    V5_LAYER_BOOK_CODES[15].mechanismCode,
+    "confined_space_atmosphere_entrapment",
+  );
+  assertEquals(
+    V5_LAYER_BOOK_CODES[16].mechanismCode,
+    "noise_vibration_dust_exposure",
+  );
+  assertEquals(
+    V5_LAYER_BOOK_CODES[17].mechanismCode,
+    "manual_handling_overexertion",
+  );
+  // 10 and 16 used to share chemical_contact_release, which meant a dust or
+  // noise hazard could fire the chemical-spill training card instead of its
+  // own, or nothing at all.
+  assert(
+    V5_LAYER_BOOK_CODES[16].mechanismCode !==
+      V5_LAYER_BOOK_CODES[10].mechanismCode,
+  );
+});
+
+Deno.test("kapalı alan, gürültü-titreşim-toz ve elle taşıma katmanları artık eğitim kartı üretir", () => {
+  for (
+    const [layer, expectedCode] of [
+      [15, "TRN-CFS-001"],
+      [16, "TRN-HYG-001"],
+      [17, "TRN-ERG-001"],
+    ] as const
+  ) {
+    const routed = routeV5Findings([{
+      photoIndex: 1,
+      output: parseV5Output(
+        envelope({
+          findings: [finding({ finding_key: `layer-${layer}`, layers: [layer] })],
+          scan: [{ layer: 1, result: "tehlike_var", note: "İşçi görülüyor." }, {
+            layer,
+            result: "tehlike_var",
+            note: "Tehlike var.",
+          }],
+        }),
+      ),
+    }]);
+    const rows = routed.items.map((item) => ({
+      public_finding_id: item.id,
+      internal_priority: item.internal_priority,
+    })) as TrainingItemRow[];
+    const cards = trainingRecommendationsFor({
+      sectorId: null,
+      hazardClass: null,
+      rows,
+    });
+    const codes = cards.map((card) => card.catalogCode);
+    assert(
+      codes.includes(expectedCode),
+      `katman ${layer}: beklenen ${expectedCode}, gelen ${codes.join(", ")}`,
+    );
+  }
 });
 
 Deno.test("bulgular eğitim motoruna kanonik kod taşır", () => {
