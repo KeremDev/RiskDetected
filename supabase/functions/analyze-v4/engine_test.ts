@@ -3702,10 +3702,20 @@ Deno.test("Gemini 3 isteğinde temperature gönderilmez", async () => {
   assertEquals("temperature" in config, false);
 });
 
-Deno.test("Gemini 3 görselleri ultra_high çözünürlükte ister", async () => {
-  const sent = await captureGeminiBody("gemini-3.5-flash-lite");
-  const config = sent.generationConfig as Record<string, unknown>;
-  assertEquals(config.mediaResolution, "MEDIA_RESOLUTION_ULTRA_HIGH");
+Deno.test("Gemini 3 ultra_high'u part düzeyinde ister, generationConfig'te değil", () => {
+  // İlk gemini-3.5-flash-lite denemesi 46 ms'de 400 döndü: ULTRA_HIGH global
+  // generationConfig'te kabul edilmiyor, yalnız part düzeyinde geçerli.
+  return captureGeminiBody("gemini-3.5-flash-lite").then((sent) => {
+    const config = sent.generationConfig as Record<string, unknown>;
+    assertEquals("mediaResolution" in config, false);
+    const contents = sent.contents as Array<Record<string, unknown>>;
+    const parts = contents[0].parts as Array<Record<string, unknown>>;
+    const image = parts.find((part) => "inlineData" in part);
+    assertEquals(
+      (image?.mediaResolution as Record<string, unknown>)?.level,
+      "media_resolution_ultra_high",
+    );
+  });
 });
 
 Deno.test("Gemini 2.5 isteği eskisi gibi kalır", async () => {
@@ -3716,4 +3726,9 @@ Deno.test("Gemini 2.5 isteği eskisi gibi kalır", async () => {
   assertEquals("thinkingLevel" in thinking, false);
   assertEquals(config.temperature, 0.1);
   assertEquals(config.mediaResolution, "MEDIA_RESOLUTION_HIGH");
+  // 2.5 has no per-part form; its image part stays bare.
+  const contents = sent.contents as Array<Record<string, unknown>>;
+  const parts = contents[0].parts as Array<Record<string, unknown>>;
+  const image = parts.find((part) => "inlineData" in part);
+  assertEquals("mediaResolution" in (image ?? {}), false);
 });

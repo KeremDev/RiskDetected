@@ -1263,9 +1263,20 @@ serve(async (req) => {
     const code =
       safe(error instanceof Error ? error.message.split(":")[0] : error, 120) ||
       "v4_analysis_failed";
+    // `code` is everything before the first colon, which is what the DB column
+    // wants and what a dashboard groups by. It also threw away the only useful
+    // part of a provider rejection: a Gemini 400 logged as "Gemini HTTP 400"
+    // and nothing else, so the switch to gemini-3.5-flash-lite failed with no
+    // way to tell which field it had objected to. The provider's own sentence
+    // now travels beside the code.
     console.error(
       "v4 analysis failed",
-      JSON.stringify({ analysis_id: analysisID, request_id: requestID, code }),
+      JSON.stringify({
+        analysis_id: analysisID,
+        request_id: requestID,
+        code,
+        detail: safe(error instanceof Error ? error.message : error, 600),
+      }),
     );
     if (engineRunID) {
       await supabase.rpc("fail_analysis_engine_run_v3", {

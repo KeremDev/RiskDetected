@@ -276,11 +276,29 @@ function geminiThinkingConfig(
  * lever for the failure this engine keeps producing: a crane hook twelve pixels
  * across, whose latch no amount of reasoning can resolve because it was never
  * in the tensor. About three hundredths of a cent per analysis.
+ *
+ * ULTRA_HIGH is accepted **per part only**. Sending it in generationConfig is
+ * rejected outright -- the first gemini-3.5-flash-lite run came back 400 in
+ * forty-six milliseconds, before any inference. So Gemini 3 carries no global
+ * setting at all and states the level next to the image instead, where the
+ * enum is an object with a lowercase level. 2.5, which has no per-part form,
+ * keeps the global field it always had.
  */
-function mediaResolutionFor(model: string): string {
-  return isGemini3(model)
-    ? "MEDIA_RESOLUTION_ULTRA_HIGH"
-    : "MEDIA_RESOLUTION_HIGH";
+function globalMediaResolution(model: string): Record<string, unknown> {
+  return isGemini3(model) ? {} : { mediaResolution: "MEDIA_RESOLUTION_HIGH" };
+}
+
+function imagePart(
+  model: string,
+  mimeType: string,
+  data: string,
+): Record<string, unknown> {
+  return {
+    inlineData: { mimeType, data },
+    ...(isGemini3(model)
+      ? { mediaResolution: { level: "media_resolution_ultra_high" } }
+      : {}),
+  };
 }
 
 export async function callV4Gemini(params: {
@@ -314,9 +332,7 @@ export async function callV4Gemini(params: {
           role: "user",
           parts: [
             { text: params.prompt },
-            {
-              inlineData: { mimeType: params.mimeType, data: params.imageData },
-            },
+            imagePart(params.model, params.mimeType, params.imageData),
           ],
         }],
         generationConfig: {
@@ -325,7 +341,7 @@ export async function callV4Gemini(params: {
           maxOutputTokens: params.maxOutputTokens,
           ...geminiSamplingConfig(params.model),
           ...geminiThinkingConfig(params.model, params),
-          mediaResolution: mediaResolutionFor(params.model),
+          ...globalMediaResolution(params.model),
         },
       },
     });
