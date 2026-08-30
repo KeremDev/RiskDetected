@@ -415,13 +415,26 @@ export async function callV4Gemini(params: {
     .map(object)
     .filter((entry) => String(entry.modality ?? "").toUpperCase() === "IMAGE")
     .reduce((total, entry) => total + count(entry.tokenCount), 0);
+  // finishReason separates a model that broke the contract from one that was
+  // cut off mid-JSON. Both surface as provider_schema_invalid, and the
+  // gemini-3.7-flash trial hit that twice with no way to tell which -- the
+  // arithmetic said there was budget left, but thinking tokens can count
+  // against maxOutputTokens and arithmetic is not evidence.
+  const finishReason = String(
+    object(
+      Array.isArray(envelope.candidates) ? envelope.candidates[0] : {},
+    ).finishReason ?? "",
+  );
   console.log(
     "v4 gemini usage",
     JSON.stringify({
       model: params.model,
       prompt_tokens: count(metadata.promptTokenCount),
       image_tokens: imageTokens,
+      output_tokens: count(metadata.candidatesTokenCount),
       thoughts_tokens: count(metadata.thoughtsTokenCount),
+      max_output_tokens: params.maxOutputTokens,
+      finish_reason: finishReason,
     }),
   );
   const baseUsage = {
