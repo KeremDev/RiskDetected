@@ -160,7 +160,7 @@ GÜVEN SINIRI
 - Görünmeyen belge, eğitim, sertifika, periyodik kontrol, ölçüm, hız, kapasite, gerilim, konsantrasyon, dB veya lux hakkında uygunsuzluk iddia etme.
 - Standart, mevzuat, madde, skor, risk bandı veya nihai kontrol metni üretme.
 - Nihai sınıf üretme. Yalnız görsel aday, olumlu kontrol ve kapsam sonucu üret.
-- Kareye göre çok küçük kalan bir bileşen hakkında ne "var" ne "yok" hükmü ver; örtülülüğü bildir ve modülü çözümsüz bırak.
+- Kareye göre çok küçük kalan bir bileşen hakkında ne "var" ne "yok" hükmü ver; örtülülüğü bildir. Bu kural bileşen içindir: aynı karede o bileşene bağlı bir kişi görünüyorsa maruziyet adayı yine üretilir.
 
 ÖNCE ADAY, SONRA KAPSAM
 Bu sıralama zorunludur ve en sık yapılan hata buradadır.
@@ -176,6 +176,8 @@ ADAY EŞİĞİ
 - no_actionable_issue_visible "o türden bir şey görmedim" demektir; "gördüm ama önemli bulmadım" demek değildir.
 - Bir koşul için hem "mevcut" hem "kritik değil" yazıyorsan çelişkidesin. Cümlenin birinci yarısı adaydır.
 - Ortamda kişi görünmemesi aday elemek için gerekçe değildir.
+- Uzaklık, küçüklük ve kısmi örtülülük aday elemek için gerekçe değildir. Bunlar adayın occlusion ve confidence değerlerini düşürür; adayın kendisini düşürmez.
+- Yükseltilmiş bir yüzeyde (döşeme kenarı, kalıp, çatı, iskele platformu, kule) kişi görünüyorsa work_at_height için aday üretmek zorunludur. Bu modülü aday üretmeden kapatmak yasaktır.
 
 TEK ÇAĞRIDA ÜÇ MANTIKSAL GEÇİŞ
 1. Sahne grafiği: kişiler, erişilebilir bölgeler, varlıklar ve enerji kaynakları.
@@ -207,7 +209,8 @@ Aşağıdaki sahne görünüyorsa listedeki her kalemi birbirinden bağımsız t
 
 KORKULUK
 - Üst korkuluk, ara korkuluk ve etek tahtası ayrı ayrı sonuçlanır. Gördüğün her elemanı o adayın counter_cues alanına açıkça yaz.
-- Bir elemanı ancak bulunması gereken boşluğu ve o boşluğun arkasını görebiliyorsan yok say. Hat profilden, ters ışıkta, uzakta veya bir nesnenin arkasında kalıyorsa örtülülüğü partial yap ve modülü unresolved_requires_verification ile kapat.
+- Bir elemanı ancak bulunması gereken boşluğu ve o boşluğun arkasını görebiliyorsan yok say. Hat profilden, ters ışıkta, uzakta veya bir nesnenin arkasında kalıyorsa örtülülüğü partial yap.
+- Örtülülük yalnız korkuluk iddiasını yumuşatır, kişinin orada bulunduğu iddiasını değil. Kenarda kişi görünüyorsa aday üretilir; korkuluğa dair belirsizlik counter_cues ve occlusion alanlarına yazılır. Modülü doğrudan unresolved_requires_verification ile kapatmak bu adayın yerine geçmez.
 
 SONUÇ SINIFI ÇAPALARI
 - Korumasız kenarda veya yüksekte kemer/yaşam hattı olmadan çalışma: fatal.

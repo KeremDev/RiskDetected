@@ -3,7 +3,7 @@ Deno.test("Gemini 3 kendi çekirdek istemini alır, 2.5'inkini değil", async ()
   const contents = sent.contents as Array<Record<string, unknown>>;
   const parts = contents[0].parts as Array<Record<string, unknown>>;
   const text = String(parts[0].text);
-  assertStringIncludes(text, "v4-gemini3-core-v4");
+  assertStringIncludes(text, "v4-gemini3-core-v5");
   assertStringIncludes(text, "ÖNCE ADAY, SONRA KAPSAM");
   assertStringIncludes(text, "ADAY EŞİĞİ");
   // 2.5'in korkuluk paranoyası taşınmadı.
@@ -18,7 +18,7 @@ Deno.test("Gemini 2.5 kendi istemini aynen alır", async () => {
   const parts = contents[0].parts as Array<Record<string, unknown>>;
   const text = String(parts[0].text);
   assertStringIncludes(text, "v4-vision-core-v10");
-  assertEquals(text.includes("v4-gemini3-core-v4"), false);
+  assertEquals(text.includes("v4-gemini3-core-v5"), false);
   assertEquals(text.includes("ÖNCE ADAY, SONRA KAPSAM"), false);
 });
 
