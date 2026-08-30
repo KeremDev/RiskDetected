@@ -23,27 +23,27 @@ import { V4_PROMPT_COMMON } from "./prompt.ts";
 function finding(overrides: Record<string, unknown> = {}) {
   return {
     finding_key: "f1",
-    title: "Üst kat döşeme kenarında korumasız çalışma",
+    title: "Üst kat döşeme kenarında korumasız çalışma.",
     category: "Yüksekte çalışma",
     description: "İşçi açık döşeme kenarında korkuluk olmadan çalışıyor.",
-    event_path: {
-      source: "Açık döşeme kenarı",
-      contact_or_failure: "Dengesini kaybederek kenardan düşme",
-      consequence: "Ölüm",
-    },
+    event_path: "Açık döşeme kenarı → dengesini kaybederek düşme → ölüm.",
     root_cause: "Kenar koruma sistemi kurulmamış.",
+    regulatory_references: [
+      "Mevzuat — 6331 sayılı İş Sağlığı ve Güvenliği Kanunu.",
+      "Standart/iyi mühendislik uygulaması — TS EN 13374 kenar koruma.",
+    ],
     fine_kinney: {
-      probability: 6,
-      frequency: 6,
-      severity: 40,
-      rationale: "Kenar açık ve işçi orada duruyor.",
+      "olasılık": 6,
+      frekans: 6,
+      "şiddet": 40,
+      "gerekçe": "Kenar açık ve işçi orada duruyor.",
     },
     immediate_control: "Üst kat döşeme kenarındaki çalışmayı durdurun.",
     corrective_steps: ["Kenarı korkulukla kapatın.", "Erişimi sınırlandırın."],
     preventive_measure: "Kenar koruma planını iş programına bağlayın.",
     training_recommendation: "Yüksekte çalışma eğitimi verin.",
     ppe_recommendation: "Tam vücut emniyet kemeri ve çift kancalı lanyard.",
-    evidence_region: { x: 0.37, y: 0.29, width: 0.06, height: 0.04 },
+    evidence_region: { x_min: 0.37, y_min: 0.29, x_max: 0.43, y_max: 0.33 },
     confidence: 0.8,
     needs_field_verification: false,
     ...overrides,
@@ -53,8 +53,8 @@ function finding(overrides: Record<string, unknown> = {}) {
 function envelope(findings: unknown[], positives: unknown[] = []) {
   return JSON.stringify({
     scene_summary: "Şantiye sahnesi.",
-    findings,
     positive_controls: positives,
+    findings,
   });
 }
 
@@ -89,10 +89,10 @@ Deno.test("bulgular skora göre sıralanır, modelin sırasına göre değil", (
         finding_key: "small",
         title: "Zeminde dağınık malzeme",
         fine_kinney: {
-          probability: 3,
-          frequency: 3,
-          severity: 3,
-          rationale: "x",
+          "olasılık": 3,
+          frekans: 3,
+          "şiddet": 3,
+          "gerekçe": "x",
         },
       }),
       finding({ finding_key: "big" }),
@@ -126,10 +126,10 @@ Deno.test("ölçek dışı Fine-Kinney değeri en yakınına oturur, bulgu düş
     output: parseV5Output(envelope([
       finding({
         fine_kinney: {
-          probability: 5,
-          frequency: 6,
-          severity: 38,
-          rationale: "x",
+          "olasılık": 5,
+          frekans: 6,
+          "şiddet": 38,
+          "gerekçe": "x",
         },
       }),
     ])),
@@ -185,8 +185,10 @@ Deno.test("mevzuat dayanağı yayımlanır, silinmez", () => {
     photoIndex: 1,
     output: parseV5Output(envelope([
       finding({
-        regulatory_references:
-          "6331 sayılı İş Sağlığı ve Güvenliği Kanunu; Yapı İşlerinde İSG Yönetmeliği Ek-4; TS EN 13374 kenar koruma sistemleri.",
+        regulatory_references: [
+          "Mevzuat — 6331 sayılı İş Sağlığı ve Güvenliği Kanunu.",
+          "Standart/iyi mühendislik uygulaması — TS EN 13374 kenar koruma sistemleri.",
+        ],
         description:
           "İşçi açık döşeme kenarında çalışıyor. 6331 sayılı kanun işverene toplu koruma yükümlülüğü getirir.",
       }),
@@ -228,19 +230,18 @@ Deno.test("yayımlanacak metni kalmayan bulgu düşer ve iz bırakır", () => {
   });
 });
 
-Deno.test("tarama katmanları bakışı yönlendirir, rapor şekli dayatmaz", () => {
-  // On iki katman geri geldi, en eski sürümdeki haliyle genişletilerek.
-  assertStringIncludes(V5_FREE_PROMPT, "12 KATMANDA TARA");
-  assertStringIncludes(V5_FREE_PROMPT, "SU VEYA NEM İLE ELEKTRİK TEMASI");
-  assertStringIncludes(V5_FREE_PROMPT, "ERGONOMİ VE ELLE TAŞIMA");
-  // Ama katman başına satır istemiyor -- v4'ün kapsam sözleşmesi tam olarak
-  // bunu istediği için bir raporun on dört maddesinin dokuzu
-  // "değerlendirilemedi" olmuştu.
+Deno.test("on sekiz katman ve disiplin kurulu istemde", () => {
+  assertStringIncludes(V5_FREE_PROMPT, "ŞU 18 KATMANDA TARA");
+  assertStringIncludes(V5_FREE_PROMPT, "çok disiplinli sanal denetim kurulu");
+  assertStringIncludes(V5_FREE_PROMPT, "Tank, silo, IBC ve transfer");
+  assertStringIncludes(V5_FREE_PROMPT, "Proses güvenliği ve büyük kaza");
+  // Katman rapora yazılmaz, katman başına bulgu istenmez.
   assertStringIncludes(
     V5_FREE_PROMPT,
-    "Katman başına satır üretme zorunluluğun yok",
+    "Katmanları çıktıya yazma ve katman başına bulgu üretme",
   );
-  assertStringIncludes(V5_FREE_PROMPT, "SONUCUNA GÖRE");
+  assertStringIncludes(V5_FREE_PROMPT, "sonucuna göre değerlendir");
+  // Sözleşme motorunun makinesi hâlâ yok.
   for (
     const token of [
       "module_coverage",
@@ -256,33 +257,69 @@ Deno.test("tarama katmanları bakışı yönlendirir, rapor şekli dayatmaz", ()
   assertEquals(V5_FREE_PROMPT.includes(V4_PROMPT_COMMON.trim()), false);
 });
 
-Deno.test("mevzuat yasağı kalktı, uydurma numara yasağı kaldı", () => {
-  assertEquals(V5_FREE_PROMPT.includes("standart kodu (TS EN, ISO"), false);
-  assertStringIncludes(V5_FREE_PROMPT, "MEVZUAT");
-  assertStringIncludes(V5_FREE_PROMPT, "6331 sayılı");
-  assertStringIncludes(V5_FREE_PROMPT, "numara uydurma");
+Deno.test("periyodik kontrol bölümü kayıt ister, yokluk iddia etmez", () => {
+  assertStringIncludes(V5_FREE_PROMPT, "PERİYODİK KONTROL, MUAYENE VE ÖLÇÜM");
+  // Üç başlık adıyla.
+  assertStringIncludes(V5_FREE_PROMPT, "Kaldırma ekipmanları ve aksesuarları");
+  assertStringIncludes(V5_FREE_PROMPT, "Topraklama direnci ölçüm raporu");
+  assertStringIncludes(V5_FREE_PROMPT, "Basınçlı kaplar ve kaplar");
+  assertStringIncludes(V5_FREE_PROMPT, "Hidrostatik test");
+  // Ve kanıt kuralıyla çelişmemesi için: doğrulat, yoktur deme.
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    '"Periyodik kontrolü yoktur" yazma; "periyodik kontrol raporunu yetkili kişiyle doğrulayın" yaz',
+  );
+  assertStringIncludes(V5_FREE_PROMPT, "Ekipmanın görünür olması kanıttır");
 });
 
-Deno.test("bulgu sayısına tavan koyulmuyor", () => {
-  assertEquals(V5_FREE_PROMPT.includes("En çok"), false);
-  assertStringIncludes(V5_FREE_PROMPT, "sayıyı kısmak için bulgu atlama");
-  // Sunucudaki sınır bir bütçe değil, bozuk yanıta karşı emniyet.
+Deno.test("mevzuat yazılır, uydurma numara yasak", () => {
+  assertStringIncludes(V5_FREE_PROMPT, "MEVZUAT VE STANDARTLAR");
+  assertStringIncludes(V5_FREE_PROMPT, "6331 sayılı Kanun");
+  assertStringIncludes(V5_FREE_PROMPT, "yalnız kesin biliyorsan yaz; uydurma");
+  assertStringIncludes(V5_FREE_PROMPT, "Türkiye mevzuatı gibi sunma");
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    "Elektrik Tesislerinde Topraklamalar Yönetmeliği",
+  );
+});
+
+Deno.test("kanıt kuralları ve tavansızlık yerinde", () => {
+  assertStringIncludes(V5_FREE_PROMPT, "DEĞİŞMEZ KANIT KURALLARI");
+  assertStringIncludes(
+    V5_FREE_PROMPT,
+    "muayene kaydının bulunmadığını fotoğraftan iddia etme",
+  );
   assertEquals(V5_MAX_FINDINGS, 24);
 });
 
-Deno.test("kalan iki dürüstlük kuralı, ölçek ve üslup yerinde", () => {
-  assertStringIncludes(V5_FREE_PROMPT, "Yalnız fotoğrafta gördüğünü yaz");
-  assertStringIncludes(V5_FREE_PROMPT, "olmadıklarını iddia etmen değildir");
-  assertStringIncludes(V5_FREE_PROMPT, "Türkçe karakterlerle");
-  assertStringIncludes(V5_FREE_PROMPT, "emir kipinde yaz");
-  assertStringIncludes(V5_FREE_PROMPT, "FINE-KINNEY ÖLÇEĞİ");
+Deno.test("köşe kutusu depolanan biçime çevrilir", () => {
+  const routed = routeV5Findings([{
+    photoIndex: 1,
+    output: parseV5Output(
+      envelope([
+        finding({
+          evidence_region: {
+            x_min: 0.37,
+            y_min: 0.29,
+            x_max: 0.43,
+            y_max: 0.33,
+          },
+        }),
+      ]),
+    ),
+  }]);
+  const region = routed.candidates[0].evidence_region as Record<string, number>;
+  assertEquals(region.x, 0.37);
+  assertEquals(region.y, 0.29);
+  assertEquals(Number(region.width.toFixed(4)), 0.06);
+  assertEquals(Number(region.height.toFixed(4)), 0.04);
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "b930621b865e299196707409bf1f2779361e8125da6fa9a6a35e145bf6d3a322";
+  "ba4f4fd7eca958738bd14b361c01689ef9f4b750addf2d506de6d92d848084df";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v5-free-core-v7");
+  assertEquals(V5_PROMPT_VERSION, "v7-free-core-multidisciplinary-v2");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 

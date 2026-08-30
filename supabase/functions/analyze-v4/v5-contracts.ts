@@ -30,7 +30,7 @@
 // config key.
 
 export const V5_ENGINE_MODE = "free";
-export const V5_PROMPT_VERSION = "v5-free-core-v7";
+export const V5_PROMPT_VERSION = "v7-free-core-multidisciplinary-v2";
 
 /** Fine-Kinney scales. The arithmetic stays deterministic; the values do not. */
 export const FK_PROBABILITY = [0.2, 0.5, 1, 3, 6, 10] as const;
@@ -51,34 +51,31 @@ export const V5_MAX_POSITIVE_CONTROLS = 4;
 export type V5Finding = {
   finding_key: string;
   title: string;
-  /** Hazard family in the model's own words; the report's section label. */
   category: string;
   description: string;
-  event_path: {
-    source: string;
-    contact_or_failure: string;
-    consequence: string;
-  };
+  /** "Kaynak → temas, arıza veya tetikleyici → sonuç", as one line. */
+  event_path: string;
   root_cause: string;
-  /** Turkish legislation and standards the model cites for this finding. */
-  regulatory_references?: string;
+  /** One to four entries, each "Mevzuat — ..." or "Standart/... — ...". */
+  regulatory_references: string[];
   fine_kinney: {
-    probability: number;
-    frequency: number;
-    severity: number;
-    rationale: string;
+    /** Turkish keys, because the operator's contract is written in Turkish. */
+    olasılık: number;
+    frekans: number;
+    şiddet: number;
+    gerekçe: string;
   };
   immediate_control: string;
   corrective_steps: string[];
   preventive_measure: string;
   training_recommendation?: string;
   ppe_recommendation?: string;
+  /** Corner box, converted to x/y/width/height before it is stored. */
   evidence_region?: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    description?: string;
+    x_min: number;
+    y_min: number;
+    x_max: number;
+    y_max: number;
   };
   confidence: number;
   needs_field_verification: boolean;
@@ -98,19 +95,29 @@ export type V5PhotoOutput = {
 const regionSchema = {
   type: "object",
   properties: {
-    x: { type: "number" },
-    y: { type: "number" },
-    width: { type: "number" },
-    height: { type: "number" },
-    description: { type: "string" },
+    x_min: { type: "number" },
+    y_min: { type: "number" },
+    x_max: { type: "number" },
+    y_max: { type: "number" },
   },
-  required: ["x", "y", "width", "height"],
+  required: ["x_min", "y_min", "x_max", "y_max"],
 };
 
 export const V5_RESPONSE_SCHEMA = {
   type: "object",
   properties: {
     scene_summary: { type: "string" },
+    positive_controls: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          description: { type: "string" },
+        },
+        required: ["title", "description"],
+      },
+    },
     findings: {
       type: "array",
       items: {
@@ -120,26 +127,18 @@ export const V5_RESPONSE_SCHEMA = {
           title: { type: "string" },
           category: { type: "string" },
           description: { type: "string" },
-          event_path: {
-            type: "object",
-            properties: {
-              source: { type: "string" },
-              contact_or_failure: { type: "string" },
-              consequence: { type: "string" },
-            },
-            required: ["source", "contact_or_failure", "consequence"],
-          },
+          event_path: { type: "string" },
           root_cause: { type: "string" },
-          regulatory_references: { type: "string" },
+          regulatory_references: { type: "array", items: { type: "string" } },
           fine_kinney: {
             type: "object",
             properties: {
-              probability: { type: "number" },
-              frequency: { type: "number" },
-              severity: { type: "number" },
-              rationale: { type: "string" },
+              "olasılık": { type: "number" },
+              frekans: { type: "number" },
+              "şiddet": { type: "number" },
+              "gerekçe": { type: "string" },
             },
-            required: ["probability", "frequency", "severity", "rationale"],
+            required: ["olasılık", "frekans", "şiddet", "gerekçe"],
           },
           immediate_control: { type: "string" },
           corrective_steps: { type: "array", items: { type: "string" } },
@@ -157,6 +156,7 @@ export const V5_RESPONSE_SCHEMA = {
           "description",
           "event_path",
           "root_cause",
+          "regulatory_references",
           "fine_kinney",
           "immediate_control",
           "corrective_steps",
@@ -166,17 +166,6 @@ export const V5_RESPONSE_SCHEMA = {
         ],
       },
     },
-    positive_controls: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          title: { type: "string" },
-          description: { type: "string" },
-        },
-        required: ["title", "description"],
-      },
-    },
   },
-  required: ["scene_summary", "findings", "positive_controls"],
+  required: ["scene_summary", "positive_controls", "findings"],
 };

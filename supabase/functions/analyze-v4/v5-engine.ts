@@ -127,6 +127,32 @@ export function criticalityForSeverity(severity: number): Criticality {
   return "ordinary";
 }
 
+/**
+ * Corner box in, offset box out.
+ *
+ * The operator's contract asks the model for {x_min, y_min, x_max, y_max};
+ * everything downstream -- the candidates table, the app's overlay -- has
+ * always spoken {x, y, width, height}. Converting here keeps the change at the
+ * boundary instead of spreading a second coordinate convention through the
+ * report.
+ */
+function cornerBoxToRegion(
+  value: unknown,
+): { x: number; y: number; width: number; height: number } | undefined {
+  const box = (value ?? {}) as Record<string, unknown>;
+  const numbers = ["x_min", "y_min", "x_max", "y_max"].map((key) =>
+    Number(box[key])
+  );
+  if (numbers.some((entry) => !Number.isFinite(entry))) return undefined;
+  const [xMin, yMin, xMax, yMax] = numbers;
+  const x = Math.min(xMin, xMax);
+  const y = Math.min(yMin, yMax);
+  const width = Math.abs(xMax - xMin);
+  const height = Math.abs(yMax - yMin);
+  if (width <= 0 || height <= 0) return undefined;
+  return { x, y, width, height };
+}
+
 export function parseV5Output(raw: string): V5PhotoOutput {
   let parsed: unknown;
   try {
@@ -144,44 +170,28 @@ export function parseV5Output(raw: string): V5PhotoOutput {
     scene_summary: text(envelope.scene_summary, 600),
     findings: findings.slice(0, V5_MAX_FINDINGS).map((entry) => {
       const finding = (entry ?? {}) as Record<string, unknown>;
-      const path = (finding.event_path ?? {}) as Record<string, unknown>;
       const kinney = (finding.fine_kinney ?? {}) as Record<string, unknown>;
-      const region = (finding.evidence_region ?? {}) as Record<string, unknown>;
-      const hasRegion = ["x", "y", "width", "height"].every((key) =>
-        Number.isFinite(Number(region[key]))
-      );
       return {
         finding_key: text(finding.finding_key, 120),
         title: text(finding.title, 200),
         category: text(finding.category, 80),
-        description: text(finding.description, 1200),
-        event_path: {
-          source: text(path.source, 300),
-          contact_or_failure: text(path.contact_or_failure, 300),
-          consequence: text(path.consequence, 300),
-        },
+        description: text(finding.description, 1600),
+        event_path: text(finding.event_path, 600),
         root_cause: text(finding.root_cause, 600),
-        regulatory_references: text(finding.regulatory_references, 600),
+        regulatory_references: textList(finding.regulatory_references, 4),
         fine_kinney: {
-          probability: Number(kinney.probability),
-          frequency: Number(kinney.frequency),
-          severity: Number(kinney.severity),
-          rationale: text(kinney.rationale, 400),
+          "olasılık": Number(kinney["olasılık"]),
+          frekans: Number(kinney.frekans),
+          "şiddet": Number(kinney["şiddet"]),
+          "gerekçe": text(kinney["gerekçe"], 400),
         },
         immediate_control: text(finding.immediate_control, 400),
         corrective_steps: textList(finding.corrective_steps, 5),
         preventive_measure: text(finding.preventive_measure, 600),
         training_recommendation: text(finding.training_recommendation, 300),
         ppe_recommendation: text(finding.ppe_recommendation, 300),
-        evidence_region: hasRegion
-          ? {
-            x: Number(region.x),
-            y: Number(region.y),
-            width: Number(region.width),
-            height: Number(region.height),
-            description: text(region.description, 200),
-          }
-          : undefined,
+        evidence_region: finding
+          .evidence_region as V5Finding["evidence_region"],
         confidence: Number.isFinite(Number(finding.confidence))
           ? Math.min(1, Math.max(0, Number(finding.confidence)))
           : 0.6,
@@ -233,7 +243,9 @@ export function routeV5Findings(
       const description = sanitizeFreeText(finding.description);
       const control = sanitizeFreeText(finding.immediate_control);
       const rootCause = sanitizeFreeText(finding.root_cause);
-      const references = sanitizeFreeText(finding.regulatory_references ?? "");
+      const references = sanitizeFreeText(
+        finding.regulatory_references.join(" "),
+      );
       const preventive = sanitizeFreeText(finding.preventive_measure);
       const steps = finding.corrective_steps.map(sanitizeFreeText);
       const training = sanitizeFreeText(finding.training_recommendation ?? "");
@@ -263,9 +275,9 @@ export function routeV5Findings(
         continue;
       }
 
-      const p = snapToScale(finding.fine_kinney.probability, FK_PROBABILITY, 3);
-      const f = snapToScale(finding.fine_kinney.frequency, FK_FREQUENCY, 3);
-      const s = snapToScale(finding.fine_kinney.severity, FK_SEVERITY, 7);
+      const p = snapToScale(finding.fine_kinney["olasılık"], FK_PROBABILITY, 3);
+      const f = snapToScale(finding.fine_kinney.frekans, FK_FREQUENCY, 3);
+      const s = snapToScale(finding.fine_kinney["şiddet"], FK_SEVERITY, 7);
       snappedCount += [p, f, s].filter((entry) => entry.snapped).length;
       const m5p = p.value <= 0.5
         ? 1
@@ -299,15 +311,16 @@ export function routeV5Findings(
         condition_code: "free_engine_finding",
         evidence_level: "E5",
         criticality,
-        evidence_region: finding.evidence_region ?? null,
+        evidence_region: cornerBoxToRegion(finding.evidence_region) ?? null,
         affirmative_cues: [description.text],
         counter_cues: [],
-        event_path: finding.event_path,
+        // The contract states the chain as one line rather than three fields.
+        event_path: { summary: finding.event_path },
         resolvability: {
           confidence: finding.confidence,
           needs_field_verification: finding.needs_field_verification,
         },
-        fine_kinney_rationale: finding.fine_kinney.rationale,
+        fine_kinney_rationale: finding.fine_kinney["gerekçe"],
       });
 
       const correctiveText = [
@@ -372,7 +385,7 @@ export function routeV5Findings(
             m5_probability: m5p,
             m5_severity: m5s,
             m5_band: band.m5Band,
-            fine_kinney_rationale: finding.fine_kinney.rationale,
+            fine_kinney_rationale: finding.fine_kinney["gerekçe"],
           },
           internal_priority: {
             engine_mode: "free",
