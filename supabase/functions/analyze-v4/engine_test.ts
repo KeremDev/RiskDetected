@@ -3,7 +3,7 @@ Deno.test("Gemini 3 kendi çekirdek istemini alır, 2.5'inkini değil", async ()
   const contents = sent.contents as Array<Record<string, unknown>>;
   const parts = contents[0].parts as Array<Record<string, unknown>>;
   const text = String(parts[0].text);
-  assertStringIncludes(text, "v4-gemini3-core-v2");
+  assertStringIncludes(text, "v4-gemini3-core-v3");
   assertStringIncludes(text, "ÖNCE ADAY, SONRA KAPSAM");
   assertStringIncludes(text, "ADAY EŞİĞİ");
   // 2.5'in korkuluk paranoyası taşınmadı.
@@ -18,7 +18,7 @@ Deno.test("Gemini 2.5 kendi istemini aynen alır", async () => {
   const parts = contents[0].parts as Array<Record<string, unknown>>;
   const text = String(parts[0].text);
   assertStringIncludes(text, "v4-vision-core-v10");
-  assertEquals(text.includes("v4-gemini3-core-v2"), false);
+  assertEquals(text.includes("v4-gemini3-core-v3"), false);
   assertEquals(text.includes("ÖNCE ADAY, SONRA KAPSAM"), false);
 });
 
@@ -4079,4 +4079,57 @@ Deno.test("Gemini 3 istemi modülü düşürerek kaçmayı yasaklar", () => {
     // Ve diğer yöne kaymamalı: uydurma hâlâ yasak.
     assertStringIncludes(text, "görmediğin bir şey için aday üretme");
   });
+});
+
+Deno.test("diakritiği düşürülmüş Türkçe dil sözleşmesini ihlal eder", () => {
+  // 638c14a6: "Su birikintisi yakinindan gecen elektrik kablosu" ve iki madde
+  // daha diakritiksiz yayımlandı. İngilizce değil -- yanlış yazılmış Türkçe --
+  // ve İngilizce işaretçisi aramayan kapı bunu göremiyordu.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    raw_label: "Su birikintisi yakinindan gecen elektrik kablosu",
+    affirmative_cues: [
+      "Zeminde genis su birikintisi var ve elektrik kablosu bu alandan geciyor, kablo yalitimi disaridan gorulemiyor.",
+    ],
+    counter_cues: [],
+    event_path: {
+      source: "zemindeki kablo",
+      contact_or_failure: "islak zeminde temas",
+      consequence: "elektrik carpmasi",
+    },
+  })]);
+  const failure = outputLanguageFailure(photo, "tr");
+  assertStringIncludes(String(failure), "diacritics_stripped");
+});
+
+Deno.test("düzgün Türkçe diakritik kapısından geçer", () => {
+  const photo = output([candidate({
+    candidate_key: "C1",
+    raw_label: "Su birikintisi yakınından geçen elektrik kablosu",
+    affirmative_cues: [
+      "Zeminde geniş su birikintisi var ve elektrik kablosu bu alandan geçiyor, kablo yalıtımı dışarıdan görülemiyor.",
+    ],
+    counter_cues: [],
+    event_path: {
+      source: "zemindeki kablo",
+      contact_or_failure: "ıslak zeminde temas",
+      consequence: "elektrik çarpması",
+    },
+  })]);
+  assertEquals(outputLanguageFailure(photo, "tr"), null);
+});
+
+Deno.test("kısa diakritiksiz etiket yanlış alarm vermez", () => {
+  const photo = output([candidate({
+    candidate_key: "C1",
+    raw_label: "motor kaplini",
+    affirmative_cues: ["motor kaplini acikta"],
+    counter_cues: [],
+    event_path: {
+      source: "kaplin",
+      contact_or_failure: "temas",
+      consequence: "yaralanma",
+    },
+  })]);
+  assertEquals(outputLanguageFailure(photo, "tr"), null);
 });

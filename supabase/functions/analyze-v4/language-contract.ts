@@ -67,6 +67,33 @@ function blockIsEnglish(block: string): boolean {
   return (block.match(ENGLISH_MARKERS) ?? []).length >= 3;
 }
 
+/** Turkish function words, as evidence that a block is Turkish at all. */
+const TURKISH_FUNCTION_WORDS =
+  /\b(?:ve|ile|bir|bu|icin|için|olarak|veya|gibi|daha|olan|var|yok)\b/giu;
+
+/**
+ * Turkish written with the diacritics stripped out.
+ *
+ * A different defect from English output and invisible to the check above,
+ * which needs three English markers to fire. "Su birikintisi yakinindan gecen
+ * elektrik kablosu" carries none -- it is Turkish, just misspelled -- so
+ * analysis 638c14a6 published three findings and a positive control in it.
+ * gemini-3.5-flash-lite does this intermittently, and it did it on the very
+ * first run of that model too.
+ *
+ * The test is deliberately narrow: long enough that a diacritic is all but
+ * certain, carrying Turkish function words so it is not some other language,
+ * and containing not one of ıİşŞğĞçÇöÖüÜ. A short label or a proper noun never
+ * reaches it, because a false verdict here costs a retry on a correct answer.
+ */
+function blockIsUndiacriticedTurkish(block: string): boolean {
+  if (block.length < 80) return false;
+  if (TURKISH_LETTERS.test(block)) return false;
+  const turkish = (block.match(TURKISH_FUNCTION_WORDS) ?? []).length;
+  return turkish >= 2 &&
+    (block.match(ENGLISH_MARKERS) ?? []).length < 3;
+}
+
 /**
  * Non-null when the provider ignored the Turkish output contract.
  *
@@ -81,9 +108,15 @@ export function outputLanguageFailure(
   const blocks = providerTextBlocks(output);
   if (blocks.length === 0) return null;
   const english = blocks.filter(blockIsEnglish);
-  if (english.length === 0) return null;
-  return `output_language_not_turkish:blocks=${english.length}/${blocks.length}:len=${
-    english[0].length
+  if (english.length > 0) {
+    return `output_language_not_turkish:blocks=${english.length}/${blocks.length}:len=${
+      english[0].length
+    }`;
+  }
+  const stripped = blocks.filter(blockIsUndiacriticedTurkish);
+  if (stripped.length === 0) return null;
+  return `output_language_diacritics_stripped:blocks=${stripped.length}/${blocks.length}:len=${
+    stripped[0].length
   }`;
 }
 

@@ -10,8 +10,8 @@ export const V4_PROMPT_VERSION = "v4-vision-core-v10";
  * measured on. Bump this constant FIRST, then read the addendum hash from
  * prompt_integrity_test.ts, exactly as for the base bundle.
  */
-export const V4_GEMINI3_PROMPT_VERSION = "v4-gemini3-core-v2";
-export const V4_ROUTER_VERSION = "claim-routing-v33";
+export const V4_GEMINI3_PROMPT_VERSION = "v4-gemini3-core-v3";
+export const V4_ROUTER_VERSION = "claim-routing-v34";
 export const V4_COVERAGE_VERSION = "critical-coverage-v3";
 export const V4_ASSURANCE_VERSION = "assurance-topic-v2";
 export const V4_STANDARDS_VERSION = "standards-registry-v1";

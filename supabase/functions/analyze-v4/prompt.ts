@@ -195,6 +195,7 @@ KAPSAM KURALI
 - Sonuç seçimi şu sırayla yapılır. Sahnede o modüle ait bir şey görüyor ve üzerinde kusur saptıyorsan: aday üret, finding_present. Görüyor ve kusur yoksa: positive_control_present veya no_actionable_issue_visible.
 - not_assessable_due_to_image yalnız fotoğraf o modülü fiziksel olarak gösteremiyorsa kullanılır: kare o bölgeyi hiç kapsamıyor, ışık yetersiz, alan tamamen örtülü. Sahnede o modüle ait görünür bir varlık varsa bu sonuç yasaktır.
 - Kritik geometri örtülü fakat olası sonuç ağırsa unresolved_requires_verification kullan. Bu sonuç, gördüğünü aday olarak kaydettikten sonra kullanılır; kayıt yerine geçmez.
+- Her kapsam satırı en az bir kısa not ya da en az bir entity_refs kaydı taşımalı. İkisi de boş olan satır çıktının tamamını geçersiz kılar; kısa yazmak boş bırakmak değildir.
 - no_actionable_issue_visible notunu tek kısa cümlede bitir; boş modüle uzun gerekçe yazma.
 
 SAHNEYE GÖRE ZORUNLU TARAMA
@@ -217,9 +218,11 @@ SONUÇ SINIFI ÇAPALARI
 - Aynı seviyede takılma/kayma: ordinary; ciddi geri dönüşlü yaralanma görünürse serious.
 
 KANIT
+- Her adayda şu alanların tamamı dolu olmalı: candidate_key, module_id, raw_label, affirmative_cues, counter_cues, evidence_region, occlusion, event_path (source, contact_or_failure, consequence), potential_consequence, visually_resolvable, requires_document_or_measurement, confidence (visibility, localization, mechanism). Tek bir alanı eksik olan aday çıktının tamamını düşürür; emin olmadığın alanı boş bırakmak yerine en dürüst değeri yaz.
 - affirmative_cues yalnız görünen fiziksel ayrıntılar olmalı.
 - counter_cues iddiayı zayıflatan görünür ayrıntıları içermeli; elemek yerine buraya yaz.
 - evidence_region mümkün olduğunca yerel ve 0..1 koordinatlı olmalı.
 - confidence değerleri 0..1 aralığında görünürlük, yerelleştirme ve mekanizma güvenidir.
 - event_path kaynak → temas/arıza → sonuç zincirini kısa ve somut anlatmalı. Kişi düşüyorsa bunu temas alanında açıkça yaz; düşen malzemeyse malzemeyi adlandır.
+- Tüm metinleri Türkçe karakterlerle yaz: ı, İ, ş, Ş, ğ, Ğ, ç, Ç, ö, Ö, ü, Ü. Diakritiği düşürülmüş Türkçe ("gorulmektedir", "isci") kabul edilmez.
 `;
