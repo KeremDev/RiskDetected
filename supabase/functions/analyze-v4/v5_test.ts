@@ -223,10 +223,10 @@ Deno.test("serbest istem sözleşme motorunun hiçbir parçasını taşımaz", (
 });
 
 const RELEASED_V5_PROMPT_SHA256 =
-  "04e495e52a793894c3dd1c7b8efcf96fcd703942837dd30450d3d07f1efa9efa";
+  "6f0ea1db69d4b9b6ed51219a9dbfe67b48673c95ffff48c305682e22344d1064";
 
 Deno.test("v5 istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V5_PROMPT_VERSION, "v5-free-core-v2");
+  assertEquals(V5_PROMPT_VERSION, "v5-free-core-v3");
   assertEquals(await computeV5PromptSHA256(), RELEASED_V5_PROMPT_SHA256);
 });
 
@@ -264,4 +264,16 @@ Deno.test("tarama sırası sözleşme değil, dikkat yönlendirmesidir", () => {
   assertStringIncludes(V5_FREE_PROMPT, "o başlığı sessizce geç");
   assertEquals(V5_FREE_PROMPT.includes("module_coverage"), false);
   assertEquals(V5_FREE_PROMPT.includes("not_assessable"), false);
+});
+
+Deno.test("birleşim kuralı örnek listesi değil, seçim kuralıdır", () => {
+  assertStringIncludes(V5_FREE_PROMPT, "TEHLİKELERİN BİRLEŞİMİ");
+  assertStringIncludes(V5_FREE_PROMPT, "EN AĞIR MAKUL");
+  // Analiz 0c4c9a03: model ıslak zemini bir bulguda, üzerinden geçen kabloyu
+  // başka bir bulguda gördü ve kabloya "takılma" dedi -- şiddet 3. İki koşulu
+  // ayrı ayrı görmek, birleşimini görmek değildir.
+  assertStringIncludes(V5_FREE_PROMPT, "su veya nem ile elektrik");
+  // Yine de bir katalog değil: modül yok, enum yok, zorunlu satır yok.
+  assertEquals(V5_FREE_PROMPT.includes("module"), false);
+  assertEquals(V5_FREE_PROMPT.includes("condition_code"), false);
 });

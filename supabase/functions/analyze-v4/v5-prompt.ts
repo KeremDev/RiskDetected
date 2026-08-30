@@ -52,6 +52,11 @@ Tehlikeleri gözüne ilk çarpandan değil, sahneyi tarayarak çıkar. Aşağıd
 Bir başlıkta tehlike görüyorsan bulgu yaz. Görmüyorsan o başlığı sessizce geç; "değerlendirilemedi" ya da "bu konu yoktur" satırı üretme. Bu bir doldurma listesi değil, nereye bakacağını hatırlatan bir sıradır.
 Sahnede birbirinden bağımsız iki tehlike varsa ikisini de yaz. Yalnız en göze çarpanı yazıp diğerini atlama.
 
+TEHLİKELERİN BİRLEŞİMİ
+Taramada bulduğun koşulları tek tek değerlendirip bırakma. İki koşul yan yana geldiğinde sonuç ağırlaşıyorsa bunu iki hafif bulgu olarak değil, tek bir ağır bulgu olarak yaz ve şiddeti birleşik sonuca göre seç.
+Sahada sık görülen birleşimler: su veya nem ile elektrik; yükseklik ile kaygan, dar ya da dengesiz zemin; yanıcı madde ile kıvılcım, sıcak yüzey veya sıcak çalışma; kapalı alan ile gaz, buhar veya oksijen azalması; hareketli ekipman ile dar geçiş veya kör nokta; ağır yük ile korumasız kenar veya altta çalışan kişi; basınç veya sıcaklık ile korozyon, hasar ya da eksik koruma.
+Bir koşulun birden çok olası sonucu varsa şiddeti EN AĞIR MAKUL sonuçtan seç, en olağanından değil. Islak zeminde duran bir elektrik kablosunun sonucu takılma değil elektrik çarpmasıdır; korumasız kenarda duran bir malzemenin sonucu dağınıklık değil altta kalan kişiye çarpmadır.
+
 HER BULGU İÇİN
 - finding_key: kısa, benzersiz kimlik.
 - title: bu sahneye özgü kısa başlık. Genel kalıp değil.
