@@ -8,6 +8,7 @@ import {
   MODULE_OUTCOMES,
   type ProviderPhotoOutput,
   V4_PROVIDER_CONTRACT_VERSION,
+  V4_GEMINI3_RESPONSE_SCHEMA,
   V4_PROVIDER_RESPONSE_SCHEMA,
   type V4ModuleID,
 } from "./contracts.ts";
@@ -264,6 +265,17 @@ function parseOutput(
  * so it is left alone: it holds no base to substitute and the rules that
  * changed are about emitting candidates.
  */
+
+/**
+ * Gemini 3 gets the schema with recommended_control on it; 2.5 gets the base
+ * contract, byte for byte, because its measured runs were made under that hash.
+ */
+function schemaFor(model: string) {
+  return isGemini3(model)
+    ? V4_GEMINI3_RESPONSE_SCHEMA
+    : V4_PROVIDER_RESPONSE_SCHEMA;
+}
+
 function promptFor(model: string, prompt: string): string {
   if (!isGemini3(model)) return prompt;
   return prompt.includes(V4_PROMPT_COMMON)
@@ -374,7 +386,7 @@ export async function callV4Gemini(params: {
         }],
         generationConfig: {
           responseMimeType: "application/json",
-          responseSchema: toGeminiResponseSchema(V4_PROVIDER_RESPONSE_SCHEMA),
+          responseSchema: toGeminiResponseSchema(schemaFor(params.model)),
           maxOutputTokens: params.maxOutputTokens,
           ...geminiSamplingConfig(params.model),
           ...geminiThinkingConfig(params.model, params),

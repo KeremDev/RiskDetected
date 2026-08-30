@@ -16,6 +16,7 @@ import {
 } from "./assurance-topic-catalog.ts";
 import { controlPlaybook, correctiveSteps } from "./control-playbook.ts";
 import { SERVER_SYNTHESIZED_COVERAGE_NOTE } from "./dynamic-modules.ts";
+import { lintControlText } from "./control-linter.ts";
 import {
   assuranceMeasures,
   moduleConsequenceRank,
@@ -547,7 +548,7 @@ function endSentence(value: string): string {
 // report -- all published CONTROL_CATALOG["process_integrity"] word for word.
 // The mechanism playbook already carries a line per mechanism; the module
 // catalog stays as the fallback for anything it does not cover.
-function controlTextFor(candidate: NormalizedCandidate): string {
+function playbookControlFor(candidate: NormalizedCandidate): string {
   const mechanism = mechanismCode(candidate);
   if (mechanism !== "other_visible_physical") {
     return controlPlaybook(mechanism, candidate.module_id, candidate.asset_ref)
@@ -555,6 +556,26 @@ function controlTextFor(candidate: NormalizedCandidate): string {
   }
   return CONTROL_CATALOG[candidate.module_id] ??
     controlPlaybook(mechanism, candidate.module_id, candidate.asset_ref).control;
+}
+
+/**
+ * The model's line when it passes the linter, the catalog sentence otherwise.
+ *
+ * The catalog knows the mechanism and nothing else, which is why one sentence
+ * served thirteen findings and why a man carrying a timber on his shoulder was
+ * told to keep pedestrians out of an equipment slewing radius. The model knows
+ * which object and which edge. `source` is carried into internal_priority so
+ * the fallback rate is measurable rather than guessed at.
+ */
+function controlTextFor(
+  candidate: NormalizedCandidate,
+): { text: string; source: string } {
+  const lint = lintControlText(candidate.recommended_control, candidate);
+  if (lint.ok) return { text: lint.text, source: "model" };
+  return {
+    text: playbookControlFor(candidate),
+    source: `playbook:${lint.reason}`,
+  };
 }
 
 function verificationAction(candidate: NormalizedCandidate): string {
@@ -2088,6 +2109,7 @@ export function routeCandidates(params: {
         ) / 3,
       ),
     );
+    const control = controlTextFor(candidate);
     items.push({
       id: crypto.randomUUID(),
       candidate_id: candidate.id,
@@ -2103,7 +2125,7 @@ export function routeCandidates(params: {
         ? assurance!.action
         : itemClass === "verification_request"
         ? verificationAction(candidate)
-        : controlTextFor(candidate),
+        : control.text,
       recommended_measures: measuresFor(candidate, itemClass),
       references_text: referencesFor(candidate, itemClass, referencePolicy),
       root_cause_text: rootCauseFor(candidate, itemClass),
@@ -2120,6 +2142,7 @@ export function routeCandidates(params: {
         criticality: candidate.criticality,
         route_reason: routeReason,
         mechanism_code: mechanismCode(candidate),
+        control_source: control.source,
         // Distinguishing noun for the title-uniqueness pass, taken from the
         // hazard's own words rather than a scene id.
         asset_label: assetLabel(candidate),

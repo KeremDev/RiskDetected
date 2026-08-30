@@ -3,7 +3,7 @@ Deno.test("Gemini 3 kendi çekirdek istemini alır, 2.5'inkini değil", async ()
   const contents = sent.contents as Array<Record<string, unknown>>;
   const parts = contents[0].parts as Array<Record<string, unknown>>;
   const text = String(parts[0].text);
-  assertStringIncludes(text, "v4-gemini3-core-v5");
+  assertStringIncludes(text, "v4-gemini3-core-v6");
   assertStringIncludes(text, "ÖNCE ADAY, SONRA KAPSAM");
   assertStringIncludes(text, "ADAY EŞİĞİ");
   // 2.5'in korkuluk paranoyası taşınmadı.
@@ -18,7 +18,7 @@ Deno.test("Gemini 2.5 kendi istemini aynen alır", async () => {
   const parts = contents[0].parts as Array<Record<string, unknown>>;
   const text = String(parts[0].text);
   assertStringIncludes(text, "v4-vision-core-v10");
-  assertEquals(text.includes("v4-gemini3-core-v5"), false);
+  assertEquals(text.includes("v4-gemini3-core-v6"), false);
   assertEquals(text.includes("ÖNCE ADAY, SONRA KAPSAM"), false);
 });
 
@@ -4202,4 +4202,51 @@ Deno.test("ilgisiz modül hâlâ kendi adayını ister", () => {
   });
   const issues = coverageValidationIssues(photo, CORE_MODULE_IDS);
   assertStringIncludes(issues.join(","), "finding_without_candidate:machinery");
+});
+
+Deno.test("modelin kendi önlemi yayımlanır ve kaynağı izlenir", () => {
+  const photo = output([candidate({
+    recommended_control:
+      "Sol bloktaki döşeme kenarında çalışmayı durdurun ve kenarı üst korkuluk, ara korkuluk ve etek tahtasıyla kesintisiz kapatın",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  assertStringIncludes(routed.items[0].recommended_action, "Sol bloktaki");
+  assertEquals(routed.items[0].internal_priority.control_source, "model");
+});
+
+Deno.test("linterden geçemeyen önlem katalog cümlesine düşer, bulgu düşmez", () => {
+  // Mevzuat atfı: modelin hiçbir yerde üretmemesi gereken tek şey.
+  const photo = output([candidate({
+    recommended_control:
+      "6331 sayılı kanun gereği kenar korumasını tamamlayın ve alanı kapatın",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  assertEquals(routed.items[0].item_class, "observed_finding");
+  assertEquals(routed.items[0].recommended_action.includes("6331"), false);
+  assertEquals(
+    routed.items[0].internal_priority.control_source,
+    "playbook:cites_authority",
+  );
+});
+
+Deno.test("önlem alanı hiç gelmezse eski davranış korunur", () => {
+  const photo = output([candidate()]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  assertEquals(routed.items[0].recommended_action.length > 0, true);
+  assertEquals(
+    routed.items[0].internal_priority.control_source,
+    "playbook:absent",
+  );
 });

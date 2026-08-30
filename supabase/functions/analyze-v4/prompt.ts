@@ -220,6 +220,16 @@ SONUÇ SINIFI ÇAPALARI
 - Su birikintisi ile temas eden veya içinden geçen elektrik hattı: en az permanent.
 - Aynı seviyede takılma/kayma: ordinary; ciddi geri dönüşlü yaralanma görünürse serious.
 
+ÖNLEM
+Her aday için recommended_control alanına o adaya özgü tek bir önlem cümlesi yaz.
+- Cümle bu fotoğraftaki nesneyi, kenarı veya bölgeyi adlandırmalı. "Tehlike yoluna erişimi durdurun" gibi her bulguya uyan bir cümle işe yaramaz; hangi kenar, hangi kablo, hangi istif olduğunu yaz.
+- Emir kipinde ve uygulanabilir olmalı: ne yapılacağı, nerede yapılacağı. Gözlem cümlesi yazma; "görülmektedir", "mevcuttur", "tespit edilmiştir" ile biten bir cümle önlem değildir.
+- Önce tehlikeyi kaynağında kesen veya toplu koruma sağlayan önlemi yaz; kişisel koruyucu ancak toplu koruma mümkün değilse ikinci cümlecik olur.
+- Mevzuat, yönetmelik, madde numarası, standart kodu, risk skoru veya risk bandı yazma. Bunlar sonraki aşamada eklenir; senin cümlende geçerse cümle atılır.
+- Görünmeyen eğitim, sertifika, belge, periyodik kontrol veya ölçüm için "yok", "eksik", "yapılmamış" deme. Bir kaydın veya iznin kurulmasını önermen serbesttir; olmadığını iddia etmen değildir.
+- Başlığı tekrar etme; 24-320 karakter arasında, tek cümle veya iki kısa cümlecik.
+- Kuralların herhangi birine takılan cümle yayımlanmaz ve yerine hazır katalog metni geçer; bu bir aday kaybı değildir, ama o bulgu yerini kaybeder.
+
 KANIT
 - Her adayda şu alanların tamamı dolu olmalı: candidate_key, module_id, raw_label, affirmative_cues, counter_cues, evidence_region, occlusion, event_path (source, contact_or_failure, consequence), potential_consequence, visually_resolvable, requires_document_or_measurement, confidence (visibility, localization, mechanism). Tek bir alanı eksik olan aday çıktının tamamını düşürür; emin olmadığın alanı boş bırakmak yerine en dürüst değeri yaz.
 - affirmative_cues yalnız görünen fiziksel ayrıntılar olmalı.

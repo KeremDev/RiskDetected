@@ -27,10 +27,10 @@ Deno.test("v4 prompt/schema bundle cannot change without versioned SHA update", 
 // gemini-2.5-flash path measured under it -- stays byte-identical. Same rule as
 // above: bump V4_GEMINI3_PROMPT_VERSION first, then read the hash.
 const RELEASED_GEMINI3_PROMPT_SHA256 =
-  "fd1476ad6ecc3d29df1a57629c0f5d7298d78a0f64263ed07d4714daad6aa12c";
+  "047a9a50dc64a2e889bd97258d6c9dd962e8547a6f15ace3294147021e3fa025";
 
 Deno.test("Gemini 3 çekirdek istemi sürüm bumpı olmadan değişemez", async () => {
-  assertEquals(V4_GEMINI3_PROMPT_VERSION, "v4-gemini3-core-v5");
+  assertEquals(V4_GEMINI3_PROMPT_VERSION, "v4-gemini3-core-v6");
   assertEquals(
     await computeV4Gemini3PromptSHA256(),
     RELEASED_GEMINI3_PROMPT_SHA256,

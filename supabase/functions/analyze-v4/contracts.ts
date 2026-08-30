@@ -10,7 +10,7 @@ export const V4_PROMPT_VERSION = "v4-vision-core-v10";
  * measured on. Bump this constant FIRST, then read the addendum hash from
  * prompt_integrity_test.ts, exactly as for the base bundle.
  */
-export const V4_GEMINI3_PROMPT_VERSION = "v4-gemini3-core-v5";
+export const V4_GEMINI3_PROMPT_VERSION = "v4-gemini3-core-v6";
 export const V4_ROUTER_VERSION = "claim-routing-v35";
 export const V4_COVERAGE_VERSION = "critical-coverage-v3";
 export const V4_ASSURANCE_VERSION = "assurance-topic-v2";
@@ -107,6 +107,12 @@ export type ProviderCandidate = {
     localization: number;
     mechanism: number;
   };
+  /**
+   * The model's own one-line control for this candidate, present only on the
+   * Gemini 3 path. Optional on purpose: the base schema does not carry it, and
+   * a line that fails the linter falls back to the deterministic playbook.
+   */
+  recommended_control?: string;
 };
 
 export type ModuleCoverage = {
@@ -372,3 +378,30 @@ export const V4_PROVIDER_RESPONSE_SCHEMA = {
     "untrusted_embedded_text",
   ],
 };
+
+/**
+ * The Gemini 3 family's response schema: the base contract, plus the one field
+ * the model needs in order to write its own control line.
+ *
+ * Cloned from V4_PROVIDER_RESPONSE_SCHEMA rather than copied, so the two can
+ * never drift, and kept out of the base object so the bundle SHA that
+ * gemini-2.5-flash was measured under stays byte-identical.
+ *
+ * recommended_control is deliberately not in `required`. A candidate that
+ * arrives without it is still a valid candidate -- it falls back to the
+ * deterministic playbook -- and making it mandatory would trade a repeated
+ * sentence for a dropped finding.
+ */
+type JsonSchemaNode = Record<string, unknown>;
+
+export const V4_GEMINI3_RESPONSE_SCHEMA: JsonSchemaNode = (() => {
+  const schema = structuredClone(
+    V4_PROVIDER_RESPONSE_SCHEMA,
+  ) as unknown as JsonSchemaNode;
+  const properties = schema.properties as JsonSchemaNode;
+  const candidates = properties.candidates as JsonSchemaNode;
+  const items = candidates.items as JsonSchemaNode;
+  const candidateProperties = items.properties as JsonSchemaNode;
+  candidateProperties.recommended_control = { type: "string" };
+  return schema;
+})();
