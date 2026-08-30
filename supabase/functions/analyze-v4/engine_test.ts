@@ -3908,3 +3908,68 @@ Deno.test("yayımlanmış düşme bulgusu düşen cisim modülünü de cevaplar"
     false,
   );
 });
+
+Deno.test("kişiye bağlı yokluk iddiası çözünürlük tabanına takılmaz", () => {
+  // 273613e1: korumasız döşeme kenarındaki işçi -- gerçek, ölümcül, gözle
+  // doğrulandı -- 0.0022'lik bölge yüzünden saha kontrolüne düştü. Fotoğraf
+  // geniş siyah bantlı ve kamera uzak; bu, parçanın çözünürlük altında olması
+  // değil, kişinin uzakta olmasıdır. Aynı tehlike bir önceki koşuda critical
+  // yayımlanmıştı.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "work_at_height",
+    raw_label: "Korkuluksuz döşeme kenarında yüksekte çalışma",
+    asset_ref: undefined,
+    person_ref: "person_upper_slab",
+    affirmative_cues: [
+      "Üst kat döşeme kenarında üst korkuluk, ara korkuluk ve topuk levhası bulunmuyor",
+      "İşçi doğrudan açık kenarın sınırında çalışıyor",
+      "Kişiye bağlı yaşam hattı veya ankraj noktası görünmüyor",
+    ],
+    evidence_region: { x: 0.37, y: 0.293, width: 0.057, height: 0.038 },
+    event_path: {
+      source: "Korumasız üst kat döşeme kenarı",
+      contact_or_failure: "İşçinin dengesini kaybederek alt kata düşmesi",
+      consequence: "Yüksekten düşmeye bağlı ölümcül yaralanma",
+    },
+    potential_consequence: "fatal",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "construction",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.item_class, "observed_finding");
+  assertEquals(item?.is_scored, true);
+});
+
+Deno.test("kişisiz bileşen iddiası tabanda kalmaya devam eder", () => {
+  // Kapının var oluş sebebi bozulmamalı: kanca mandalı hâlâ düşmeli.
+  const photo = output([candidate({
+    candidate_key: "C1",
+    module_id: "lifting",
+    raw_label: "Vinç kancasında emniyet mandalı eksikliği",
+    asset_ref: "hook_1",
+    person_ref: undefined,
+    affirmative_cues: ["Kanca ağzında güvenlik mandalı görünmüyor"],
+    evidence_region: { x: 0.49, y: 0.42, width: 0.03, height: 0.05 },
+    event_path: {
+      source: "asılı yük",
+      contact_or_failure: "kancadan yükün ayrılması",
+      consequence: "yükün düşmesi",
+    },
+    potential_consequence: "fatal",
+  })]);
+  const routed = routeCandidates({
+    candidates: normalizeCandidates(photo, 1),
+    photoOutputs: [{ photoIndex: 1, output: photo }],
+    sectorID: "manufacturing",
+  });
+  const item = routed.items.find((entry) => entry.candidate_id);
+  assertEquals(item?.is_scored, false);
+  assertStringIncludes(
+    String(item?.internal_priority.route_reason),
+    "absence_claim_below_resolution_floor",
+  );
+});

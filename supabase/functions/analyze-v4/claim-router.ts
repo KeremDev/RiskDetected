@@ -1522,6 +1522,23 @@ function absenceRegionTooSmallToResolve(
   candidate: NormalizedCandidate,
 ): number | null {
   if (candidate.condition_code !== "visible_structural_absence") return null;
+  // A claim about a person is not a claim about a component.
+  //
+  // The floor exists to stop a verdict on a part too small to have been
+  // resolved -- a hook latch inside twelve pixels of hook, asset_ref hook_1,
+  // nobody in the frame. Analysis 273613e1 then lost a genuine fatal to it: a
+  // worker at an unguarded slab edge, person_ref person_upper_slab, no
+  // asset_ref, region 0.0022 because the photograph is heavily letterboxed and
+  // the camera is far away. The same hazard scored critical on the previous run
+  // of the same image, where the model happened to report a larger box.
+  //
+  // Distance shrinking a person is not the same fact as a part being below
+  // resolution: the subject is the person's exposure and the missing collective
+  // or personal protection around them, and the frame shows a whole human being
+  // to scale it by. Guardrail hallucination is real but it is held by the gates
+  // built for it -- barrier continuity, the sandwich rule, second-pass
+  // disagreement -- not by this one.
+  if ((candidate.person_ref ?? "").trim()) return null;
   const region = candidate.evidence_region;
   if (!region) return null;
   const width = Number(region.width);
