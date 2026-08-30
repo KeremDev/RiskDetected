@@ -461,6 +461,10 @@ export function routeV5Findings(
           internal_priority: {
             engine_mode: "free",
             finding_key: finding.finding_key,
+            // Which scan layer produced this. unfulfilledHazardLayers checks
+            // the same binding across the whole output; this makes it
+            // readable per item afterwards.
+            scan_layer: Number.isFinite(finding.layer) ? finding.layer : null,
             control_source: "model",
             sanitized: removed,
             scale_snapped: [p, f, s].some((entry) => entry.snapped),
