@@ -227,7 +227,6 @@ export function parseV5Output(raw: string): V5PhotoOutput {
         immediate_control: text(finding.immediate_control, 400),
         corrective_steps: textList(finding.corrective_steps, 5),
         preventive_measure: text(finding.preventive_measure, 600),
-        notebook_recommendation: text(finding.notebook_recommendation, 400),
         training_recommendation: text(finding.training_recommendation, 300),
         ppe_recommendation: text(finding.ppe_recommendation, 300),
         evidence_region: finding
@@ -520,14 +519,6 @@ export function routeV5Findings(
       const steps = finding.corrective_steps.map((step) =>
         sanitizeFreeText(step)
       );
-      // The same control as `control`, in Onaylı Defter's register. Falls
-      // back to `control` itself (still imperative) only if the model left
-      // this empty -- an imperative sentence in the log book is the failure
-      // this field exists to prevent, but it is a smaller failure than an
-      // empty log line.
-      const notebookRecommendation = sanitizeFreeText(
-        finding.notebook_recommendation || finding.immediate_control,
-      );
       const training = sanitizeFreeText(finding.training_recommendation ?? "");
       const ppe = sanitizeFreeText(finding.ppe_recommendation ?? "");
       const removed = [
@@ -537,7 +528,6 @@ export function routeV5Findings(
         rootCause,
         references,
         preventive,
-        notebookRecommendation,
         training,
         ppe,
         ...steps,
@@ -606,7 +596,6 @@ export function routeV5Findings(
             control_source: "model",
             sanitized: removed,
             scale_snapped: false,
-            notebook_oneri: notebookRecommendation.text,
             book_source: bookSourceFor({
               finding,
               photoIndex,
@@ -741,7 +730,6 @@ export function routeV5Findings(
             control_source: "model",
             sanitized: removed,
             scale_snapped: [p, f, s].some((entry) => entry.snapped),
-            notebook_oneri: notebookRecommendation.text,
             book_source: bookSourceFor({
               finding,
               photoIndex,

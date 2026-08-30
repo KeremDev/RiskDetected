@@ -32,7 +32,7 @@
 import { EXPERT_ASSET_FAMILIES } from "./v5-taxonomy.ts";
 
 export const V5_ENGINE_MODE = "free";
-export const V5_PROMPT_VERSION = "v7-free-core-multidisciplinary-v15";
+export const V5_PROMPT_VERSION = "v7-free-core-multidisciplinary-v14";
 
 /** Fine-Kinney scales. The arithmetic stays deterministic; the values do not. */
 export const FK_PROBABILITY = [0.2, 0.5, 1, 3, 6, 10] as const;
@@ -85,21 +85,6 @@ export type V5Finding = {
   immediate_control: string;
   corrective_steps: string[];
   preventive_measure: string;
-  /**
-   * The same control as `immediate_control`, for a different reader.
-   *
-   * `immediate_control` is written "emir kipinde" -- imperative, a checklist
-   * item for whoever is on site right now. Onaylı Defter is a different
-   * document: a specialist's formal log entry, addressed to the employer, and
-   * "İşçiyi derhal indirin ve çalışmayı durdurun." read as a command stuck
-   * into a report the operator was handing an employer. Turkish nominalises
-   * this correctly ("Çalışmanın durdurulması önerilmektedir.") and a server
-   * regex does not -- Turkish agglutination makes runtime stem-plus-suffix
-   * assembly a reliable source of wrong vowels and wrong buffer consonants,
-   * which is worse than the register being wrong. So the model writes both
-   * moods once, in the one response it already returns.
-   */
-  notebook_recommendation: string;
   training_recommendation?: string;
   ppe_recommendation?: string;
   /** Corner box, converted to x/y/width/height before it is stored. */
@@ -237,7 +222,6 @@ export const V5_RESPONSE_SCHEMA = {
           immediate_control: { type: "string" },
           corrective_steps: { type: "array", items: { type: "string" } },
           preventive_measure: { type: "string" },
-          notebook_recommendation: { type: "string" },
           training_recommendation: { type: "string" },
           ppe_recommendation: { type: "string" },
           evidence_region: regionSchema,
@@ -257,7 +241,6 @@ export const V5_RESPONSE_SCHEMA = {
           "immediate_control",
           "corrective_steps",
           "preventive_measure",
-          "notebook_recommendation",
           "confidence",
           "needs_field_verification",
         ],

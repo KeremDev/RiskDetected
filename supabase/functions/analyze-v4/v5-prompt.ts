@@ -222,7 +222,6 @@ Alan içerikleri:
 - \`immediate_control\`: emir kipinde tek cümle.
 - \`corrective_steps\`: 2-5 somut adım.
 - \`preventive_measure\`: tekrarı önleyen sistem kontrolü, emir kipinde.
-- \`notebook_recommendation\`: aynı önlemi, aynı bilgiyle, Onaylı Defter için resmî rapor diliyle tekrar yaz. Emir kipi kullanma; "önerilmektedir", "tavsiye edilmektedir" veya "gerekmektedir" ile biten tek cümle olsun. "İşçiyi derhal indirin ve çalışmayı durdurun." değil, "Çalışmanın derhal durdurulması önerilmektedir." yaz. "Uygun kaynak paravanı yerleştirin." değil, "Kaynak bölgesine uygun paravan yerleştirilmesi önerilmektedir." yaz. İçerik \`immediate_control\` ile aynı önlemi anlatır; yalnız kip değişir.
 - \`training_recommendation\`, \`ppe_recommendation\`: doğrudan ilgiliyse yaz, değilse boş dize.
 - \`evidence_region\`: \`x_min\`, \`y_min\`, \`x_max\`, \`y_max\`; 0..1 aralığında, sol üst başlangıçlı en küçük kutu.
 - \`confidence\`: 0..1 arasında görsel kanıt kesinliği.

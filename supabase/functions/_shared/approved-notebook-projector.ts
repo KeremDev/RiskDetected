@@ -366,25 +366,20 @@ function recommendationText(
   const itemClass = finding.item_class ??
     (finding.is_scored === false ? "verification_request" : "observed_finding");
 
-  // internal_priority.notebook_oneri: for a registry card, the specialist's
-  // full ifPresentTr paragraph was landing here verbatim (345-511 characters,
-  // analysis bc85eccd) instead of the one sentence notebookOneriTr was written
-  // for. For a scored finding, the model's own `immediate_control` was
-  // landing here in imperative mood -- "İşçiyi derhal indirin ve çalışmayı
-  // durdurun." -- a command inside a report addressed to the employer, not
-  // the specialist's own log entry. `notebook_recommendation` is the same
-  // control in the register the log book actually wants: v5-prompt.ts asks
-  // the model to end it "önerilmektedir" or "tavsiye edilmektedir", because
-  // nominalising a Turkish imperative correctly is not something a server
-  // regex can be trusted to do. Both sources land in the same field so this
-  // check applies to both classes uniformly.
-  if (itemClass === "observed_finding" || itemClass === "assurance_requirement") {
-    const writtenForNotebook = language === "tr"
+  if (itemClass === "assurance_requirement") {
+    // Was: the generic prefix followed by the specialist card's full
+    // recommended_action -- for a registry card that is `ifPresentTr`, a
+    // multi-sentence paragraph written for the Uzman Görüşü reader, not a
+    // defter line. Analysis bc85eccd published five of these at 345-511
+    // characters each, which is most of the "gereksiz uzun" the operator
+    // flagged. notebookOneriTr is the one-sentence instruction written for
+    // this purpose specifically -- server-authored, no model involvement.
+    const registryOneri = language === "tr"
       ? sanitizeNotebookContentText(
         pathValue(metadata?.internal_priority, [["notebook_oneri"]]),
       )
       : "";
-    if (writtenForNotebook) return sentence(writtenForNotebook);
+    if (registryOneri) return sentence(registryOneri);
   }
 
   const actions = uniqueSentences(actionTexts(finding));

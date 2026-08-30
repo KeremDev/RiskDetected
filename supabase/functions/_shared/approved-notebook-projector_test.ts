@@ -242,11 +242,13 @@ Deno.test("assurance items without a registry line keep the prior behaviour", as
 });
 
 // --------------------------------------------------------------------------
-// The operator: "işciyi derhal indirin ve çalışmayı durdurun ... bu dil iyi
-// değil. emir kipinden ziyade önerilmektedir yazılması daha mantıklı."
+// The operator: only Onaylı Defter, not the model or Risk Analizi. A scored
+// finding's recommendation stays whatever recommended_action says -- v5
+// never touches immediate_control's register, and the notebook doesn't
+// either.
 // --------------------------------------------------------------------------
 
-Deno.test("scored finding uses the model's advisory-register line over the imperative action", async () => {
+Deno.test("scored finding's recommendation is recommended_action, untouched", async () => {
   const entries = await projectApprovedNotebookEntries({
     analysisID: "88888888-8888-4888-8888-888888888888",
     language: "tr",
@@ -262,40 +264,11 @@ Deno.test("scored finding uses the model's advisory-register line over the imper
       fk_band: "critical",
       display_order: 0,
     }],
-    metadata: [{
-      public_finding_id: "99999999-9999-4999-8999-999999999999",
-      internal_priority: {
-        engine_mode: "free",
-        control_source: "model",
-        notebook_oneri: "Çalışmanın derhal durdurulması önerilmektedir.",
-      },
-    }],
   });
   assertEquals(entries.length, 1);
   assertEquals(
     entries[0].recommendation_text,
-    "Çalışmanın derhal durdurulması önerilmektedir.",
-  );
-  assert(!entries[0].recommendation_text.includes("indirin"));
-});
-
-Deno.test("scored finding without notebook_oneri keeps the imperative action (v4 legacy)", async () => {
-  const entries = await projectApprovedNotebookEntries({
-    analysisID: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-    language: "tr",
-    findings: [{
-      id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-      item_class: "observed_finding",
-      is_scored: true,
-      title: "Açık kenarda düşme riski",
-      description: "Kenar koruması bulunmayan erişilebilir çalışma alanı.",
-      recommended_action: "Uygun korkuluk sistemi kurulmalıdır.",
-      display_order: 0,
-    }],
-  });
-  assertEquals(
-    entries[0].recommendation_text,
-    "Uygun korkuluk sistemi kurulmalıdır.",
+    "İşçiyi derhal tank üzerinden güvenli bir platforma indirin ve çalışmayı durdurun.",
   );
 });
 
