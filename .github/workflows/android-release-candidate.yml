@@ -51,6 +51,18 @@ jobs:
           grep -q 'Kapalı test kullanıcılarımızın geri bildirimleri doğrultusunda' android/play-store/metadata/2.0.0/release-notes-tr.txt
           grep -q 'Based on feedback from our closed-test users' android/play-store/metadata/2.0.0/release-notes-en.txt
 
+      - name: Verify unique migration timestamps
+        run: |
+          duplicates=$(find supabase/migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' \
+            | cut -d_ -f1 \
+            | sort \
+            | uniq -d)
+          if [[ -n "$duplicates" ]]; then
+            echo "Duplicate Supabase migration timestamps:" >&2
+            echo "$duplicates" >&2
+            exit 1
+          fi
+
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.7.14
