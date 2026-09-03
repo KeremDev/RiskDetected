@@ -464,7 +464,7 @@
     <string name="rd_loading_sector_format">Loading risk analysis templates for %1$s...</string>
     <string name="rd_loading_hazard_format">Preparing the checklist for the %1$s class...</string>
     <string name="rd_loading_certificate_format">Personalizing the report format for %1$s...</string>
-    <string name="rd_plan_kaydet_google_play">Let’s save your plan to your account; verify prices and eligible offers in Google Play.</string>
+    <string name="rd_plan_kaydet_google_play">Let’s save your plan to your account and give you personalized results.</string>
     <string name="rd_bildirim_plan_teklif_baslik">Follow plan and offer information through notifications</string>
     <string name="rd_bildirim_plan_teklif_aciklama">Turn on notifications for plan, offer and app reminders.</string>
     <string name="rd_ucretsiz_devam_et">Continue for Free</string>

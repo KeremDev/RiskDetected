@@ -165,6 +165,7 @@ private data class ResultHubBody(
     @SerialName("client_app_build") val clientAppBuild: String,
     val section: AnalysisResultSectionId? = null,
     val format: String? = null,
+    @SerialName("report_kind") val reportKind: String? = null,
     @SerialName("selected_item_keys") val selectedItemKeys: List<String>? = null,
     @SerialName("request_id") val requestId: String? = null,
     @SerialName("target_kind") val targetKind: String? = null,
@@ -234,6 +235,7 @@ class AnalysisResultHubRepository @Inject constructor(
         analysisId: String,
         section: AnalysisResultSectionId,
         format: String,
+        reportKind: String,
         selected: List<String>,
         requestId: String = UUID.randomUUID().toString(),
     ): RdResult<AnalysisReportIntent> = try {
@@ -242,6 +244,7 @@ class AnalysisResultHubRepository @Inject constructor(
             body = body("create_report_intent", analysisId).copy(
                 section = section,
                 format = format,
+                reportKind = reportKind,
                 selectedItemKeys = selected,
                 requestId = requestId,
             ),

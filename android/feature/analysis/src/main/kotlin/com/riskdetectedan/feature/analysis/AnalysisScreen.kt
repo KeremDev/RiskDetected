@@ -177,6 +177,7 @@ fun AnalysisScreen(
             reportState = reportState,
             reportSetup = reportSetup,
             onGenerateReport = reportViewModel::generate,
+            onRefreshReportSetup = reportViewModel::loadSetup,
             onReportFileConsumed = reportViewModel::clearReadyFile,
             onReportErrorDismiss = reportViewModel::clearError,
             onBack = onBack,

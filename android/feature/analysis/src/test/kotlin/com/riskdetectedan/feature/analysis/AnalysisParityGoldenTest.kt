@@ -34,6 +34,7 @@ import com.riskdetectedan.core.data.analysis.PlanCapabilities
 import com.riskdetectedan.core.data.company.Company
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.data.profile.UserProfile
+import com.riskdetectedan.core.data.reports.ReportQuotaUsage
 import com.riskdetectedan.core.designsystem.RiskDetectedTheme
 import org.junit.Rule
 import org.junit.Test
@@ -248,10 +249,19 @@ class AnalysisParityGoldenTest {
     }
 
     @Test
+    fun report_kind_wire_value_follows_the_selected_card_not_the_active_section() {
+        org.junit.Assert.assertEquals("standard", ParityReportKind.Standard.wireValue())
+        org.junit.Assert.assertEquals("risk_analysis", ParityReportKind.RiskAnalysis.wireValue())
+    }
+
+    @Test
     fun free_risk_report_sheet_dark_has_legible_trial_and_themed_cta() {
         setResultContent(
             capabilities = PlanCapabilities.forTier(SubscriptionTier.Free),
             reportState = ResultReportUiState.Idle,
+            reportSetup = ResultReportSetup(
+                quotaUsage = ReportQuotaUsage(standardUsed = 0, standardLimit = 1, riskTrialUsed = false),
+            ),
             darkTheme = true,
             resultHub = resultHub.copy(tier = "free"),
         )
@@ -263,6 +273,26 @@ class AnalysisParityGoldenTest {
         composeRule.onNodeWithText("Standart Rapor").performClick()
         composeRule.onAllNodesWithText("Rapor Oluştur")[1].assertIsDisplayed().assertIsEnabled()
         composeRule.onRoot().captureRoboImage(roborazziOptions = crossPlatformGradientOptions)
+    }
+
+    @Test
+    fun used_free_risk_report_gift_hides_ribbon_and_locks_the_table() {
+        setResultContent(
+            capabilities = PlanCapabilities.forTier(SubscriptionTier.Free),
+            reportState = ResultReportUiState.Idle,
+            reportSetup = ResultReportSetup(
+                quotaUsage = ReportQuotaUsage(standardUsed = 0, standardLimit = 1, riskTrialUsed = true),
+            ),
+            resultHub = resultHub.copy(tier = "free"),
+        )
+        composeRule.onNodeWithText("Rapor Oluştur").performClick()
+
+        composeRule.onAllNodesWithText("Hoş geldin, 1 risk analizi oluşturma hakkını hemen kullan!").assertCountEquals(0)
+        composeRule.onNodeWithText("Bir kez tanımlanan hakkını kullandın. Risk analizi tabloları Plus ile devam eder.").assertIsDisplayed()
+        composeRule.onNodeWithText("PLUS/PRO").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+        composeRule.onNodeWithText("Standart Rapor").performClick()
+        composeRule.onAllNodesWithText("Rapor Oluştur")[1].assertIsDisplayed().assertIsEnabled()
     }
 
     @Test

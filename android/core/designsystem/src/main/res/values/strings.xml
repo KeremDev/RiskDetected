@@ -464,7 +464,7 @@
     <string name="rd_loading_sector_format">%1$s için risk analiz şablonları yükleniyor…</string>
     <string name="rd_loading_hazard_format">%1$s sınıfı için kontrol listesi hazırlanıyor…</string>
     <string name="rd_loading_certificate_format">%1$s için rapor formatı kişiselleştiriliyor…</string>
-    <string name="rd_plan_kaydet_google_play">Planını hesabına kaydedelim; fiyat ve uygun teklifleri Google Play\'de doğrula.</string>
+    <string name="rd_plan_kaydet_google_play">Planını hesabına kaydedelim ve sana özel sonuçlar verelim.</string>
     <string name="rd_bildirim_plan_teklif_baslik">Plan ve teklif bilgilerini bildirimlerden takip edebilirsin</string>
     <string name="rd_bildirim_plan_teklif_aciklama">Plan, teklif ve uygulama hatırlatmaları için bildirimleri aç.</string>
     <string name="rd_ucretsiz_devam_et">Ücretsiz devam et</string>

@@ -169,7 +169,12 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private enum class ParityRiskMethod(val wire: String) { FineKinney("fine_kinney"), Matrix5x5("matrix_5x5") }
-private enum class ParityReportKind { Standard, RiskAnalysis }
+internal enum class ParityReportKind { Standard, RiskAnalysis }
+
+internal fun ParityReportKind.wireValue(): String = when (this) {
+    ParityReportKind.Standard -> "standard"
+    ParityReportKind.RiskAnalysis -> "risk_analysis"
+}
 
 /**
  * Screen-specific mirror of iOS `RDTypography.font` calls. Build 87 moved the complete iOS
@@ -406,6 +411,7 @@ internal fun IosParityResultView(
     reportState: ResultReportUiState,
     reportSetup: ResultReportSetup,
     onGenerateReport: (ResultReportRequest, String, String, ResultReportFormat) -> Unit,
+    onRefreshReportSetup: () -> Unit = {},
     onReportFileConsumed: () -> Unit,
     onReportErrorDismiss: () -> Unit,
     onBack: (() -> Unit)?,
@@ -436,6 +442,10 @@ internal fun IosParityResultView(
         ?: stringResource(RdR.string.rd_genel)
     val selectedHubItem = selectedHubItemId?.let { id ->
         resultHub?.sections?.asSequence()?.flatMap { it.items.asSequence() }?.firstOrNull { it.id == id }
+    }
+    val openReportSheet = {
+        onRefreshReportSetup()
+        showReportSheet = true
     }
 
     LaunchedEffect(resultHub?.analysisId) {
@@ -504,7 +514,7 @@ internal fun IosParityResultView(
                         onResultEvent("locked_teaser_cta_tapped", hubSection, null)
                         onResultHubUpgrade(hubSection)
                     },
-                    onReport = { showReportSheet = true },
+                    onReport = openReportSheet,
                     onBack = { onBack?.invoke() },
                     onEvent = onResultEvent,
                     onEditNotebook = onEditNotebook,
@@ -566,7 +576,7 @@ internal fun IosParityResultView(
                 .padding(horizontal = 20.dp, vertical = 14.dp),
         ) {
             Button(
-                onClick = { showReportSheet = true },
+                onClick = openReportSheet,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = colors.cta, contentColor = Color.White),
@@ -596,8 +606,8 @@ internal fun IosParityResultView(
                 onClose = { selectedHubItemId = null; selectedFinding = null },
                 onEdit = { editingFinding = finding },
                 onDelete = { deletingFinding = finding },
-                onGenerateReport = { showReportSheet = true },
-                onShareReport = { showReportSheet = true },
+                onGenerateReport = openReportSheet,
+                onShareReport = openReportSheet,
                 onUpgrade = { tier -> onUpgradeTierAt(tier, "finding_detail_regulatory_references") },
             )
         }
@@ -622,6 +632,7 @@ internal fun IosParityResultView(
             onUpgrade = { onUpgradeTierAt(SubscriptionTier.Plus, "result_locked_report_options") },
             companies = reportSetup.companies,
             profile = reportSetup.profile,
+            freeRiskTrialAvailable = reportSetup.quotaUsage?.riskTrialUsed == false,
             initialCompanyId = summary?.companyId,
             onGenerate = { kind, output, customization ->
                 showReportSheet = false
@@ -650,14 +661,7 @@ internal fun IosParityResultView(
                 )
                 onGenerateReport(
                     request,
-                    activeHubSection?.id?.let {
-                        when (it) {
-                            AnalysisResultSectionId.RiskAnalysis -> "risk_analysis"
-                            AnalysisResultSectionId.ExpertRecommendations -> "expert_recommendations"
-                            AnalysisResultSectionId.TrainingRecommendations -> "training_recommendations"
-                            AnalysisResultSectionId.ApprovedNotebook -> "approved_notebook"
-                        }
-                    } ?: if (kind == ParityReportKind.Standard) "standard" else "risk_analysis",
+                    kind.wireValue(),
                     method.wire,
                     output,
                 )
@@ -3281,6 +3285,7 @@ private fun ResultReportSettingsSheet(
     onUpgrade: () -> Unit,
     companies: List<Company>,
     profile: UserProfile?,
+    freeRiskTrialAvailable: Boolean,
     initialCompanyId: String?,
     onGenerate: (ParityReportKind, ResultReportFormat, ResultReportCustomization) -> Unit,
 ) {
@@ -3302,6 +3307,10 @@ private fun ResultReportSettingsSheet(
     var certificateNumber by remember(profile?.id) { mutableStateOf(profile?.certificateNumber.orEmpty()) }
     var showOverrides by remember { mutableStateOf(false) }
     var showCompanyPicker by remember { mutableStateOf(false) }
+    val riskAnalysisLocked = tier == SubscriptionTier.Free && !freeRiskTrialAvailable
+    LaunchedEffect(riskAnalysisLocked) {
+        if (riskAnalysisLocked && kind == ParityReportKind.RiskAnalysis) kind = null
+    }
     val canGenerate = selectedCount > 0 && (!isRiskSection || kind != null)
     val maximumSheetHeight = (LocalConfiguration.current.screenHeightDp * .92f).dp
     val context = LocalContext.current
@@ -3429,14 +3438,22 @@ private fun ResultReportSettingsSheet(
                     }
                     item {
                         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            if (tier == SubscriptionTier.Free) FreeTrialRibbon()
+                            if (tier == SubscriptionTier.Free && freeRiskTrialAvailable) FreeTrialRibbon()
                             ReportOptionCard(
                                 selected = kind == ParityReportKind.RiskAnalysis,
                                 icon = Icons.Filled.TableChart,
                                 title = stringResource(RdR.string.rd_risk_analizi_tablosu),
-                                subtitle = stringResource(RdR.string.rd_risk_analizi_tablosu_aciklama),
+                                subtitle = stringResource(
+                                    if (riskAnalysisLocked) RdR.string.rd_risk_analizi_deneme_kullanildi
+                                    else RdR.string.rd_risk_analizi_tablosu_aciklama,
+                                ),
                                 emphasized = true,
-                                onClick = { kind = ParityReportKind.RiskAnalysis },
+                                locked = riskAnalysisLocked,
+                                badge = stringResource(RdR.string.rd_plus_pro).takeIf { riskAnalysisLocked },
+                                onClick = {
+                                    if (riskAnalysisLocked) onUpgrade()
+                                    else kind = ParityReportKind.RiskAnalysis
+                                },
                             )
                         }
                     }
@@ -3760,6 +3777,8 @@ private fun ReportOptionCard(
     title: String,
     subtitle: String,
     emphasized: Boolean,
+    locked: Boolean = false,
+    badge: String? = null,
     onClick: () -> Unit,
 ) {
     val colors = RdTheme.colors
@@ -3787,7 +3806,7 @@ private fun ReportOptionCard(
             ),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, null, tint = if (selected || emphasized) colors.white else colors.greenDark, modifier = Modifier.size(if (emphasized) 25.dp else 23.dp))
+            Icon(if (locked) Icons.Filled.Lock else icon, null, tint = if (selected || emphasized) colors.white else colors.greenDark, modifier = Modifier.size(if (emphasized) 25.dp else 23.dp))
         }
         Spacer(Modifier.width(14.dp))
         Column(
@@ -3806,8 +3825,22 @@ private fun ReportOptionCard(
                 maxLines = if (emphasized) 4 else 2,
             )
         }
-        Box(Modifier.size(if (emphasized) 29.dp else 26.dp).clip(CircleShape).border(1.5.dp, if (selected) colors.green else colors.line, CircleShape).background(if (selected) colors.green else colors.white), contentAlignment = Alignment.Center) {
-            if (selected) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(if (emphasized) 17.dp else 15.dp))
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            badge?.let { label ->
+                Text(
+                    label.localizedUppercase(),
+                    style = iosRounded(8f, FontWeight.Black, tracking = .35f),
+                    color = colors.planPlusDark,
+                    modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(colors.planPlusSoft)
+                        .padding(horizontal = 7.dp, vertical = 4.dp),
+                )
+            }
+            Box(Modifier.size(if (emphasized) 29.dp else 26.dp).clip(CircleShape).border(1.5.dp, if (selected) colors.green else colors.line, CircleShape).background(if (selected) colors.green else colors.white), contentAlignment = Alignment.Center) {
+                when {
+                    selected -> Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(if (emphasized) 17.dp else 15.dp))
+                    locked -> Icon(Icons.Filled.Lock, null, tint = colors.planPlusDark, modifier = Modifier.size(14.dp))
+                }
+            }
         }
     }
 }

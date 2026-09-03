@@ -34,6 +34,16 @@ import com.riskdetectedan.core.designsystem.rdPaywallDesignState
 import com.riskdetectedan.core.designsystem.R as RdR
 
 private const val PLAY_SUBSCRIPTIONS_URL = "https://play.google.com/store/account/subscriptions"
+private const val ONBOARDING_PLUS_TRIAL_DAYS = 7
+
+internal fun resolvedOnboardingTrialDays(
+    hasYearlyPackage: Boolean,
+    storePeriodIso8601: String?,
+): Int? = if (hasYearlyPackage) {
+    PaywallDesignPricing.trialDays(storePeriodIso8601) ?: ONBOARDING_PLUS_TRIAL_DAYS
+} else {
+    null
+}
 
 /**
  * Onboarding 11. adımın paywall'ı — uygulama içi paywall ile birebir aynı Claude Design ekranı
@@ -67,9 +77,15 @@ fun OBTimelinePaywallScreen(
     val monthlyPackage = viewModel.packageFor(selectedPlan, OBPaywallBilling.Monthly)
     val selectedPackage = if (selectedBilling == OBPaywallBilling.Yearly) yearlyPackage else monthlyPackage
 
-    // Deneme anlatımı yalnızca Play'in bu hesap için gerçekten döndürdüğü teklife dayanır.
+    // Onboarding'in önceki adımı kullanıcıya 0,00 TL başlangıcı vaat eder. Plus yıllık ürün
+    // yüklendiyse bu son adım aynı 7 günlük deneme akışını korur; Play daha ayrıntılı bir dönem
+    // döndürürse mağaza değeri önceliklidir. Satın alma yine yalnız gerçek RevenueCat paketiyle
+    // başlatılır ve Google Play onay ekranı nihai fiyat/uygunluk kaynağı olmaya devam eder.
     val trialDays = if (selectedPlan == OBPaywallPlan.Plus) {
-        PaywallDesignPricing.trialDays(yearlyPackage?.freeTrialPeriodIso8601)
+        resolvedOnboardingTrialDays(
+            hasYearlyPackage = yearlyPackage != null,
+            storePeriodIso8601 = yearlyPackage?.freeTrialPeriodIso8601,
+        )
     } else {
         null
     }

@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.riskdetectedan.core.designsystem.RdPaywallDesignBilling
@@ -25,6 +26,7 @@ import com.riskdetectedan.core.designsystem.RdPaywallDesignTag
 import com.riskdetectedan.core.designsystem.RdPaywallDesignTier
 import com.riskdetectedan.core.designsystem.RiskDetectedLightOnlyTheme
 import com.riskdetectedan.core.designsystem.rdPaywallDesignState
+import com.riskdetectedan.core.designsystem.R as RdR
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,6 +47,15 @@ class PaywallDesignOnDeviceTest {
 
     @Test
     fun paywallRendersAndRespondsOnDevice() {
+        val resources = InstrumentationRegistry.getInstrumentation().targetContext.resources
+        val startTrial = resources.getString(RdR.string.rd_paywall_design_cta_start_trial)
+        val startSubscription = resources.getString(RdR.string.rd_aboneligi_baslat)
+        val trialHero = resources.getString(RdR.string.rd_paywall_design_hero_trial)
+        val trialDay = resources.getString(RdR.string.rd_paywall_design_timeline_day_format, "7")
+        val trialNote = resources.getString(RdR.string.rd_paywall_design_plan_trial_note_format, "7")
+        val discount = resources.getString(RdR.string.rd_paywall_design_plan_discount_format, "17")
+        val plusBenefits = resources.getString(RdR.string.rd_paywall_design_hero_benefits_format, "PLUS")
+
         composeRule.setContent {
             RiskDetectedLightOnlyTheme {
                 var tier by remember { mutableStateOf(RdPaywallDesignTier.Plus) }
@@ -59,7 +70,13 @@ class PaywallDesignOnDeviceTest {
                     trialDays = if (tier == RdPaywallDesignTier.Plus) 7 else null,
                     discountPercent = 17,
                     priceUnavailableText = "fiyat yükleniyor",
-                    cta = RdPaywallDesignCta(title = "Aboneliği Başlat"),
+                    cta = RdPaywallDesignCta(
+                        title = if (tier == RdPaywallDesignTier.Plus && billing == RdPaywallDesignBilling.Yearly) {
+                            startTrial
+                        } else {
+                            startSubscription
+                        },
+                    ),
                 )
 
                 RdPaywallDesignScreen(
@@ -86,22 +103,25 @@ class PaywallDesignOnDeviceTest {
         // 1) PLUS + yıllık: gerçek Play teklifi varsayımıyla deneme anlatımı görünür.
         composeRule.onNodeWithTag(RdPaywallDesignTag.Plus).assertIsDisplayed()
         composeRule.onNodeWithTag(RdPaywallDesignTag.TrialTimeline).assertIsDisplayed()
-        composeRule.onNodeWithText("Ücretsiz Deneme Nasıl Çalışır?").assertIsDisplayed()
-        composeRule.onNodeWithText("7 gün ücretsiz").assertIsDisplayed()
-        composeRule.onNodeWithText("%17 İndirim").assertIsDisplayed()
         capture("plus_yearly")
+        composeRule.onNodeWithText(trialHero).assertIsDisplayed()
+        composeRule.onNodeWithText(trialDay).assertIsDisplayed()
+        composeRule.onNodeWithText(trialNote).assertIsDisplayed()
+        composeRule.onNodeWithText(startTrial).assertIsDisplayed()
+        composeRule.onNodeWithText(discount).assertIsDisplayed()
 
         // 2) Aylığa geçince deneme anlatımı yerini karşılaştırma tablosuna bırakır.
         composeRule.onNodeWithTag(RdPaywallDesignTag.PlanMonthly).performClick()
         composeRule.onNodeWithTag(RdPaywallDesignTag.ComparisonTable).assertIsDisplayed()
-        composeRule.onNodeWithText("PLUS Abonelik Avantajları").assertIsDisplayed()
+        composeRule.onNodeWithText(plusBenefits).assertIsDisplayed()
         capture("plus_monthly")
 
         // 3) Çapraz satış PRO ekranını açar.
-        composeRule.onNodeWithTag(RdPaywallDesignTag.CrossSellPro).performClick()
+        composeRule.onNodeWithTag(RdPaywallDesignTag.CrossSellPro).performScrollTo().performClick()
+        composeRule.waitForIdle()
         composeRule.onNodeWithTag(RdPaywallDesignTag.Pro).assertIsDisplayed()
-        composeRule.onNodeWithText("PRO Abonelik Avantajları").assertIsDisplayed()
-        composeRule.onNodeWithText("Limitsiz").assertIsDisplayed()
+        composeRule.onNodeWithTag(RdPaywallDesignTag.HeroLabel).performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag(RdPaywallDesignTag.ComparisonTable).performScrollTo().assertIsDisplayed()
         capture("pro_yearly")
 
         // 4) Yasal/abonelik bağlantıları her iki ekranda da erişilebilir olmalı.
@@ -112,7 +132,8 @@ class PaywallDesignOnDeviceTest {
         composeRule.onNodeWithTag(RdPaywallDesignTag.Cta).assertIsDisplayed()
 
         // 5) PRO'dan PLUS'a dönüş.
-        composeRule.onNodeWithTag(RdPaywallDesignTag.CrossSellPlus).performClick()
+        composeRule.onNodeWithTag(RdPaywallDesignTag.CrossSellPlus).performScrollTo().performClick()
+        composeRule.waitForIdle()
         composeRule.onNodeWithTag(RdPaywallDesignTag.Plus).assertIsDisplayed()
     }
 

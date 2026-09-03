@@ -20,6 +20,7 @@ import com.riskdetectedan.core.data.release.ReleasePolicyRepository
 import com.riskdetectedan.core.data.reports.PdfReportFileName
 import com.riskdetectedan.core.data.reports.PdfReportGenerator
 import com.riskdetectedan.core.data.reports.PdfReportInput
+import com.riskdetectedan.core.data.reports.ReportQuotaUsage
 import com.riskdetectedan.core.data.reports.ReportsRepository
 import com.riskdetectedan.core.data.store.ReviewEligibilityRepository
 import com.riskdetectedan.core.designsystem.R as RdR
@@ -63,6 +64,7 @@ data class ResultReportRequest(
 data class ResultReportSetup(
     val profile: UserProfile? = null,
     val companies: List<Company> = emptyList(),
+    val quotaUsage: ReportQuotaUsage? = null,
 )
 
 data class ResultReportFile(
@@ -112,7 +114,15 @@ class ResultReportViewModel @Inject constructor(
             val profile = (profileRepository.fetchProfile(userId) as? RdResult.Success)?.value
             val companies = (companyRepository.listCompanies(includeArchived = false) as? RdResult.Success)
                 ?.value.orEmpty()
-            _setup.value = ResultReportSetup(profile = profile, companies = companies)
+            val quotaUsage = (reportsRepository.fetchQuotaUsage(
+                userId = userId,
+                tier = profile?.tier ?: _setup.value.profile?.tier ?: com.riskdetectedan.core.data.profile.SubscriptionTier.Free,
+            ) as? RdResult.Success)?.value ?: _setup.value.quotaUsage
+            _setup.value = ResultReportSetup(
+                profile = profile,
+                companies = companies,
+                quotaUsage = quotaUsage,
+            )
         }
     }
 
@@ -134,6 +144,7 @@ class ResultReportViewModel @Inject constructor(
                     analysisId = request.analysisId,
                     section = request.contentScope,
                     format = if (format == ResultReportFormat.Pdf) "pdf" else "xlsx",
+                    reportKind = if (kind == "risk_analysis") "riskAnalysis" else "standard",
                     selected = request.selectedItemKeys,
                 )) {
                     is RdResult.Success -> request.copy(exportIntentId = intent.value.id)
@@ -170,11 +181,21 @@ class ResultReportViewModel @Inject constructor(
                         )
                     }
                     reviewEligibilityRepository.recordSuccessfulReport(result.value.reportId)
+                    if (kind == "risk_analysis") {
+                        markRiskTrialUsedLocally()
+                        loadSetup()
+                    }
                     _state.value = ResultReportUiState.Generating(format, 1f)
                     delay(480)
                     _state.value = ResultReportUiState.Ready(result.value)
                 }
                 is RdResult.Failure -> {
+                    if (result.code == "free_risk_analysis_trial_exhausted" ||
+                        result.message.contains("free_risk_analysis_trial_exhausted", ignoreCase = true)
+                    ) {
+                        markRiskTrialUsedLocally()
+                        loadSetup()
+                    }
                     authoritativeRequest.contentScope?.let { section ->
                         resultHubRepository.recordEvent(
                             analysisId = authoritativeRequest.analysisId,
@@ -200,6 +221,12 @@ class ResultReportViewModel @Inject constructor(
 
     fun clearError() {
         if (_state.value is ResultReportUiState.Failed) _state.value = ResultReportUiState.Idle
+    }
+
+    private fun markRiskTrialUsedLocally() {
+        val current = _setup.value
+        val quota = current.quotaUsage ?: return
+        _setup.value = current.copy(quotaUsage = quota.copy(riskTrialUsed = true))
     }
 
     private fun startProgress(format: ResultReportFormat) {

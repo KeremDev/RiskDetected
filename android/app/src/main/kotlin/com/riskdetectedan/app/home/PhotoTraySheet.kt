@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -86,7 +87,13 @@ fun PhotoTraySheet(
     val slotCount = maxOf(visibleSlotCount, minOf(maxPhotoCount, photoPaths.size + 1))
     val hasLockedSlots = slotCount > maxPhotoCount
 
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = RdSpacing.lg).padding(top = RdSpacing.md, bottom = RdSpacing.lg)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = RdSpacing.lg)
+            .padding(top = RdSpacing.md, bottom = RdSpacing.lg),
+    ) {
         Row(verticalAlignment = Alignment.Top) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(stringResource(RdR.string.rd_fotograflar), style = RdFontStyle.Title2.toTextStyle(), color = colors.black)
@@ -153,7 +160,7 @@ private fun SourceButton(title: String, icon: androidx.compose.ui.graphics.vecto
         modifier = modifier
             .height(46.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(colors.fog)
+            .background(colors.white)
             .border(1.dp, colors.line, RoundedCornerShape(16.dp))
             .clickable(enabled = enabled, onClick = onClick),
         horizontalArrangement = Arrangement.Center,
