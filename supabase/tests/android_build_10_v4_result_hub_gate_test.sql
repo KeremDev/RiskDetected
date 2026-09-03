@@ -50,8 +50,18 @@ select ok(
   'the active analysis configuration is the released V4 contract'
 );
 select ok(
-  (select (value->>'latest_build')::integer < 10 from public.app_feature_flags where key='android_release_policy'),
-  'build 10 is not advertised before Play is live'
+  exists (
+    select 1
+    from public.app_feature_flags
+    where key='android_release_policy'
+      and (value->>'latest_build')::integer = 10
+      and (value->>'minimum_supported_build')::integer <= 10
+      and coalesce((value->>'soft_update_enabled')::boolean, true) = false
+      and coalesce((value->>'hard_update_enabled')::boolean, true) = false
+      and value->>'app_store_url' = 'https://play.google.com/store/apps/details?id=com.riskdetectedan.app'
+      and value->>'policy_version' = 'production-2.0.0-vc10'
+  ),
+  'live build 10 is advertised without forcing or nudging an update'
 );
 select ok(
   not exists (
