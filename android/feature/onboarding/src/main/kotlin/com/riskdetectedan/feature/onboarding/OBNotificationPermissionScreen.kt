@@ -81,11 +81,29 @@ fun OBNotificationPermissionScreen(
     onContinue: () -> Unit,
     viewModel: OnboardingNotificationPermissionViewModel = hiltViewModel(),
 ) {
+    OBNotificationPermissionContent(
+        onContinue = onContinue,
+        recordPermission = { granted, onComplete ->
+            viewModel.recordPermission(granted = granted, onComplete = onComplete)
+        },
+    )
+}
+
+/**
+ * The screen itself, with the persistence step supplied by the caller. Kept separate so the
+ * golden test can render exactly this production layout without a Hilt-managed Activity — the
+ * same seam [OBTimelinePaywallPreviewSurface] and `PaywallParityPreviewSurface` use.
+ */
+@Composable
+fun OBNotificationPermissionContent(
+    onContinue: () -> Unit,
+    recordPermission: (granted: Boolean, onComplete: () -> Unit) -> Unit,
+) {
     val colors = RdTheme.colors
     val context = LocalContext.current
 
     fun finish(granted: Boolean) {
-        viewModel.recordPermission(granted = granted, onComplete = onContinue)
+        recordPermission(granted, onContinue)
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(

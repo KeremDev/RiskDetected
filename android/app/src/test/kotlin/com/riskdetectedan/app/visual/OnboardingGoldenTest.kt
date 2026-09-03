@@ -55,7 +55,7 @@ import com.riskdetectedan.feature.onboarding.OBCertificateScreen
 import com.riskdetectedan.feature.onboarding.OBFrequencyScreen
 import com.riskdetectedan.feature.onboarding.OBHazardClassScreen
 import com.riskdetectedan.feature.onboarding.OBLoadingScreen
-import com.riskdetectedan.feature.onboarding.OBNotificationPermissionScreen
+import com.riskdetectedan.feature.onboarding.OBNotificationPermissionContent
 import com.riskdetectedan.feature.onboarding.OBPlanSummaryScreen
 import com.riskdetectedan.feature.onboarding.OBTrialInvitePreviewSurface
 import com.riskdetectedan.feature.onboarding.OBTimelinePaywallPreviewSurface
@@ -261,7 +261,10 @@ class OnboardingGoldenTest {
         composeRule.mainClock.autoAdvance = false
         composeRule.setContent {
             RiskDetectedLightOnlyTheme {
-                OBNotificationPermissionScreen(onContinue = {})
+                // The production layout, with only the persistence step stubbed: the screen
+                // itself resolves its recorder through Hilt, which no Robolectric compose
+                // host can provide.
+                OBNotificationPermissionContent(onContinue = {}, recordPermission = { _, _ -> })
             }
         }
 

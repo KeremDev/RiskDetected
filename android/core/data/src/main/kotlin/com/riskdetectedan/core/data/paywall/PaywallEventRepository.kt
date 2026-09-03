@@ -53,6 +53,7 @@ enum class PaywallEventName(val wireValue: String) {
     PurchaseStarted("purchase_started"),
     PurchaseSucceeded("purchase_succeeded"),
     PurchaseFailed("purchase_failed"),
+    PurchaseCancelled("purchase_cancelled"),
     RestoreTap("restore_tap"),
 }
 

@@ -1,5 +1,5 @@
 Based on feedback from our closed-test users:
-• Analysis results, finding details, and locked-content cards were refreshed.
-• Report creation, PDF/Excel exports, and Approved Logbook wording were improved.
-• Home, profile, onboarding, membership screens, and dark mode were refined.
-• Notifications, navigation, and overall app stability were improved.
+• Analysis and report notifications now reach your device; the fault blocking delivery is fixed.
+• All notifications now share a single system channel.
+• Plan and billing-period selections on the membership screens are handled more accurately.
+• General stability improvements.

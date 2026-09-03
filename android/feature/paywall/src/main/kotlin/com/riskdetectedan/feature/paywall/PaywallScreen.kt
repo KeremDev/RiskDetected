@@ -115,7 +115,7 @@ fun PaywallScreen(
 
     LaunchedEffect(state, initialPlan) {
         if (!didApplyInitialPlan && initialPlan != null && state is PaywallUiState.Loaded) {
-            viewModel.selectPlan(initialPlan)
+            viewModel.applyInitialPlan(initialPlan)
             didApplyInitialPlan = true
         }
     }

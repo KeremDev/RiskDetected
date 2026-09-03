@@ -274,8 +274,26 @@ class PaywallViewModel @Inject constructor(
             _state.value = PaywallUiState.Loaded(packages, backendTier, activeProductId)
             _selectedPlan.value = if (backendTier == SubscriptionTier.Free) PaywallPlan.Plus else PaywallPlan.Pro
             alignBillingWithAvailablePackage(packages)
-            recordEvent(userId, PaywallEventName.View, selectedTier = _selectedPlan.value.tier)
+            recordEvent(
+                userId,
+                PaywallEventName.View,
+                selectedTier = _selectedPlan.value.tier,
+                billing = billingFor(_selectedPlan.value),
+            )
         }
+    }
+
+    /**
+     * Applies the plan a promotion asked for (`PaywallForTier`) without emitting `plan_select`:
+     * the user tapped an upgrade surface, not the paywall's own plan toggle, and iOS derives its
+     * `activeScreen` from the same context silently. Logging one here made every promotion-opened
+     * paywall look like the user had switched plans on it.
+     */
+    fun applyInitialPlan(plan: PaywallPlan) {
+        if (_selectedPlan.value == plan || _isPurchasing.value) return
+        _selectedPlan.value = plan
+        setBilling(plan, PaywallBilling.Yearly)
+        alignBillingWithAvailablePackage((_state.value as? PaywallUiState.Loaded)?.packages.orEmpty())
     }
 
     fun selectPlan(plan: PaywallPlan) {
@@ -367,9 +385,16 @@ class PaywallViewModel @Inject constructor(
                     _isPurchasing.value = false
                     val cause = result.cause
                     if (cause is PurchasesTransactionException && cause.userCancelled) {
-                        // Silent, matches iOS's `catch is CancellationError` in
-                        // InAppPaywallView.swift — no error UI, no purchase_failed event, the
-                        // user just closed the Google Play sheet.
+                        // Silent in the UI, matches iOS's `catch is CancellationError` in
+                        // InAppPaywallView.swift — no error card, no purchase_failed event. The
+                        // funnel still needs the drop-off, so record purchase_cancelled exactly
+                        // as PaywallDesignFlowView.swift does.
+                        recordEvent(
+                            userId,
+                            PaywallEventName.PurchaseCancelled,
+                            selectedTier = billingPackage.tier,
+                            billingPackage = billingPackage,
+                        )
                         return@launch
                     }
                     _purchaseError.value = AppErrorMessages.makePurchase(

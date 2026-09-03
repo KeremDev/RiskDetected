@@ -129,9 +129,13 @@ fun OBTimelinePaywallScreen(
     Box(modifier = Modifier.fillMaxSize().background(RdPaywallDesignColor.Surface)) {
         RdPaywallDesignScreen(
             state = designState,
-            onClose = onDismiss,
+            onClose = {
+                viewModel.recordClose()
+                onDismiss()
+            },
             onSelectBilling = { viewModel.selectBilling(it.obBilling) },
             onCta = {
+                viewModel.recordCtaTap()
                 val target = selectedPackage
                 when {
                     target == null -> viewModel.load()

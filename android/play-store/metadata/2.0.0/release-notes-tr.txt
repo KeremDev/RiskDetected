@@ -1,5 +1,5 @@
 Kapalı test kullanıcılarımızın geri bildirimleri doğrultusunda:
-• Analiz sonuçları, bulgu detayları ve kilitli içerik kartları yenilendi.
-• Rapor oluşturma, PDF/Excel çıktıları ve Onaylı Defter metinleri iyileştirildi.
-• Ana sayfa, profil, ilk kullanım, üyelik ekranları ve koyu tema geliştirildi.
-• Bildirimler, yönlendirmeler ve genel uygulama kararlılığı iyileştirildi.
+• Analiz ve rapor bildirimleri artık cihazınıza ulaşıyor; gönderimi engelleyen hata giderildi.
+• Tüm bildirimler tek bir sistem kanalında toplandı.
+• Üyelik ekranlarında plan ve ödeme dönemi seçimleri daha doğru işleniyor.
+• Genel kararlılık iyileştirmeleri.

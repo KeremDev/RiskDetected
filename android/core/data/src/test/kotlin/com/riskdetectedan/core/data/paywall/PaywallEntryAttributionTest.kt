@@ -58,4 +58,26 @@ class PaywallEntryAttributionTest {
         assertEquals("locked_content_teaser", attributes.getValue("placement").jsonPrimitive.content)
         assertEquals("training_recommendations", attributes.getValue("source_section").jsonPrimitive.content)
     }
+
+    /** `paywall_events_event_name_check` is a shared constraint: a wire value the DB doesn't list
+     * is rejected outright, and the event is lost silently (analytics never surface insert
+     * errors to the purchase flow). */
+    @Test
+    fun `event wire values stay inside the shared database allowlist`() {
+        val allowed = setOf(
+            "entry_tap", "view", "close", "cta_tap", "plan_select", "billing_select",
+            "purchase_started", "purchase_succeeded", "purchase_failed", "purchase_cancelled",
+            "restore_tap", "payment_pending", "personal_plan_view", "personal_plan_continue",
+            "trial_invite_view", "trial_invite_cta_tap",
+        )
+
+        PaywallEventName.entries.forEach { event ->
+            assertEquals(
+                "unlisted paywall event wire value: ${event.wireValue}",
+                true,
+                event.wireValue in allowed,
+            )
+        }
+        assertEquals("purchase_cancelled", PaywallEventName.PurchaseCancelled.wireValue)
+    }
 }

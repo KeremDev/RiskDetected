@@ -37,6 +37,12 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/rd_notification_accent" />
+        <!-- Without this the system-rendered path used FCM's fallback channel while the
+             foreground path used ours, so the user saw two switches for one app's notifications.
+             RdNotificationChannel creates this channel at startup, before any message arrives. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="riskdetected_updates" />
 
         <!--
           Ç1 (review doc): no certificate pinning in v1 — Network Security Config +

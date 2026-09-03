@@ -65,7 +65,9 @@ import kotlinx.serialization.Serializable
 @Serializable data class AnalysisReports(val analysisId: String)
 @Serializable data class AnalysisResult(val analysisId: String)
 @Serializable object DeleteAccount
-@Serializable object Paywall
+// Every paywall entry point carries its attribution (PaywallForTier). An argument-free paywall
+// route existed alongside it and could only ever report entry_point="unknown"; nothing navigated
+// to it, so it is gone rather than left as a way to lose attribution.
 @Serializable data class PaywallForTier(
     val tier: String,
     val resultAnalysisId: String? = null,

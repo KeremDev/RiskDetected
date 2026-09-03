@@ -2,8 +2,6 @@ package com.riskdetectedan.app.push
 
 import android.Manifest
 import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -89,16 +87,9 @@ class RdFirebaseMessagingService : FirebaseMessagingService() {
         ) return
 
         val payload = NotificationDeepLinkParser.parse(message.data) ?: return
-        val manager = getSystemService(NotificationManager::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            manager.createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_ID,
-                    getString(RdR.string.rd_bildirim_kanali),
-                    NotificationManager.IMPORTANCE_DEFAULT,
-                ),
-            )
-        }
+        // Same channel the manifest declares for FCM's own background rendering, so foreground
+        // and background notifications share one entry in system settings.
+        RdNotificationChannel.ensure(this)
 
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -114,16 +105,12 @@ class RdFirebaseMessagingService : FirebaseMessagingService() {
         val body = message.notification?.body ?: getString(RdR.string.rd_yeni_guncelleme_var)
         val notification = createRiskDetectedNotification(
             context = this,
-            channelId = CHANNEL_ID,
+            channelId = RdNotificationChannel.ID,
             pendingIntent = pendingIntent,
             title = title,
             body = body,
         )
         NotificationManagerCompat.from(this).notify(payload.hashCode(), notification)
-    }
-
-    private companion object {
-        const val CHANNEL_ID = "riskdetected_updates"
     }
 }
 

@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.test.core.app.ApplicationProvider
 import com.riskdetectedan.app.R
 import org.junit.Assert.assertEquals
@@ -61,5 +62,27 @@ class NotificationBrandingTest {
             R.color.rd_notification_accent,
             applicationInfo.metaData.getInt("com.google.firebase.messaging.default_notification_color"),
         )
+    }
+
+    /** Background/killed-state messages are rendered by FCM on the channel this meta-data names.
+     * Without the declaration they landed on FCM's fallback channel while foreground
+     * notifications used ours — one app, two switches in system settings. */
+    @Test
+    fun `background and foreground notifications share one declared channel`() {
+        val applicationInfo = context.packageManager.getApplicationInfo(
+            context.packageName,
+            PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA.toLong()),
+        )
+        val declaredChannelId = applicationInfo.metaData
+            .getString("com.google.firebase.messaging.default_notification_channel_id")
+
+        assertEquals(RdNotificationChannel.ID, declaredChannelId)
+
+        RdNotificationChannel.ensure(context)
+        val channel = NotificationManagerCompat.from(context)
+            .getNotificationChannelCompat(RdNotificationChannel.ID)
+
+        assertNotNull(channel)
+        assertEquals(declaredChannelId, channel!!.id)
     }
 }

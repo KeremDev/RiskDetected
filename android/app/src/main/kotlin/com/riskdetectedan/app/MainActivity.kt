@@ -26,6 +26,7 @@ import com.riskdetectedan.app.push.PushTokenRegistrar
 import com.riskdetectedan.app.telemetry.PlatformTelemetryRegistrar
 import com.riskdetectedan.app.push.NotificationDeepLinkHandler
 import com.riskdetectedan.app.push.NotificationEngagementRegistrar
+import com.riskdetectedan.app.localization.ProfileLocalizationRegistrar
 import com.riskdetectedan.app.release.ReleaseGate
 import com.riskdetectedan.app.settings.AppearanceMode
 import com.riskdetectedan.app.settings.AppearanceViewModel
@@ -122,6 +123,10 @@ class MainActivity : ComponentActivity() {
                         // Supplies the authorization + foreground heartbeat used by the shared
                         // notification automation eligibility engine.
                         NotificationEngagementRegistrar()
+                        // No UI — repairs a missing profiles.app_language/preferred_content_locale
+                        // pair. Without it the backend refuses to localize (and therefore to
+                        // send) every transactional notification for that account.
+                        ProfileLocalizationRegistrar()
                         // No UI — records a background legal-acceptance audit row (consents
                         // table) for the Turkish document set once signed in. Mirrors
                         // AppState.swift's session-sink call to LegalAcceptanceService; there is

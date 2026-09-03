@@ -245,12 +245,6 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                 onBack = { navController.popBackStack() },
             )
         }
-        composable<Paywall> {
-            // InAppPaywallView.swift pins both its surface and legal sheet to light mode.
-            RiskDetectedLightOnlyTheme {
-                PaywallScreen(onBack = { navController.popBackStack() }, entryPoint = "unknown")
-            }
-        }
         composable<PaywallForTier> { backStackEntry ->
             val args: PaywallForTier = backStackEntry.toRoute()
             RiskDetectedLightOnlyTheme {

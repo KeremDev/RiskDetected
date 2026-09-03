@@ -12,6 +12,7 @@ import com.riskdetectedan.core.data.billing.BillingRepository
 import com.riskdetectedan.core.data.billing.PaywallDesignPricing
 import com.riskdetectedan.core.data.error.AppErrorMessage
 import com.riskdetectedan.core.data.error.AppErrorMessages
+import com.riskdetectedan.core.data.paywall.PaywallEntryAttribution
 import com.riskdetectedan.core.data.paywall.PaywallEventMetadata
 import com.riskdetectedan.core.data.paywall.PaywallEventName
 import com.riskdetectedan.core.data.paywall.PaywallEventRepository
@@ -33,6 +34,17 @@ import javax.inject.Inject
 
 private const val EVENT_SOURCE = "onboarding_v2"
 
+/**
+ * The onboarding paywall has no preceding upgrade tap to inherit attribution from, so it declares
+ * its own — the same triple `PaywallEventService.swift` writes for `source = .onboardingV2`
+ * (`PaywallEntryPoint.onboardingFlow` → surface `onboarding`, component `onboarding_paywall`).
+ * Without it every onboarding paywall event landed with a null entry_point and was invisible in
+ * the funnel next to the in-app paywall's own rows.
+ */
+private const val ENTRY_POINT = "onboarding_flow"
+private const val ENTRY_SURFACE = "onboarding"
+private const val ENTRY_COMPONENT = "onboarding_paywall"
+
 /** Bir plan için yıllık/aylık paket çifti. */
 data class OBTimelinePackages(val yearly: BillingPackage?, val monthly: BillingPackage?)
 
@@ -43,7 +55,10 @@ enum class OBPaywallPlan(val tier: SubscriptionTier) {
     Pro(SubscriptionTier.Pro),
 }
 
-enum class OBPaywallBilling { Yearly, Monthly }
+enum class OBPaywallBilling(val wireValue: String) {
+    Yearly("yearly"),
+    Monthly("monthly"),
+}
 
 sealed interface OBTimelinePaywallUiState {
     data object Loading : OBTimelinePaywallUiState
@@ -97,6 +112,14 @@ class OBTimelinePaywallViewModel @Inject constructor(
 
     private val funnelSessionId = UUID.randomUUID().toString()
 
+    private val entryAttribution = PaywallEntryAttribution(
+        entryPoint = ENTRY_POINT,
+        entrySurface = ENTRY_SURFACE,
+        entryComponent = ENTRY_COMPONENT,
+        entryTargetTier = SubscriptionTier.Plus,
+        attributes = mapOf("client_platform" to "android"),
+    )
+
     init {
         load()
     }
@@ -121,7 +144,7 @@ class OBTimelinePaywallViewModel @Inject constructor(
         if (billingFor(plan) == billing || _isPurchasing.value) return
         setBilling(plan, billing)
         authRepository.currentUserId?.let {
-            recordEvent(it, PaywallEventName.BillingSelect, selectedTier = plan.tier)
+            recordEvent(it, PaywallEventName.BillingSelect, selectedTier = plan.tier, billing = billing)
         }
     }
 
@@ -135,7 +158,30 @@ class OBTimelinePaywallViewModel @Inject constructor(
         setBilling(target, OBPaywallBilling.Yearly)
         alignBillingWithAvailablePackage()
         authRepository.currentUserId?.let {
-            recordEvent(it, PaywallEventName.PlanSelect, selectedTier = target.tier)
+            recordEvent(it, PaywallEventName.PlanSelect, selectedTier = target.tier, billing = billingFor(target))
+        }
+    }
+
+    /** CTA ve kapatma, uygulama içi paywall'daki karşılıkları gibi kaydedilir (iOS
+     * `handlePrimaryAction` / `closePaywall`); bunlar olmadan onboarding hunisinde görüntüleme ile
+     * satın alma arasındaki adım boş kalıyordu. */
+    fun recordCtaTap() {
+        val plan = _selectedPlan.value
+        authRepository.currentUserId?.let {
+            recordEvent(
+                it,
+                PaywallEventName.CtaTap,
+                selectedTier = plan.tier,
+                billingPackage = packageFor(plan, billingFor(plan)),
+                billing = billingFor(plan),
+            )
+        }
+    }
+
+    fun recordClose() {
+        val plan = _selectedPlan.value
+        authRepository.currentUserId?.let {
+            recordEvent(it, PaywallEventName.Close, selectedTier = plan.tier, billing = billingFor(plan))
         }
     }
 
@@ -192,7 +238,12 @@ class OBTimelinePaywallViewModel @Inject constructor(
             }
             _state.value = OBTimelinePaywallUiState.Loaded(plus = plusPackages, pro = pair(SubscriptionTier.Pro))
             alignBillingWithAvailablePackage()
-            recordEvent(userId, PaywallEventName.View, selectedTier = SubscriptionTier.Plus)
+            recordEvent(
+                userId,
+                PaywallEventName.View,
+                selectedTier = SubscriptionTier.Plus,
+                billing = billingFor(_selectedPlan.value),
+            )
         }
     }
 
@@ -228,7 +279,17 @@ class OBTimelinePaywallViewModel @Inject constructor(
                 is RdResult.Failure -> {
                     _isPurchasing.value = false
                     val cause = result.cause
-                    if (cause is PurchasesTransactionException && cause.userCancelled) return@launch
+                    if (cause is PurchasesTransactionException && cause.userCancelled) {
+                        // Silent for the user, recorded for the funnel — same split as
+                        // feature:paywall and PaywallDesignFlowView.swift.
+                        recordEvent(
+                            userId,
+                            PaywallEventName.PurchaseCancelled,
+                            selectedTier = billingPackage.tier,
+                            billingPackage = billingPackage,
+                        )
+                        return@launch
+                    }
                     _purchaseError.value = AppErrorMessages.makePurchase(
                         cause ?: RuntimeException(result.message),
                         context = context.getString(RdR.string.rd_satin_alma_dogrulanamadi),
@@ -307,13 +368,17 @@ class OBTimelinePaywallViewModel @Inject constructor(
         selectedTier: SubscriptionTier?,
         billingPackage: BillingPackage? = null,
         purchaseError: String? = null,
+        billing: OBPaywallBilling? = null,
     ) {
         paywallEventRepository.record(
             event = event,
             userId = userId,
             funnelSessionId = funnelSessionId,
             selectedTier = selectedTier,
-            billing = billingPackage?.productId?.let {
+            // An explicit selection carries its own billing period: billing_select/plan_select
+            // reach no store package, so deriving the value from a product id alone left every
+            // onboarding monthly/yearly choice unrecorded.
+            billing = billing?.wireValue ?: billingPackage?.productId?.let {
                 when {
                     it.contains("yearly", ignoreCase = true) -> "yearly"
                     it.contains("monthly", ignoreCase = true) -> "monthly"
@@ -323,11 +388,15 @@ class OBTimelinePaywallViewModel @Inject constructor(
             productIdentifier = billingPackage?.productId,
             metadata = PaywallEventMetadata(
                 layout = "onboarding_timeline",
-                currentTier = selectedTier?.name?.lowercase() ?: "unknown",
+                // The tier the user already has is not resolved on this screen (onboarding never
+                // reads the entitlement here), and reporting the *selected* tier as the current
+                // one made every onboarding row look like an existing subscriber.
+                currentTier = "unknown",
                 selectedPackageId = billingPackage?.id,
                 purchaseError = purchaseError,
             ),
             source = EVENT_SOURCE,
+            attribution = entryAttribution,
         )
     }
 }
