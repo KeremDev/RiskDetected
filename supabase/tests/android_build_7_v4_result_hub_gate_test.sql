@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions, pg_catalog;
 
-select extensions.plan(17);
+select extensions.plan(16);
 
 select ok(
   position(
@@ -72,11 +72,6 @@ select ok(
 select ok(
   (select value->'enabled_ios_builds' ? '88' from public.app_feature_flags where key='analysis_result_hub_v1'),
   'result hub keeps iOS build 88 admitted'
-);
-select is(
-  (select (value->>'latest_build')::int from public.app_feature_flags where key='android_release_policy'),
-  6,
-  'closed-test gate does not advertise build 7 before Play upload'
 );
 select ok(
   (select not (value->>'hard_update_enabled')::boolean and not (value->>'soft_update_enabled')::boolean

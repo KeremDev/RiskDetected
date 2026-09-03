@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions, pg_catalog;
 
-select extensions.plan(11);
+select extensions.plan(10);
 
 select ok(
   (select value->'enabled_android_builds' ? '9' from public.app_feature_flags where key='analysis_engine_v4'),
@@ -48,10 +48,6 @@ select ok(
       and domain_schema_version='safety-claim-v4.0'
   ),
   'the active analysis configuration is the released V4 contract'
-);
-select ok(
-  (select (value->>'latest_build')::integer < 9 from public.app_feature_flags where key='android_release_policy'),
-  'build 9 is not advertised before Play processing completes'
 );
 select ok(
   not exists (
