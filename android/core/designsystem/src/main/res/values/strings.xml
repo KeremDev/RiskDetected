@@ -281,6 +281,7 @@
     <string name="rd_siradaki_mdp_format">Sıradaki: %1$s (%2$d MDP kaldı)</string>
     <string name="rd_professional_progress_target_format">Hedef: %1$s · %2$d MDP kaldı</string>
     <string name="rd_report_sheet_title">Raporunu oluştur ve paylaş</string>
+    <string name="rd_rapor_turu_secin">Rapor türü seçin</string>
     <string name="rd_report_sheet_subtitle_format">%1$d/%2$d bulgu seçili · PDF veya Excel</string>
     <string name="rd_progress_stage_candidate">Aday</string>
     <string name="rd_progress_stage_field">Saha</string>
@@ -681,7 +682,7 @@
     <string name="rd_standart_rapor">Standart Rapor</string>
     <string name="rd_standart_rapor_aciklama">Bulgular, fotoğraflar ve önerilen tedbirleri içeren hızlı uygunsuzluk raporu.</string>
     <string name="rd_risk_analizi_tablosu">Risk Analizi Tablosu</string>
-    <string name="rd_risk_analizi_tablosu_aciklama">Fine-Kinney veya 5×5 yöntemiyle ayrıntılı risk değerlendirmesi.</string>
+    <string name="rd_risk_analizi_tablosu_aciklama">Analizlerini Fine-Kinney veya 5×5 Matris ile hesapla, PDF ya da Excel olarak rapor oluştur ve paylaş.</string>
     <string name="rd_risk_analizi_deneme_kullanildi">Bir kez tanımlanan hakkını kullandın. Risk analizi tabloları Plus ile devam eder.</string>
     <string name="rd_tek_seferlik_deneme">TEK SEFERLİK ÜCRETSİZ DENEME</string>
     <string name="rd_tek_seferlik_deneme_aciklama">Hoş geldin, 1 risk analizi oluşturma hakkını hemen kullan!</string>
@@ -975,8 +976,10 @@
     <string name="rd_result_no_verified_reference">Doğrulanmış dayanak bulunmuyor.</string>
     <string name="rd_result_upgrade_plus_title">Analizini PLUS ve PRO ile güçlendir</string>
     <string name="rd_result_upgrade_pro_title">Analizini PRO ile güçlendir</string>
-    <string name="rd_result_upgrade_plus_body">Detaylı analiz, uzman görüşleri ve gelişmiş raporları aç.</string>
-    <string name="rd_result_upgrade_pro_body">Derin Araştırma ve sınırsız analiz özelliklerini aç.</string>
+    <string name="rd_result_upgrade_plus_body">Daha detaylı analiz, uzman görüşleri ve gelişmiş raporlar için PLUS’a; Derin Araştırma, daha güçlü yapay zekâ ve sınırsız analiz için PRO’ya geç.</string>
+    <string name="rd_result_upgrade_pro_body">Analizlerinde Derin Araştırma ve daha güçlü yapay zekâ modellerinden yararlan. PRO’ya geç; sınırsız analiz seni bekliyor.</string>
+    <string name="rd_result_explore_plans">Planları incele</string>
+    <string name="rd_result_upgrade_to_pro">PRO’ya geç</string>
     <string name="rd_result_premium_caption">Bu özellikler premium özelliktir.</string>
     <string name="rd_canvas_general">Genel</string>
     <string name="rd_canvas_ppe">KKD</string>

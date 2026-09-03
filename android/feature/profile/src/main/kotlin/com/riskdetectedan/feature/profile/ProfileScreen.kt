@@ -277,10 +277,11 @@ fun ProfileScreen(
                 // the summary only on an explicit close (Tamam / X), never on a plain swipe-away
                 // (see the LaunchedEffect above's doc comment for why that distinction matters).
                 pendingCelebrationBadge?.let { badge ->
-                    val sheetState = rememberModalBottomSheetState()
+                    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
                     ModalBottomSheet(
                         onDismissRequest = { pendingCelebrationBadge = null },
                         sheetState = sheetState,
+                        containerColor = colors.paper,
                     ) {
                         ProfessionalProgressCelebrationSheet(badge = badge) {
                             viewModel.markBadgeSeen(badge)

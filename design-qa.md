@@ -58,8 +58,6 @@
 
 final result: passed
 
----
-
 # Android Sector Selection and Start Scan Parity QA
 
 ## Comparison target
@@ -117,6 +115,141 @@ final result: passed
 - Two API 33 on-device Compose tests passed: initial expanded sector sheet and large-font onboarding subtitle visibility.
 - A locally signed production release was built and launched with the existing real app session; the corrected Home CTA was visually verified.
 - No Play Console upload was performed.
+
+## Open questions
+
+- None.
+
+## Follow-up polish
+
+- None required for this requested scope.
+
+final result: passed
+
+---
+
+# Android iOS Parity Design QA — Analysis Results
+
+Date: 2026-09-01
+
+## Grounding
+
+- Product source: `App/Views/Result/AnalysisResultHubView.swift`
+  - optional report selection state (`reportKind`) at line 69
+  - report sheet implementation near line 3135
+  - membership promotion implementation near line 2579
+- Finding detail source: `App/Views/Result/RiskDetailView.swift` near line 467
+- Progress celebration source: `App/Features/ProfessionalProgress/ProfessionalProgressCelebrationSheet.swift`
+- Reported Android states: the five screenshots attached to the implementation request.
+
+## Side-by-side visual evidence
+
+- Locked result cards: `output/design-qa/locked-cards-before-after.png`
+- Report creation sheet: `output/design-qa/report-sheet-before-after.png`
+- Finding membership promotion: `output/design-qa/finding-promotion-before-after.png`
+- Professional progress celebration: `output/design-qa/celebration-before-after.png`
+
+Each comparison was opened and visually inspected after the updated Android screenshot was placed beside the reported state.
+
+## Checklist
+
+- [x] Free Expert Opinion, Training Recommendation, and Approved Notebook cards expose only a two-word teaser; protected copy is blurred and removed from accessibility semantics.
+- [x] PLUS / PRO overlay and upgrade action match the iOS premium treatment.
+- [x] Result header uses the account avatar source and shows the correct Upgrade CTA for eligible tiers.
+- [x] Celebration content is compact; confetti starts above the content, flows downward continuously, and fades before the bottom edge.
+- [x] Standard Report is the compact option; Risk Analysis Table has stronger visual weight.
+- [x] No report type is selected initially and the primary action remains disabled until an explicit selection.
+- [x] Report action label is centered.
+- [x] Finding editor sheet drag is disabled so the inner scroll does not fight the bottom sheet.
+- [x] Finding detail membership promotion uses the iOS multi-plan gradient, PLUS / PRO badges, copy, and CTA treatment.
+- [x] Turkish and English resource generation is current.
+- [x] Roborazzi visual verification, profile unit tests, debug assemble, install, launch, and crash-log smoke check pass.
+
+final result: passed
+
+---
+
+# Android Notification and Dark Appearance QA
+
+Date: 2026-09-01
+
+## Grounding
+
+- Notification reference: the Android notification tray screenshot attached to the request and the native iOS notification behavior in `App/Services/NotificationService.swift`.
+- Dark result references: the three attached Android screenshots covering the report sheet, finding detail, and result-card states.
+- Product source: the existing RiskDetected logo assets, Android design tokens, `App/Views/Result/AnalysisResultHubView.swift`, and `App/Views/Result/RiskDetailView.swift`.
+
+## Side-by-side visual evidence
+
+- Report sheet reference versus corrected build: `output/design-qa/android-dark-report-reference-vs-build.png`
+- Finding detail reference versus corrected build: `output/design-qa/android-dark-finding-reference-vs-build.png`
+- Result page reference versus corrected build: `output/design-qa/android-dark-result-reference-vs-build.png`
+
+Each comparison was opened as a single combined image and inspected for contrast, hierarchy, clipping, spacing, CTA treatment, icon size, and header-logo visibility.
+
+## Checklist
+
+- [x] The result and main headers use a white brand mark in dark appearance and retain readable green-tinted avatar initials.
+- [x] Active report CTAs use the product green in dark appearance with black text and icons; disabled states remain visually distinct.
+- [x] The free risk-analysis entitlement ribbon has a visible amber border, icon, and text on the dark surface.
+- [x] Root-cause labels and body copy use a legible amber treatment instead of the low-contrast brown-on-brown state.
+- [x] Finding download, edit, delete, and share actions have larger touch surfaces and icons.
+- [x] The download subtitle wraps completely inside its action card instead of clipping.
+- [x] Existing dark profile and report-archive goldens were inspected; no additional P0/P1/P2 contrast defect was found in the requested scope.
+- [x] Foreground notifications use the complete full-colour app artwork plus the dedicated monochrome Android status mark.
+- [x] Background/killed-state FCM notifications use the same status mark and notification accent through manifest defaults.
+
+## Verification
+
+- `NotificationBrandingTest`: 2/2 checks passed, including foreground and background notification paths.
+- Four focused dark-appearance Roborazzi states were recorded and `verifyRoborazziDebug` passed.
+- `assembleDebug` completed successfully and `git diff --check` reported no whitespace errors.
+- The final APK installed successfully on the API 33 emulator and `MainActivity` completed a cold launch without a crash.
+- The debug environment's existing fail-closed runtime gate prevents a real authenticated-data walkthrough, so requested screen states were verified with deterministic Compose fixtures and combined visual comparisons.
+
+## Open questions
+
+- None.
+
+## Follow-up polish
+
+- None required for this requested scope.
+
+final result: passed
+
+---
+
+# Android Risk Analysis Report Card Fill QA
+
+Date: 2026-09-01
+
+## Comparison target
+
+- Source visual truth: `/var/folders/b8/1ntgctld0x9_wm3ms9cxkdtr0000gn/T/TemporaryItems/NSIRD_screencaptureui_5FFgI3/Ekran Resmi 2026-09-01 13.51.59.png`
+- Implementation screenshot: `android/feature/analysis/src/test/screenshots/debug/com.riskdetectedan.feature.analysis.AnalysisParityGoldenTest.free_risk_report_sheet_dark_has_legible_trial_and_themed_cta.png`
+- Full and focused side-by-side evidence: `output/design-qa/risk-report-card-fill-reference-vs-build.png`
+- State: dark appearance, Standard Report selected, Risk Analysis Table unselected, active report CTA.
+- Source pixels: `412 × 472`; implementation pixels: `1179 × 2556`; focused comparison: `2257 × 1200`. The implementation was cropped to the matching report-card region, then both regions were normalized to the same `1200 px` comparison height. Android golden viewport density remains the existing project baseline.
+
+## Findings and comparison history
+
+- Iteration 1 — P2: the emphasized Risk Analysis Table card kept its expanded height while its short subtitle and top-aligned radio occupied only the upper half, leaving an obvious empty lower region.
+- Fix: restored the complete iOS report explanation, vertically centered the emphasized row, increased the table icon from `48 dp` to `52 dp`, increased the radio from `26 dp` to `29 dp`, and tightened emphasized vertical padding from `16 dp` to `14 dp`.
+- Post-fix evidence: the title and three-line description now use the card body, while the icon and selection control share the card's optical center. The focused combined comparison contains no remaining P0/P1/P2 issue.
+
+## Required fidelity surfaces
+
+- Fonts and typography: existing rounded family and heavy title weight are preserved; the description uses `11.8 sp` with `15 sp` line height and no clipping.
+- Spacing and layout rhythm: visual weight is distributed across the full emphasized card; left asset, text block, and radio align around the same vertical center.
+- Colors and visual tokens: existing dark surface, multicolour emphasis border, icon gradient, muted secondary copy, and selection-state colors are unchanged.
+- Image and icon fidelity: the existing Material table icon is retained and scaled within its supplied gradient container; no placeholder or replacement asset was introduced.
+- Copy and content: Turkish and English descriptions now match the complete iOS report-table explanation, including PDF and Excel output context.
+
+## Verification
+
+- Focused Roborazzi record passed for both explicit-selection and dark report-sheet states.
+- The complete Turkish subtitle is asserted as visible in the dark report-sheet test.
+- No focused-region clipping, overflow, or unbalanced bottom whitespace remains.
 
 ## Open questions
 

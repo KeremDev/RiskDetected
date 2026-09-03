@@ -36,6 +36,7 @@ import com.riskdetectedan.core.data.analysis.AnalysisSectorPickerItem
 import com.riskdetectedan.core.data.profile.ProfileStats
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.data.profile.UserProfile
+import com.riskdetectedan.core.data.progress.ProfessionalProgressBadge
 import com.riskdetectedan.core.designsystem.RiskDetectedTheme
 import com.riskdetectedan.core.designsystem.RdPaywallDesignColor
 import com.riskdetectedan.core.designsystem.RdPaywallDesignGlyph
@@ -72,6 +73,7 @@ import com.riskdetectedan.feature.profile.AccountDeletionParityPreviewSurface
 import com.riskdetectedan.feature.profile.CompanyListParityPreviewSurface
 import com.riskdetectedan.feature.profile.ProfileParityPreviewSurface
 import com.riskdetectedan.feature.profile.ProfileLoadedSurface
+import com.riskdetectedan.feature.profile.ProfessionalProgressCelebrationSheet
 import com.riskdetectedan.feature.reports.ReportsParityPreviewSurface
 import org.junit.Rule
 import org.junit.Test
@@ -279,6 +281,32 @@ class OnboardingGoldenTest {
         }
         composeRule.waitForIdle()
         composeRule.mainClock.advanceTimeBy(1_400L)
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun professional_progress_celebration_is_compact_and_confetti_flows_light() {
+        composeRule.mainClock.autoAdvance = false
+        composeRule.setContent {
+            CompositionLocalProvider(LocalRdConfettiSnapshotElapsedMillis provides 1_800L) {
+                RiskDetectedLightOnlyTheme {
+                    ProfessionalProgressCelebrationSheet(
+                        badge = ProfessionalProgressBadge(
+                            id = "badge-1",
+                            badgeKey = "reports:1",
+                            badgeType = "reports",
+                            title = "İlk Adım",
+                            subtitle = "İlk raporunu oluşturdun. Mesleki takip izin başladı.",
+                            iconName = "medal.fill",
+                        ),
+                        onClose = {},
+                    )
+                }
+            }
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("İlk Adım").assertIsDisplayed()
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
 

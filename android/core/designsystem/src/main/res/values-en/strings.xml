@@ -281,6 +281,7 @@
     <string name="rd_siradaki_mdp_format">Next: %1$s (%2$d MDP remaining)</string>
     <string name="rd_professional_progress_target_format">Target: %1$s · %2$d MDP remaining</string>
     <string name="rd_report_sheet_title">Create and share your report</string>
+    <string name="rd_rapor_turu_secin">Select report type</string>
     <string name="rd_report_sheet_subtitle_format">%1$d/%2$d findings selected · PDF or Excel</string>
     <string name="rd_progress_stage_candidate">Candidate</string>
     <string name="rd_progress_stage_field">Field</string>
@@ -680,7 +681,7 @@
     <string name="rd_standart_rapor">Standard Report</string>
     <string name="rd_standart_rapor_aciklama">A quick nonconformity report containing findings, photos and recommended measures.</string>
     <string name="rd_risk_analizi_tablosu">Risk Analysis Table</string>
-    <string name="rd_risk_analizi_tablosu_aciklama">Detailed risk assessment using the Fine-Kinney or 5×5 method.</string>
+    <string name="rd_risk_analizi_tablosu_aciklama">Calculate with Fine-Kinney or 5×5 Matrix, then create and share a PDF or Excel report.</string>
     <string name="rd_risk_analizi_deneme_kullanildi">You have used your one-time risk assessment allowance. Upgrade to Plus to continue using risk assessment tables.</string>
     <string name="rd_tek_seferlik_deneme">ONE-TIME FREE TRIAL</string>
     <string name="rd_tek_seferlik_deneme_aciklama">Welcome, use your right to create 1 risk analysis now!</string>
@@ -966,8 +967,10 @@
     <string name="rd_result_no_verified_reference">No verified reference available.</string>
     <string name="rd_result_upgrade_plus_title">Power up your analysis with PLUS and PRO</string>
     <string name="rd_result_upgrade_pro_title">Power up your analysis with PRO</string>
-    <string name="rd_result_upgrade_plus_body">Unlock detailed analysis, expert opinions and advanced reports.</string>
-    <string name="rd_result_upgrade_pro_body">Unlock Deep Research and unlimited analysis features.</string>
+    <string name="rd_result_upgrade_plus_body">Choose PLUS for more detailed analysis, expert opinions and advanced reports; choose PRO for Deep Research, more powerful AI and unlimited analyses.</string>
+    <string name="rd_result_upgrade_pro_body">Use Deep Research and more powerful AI models in your analyses. Upgrade to PRO; unlimited analyses await.</string>
+    <string name="rd_result_explore_plans">Explore plans</string>
+    <string name="rd_result_upgrade_to_pro">Upgrade to PRO</string>
     <string name="rd_result_premium_caption">These features are premium.</string>
     <string name="rd_canvas_general">General</string>
     <string name="rd_canvas_ppe">PPE</string>

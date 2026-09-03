@@ -33,17 +33,18 @@ import com.riskdetectedan.core.designsystem.toTextStyle
 @Composable
 fun HomeHeaderAvatar(initials: String, tier: SubscriptionTier, avatarPath: String? = null, size: Int = 36) {
     val colors = RdTheme.colors
+    val isDark = RdTheme.isDark
     val sizeDp = size.dp
     Box(modifier = Modifier.size(sizeDp)) {
         Box(
             modifier = Modifier
                 .size(sizeDp)
                 .clip(CircleShape)
-                .background(Color(0xFFDDE5E0))
-                .border(1.dp, colors.white.copy(alpha = 0.55f), CircleShape),
+                .background(if (isDark) colors.resultGreenTintStrong else Color(0xFFDDE5E0))
+                .border(1.dp, colors.line, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Text(initials, style = RdFontStyle.Caption.toTextStyle(), color = colors.white)
+            Text(initials, style = RdFontStyle.Caption.toTextStyle(), color = if (isDark) colors.resultGreenDark else colors.onyx)
             if (!avatarPath.isNullOrBlank()) {
                 HomeAvatarImage(path = avatarPath, modifier = Modifier.clip(CircleShape))
             }

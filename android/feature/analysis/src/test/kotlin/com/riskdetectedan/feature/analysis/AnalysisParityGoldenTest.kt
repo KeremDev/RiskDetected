@@ -6,10 +6,14 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -94,6 +98,48 @@ class AnalysisParityGoldenTest {
     }
 
     @Test
+    fun pro_finding_detail_actions_dark() {
+        setResultContent(
+            capabilities = proCapabilities(),
+            reportState = ResultReportUiState.Idle,
+            darkTheme = true,
+        )
+        composeRule.onNodeWithText("Koruyucusuz hareketli makine parçası").performClick()
+
+        composeRule.onNode(hasContentDescription("Düzenle")).assertIsDisplayed()
+        composeRule.onNodeWithText("Raporu İndir").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun pro_finding_detail_root_cause_dark() {
+        setResultContent(
+            capabilities = proCapabilities(),
+            reportState = ResultReportUiState.Idle,
+            darkTheme = true,
+        )
+        composeRule.onNodeWithText("Koruyucusuz hareketli makine parçası").performClick()
+        composeRule.onAllNodes(hasScrollAction())[1]
+            .performScrollToNode(hasText("KÖK NEDEN", substring = true))
+
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun free_finding_detail_uses_ios_membership_promotion_light() {
+        setResultContent(
+            capabilities = PlanCapabilities.forTier(SubscriptionTier.Free),
+            reportState = ResultReportUiState.Idle,
+        )
+        composeRule.onNodeWithText("Koruyucusuz hareketli makine parçası").performClick()
+        composeRule.onAllNodes(hasScrollAction())[1]
+            .performScrollToNode(hasText("Analizini PLUS ve PRO ile güçlendir"))
+        composeRule.onNodeWithText("Planları incele").assertIsDisplayed()
+
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
     fun pro_result_dark() {
         setResultContent(
             capabilities = proCapabilities(),
@@ -109,6 +155,18 @@ class AnalysisParityGoldenTest {
         setResultContent(
             capabilities = proCapabilities(),
             reportState = ResultReportUiState.Idle,
+            resultHub = resultHub,
+        )
+
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun pro_result_hub_risk_analysis_dark() {
+        setResultContent(
+            capabilities = proCapabilities(),
+            reportState = ResultReportUiState.Idle,
+            darkTheme = true,
             resultHub = resultHub,
         )
 
@@ -138,6 +196,65 @@ class AnalysisParityGoldenTest {
         composeRule.onNodeWithText("Eğitim Önerileri").performClick()
         composeRule.onNodeWithText("İş ekipmanlarının güvenli kullanımı").assertIsDisplayed()
 
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun free_result_hub_uses_ios_premium_teasers_for_all_locked_sections() {
+        val teaserHub = resultHub.copy(
+            tier = "free",
+            sections = resultHub.sections.map { section ->
+                if (section.id == AnalysisResultSectionId.RiskAnalysis) section
+                else section.copy(access = AnalysisResultAccess.Teaser, canEdit = false, canReport = false)
+            },
+        )
+        setResultContent(
+            capabilities = PlanCapabilities.forTier(SubscriptionTier.Free),
+            reportState = ResultReportUiState.Idle,
+            resultHub = teaserHub,
+        )
+
+        composeRule.onNodeWithText("Uzman Görüşü").performClick()
+        composeRule.onNodeWithText("Koruyucu uygunluğunu…").assertIsDisplayed()
+        composeRule.onAllNodesWithText("Koruyucu uygunluğunu sahada teyit edin").assertCountEquals(0)
+        composeRule.onNodeWithText("Bu özellikler premium özelliktir.").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+
+        composeRule.onNodeWithText("Eğitim Önerileri").performClick()
+        composeRule.onNodeWithText("İş ekipmanlarının…").assertIsDisplayed()
+        composeRule.onAllNodesWithText("İş ekipmanlarının güvenli kullanımı").assertCountEquals(0)
+
+        composeRule.onNodeWithText("Onaylı Defter").performClick()
+        composeRule.onNodeWithText("Koruyucusuz ekipman…").assertIsDisplayed()
+        composeRule.onAllNodesWithText("Koruyucusuz ekipman gözlenmiştir. Uygun koruyucu takılmalıdır.").assertCountEquals(0)
+    }
+
+    @Test
+    fun risk_report_sheet_requires_an_explicit_report_type_selection() {
+        setResultContent(proCapabilities(), ResultReportUiState.Idle, reportSetup)
+        composeRule.onNodeWithText("Rapor Oluştur").performClick()
+
+        composeRule.onNodeWithText("Rapor türü seçin").assertIsDisplayed().assertIsNotEnabled()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+        composeRule.onNodeWithText("Standart Rapor").performClick()
+        composeRule.onAllNodesWithText("Rapor Oluştur")[1].assertIsDisplayed().assertIsEnabled()
+    }
+
+    @Test
+    fun free_risk_report_sheet_dark_has_legible_trial_and_themed_cta() {
+        setResultContent(
+            capabilities = PlanCapabilities.forTier(SubscriptionTier.Free),
+            reportState = ResultReportUiState.Idle,
+            darkTheme = true,
+            resultHub = resultHub.copy(tier = "free"),
+        )
+        composeRule.onNodeWithText("Rapor Oluştur").performClick()
+
+        composeRule.onNodeWithText("Hoş geldin, 1 risk analizi oluşturma hakkını hemen kullan!").assertIsDisplayed()
+        composeRule.onNodeWithText("Analizlerini Fine-Kinney veya 5×5 Matris ile hesapla, PDF ya da Excel olarak rapor oluştur ve paylaş.").assertIsDisplayed()
+        composeRule.onNodeWithText("Rapor türü seçin").assertIsDisplayed().assertIsNotEnabled()
+        composeRule.onNodeWithText("Standart Rapor").performClick()
+        composeRule.onAllNodesWithText("Rapor Oluştur")[1].assertIsDisplayed().assertIsEnabled()
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
 

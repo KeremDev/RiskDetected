@@ -102,12 +102,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -117,6 +119,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -468,6 +471,7 @@ internal fun IosParityResultView(
                 onBack = onBack,
                 profile = reportSetup.profile,
                 tier = reportSetup.profile?.tier ?: capabilities.tier,
+                onUpgrade = { tier -> onUpgradeTierAt(tier, "result_header_upgrade") },
             )
             if (resultHub?.enabled == true) {
                 ResultHubSurface(
@@ -1509,16 +1513,24 @@ private fun ResultHubItemCard(
                 item.categoryLabel?.takeIf(String::isNotBlank)?.let {
                     Text(it.localizedUppercase(), style = iosRounded(10f, FontWeight.Black), color = activeStrong, modifier = Modifier.padding(top = 12.dp))
                 }
-                Text(item.displayTitle, style = iosRounded(15f, FontWeight.Black), color = colors.resultPrimaryText, modifier = Modifier.padding(top = 8.dp))
-                Text(
-                    item.displayBody,
-                    style = iosRounded(12.5f),
-                    color = colors.resultSecondaryText,
-                    modifier = Modifier.padding(top = 8.dp),
-                    maxLines = if (access == AnalysisResultAccess.Teaser) 2 else 6,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (access == AnalysisResultAccess.Full) {
+                if (access == AnalysisResultAccess.Teaser) {
+                    ResultPremiumTextTeaser(
+                        title = item.displayTitle,
+                        body = item.displayBody,
+                        minimumBlurHeight = 148.dp,
+                        accent = activeAccent,
+                        onUpgrade = onUpgrade,
+                    )
+                } else {
+                    Text(item.displayTitle, style = iosRounded(15f, FontWeight.Black), color = colors.resultPrimaryText, modifier = Modifier.padding(top = 8.dp))
+                    Text(
+                        item.displayBody,
+                        style = iosRounded(12.5f),
+                        color = colors.resultSecondaryText,
+                        modifier = Modifier.padding(top = 8.dp),
+                        maxLines = 6,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                     val duration = listOfNotNull(item.durationLabel, item.durationValue)
                         .filter(String::isNotBlank)
                         .joinToString(" · ")
@@ -1533,15 +1545,25 @@ private fun ResultHubItemCard(
                     }
                 }
             } else {
-                Text(item.displayTitle, style = iosRounded(15f, FontWeight.Black), color = colors.resultPrimaryText, modifier = Modifier.padding(top = 12.dp))
-                Text(
-                    item.displayBody,
-                    style = iosRounded(12.5f),
-                    color = colors.resultSecondaryText,
-                    modifier = Modifier.padding(top = 8.dp),
-                    maxLines = if (access == AnalysisResultAccess.Teaser) 2 else 6,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                if (access == AnalysisResultAccess.Teaser && sectionId == AnalysisResultSectionId.ExpertRecommendations) {
+                    ResultPremiumTextTeaser(
+                        title = item.displayTitle,
+                        body = item.displayBody,
+                        minimumBlurHeight = 128.dp,
+                        accent = activeAccent,
+                        onUpgrade = onUpgrade,
+                    )
+                } else {
+                    Text(item.displayTitle, style = iosRounded(15f, FontWeight.Black), color = colors.resultPrimaryText, modifier = Modifier.padding(top = 12.dp))
+                    Text(
+                        item.displayBody,
+                        style = iosRounded(12.5f),
+                        color = colors.resultSecondaryText,
+                        modifier = Modifier.padding(top = 8.dp),
+                        maxLines = if (access == AnalysisResultAccess.Teaser) 2 else 6,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
             if (access == AnalysisResultAccess.Full && sectionId == AnalysisResultSectionId.RiskAnalysis && !corrective.isNullOrBlank()) {
                 Column(
@@ -1566,29 +1588,30 @@ private fun ResultHubItemCard(
             }
             if (access == AnalysisResultAccess.Full && sectionId == AnalysisResultSectionId.RiskAnalysis) {
                 val tags = buildList {
-                    if (!item.rootCauseText.isNullOrBlank()) add(stringResource(RdR.string.rd_result_tag_root_cause))
-                    if (item.recommendedMeasures.orEmpty().any { it.kind.equals("preventive", true) && it.text.isNotBlank() }) add(stringResource(RdR.string.rd_result_tag_preventive))
-                    if (!item.referencesText.isNullOrBlank() || !item.referenceText.isNullOrBlank()) add(stringResource(RdR.string.rd_result_tag_legislation))
+                    if (!item.rootCauseText.isNullOrBlank()) add(stringResource(RdR.string.rd_result_tag_root_cause) to true)
+                    if (item.recommendedMeasures.orEmpty().any { it.kind.equals("preventive", true) && it.text.isNotBlank() }) add(stringResource(RdR.string.rd_result_tag_preventive) to false)
+                    if (!item.referencesText.isNullOrBlank() || !item.referenceText.isNullOrBlank()) add(stringResource(RdR.string.rd_result_tag_legislation) to false)
                 }
                 if (tags.isNotEmpty()) {
                     Row(
                         Modifier.fillMaxWidth().padding(top = 12.dp).horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        tags.forEachIndexed { index, tag ->
+                        tags.forEach { (tag, isRootCause) ->
                             Text(
                                 tag,
                                 style = iosRounded(10.5f, FontWeight.Black),
-                                color = colors.resultPrimaryText,
+                                // A fixed dark ink keeps the amber chip readable in both themes.
+                                color = if (isRootCause) Color(0xFF5C4000) else colors.resultPrimaryText,
                                 modifier = Modifier.clip(RoundedCornerShape(3.dp))
-                                    .background(if (index == 0) Color(0xFFFFE89A) else colors.resultMintTint)
+                                    .background(if (isRootCause) Color(0xFFFFE89A) else colors.resultMintTint)
                                     .padding(horizontal = 6.dp, vertical = 4.dp),
                             )
                         }
                     }
                 }
             }
-            if (access == AnalysisResultAccess.Teaser) {
+            if (access == AnalysisResultAccess.Teaser && sectionId == AnalysisResultSectionId.RiskAnalysis) {
                 Column(Modifier.fillMaxWidth().padding(top = 12.dp).blur(3.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Box(Modifier.fillMaxWidth().height(11.dp).clip(RoundedCornerShape(4.dp)).background(colors.resultLine))
                     Box(Modifier.fillMaxWidth(.66f).height(11.dp).clip(RoundedCornerShape(4.dp)).background(colors.resultLine.copy(.7f)))
@@ -1657,6 +1680,77 @@ private fun ResultHubItemCard(
 }
 
 @Composable
+private fun ResultPremiumTextTeaser(
+    title: String,
+    body: String,
+    minimumBlurHeight: androidx.compose.ui.unit.Dp,
+    accent: Color,
+    onUpgrade: () -> Unit,
+) {
+    val colors = RdTheme.colors
+    Column(Modifier.fillMaxWidth().padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Text(
+            firstWords(title, 2),
+            style = iosRounded(14f, FontWeight.Black),
+            color = colors.resultPrimaryText,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Box(
+            Modifier.fillMaxWidth().heightIn(min = minimumBlurHeight).clip(RoundedCornerShape(10.dp))
+                .clickable(onClick = onUpgrade),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                Modifier.fillMaxWidth().heightIn(min = minimumBlurHeight).blur(5.5.dp).alpha(.72f).clearAndSetSemantics { },
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(title, style = iosRounded(13f, FontWeight.Bold), color = colors.resultPrimaryText, maxLines = 2)
+                Text(body, style = iosRounded(12f), color = colors.resultSecondaryText, maxLines = 6, overflow = TextOverflow.Ellipsis)
+                Box(Modifier.fillMaxWidth(.82f).height(10.dp).clip(CircleShape).background(accent.copy(.32f)))
+                Box(Modifier.fillMaxWidth(.58f).height(10.dp).clip(CircleShape).background(colors.resultLine))
+            }
+            ResultPremiumTeaserCallout(onUpgrade)
+        }
+    }
+}
+
+@Composable
+private fun ResultPremiumTeaserCallout(onUpgrade: () -> Unit) {
+    val colors = RdTheme.colors
+    Column(
+        Modifier.shadow(7.dp, RoundedCornerShape(13.dp))
+            .clip(RoundedCornerShape(13.dp))
+            .background(colors.resultElevatedSurface.copy(.96f))
+            .border(
+                1.6.dp,
+                Brush.linearGradient(
+                    listOf(Color(0xFFE8762A), Color(0xFFE0A828), Color(0xFF4FAE7A), Color(0xFF1F8F9C)),
+                ),
+                RoundedCornerShape(13.dp),
+            )
+            .clickable(onClick = onUpgrade)
+            .padding(horizontal = 18.dp, vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            Icon(Icons.Filled.WorkspacePremium, null, tint = Color(0xFFE0A828), modifier = Modifier.size(15.dp))
+            Text(stringResource(RdR.string.rd_plus).localizedUppercase(), style = iosRounded(12.5f, FontWeight.Black), color = Color(0xFFA67C12))
+            Box(Modifier.width(1.dp).height(14.dp).background(Color.Black.copy(.12f)))
+            Icon(Icons.Filled.Star, null, tint = colors.resultGreen, modifier = Modifier.size(15.dp))
+            Text(stringResource(RdR.string.rd_pro).localizedUppercase(), style = iosRounded(12.5f, FontWeight.Black), color = colors.resultGreenDark)
+        }
+        Text(
+            stringResource(RdR.string.rd_result_premium_caption),
+            style = iosRounded(10.5f, FontWeight.SemiBold),
+            color = colors.resultSecondaryText,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
 private fun ResultHubNotebookPaper(
     items: List<AnalysisResultHubItem>,
     access: AnalysisResultAccess,
@@ -1702,28 +1796,54 @@ private fun ResultHubNotebookPaper(
                 }
                 .padding(start = 50.dp, end = 15.dp, top = 14.dp, bottom = 18.dp),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(27.dp)) {
-                items.forEachIndexed { index, item ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.Top) {
-                        Text("${index + 1}-", style = iosRounded(13f, FontWeight.ExtraBold), color = strong, modifier = Modifier.width(18.dp), textAlign = TextAlign.End)
-                        Text(
-                            notebookCombinedText(item),
-                            style = iosRounded(12.5f, FontWeight.Medium).copy(lineHeight = 23.sp),
-                            color = colors.resultPrimaryText,
-                            modifier = Modifier.weight(1f).then(if (access == AnalysisResultAccess.Teaser) Modifier.blur(4.5.dp) else Modifier),
-                        )
+            if (access == AnalysisResultAccess.Teaser) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    items.firstOrNull()?.let { first ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.Top) {
+                            Text("1-", style = iosRounded(13f, FontWeight.ExtraBold), color = strong, modifier = Modifier.width(18.dp), textAlign = TextAlign.End)
+                            Text(
+                                firstWords(notebookCombinedText(first), 2),
+                                style = iosRounded(12.5f, FontWeight.Medium).copy(lineHeight = 23.sp),
+                                color = colors.resultPrimaryText,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                    Box(Modifier.fillMaxWidth().heightIn(min = 154.dp), contentAlignment = Alignment.Center) {
+                        Column(
+                            Modifier.fillMaxWidth().heightIn(min = 154.dp).blur(4.5.dp).alpha(.76f).clearAndSetSemantics { },
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                        ) {
+                            items.forEachIndexed { index, item ->
+                                Row(horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.Top) {
+                                    Text("${index + 1}-", style = iosRounded(13f, FontWeight.ExtraBold), color = strong, modifier = Modifier.width(18.dp), textAlign = TextAlign.End)
+                                    Text(
+                                        notebookCombinedText(item),
+                                        style = iosRounded(12.5f, FontWeight.Medium).copy(lineHeight = 23.sp),
+                                        color = colors.resultPrimaryText,
+                                        modifier = Modifier.weight(1f),
+                                        maxLines = 3,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                            }
+                        }
+                        ResultPremiumTeaserCallout(onUpgrade)
                     }
                 }
-            }
-            if (access == AnalysisResultAccess.Teaser) {
-                Column(
-                    Modifier.align(Alignment.Center).clip(RoundedCornerShape(12.dp)).background(colors.resultSurface.copy(.96f))
-                        .border(1.dp, accent.copy(.34f), RoundedCornerShape(12.dp)).padding(horizontal = 18.dp, vertical = 14.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(7.dp),
-                ) {
-                    Icon(Icons.Filled.Lock, null, tint = strong, modifier = Modifier.size(18.dp))
-                    Text(stringResource(RdR.string.rd_result_unlock_all), style = iosRounded(12f, FontWeight.ExtraBold), color = strong)
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(27.dp)) {
+                    items.forEachIndexed { index, item ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(9.dp), verticalAlignment = Alignment.Top) {
+                            Text("${index + 1}-", style = iosRounded(13f, FontWeight.ExtraBold), color = strong, modifier = Modifier.width(18.dp), textAlign = TextAlign.End)
+                            Text(
+                                notebookCombinedText(item),
+                                style = iosRounded(12.5f, FontWeight.Medium).copy(lineHeight = 23.sp),
+                                color = colors.resultPrimaryText,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -1793,6 +1913,12 @@ private fun firstSentence(text: String, maximumLength: Int = 170): String {
     return normalized.take(maximumLength).substringBeforeLast(' ', normalized.take(maximumLength)) + "…"
 }
 
+private fun firstWords(text: String, count: Int): String {
+    val words = text.trim().split(Regex("\\s+")).filter(String::isNotBlank)
+    val visible = words.take(count.coerceAtLeast(1)).joinToString(" ")
+    return if (words.size > count) "$visible…" else visible
+}
+
 @Composable
 private fun ResultHubReportBar(
     selectedSection: AnalysisResultSectionId,
@@ -1809,6 +1935,10 @@ private fun ResultHubReportBar(
     modifier: Modifier = Modifier,
 ) {
     val colors = RdTheme.colors
+    val isDark = RdTheme.isDark
+    val ctaContent = if (isDark) colors.onyx else Color.White
+    val ctaArrowSurface = if (isDark) colors.resultElevatedSurface else Color.White
+    val ctaArrowContent = if (isDark) Color.White else colors.onyx
     val enabled = when {
         section?.access == AnalysisResultAccess.Teaser -> true
         trainingWithoutReport -> !trainingPro
@@ -1848,7 +1978,7 @@ private fun ResultHubReportBar(
                 Modifier.weight(1f).height(50.dp)
                     .shadow(8.dp, RoundedCornerShape(14.dp), ambientColor = Color.Black.copy(.28f))
                     .clip(RoundedCornerShape(14.dp))
-                    .background(if (enabled) Color(0xFF111111) else Color(0xFF6D6D6D))
+                    .background(if (enabled) colors.cta else colors.resultLine)
                     .then(if (enabled) Modifier.clickable(onClick = action) else Modifier)
                     .padding(end = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -1858,12 +1988,12 @@ private fun ResultHubReportBar(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
                 ) {
-                    Icon(if (section?.access == AnalysisResultAccess.Teaser || trainingWithoutReport) Icons.Filled.Lock else Icons.Filled.Tune, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                    Icon(if (section?.access == AnalysisResultAccess.Teaser || trainingWithoutReport) Icons.Filled.Lock else Icons.Filled.Tune, null, tint = if (enabled) ctaContent else colors.resultTertiaryText, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(9.dp))
-                    Text(actionLabel, style = iosRounded(15.5f, FontWeight.Black), color = Color.White, maxLines = 1)
+                    Text(actionLabel, style = iosRounded(15.5f, FontWeight.Black), color = if (enabled) ctaContent else colors.resultTertiaryText, maxLines = 1)
                 }
-                Box(Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(Color.White), contentAlignment = Alignment.Center) {
-                    Icon(Icons.AutoMirrored.Filled.Send, null, tint = Color(0xFF111111), modifier = Modifier.size(17.dp))
+                Box(Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(if (enabled) ctaArrowSurface else colors.resultSubtleSurface), contentAlignment = Alignment.Center) {
+                    Icon(Icons.AutoMirrored.Filled.Send, null, tint = if (enabled) ctaArrowContent else colors.resultTertiaryText, modifier = Modifier.size(17.dp))
                 }
             }
         }
@@ -1945,6 +2075,7 @@ private fun IosParityFindingEditorSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
+        sheetGesturesEnabled = false,
         containerColor = colors.paper,
         dragHandle = null,
     ) {
@@ -2081,8 +2212,12 @@ private fun ParityResultHeader(
     onBack: (() -> Unit)?,
     profile: UserProfile?,
     tier: SubscriptionTier,
+    onUpgrade: (SubscriptionTier) -> Unit,
 ) {
     val colors = RdTheme.colors
+    val targetTier = if (tier == SubscriptionTier.Plus) SubscriptionTier.Pro else SubscriptionTier.Plus
+    val upgradeAccent = if (targetTier == SubscriptionTier.Pro) colors.resultGreen else colors.planPlus
+    val upgradeAccentDark = if (targetTier == SubscriptionTier.Pro) colors.resultGreenDark else colors.planPlusDark
     Row(
         Modifier.fillMaxWidth().height(64.dp).background(colors.resultElevatedSurface).padding(horizontal = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -2095,26 +2230,47 @@ private fun ParityResultHeader(
             painter = painterResource(RdR.drawable.rd_logo),
             contentDescription = "RiskDetected",
             contentScale = ContentScale.Fit,
+            // iOS templates the wordmark in dark appearance. The source PNG is predominantly
+            // black, so leaving it unmodified makes the Android header disappear at night.
+            colorFilter = if (RdTheme.isDark) ColorFilter.tint(Color.White) else null,
             modifier = Modifier.width(126.dp).height(36.dp),
         )
         Spacer(Modifier.weight(1f))
-        Box(Modifier.size(44.dp)) {
+        if (tier != SubscriptionTier.Pro) {
+            Row(
+                Modifier.shadow(8.dp, RoundedCornerShape(7.dp), ambientColor = upgradeAccent.copy(.24f), spotColor = upgradeAccent.copy(.24f))
+                    .clip(RoundedCornerShape(7.dp))
+                    .background(Brush.linearGradient(listOf(upgradeAccent, upgradeAccentDark)))
+                    .clickable { onUpgrade(targetTier) }
+                    .height(24.dp).padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Icon(Icons.Filled.ArrowCircleUp, null, tint = Color.White, modifier = Modifier.size(12.dp))
+                Text(stringResource(RdR.string.rd_yukselt), style = iosRounded(10.5f, FontWeight.SemiBold), color = Color.White)
+            }
+            Spacer(Modifier.width(8.dp))
+        }
+        Box(Modifier.size(40.dp)) {
             Box(
-                Modifier.align(Alignment.TopStart).size(40.dp).clip(CircleShape)
-                    .background(colors.resultGreenTint)
+                Modifier.fillMaxSize().clip(CircleShape)
+                    .background(if (RdTheme.isDark) colors.resultGreenTintStrong else Color(0xFFDDE5E0))
                     .border(1.dp, colors.resultLine, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     profile?.displayInitials?.takeIf { it != "—" } ?: "RD",
                     style = iosRounded(13f, FontWeight.Black),
-                    color = colors.resultPrimaryText,
+                    color = if (RdTheme.isDark) colors.resultGreenDark else colors.onyx,
                     maxLines = 1,
                 )
+                profile?.avatarUrl?.takeIf(String::isNotBlank)?.let { path ->
+                    AnalysisHeaderAvatarImage(path = path, modifier = Modifier.clip(CircleShape))
+                }
             }
             if (tier != SubscriptionTier.Free) {
                 Box(
-                    Modifier.align(Alignment.BottomEnd).size(19.dp).clip(CircleShape)
+                    Modifier.align(Alignment.BottomEnd).size(18.dp).clip(CircleShape)
                         .background(if (tier == SubscriptionTier.Plus) colors.planPlus else colors.resultGreen)
                         .border(1.5.dp, colors.resultElevatedSurface, CircleShape),
                     contentAlignment = Alignment.Center,
@@ -2654,32 +2810,33 @@ private fun FindingDetailSurface(
                 }
             }
             item {
-                Box(Modifier.fillMaxWidth().height(36.dp)) {
+                Box(Modifier.fillMaxWidth().height(44.dp)) {
                     Row(
-                        Modifier.fillMaxWidth().padding(horizontal = 20.dp).offset(y = (-20).dp),
+                        Modifier.fillMaxWidth().padding(horizontal = 16.dp).offset(y = (-24).dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(9.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         Row(
-                            Modifier.weight(1f).height(56.dp)
+                            Modifier.weight(1f).height(60.dp)
                                 .shadow(8.dp, RoundedCornerShape(18.dp), ambientColor = colors.resultPrimaryText.copy(.18f))
                                 .clip(RoundedCornerShape(18.dp)).background(colors.resultElevatedSurface)
-                                .clickable(onClick = onGenerateReport).padding(horizontal = 13.dp),
+                                .clickable(onClick = onGenerateReport).padding(horizontal = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
-                            Box(Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(colors.resultGreenTint), contentAlignment = Alignment.Center) {
-                                Icon(Icons.Filled.Download, null, tint = colors.resultGreenDark, modifier = Modifier.size(16.dp))
+                            Box(Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(colors.resultGreenTint), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Filled.Download, null, tint = colors.resultGreenDark, modifier = Modifier.size(21.dp))
                             }
+                            Spacer(Modifier.width(8.dp))
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                Text(stringResource(RdR.string.rd_result_download_report), style = iosRounded(13.5f, FontWeight.Black), color = colors.resultPrimaryText)
-                                Text(stringResource(RdR.string.rd_result_standard_report_caption), style = iosRounded(9.5f, FontWeight.Medium), color = colors.resultTertiaryText, maxLines = 1)
+                                Text(stringResource(RdR.string.rd_result_download_report), style = iosRounded(14.5f, FontWeight.Black), color = colors.resultPrimaryText, maxLines = 1)
+                                Text(stringResource(RdR.string.rd_result_standard_report_caption), style = iosRounded(8.8f, FontWeight.Medium, lineHeightMultiplier = 1f), color = colors.resultTertiaryText, maxLines = 3)
                             }
+                            Spacer(Modifier.width(4.dp))
                             Icon(Icons.Filled.KeyboardArrowRight, null, tint = colors.resultTertiaryText, modifier = Modifier.size(14.dp))
                         }
-                        DetailActionSquare(onEdit, colors.resultGreenDark) { Icon(Icons.Filled.Edit, stringResource(RdR.string.rd_result_edit), tint = colors.resultGreenDark, modifier = Modifier.size(17.dp)) }
-                        DetailActionSquare(onDelete, colors.criticalText) { Icon(Icons.Filled.DeleteOutline, stringResource(RdR.string.rd_sil), tint = colors.criticalText, modifier = Modifier.size(17.dp)) }
-                        DetailActionSquare(onShareReport, colors.resultGreenDark) { Icon(Icons.Filled.IosShare, stringResource(RdR.string.rd_result_share_report), tint = colors.resultGreenDark, modifier = Modifier.size(17.dp)) }
+                        DetailActionSquare(onEdit, colors.resultGreenDark) { Icon(Icons.Filled.Edit, stringResource(RdR.string.rd_result_edit), tint = colors.resultGreenDark, modifier = Modifier.size(20.dp)) }
+                        DetailActionSquare(onDelete, colors.criticalText) { Icon(Icons.Filled.DeleteOutline, stringResource(RdR.string.rd_sil), tint = colors.criticalText, modifier = Modifier.size(20.dp)) }
+                        DetailActionSquare(onShareReport, colors.resultGreenDark) { Icon(Icons.Filled.IosShare, stringResource(RdR.string.rd_result_share_report), tint = colors.resultGreenDark, modifier = Modifier.size(20.dp)) }
                     }
                 }
             }
@@ -2732,7 +2889,7 @@ private fun FindingDetailSurface(
             }
             finding.rootCauseText?.takeIf(String::isNotBlank)?.let { rootCause ->
                 item {
-                    ResultDetailBlock(Icons.Filled.FactCheck, stringResource(RdR.string.rd_kok_neden_dot), stringResource(RdR.string.rd_result_finding), stringResource(RdR.string.rd_result_root_cause_description), rootCause, Color(0xFFA66A13), colors.resultAmberTint)
+                    ResultDetailBlock(Icons.Filled.FactCheck, stringResource(RdR.string.rd_kok_neden_dot), stringResource(RdR.string.rd_result_finding), stringResource(RdR.string.rd_result_root_cause_description), rootCause, if (RdTheme.isDark) colors.sectionExpertStrong else Color(0xFFA66A13), colors.resultAmberTint)
                 }
             }
             val corrective = finding.recommendedMeasures.orEmpty().filter { !it.kind.equals("preventive", true) && it.text.isNotBlank() }
@@ -2859,8 +3016,8 @@ private fun DetailHeroButton(onClick: () -> Unit, content: @Composable () -> Uni
 private fun DetailActionSquare(onClick: () -> Unit, tint: Color, content: @Composable () -> Unit) {
     val colors = RdTheme.colors
     Box(
-        Modifier.size(44.dp).shadow(8.dp, RoundedCornerShape(14.dp), ambientColor = colors.resultPrimaryText.copy(.14f))
-            .clip(RoundedCornerShape(14.dp)).background(colors.resultElevatedSurface)
+        Modifier.size(48.dp).shadow(8.dp, RoundedCornerShape(15.dp), ambientColor = colors.resultPrimaryText.copy(.14f))
+            .clip(RoundedCornerShape(15.dp)).background(colors.resultElevatedSurface)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) { content() }
@@ -2896,22 +3053,100 @@ private fun ResultDetailBlock(
 private fun DetailMembershipPromotion(tier: SubscriptionTier, onUpgrade: (SubscriptionTier) -> Unit) {
     val colors = RdTheme.colors
     val target = if (tier == SubscriptionTier.Free) SubscriptionTier.Plus else SubscriptionTier.Pro
-    val accent = if (target == SubscriptionTier.Plus) colors.planPlusDark else colors.resultGreenDark
-    val tint = if (target == SubscriptionTier.Plus) colors.planPlusSoft else colors.resultGreenTint
+    val plusAndPro = tier == SubscriptionTier.Free
+    val borderColors = if (plusAndPro) {
+        listOf(Color(0xFFF0A400), Color(0xFFE8762A), Color(0xFF7259F5), Color(0xFF168FC7), Color(0xFF00AE73))
+    } else {
+        listOf(Color(0xFF7259F5), Color(0xFF168FC7), Color(0xFF00AE73))
+    }
+    val actionColors = if (plusAndPro) {
+        listOf(Color(0xFFD88A00), Color(0xFF7259F5), Color(0xFF168FC7), Color(0xFF00A86B))
+    } else {
+        listOf(Color(0xFF6656E8), Color(0xFF168FC7), Color(0xFF00A86B))
+    }
+    val cardShape = RoundedCornerShape(14.dp)
     Row(
-        Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 10.dp)
-            .clip(RoundedCornerShape(12.dp)).background(tint)
-            .border(1.dp, accent.copy(.30f), RoundedCornerShape(12.dp))
-            .clickable { onUpgrade(target) }.padding(13.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 12.dp)
+            .shadow(11.dp, cardShape, ambientColor = Color(0xFF6656E8).copy(.16f), spotColor = Color(0xFF168FC7).copy(.10f))
+            .clip(cardShape)
+            .background(
+                Brush.linearGradient(
+                    if (plusAndPro) {
+                        listOf(colors.resultAmberTint, colors.resultElevatedSurface, colors.resultBlueTint, colors.resultMintTint)
+                    } else {
+                        listOf(colors.resultElevatedSurface, colors.resultBlueTint, colors.resultMintTint)
+                    },
+                ),
+            )
+            .border(2.dp, Brush.linearGradient(borderColors), cardShape)
+            .clickable { onUpgrade(target) }.padding(14.dp),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Icon(if (target == SubscriptionTier.Plus) Icons.Filled.WorkspacePremium else Icons.Filled.Star, null, tint = accent, modifier = Modifier.size(20.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(stringResource(if (target == SubscriptionTier.Plus) RdR.string.rd_result_upgrade_plus_title else RdR.string.rd_result_upgrade_pro_title), style = iosRounded(12.5f, FontWeight.Black), color = colors.resultPrimaryText)
-            Text(stringResource(if (target == SubscriptionTier.Plus) RdR.string.rd_result_upgrade_plus_body else RdR.string.rd_result_upgrade_pro_body), style = iosRounded(10.5f, FontWeight.Medium), color = colors.resultSecondaryText)
+        Box(
+            Modifier.size(44.dp).shadow(9.dp, RoundedCornerShape(12.dp), ambientColor = Color(0xFF7259F5).copy(.28f))
+                .clip(RoundedCornerShape(12.dp)).background(Brush.linearGradient(actionColors)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(1.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (plusAndPro) Icon(Icons.Filled.WorkspacePremium, null, tint = Color.White, modifier = Modifier.size(13.dp))
+                Icon(Icons.Filled.Star, null, tint = Color.White, modifier = Modifier.size(if (plusAndPro) 13.dp else 18.dp))
+            }
         }
-        Icon(Icons.Filled.KeyboardArrowRight, null, tint = accent, modifier = Modifier.size(18.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Text(
+                stringResource(if (plusAndPro) RdR.string.rd_result_upgrade_plus_title else RdR.string.rd_result_upgrade_pro_title),
+                style = iosRounded(14f, FontWeight.Black),
+                color = colors.resultPrimaryText,
+                maxLines = if (plusAndPro) 2 else 1,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                if (plusAndPro) PremiumPlanBadge(
+                    text = stringResource(RdR.string.rd_plus).localizedUppercase(),
+                    icon = Icons.Filled.WorkspacePremium,
+                    colors = listOf(Color(0xFFF0A400), Color(0xFFE8762A)),
+                )
+                PremiumPlanBadge(
+                    text = stringResource(RdR.string.rd_pro).localizedUppercase(),
+                    icon = Icons.Filled.Star,
+                    colors = listOf(Color(0xFF7259F5), Color(0xFF168FC7), Color(0xFF00AE73)),
+                )
+            }
+            Text(
+                stringResource(if (plusAndPro) RdR.string.rd_result_upgrade_plus_body else RdR.string.rd_result_upgrade_pro_body),
+                style = iosRounded(11.25f, FontWeight.Medium),
+                color = colors.resultSecondaryText,
+            )
+            Row(
+                Modifier.height(28.dp).clip(CircleShape).background(Brush.linearGradient(actionColors)).padding(horizontal = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                Text(
+                    stringResource(if (plusAndPro) RdR.string.rd_result_explore_plans else RdR.string.rd_result_upgrade_to_pro),
+                    style = iosRounded(10.5f, FontWeight.Black),
+                    color = Color.White,
+                )
+                Icon(Icons.Filled.ArrowCircleUp, null, tint = Color.White, modifier = Modifier.size(12.dp))
+            }
+        }
+        Icon(Icons.Filled.KeyboardArrowRight, null, tint = Color(0xFF6656E8), modifier = Modifier.padding(top = 15.dp).size(16.dp))
+    }
+}
+
+@Composable
+private fun PremiumPlanBadge(
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    colors: List<Color>,
+) {
+    Row(
+        Modifier.height(20.dp).clip(CircleShape).background(Brush.linearGradient(colors)).padding(horizontal = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        Icon(icon, null, tint = Color.White, modifier = Modifier.size(8.dp))
+        Text(text, style = iosRounded(8.5f, FontWeight.Black, tracking = .5f), color = Color.White)
     }
 }
 
@@ -3050,7 +3285,12 @@ private fun ResultReportSettingsSheet(
     onGenerate: (ParityReportKind, ResultReportFormat, ResultReportCustomization) -> Unit,
 ) {
     val colors = RdTheme.colors
-    var kind by remember { mutableStateOf(ParityReportKind.Standard) }
+    val isRiskSection = sectionId == AnalysisResultSectionId.RiskAnalysis
+    val isDark = RdTheme.isDark
+    val ctaContent = if (isDark) colors.onyx else Color.White
+    var kind by remember(isRiskSection) {
+        mutableStateOf<ParityReportKind?>(if (isRiskSection) null else ParityReportKind.Standard)
+    }
     var format by remember { mutableStateOf(ResultReportFormat.Pdf) }
     var selectedCompanyId by remember(initialCompanyId) { mutableStateOf(initialCompanyId) }
     val selectedCompany = companies.firstOrNull { it.id == selectedCompanyId }
@@ -3062,7 +3302,7 @@ private fun ResultReportSettingsSheet(
     var certificateNumber by remember(profile?.id) { mutableStateOf(profile?.certificateNumber.orEmpty()) }
     var showOverrides by remember { mutableStateOf(false) }
     var showCompanyPicker by remember { mutableStateOf(false) }
-    val isRiskSection = sectionId == AnalysisResultSectionId.RiskAnalysis
+    val canGenerate = selectedCount > 0 && (!isRiskSection || kind != null)
     val maximumSheetHeight = (LocalConfiguration.current.screenHeightDp * .92f).dp
     val context = LocalContext.current
     val logoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -3183,6 +3423,7 @@ private fun ResultReportSettingsSheet(
                             icon = Icons.Filled.Description,
                             title = stringResource(RdR.string.rd_standart_rapor),
                             subtitle = stringResource(RdR.string.rd_standart_rapor_aciklama),
+                            emphasized = false,
                             onClick = { kind = ParityReportKind.Standard; format = ResultReportFormat.Pdf },
                         )
                     }
@@ -3194,6 +3435,7 @@ private fun ResultReportSettingsSheet(
                                 icon = Icons.Filled.TableChart,
                                 title = stringResource(RdR.string.rd_risk_analizi_tablosu),
                                 subtitle = stringResource(RdR.string.rd_risk_analizi_tablosu_aciklama),
+                                emphasized = true,
                                 onClick = { kind = ParityReportKind.RiskAnalysis },
                             )
                         }
@@ -3263,35 +3505,46 @@ private fun ResultReportSettingsSheet(
             }
             if (!showCompanyPicker) Button(
                 onClick = {
-                    onGenerate(
-                        kind,
-                        format,
-                        ResultReportCustomization(
-                            companyId = selectedCompanyId,
-                            companyName = companyName,
-                            companyInfo = companyInfo,
-                            companyLogoBytes = companyLogoBytes,
-                            preparedBy = preparedBy,
-                            preparedTitle = preparedTitle,
-                            certificateNumber = certificateNumber,
-                        ),
-                    )
+                    kind?.let { selectedKind ->
+                        onGenerate(
+                            selectedKind,
+                            format,
+                            ResultReportCustomization(
+                                companyId = selectedCompanyId,
+                                companyName = companyName,
+                                companyInfo = companyInfo,
+                                companyLogoBytes = companyLogoBytes,
+                                preparedBy = preparedBy,
+                                preparedTitle = preparedTitle,
+                                certificateNumber = certificateNumber,
+                            ),
+                        )
+                    }
                 },
+                enabled = canGenerate,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp).height(58.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF111111), contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colors.cta,
+                    contentColor = ctaContent,
+                    disabledContainerColor = colors.resultLine,
+                    disabledContentColor = colors.resultTertiaryText,
+                ),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 18.dp),
             ) {
-                Icon(Icons.Filled.Download, null, modifier = Modifier.size(20.dp))
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    when {
-                        kind == ParityReportKind.Standard -> stringResource(RdR.string.rd_rapor_olustur)
-                        format == ResultReportFormat.Excel -> stringResource(RdR.string.rd_excel_risk_tablosu_olustur)
-                        else -> stringResource(RdR.string.rd_risk_analizi_pdf_olustur)
-                    },
-                    style = iosRounded(17f, FontWeight.SemiBold),
-                    modifier = Modifier.weight(1f),
-                )
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.Download, null, modifier = Modifier.align(Alignment.CenterStart).size(20.dp))
+                    Text(
+                        when {
+                            kind == null -> stringResource(RdR.string.rd_rapor_turu_secin)
+                            kind == ParityReportKind.Standard -> stringResource(RdR.string.rd_rapor_olustur)
+                            format == ResultReportFormat.Excel -> stringResource(RdR.string.rd_excel_risk_tablosu_olustur)
+                            else -> stringResource(RdR.string.rd_risk_analizi_pdf_olustur)
+                        },
+                        style = iosRounded(15.5f, FontWeight.Black),
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
         }
     }
@@ -3501,25 +3754,60 @@ private fun CompanyPickerRow(title: String, subtitle: String, selected: Boolean,
 }
 
 @Composable
-private fun ReportOptionCard(selected: Boolean, icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
+private fun ReportOptionCard(
+    selected: Boolean,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    emphasized: Boolean,
+    onClick: () -> Unit,
+) {
     val colors = RdTheme.colors
+    val shape = RoundedCornerShape(15.dp)
+    val idleBorder = if (emphasized) {
+        Brush.linearGradient(listOf(Color(0xFFE8762A), Color(0xFFE0A828), Color(0xFF4FAE7A), Color(0xFF1F8F9C)))
+    } else {
+        Brush.linearGradient(listOf(colors.line, colors.line))
+    }
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 104.dp).shadow(if (selected) 14.dp else 0.dp, RoundedCornerShape(20.dp), ambientColor = colors.green.copy(.12f), spotColor = colors.green.copy(.12f))
-            .clip(RoundedCornerShape(20.dp)).background(if (selected) colors.greenSoft.copy(.65f) else colors.white)
-            .border(if (selected) 1.4.dp else 1.dp, if (selected) colors.green.copy(.55f) else colors.line, RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick).padding(horizontal = 18.dp, vertical = if (selected) 18.dp else 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        Modifier.fillMaxWidth().heightIn(min = if (emphasized) 120.dp else 78.dp)
+            .shadow(if (selected) 12.dp else 0.dp, shape, ambientColor = colors.green.copy(.12f), spotColor = colors.green.copy(.12f))
+            .clip(shape).background(if (selected) colors.greenSoft.copy(.65f) else colors.white)
+            .border(if (selected) 2.2.dp else if (emphasized) 1.8.dp else 1.2.dp, if (selected) Brush.linearGradient(listOf(colors.green, colors.greenDark)) else idleBorder, shape)
+            .clickable(onClick = onClick).padding(horizontal = 15.dp, vertical = if (emphasized) 14.dp else 13.dp),
+        verticalAlignment = if (emphasized) Alignment.CenterVertically else Alignment.Top,
     ) {
-        Box(Modifier.size(58.dp).clip(RoundedCornerShape(15.dp)).background(if (selected) colors.green else colors.greenSoft), contentAlignment = Alignment.Center) {
-            Icon(icon, null, tint = if (selected) colors.white else colors.greenDark, modifier = Modifier.size(25.dp))
+        Box(
+            Modifier.size(if (emphasized) 52.dp else 48.dp).clip(RoundedCornerShape(10.dp)).background(
+                when {
+                    selected -> Brush.linearGradient(listOf(colors.green, colors.greenDark))
+                    emphasized -> Brush.linearGradient(listOf(Color(0xFFE9A62C), Color(0xFF2C9B82)))
+                    else -> Brush.linearGradient(listOf(colors.greenSoft, colors.greenSoft))
+                },
+            ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, null, tint = if (selected || emphasized) colors.white else colors.greenDark, modifier = Modifier.size(if (emphasized) 25.dp else 23.dp))
         }
         Spacer(Modifier.width(14.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(title, style = iosRounded(17f, FontWeight.Bold), color = colors.black)
-            Text(subtitle, style = iosRounded(13.5f), color = colors.slate, maxLines = 3)
+        Column(
+            Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Text(title, style = iosRounded(14.5f, FontWeight.Black), color = colors.black, maxLines = 2)
+            Text(
+                subtitle,
+                style = if (emphasized) {
+                    iosRounded(11.8f, FontWeight.Medium).copy(lineHeight = 15.sp)
+                } else {
+                    iosRounded(11.5f, FontWeight.Medium)
+                },
+                color = colors.slate,
+                maxLines = if (emphasized) 4 else 2,
+            )
         }
-        Box(Modifier.size(24.dp).clip(CircleShape).border(2.dp, if (selected) colors.green else colors.slate.copy(.32f), CircleShape).background(if (selected) colors.green else Color.Transparent), contentAlignment = Alignment.Center) {
-            if (selected) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(15.dp))
+        Box(Modifier.size(if (emphasized) 29.dp else 26.dp).clip(CircleShape).border(1.5.dp, if (selected) colors.green else colors.line, CircleShape).background(if (selected) colors.green else colors.white), contentAlignment = Alignment.Center) {
+            if (selected) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(if (emphasized) 17.dp else 15.dp))
         }
     }
 }
@@ -3527,17 +3815,24 @@ private fun ReportOptionCard(selected: Boolean, icon: androidx.compose.ui.graphi
 @Composable
 private fun FreeTrialRibbon() {
     val colors = RdTheme.colors
+    val isDark = RdTheme.isDark
+    val accent = if (isDark) colors.sectionExpertStrong else colors.planPlusDark
+    val ribbonGradient = if (isDark) {
+        listOf(colors.resultAmberTint, colors.resultSurface)
+    } else {
+        listOf(colors.planPlusSoft.copy(.98f), colors.white.copy(.96f))
+    }
     Row(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp))
-            .background(Brush.linearGradient(listOf(colors.planPlusSoft.copy(.98f), colors.white.copy(.96f))))
-            .border(1.dp, colors.planPlus.copy(.34f), RoundedCornerShape(18.dp)).padding(horizontal = 16.dp, vertical = 9.dp),
+            .background(Brush.linearGradient(ribbonGradient))
+            .border(1.dp, colors.planPlus.copy(if (isDark) .62f else .34f), RoundedCornerShape(18.dp)).padding(horizontal = 16.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(9.dp),
     ) {
-        Box(Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(colors.white.copy(.72f)), contentAlignment = Alignment.Center) {
-            Icon(Icons.Filled.WorkspacePremium, null, tint = colors.planPlusDark, modifier = Modifier.size(15.dp))
+        Box(Modifier.size(28.dp).clip(RoundedCornerShape(9.dp)).background(colors.resultElevatedSurface), contentAlignment = Alignment.Center) {
+            Icon(Icons.Filled.WorkspacePremium, null, tint = accent, modifier = Modifier.size(15.dp))
         }
-        Text(stringResource(RdR.string.rd_tek_seferlik_deneme_aciklama), style = iosRounded(13.5f, FontWeight.Bold), color = colors.planPlusDark, modifier = Modifier.weight(1f), maxLines = 2)
+        Text(stringResource(RdR.string.rd_tek_seferlik_deneme_aciklama), style = iosRounded(13.5f, FontWeight.Bold), color = accent, modifier = Modifier.weight(1f), maxLines = 2)
     }
 }
 

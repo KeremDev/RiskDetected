@@ -29,6 +29,14 @@
         <meta-data
             android:name="firebase_crashlytics_collection_enabled"
             android:value="${firebaseCrashlyticsCollectionEnabled}" />
+        <!-- FCM renders background/killed-state notifications itself. These defaults keep that
+             system-rendered path visually identical to our foreground notification path. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_launcher_monochrome" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/rd_notification_accent" />
 
         <!--
           Ç1 (review doc): no certificate pinning in v1 — Network Security Config +
