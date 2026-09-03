@@ -1,6 +1,12 @@
+import {
+  type ApprovedNotebookItemClass,
+  isStrictTurkishNotebookAdvisory,
+  notebookAdvisoryFallback,
+} from "./approved-notebook-advisory-language.ts";
+
 export const APPROVED_NOTEBOOK_PROJECTION_VERSION =
   "approved-notebook-projection-v2";
-export const APPROVED_NOTEBOOK_TEMPLATE_TR = "approved-notebook-tr-v2";
+export const APPROVED_NOTEBOOK_TEMPLATE_TR = "approved-notebook-tr-v3-advisory";
 export const SAFETY_LOG_TEMPLATE_EN = "safety-log-en-v2";
 
 export type ResultHubLanguage = "tr" | "en";
@@ -49,6 +55,11 @@ export type ApprovedNotebookProjection = {
   recommendation_text: string;
   reference_text: string | null;
   display_order: number;
+};
+
+export type ApprovedNotebookAdvisory = {
+  source_finding_id: string;
+  advisory_text: string;
 };
 
 type Group = {
@@ -362,6 +373,7 @@ function recommendationText(
   finding: ProjectorFinding,
   language: ResultHubLanguage,
   metadata?: V4ResultMetadata,
+  advisory?: ApprovedNotebookAdvisory,
 ): string {
   const itemClass = finding.item_class ??
     (finding.is_scored === false ? "verification_request" : "observed_finding");
@@ -379,30 +391,36 @@ function recommendationText(
         pathValue(metadata?.internal_priority, [["notebook_oneri"]]),
       )
       : "";
-    if (registryOneri) return sentence(registryOneri);
+    if (
+      registryOneri &&
+      (language !== "tr" || isStrictTurkishNotebookAdvisory(registryOneri))
+    ) return sentence(registryOneri);
+  }
+
+  // Onaylı Defter is an employer-facing recommendation, not the operational
+  // command shown in Risk Analizi. Turkish rows therefore never fall through
+  // to recommended_action: they use the canonical style-only sidecar, or a
+  // conservative class-specific advisory while that sidecar self-heals.
+  if (language === "tr") {
+    const canonical = sanitizeNotebookContentText(advisory?.advisory_text);
+    if (isStrictTurkishNotebookAdvisory(canonical)) return canonical;
+    return notebookAdvisoryFallback(itemClass as ApprovedNotebookItemClass);
   }
 
   const actions = uniqueSentences(actionTexts(finding));
-  const fallback = language === "tr"
-    ? "Uygun mühendislik ve organizasyonel kontroller belirlenerek uygulanmalıdır."
-    : "Appropriate engineering and organisational controls should be identified and implemented.";
+  const fallback =
+    "Appropriate engineering and organisational controls should be identified and implemented.";
   const joined = actions.join(" ") || fallback;
 
   if (itemClass === "verification_request") {
-    return language === "tr"
-      ? `Saha doğrulaması yapılmalı; uygunsuzluk belirlenirse ${
-        joined.charAt(0).toLocaleLowerCase("tr-TR")
-      }${joined.slice(1)}`
-      : `Field verification should be completed; if a nonconformity is confirmed, ${
-        joined.charAt(0).toLowerCase()
-      }${joined.slice(1)}`;
+    return `Field verification should be completed; if a nonconformity is confirmed, ${
+      joined.charAt(0).toLowerCase()
+    }${joined.slice(1)}`;
   }
   if (itemClass === "assurance_requirement") {
     // No registry-authored line -- a v4 legacy assurance item, or an English
     // report. Falls back to what shipped before.
-    return language === "tr"
-      ? `İlgili güvence kayıt, ölçüm veya yetkili saha kontrolüyle doğrulanmalıdır. ${joined}`
-      : `The relevant assurance should be verified through records, measurement, or an authorised field check. ${joined}`;
+    return `The relevant assurance should be verified through records, measurement, or an authorised field check. ${joined}`;
   }
   return joined;
 }
@@ -439,6 +457,7 @@ export async function projectApprovedNotebookEntries(params: {
   language: ResultHubLanguage;
   findings: ProjectorFinding[];
   metadata?: V4ResultMetadata[];
+  advisories?: ApprovedNotebookAdvisory[];
 }): Promise<ApprovedNotebookProjection[]> {
   const metadataByFinding = new Map(
     (params.metadata ?? [])
@@ -446,6 +465,9 @@ export async function projectApprovedNotebookEntries(params: {
       .map((item) => [item.public_finding_id as string, item]),
   );
   const groups = new Map<string, Group>();
+  const advisoryByFinding = new Map(
+    (params.advisories ?? []).map((row) => [row.source_finding_id, row]),
+  );
 
   for (const row of params.findings) {
     if (!row.id || !sanitizeNotebookText(row.title)) continue;
@@ -490,7 +512,12 @@ export async function projectApprovedNotebookEntries(params: {
     ).join(" ");
     const recommendations = uniqueSentences(
       group.rows.map((row) =>
-        recommendationText(row, params.language, metadataByFinding.get(row.id))
+        recommendationText(
+          row,
+          params.language,
+          metadataByFinding.get(row.id),
+          advisoryByFinding.get(row.id),
+        )
       ),
     ).join(" ");
     const references = uniqueSentences(

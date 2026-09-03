@@ -32,11 +32,12 @@ import {
   FIXED_OBSERVATION_BASIS,
   type V4ItemRow,
 } from "../_shared/approved-book/index.ts";
+import type { TrainingItemRow } from "../_shared/training-recommendations/index.ts";
 import {
-  hazardClassFrom,
-  type TrainingItemRow,
-  trainingRecommendationsFor,
-} from "../_shared/training-recommendations/index.ts";
+  buildTrainingCardSnapshots,
+  persistTrainingCardSnapshots,
+} from "../_shared/training-recommendations/snapshot.ts";
+import type { ApprovedNotebookAdvisoryRow } from "../_shared/approved-notebook-advisory-snapshot.ts";
 import { userFacingCopy } from "../_shared/user-facing-copy.ts";
 
 const corsHeaders = {
@@ -282,31 +283,6 @@ async function buildApprovedBookSection(
   }
 }
 
-/**
- * Stable id per catalogue code.
- *
- * Training cards are derived rather than stored, so their ids have to be a pure
- * function of the analysis and the catalogue code. That keeps a reaction on
- * "Yüksekte Güvenli Çalışma" pointing at the same card across reloads without
- * a table to keep in sync.
- */
-function trainingCardID(analysisID: string, catalogCode: string): string {
-  let hash = 0x811c9dc5;
-  for (const char of `${analysisID}|${catalogCode}`) {
-    hash ^= char.codePointAt(0) ?? 0;
-    hash = Math.imul(hash, 0x01000193) >>> 0;
-  }
-  const seed = hash.toString(16).padStart(8, "0");
-  const body = `${seed}${analysisID.replace(/-/g, "").slice(0, 24)}`.slice(
-    0,
-    32,
-  )
-    .padEnd(32, "0");
-  return `${body.slice(0, 8)}-${body.slice(8, 12)}-5${body.slice(13, 16)}-a${
-    body.slice(17, 20)
-  }-${body.slice(20, 32)}`;
-}
-
 /** Stable per-cluster id, distinct from the v2 id space. */
 async function bookEntryID(
   analysisID: string,
@@ -357,11 +333,26 @@ async function loadAuthoritativeSections(context: Context) {
   const metadata =
     (Array.isArray(metadataData) ? metadataData : []) as V4ResultMetadata[];
 
+  const { data: advisoryData, error: advisoryError } = await context.supabase
+    .rpc("result_hub_list_notebook_advisories_v1", {
+      p_user_id: context.userID,
+      p_analysis_id: context.analysis.id,
+      p_language: context.language,
+    });
+  if (advisoryError) {
+    throw new Error(`notebook_advisory_fetch_failed:${advisoryError.message}`);
+  }
+  const advisories =
+    (Array.isArray(advisoryData)
+      ? advisoryData
+      : []) as ApprovedNotebookAdvisoryRow[];
+
   const projected = await projectApprovedNotebookEntries({
     analysisID: String(context.analysis.id),
     language: context.language,
     findings: findings as ProjectorFinding[],
     metadata,
+    advisories,
   });
   const templateVersion = context.language === "tr"
     ? APPROVED_NOTEBOOK_TEMPLATE_TR
@@ -408,34 +399,33 @@ async function loadAuthoritativeSections(context: Context) {
     ? []
     : await buildApprovedBookSection(context, metadata);
 
-  // Training recommendations are derived, not stored: the same analysis and the
-  // same catalogue always produce the same cards, so persisting them would only
-  // add a copy to keep in sync. Ids are stable per catalogue code so reactions
-  // and selections keep pointing at the same card.
+  // The mobile response remains derived from canonical V4 metadata. The exact
+  // output is also persisted as an idempotent snapshot for admin/reporting
+  // consumers that cannot execute this TypeScript catalogue engine.
   // The statutory hours split on the workplace hazard class, which no
   // photograph shows. It arrives only from a company the user bound to this
   // analysis; without one the card states all three classes rather than
   // asserting a class nobody declared.
-  const training = trainingRecommendationsFor({
-    sectorId: cleanString(context.analysis.analysis_sector, 64) || null,
-    hazardClass: hazardClassFrom(
-      safeObject(context.analysis.companies).hazard_class,
-    ),
+  const training = buildTrainingCardSnapshots({
+    analysisID: String(context.analysis.id),
+    sectorID: cleanString(context.analysis.analysis_sector, 64) || null,
+    hazardClass: safeObject(context.analysis.companies).hazard_class,
     rows: metadata as unknown as TrainingItemRow[],
-  }).map((card) => ({
-    id: trainingCardID(String(context.analysis.id), card.catalogCode),
-    catalog_code: card.catalogCode,
-    title: card.title,
-    category_label: card.categoryLabel,
-    audience_label: card.audienceLabel,
-    text: card.text,
-    group_code: card.groupCode,
-    duration_label: card.duration?.label ?? null,
-    duration_value: card.duration?.value ?? null,
-    duration_note: card.duration?.note ?? null,
-    source_finding_ids: card.sourceItemIds,
-    display_order: card.displayOrder,
-  }));
+  });
+  try {
+    await persistTrainingCardSnapshots(context.supabase, {
+      userID: context.userID,
+      analysisID: String(context.analysis.id),
+      cards: training,
+    });
+  } catch (error) {
+    // Snapshot availability must not hide otherwise valid mobile results. The
+    // analysis workers write the same snapshot, and this path self-heals gaps.
+    console.warn(
+      "training snapshot refresh skipped",
+      cleanString(error instanceof Error ? error.message : error, 180),
+    );
+  }
 
   const { data: feedbackData } = await context.supabase
     .rpc("result_hub_feedback_for_analysis", {

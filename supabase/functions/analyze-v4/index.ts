@@ -75,6 +75,8 @@ import {
   type TargetedGroup,
   targetedPrompt,
 } from "./targeted-queue.ts";
+import { refreshTrainingCardSnapshot } from "../_shared/training-recommendations/snapshot.ts";
+import { refreshApprovedNotebookAdvisories } from "../_shared/approved-notebook-advisory-snapshot.ts";
 
 type JobBody = Record<string, unknown> & {
   __worker?: boolean;
@@ -497,7 +499,9 @@ async function analyzePhoto(params: {
           thinking: params.retryThinking,
           prompt: languageContractCorrection(params.prompt),
         });
-      } else if (!schemaRetryAdded && error.code === "provider_schema_invalid") {
+      } else if (
+        !schemaRetryAdded && error.code === "provider_schema_invalid"
+      ) {
         schemaRetryAdded = true;
         attempts.push({
           kind: "technical_retry",
@@ -569,7 +573,9 @@ function boundedVisibleItems(
     !["observed_finding", "assurance_requirement", "verification_request"]
       .includes(item.item_class)
   );
-  const findings = items.filter((item) => item.item_class === "observed_finding");
+  const findings = items.filter((item) =>
+    item.item_class === "observed_finding"
+  );
   const unscored = items.filter((item) =>
     ["assurance_requirement", "verification_request"].includes(item.item_class)
   );
@@ -839,8 +845,8 @@ serve(async (req) => {
       );
       const freeThinkingLevel =
         typeof engineConfig.v5_gemini_thinking_level === "string"
-          ? engineConfig.v5_gemini_thinking_level as typeof config
-            .geminiThinkingLevel
+          ? engineConfig
+            .v5_gemini_thinking_level as typeof config.geminiThinkingLevel
           : config.geminiThinkingLevel;
       const outputs = await Promise.all(photos.map(async (photo) => {
         const attemptID = crypto.randomUUID();
@@ -1105,8 +1111,9 @@ serve(async (req) => {
               row.result === "tehlike_var"
             ).map((row) => row.layer),
             layers_without_finding: unfulfilledHazardLayers(entry.output),
-            records_findings_absorbing_hazards:
-              recordsFindingsAbsorbingHazards(entry.output),
+            records_findings_absorbing_hazards: recordsFindingsAbsorbingHazards(
+              entry.output,
+            ),
             findings_per_hazard_layer: entry.output.layer_scan.filter((row) =>
                 row.result === "tehlike_var"
               ).length > 0
@@ -1148,7 +1155,9 @@ serve(async (req) => {
             // length ceiling is its own; MAX_TOKENS means we capped it. Six
             // runs sat within 4% of 3200 visible tokens against a 32768 budget
             // and the cause was being deduced rather than read.
-            finish_reasons: outputs.map((entry) => entry.finishReason),
+            finish_reasons: outputs.map((entry) =>
+              entry.finishReason
+            ),
             stopped_naturally: outputs.every((entry) =>
               entry.finishReason === "STOP"
             ),
@@ -1726,6 +1735,42 @@ serve(async (req) => {
         `v4_finalize_failed:${
           safe(finalizeError?.message ?? finalized?.state)
         }`,
+      );
+    }
+    try {
+      await refreshTrainingCardSnapshot(supabase, {
+        userID,
+        analysisID,
+      });
+    } catch (snapshotError) {
+      // The committed analysis remains authoritative. Result-hub reads retry
+      // the same deterministic projection if this best-effort write fails.
+      console.warn(
+        "v4 training snapshot skipped",
+        safe(
+          snapshotError instanceof Error
+            ? snapshotError.message
+            : snapshotError,
+          240,
+        ),
+      );
+    }
+    try {
+      await refreshApprovedNotebookAdvisories(supabase, {
+        userID,
+        analysisID,
+      });
+    } catch (snapshotError) {
+      // The operational Risk Analizi result is already committed. Notebook
+      // prose is an isolated, best-effort projection and must never fail it.
+      console.warn(
+        "v4 notebook advisory snapshot skipped",
+        safe(
+          snapshotError instanceof Error
+            ? snapshotError.message
+            : snapshotError,
+          240,
+        ),
       );
     }
     return json(200, {

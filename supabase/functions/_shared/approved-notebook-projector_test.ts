@@ -122,7 +122,7 @@ Deno.test("same asset and mechanism in different regions stay separate", async (
   assertEquals(entries.length, 2);
 });
 
-Deno.test("projector prefers concise primary action and is deterministic", async () => {
+Deno.test("projector prefers canonical notebook advice and is deterministic", async () => {
   const input = {
     analysisID: "11111111-1111-4111-8111-111111111111",
     language: "tr" as const,
@@ -140,14 +140,20 @@ Deno.test("projector prefers concise primary action and is deterministic", async
           "1. Birinci teknik adım. 2. İkinci teknik adım. 3. Üçüncü teknik adım.",
       }],
     }],
+    advisories: [{
+      source_finding_id: "22222222-2222-4222-8222-222222222222",
+      advisory_text:
+        "Erişimin durdurulması ve uygun kenar koruması kurulması önerilmektedir.",
+    }],
   };
   const first = await projectApprovedNotebookEntries(input);
   const second = await projectApprovedNotebookEntries(input);
   assertEquals(first, second);
   assertEquals(
     first[0].recommendation_text,
-    "Erişimi durdurun ve uygun kenar koruması kurun.",
+    "Erişimin durdurulması ve uygun kenar koruması kurulması önerilmektedir.",
   );
+  assert(!first[0].recommendation_text.includes("durdurun"));
 });
 
 Deno.test("unverified standard identifiers never leak from source prose", async () => {
@@ -184,8 +190,10 @@ Deno.test("registry-authored notebook line replaces the generic template and the
       id: "55555555-5555-4555-8555-555555555555",
       item_class: "assurance_requirement",
       is_scored: false,
-      title: "Basınçlı Kap ve Hava Tankı — Periyodik Kontrol, Basınç Deneyi ve Kalan Ömür Doğrulaması",
-      description: "Sahada basınçlı kap görülmektedir. (uzun uzman paragrafı burada devam eder)",
+      title:
+        "Basınçlı Kap ve Hava Tankı — Periyodik Kontrol, Basınç Deneyi ve Kalan Ömür Doğrulaması",
+      description:
+        "Sahada basınçlı kap görülmektedir. (uzun uzman paragrafı burada devam eder)",
       recommended_action:
         "Rapor mevcutsa; “1,5 kat yapıldı” ifadesine tek başına güvenmeyin. Yıllık veya üç yıllık/onarım sonrası hangi rejimin uygulandığını, test basıncının etiket ve tasarım dosyasından nasıl türetildiğini, test ortamı/sıcaklığı/hava tahliyesini, kalibrasyonlu referans manometreyi ve deformasyon-kaçak kabul kriterlerini inceleyin.",
       display_order: 0,
@@ -198,7 +206,8 @@ Deno.test("registry-authored notebook line replaces the generic template and the
         expert_family: "pressure_vessel",
         notebook_tespit:
           "Sahada basınçlı kap veya hava tankı bulunmakta, periyodik kontrol ve basınç deneyi kaydı doğrulanmamıştır.",
-        notebook_oneri: "Hidrostatik test ve et kalınlığı ölçüm raporu istenmelidir.",
+        notebook_oneri:
+          "Hidrostatik test ve et kalınlığı ölçüm raporunun istenmesi önerilmektedir.",
       },
     }],
   });
@@ -209,7 +218,7 @@ Deno.test("registry-authored notebook line replaces the generic template and the
   );
   assertEquals(
     entries[0].recommendation_text,
-    "Hidrostatik test ve et kalınlığı ölçüm raporu istenmelidir.",
+    "Hidrostatik test ve et kalınlığı ölçüm raporunun istenmesi önerilmektedir.",
   );
   // Neither the generic "saha veya kayıt teyidi gerektirmektedir" template nor
   // the specialist card's long paragraph reaches the reader.
@@ -220,10 +229,7 @@ Deno.test("registry-authored notebook line replaces the generic template and the
   assert(entries[0].recommendation_text.length < 100);
 });
 
-Deno.test("assurance items without a registry line keep the prior behaviour", async () => {
-  // A v4 legacy item, or a model-sourced records finding the registry never
-  // covered: no internal_priority.notebook_tespit/notebook_oneri, so the
-  // generic template and the short model action still apply.
+Deno.test("assurance items without a registry line use strict advisory fallback", async () => {
   const entries = await projectApprovedNotebookEntries({
     analysisID: "66666666-6666-4666-8666-666666666666",
     language: "tr",
@@ -238,17 +244,21 @@ Deno.test("assurance items without a registry line keep the prior behaviour", as
   });
   assertEquals(entries.length, 1);
   assert(entries[0].finding_text.includes("saha veya kayıt teyidi"));
-  assert(entries[0].recommendation_text.includes("İlgili güvence kayıt"));
+  assertEquals(
+    entries[0].recommendation_text,
+    "İlgili kayıt, ölçüm ve yetkili saha kontrollerinin doğrulanması önerilmektedir.",
+  );
 });
 
 // --------------------------------------------------------------------------
-// The operator: only Onaylı Defter, not the model or Risk Analizi. A scored
-// finding's recommendation stays whatever recommended_action says -- v5
-// never touches immediate_control's register, and the notebook doesn't
-// either.
+// The operator: only Onaylı Defter, not the model or Risk Analizi. The
+// operational recommended_action remains the input, while the notebook reads
+// its own canonical advisory sentence.
 // --------------------------------------------------------------------------
 
-Deno.test("scored finding's recommendation is recommended_action, untouched", async () => {
+Deno.test("scored finding uses notebook sidecar without mutating risk action", async () => {
+  const riskAction =
+    "İşçiyi derhal tank üzerinden güvenli bir platforma indirin ve çalışmayı durdurun.";
   const entries = await projectApprovedNotebookEntries({
     analysisID: "88888888-8888-4888-8888-888888888888",
     language: "tr",
@@ -259,17 +269,23 @@ Deno.test("scored finding's recommendation is recommended_action, untouched", as
       title: "Silindirik Tank Üzerinde Korkuluksuz Yüksekte Çalışma",
       description:
         "İşçi, yüksek konumdaki silindirik metal tankın üzerinde korkuluk olmaksızın çalışmaktadır.",
-      recommended_action:
-        "İşçiyi derhal tank üzerinden güvenli bir platforma indirin ve çalışmayı durdurun.",
+      recommended_action: riskAction,
       fk_band: "critical",
       display_order: 0,
+    }],
+    advisories: [{
+      source_finding_id: "99999999-9999-4999-8999-999999999999",
+      advisory_text:
+        "İşçinin derhal tank üzerinden güvenli bir platforma indirilmesi ve çalışmanın durdurulması önerilmektedir.",
     }],
   });
   assertEquals(entries.length, 1);
   assertEquals(
     entries[0].recommendation_text,
-    "İşçiyi derhal tank üzerinden güvenli bir platforma indirin ve çalışmayı durdurun.",
+    "İşçinin derhal tank üzerinden güvenli bir platforma indirilmesi ve çalışmanın durdurulması önerilmektedir.",
   );
+  assertEquals(riskAction.includes("indirin"), true);
+  assertEquals(entries[0].recommendation_text.includes("indirin"), false);
 });
 
 Deno.test("teaser returns only the first bounded sentence", () => {

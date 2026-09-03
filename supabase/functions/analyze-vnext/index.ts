@@ -59,6 +59,8 @@ import {
   shouldUseOpenAILunaBackground,
   targetedProviderTimeoutMs,
 } from "../_shared/provider-execution-policy.ts";
+import { refreshTrainingCardSnapshot } from "../_shared/training-recommendations/snapshot.ts";
+import { refreshApprovedNotebookAdvisories } from "../_shared/approved-notebook-advisory-snapshot.ts";
 
 type JobBody = Record<string, unknown> & {
   analysis_id?: string;
@@ -2217,6 +2219,32 @@ serve(async (req) => {
         `finalize_v3_failed:${
           safeText(finalizeError?.message ?? finalized?.state)
         }`,
+      );
+    }
+    try {
+      await refreshTrainingCardSnapshot(supabase, {
+        userID,
+        analysisID,
+      });
+    } catch (snapshotError) {
+      // Finalization is already committed. Keep the analysis successful and
+      // let the result-hub load path self-heal this idempotent projection.
+      console.warn(
+        "vNext training snapshot skipped",
+        safeText(snapshotError, 240),
+      );
+    }
+    try {
+      await refreshApprovedNotebookAdvisories(supabase, {
+        userID,
+        analysisID,
+      });
+    } catch (snapshotError) {
+      // Legacy/vNext routing may still complete older jobs. It gets the same
+      // isolated notebook projection without changing its analysis payload.
+      console.warn(
+        "vNext notebook advisory snapshot skipped",
+        safeText(snapshotError, 240),
       );
     }
     if (!checkpointOnlyRefinalize) {

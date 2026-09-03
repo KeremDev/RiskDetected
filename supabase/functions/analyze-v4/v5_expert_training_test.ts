@@ -5,10 +5,7 @@ import {
 } from "https://deno.land/std@0.208.0/testing/asserts.ts";
 import { parseV5Output, routeV5Findings } from "./v5-engine.ts";
 import { V5_RESPONSE_SCHEMA } from "./v5-contracts.ts";
-import {
-  EXPERT_ASSET_FAMILIES,
-  V5_LAYER_BOOK_CODES,
-} from "./v5-taxonomy.ts";
+import { EXPERT_ASSET_FAMILIES, V5_LAYER_BOOK_CODES } from "./v5-taxonomy.ts";
 import {
   EXPERT_REGISTRY,
   expertRecommendationsFor,
@@ -107,7 +104,10 @@ Deno.test("uzman kartı gözlem, gereklilik ve dayanak taşır", () => {
 
 Deno.test("her kayıt cümlesi noktayla biter ve boş kalmaz", () => {
   const built = expertRecommendationsFor(Object.keys(EXPERT_REGISTRY));
-  assertEquals(built.recommendations.length, Object.keys(EXPERT_REGISTRY).length);
+  assertEquals(
+    built.recommendations.length,
+    Object.keys(EXPERT_REGISTRY).length,
+  );
   for (const card of built.recommendations) {
     assert(card.title.length > 8, card.family);
     assert(card.text.length > 120, card.family);
@@ -151,7 +151,7 @@ Deno.test("her kayıt kendi defter cümlesini taşır, uzman paragrafından kesi
 // --------------------------------------------------------------------------
 
 const IMPERATIVE_VERB_ENDING = /(?:in|ın|ün|un|yin|yın|yün|yun)\.$/u;
-const ADVISORY_ENDING = /(?:önerilmektedir|tavsiye edilmektedir|gerekmektedir)\.$/u;
+const ADVISORY_ENDING = /(?:önerilmektedir|tavsiye edilmektedir)\.$/u;
 
 Deno.test("kayıt defteri önerisi tavsiye kipinde biter, emir kipinde değil", () => {
   const built = expertRecommendationsFor(Object.keys(EXPERT_REGISTRY));
@@ -196,7 +196,10 @@ Deno.test("kapalı listedeki 22 ailenin tamamı kayıt defterinde", () => {
 // --------------------------------------------------------------------------
 
 Deno.test("şema ekipman ailelerini kapalı listeyle dayatır", () => {
-  const schema = V5_RESPONSE_SCHEMA as unknown as Record<string, any>;
+  const schema = V5_RESPONSE_SCHEMA as unknown as {
+    properties: { observed_assets: { items: { enum: unknown[] } } };
+    required: string[];
+  };
   assertEquals(
     schema.properties.observed_assets.items.enum.length,
     EXPERT_ASSET_FAMILIES.length,
@@ -354,7 +357,9 @@ Deno.test("kapalı alan, gürültü-titreşim-toz ve elle taşıma katmanları a
       photoIndex: 1,
       output: parseV5Output(
         envelope({
-          findings: [finding({ finding_key: `layer-${layer}`, layers: [layer] })],
+          findings: [
+            finding({ finding_key: `layer-${layer}`, layers: [layer] }),
+          ],
           scan: [{ layer: 1, result: "tehlike_var", note: "İşçi görülüyor." }, {
             layer,
             result: "tehlike_var",
