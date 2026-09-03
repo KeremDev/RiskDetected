@@ -7,7 +7,7 @@ on:
         description: "Play Console'da kullanılmamış versionCode"
         required: true
         type: string
-        default: "9"
+        default: "10"
 
 permissions:
   contents: read
@@ -36,19 +36,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify combined mobile release coordinates
+      - name: Verify Android release coordinates
+        env:
+          EXPECTED_VERSION_CODE: ${{ inputs.expected_version_code }}
         run: |
-          grep -q 'versionCode = 9' android/app/build.gradle.kts
+          actual=$(sed -n 's/^[[:space:]]*versionCode = \([0-9][0-9]*\)$/\1/p' android/app/build.gradle.kts)
+          test "$actual" = "$EXPECTED_VERSION_CODE"
           grep -q 'versionName = "2.0.0"' android/app/build.gradle.kts
-          grep -q 'MARKETING_VERSION = 2.0.0' RiskDetected.xcodeproj/project.pbxproj
-          grep -q 'CURRENT_PROJECT_VERSION = 88' RiskDetected.xcodeproj/project.pbxproj
 
-      - name: Verify closed-test release notes
+      - name: Verify production release notes
         run: |
           test "$(wc -m < android/play-store/metadata/2.0.0/release-notes-tr.txt)" -le 500
           test "$(wc -m < android/play-store/metadata/2.0.0/release-notes-en.txt)" -le 500
-          grep -q 'Kapalı test grubumuzun geri dönüşlerine istinaden' android/play-store/metadata/2.0.0/release-notes-tr.txt
-          grep -q 'Based on feedback from our closed testing group' android/play-store/metadata/2.0.0/release-notes-en.txt
+          grep -q 'Kapalı test kullanıcılarımızın geri bildirimleri doğrultusunda' android/play-store/metadata/2.0.0/release-notes-tr.txt
+          grep -q 'Based on feedback from our closed-test users' android/play-store/metadata/2.0.0/release-notes-en.txt
 
       - uses: denoland/setup-deno@v2
         with:
@@ -58,11 +59,33 @@ jobs:
       - name: Deno format and changed-worker lint
         run: |
           deno fmt --check \
+            supabase/functions/_shared/approved-notebook-advisory-language.ts \
+            supabase/functions/_shared/approved-notebook-advisory-language_test.ts \
+            supabase/functions/_shared/approved-notebook-advisory-snapshot.ts \
+            supabase/functions/_shared/approved-notebook-advisory-snapshot_test.ts \
+            supabase/functions/_shared/approved-notebook-projector.ts \
+            supabase/functions/_shared/approved-notebook-projector_test.ts \
+            supabase/functions/_shared/training-recommendations/snapshot.ts \
+            supabase/functions/_shared/training-recommendations/snapshot_test.ts \
+            supabase/functions/analyze-v4/index.ts \
+            supabase/functions/analyze-v4/v5_expert_training_test.ts \
+            supabase/functions/analyze-vnext/index.ts \
             supabase/functions/analysis-result-sections/index.ts \
             supabase/functions/analysis-result-sections/index_static_test.ts \
             supabase/functions/app-release-policy/index.ts \
             supabase/functions/app-release-policy/index_static_test.ts
           deno lint --rules-exclude=no-import-prefix,no-explicit-any \
+            supabase/functions/_shared/approved-notebook-advisory-language.ts \
+            supabase/functions/_shared/approved-notebook-advisory-language_test.ts \
+            supabase/functions/_shared/approved-notebook-advisory-snapshot.ts \
+            supabase/functions/_shared/approved-notebook-advisory-snapshot_test.ts \
+            supabase/functions/_shared/approved-notebook-projector.ts \
+            supabase/functions/_shared/approved-notebook-projector_test.ts \
+            supabase/functions/_shared/training-recommendations/snapshot.ts \
+            supabase/functions/_shared/training-recommendations/snapshot_test.ts \
+            supabase/functions/analyze-v4/index.ts \
+            supabase/functions/analyze-v4/v5_expert_training_test.ts \
+            supabase/functions/analyze-vnext/index.ts \
             supabase/functions/analysis-result-sections/index.ts \
             supabase/functions/analysis-result-sections/index_static_test.ts \
             supabase/functions/app-release-policy/index.ts \
@@ -206,18 +229,41 @@ jobs:
           test -n "$actual"
           test "$actual" = "$expected"
 
-      - name: Verify production admits the closed-test build
+      - name: Verify production admits the release build
+        env:
+          EXPECTED_VERSION_CODE: ${{ inputs.expected_version_code }}
         run: |
+          payload=$(jq -cn --arg build "$EXPECTED_VERSION_CODE" '{
+            client_platform:"android",
+            client_app_version:"2.0.0",
+            client_app_build:$build,
+            api_contract_version:3,
+            client_capabilities:{
+              multi_photo_analysis:true,
+              multi_photo_coverage_v2:true,
+              editable_findings:true,
+              report_snapshot_v2:true,
+              safety_claim_v4_scoreless:true,
+              analysis_result_hub_v1:true,
+              global_localization_wave1:true
+            },
+            app_language:"en",
+            content_locale:"en-US",
+            work_jurisdiction_country:"US",
+            safety_profile_id:"en-us-generic-v1",
+            safety_profile_version:1,
+            android_legal_context:null
+          }')
           response=$(curl --fail --silent --show-error \
             -H "apikey: $RD_PRODUCTION_SUPABASE_PUBLISHABLE_KEY" \
             -H "Authorization: Bearer $RD_PRODUCTION_SUPABASE_PUBLISHABLE_KEY" \
             -H "Content-Type: application/json" \
             "$RD_PRODUCTION_SUPABASE_URL/functions/v1/app-release-policy" \
-            --data '{"client_platform":"android","client_app_version":"2.0.0","client_app_build":"9","api_contract_version":3,"client_capabilities":{"multi_photo_analysis":true,"multi_photo_coverage_v2":true,"editable_findings":true,"report_snapshot_v2":true,"safety_claim_v4_scoreless":true,"analysis_result_hub_v1":true,"global_localization_wave1":true},"app_language":"en","content_locale":"en-US","work_jurisdiction_country":"US","safety_profile_id":"en-us-generic-v1","safety_profile_version":1,"android_legal_context":null}')
-          jq -e '
+            --data "$payload")
+          jq -e --argjson expected "$EXPECTED_VERSION_CODE" '
             .ok == true and
             .policy.hard_update_enabled == false and
-            .android_runtime_gates.evaluated_version_code == 9 and
+            .android_runtime_gates.evaluated_version_code == $expected and
             ([
               .android_runtime_gates.client.enabled,
               .android_runtime_gates.auth.enabled,
@@ -247,7 +293,7 @@ jobs:
       - name: Upload release candidate evidence
         uses: actions/upload-artifact@v4
         with:
-          name: riskdetected-android-2.0.0-vc9-release-candidate
+          name: riskdetected-android-2.0.0-vc${{ inputs.expected_version_code }}-release-candidate
           retention-days: 30
           if-no-files-found: error
           path: |

@@ -1,1 +1,1 @@
-2.0.0 (9) — Tester Geri Bildirim Güncellemesi
+2.0.0 (10) — İlk Üretim Sürümü

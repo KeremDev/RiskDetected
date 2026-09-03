@@ -1,7 +1,5 @@
-Kapalı test grubumuzun geri dönüşlerine istinaden yeni düzenlemeler yapıldı.
-
-• Analiz sektör seçim paneli ilk açılışta tam görünür hale getirildi
-• Ana sayfadaki Taramayı Başlat butonu iOS ile aynı ikon düzenine getirildi
-• Onboarding sektör kartlarında kesilen açıklamalar düzeltildi
-• Analiz sonucu yönlendirmeleri, bulgu detay/aksiyonları ve rapor ekranları iyileştirildi
-• Profil, paywall, lokalizasyon, performans ve kararlılık geliştirmeleri yapıldı
+Kapalı test kullanıcılarımızın geri bildirimleri doğrultusunda:
+• Analiz sonuçları, bulgu detayları ve kilitli içerik kartları yenilendi.
+• Rapor oluşturma, PDF/Excel çıktıları ve Onaylı Defter metinleri iyileştirildi.
+• Ana sayfa, profil, ilk kullanım, üyelik ekranları ve koyu tema geliştirildi.
+• Bildirimler, yönlendirmeler ve genel uygulama kararlılığı iyileştirildi.
