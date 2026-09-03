@@ -99,6 +99,13 @@ class OnboardingGoldenTest {
         compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0f),
     )
 
+    // The profile artwork contains translucent gradients whose native Skia result differs by a
+    // single channel value on Linux. This tightly bounded option is used by that capture only;
+    // the rest of the release golden suite stays exact-pixel.
+    private val crossPlatformGradientOptions = RoborazziOptions(
+        compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.000003f),
+    )
+
     @Test
     fun splash_light() {
         composeRule.setContent {
@@ -729,7 +736,7 @@ class OnboardingGoldenTest {
         assertEquals(1, analysesOpened)
         composeRule.onAllNodesWithText("Aday Uzman")[0].performClick()
         assertEquals(1, titlesOpened)
-        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+        composeRule.onRoot().captureRoboImage(roborazziOptions = crossPlatformGradientOptions)
     }
 
     @Test

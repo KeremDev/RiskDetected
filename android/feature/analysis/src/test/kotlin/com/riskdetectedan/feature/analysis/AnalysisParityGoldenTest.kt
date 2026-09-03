@@ -58,6 +58,13 @@ class AnalysisParityGoldenTest {
         compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0f),
     )
 
+    // Native Skia rounds the multi-stop gradients in this sheet by 1-2 channel values between
+    // macOS and Linux. Keep the allowance below any visible/layout delta and scoped to this one
+    // cross-platform capture; every other release golden remains exact-pixel.
+    private val crossPlatformGradientOptions = RoborazziOptions(
+        compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.000003f),
+    )
+
     @Test
     fun analysis_waiting_polling_light() {
         composeRule.mainClock.autoAdvance = false
@@ -255,7 +262,7 @@ class AnalysisParityGoldenTest {
         composeRule.onNodeWithText("Rapor türü seçin").assertIsDisplayed().assertIsNotEnabled()
         composeRule.onNodeWithText("Standart Rapor").performClick()
         composeRule.onAllNodesWithText("Rapor Oluştur")[1].assertIsDisplayed().assertIsEnabled()
-        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+        composeRule.onRoot().captureRoboImage(roborazziOptions = crossPlatformGradientOptions)
     }
 
     @Test
