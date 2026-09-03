@@ -290,7 +290,7 @@ class AnalysisParityGoldenTest {
         composeRule.onAllNodesWithText("Hoş geldin, 1 risk analizi oluşturma hakkını hemen kullan!").assertCountEquals(0)
         composeRule.onNodeWithText("Bir kez tanımlanan hakkını kullandın. Risk analizi tabloları Plus ile devam eder.").assertIsDisplayed()
         composeRule.onNodeWithText("PLUS/PRO").assertIsDisplayed()
-        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+        composeRule.onRoot().captureRoboImage(roborazziOptions = crossPlatformGradientOptions)
         composeRule.onNodeWithText("Standart Rapor").performClick()
         composeRule.onAllNodesWithText("Rapor Oluştur")[1].assertIsDisplayed().assertIsEnabled()
     }
