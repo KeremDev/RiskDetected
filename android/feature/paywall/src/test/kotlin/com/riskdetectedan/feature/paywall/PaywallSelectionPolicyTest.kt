@@ -77,10 +77,17 @@ class PaywallSelectionPolicyTest {
 
     @Test
     fun `result paywall coordinates retain the exact clicked component`() {
+        assertEquals("analysis_results", paywallEntrySurface("result_header_upgrade"))
+        assertEquals("header_upgrade_cta", paywallEntryComponent("result_header_upgrade"))
         assertEquals("result_summary_hint", paywallEntryComponent("result_summary_upgrade_hint"))
         assertEquals("confidence_chip", paywallEntryComponent("result_confidence_chip"))
         assertEquals("finding_card_locked_feature", paywallEntryComponent("result_finding_locked_feature"))
         assertEquals("locked_finding_preview", paywallEntryComponent("result_locked_finding_preview"))
+        assertEquals("finding_detail", paywallEntrySurface("finding_detail_plus_pro_promotion"))
+        assertEquals("finding_detail_membership_promotion", paywallEntryComponent("finding_detail_plus_pro_promotion"))
+        assertEquals("finding_detail_membership_promotion", paywallEntryComponent("finding_detail_pro_promotion"))
         assertEquals("regulatory_references_lock", paywallEntryComponent("finding_detail_regulatory_references"))
+        assertEquals("analysis_results", paywallEntrySurface("result_report_company_picker"))
+        assertEquals("company_picker_lock", paywallEntryComponent("result_report_company_picker"))
     }
 }

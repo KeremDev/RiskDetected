@@ -178,6 +178,7 @@ class PaywallViewModel @Inject constructor(
         entryPoint: String? = null,
         entryTargetTier: String? = null,
         entryItemId: String? = null,
+        entryAttributes: Map<String, String> = emptyMap(),
     ) {
         if (didBegin) return
         didBegin = true
@@ -195,7 +196,7 @@ class PaywallViewModel @Inject constructor(
             analysisId = resultHubAnalysisId,
             resultSection = resultSection?.takeIf(String::isNotBlank),
             itemId = entryItemId?.takeIf(String::isNotBlank),
-            attributes = mapOf("client_platform" to "android"),
+            attributes = entryAttributes + ("client_platform" to "android"),
         )
         authRepository.currentUserId?.let { userId ->
             recordEvent(
@@ -439,29 +440,27 @@ class PaywallViewModel @Inject constructor(
         purchaseError: String? = null,
         billing: PaywallBilling? = null,
     ) {
-        viewModelScope.launch {
-            paywallEventRepository.record(
-                event = event,
-                userId = userId,
-                funnelSessionId = funnelSessionId,
-                selectedTier = selectedTier,
-                billing = billing?.wireValue ?: billingPackage?.productId?.let {
-                    when {
-                        it.contains("yearly", ignoreCase = true) -> "yearly"
-                        it.contains("monthly", ignoreCase = true) -> "monthly"
-                        else -> null
-                    }
-                },
-                productIdentifier = billingPackage?.productId,
-                metadata = PaywallEventMetadata(
-                    currentTier = ((_state.value as? PaywallUiState.Loaded)?.currentTier)
-                        ?.name?.lowercase() ?: "unknown",
-                    selectedPackageId = billingPackage?.id,
-                    purchaseError = purchaseError,
-                ),
-                attribution = entryAttribution,
-            )
-        }
+        paywallEventRepository.record(
+            event = event,
+            userId = userId,
+            funnelSessionId = funnelSessionId,
+            selectedTier = selectedTier,
+            billing = billing?.wireValue ?: billingPackage?.productId?.let {
+                when {
+                    it.contains("yearly", ignoreCase = true) -> "yearly"
+                    it.contains("monthly", ignoreCase = true) -> "monthly"
+                    else -> null
+                }
+            },
+            productIdentifier = billingPackage?.productId,
+            metadata = PaywallEventMetadata(
+                currentTier = ((_state.value as? PaywallUiState.Loaded)?.currentTier)
+                    ?.name?.lowercase() ?: "unknown",
+                selectedPackageId = billingPackage?.id,
+                purchaseError = purchaseError,
+            ),
+            attribution = entryAttribution,
+        )
     }
 
     private fun recordResultHubEvent(name: String) {

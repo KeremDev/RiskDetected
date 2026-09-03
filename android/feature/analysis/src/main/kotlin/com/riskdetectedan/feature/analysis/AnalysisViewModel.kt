@@ -517,8 +517,6 @@ class AnalysisViewModel @Inject constructor(
         }
     }
 
-    fun currentResultHubFunnelSessionId(): String = resultHubFunnelSessionId
-
     fun mutateNotebookEntry(
         analysisId: String,
         item: AnalysisResultHubItem,

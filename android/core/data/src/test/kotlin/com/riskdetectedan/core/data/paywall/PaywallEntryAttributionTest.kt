@@ -32,4 +32,30 @@ class PaywallEntryAttributionTest {
         assertEquals("pro", encoded.getValue("entry_target_tier").jsonPrimitive.content)
         assertEquals("training_recommendations", encoded.getValue("result_section").jsonPrimitive.content)
     }
+
+    @Test
+    fun `entry context mirrors ios nesting used by attribution dashboard`() {
+        val context = PaywallEntryAttribution(
+            entryPoint = "result_hub_training_promotion",
+            entrySurface = "training_recommendations",
+            entryComponent = "result_membership_promotion",
+            entryTargetTier = SubscriptionTier.Plus,
+            analysisId = "11111111-1111-4111-8111-111111111111",
+            resultSection = "training_recommendations",
+            itemId = "training-card-1",
+            attributes = mapOf(
+                "entry_kind" to "content_gate",
+                "placement" to "locked_content_teaser",
+                "source_section" to "training_recommendations",
+            ),
+            clientOccurredAt = "2026-09-03T19:00:00Z",
+        ).toEntryContext("22222222-2222-4222-8222-222222222222")
+
+        val attributes = context.getValue("attributes").jsonObject
+        assertEquals("22222222-2222-4222-8222-222222222222", context.getValue("funnel_session_id").jsonPrimitive.content)
+        assertEquals("training_recommendations", context.getValue("result_section").jsonPrimitive.content)
+        assertEquals("content_gate", attributes.getValue("entry_kind").jsonPrimitive.content)
+        assertEquals("locked_content_teaser", attributes.getValue("placement").jsonPrimitive.content)
+        assertEquals("training_recommendations", attributes.getValue("source_section").jsonPrimitive.content)
+    }
 }

@@ -93,6 +93,16 @@ import com.riskdetectedan.core.designsystem.riskLevelFromRaw
 import com.riskdetectedan.core.designsystem.toTextStyle
 import com.riskdetectedan.core.designsystem.rdAnalysisCanvasTitle
 
+data class AnalysisPaywallRequest(
+    val targetTier: SubscriptionTier,
+    val analysisId: String,
+    val entryPoint: String,
+    val resultSection: AnalysisResultSectionId? = null,
+    val itemId: String? = null,
+    val funnelSessionId: String,
+    val attributes: Map<String, String> = emptyMap(),
+)
+
 /**
  * Sector picker + full submit flow: create `analyses` row -> upload photo -> call `analyze`
  * -> poll -> fetch+display findings (2026-08-08 visual pass, Faz I of the core-flow redesign).
@@ -118,9 +128,7 @@ fun AnalysisScreen(
     onOpenCompanies: () -> Unit = {},
     onUpgrade: () -> Unit = {},
     onUpgradeTier: (SubscriptionTier) -> Unit = { onUpgrade() },
-    onUpgradeTierAt: (SubscriptionTier, String) -> Unit = { tier, _ -> onUpgradeTier(tier) },
-    onResultHubUpgrade: (SubscriptionTier, String, AnalysisResultSectionId, String) -> Unit =
-        { tier, _, _, _ -> onUpgradeTier(tier) },
+    onPaywall: (AnalysisPaywallRequest) -> Unit = { onUpgradeTier(it.targetTier) },
     viewModel: AnalysisViewModel = hiltViewModel(),
     reportViewModel: ResultReportViewModel = hiltViewModel(),
 ) {
@@ -185,15 +193,7 @@ fun AnalysisScreen(
             onUpdate = { finding, patch -> viewModel.updateFinding(completed.analysisId, finding, patch) },
             onOpenCompanies = onOpenCompanies,
             onUpgradeTier = onUpgradeTier,
-            onUpgradeTierAt = onUpgradeTierAt,
-            onResultHubUpgrade = { section ->
-                onResultHubUpgrade(
-                    SubscriptionTier.Plus,
-                    completed.analysisId,
-                    section,
-                    viewModel.currentResultHubFunnelSessionId(),
-                )
-            },
+            onPaywall = onPaywall,
             onFeedback = { section, item, reaction, reason, note ->
                 viewModel.setResultFeedback(completed.analysisId, section, item, reaction, reason, note)
             },

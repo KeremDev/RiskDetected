@@ -50,26 +50,35 @@ class OnboardingAnswersRepository @Inject constructor(
         return try {
             val params = Json.encodeToJsonElement(draft.toRpcPayload()) as JsonObject
             client.postgrest.rpc("upsert_onboarding_v2_answers", params)
-            if (draft.appLanguage == "en") {
-                val profileId = draft.safetyProfileId
-                    ?: return RdResult.Failure("safety_profile_required", "safety_profile_required")
-                val localization = RdClientMetadata.localizationForSafetyProfile(profileId)
-                    ?: return RdResult.Failure("invalid_safety_profile", "invalid_safety_profile")
-                val userId = client.auth.currentUserOrNull()?.id
-                    ?: return RdResult.Failure("auth_required", "auth_required")
-                client.postgrest.from("profiles").update(
-                    OnboardingLocalizationPayload(
-                        appLanguage = localization.appLanguage,
-                        preferredContentLocale = localization.contentLocale,
-                        workJurisdictionCountry = localization.workJurisdictionCountry,
-                        safetyProfileId = localization.safetyProfileId,
-                        safetyProfileVersion = localization.safetyProfileVersion,
-                        legalDocumentSet = localization.legalDocumentSetId,
-                        title = draft.professionalRole?.label,
-                    ),
-                ) {
-                    filter { eq("id", userId) }
-                }
+            // The notification/report workers resolve exact-locale content from profiles. This
+            // write must happen for Turkish as well as English: Turkish onboarding used to only
+            // persist user_onboarding_answers, leaving freshly-created accounts without a locale
+            // until a later heartbeat happened (and report_ready was then recorded as
+            // LOCALIZATION_BLOCKED). Keep the selected safety profile when it is valid, while
+            // falling back to the current Android contract for older/incomplete drafts.
+            val profileId = if (draft.appLanguage == "en") {
+                draft.safetyProfileId ?: RdClientMetadata.SAFETY_PROFILE_ID
+            } else {
+                // Turkish is the safe base contract; never let a stale English profile id in a
+                // pending draft change the language selected for the current onboarding run.
+                "tr-tr-current-v1"
+            }
+            val localization = RdClientMetadata.localizationForSafetyProfile(profileId)
+                ?: RdClientMetadata.localization()
+            val userId = client.auth.currentUserOrNull()?.id
+                ?: return RdResult.Failure("auth_required", "auth_required")
+            client.postgrest.from("profiles").update(
+                OnboardingLocalizationPayload(
+                    appLanguage = localization.appLanguage,
+                    preferredContentLocale = localization.contentLocale,
+                    workJurisdictionCountry = localization.workJurisdictionCountry,
+                    safetyProfileId = localization.safetyProfileId,
+                    safetyProfileVersion = localization.safetyProfileVersion,
+                    legalDocumentSet = localization.legalDocumentSetId,
+                    title = draft.professionalRole?.label,
+                ),
+            ) {
+                filter { eq("id", userId) }
             }
             clearPending()
             RdResult.Success(Unit)

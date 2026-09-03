@@ -26,6 +26,7 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons.extended)
+    implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     // System Photo Picker (PickVisualMedia), for company-logo selection.
     implementation(libs.androidx.activity.compose)

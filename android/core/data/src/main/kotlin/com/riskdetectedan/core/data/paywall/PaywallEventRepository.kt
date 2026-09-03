@@ -1,10 +1,19 @@
 package com.riskdetectedan.core.data.paywall
 
+import android.util.Log
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
@@ -32,6 +41,7 @@ import javax.inject.Singleton
  */
 private const val SOURCE = "in_app"
 private const val VARIANT_ID = "android_default_v1"
+private const val TAG = "PaywallEvents"
 
 enum class PaywallEventName(val wireValue: String) {
     EntryTap("entry_tap"),
@@ -56,7 +66,23 @@ data class PaywallEntryAttribution(
     @SerialName("result_section") val resultSection: String? = null,
     @SerialName("item_id") val itemId: String? = null,
     val attributes: Map<String, String> = emptyMap(),
+    @SerialName("client_occurred_at") val clientOccurredAt: String = Instant.now().toString(),
 )
+
+internal fun PaywallEntryAttribution.toEntryContext(funnelSessionId: String): JsonObject = buildJsonObject {
+    put("funnel_session_id", funnelSessionId)
+    put("entry_point", entryPoint)
+    put("surface", entrySurface)
+    put("component", entryComponent)
+    entryTargetTier?.let { put("target_tier", it.name.lowercase()) }
+    analysisId?.let { put("analysis_id", it) }
+    resultSection?.let { put("result_section", it) }
+    itemId?.let { put("item_id", it) }
+    putJsonObject("attributes") {
+        attributes.forEach { (key, value) -> put(key, value) }
+    }
+    put("client_occurred_at", clientOccurredAt)
+}
 
 @Serializable
 data class PaywallEventMetadata(
@@ -89,15 +115,16 @@ private data class PaywallEventPayload(
     @SerialName("analysis_id") val analysisId: String? = null,
     @SerialName("result_section") val resultSection: String? = null,
     @SerialName("item_id") val itemId: String? = null,
-    @SerialName("entry_context") val entryContext: Map<String, String> = emptyMap(),
+    @SerialName("entry_context") val entryContext: JsonObject = buildJsonObject {},
     val metadata: PaywallEventMetadata,
 )
 
 @Singleton
 class PaywallEventRepository @Inject constructor(private val client: SupabaseClient) {
     private val appSessionId = UUID.randomUUID().toString()
+    private val deliveryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    suspend fun record(
+    fun record(
         event: PaywallEventName,
         userId: String,
         funnelSessionId: String,
@@ -108,33 +135,38 @@ class PaywallEventRepository @Inject constructor(private val client: SupabaseCli
         source: String = SOURCE,
         attribution: PaywallEntryAttribution? = null,
     ) {
-        try {
-            client.postgrest.from("paywall_events").insert(
-                PaywallEventPayload(
-                    userId = userId,
-                    funnelSessionId = funnelSessionId,
-                    source = source,
-                    variantId = VARIANT_ID,
-                    eventName = event.wireValue,
-                    selectedTier = selectedTier,
-                    billing = billing,
-                    productIdentifier = productIdentifier,
-                    clientOccurredAt = Instant.now().toString(),
-                    appSessionId = appSessionId,
-                    entryPoint = attribution?.entryPoint,
-                    entrySurface = attribution?.entrySurface,
-                    entryComponent = attribution?.entryComponent,
-                    entryTargetTier = attribution?.entryTargetTier,
-                    analysisId = attribution?.analysisId,
-                    resultSection = attribution?.resultSection,
-                    itemId = attribution?.itemId,
-                    entryContext = attribution?.attributes.orEmpty(),
-                    metadata = metadata,
-                ),
-            )
-        } catch (t: Throwable) {
-            // Analytics must never surface an error to the purchase flow — same as iOS's
-            // fire-and-forget Task{} + logger-only error handling.
+        val clientOccurredAt = Instant.now().toString()
+        val payload = PaywallEventPayload(
+            userId = userId,
+            funnelSessionId = funnelSessionId,
+            source = source,
+            variantId = VARIANT_ID,
+            eventName = event.wireValue,
+            selectedTier = selectedTier,
+            billing = billing,
+            productIdentifier = productIdentifier,
+            clientOccurredAt = clientOccurredAt,
+            appSessionId = appSessionId,
+            entryPoint = attribution?.entryPoint,
+            entrySurface = attribution?.entrySurface,
+            entryComponent = attribution?.entryComponent,
+            entryTargetTier = attribution?.entryTargetTier,
+            analysisId = attribution?.analysisId,
+            resultSection = attribution?.resultSection,
+            itemId = attribution?.itemId,
+            entryContext = attribution?.toEntryContext(funnelSessionId) ?: buildJsonObject {},
+            metadata = metadata,
+        )
+        // Delivery must outlive the paywall destination. In particular, recordClose() is followed
+        // immediately by popBackStack(); using viewModelScope alone could cancel that final write.
+        deliveryScope.launch {
+            try {
+                client.postgrest.from("paywall_events").insert(payload)
+            } catch (t: Throwable) {
+                // Analytics must never surface an error to the purchase flow, but a rejected event
+                // must remain diagnosable in Logcat (matching iOS's logger-only failure handling).
+                Log.e(TAG, "Paywall event insert failed: ${event.wireValue}", t)
+            }
         }
     }
 }

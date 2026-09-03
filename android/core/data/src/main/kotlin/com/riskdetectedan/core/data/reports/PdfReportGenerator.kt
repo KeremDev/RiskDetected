@@ -89,6 +89,14 @@ class PdfReportGenerator @Inject constructor(
     private val COLOR_GREEN = Color.parseColor("#00B82E")
     private val COLOR_WHITE = Color.WHITE
 
+    /** The merged app resources contain the same RD wordmark used by the rest of Android UI. */
+    private val brandLogo: Bitmap? by lazy {
+        val resourceId = context.resources.getIdentifier("rd_logo", "drawable", context.packageName)
+        resourceId.takeIf { it != 0 }?.let {
+            runCatching { BitmapFactory.decodeResource(context.resources, it) }.getOrNull()
+        }
+    }
+
     private fun bandColor(band: String): Int = when (band.lowercase()) {
         "critical" -> Color.parseColor("#B42318")
         "high" -> Color.parseColor("#C76A00")
@@ -182,7 +190,7 @@ class PdfReportGenerator @Inject constructor(
             company,
             "${copy(input, "Doküman No", "Document no.")}: #${documentNumber(input)}",
         ).filter(String::isNotBlank).joinToString(" · ")
-        drawTextRect(canvas, footer, RectF(42f, 448f, 800f, 470f), 9.5f, COLOR_SLATE)
+        drawFittingTextRect(canvas, footer, RectF(42f, 448f, 800f, 470f), 9.5f, 7f, COLOR_SLATE)
         drawTextRect(canvas, reportDisclaimer(input), RectF(42f, 472f, 800f, 491f), 7.2f, COLOR_SLATE, align = Paint.Align.CENTER)
         drawMethodLegend(canvas, input, RectF(42f, 496f, 800f, 544f))
 
@@ -233,7 +241,9 @@ class PdfReportGenerator @Inject constructor(
         }
         drawRiskChrome(canvas, input, title, startPage, totalPages)
         if (isMatrix) drawMatrixReference(canvas, input, 32f, 82f) else drawFineKinneyReference(canvas, input, 32f, 82f)
-        drawRiskInfoStrip(canvas, input, RectF(32f, 520f, 810f, 562f))
+        // The 5x5 matrix reference reaches lower on the page than Fine-Kinney's tables.
+        val infoTop = if (isMatrix) 536f else 512f
+        drawRiskInfoStrip(canvas, input, RectF(32f, infoTop, 810f, 586f))
         document.finishPage(page)
         return startPage + 1
     }
@@ -326,8 +336,9 @@ class PdfReportGenerator @Inject constructor(
 
     private fun drawReportLogo(canvas: Canvas, input: PdfReportInput, rect: RectF) {
         val logo = input.companyLogoBytes?.let { runCatching { BitmapFactory.decodeByteArray(it, 0, it.size) }.getOrNull() }
+            ?: brandLogo
         if (logo != null) drawBitmapFit(canvas, logo, rect) else {
-            drawTextRect(canvas, context.getString(R.string.rd_pdf_brand), rect, 20f, COLOR_ONYX, bold = true)
+            drawFittingTextRect(canvas, context.getString(R.string.rd_pdf_brand), rect, 20f, 12f, COLOR_ONYX, bold = true)
         }
     }
 
@@ -471,11 +482,11 @@ class PdfReportGenerator @Inject constructor(
             append("${copy(input, "Firma", "Company")}: ${input.companyName ?: unspecified}\n")
             append("${copy(input, "Firma bilgisi", "Company details")}: ${input.companyAddress ?: unspecified}")
         }
-        drawTextRect(canvas, left, RectF(rect.left + 10f, rect.top + 4f, rect.left + 270f, rect.bottom - 2f), 7.4f, COLOR_SLATE, bold = true)
+        drawFittingTextRect(canvas, left, RectF(rect.left + 10f, rect.top + 3f, rect.left + 284f, rect.bottom - 3f), 7.4f, 5.8f, COLOR_SLATE, bold = true)
         val middle = "${copy(input, "Hazırlayan", "Prepared by")}: ${input.preparedByName}\n${copy(input, "Ünvan", "Title")}: ${input.preparedByTitle ?: unspecified}\n${copy(input, "Belge No", "Certificate no.")}: ${input.certificateNumber ?: unspecified}"
-        drawTextRect(canvas, middle, RectF(rect.left + 294f, rect.top + 4f, rect.left + 514f, rect.bottom - 2f), 7.4f, COLOR_SLATE, bold = true)
+        drawFittingTextRect(canvas, middle, RectF(rect.left + 304f, rect.top + 3f, rect.left + 524f, rect.bottom - 3f), 7.4f, 5.8f, COLOR_SLATE, bold = true)
         val right = "${copy(input, "Tarih", "Date")}: ${input.createdAt?.take(10) ?: unspecified}\n${copy(input, "Doküman No", "Document no.")}: #${documentNumber(input)}"
-        drawTextRect(canvas, right, RectF(rect.left + 548f, rect.top + 8f, rect.right - 10f, rect.bottom - 4f), 7.4f, COLOR_ONYX, bold = true, align = Paint.Align.RIGHT)
+        drawFittingTextRect(canvas, right, RectF(rect.left + 548f, rect.top + 8f, rect.right - 10f, rect.bottom - 4f), 7.4f, 5.8f, COLOR_ONYX, bold = true, align = Paint.Align.RIGHT)
     }
 
     private fun riskTableWidths(input: PdfReportInput): List<Float> {
@@ -758,6 +769,27 @@ class PdfReportGenerator @Inject constructor(
         canvas.translate(rect.left, rect.top + verticalOffset)
         layout.draw(canvas)
         canvas.restore()
+    }
+
+    private fun drawFittingTextRect(
+        canvas: Canvas,
+        text: String,
+        rect: RectF,
+        size: Float,
+        minimumSize: Float,
+        color: Int,
+        bold: Boolean = false,
+        align: Paint.Align = Paint.Align.LEFT,
+    ) {
+        var currentSize = size
+        while (currentSize > minimumSize) {
+            if (measuredHeight(text, rect.width(), currentSize, bold) <= rect.height()) {
+                drawTextRect(canvas, text, rect, currentSize, color, bold, align)
+                return
+            }
+            currentSize -= 0.2f
+        }
+        drawTextRect(canvas, text, rect, minimumSize, color, bold, align)
     }
 
     private fun drawRoundedRect(canvas: Canvas, rect: RectF, radius: Float, fill: Int, stroke: Int, strokeWidth: Float) {

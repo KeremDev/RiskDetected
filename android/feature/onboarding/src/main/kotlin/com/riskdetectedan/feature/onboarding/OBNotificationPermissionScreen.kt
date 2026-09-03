@@ -5,6 +5,7 @@ import com.riskdetectedan.core.designsystem.R as RdR
 import androidx.compose.ui.res.stringResource
 
 import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -47,6 +48,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.core.designsystem.RdButtonStyle
 import com.riskdetectedan.core.designsystem.RdFontStyle
 import com.riskdetectedan.core.designsystem.RdPrimaryButton
@@ -56,25 +61,36 @@ import com.riskdetectedan.core.designsystem.toTextStyle
 
 /**
  * Port of OBNotificationPermissionView.swift (2026-08-08 visual pass, Faz E). POST_NOTIFICATIONS
- * request logic (Android 13+ only, no-op + continue below that) is unchanged from before this
- * pass — pure UI layer. iOS's animated bell (custom `OBBellGlyph` Bezier shape + wiggle/ripple
+ * request logic (Android 13+ only, no-op + continue below that) now also persists the server-side
+ * master preference when permission is granted, matching iOS's onboarding flow. iOS's animated bell
+ * (custom `OBBellGlyph` Bezier shape + wiggle/ripple
  * `TimelineView` animation) is a static `NotificationsActive` icon (no custom Path drawing — the
  * Bezier bell shape itself isn't ported) but the wiggle+ripple motion itself now IS real
  * (2026-08-09 animation pass): the bell rotates in a periodic keyframe wiggle (rest, then a
  * quick 3-shake burst, matching a real notification-bell alert cadence rather than a continuous
  * back-and-forth that would feel spammy over an onboarding screen users sit on for seconds), and
  * the radial glow behind it breathes (scale) in its own slower loop — same intent as iOS's
- * ripple, simpler mechanism (scale, not an expanding stroked ring). Android's pre-existing
+ * ripple, simpler mechanism (scale, not an expanding stroked ring).
  * The footer uses the same single "Ücretsiz devam et" action as iOS: that action requests the
- * system permission once and advances regardless of the user's decision. There is no second
- * permission-bypass action, so the onboarding order and prompt timing stay identical.
+ * system permission once, records a granted choice, and advances regardless of the user's
+ * decision. There is no second permission-bypass action, so the onboarding order and prompt timing
+ * stay identical.
  */
 @Composable
-fun OBNotificationPermissionScreen(onContinue: () -> Unit) {
+fun OBNotificationPermissionScreen(
+    onContinue: () -> Unit,
+    viewModel: OnboardingNotificationPermissionViewModel = hiltViewModel(),
+) {
     val colors = RdTheme.colors
+    val context = LocalContext.current
+
+    fun finish(granted: Boolean) {
+        viewModel.recordPermission(granted = granted, onComplete = onContinue)
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
-    ) { _ -> onContinue() }
+    ) { granted -> finish(granted) }
 
     val infiniteTransition = rememberInfiniteTransition(label = "bell")
     // 3-shake wiggle burst every 2.6s, rest of the cycle at 0° — a periodic alert cadence, not a
@@ -164,10 +180,20 @@ fun OBNotificationPermissionScreen(onContinue: () -> Unit) {
         RdPrimaryButton(
             text = stringResource(RdR.string.rd_bildirimleri_ac),
             onClick = {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val osPermissionGranted = NotificationManagerCompat.from(context).areNotificationsEnabled() &&
+                    (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+                        PackageManager.PERMISSION_GRANTED)
+                if (osPermissionGranted) {
+                    // The permission may already have been granted in system settings. Still run
+                    // the persistence path so the server row is created during onboarding.
+                    finish(granted = true)
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 } else {
-                    onContinue()
+                    // Below Android 13 there is no runtime prompt. The system setting is disabled,
+                    // so continue without creating an enabled preference row.
+                    finish(granted = false)
                 }
             },
             showArrow = false,

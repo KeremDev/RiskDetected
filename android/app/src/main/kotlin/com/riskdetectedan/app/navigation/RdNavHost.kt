@@ -178,22 +178,21 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                 preSelectedSectorId = args.sectorId,
                 onBack = { navController.popBackStack() },
                 onOpenCompanies = { navController.navigate(Companies) },
-                onUpgrade = {
-                    navController.navigate(PaywallForTier(tier = "plus", entryPoint = "result_locked_report_options"))
-                },
-                onUpgradeTier = { tier ->
-                    navController.navigate(PaywallForTier(tier.name.lowercase(), entryPoint = "result_finding_locked_feature"))
-                },
-                onUpgradeTierAt = { tier, entryPoint ->
-                    navController.navigate(PaywallForTier(tier.name.lowercase(), entryPoint = entryPoint))
-                },
-                onResultHubUpgrade = { tier, analysisId, section, funnelSessionId ->
+                onPaywall = { request ->
                     navController.navigate(
                         PaywallForTier(
-                            tier = tier.name.lowercase(),
-                            resultAnalysisId = analysisId,
-                            resultSection = section.wireValue,
-                            resultFunnelSessionId = funnelSessionId,
+                            tier = request.targetTier.name.lowercase(),
+                            resultAnalysisId = request.analysisId,
+                            resultSection = request.resultSection?.wireValue,
+                            resultFunnelSessionId = request.funnelSessionId,
+                            entryPoint = request.entryPoint,
+                            entryItemId = request.itemId,
+                            entryKind = request.attributes["entry_kind"],
+                            entryPlacement = request.attributes["placement"],
+                            entryPromotionVariant = request.attributes["promotion_variant"],
+                            entrySourceSection = request.attributes["source_section"],
+                            entryCurrentTier = request.attributes["current_tier"],
+                            entryPreviewNumber = request.attributes["preview_number"],
                         ),
                     )
                 },
@@ -213,22 +212,21 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                 completedAnalysisId = args.analysisId,
                 onBack = { navController.popBackStack() },
                 onOpenCompanies = { navController.navigate(Companies) },
-                onUpgrade = {
-                    navController.navigate(PaywallForTier(tier = "plus", entryPoint = "result_locked_report_options"))
-                },
-                onUpgradeTier = { tier ->
-                    navController.navigate(PaywallForTier(tier.name.lowercase(), entryPoint = "result_finding_locked_feature"))
-                },
-                onUpgradeTierAt = { tier, entryPoint ->
-                    navController.navigate(PaywallForTier(tier.name.lowercase(), entryPoint = entryPoint))
-                },
-                onResultHubUpgrade = { tier, analysisId, section, funnelSessionId ->
+                onPaywall = { request ->
                     navController.navigate(
                         PaywallForTier(
-                            tier = tier.name.lowercase(),
-                            resultAnalysisId = analysisId,
-                            resultSection = section.wireValue,
-                            resultFunnelSessionId = funnelSessionId,
+                            tier = request.targetTier.name.lowercase(),
+                            resultAnalysisId = request.analysisId,
+                            resultSection = request.resultSection?.wireValue,
+                            resultFunnelSessionId = request.funnelSessionId,
+                            entryPoint = request.entryPoint,
+                            entryItemId = request.itemId,
+                            entryKind = request.attributes["entry_kind"],
+                            entryPlacement = request.attributes["placement"],
+                            entryPromotionVariant = request.attributes["promotion_variant"],
+                            entrySourceSection = request.attributes["source_section"],
+                            entryCurrentTier = request.attributes["current_tier"],
+                            entryPreviewNumber = request.attributes["preview_number"],
                         ),
                     )
                 },
@@ -265,6 +263,12 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                     entryPoint = args.entryPoint,
                     entryTargetTier = args.tier,
                     entryItemId = args.entryItemId,
+                    entryKind = args.entryKind,
+                    entryPlacement = args.entryPlacement,
+                    entryPromotionVariant = args.entryPromotionVariant,
+                    entrySourceSection = args.entrySourceSection,
+                    entryCurrentTier = args.entryCurrentTier,
+                    entryPreviewNumber = args.entryPreviewNumber,
                 )
             }
         }

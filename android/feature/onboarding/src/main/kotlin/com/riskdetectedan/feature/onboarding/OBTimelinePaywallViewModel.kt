@@ -308,28 +308,26 @@ class OBTimelinePaywallViewModel @Inject constructor(
         billingPackage: BillingPackage? = null,
         purchaseError: String? = null,
     ) {
-        viewModelScope.launch {
-            paywallEventRepository.record(
-                event = event,
-                userId = userId,
-                funnelSessionId = funnelSessionId,
-                selectedTier = selectedTier,
-                billing = billingPackage?.productId?.let {
-                    when {
-                        it.contains("yearly", ignoreCase = true) -> "yearly"
-                        it.contains("monthly", ignoreCase = true) -> "monthly"
-                        else -> null
-                    }
-                },
-                productIdentifier = billingPackage?.productId,
-                metadata = PaywallEventMetadata(
-                    layout = "onboarding_timeline",
-                    currentTier = selectedTier?.name?.lowercase() ?: "unknown",
-                    selectedPackageId = billingPackage?.id,
-                    purchaseError = purchaseError,
-                ),
-                source = EVENT_SOURCE,
-            )
-        }
+        paywallEventRepository.record(
+            event = event,
+            userId = userId,
+            funnelSessionId = funnelSessionId,
+            selectedTier = selectedTier,
+            billing = billingPackage?.productId?.let {
+                when {
+                    it.contains("yearly", ignoreCase = true) -> "yearly"
+                    it.contains("monthly", ignoreCase = true) -> "monthly"
+                    else -> null
+                }
+            },
+            productIdentifier = billingPackage?.productId,
+            metadata = PaywallEventMetadata(
+                layout = "onboarding_timeline",
+                currentTier = selectedTier?.name?.lowercase() ?: "unknown",
+                selectedPackageId = billingPackage?.id,
+                purchaseError = purchaseError,
+            ),
+            source = EVENT_SOURCE,
+        )
     }
 }

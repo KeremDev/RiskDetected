@@ -167,6 +167,7 @@ import java.text.NumberFormat
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import java.util.UUID
 
 private enum class ParityRiskMethod(val wire: String) { FineKinney("fine_kinney"), Matrix5x5("matrix_5x5") }
 internal enum class ParityReportKind { Standard, RiskAnalysis }
@@ -174,6 +175,53 @@ internal enum class ParityReportKind { Standard, RiskAnalysis }
 internal fun ParityReportKind.wireValue(): String = when (this) {
     ParityReportKind.Standard -> "standard"
     ParityReportKind.RiskAnalysis -> "risk_analysis"
+}
+
+internal fun AnalysisResultSectionId.paywallPromotionEntryPoint(): String = when (this) {
+    AnalysisResultSectionId.RiskAnalysis -> "result_hub_risk_analysis_promotion"
+    AnalysisResultSectionId.ExpertRecommendations -> "result_hub_expert_advice_promotion"
+    AnalysisResultSectionId.TrainingRecommendations -> "result_hub_training_promotion"
+    AnalysisResultSectionId.ApprovedNotebook -> "result_hub_approved_notebook_promotion"
+}
+
+private fun AnalysisResultSectionId.wireValue(): String = when (this) {
+    AnalysisResultSectionId.RiskAnalysis -> "risk_analysis"
+    AnalysisResultSectionId.ExpertRecommendations -> "expert_recommendations"
+    AnalysisResultSectionId.TrainingRecommendations -> "training_recommendations"
+    AnalysisResultSectionId.ApprovedNotebook -> "approved_notebook"
+}
+
+internal fun analysisPaywallRequest(
+    targetTier: SubscriptionTier,
+    analysisId: String,
+    entryPoint: String,
+    resultSection: AnalysisResultSectionId? = null,
+    itemId: String? = null,
+    placement: String,
+    entryKind: String,
+    promotionVariant: String? = null,
+    currentTier: SubscriptionTier? = null,
+    extraAttributes: Map<String, String> = emptyMap(),
+): AnalysisPaywallRequest {
+    val attributes = buildMap {
+        put("placement", placement)
+        put("entry_kind", entryKind)
+        resultSection?.let { put("source_section", it.wireValue()) }
+        promotionVariant?.let { put("promotion_variant", it) }
+        currentTier?.let { put("current_tier", it.name.lowercase(Locale.ROOT)) }
+        putAll(extraAttributes)
+    }
+    return AnalysisPaywallRequest(
+        targetTier = targetTier,
+        analysisId = analysisId,
+        entryPoint = entryPoint,
+        resultSection = resultSection,
+        itemId = itemId,
+        // A paywall presentation is one journey. Reusing the result-screen session caused
+        // Expert/Training/Notebook taps to collapse into a single dashboard card.
+        funnelSessionId = UUID.randomUUID().toString(),
+        attributes = attributes,
+    )
 }
 
 /**
@@ -419,8 +467,7 @@ internal fun IosParityResultView(
     onUpdate: (Finding, FindingPatch) -> Unit,
     onOpenCompanies: () -> Unit,
     onUpgradeTier: (SubscriptionTier) -> Unit,
-    onUpgradeTierAt: (SubscriptionTier, String) -> Unit = { tier, _ -> onUpgradeTier(tier) },
-    onResultHubUpgrade: (AnalysisResultSectionId) -> Unit = { onUpgradeTier(SubscriptionTier.Plus) },
+    onPaywall: (AnalysisPaywallRequest) -> Unit = { onUpgradeTier(it.targetTier) },
     onFeedback: (AnalysisResultSectionId, AnalysisResultHubItem, AnalysisItemReaction, String?, String?) -> Unit = { _, _, _, _, _ -> },
     onResultEvent: (String, AnalysisResultSectionId?, String?) -> Unit = { _, _, _ -> },
     onEditNotebook: (AnalysisResultHubItem, String, String) -> Unit = { _, _, _ -> },
@@ -481,7 +528,17 @@ internal fun IosParityResultView(
                 onBack = onBack,
                 profile = reportSetup.profile,
                 tier = reportSetup.profile?.tier ?: capabilities.tier,
-                onUpgrade = { tier -> onUpgradeTierAt(tier, "result_header_upgrade") },
+                onUpgrade = { tier ->
+                    onPaywall(
+                        analysisPaywallRequest(
+                            targetTier = tier,
+                            analysisId = analysisId,
+                            entryPoint = "result_header_upgrade",
+                            placement = "result_header",
+                            entryKind = "header_cta",
+                        ),
+                    )
+                },
             )
             if (resultHub?.enabled == true) {
                 ResultHubSurface(
@@ -510,9 +567,26 @@ internal fun IosParityResultView(
                         }
                     },
                     onFeedback = onFeedback,
-                    onUpgrade = {
-                        onResultEvent("locked_teaser_cta_tapped", hubSection, null)
-                        onResultHubUpgrade(hubSection)
+                    onUpgrade = { placement, itemId ->
+                        onResultEvent("locked_teaser_cta_tapped", hubSection, itemId)
+                        val targetTier = if (capabilities.tier == SubscriptionTier.Plus) {
+                            SubscriptionTier.Pro
+                        } else {
+                            SubscriptionTier.Plus
+                        }
+                        onPaywall(
+                            analysisPaywallRequest(
+                                targetTier = targetTier,
+                                analysisId = analysisId,
+                                entryPoint = hubSection.paywallPromotionEntryPoint(),
+                                resultSection = hubSection,
+                                itemId = itemId,
+                                placement = placement,
+                                entryKind = if (placement == "sticky_report_cta") "report_gate" else "content_gate",
+                                promotionVariant = if (capabilities.tier == SubscriptionTier.Plus) "pro" else "plus_pro",
+                                currentTier = capabilities.tier,
+                            ),
+                        )
                     },
                     onReport = openReportSheet,
                     onBack = { onBack?.invoke() },
@@ -527,7 +601,15 @@ internal fun IosParityResultView(
             ) {
                 item {
                     ResultMetaSurface(summary, canvasLabel, photoBytes, findings, capabilities) { tier ->
-                        onUpgradeTierAt(tier, "result_summary_upgrade_hint")
+                        onPaywall(
+                            analysisPaywallRequest(
+                                targetTier = tier,
+                                analysisId = analysisId,
+                                entryPoint = "result_summary_upgrade_hint",
+                                placement = "result_summary",
+                                entryKind = "membership_promotion",
+                            ),
+                        )
                     }
                 }
                 item { ResultMethodSelector(method) { method = it } }
@@ -553,7 +635,19 @@ internal fun IosParityResultView(
                                 tier = capabilities.tier,
                                 onEdit = { editingFinding = finding },
                                 onDelete = { deletingFinding = finding },
-                                onUpgrade = { tier -> onUpgradeTierAt(tier, "result_finding_locked_feature") },
+                                onUpgrade = { tier ->
+                                    onPaywall(
+                                        analysisPaywallRequest(
+                                            targetTier = tier,
+                                            analysisId = analysisId,
+                                            entryPoint = "result_finding_locked_feature",
+                                            resultSection = AnalysisResultSectionId.RiskAnalysis,
+                                            itemId = finding.id,
+                                            placement = "finding_card_feature",
+                                            entryKind = "content_gate",
+                                        ),
+                                    )
+                                },
                                 onOpenDetail = { selectedHubItemId = null; selectedFinding = finding },
                             )
                             if (capabilities.tier == SubscriptionTier.Free && index < 2) {
@@ -561,7 +655,19 @@ internal fun IosParityResultView(
                                     number = findings.size + index + 1,
                                     requiredTier = if (index == 0) SubscriptionTier.Pro else SubscriptionTier.Plus,
                                     level = if (index == 0) RiskLevel.High else RiskLevel.Medium,
-                                    onUpgrade = { tier -> onUpgradeTierAt(tier, "result_locked_finding_preview") },
+                                    onUpgrade = { tier ->
+                                        onPaywall(
+                                            analysisPaywallRequest(
+                                                targetTier = tier,
+                                                analysisId = analysisId,
+                                                entryPoint = "result_locked_finding_preview",
+                                                resultSection = AnalysisResultSectionId.RiskAnalysis,
+                                                placement = "locked_finding_preview",
+                                                entryKind = "content_gate",
+                                                extraAttributes = mapOf("preview_number" to (findings.size + index + 1).toString()),
+                                            ),
+                                        )
+                                    },
                                 )
                             }
                         }
@@ -608,7 +714,39 @@ internal fun IosParityResultView(
                 onDelete = { deletingFinding = finding },
                 onGenerateReport = openReportSheet,
                 onShareReport = openReportSheet,
-                onUpgrade = { tier -> onUpgradeTierAt(tier, "finding_detail_regulatory_references") },
+                onMembershipUpgrade = { tier ->
+                    onPaywall(
+                        analysisPaywallRequest(
+                            targetTier = tier,
+                            analysisId = analysisId,
+                            entryPoint = if (capabilities.tier == SubscriptionTier.Plus) {
+                                "finding_detail_pro_promotion"
+                            } else {
+                                "finding_detail_plus_pro_promotion"
+                            },
+                            resultSection = hubSection,
+                            itemId = selectedHubItemId ?: finding.id,
+                            placement = "finding_detail_promotion",
+                            entryKind = "membership_promotion",
+                            promotionVariant = if (capabilities.tier == SubscriptionTier.Plus) "pro" else "plus_pro",
+                            currentTier = capabilities.tier,
+                        ),
+                    )
+                },
+                onRegulatoryUpgrade = { tier ->
+                    onPaywall(
+                        analysisPaywallRequest(
+                            targetTier = tier,
+                            analysisId = analysisId,
+                            entryPoint = "finding_detail_regulatory_references",
+                            resultSection = hubSection,
+                            itemId = selectedHubItemId ?: finding.id,
+                            placement = "finding_detail_regulatory_references",
+                            entryKind = "content_gate",
+                            currentTier = capabilities.tier,
+                        ),
+                    )
+                },
             )
         }
     }
@@ -629,7 +767,23 @@ internal fun IosParityResultView(
             onMethodChange = { method = it },
             onClose = { showReportSheet = false },
             onOpenCompanies = onOpenCompanies,
-            onUpgrade = { onUpgradeTierAt(SubscriptionTier.Plus, "result_locked_report_options") },
+            onUpgrade = { entryPoint ->
+                onPaywall(
+                    analysisPaywallRequest(
+                        targetTier = SubscriptionTier.Plus,
+                        analysisId = analysisId,
+                        entryPoint = entryPoint,
+                        resultSection = reportSection?.id,
+                        placement = if (entryPoint == "result_report_company_picker") {
+                            "report_company_picker"
+                        } else {
+                            "report_sheet_upgrade"
+                        },
+                        entryKind = "report_gate",
+                        currentTier = reportSetup.profile?.tier ?: capabilities.tier,
+                    ),
+                )
+            },
             companies = reportSetup.companies,
             profile = reportSetup.profile,
             freeRiskTrialAvailable = reportSetup.quotaUsage?.riskTrialUsed == false,
@@ -720,7 +874,7 @@ private fun ResultHubSurface(
     onDelete: (AnalysisResultHubItem) -> Unit,
     onDetail: (AnalysisResultHubItem) -> Unit,
     onFeedback: (AnalysisResultSectionId, AnalysisResultHubItem, AnalysisItemReaction, String?, String?) -> Unit,
-    onUpgrade: () -> Unit,
+    onUpgrade: (placement: String, itemId: String?) -> Unit,
     onReport: () -> Unit,
     onBack: () -> Unit,
     onEvent: (String, AnalysisResultSectionId?, String?) -> Unit,
@@ -859,7 +1013,7 @@ private fun ResultHubSurface(
                         ResultHubNotebookPaper(
                             items = section.items,
                             access = section.access,
-                            onUpgrade = onUpgrade,
+                            onUpgrade = { onUpgrade("locked_content_teaser", null) },
                             modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 34.dp),
                         )
                     }
@@ -904,7 +1058,7 @@ private fun ResultHubSurface(
                                 onEvent("result_item_detail_opened", selectedSection, item.id)
                                 if (selectedSection == AnalysisResultSectionId.RiskAnalysis) onDetail(item) else detailItem = item
                             },
-                            onUpgrade = onUpgrade,
+                            onUpgrade = { onUpgrade("locked_content_teaser", item.id) },
                         )
                     }
                 }
@@ -923,7 +1077,7 @@ private fun ResultHubSurface(
             trainingWithoutReport = trainingWithoutReport,
             trainingPro = trainingPro,
             onBack = onBack,
-            onUpgrade = onUpgrade,
+            onUpgrade = { onUpgrade("sticky_report_cta", null) },
             onReport = onReport,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
@@ -2696,7 +2850,8 @@ private fun FindingDetailSurface(
     onDelete: () -> Unit,
     onGenerateReport: () -> Unit,
     onShareReport: () -> Unit,
-    onUpgrade: (SubscriptionTier) -> Unit,
+    onMembershipUpgrade: (SubscriptionTier) -> Unit,
+    onRegulatoryUpgrade: (SubscriptionTier) -> Unit,
 ) {
     val colors = RdTheme.colors
     val level = parityLevel(finding, method)
@@ -2904,7 +3059,7 @@ private fun FindingDetailSurface(
                 }
             }
             if (tier != SubscriptionTier.Pro) {
-                item { DetailMembershipPromotion(tier, onUpgrade) }
+                item { DetailMembershipPromotion(tier, onMembershipUpgrade) }
             }
             val preventive = finding.recommendedMeasures.orEmpty().filter { it.kind.equals("preventive", true) && it.text.isNotBlank() }.map { it.text }
             if (preventive.isNotEmpty()) {
@@ -2924,7 +3079,7 @@ private fun FindingDetailSurface(
                         colors.resultBlueTint,
                     )
                 } else {
-                    ResultLockedReferenceBlock { onUpgrade(SubscriptionTier.Plus) }
+                    ResultLockedReferenceBlock { onRegulatoryUpgrade(SubscriptionTier.Plus) }
                 }
             }
         }
@@ -3282,7 +3437,7 @@ private fun ResultReportSettingsSheet(
     onMethodChange: (ParityRiskMethod) -> Unit,
     onClose: () -> Unit,
     onOpenCompanies: () -> Unit,
-    onUpgrade: () -> Unit,
+    onUpgrade: (entryPoint: String) -> Unit,
     companies: List<Company>,
     profile: UserProfile?,
     freeRiskTrialAvailable: Boolean,
@@ -3451,7 +3606,7 @@ private fun ResultReportSettingsSheet(
                                 locked = riskAnalysisLocked,
                                 badge = stringResource(RdR.string.rd_plus_pro).takeIf { riskAnalysisLocked },
                                 onClick = {
-                                    if (riskAnalysisLocked) onUpgrade()
+                                    if (riskAnalysisLocked) onUpgrade("result_locked_report_options")
                                     else kind = ParityReportKind.RiskAnalysis
                                 },
                             )
@@ -3477,7 +3632,7 @@ private fun ResultReportSettingsSheet(
                                 onClick = { showCompanyPicker = true },
                             )
                         } else {
-                            LockedCompanyCard(onUpgrade)
+                            LockedCompanyCard { onUpgrade("result_report_company_picker") }
                         }
                     }
                     item {

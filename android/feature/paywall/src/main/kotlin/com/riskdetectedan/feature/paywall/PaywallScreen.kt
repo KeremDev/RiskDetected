@@ -61,6 +61,12 @@ fun PaywallScreen(
     entryPoint: String? = null,
     entryTargetTier: String? = null,
     entryItemId: String? = null,
+    entryKind: String? = null,
+    entryPlacement: String? = null,
+    entryPromotionVariant: String? = null,
+    entrySourceSection: String? = null,
+    entryCurrentTier: String? = null,
+    entryPreviewNumber: String? = null,
     viewModel: PaywallViewModel = hiltViewModel(),
 ) {
     val colors = RdTheme.colors
@@ -75,7 +81,20 @@ fun PaywallScreen(
     var legalDocumentKind by remember { mutableStateOf<String?>(null) }
     var didApplyInitialPlan by remember(initialPlan) { mutableStateOf(false) }
 
-    LaunchedEffect(resultAnalysisId, resultSection, resultFunnelSessionId, entryPoint, entryTargetTier, entryItemId) {
+    LaunchedEffect(
+        resultAnalysisId,
+        resultSection,
+        resultFunnelSessionId,
+        entryPoint,
+        entryTargetTier,
+        entryItemId,
+        entryKind,
+        entryPlacement,
+        entryPromotionVariant,
+        entrySourceSection,
+        entryCurrentTier,
+        entryPreviewNumber,
+    ) {
         viewModel.begin(
             resultAnalysisId = resultAnalysisId,
             resultSection = resultSection,
@@ -83,6 +102,14 @@ fun PaywallScreen(
             entryPoint = entryPoint,
             entryTargetTier = entryTargetTier,
             entryItemId = entryItemId,
+            entryAttributes = buildMap {
+                entryKind?.takeIf(String::isNotBlank)?.let { put("entry_kind", it) }
+                entryPlacement?.takeIf(String::isNotBlank)?.let { put("placement", it) }
+                entryPromotionVariant?.takeIf(String::isNotBlank)?.let { put("promotion_variant", it) }
+                entrySourceSection?.takeIf(String::isNotBlank)?.let { put("source_section", it) }
+                entryCurrentTier?.takeIf(String::isNotBlank)?.let { put("current_tier", it) }
+                entryPreviewNumber?.takeIf(String::isNotBlank)?.let { put("preview_number", it) }
+            },
         )
     }
 

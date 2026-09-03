@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.core.data.notifications.ProgressPreference
@@ -43,7 +44,8 @@ import com.riskdetectedan.core.designsystem.toTextStyle
  * Faz K of the core-flow redesign) — the master enabled/disable + app_reminders + 3 progress
  * flags this service actually exposes toggle UI for. APNs/FCM device-token registration (the
  * rest of that 684-line file) not ported — separate, needs a real Firebase project (Faz 7).
- * ViewModel logic unchanged. */
+ * Android's master/category mutations now keep the server preference row and OS authorization in
+ * sync, including the no-row upgrade case. */
 @Composable
 fun NotificationSettingsScreen(onBack: (() -> Unit)? = null, viewModel: NotificationSettingsViewModel = hiltViewModel()) {
     val colors = RdTheme.colors
@@ -76,14 +78,13 @@ fun NotificationSettingsScreen(onBack: (() -> Unit)? = null, viewModel: Notifica
                     RdSectionCard {
                         Column {
                             PreferenceRow(stringResource(RdR.string.rd_bildirimler_acik), prefs.enabled) { enabled ->
-                                if (!enabled || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                                val systemPermissionGranted = NotificationManagerCompat.from(context).areNotificationsEnabled() &&
+                                    (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+                                        PackageManager.PERMISSION_GRANTED)
+                                if (!enabled || systemPermissionGranted) {
                                     viewModel.setMaster(enabled)
-                                } else if (
-                                    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
-                                    PackageManager.PERMISSION_GRANTED
-                                ) {
-                                    viewModel.setMaster(true)
-                                } else {
+                                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                                     permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                                 }
                             }

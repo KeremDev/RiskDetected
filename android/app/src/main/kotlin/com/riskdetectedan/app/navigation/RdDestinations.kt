@@ -73,4 +73,10 @@ import kotlinx.serialization.Serializable
     val resultFunnelSessionId: String? = null,
     val entryPoint: String? = null,
     val entryItemId: String? = null,
+    val entryKind: String? = null,
+    val entryPlacement: String? = null,
+    val entryPromotionVariant: String? = null,
+    val entrySourceSection: String? = null,
+    val entryCurrentTier: String? = null,
+    val entryPreviewNumber: String? = null,
 )

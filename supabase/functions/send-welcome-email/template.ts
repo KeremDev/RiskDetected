@@ -22,6 +22,80 @@ export const WELCOME_EMAIL_LOCALES = [
 
 export type WelcomeEmailLocale = typeof WELCOME_EMAIL_LOCALES[number];
 
+export type WelcomeEmailLocaleResolution = {
+  appLanguage: "tr" | "en";
+  locale: WelcomeEmailLocale;
+};
+
+export type WelcomeEmailLocaleInput = {
+  profileAppLanguage?: string | null;
+  profileContentLocale?: string | null;
+  requestAppLanguage?: string | null;
+  requestContentLocale?: string | null;
+};
+
+function normalizeLanguage(value: string | null | undefined): "tr" | "en" | null {
+  const language = value?.trim().toLowerCase();
+  return language === "tr" || language === "en" ? language : null;
+}
+
+function normalizeSupportedLocale(
+  value: string | null | undefined,
+): WelcomeEmailLocale | null {
+  const locale = value?.trim();
+  return (WELCOME_EMAIL_LOCALES as readonly string[]).includes(locale ?? "")
+    ? locale as WelcomeEmailLocale
+    : null;
+}
+
+function localeLanguage(locale: WelcomeEmailLocale): "tr" | "en" {
+  return locale === "tr-TR" ? "tr" : "en";
+}
+
+function defaultLocale(language: "tr" | "en"): WelcomeEmailLocale {
+  return language === "tr" ? "tr-TR" : "en-001";
+}
+
+/**
+ * Resolves the welcome-email locale without crossing languages. New Android sessions can invoke
+ * the function before the profile-localization trigger has populated its nullable fields, so the
+ * authenticated client's exact locale is used only when the profile is still incomplete. A
+ * non-empty unsupported value remains a hard failure; it is not silently mapped to another
+ * language or a guessed regional template.
+ */
+export function resolveWelcomeEmailLocale(
+  input: WelcomeEmailLocaleInput,
+): WelcomeEmailLocaleResolution | null {
+  const profileLanguage = normalizeLanguage(input.profileAppLanguage);
+  const requestLanguage = normalizeLanguage(input.requestAppLanguage);
+  const profileLocaleRaw = input.profileContentLocale?.trim() ?? "";
+  const requestLocaleRaw = input.requestContentLocale?.trim() ?? "";
+  const profileLocale = normalizeSupportedLocale(profileLocaleRaw);
+  const requestLocale = normalizeSupportedLocale(requestLocaleRaw);
+
+  // A persisted non-empty value is authoritative. Keep the existing exact-locale contract for
+  // malformed values instead of allowing a client request to mask a broken profile row.
+  if (profileLocaleRaw && !profileLocale) return null;
+  if (profileLanguage === null && input.profileAppLanguage?.trim()) return null;
+  if (requestLanguage === null && input.requestAppLanguage?.trim()) return null;
+  if (requestLocaleRaw && !requestLocale) return null;
+
+  const language = profileLanguage ??
+    (profileLocale ? localeLanguage(profileLocale) : null) ??
+    requestLanguage ??
+    (requestLocale ? localeLanguage(requestLocale) : null) ??
+    // Turkish is the product's base language for legacy sessions that predate localization
+    // metadata. Android sends its current locale on every new call, so this is only a last resort.
+    "tr";
+  const locale = profileLocale ??
+    (profileLanguage ? defaultLocale(profileLanguage) : null) ??
+    requestLocale ??
+    (requestLanguage ? defaultLocale(requestLanguage) : null) ??
+    defaultLocale(language);
+
+  return localeLanguage(locale) === language ? { appLanguage: language, locale } : null;
+}
+
 const TURKISH_SUBJECT = "RiskDetected’a hoş geldiniz";
 
 const HTML_TEMPLATE = `<!DOCTYPE html>

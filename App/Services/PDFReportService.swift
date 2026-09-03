@@ -421,7 +421,8 @@ final class PDFReportService: @unchecked Sendable {
             drawMatrix5Reference(origin: CGPoint(x: margin, y: 82), language: language)
         }
 
-        drawRiskAnalysisInfoStrip(input: input, rect: CGRect(x: margin, y: 520, width: pageRect.width - margin * 2, height: 42))
+        let infoTop: CGFloat = input.options.method == .matrix5x5 ? 536 : 512
+        drawRiskAnalysisInfoStrip(input: input, rect: CGRect(x: margin, y: infoTop, width: pageRect.width - margin * 2, height: 50))
     }
 
     private func drawRiskAnalysisTablePages(input: ReportInput, context: UIGraphicsPDFRendererContext, pageRect: CGRect, pages: [[AssessmentTableRow]], totalPages: Int) {
@@ -493,10 +494,16 @@ final class PDFReportService: @unchecked Sendable {
     private func drawReportLogo(input: ReportInput, in rect: CGRect, fallbackTextRect: CGRect, companyCornerRadius: CGFloat) {
         if let companyLogo = input.companyLogo {
             drawImage(companyLogo, in: rect, cornerRadius: companyCornerRadius, mode: .scaleAspectFit)
-        } else if let logo = UIImage(named: "RDLogo") {
+        } else if let logo = UIImage(named: "RDLogo", in: Bundle.main, compatibleWith: nil) ?? UIImage(named: "RDLogo") {
             drawImage(logo, in: rect, cornerRadius: 0, mode: .scaleAspectFit)
         } else {
-            drawText("RiskDetected", in: fallbackTextRect, font: .systemFont(ofSize: 20, weight: .bold), color: .rdPDFBlack)
+            drawFittingText(
+                "RiskDetected",
+                in: fallbackTextRect,
+                baseFont: .systemFont(ofSize: 20, weight: .bold),
+                minimumFontSize: 12,
+                color: .rdPDFBlack
+            )
         }
     }
 
@@ -745,21 +752,21 @@ final class PDFReportService: @unchecked Sendable {
         } ?? ""
         drawFittingText(
             "\(sectorLine)\(copy(language: language, tr: "Analiz", en: "Analysis")): \(analysis.title)\n\(copy(language: language, tr: "Firma", en: "Company")): \(company)\n\(copy(language: language, tr: "Firma bilgisi", en: "Company details")): \(companyInfo ?? unspecified)",
-            in: CGRect(x: rect.minX + 10, y: rect.minY + 5, width: 260, height: 37),
+            in: CGRect(x: rect.minX + 10, y: rect.minY + 5, width: 280, height: rect.height - 10),
             baseFont: .systemFont(ofSize: 7.4, weight: .semibold),
             minimumFontSize: 5.8,
             color: .rdPDFSlate
         )
         drawFittingText(
             "\(copy(language: language, tr: "Hazırlayan", en: "Prepared by")): \(prepared)\n\(copy(language: language, tr: "Ünvan", en: "Title")): \(title)\n\(copy(language: language, tr: "Belge No", en: "Certificate no.")): \(certificate)",
-            in: CGRect(x: rect.minX + 294, y: rect.minY + 5, width: 220, height: 37),
+            in: CGRect(x: rect.minX + 304, y: rect.minY + 5, width: 220, height: rect.height - 10),
             baseFont: .systemFont(ofSize: 7.4, weight: .semibold),
             minimumFontSize: 5.8,
             color: .rdPDFSlate
         )
         drawFittingText(
             "\(copy(language: language, tr: "Tarih", en: "Date")): \(formattedDate(analysis.createdAt, language: language))\n\(copy(language: language, tr: "Doküman No", en: "Document no.")): #\(String(analysis.id.uuidString.prefix(8)).uppercased())",
-            in: CGRect(x: rect.minX + 548, y: rect.minY + 9, width: 200, height: 24),
+            in: CGRect(x: rect.minX + 548, y: rect.minY + 9, width: 200, height: rect.height - 18),
             baseFont: .monospacedSystemFont(ofSize: 7.4, weight: .semibold),
             minimumFontSize: 5.8,
             color: .rdPDFBlack,
