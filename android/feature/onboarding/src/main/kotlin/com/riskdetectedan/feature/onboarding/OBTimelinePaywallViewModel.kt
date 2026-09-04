@@ -10,6 +10,8 @@ import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.billing.BillingPackage
 import com.riskdetectedan.core.data.billing.BillingRepository
 import com.riskdetectedan.core.data.billing.PaywallDesignPricing
+import com.riskdetectedan.core.data.billing.PurchaseErrorClassifier
+import com.riskdetectedan.core.data.billing.PurchaseErrorKind
 import com.riskdetectedan.core.data.error.AppErrorMessage
 import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.paywall.PaywallEntryAttribution
@@ -111,6 +113,7 @@ class OBTimelinePaywallViewModel @Inject constructor(
         }.stateIn(viewModelScope, SharingStarted.Eagerly, OBPaywallBilling.Yearly)
 
     private val funnelSessionId = UUID.randomUUID().toString()
+    private var didRecordOpen = false
 
     private val entryAttribution = PaywallEntryAttribution(
         entryPoint = ENTRY_POINT,
@@ -208,6 +211,24 @@ class OBTimelinePaywallViewModel @Inject constructor(
             _state.value = OBTimelinePaywallUiState.Unavailable
             return
         }
+        if (!didRecordOpen) {
+            didRecordOpen = true
+            // The onboarding paywall has no preceding card callback. Record both source entry
+            // and visible presentation before store configuration so a missing offering/runtime
+            // gate cannot erase the journey.
+            recordEvent(
+                userId,
+                PaywallEventName.EntryTap,
+                selectedTier = SubscriptionTier.Plus,
+                billing = billingFor(_selectedPlan.value),
+            )
+            recordEvent(
+                userId,
+                PaywallEventName.View,
+                selectedTier = SubscriptionTier.Plus,
+                billing = billingFor(_selectedPlan.value),
+            )
+        }
         viewModelScope.launch {
             if (!releasePolicyRepository.resolveGate(AndroidRuntimeGateName.Payments).enabled) {
                 _state.value = OBTimelinePaywallUiState.Unavailable
@@ -238,12 +259,6 @@ class OBTimelinePaywallViewModel @Inject constructor(
             }
             _state.value = OBTimelinePaywallUiState.Loaded(plus = plusPackages, pro = pair(SubscriptionTier.Pro))
             alignBillingWithAvailablePackage()
-            recordEvent(
-                userId,
-                PaywallEventName.View,
-                selectedTier = SubscriptionTier.Plus,
-                billing = billingFor(_selectedPlan.value),
-            )
         }
     }
 
@@ -279,7 +294,8 @@ class OBTimelinePaywallViewModel @Inject constructor(
                 is RdResult.Failure -> {
                     _isPurchasing.value = false
                     val cause = result.cause
-                    if (cause is PurchasesTransactionException && cause.userCancelled) {
+                    val errorKind = cause?.let { PurchaseErrorClassifier.classify(it) }?.kind
+                    if ((cause is PurchasesTransactionException && cause.userCancelled) || errorKind == PurchaseErrorKind.Cancelled) {
                         // Silent for the user, recorded for the funnel — same split as
                         // feature:paywall and PaywallDesignFlowView.swift.
                         recordEvent(
@@ -290,6 +306,11 @@ class OBTimelinePaywallViewModel @Inject constructor(
                         )
                         return@launch
                     }
+                    val event = if (errorKind == PurchaseErrorKind.PaymentPending) {
+                        PaywallEventName.PaymentPending
+                    } else {
+                        PaywallEventName.PurchaseFailed
+                    }
                     _purchaseError.value = AppErrorMessages.makePurchase(
                         cause ?: RuntimeException(result.message),
                         context = context.getString(RdR.string.rd_satin_alma_dogrulanamadi),
@@ -297,7 +318,7 @@ class OBTimelinePaywallViewModel @Inject constructor(
                     )
                     recordEvent(
                         userId,
-                        PaywallEventName.PurchaseFailed,
+                        event,
                         selectedTier = billingPackage.tier,
                         billingPackage = billingPackage,
                         purchaseError = result.message,

@@ -55,6 +55,7 @@ struct RiskDetectedApp: App {
                 }
                 .onChange(of: scenePhase) { phase in
                     guard phase == .active else { return }
+                    PaywallEventService.shared.flushPendingIfPossible()
                     Task {
                         await NotificationService.shared.handleAppBecameActive()
                         await appState.refreshNativeLanguageContext()

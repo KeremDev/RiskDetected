@@ -8,6 +8,7 @@ struct OBPlanSummaryView: View {
 
     @State private var checkScale: CGFloat = 0
     @State private var funnelSessionID = UUID()
+    @State private var entryOccurredAt = Date()
     @State private var didLogView = false
     @State private var revealedTimelineStepCount = 0
     @State private var didAnimateTimeline = false
@@ -285,6 +286,21 @@ struct OBPlanSummaryView: View {
                 errorMessage: nil,
                 contextHeadline: context.headline,
                 purchaseError: nil
+            ),
+            entryContext: PaywallEntryContext(
+                funnelSessionID: funnelSessionID,
+                entryPoint: .onboardingPersonalPlan,
+                surface: .onboarding,
+                component: PaywallEntryPoint.onboardingPersonalPlan.component,
+                targetTier: .plus,
+                analysisID: nil,
+                resultSection: nil,
+                itemID: nil,
+                attributes: [
+                    "client_platform": "ios",
+                    "onboarding_segment": context.segmentKey,
+                ],
+                clientOccurredAt: entryOccurredAt
             )
         )
     }

@@ -384,26 +384,32 @@ struct PaywallDesignHero: View {
 // MARK: - Sosyal kanıt
 
 struct PaywallDesignSocialProof: View {
+    @Environment(\.rdLayoutProfile) private var layoutProfile
+
     var body: some View {
+        let isDense = layoutProfile.usesCompactPaywallLayout
+        let imageWidth: CGFloat = isDense ? 184 : PaywallDesignMetric.socialProofImageWidth
+        let boxSize = isDense ? CGSize(width: 176, height: 48) : PaywallDesignMetric.socialProofBox
+
         HStack(spacing: 0) {
             Spacer(minLength: 0)
             Image("PaywallSocialProof")
                 .resizable()
                 .frame(
-                    width: PaywallDesignMetric.socialProofImageWidth,
-                    height: PaywallDesignMetric.socialProofImageWidth / PaywallDesignMetric.socialProofImageAspect
+                    width: imageWidth,
+                    height: imageWidth / PaywallDesignMetric.socialProofImageAspect
                 )
-                .offset(x: -5.7, y: -24.2)
+                .offset(x: isDense ? -5.3 : -5.7, y: isDense ? -22.4 : -24.2)
                 .frame(
-                    width: PaywallDesignMetric.socialProofBox.width,
-                    height: PaywallDesignMetric.socialProofBox.height,
+                    width: boxSize.width,
+                    height: boxSize.height,
                     alignment: .topLeading
                 )
                 .clipped()
                 .accessibilityLabel(RDLocalization.string("paywall.design.social_proof.accessibility", table: .paywall, fallback: "10.000+ kullanıcı, İSG uzmanlarının tercihi"))
             Spacer(minLength: 0)
         }
-        .padding(.top, 6)
+        .padding(.top, isDense ? 1 : 6)
         .padding(.horizontal, PaywallDesignMetric.screenPadding)
     }
 }
@@ -421,10 +427,12 @@ struct PaywallDesignTrialTimeline: View {
     @Environment(\.rdLayoutProfile) private var layoutProfile
 
     private var reminderDay: Int { max(1, trialDays - 2) }
+    private var isDense: Bool { layoutProfile.usesCompactPaywallLayout }
+    private var stepSpacing: CGFloat { isDense ? 6 : (layoutProfile.isCompact ? 9 : 14) }
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: isDense ? 10 : 12) {
                 rail(circleColor: PaywallDesignColor.orange, railColor: PaywallDesignColor.orange) {
                     PaywallDesignCheckIcon(
                         size: CGSize(width: 13, height: 10.5),
@@ -435,10 +443,10 @@ struct PaywallDesignTrialTimeline: View {
                 // Diğer basamaklarla aynı biçim: başlık üstte, açıklama altında.
                 todayStep
                     // Bağlantı çizgisinin görünmesi için diğer satırlarla eşit yükseklik.
-                    .padding(.bottom, layoutProfile.isCompact ? 9 : 14)
+                    .padding(.bottom, stepSpacing)
             }
 
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: isDense ? 10 : 12) {
                 rail(circleColor: PaywallDesignColor.idleMark, railColor: PaywallDesignColor.idleRail) {
                     PaywallDesignBellIcon(size: CGSize(width: 12.5, height: 13.5))
                 }
@@ -450,10 +458,10 @@ struct PaywallDesignTrialTimeline: View {
                         fallback: "Deneme süreniz bitmeden size hatırlatacağız"
                     )
                 )
-                .padding(.bottom, layoutProfile.isCompact ? 9 : 14)
+                .padding(.bottom, stepSpacing)
             }
 
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: isDense ? 10 : 12) {
                 rail(circleColor: PaywallDesignColor.idleMark, railColor: nil) {
                     PaywallDesignCardIcon(size: CGSize(width: 13, height: 10.5))
                 }
@@ -467,7 +475,7 @@ struct PaywallDesignTrialTimeline: View {
                 )
             }
         }
-        .padding(.top, layoutProfile.isCompact ? 10 : 16)
+        .padding(.top, isDense ? 8 : (layoutProfile.isCompact ? 10 : 16))
         .padding(.horizontal, layoutProfile.horizontalPadding)
         .accessibilityIdentifier("in_app_paywall.trial_timeline")
     }
@@ -542,7 +550,7 @@ struct PaywallDesignTrialTimeline: View {
             Text(detail)
                 .font(RDTypography.font(size: 12.5))
                 .foregroundColor(PaywallDesignColor.muted)
-                .designLineHeight(12.5)
+                .designLineHeight(12.5, multiple: isDense ? 1.25 : 1.4)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 2)
         }
@@ -557,7 +565,7 @@ struct PaywallDesignTrialTimeline: View {
         VStack(spacing: 0) {
             Circle()
                 .fill(circleColor)
-                .frame(width: 28, height: 28)
+                .frame(width: isDense ? 26 : 28, height: isDense ? 26 : 28)
                 .overlay(icon())
             if let railColor {
                 Rectangle()
@@ -567,7 +575,7 @@ struct PaywallDesignTrialTimeline: View {
                     .padding(.vertical, 3)
             }
         }
-        .frame(width: 28)
+        .frame(width: isDense ? 26 : 28)
     }
 }
 
@@ -805,6 +813,7 @@ struct PaywallDesignFeatureMarquee: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.rdLayoutProfile) private var layoutProfile
 
     @State private var rowWidth: CGFloat = 0
     @State private var rowHeight: CGFloat = 27
@@ -833,7 +842,7 @@ struct PaywallDesignFeatureMarquee: View {
             }
         }
         .clipped()
-        .padding(.top, 12)
+        .padding(.top, layoutProfile.usesCompactPaywallLayout ? 7 : 12)
         .onPreferenceChange(PaywallDesignMarqueeWidthKey.self) { width in
             guard width > 0, abs(width - rowWidth) > 0.5 else { return }
             rowWidth = width
@@ -861,7 +870,7 @@ struct PaywallDesignFeatureMarquee: View {
     }
 
     private func chip(_ feature: PaywallDesignFeature) -> some View {
-        HStack(spacing: 6) {
+        HStack(alignment: .bottom, spacing: 6) {
             PaywallDesignFeatureIcon(glyph: feature.glyph, size: 13.5, color: accent)
             Text(feature.title)
                 // Şerit bir vitrin, okunması gereken bir liste değil; düz ağırlıkta
@@ -871,8 +880,8 @@ struct PaywallDesignFeatureMarquee: View {
                 .lineLimit(1)
                 .fixedSize()
         }
-        .padding(.vertical, 5.5)
-        .padding(.horizontal, 11)
+        .padding(.vertical, layoutProfile.usesCompactPaywallLayout ? 4 : 5.5)
+        .padding(.horizontal, layoutProfile.usesCompactPaywallLayout ? 9 : 11)
         .background(
             GeometryReader { geometry in
                 Capsule()
@@ -972,7 +981,10 @@ struct PaywallDesignComparisonTable: View {
                 comparisonTable
             }
         }
-        .padding(.top, layoutProfile.isCompact ? 10 : 16)
+        .padding(
+            .top,
+            layoutProfile.usesCompactPaywallLayout ? 8 : (layoutProfile.isCompact ? 10 : 16)
+        )
         .padding(.horizontal, layoutProfile.horizontalPadding)
     }
 
@@ -998,7 +1010,10 @@ struct PaywallDesignComparisonTable: View {
                     mark(row.left)
                     mark(row.right)
                 }
-                .padding(.vertical, layoutProfile.isCompact ? 4 : 6)
+                .padding(
+                    .vertical,
+                    layoutProfile.usesCompactPaywallLayout ? 4 : (layoutProfile.isCompact ? 4 : 6)
+                )
 
                 if index < rows.count - 1 {
                     Rectangle()
@@ -1111,6 +1126,8 @@ struct PaywallDesignPlanCard: View {
 
     @Environment(\.rdLayoutProfile) private var layoutProfile
 
+    private var isDense: Bool { layoutProfile.usesCompactPaywallLayout }
+
     var body: some View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 0) {
@@ -1132,7 +1149,7 @@ struct PaywallDesignPlanCard: View {
                         .foregroundColor(PaywallDesignColor.ink)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(.bottom, 10)
+                .padding(.bottom, isDense ? 6 : 10)
 
                 Text(price)
                     .font(RDTypography.font(size: 14.5, weight: .semibold))
@@ -1151,13 +1168,17 @@ struct PaywallDesignPlanCard: View {
                     Text(trialNote)
                         .font(RDTypography.font(size: 11, weight: .bold))
                         .foregroundColor(accent)
-                        .padding(.top, 7)
+                        .padding(.top, isDense ? 4 : 7)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .padding(.vertical, 14)
+            .padding(.vertical, isDense ? 10 : 14)
             .padding(.horizontal, 12)
-            .frame(maxWidth: .infinity, minHeight: layoutProfile.prefersStackedControls ? 112 : 126, alignment: .topLeading)
+            .frame(
+                maxWidth: .infinity,
+                minHeight: isDense ? 104 : (layoutProfile.prefersStackedControls ? 112 : 126),
+                alignment: .topLeading
+            )
             .background(
                 RoundedRectangle(cornerRadius: PaywallDesignMetric.cardRadius, style: .continuous)
                     .fill(isSelected ? selectedBackground : Color.white)
@@ -1206,6 +1227,8 @@ struct PaywallDesignUpsellCard<Icon: View>: View {
     var accessibilityIdentifier: String
     var onTap: () -> Void
 
+    @Environment(\.rdLayoutProfile) private var layoutProfile
+
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 10) {
@@ -1218,8 +1241,8 @@ struct PaywallDesignUpsellCard<Icon: View>: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 PaywallDesignChevronIcon(color: chevronColor)
             }
-            .padding(.vertical, 14)
-            .padding(.horizontal, 16)
+            .padding(.vertical, layoutProfile.usesCompactPaywallLayout ? 10 : 14)
+            .padding(.horizontal, layoutProfile.usesCompactPaywallLayout ? 14 : 16)
             .background(
                 RoundedRectangle(cornerRadius: PaywallDesignMetric.cardRadius, style: .continuous)
                     .fill(background)
@@ -1272,6 +1295,7 @@ struct PaywallDesignNotice: View {
 
 struct PaywallDesignFooter: View {
     var ctaTitle: String
+    var purchaseDisclosure: String?
     var ctaAccessibilityIdentifier: String
     var isLoading: Bool
     var isDisabled: Bool
@@ -1279,6 +1303,10 @@ struct PaywallDesignFooter: View {
     var notice: String?
     var errorMessage: String?
     var onCTA: () -> Void
+    var onRestore: () -> Void
+    var onTerms: () -> Void
+    var onPrivacy: () -> Void
+    var onManageSubscription: () -> Void
 
     @Environment(\.rdLayoutProfile) private var layoutProfile
 
@@ -1324,10 +1352,33 @@ struct PaywallDesignFooter: View {
             .disabled(isDisabled)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier(ctaAccessibilityIdentifier)
+
+            if let purchaseDisclosure {
+                Text(purchaseDisclosure)
+                    .font(RDTypography.font(size: 10.5, weight: .medium))
+                    .foregroundColor(PaywallDesignColor.footer)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+                    .allowsTightening(true)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 4)
+                    .accessibilityIdentifier("in_app_paywall.purchase_disclosure")
+            }
+
+            PaywallDesignLegalLinks(
+                onRestore: onRestore,
+                onTerms: onTerms,
+                onPrivacy: onPrivacy,
+                onManageSubscription: onManageSubscription
+            )
+            // Yasal bağlantıları home indicator'a yaklaştırırken CTA ve fiyat
+            // satırının safe-area konumunu sabit tut.
+            .offset(y: 12)
         }
-        .padding(.top, 10)
+        .padding(.top, 8)
         .padding(.horizontal, layoutProfile.horizontalPadding)
-        .padding(.bottom, 10)
+        .padding(.bottom, 0)
         .background(
             Color.white
                 .shadow(color: Color.black.opacity(0.05), radius: 12, x: 0, y: -8)
@@ -1335,69 +1386,25 @@ struct PaywallDesignFooter: View {
     }
 }
 
-/// Renewal disclosure and legal actions remain in the document's natural
-/// reading order. Keeping only the purchase button sticky leaves substantially
-/// more usable height on compact phones without hiding any information.
-struct PaywallDesignLegalFooter: View {
-    var renewalPrice: String?
+/// Satın alma ve hukuki işlemler CTA ile aynı sabit alt alanda kalır. Metinler
+/// görsel olarak küçük tutulurken her bağlantı erişilebilir dokunma alanını korur.
+struct PaywallDesignLegalLinks: View {
     var onRestore: () -> Void
     var onTerms: () -> Void
     var onPrivacy: () -> Void
     var onManageSubscription: () -> Void
 
-    @Environment(\.rdLayoutProfile) private var layoutProfile
-
     var body: some View {
-        VStack(spacing: 8) {
-            autoRenewText
-                .font(RDTypography.font(size: 11))
-                .foregroundColor(PaywallDesignColor.footer)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity)
-                .accessibilityIdentifier("in_app_paywall.auto_renew")
-
-            if layoutProfile.isAccessibilityText || layoutProfile.widthClass == .narrow {
-                LazyVGrid(
-                    columns: [GridItem(.flexible()), GridItem(.flexible())],
-                    spacing: 4
-                ) {
-                    legalLinks
-                }
-            } else {
-                HStack(spacing: 8) {
-                    link(restoreTitle, identifier: "in_app_paywall.restore", action: onRestore)
-                    separator
-                    link(termsTitle, identifier: "in_app_paywall.terms", action: onTerms)
-                    separator
-                    link(privacyTitle, identifier: "in_app_paywall.privacy", action: onPrivacy)
-                    separator
-                    link(manageTitle, identifier: "in_app_paywall.manage", action: onManageSubscription)
-                }
-            }
+        HStack(spacing: 6) {
+            link(restoreTitle, identifier: "in_app_paywall.restore", action: onRestore)
+            separator
+            link(termsTitle, identifier: "in_app_paywall.terms", action: onTerms)
+            separator
+            link(privacyTitle, identifier: "in_app_paywall.privacy", action: onPrivacy)
+            separator
+            link(manageTitle, identifier: "in_app_paywall.manage", action: onManageSubscription)
         }
         .frame(maxWidth: .infinity)
-    }
-
-    @ViewBuilder
-    private var legalLinks: some View {
-        link(restoreTitle, identifier: "in_app_paywall.restore", action: onRestore)
-        link(termsTitle, identifier: "in_app_paywall.terms", action: onTerms)
-        link(privacyTitle, identifier: "in_app_paywall.privacy", action: onPrivacy)
-        link(manageTitle, identifier: "in_app_paywall.manage", action: onManageSubscription)
-    }
-
-    /// Otomatik yenileme cümlesi ve arkasına seçili planın fiyatı.
-    private var autoRenewText: Text {
-        let sentence = Text(
-            RDLocalization.string(
-                "paywall.design.footer.auto_renew",
-                table: .paywall,
-                fallback: "Otomatik yenilenir. İstediğiniz zaman iptal edin."
-            )
-        )
-        guard let renewalPrice else { return sentence }
-        return sentence + Text(" ") + Text(renewalPrice).fontWeight(.semibold)
     }
 
     private var restoreTitle: String {
@@ -1426,9 +1433,12 @@ struct PaywallDesignLegalFooter: View {
     private func link(_ title: String, identifier: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(RDTypography.font(size: 11))
+                .font(RDTypography.font(size: 10.5))
                 .foregroundColor(PaywallDesignColor.footer)
-                .frame(maxWidth: .infinity, minHeight: 44)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+                .allowsTightening(true)
+                .frame(maxWidth: .infinity, minHeight: 28, alignment: .bottom)
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)

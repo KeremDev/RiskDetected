@@ -14,6 +14,7 @@ struct PaywallDesignPlanOption: Equatable {
 
 struct PaywallDesignCTAState: Equatable {
     var title: String
+    var purchaseDisclosure: String?
     var isLoading: Bool
     var isDisabled: Bool
     var accessibilityIdentifier: String
@@ -50,8 +51,6 @@ struct PaywallDesignScreen: View {
     var cta: PaywallDesignCTAState
     var notice: String?
     var errorMessage: String?
-    /// Alt bardaki otomatik yenileme cümlesinin devamına eklenen seçili plan fiyatı.
-    var renewalPrice: String?
     var crossSell: PaywallDesignCrossSell?
 
     var onClose: () -> Void
@@ -102,31 +101,22 @@ struct PaywallDesignScreen: View {
 
                     AnyLayout(
                         profile.prefersStackedControls
-                            ? AnyLayout(VStackLayout(spacing: 12))
-                            : AnyLayout(HStackLayout(spacing: 10))
+                            ? AnyLayout(VStackLayout(spacing: profile.usesCompactPaywallLayout ? 8 : 12))
+                            : AnyLayout(HStackLayout(spacing: profile.usesCompactPaywallLayout ? 8 : 10))
                     ) {
                         planCard(annual, billing: .yearly, identifier: "in_app_paywall.plan.yearly")
                         planCard(monthly, billing: .monthly, identifier: "in_app_paywall.plan.monthly")
                     }
-                    .padding(.top, profile.isCompact ? 16 : 22)
+                    .padding(.top, profile.usesCompactPaywallLayout ? 10 : (profile.isCompact ? 16 : 22))
                     .padding(.horizontal, profile.horizontalPadding)
-                    .padding(.bottom, profile.isCompact ? 18 : 24)
+                    .padding(.bottom, profile.usesCompactPaywallLayout ? 10 : (profile.isCompact ? 18 : 24))
 
                     if let crossSell {
                         crossSellCard(crossSell)
                             .padding(.horizontal, profile.horizontalPadding)
-                            .padding(.bottom, profile.sectionSpacing)
+                            .padding(.bottom, profile.usesCompactPaywallLayout ? 8 : profile.sectionSpacing)
                     }
 
-                    PaywallDesignLegalFooter(
-                        renewalPrice: renewalPrice,
-                        onRestore: onRestore,
-                        onTerms: onTerms,
-                        onPrivacy: onPrivacy,
-                        onManageSubscription: onManageSubscription
-                    )
-                    .padding(.horizontal, profile.horizontalPadding)
-                    .padding(.bottom, profile.sectionSpacing)
                 }
             }
             // Ekran değiştiğinde (PLUS ↔ PRO) kaydırma konumu başa dönsün;
@@ -136,13 +126,18 @@ struct PaywallDesignScreen: View {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 PaywallDesignFooter(
                     ctaTitle: cta.title,
+                    purchaseDisclosure: cta.purchaseDisclosure,
                     ctaAccessibilityIdentifier: cta.accessibilityIdentifier,
                     isLoading: cta.isLoading,
                     isDisabled: cta.isDisabled,
                     accent: accent,
                     notice: notice,
                     errorMessage: errorMessage,
-                    onCTA: onCTA
+                    onCTA: onCTA,
+                    onRestore: onRestore,
+                    onTerms: onTerms,
+                    onPrivacy: onPrivacy,
+                    onManageSubscription: onManageSubscription
                 )
             }
         }

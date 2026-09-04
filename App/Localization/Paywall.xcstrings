@@ -325,6 +325,24 @@
         }
       }
     },
+    "paywall.design.footer.trial_disclosure_yearly_format": {
+      "comment": "compact CTA disclosure for a yearly free trial; placeholders: %1$@ = trial days, %2$@ = localized store price",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ days free, then %2$@ / year."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ gün ücretsiz, ardından %2$@ / yıl."
+          }
+        }
+      }
+    },
     "paywall.design.hero.benefits_format": {
       "comment": "paywall design hero pill copy for benefits view; placeholders: %1$@ = plan name",
       "extractionState": "manual",

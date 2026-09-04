@@ -640,6 +640,9 @@ final class AuthService: ObservableObject {
 
                 await MainActor.run {
                     self.session = newSession
+                    if newSession != nil {
+                        PaywallEventService.shared.flushPendingIfPossible()
+                    }
                 }
 
                 if newSession?.user.id != nil {

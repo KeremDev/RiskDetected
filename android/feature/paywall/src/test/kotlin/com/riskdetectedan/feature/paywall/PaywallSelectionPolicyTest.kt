@@ -3,6 +3,7 @@ package com.riskdetectedan.feature.paywall
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -89,5 +90,15 @@ class PaywallSelectionPolicyTest {
         assertEquals("regulatory_references_lock", paywallEntryComponent("finding_detail_regulatory_references"))
         assertEquals("analysis_results", paywallEntrySurface("result_report_company_picker"))
         assertEquals("company_picker_lock", paywallEntryComponent("result_report_company_picker"))
+    }
+
+    @Test
+    fun `every registered entry point resolves without an unknown coordinate`() {
+        paywallEntryCatalog.forEach { (entryPoint, definition) ->
+            assertNotEquals("unknown surface for $entryPoint", "unknown", definition.surface)
+            assertNotEquals("unknown component for $entryPoint", "unknown", definition.component)
+            assertEquals(definition.surface, paywallEntrySurface(entryPoint))
+            assertEquals(definition.component, paywallEntryComponent(entryPoint))
+        }
     }
 }

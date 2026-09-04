@@ -544,7 +544,31 @@ async function recordPaywallConversionAttribution(params: {
     Date.parse(purchasedAt) - 24 * 60 * 60 * 1000,
   ).toISOString();
 
-  const { data: entry, error: entryError } = await params.supabase
+  // Prefer the exact checkout funnel. A user can inspect several promotion cards within the
+  // 24-hour attribution window; "latest entry tap" alone can therefore credit the wrong card.
+  // purchase_started is emitted before the store sheet and carries both product and funnel.
+  const { data: checkout, error: checkoutError } = params.state.productID
+    ? await params.supabase
+      .from("paywall_events")
+      .select("funnel_session_id")
+      .eq("user_id", params.userID)
+      .eq("event_name", "purchase_started")
+      .eq("product_identifier", params.state.productID)
+      .gte("client_occurred_at", attributionWindowStart)
+      .lte("client_occurred_at", purchasedAt)
+      .order("client_occurred_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    : { data: null, error: null };
+
+  if (checkoutError) {
+    console.warn(
+      "Paywall attribution checkout lookup failed",
+      JSON.stringify({ event_id: params.eventID, code: checkoutError.code }),
+    );
+  }
+
+  let entryQuery = params.supabase
     .from("paywall_events")
     .select(
       "id,funnel_session_id,client_occurred_at,entry_point,entry_surface,entry_component,analysis_id,result_section,item_id,entry_context",
@@ -552,7 +576,11 @@ async function recordPaywallConversionAttribution(params: {
     .eq("user_id", params.userID)
     .eq("event_name", "entry_tap")
     .gte("client_occurred_at", attributionWindowStart)
-    .lte("client_occurred_at", purchasedAt)
+    .lte("client_occurred_at", purchasedAt);
+  if (checkout?.funnel_session_id) {
+    entryQuery = entryQuery.eq("funnel_session_id", checkout.funnel_session_id);
+  }
+  const { data: entry, error: entryError } = await entryQuery
     .order("client_occurred_at", { ascending: false })
     .limit(1)
     .maybeSingle();

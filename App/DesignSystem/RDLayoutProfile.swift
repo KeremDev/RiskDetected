@@ -69,10 +69,17 @@ struct RDLayoutProfile: Equatable, Sendable {
 
     var paywallHeroHeight: CGFloat {
         switch heightClass {
-        case .short: 218
-        case .standard: 252
-        case .tall: 286
+        case .short: 196
+        case .standard: 220
+        case .tall: 260
         }
+    }
+
+    /// Paywall'ın ilk görünümünde planlar ve bir üst paket geçişi için daha fazla
+    /// alan bırakır. Erişilebilirlik yazı boyutlarında içerik sıkıştırılmaz; metinler
+    /// doğal yüksekliğini alıp kaydırılabilir kalır.
+    var usesCompactPaywallLayout: Bool {
+        heightClass != .tall && !isAccessibilityText
     }
 
     var isCompact: Bool {

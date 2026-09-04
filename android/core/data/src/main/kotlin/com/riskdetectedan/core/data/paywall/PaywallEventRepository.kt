@@ -1,35 +1,41 @@
 package com.riskdetectedan.core.data.paywall
 
+import android.content.Context
 import android.util.Log
 import com.riskdetectedan.core.data.profile.SubscriptionTier
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Mirrors PaywallEventService.swift's `record()` — analytics only, never blocks/affects the
- * purchase flow (errors are swallowed, matching the Swift `Task { try? ... }` fire-and-forget).
+ * Mirrors PaywallEventService.swift's durable delivery contract. Events are persisted before
+ * upload, retried outside the paywall ViewModel lifecycle, and acknowledged only after PostgREST
+ * accepts them. `client_event_id` makes a retry safe after a lost HTTP response.
  *
  * Android now mirrors the live in-app paywall interactions, including explicit plan/billing
- * selection, CTA and close events. Payment-pending remains excluded until the shared database
- * CHECK accepts it; RevenueCat's pending result is still surfaced through the billing state.
- * `payment_pending`/`personal_plan_view`/`personal_plan_continue`/`trial_invite_*` exist as Swift
- * enum cases but AREN'T in `paywall_events_event_name_check`'s allowed list either (pre-existing
- * drift between the Swift enum and the DB constraint, not something this port needs to fix) —
- * skipped for that reason too, sending them would just fail the CHECK.
+ * selection, CTA, close, cancellation and payment-pending events. The shared database constraint
+ * is maintained by the paywall delivery-integrity migration and is covered by pgTAP.
  *
  * `source` is `"in_app"` for Profile → "Planı yükselt" (feature #20) and `"onboarding_v2"` for
  * the onboarding-step-11 paywall (feature:onboarding's `OBTimelinePaywallScreen`, wired to real
@@ -54,6 +60,7 @@ enum class PaywallEventName(val wireValue: String) {
     PurchaseSucceeded("purchase_succeeded"),
     PurchaseFailed("purchase_failed"),
     PurchaseCancelled("purchase_cancelled"),
+    PaymentPending("payment_pending"),
     RestoreTap("restore_tap"),
 }
 
@@ -98,6 +105,7 @@ data class PaywallEventMetadata(
 
 @Serializable
 private data class PaywallEventPayload(
+    @SerialName("client_event_id") val clientEventId: String,
     @SerialName("user_id") val userId: String,
     @SerialName("funnel_session_id") val funnelSessionId: String,
     val source: String,
@@ -121,9 +129,18 @@ private data class PaywallEventPayload(
 )
 
 @Singleton
-class PaywallEventRepository @Inject constructor(private val client: SupabaseClient) {
+class PaywallEventRepository @Inject constructor(
+    @ApplicationContext context: Context,
+    private val client: SupabaseClient,
+) {
     private val appSessionId = UUID.randomUUID().toString()
     private val deliveryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private val queueLock = Any()
+    private val isFlushing = AtomicBoolean(false)
+    private val retryAttempt = AtomicInteger(0)
+    @Volatile private var retryJob: Job? = null
 
     fun record(
         event: PaywallEventName,
@@ -138,6 +155,7 @@ class PaywallEventRepository @Inject constructor(private val client: SupabaseCli
     ) {
         val clientOccurredAt = Instant.now().toString()
         val payload = PaywallEventPayload(
+            clientEventId = UUID.randomUUID().toString(),
             userId = userId,
             funnelSessionId = funnelSessionId,
             source = source,
@@ -158,16 +176,89 @@ class PaywallEventRepository @Inject constructor(private val client: SupabaseCli
             entryContext = attribution?.toEntryContext(funnelSessionId) ?: buildJsonObject {},
             metadata = metadata,
         )
-        // Delivery must outlive the paywall destination. In particular, recordClose() is followed
-        // immediately by popBackStack(); using viewModelScope alone could cancel that final write.
+        enqueue(payload)
+        flushPending()
+    }
+
+    /** May be called from application/activity lifecycle hooks after auth or connectivity returns. */
+    fun flushPending() {
+        retryJob?.cancel()
+        retryJob = null
+        if (!isFlushing.compareAndSet(false, true)) return
         deliveryScope.launch {
+            var deliveryFailed = false
             try {
-                client.postgrest.from("paywall_events").insert(payload)
-            } catch (t: Throwable) {
-                // Analytics must never surface an error to the purchase flow, but a rejected event
-                // must remain diagnosable in Logcat (matching iOS's logger-only failure handling).
-                Log.e(TAG, "Paywall event insert failed: ${event.wireValue}", t)
+                while (true) {
+                    val next = synchronized(queueLock) { readPendingLocked().firstOrNull() } ?: break
+                    try {
+                        client.postgrest.from("paywall_events").upsert(next) {
+                            onConflict = "client_event_id"
+                            ignoreDuplicates = true
+                        }
+                        acknowledge(next.clientEventId)
+                    } catch (t: Throwable) {
+                        deliveryFailed = true
+                        Log.e(TAG, "Paywall event delivery deferred: ${next.eventName}", t)
+                        break
+                    }
+                }
+            } finally {
+                isFlushing.set(false)
+                // Close the small race where a new event is enqueued after the loop observed an
+                // empty queue but before the flag was cleared. Network failures use a bounded
+                // exponential retry so delivery also recovers while the app stays foregrounded.
+                if (deliveryFailed) {
+                    scheduleRetry()
+                } else if (synchronized(queueLock) { readPendingLocked().isNotEmpty() }) {
+                    flushPending()
+                } else {
+                    retryAttempt.set(0)
+                }
             }
         }
+    }
+
+    private fun scheduleRetry() {
+        if (synchronized(queueLock) { readPendingLocked().isEmpty() }) return
+        val attempt = retryAttempt.getAndUpdate { current -> (current + 1).coerceAtMost(6) }
+        val delayMillis = (5_000L * (1L shl attempt.coerceAtMost(6))).coerceAtMost(300_000L)
+        retryJob?.cancel()
+        retryJob = deliveryScope.launch {
+            delay(delayMillis)
+            retryJob = null
+            flushPending()
+        }
+    }
+
+    private fun enqueue(payload: PaywallEventPayload) = synchronized(queueLock) {
+        val pending = readPendingLocked()
+        if (pending.any { it.clientEventId == payload.clientEventId }) return@synchronized
+        persistLocked(pending + payload)
+    }
+
+    private fun acknowledge(clientEventId: String) = synchronized(queueLock) {
+        persistLocked(readPendingLocked().filterNot { it.clientEventId == clientEventId })
+    }
+
+    private fun readPendingLocked(): List<PaywallEventPayload> {
+        val encoded = preferences.getString(PENDING_EVENTS_KEY, null) ?: return emptyList()
+        return runCatching { json.decodeFromString<List<PaywallEventPayload>>(encoded) }
+            .onFailure {
+                Log.e(TAG, "Pending paywall event queue could not be decoded", it)
+                preferences.edit().remove(PENDING_EVENTS_KEY).commit()
+            }
+            .getOrDefault(emptyList())
+    }
+
+    private fun persistLocked(events: List<PaywallEventPayload>) {
+        val editor = preferences.edit()
+        if (events.isEmpty()) editor.remove(PENDING_EVENTS_KEY)
+        else editor.putString(PENDING_EVENTS_KEY, json.encodeToString(events))
+        if (!editor.commit()) Log.e(TAG, "Pending paywall event queue could not be persisted")
+    }
+
+    private companion object {
+        const val PREFERENCES_NAME = "rd_paywall_event_delivery"
+        const val PENDING_EVENTS_KEY = "pending_events_v1"
     }
 }

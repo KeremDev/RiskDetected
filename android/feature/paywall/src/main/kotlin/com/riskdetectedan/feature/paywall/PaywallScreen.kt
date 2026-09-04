@@ -58,7 +58,7 @@ fun PaywallScreen(
     resultAnalysisId: String? = null,
     resultSection: String? = null,
     resultFunnelSessionId: String? = null,
-    entryPoint: String? = null,
+    entryPoint: String,
     entryTargetTier: String? = null,
     entryItemId: String? = null,
     entryKind: String? = null,

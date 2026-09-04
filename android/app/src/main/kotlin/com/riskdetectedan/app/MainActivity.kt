@@ -39,6 +39,7 @@ import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.billing.BillingRepository
 import com.riskdetectedan.core.data.notifications.NotificationEngagementRepository
 import com.riskdetectedan.core.data.onboarding.OnboardingAnswersRepository
+import com.riskdetectedan.core.data.paywall.PaywallEventRepository
 import com.riskdetectedan.core.designsystem.RiskDetectedTheme
 import com.riskdetectedan.core.designsystem.RdTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -64,6 +65,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var billingRepository: BillingRepository
     @Inject lateinit var notificationEngagementRepository: NotificationEngagementRepository
     @Inject lateinit var onboardingAnswersRepository: OnboardingAnswersRepository
+    @Inject lateinit var paywallEventRepository: PaywallEventRepository
 
     private val updateResultLauncher = registerForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult(),
@@ -191,6 +193,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        paywallEventRepository.flushPending()
         if (::playUpdateController.isInitialized) playUpdateController.resumeInterruptedImmediateUpdate()
         if (authRepository.currentUserId != null) {
             // Detect renewal-intent changes immediately after returning from

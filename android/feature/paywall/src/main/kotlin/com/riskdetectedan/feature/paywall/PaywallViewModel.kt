@@ -13,6 +13,8 @@ import com.riskdetectedan.core.data.billing.BillingPackage
 import com.riskdetectedan.core.data.billing.BillingRepository
 import com.riskdetectedan.core.data.billing.BillingSubscriptionState
 import com.riskdetectedan.core.data.billing.PaywallDesignPricing
+import com.riskdetectedan.core.data.billing.PurchaseErrorClassifier
+import com.riskdetectedan.core.data.billing.PurchaseErrorKind
 import com.riskdetectedan.core.data.error.AppErrorMessage
 import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.paywall.PaywallEventMetadata
@@ -76,44 +78,60 @@ internal fun String?.resultPromotionEntryPoint(): String? = when (this) {
     else -> null
 }
 
-internal fun paywallEntrySurface(entryPoint: String): String = when {
-    entryPoint.startsWith("home_") || entryPoint == "quick_scan_quota_alert" -> "home"
-    entryPoint.startsWith("analyses_") -> "analyses"
-    entryPoint.startsWith("reports_") -> "reports"
-    entryPoint.startsWith("profile_") -> "profile"
-    entryPoint.startsWith("finding_detail_") -> "finding_detail"
-    entryPoint == "result_hub_expert_advice_promotion" -> "expert_advice"
-    entryPoint == "result_hub_training_promotion" -> "training_recommendations"
-    entryPoint == "result_hub_approved_notebook_promotion" -> "approved_notebook"
-    entryPoint.startsWith("result_") -> "analysis_results"
-    entryPoint == "onboarding_flow" -> "onboarding"
-    else -> "unknown"
-}
+internal data class PaywallEntryDefinition(val surface: String, val component: String)
 
-internal fun paywallEntryComponent(entryPoint: String): String = when {
-    entryPoint.endsWith("header_upgrade") -> "header_upgrade_cta"
-    entryPoint.endsWith("profile_menu_upgrade") -> "header_profile_menu_upgrade"
-    entryPoint.contains("quota_alert") -> "quota_alert"
-    entryPoint.contains("canvas_locked") -> "analysis_focus_lock"
-    entryPoint.contains("photo_upload_quota") -> "photo_upload_quota_lock"
-    entryPoint.contains("quota_hint") -> "quota_status_card"
-    entryPoint.contains("analysis_start_quota") -> "analysis_start_quota_gate"
-    entryPoint.contains("quick_scan_quota") -> "quick_scan_quota_gate"
-    entryPoint.contains("photo_tray_locked") -> "photo_tray_locked_slot"
-    entryPoint.contains("photo_limit") -> "photo_limit_gate"
-    entryPoint.endsWith("company_picker") -> "company_picker_lock"
-    entryPoint.endsWith("upsell_card") -> "plan_upsell_card"
-    entryPoint.contains("locked_report_options") -> "report_options_lock"
-    entryPoint.startsWith("result_hub_") -> "result_membership_promotion"
-    entryPoint == "result_summary_upgrade_hint" -> "result_summary_hint"
-    entryPoint == "result_confidence_chip" -> "confidence_chip"
-    entryPoint == "result_finding_locked_feature" -> "finding_card_locked_feature"
-    entryPoint == "result_locked_finding_preview" -> "locked_finding_preview"
-    entryPoint.contains("regulatory_references") -> "regulatory_references_lock"
-    entryPoint.startsWith("finding_detail_") -> "finding_detail_membership_promotion"
-    entryPoint == "onboarding_flow" -> "onboarding_paywall"
-    else -> "unknown"
-}
+/**
+ * Stable analytics catalog shared conceptually with iOS `PaywallEntryPoint`.
+ * Exact lookup is deliberate: prefix heuristics made a typo look partially valid and let a new
+ * card silently land in the dashboard with component="unknown".
+ */
+internal val paywallEntryCatalog: Map<String, PaywallEntryDefinition> = mapOf(
+    "home_header_upgrade" to PaywallEntryDefinition("home", "header_upgrade_cta"),
+    "home_header_profile_menu_upgrade" to PaywallEntryDefinition("home", "header_profile_menu_upgrade"),
+    "analyses_header_upgrade" to PaywallEntryDefinition("analyses", "header_upgrade_cta"),
+    "analyses_header_profile_menu_upgrade" to PaywallEntryDefinition("analyses", "header_profile_menu_upgrade"),
+    "reports_header_upgrade" to PaywallEntryDefinition("reports", "header_upgrade_cta"),
+    "reports_header_profile_menu_upgrade" to PaywallEntryDefinition("reports", "header_profile_menu_upgrade"),
+    "result_header_upgrade" to PaywallEntryDefinition("analysis_results", "header_upgrade_cta"),
+    "result_header_profile_menu_upgrade" to PaywallEntryDefinition("analysis_results", "header_profile_menu_upgrade"),
+    "quick_scan_quota_alert" to PaywallEntryDefinition("home", "quota_alert"),
+    "home_canvas_locked_focus" to PaywallEntryDefinition("home", "analysis_focus_lock"),
+    "home_photo_upload_quota" to PaywallEntryDefinition("home", "photo_upload_quota_lock"),
+    "home_quota_hint" to PaywallEntryDefinition("home", "quota_status_card"),
+    "home_analysis_start_quota" to PaywallEntryDefinition("home", "analysis_start_quota_gate"),
+    "home_quick_scan_quota" to PaywallEntryDefinition("home", "quick_scan_quota_gate"),
+    "home_photo_tray_locked_slot" to PaywallEntryDefinition("home", "photo_tray_locked_slot"),
+    "home_photo_limit" to PaywallEntryDefinition("home", "photo_limit_gate"),
+    "analyses_company_picker" to PaywallEntryDefinition("analyses", "company_picker_lock"),
+    "reports_company_picker" to PaywallEntryDefinition("reports", "company_picker_lock"),
+    "profile_company_picker" to PaywallEntryDefinition("profile", "company_picker_lock"),
+    "profile_upsell_card" to PaywallEntryDefinition("profile", "plan_upsell_card"),
+    "reports_upsell_card" to PaywallEntryDefinition("reports", "plan_upsell_card"),
+    "reports_locked_report_options" to PaywallEntryDefinition("reports", "report_options_lock"),
+    "reports_report_company_picker" to PaywallEntryDefinition("reports", "company_picker_lock"),
+    "result_hub_risk_analysis_promotion" to PaywallEntryDefinition("analysis_results", "result_membership_promotion"),
+    "result_hub_expert_advice_promotion" to PaywallEntryDefinition("expert_advice", "result_membership_promotion"),
+    "result_hub_training_promotion" to PaywallEntryDefinition("training_recommendations", "result_membership_promotion"),
+    "result_hub_approved_notebook_promotion" to PaywallEntryDefinition("approved_notebook", "result_membership_promotion"),
+    "result_locked_report_options" to PaywallEntryDefinition("analysis_results", "report_options_lock"),
+    "result_report_company_picker" to PaywallEntryDefinition("analysis_results", "company_picker_lock"),
+    "result_summary_upgrade_hint" to PaywallEntryDefinition("analysis_results", "result_summary_hint"),
+    "result_confidence_chip" to PaywallEntryDefinition("analysis_results", "confidence_chip"),
+    "result_finding_locked_feature" to PaywallEntryDefinition("analysis_results", "finding_card_locked_feature"),
+    "result_locked_finding_preview" to PaywallEntryDefinition("analysis_results", "locked_finding_preview"),
+    "finding_detail_plus_pro_promotion" to PaywallEntryDefinition("finding_detail", "finding_detail_membership_promotion"),
+    "finding_detail_pro_promotion" to PaywallEntryDefinition("finding_detail", "finding_detail_membership_promotion"),
+    "finding_detail_regulatory_references" to PaywallEntryDefinition("finding_detail", "regulatory_references_lock"),
+    "onboarding_personal_plan" to PaywallEntryDefinition("onboarding", "personal_plan_screen"),
+    "onboarding_trial_invite" to PaywallEntryDefinition("onboarding", "trial_invite_screen"),
+    "onboarding_flow" to PaywallEntryDefinition("onboarding", "onboarding_paywall"),
+)
+
+internal fun paywallEntrySurface(entryPoint: String): String =
+    paywallEntryCatalog[entryPoint]?.surface ?: "unknown"
+
+internal fun paywallEntryComponent(entryPoint: String): String =
+    paywallEntryCatalog[entryPoint]?.component ?: "unknown"
 
 /**
  * Mirrors `RevenueCatSubscriptionManager`'s configure -> identify -> loadOfferings sequence
@@ -175,7 +193,7 @@ class PaywallViewModel @Inject constructor(
         resultAnalysisId: String? = null,
         resultSection: String? = null,
         inheritedFunnelSessionId: String? = null,
-        entryPoint: String? = null,
+        entryPoint: String,
         entryTargetTier: String? = null,
         entryItemId: String? = null,
         entryAttributes: Map<String, String> = emptyMap(),
@@ -185,9 +203,10 @@ class PaywallViewModel @Inject constructor(
         funnelSessionId = inheritedFunnelSessionId?.takeIf { it.isNotBlank() } ?: funnelSessionId
         resultHubAnalysisId = resultAnalysisId?.takeIf { it.isNotBlank() }
         resultHubSection = resultSection.toResultSectionOrNull()
-        val resolvedEntryPoint = entryPoint?.takeIf(String::isNotBlank)
+        val resolvedEntryPoint = entryPoint.takeIf(String::isNotBlank)
             ?: resultSection.resultPromotionEntryPoint()
             ?: "unknown"
+        val isRegisteredEntryPoint = paywallEntryCatalog.containsKey(resolvedEntryPoint)
         entryAttribution = PaywallEntryAttribution(
             entryPoint = resolvedEntryPoint,
             entrySurface = paywallEntrySurface(resolvedEntryPoint),
@@ -196,12 +215,22 @@ class PaywallViewModel @Inject constructor(
             analysisId = resultHubAnalysisId,
             resultSection = resultSection?.takeIf(String::isNotBlank),
             itemId = entryItemId?.takeIf(String::isNotBlank),
-            attributes = entryAttributes + ("client_platform" to "android"),
+            attributes = entryAttributes + mapOf(
+                "client_platform" to "android",
+                "attribution_status" to if (isRegisteredEntryPoint) "registered" else "unregistered_entry_point",
+            ),
         )
         authRepository.currentUserId?.let { userId ->
             recordEvent(
                 userId = userId,
                 event = PaywallEventName.EntryTap,
+                selectedTier = entryAttribution?.entryTargetTier,
+            )
+            // Opening the paywall is a UI fact, not an offerings-load success. Recording this
+            // only after RevenueCat/configuration completed made failed/slow opens disappear.
+            recordEvent(
+                userId = userId,
+                event = PaywallEventName.View,
                 selectedTier = entryAttribution?.entryTargetTier,
             )
         }
@@ -274,12 +303,6 @@ class PaywallViewModel @Inject constructor(
             _state.value = PaywallUiState.Loaded(packages, backendTier, activeProductId)
             _selectedPlan.value = if (backendTier == SubscriptionTier.Free) PaywallPlan.Plus else PaywallPlan.Pro
             alignBillingWithAvailablePackage(packages)
-            recordEvent(
-                userId,
-                PaywallEventName.View,
-                selectedTier = _selectedPlan.value.tier,
-                billing = billingFor(_selectedPlan.value),
-            )
         }
     }
 
@@ -384,7 +407,8 @@ class PaywallViewModel @Inject constructor(
                 is RdResult.Failure -> {
                     _isPurchasing.value = false
                     val cause = result.cause
-                    if (cause is PurchasesTransactionException && cause.userCancelled) {
+                    val errorKind = cause?.let { PurchaseErrorClassifier.classify(it) }?.kind
+                    if ((cause is PurchasesTransactionException && cause.userCancelled) || errorKind == PurchaseErrorKind.Cancelled) {
                         // Silent in the UI, matches iOS's `catch is CancellationError` in
                         // InAppPaywallView.swift — no error card, no purchase_failed event. The
                         // funnel still needs the drop-off, so record purchase_cancelled exactly
@@ -397,17 +421,27 @@ class PaywallViewModel @Inject constructor(
                         )
                         return@launch
                     }
+                    if (errorKind == PurchaseErrorKind.PaymentPending) {
+                        recordEvent(
+                            userId,
+                            PaywallEventName.PaymentPending,
+                            selectedTier = billingPackage.tier,
+                            billingPackage = billingPackage,
+                            purchaseError = result.message,
+                        )
+                    } else {
+                        recordEvent(
+                            userId,
+                            PaywallEventName.PurchaseFailed,
+                            selectedTier = billingPackage.tier,
+                            billingPackage = billingPackage,
+                            purchaseError = result.message,
+                        )
+                    }
                     _purchaseError.value = AppErrorMessages.makePurchase(
                         cause ?: RuntimeException(result.message),
                         context = context.getString(RdR.string.rd_satin_alma_dogrulanamadi),
                         fallbackTitle = context.getString(RdR.string.rd_satin_alma_dogrulanamadi),
-                    )
-                    recordEvent(
-                        userId,
-                        PaywallEventName.PurchaseFailed,
-                        selectedTier = billingPackage.tier,
-                        billingPackage = billingPackage,
-                        purchaseError = result.message,
                     )
                 }
             }

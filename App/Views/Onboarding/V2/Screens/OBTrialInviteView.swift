@@ -13,6 +13,7 @@ struct OBTrialInviteView: View {
     var onRestore: () -> Void = {}
 
     @State private var funnelSessionID = UUID()
+    @State private var entryOccurredAt = Date()
     @State private var didLogView = false
     // Phone deck state — every cycle, the next phone slides forward while
     // the previous front recedes. Creates a continuous three-screen loop.
@@ -48,6 +49,16 @@ struct OBTrialInviteView: View {
                 VStack(spacing: 4) {
                     OBPrimaryButton(title: RDLocalization.string("onboarding.obtrial.invite.view.0.00.ye.dene.c364ad31", table: .onboarding, fallback: "0.00 TL'ye dene"), trailingIcon: "arrow.right", style: .onyx, accessibilityID: "onboarding.trial_invite.cta") {
                         record(.trialInviteCtaTap)
+                        // Carry this exact promotion-card funnel through the notification step
+                        // into the paywall. The paywall consumes this context and records `view`
+                        // against the same funnel_session_id.
+                        PaywallEventService.shared.beginEntry(
+                            at: .onboardingTrialInvite,
+                            currentTier: app.currentTier,
+                            targetTier: .plus,
+                            funnelSessionID: funnelSessionID,
+                            source: .onboardingV2
+                        )
                         onContinue()
                     }
                     .obStage(delay: 0.4)
@@ -366,6 +377,18 @@ struct OBTrialInviteView: View {
                 errorMessage: nil,
                 contextHeadline: RDLocalization.string("onboarding.obtrial.invite.view.uygulamayi.ucretsiz.denemeni.istiyoruz.2cbb5618", table: .onboarding, fallback: "Ücretsiz denemenizi istiyoruz"),
                 purchaseError: nil
+            ),
+            entryContext: PaywallEntryContext(
+                funnelSessionID: funnelSessionID,
+                entryPoint: .onboardingTrialInvite,
+                surface: .onboarding,
+                component: PaywallEntryPoint.onboardingTrialInvite.component,
+                targetTier: .plus,
+                analysisID: nil,
+                resultSection: nil,
+                itemID: nil,
+                attributes: ["client_platform": "ios"],
+                clientOccurredAt: entryOccurredAt
             )
         )
     }

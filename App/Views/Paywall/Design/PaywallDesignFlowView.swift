@@ -71,7 +71,6 @@ struct PaywallDesignFlowView: View {
                 cta: ctaState,
                 notice: workingMessage ?? notice,
                 errorMessage: visibleError,
-                renewalPrice: renewalPriceText,
                 crossSell: crossSell,
                 onClose: closePaywall,
                 onSelectBilling: select(billing:),
@@ -94,25 +93,29 @@ struct PaywallDesignFlowView: View {
         }
         .task {
             let preferredFunnelID = resultHubContext?.funnelSessionID
-            if let pendingEntry = PaywallEventService.shared.consumePendingEntry(
-                preferredFunnelSessionID: preferredFunnelID
-            ) {
-                entryContext = pendingEntry
-                funnelSessionID = pendingEntry.funnelSessionID
-            } else if source == .onboardingV2 {
-                let onboardingEntry = PaywallEntryContext(
-                    funnelSessionID: funnelSessionID,
-                    entryPoint: .onboardingFlow,
-                    surface: .onboarding,
-                    component: PaywallEntryPoint.onboardingFlow.component,
-                    targetTier: .plus,
-                    analysisID: nil,
-                    resultSection: nil,
-                    itemID: nil,
-                    attributes: [:],
-                    clientOccurredAt: Date()
-                )
-                entryContext = onboardingEntry
+            if entryContext == nil {
+                if let pendingEntry = PaywallEventService.shared.consumePendingEntry(
+                    preferredFunnelSessionID: preferredFunnelID
+                ) {
+                    entryContext = pendingEntry
+                    funnelSessionID = pendingEntry.funnelSessionID
+                } else if source == .onboardingV2 {
+                    // Onboarding presents the paywall directly (there is no external upgrade CTA
+                    // that can call beginEntry). Emit the missing entry event here, before any
+                    // RevenueCat/configuration request can fail, and consume the temporary handoff
+                    // immediately so it cannot leak into a later in-app paywall.
+                    let onboardingEntry = PaywallEventService.shared.beginEntry(
+                        at: .onboardingFlow,
+                        currentTier: app.currentTier,
+                        targetTier: .plus,
+                        funnelSessionID: funnelSessionID,
+                        source: .onboardingV2
+                    )
+                    _ = PaywallEventService.shared.consumePendingEntry(
+                        preferredFunnelSessionID: onboardingEntry.funnelSessionID
+                    )
+                    entryContext = onboardingEntry
+                }
             }
             if let resultHubContext {
                 funnelSessionID = resultHubContext.funnelSessionID
@@ -352,6 +355,27 @@ struct PaywallDesignFlowView: View {
         )
     }
 
+    /// CTA'nın hemen altında gösterilen tutar doğrudan seçili RevenueCat/App Store
+    /// paketinden gelir. Yıllık PLUS denemesinde deneme süresi ile deneme sonrası
+    /// tahsil edilecek toplam yıllık fiyat tek, kısa cümlede açıklanır.
+    private var purchaseDisclosureText: String? {
+        guard
+            !currentPlanIncludesActiveScreen,
+            let price = selectedPackage?.displayPrice
+        else { return nil }
+
+        if activeScreen == .plus, activeBilling == .yearly, let trialDays {
+            return RDLocalization.format(
+                "paywall.design.footer.trial_disclosure_yearly_format",
+                table: .paywall,
+                fallback: "%1$@ gün ücretsiz, ardından %2$@ / yıl.",
+                arguments: [String(trialDays), price]
+            )
+        }
+
+        return renewalPriceText
+    }
+
     /// Yıllık paketin aylık pakete göre gerçek indirim oranı. App Store fiyatları
     /// yüklenmemişse veya fark anlamlı değilse rozet gösterilmez.
     private var discountText: String? {
@@ -379,6 +403,7 @@ struct PaywallDesignFlowView: View {
     private var ctaState: PaywallDesignCTAState {
         PaywallDesignCTAState(
             title: primaryButtonTitle,
+            purchaseDisclosure: purchaseDisclosureText,
             isLoading: isWorking,
             isDisabled: primaryButtonDisabled,
             accessibilityIdentifier: "in_app_paywall.cta"

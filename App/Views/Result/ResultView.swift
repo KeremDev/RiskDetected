@@ -238,13 +238,7 @@ struct ResultView: View {
                     onPaywall: { request in
                         beginPaywallEntry(
                             at: paywallEntryPoint(for: request.section),
-                            // Eğitim kaynağı ayrı entry point/surface ve
-                            // source_section niteliğiyle izlenir. Canlı
-                            // veritabanındaki eski result_section kısıtına
-                            // takılmaması için bu kolon şimdilik boş bırakılır.
-                            section: request.section == .trainingRecommendations
-                                ? nil
-                                : request.section,
+                            section: request.section,
                             itemID: request.itemID,
                             attributes: request.attributes,
                             funnelSessionID: request.funnelSessionID
@@ -430,9 +424,13 @@ struct ResultView: View {
                     showReportSettings = false
                     generateAndShareExcel(method: reportOptions.method)
                 },
-                onPaywall: {
+                onPaywall: { placement in
                     showReportSettings = false
-                    beginPaywallEntry(at: .resultLockedReportOptions)
+                    beginPaywallEntry(
+                        at: placement == .companyPicker
+                            ? .resultReportCompanyPicker
+                            : .resultLockedReportOptions
+                    )
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {
                         showPaywall = true
                     }
@@ -2150,6 +2148,11 @@ private enum ReportOutputFormat: String, CaseIterable, Identifiable {
     }
 }
 
+enum ReportSettingsPaywallPlacement {
+    case reportOptions
+    case companyPicker
+}
+
 struct ReportSettingsSheet: View {
     @Environment(\.colorScheme) private var colorScheme
     @Binding var options: PDFReportOptions
@@ -2163,7 +2166,7 @@ struct ReportSettingsSheet: View {
     let reportQuotaExhausted: Bool
     let onGenerate: () -> Void
     let onGenerateExcel: (() -> Void)?
-    let onPaywall: () -> Void
+    let onPaywall: (ReportSettingsPaywallPlacement) -> Void
     let onClose: () -> Void
     @State private var selectedLogoItem: PhotosPickerItem?
     @State private var outputFormat: ReportOutputFormat = .pdf
@@ -2262,7 +2265,7 @@ struct ReportSettingsSheet: View {
                     selectedCompany = company
                     applyCompanyToOptions(company)
                 },
-                onPaywall: onPaywall
+                onPaywall: { onPaywall(.companyPicker) }
             )
             .presentationDetents(CompanyPickerSheet.presentationDetents(for: accessTier))
             .presentationDragIndicator(.visible)
@@ -2312,12 +2315,12 @@ struct ReportSettingsSheet: View {
                              if accessTier == .pro {
                                  onClose()
                              } else {
-                                 onPaywall()
+                                 onPaywall(.reportOptions)
                              }
                              return
                          }
                          if options.kind == .riskAnalysis, riskAnalysisLocked {
-                             onPaywall()
+                             onPaywall(.reportOptions)
                              return
                          }
                          if options.kind == .riskAnalysis, outputFormat == .excel, let onGenerateExcel {
@@ -2400,7 +2403,7 @@ struct ReportSettingsSheet: View {
         return Button {
             UISelectionFeedbackGenerator().selectionChanged()
             if locked {
-                onPaywall()
+                onPaywall(.reportOptions)
             } else {
                 withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
                     options.kind = kind
@@ -2750,7 +2753,7 @@ struct ReportSettingsSheet: View {
                 .accessibilityIdentifier("report.settings.company_select")
             } else {
                 Button {
-                    onPaywall()
+                    onPaywall(.companyPicker)
                 } label: {
                     HStack(spacing: 12) {
                         Image(systemName: "lock.fill")

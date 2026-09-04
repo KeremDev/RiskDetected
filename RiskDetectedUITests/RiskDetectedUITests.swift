@@ -1274,6 +1274,14 @@ final class RiskDetectedUITests: XCTestCase {
         // Özellikler artık kayan şeritte; "Bugün" altındaki ızgara kaldırıldı.
         XCTAssertTrue(waitFor("in_app_paywall.feature_marquee", timeout: 6).exists)
 
+        // iPhone 13 sınıfı ekranlarda PLUS → PRO geçiş kartı ilk açılışta CTA'nın
+        // arkasında kalmamalı. Üretimde fiyat açıklaması CTA alanını büyüttüğü için
+        // burada ayrıca küçük bir güvenlik payı bırakılır.
+        let proLink = waitFor("in_app_paywall.plus.pro_link", timeout: 6)
+        let cta = waitFor("in_app_paywall.cta", timeout: 6)
+        XCTAssertTrue(proLink.isHittable)
+        XCTAssertLessThanOrEqual(proLink.frame.maxY + 20, cta.frame.minY)
+
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "trial-timeline-with-feature-marquee"
         screenshot.lifetime = .keepAlways
@@ -1281,7 +1289,7 @@ final class RiskDetectedUITests: XCTestCase {
     }
 
     /// Şerit artık deneme anlatımına bağlı değil: PLUS/PRO ve yıllık/aylık dört
-    /// kombinasyonun hepsinde görünür, alt bardaki otomatik yenileme satırı da öyle.
+    /// kombinasyonun hepsinde görünür; hukuki bağlantılar CTA altında sabit kalır.
     func testFeatureMarqueeAppearsOnEveryPaywallVariant() throws {
         launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER"])
 
@@ -1290,7 +1298,8 @@ final class RiskDetectedUITests: XCTestCase {
 
         XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 8).exists)
         XCTAssertTrue(waitFor("in_app_paywall.feature_marquee", timeout: 8).exists)
-        XCTAssertTrue(waitFor("in_app_paywall.auto_renew", timeout: 6).exists)
+        XCTAssertTrue(waitFor("in_app_paywall.restore", timeout: 6).exists)
+        XCTAssertFalse(exists("in_app_paywall.auto_renew", timeout: 1))
 
         tapScrolling("in_app_paywall.plan.monthly")
         XCTAssertTrue(waitFor("in_app_paywall.feature_marquee", timeout: 6).exists)
@@ -1301,7 +1310,7 @@ final class RiskDetectedUITests: XCTestCase {
 
         tapScrolling("in_app_paywall.plan.monthly")
         XCTAssertTrue(waitFor("in_app_paywall.feature_marquee", timeout: 6).exists)
-        XCTAssertTrue(waitFor("in_app_paywall.auto_renew", timeout: 6).exists)
+        XCTAssertTrue(waitFor("in_app_paywall.restore", timeout: 6).exists)
     }
 
     /// Şeridin yalnız var olması yeterli değil: eski `repeatForever` uygulaması bazı
@@ -2107,6 +2116,12 @@ final class RiskDetectedUITests: XCTestCase {
         _ element: XCUIElement,
         targetIdentifier: String
     ) -> Bool {
+        let paywallFooterLinks = [
+            "in_app_paywall.restore",
+            "in_app_paywall.terms",
+            "in_app_paywall.privacy",
+            "in_app_paywall.manage",
+        ]
         let pinnedActionIdentifiers = [
             "in_app_paywall.cta",
             "result.hub.report",
@@ -2115,6 +2130,12 @@ final class RiskDetectedUITests: XCTestCase {
         ]
 
         for identifier in pinnedActionIdentifiers where identifier != targetIdentifier {
+            // Hukuki bağlantılar artık CTA'nın altında, aynı sabit footer'ın parçası.
+            // Bu nedenle CTA'dan daha aşağıda olmaları bir örtüşme değildir.
+            if identifier == "in_app_paywall.cta",
+               paywallFooterLinks.contains(targetIdentifier) {
+                continue
+            }
             let action = app.buttons[identifier]
             guard action.exists, !action.frame.isEmpty else { continue }
             if element.frame.maxY > action.frame.minY - 4 {

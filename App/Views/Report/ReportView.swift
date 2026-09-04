@@ -164,10 +164,12 @@ struct ReportView: View {
                     onGenerateExcel: {
                         generateExcelReport()
                     },
-                    onPaywall: {
+                    onPaywall: { placement in
                         showSourceReportSheet = false
                         PaywallEventService.shared.beginEntry(
-                            at: .reportsLockedReportOptions,
+                            at: placement == .companyPicker
+                                ? .reportsReportCompanyPicker
+                                : .reportsLockedReportOptions,
                             currentTier: app.currentTier,
                             targetTier: app.currentTier == .plus ? .pro : .plus
                         )
@@ -1792,7 +1794,7 @@ private struct ReportSourceSheet: View {
     @Binding var companyLogo: UIImage?
     let onGenerateCustom: (PDFReportOptions, UIImage?) -> Void
     let onGenerateExcel: () -> Void
-    let onPaywall: () -> Void
+    let onPaywall: (ReportSettingsPaywallPlacement) -> Void
     @State private var showSettings = false
     @State private var reportSettingsDetent: PresentationDetent = .medium
 
@@ -1830,9 +1832,9 @@ private struct ReportSourceSheet: View {
                     showSettings = false
                     onGenerateExcel()
                 },
-                onPaywall: {
+                onPaywall: { placement in
                     showSettings = false
-                    onPaywall()
+                    onPaywall(placement)
                 },
                 onClose: { showSettings = false }
             )
