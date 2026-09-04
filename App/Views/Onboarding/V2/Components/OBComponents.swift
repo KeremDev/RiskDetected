@@ -28,6 +28,50 @@ extension View {
     func obStage(delay: Double = 0) -> some View { modifier(OBStageModifier(delay: delay)) }
 }
 
+// MARK: - Adaptive screen scaffold
+
+/// Onboarding ekranlarının kendi container ölçüsünden beslenen ortak iskeleti.
+/// Header sabit kalır, uzun içerik kayar ve ana aksiyon home indicator ile çakışmaz.
+struct OBScreenScaffold<Header: View, Content: View, Footer: View>: View {
+    var background: Color = .rdPaper
+    private let header: (RDLayoutProfile) -> Header
+    private let content: (RDLayoutProfile) -> Content
+    private let footer: (RDLayoutProfile) -> Footer
+
+    init(
+        background: Color = .rdPaper,
+        @ViewBuilder header: @escaping (RDLayoutProfile) -> Header,
+        @ViewBuilder content: @escaping (RDLayoutProfile) -> Content,
+        @ViewBuilder footer: @escaping (RDLayoutProfile) -> Footer
+    ) {
+        self.background = background
+        self.header = header
+        self.content = content
+        self.footer = footer
+    }
+
+    var body: some View {
+        RDAdaptiveContainer { profile in
+            VStack(spacing: 0) {
+                header(profile)
+
+                ScrollView(showsIndicators: false) {
+                    content(profile)
+                        .frame(maxWidth: .infinity)
+                        .padding(.bottom, profile.sectionSpacing)
+                }
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                footer(profile)
+                    .padding(.horizontal, profile.horizontalPadding)
+                    .padding(.vertical, profile.isCompact ? 8 : 12)
+                    .background(background.shadow(.drop(color: .black.opacity(0.06), radius: 8, y: -3)))
+            }
+            .background(background)
+        }
+    }
+}
+
 // MARK: - Top bar (back + progress)
 
 struct OBTopBar: View {
@@ -37,6 +81,7 @@ struct OBTopBar: View {
     var trailingLabel: String?  // "01 / 05" or "HAZIR"
     var trailingDone: Bool = false
     var onBack: (() -> Void)?
+    @Environment(\.rdLayoutProfile) private var layoutProfile
 
     var body: some View {
         HStack(spacing: 14) {
@@ -78,9 +123,9 @@ struct OBTopBar: View {
                 }
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 16)
-        .padding(.bottom, 20)
+        .padding(.horizontal, layoutProfile.horizontalPadding)
+        .padding(.top, layoutProfile.isCompact ? 8 : 16)
+        .padding(.bottom, layoutProfile.isCompact ? 12 : 20)
     }
 }
 
@@ -320,6 +365,8 @@ struct OBPrimaryButton: View {
 
                 Text(displayTitle)
                     .font(RDTypography.font(size: RDFontScale.size(16), weight: .semibold))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 if let trailingIcon, !isLoading {
                     Image(systemName: trailingIcon)
@@ -330,7 +377,9 @@ struct OBPrimaryButton: View {
             }
             .foregroundStyle(textColor)
             .frame(maxWidth: .infinity)
-            .frame(height: 56)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 14)
+            .frame(minHeight: 56)
             .background(bgColor)
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .shadow(color: shadowColor, radius: 16, y: 6)
@@ -405,11 +454,12 @@ private func obIdentifierSlug(_ value: String) -> String {
 
 struct OBFooter<Content: View>: View {
     @ViewBuilder var content: Content
+    @Environment(\.rdLayoutProfile) private var layoutProfile
     var body: some View {
         VStack(spacing: 12) { content }
-            .padding(.horizontal, 24)
-            .padding(.top, 12)
-            .padding(.bottom, 28)
+            .padding(.horizontal, layoutProfile.horizontalPadding)
+            .padding(.top, layoutProfile.isCompact ? 8 : 12)
+            .padding(.bottom, layoutProfile.isCompact ? 12 : 20)
     }
 }
 

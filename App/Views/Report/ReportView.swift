@@ -81,7 +81,7 @@ struct ReportView: View {
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.bottom, RDTabBar.contentClearance)
+                .padding(.bottom, 24)
             }
         }
         .background(Color.rdCloud)
@@ -1794,7 +1794,7 @@ private struct ReportSourceSheet: View {
     let onGenerateExcel: () -> Void
     let onPaywall: () -> Void
     @State private var showSettings = false
-    @State private var reportSettingsDetent: PresentationDetent = .height(430)
+    @State private var reportSettingsDetent: PresentationDetent = .medium
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -1804,7 +1804,7 @@ private struct ReportSourceSheet: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
-            .padding(.bottom, 110)
+            .padding(.bottom, 20)
         }
         .background(Color.rdCloud)
         .accessibilityIdentifier("report.source_sheet")
@@ -1836,7 +1836,7 @@ private struct ReportSourceSheet: View {
                 },
                 onClose: { showSettings = false }
             )
-            .presentationDetents([.height(430), .large], selection: $reportSettingsDetent)
+            .presentationDetents([.medium, .large], selection: $reportSettingsDetent)
             .presentationDragIndicator(.visible)
             .preferredColorScheme(colorScheme)
         }
@@ -1899,7 +1899,7 @@ private struct ReportSourceSheet: View {
                 companyID: selectedCompany?.id,
                 language: reportOptions.language
             )
-            reportSettingsDetent = .height(430)
+            reportSettingsDetent = .medium
             showSettings = true
         }
         .disabled(isExcelGenerating || pdfGeneration.isActive)

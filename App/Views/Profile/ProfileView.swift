@@ -8,6 +8,7 @@ struct ProfileView: View {
     @EnvironmentObject var app: AppState
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.openURL) private var openURL
+    @Environment(\.rdLayoutProfile) private var layoutProfile
     @StateObject private var notifications = NotificationService.shared
     @State private var showPaywall = false
     @State private var showProfileEditor = false
@@ -69,9 +70,9 @@ struct ProfileView: View {
                     deleteAccountCard
                     signOutCard
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, layoutProfile.horizontalPadding)
                 .padding(.top, 0)
-                .padding(.bottom, RDTabBar.contentClearance)
+                .padding(.bottom, 24)
             }
         }
         .background(Color.rdPaper)
@@ -170,7 +171,7 @@ struct ProfileView: View {
                 notificationService: notifications,
                 onClose: { showNotificationSettings = false }
             )
-            .presentationDetents([.height(690), .large])
+            .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -218,7 +219,7 @@ struct ProfileView: View {
         }
         .sheet(item: $profileBadgesSheet) { item in
             ProfessionalProgressBadgesView(summary: item.summary)
-                .presentationDetents([.height(360)])
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
                 .preferredColorScheme(preferredModalColorScheme)
         }
@@ -278,60 +279,57 @@ struct ProfileView: View {
 
     private var profileHeader: some View {
         VStack(spacing: 0) {
-            ZStack(alignment: .topLeading) {
-                VStack(spacing: 0) {
-                    profileCover
-                        .frame(height: 148)
+            profileCover
+                .frame(height: layoutProfile.isCompact ? 118 : 148)
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(profileDisplayName)
-                            .font(RDTypography.font(size: RDFontScale.size(23), weight: .bold, design: .rounded))
-                            .foregroundStyle(Color.rdBlack)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.72)
-                            .padding(.top, 50)
-
-                        Text(profileExpertiseLabel)
-                            .font(RDTypography.font(size: RDFontScale.size(13.5), weight: .medium, design: .rounded))
-                            .foregroundStyle(Color.rdSlate)
-                            .lineSpacing(2)
-                            .lineLimit(2)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        if RDProfessionalProgressLocalizationReview.isAvailable,
-                           let professionalProgressSummary {
-                            Button {
-                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                                showProfileBadges(professionalProgressSummary)
-                            } label: {
-                                Label(RDLocalization.string("localizable.profile.view.basarilarim.9425dd36", table: .localizable, fallback: "Başarılarım"), systemImage: "rosette")
-                                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded))
-                                    .foregroundStyle(Color.rdGreenDark)
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.top, 6)
-                            .accessibilityLabel(RDLocalization.string("localizable.profile.view.basarilarim.e21f7c9f", table: .localizable, fallback: "Başarılarım"))
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, professionalProgressSummary == nil ? 16 : 12)
-
-                    profileHeroStatsRow
-                }
-
+            AnyLayout(
+                layoutProfile.isAccessibilityText
+                    ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+                    : AnyLayout(HStackLayout(alignment: .top, spacing: 16))
+            ) {
                 profileAvatarPicker
-                    .offset(x: 28, y: 96)
+                    .offset(y: layoutProfile.isAccessibilityText ? 0 : -42)
+                    .padding(.bottom, layoutProfile.isAccessibilityText ? 0 : -42)
 
-                if RDProfessionalProgressLocalizationReview.isAvailable,
-                   professionalProgressSummary != nil {
-                    professionalTitleBadge
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.leading, 202)
-                        .padding(.trailing, 16)
-                        .offset(y: 172)
+                VStack(alignment: .leading, spacing: 6) {
+                    if RDProfessionalProgressLocalizationReview.isAvailable,
+                       professionalProgressSummary != nil {
+                        professionalTitleBadge
+                    }
+
+                    Text(profileDisplayName)
+                        .font(RDTypography.font(size: RDFontScale.size(23), weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.rdBlack)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(profileExpertiseLabel)
+                        .font(RDTypography.font(size: RDFontScale.size(13.5), weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.rdSlate)
+                        .lineSpacing(2)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if RDProfessionalProgressLocalizationReview.isAvailable,
+                       let professionalProgressSummary {
+                        Button {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            showProfileBadges(professionalProgressSummary)
+                        } label: {
+                            Label(RDLocalization.string("localizable.profile.view.basarilarim.9425dd36", table: .localizable, fallback: "Başarılarım"), systemImage: "rosette")
+                                .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                                .foregroundStyle(Color.rdGreenDark)
+                                .frame(minHeight: 44)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(RDLocalization.string("localizable.profile.view.basarilarim.e21f7c9f", table: .localizable, fallback: "Başarılarım"))
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding(.horizontal, layoutProfile.horizontalPadding)
+            .padding(.top, layoutProfile.isAccessibilityText ? 16 : 10)
+            .padding(.bottom, 14)
+
+            profileHeroStatsLayout
         }
         .background(profileCardFill)
         .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
@@ -515,8 +513,7 @@ struct ProfileView: View {
                 Text(professionalTitleLabel)
                     .font(RDTypography.font(size: RDFontScale.size(11.5), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.vertical, 5)
             .padding(.leading, 6)
@@ -530,7 +527,7 @@ struct ProfileView: View {
                     .stroke(professionalTitleAccent.opacity(0.22), lineWidth: 1)
             )
             .shadow(color: professionalTitleAccent.opacity(0.12), radius: 7, x: 0, y: 4)
-            .frame(maxWidth: 155, alignment: .leading)
+            .frame(maxWidth: layoutProfile.isAccessibilityText ? .infinity : 190, alignment: .leading)
         }
         .buttonStyle(.plain)
         .disabled(professionalProgressSummary == nil)
@@ -556,6 +553,26 @@ struct ProfileView: View {
                 .frame(height: 1)
         }
         .accessibilityIdentifier("profile.hero.stats")
+    }
+
+    @ViewBuilder
+    private var profileHeroStatsLayout: some View {
+        if layoutProfile.prefersStackedControls {
+            LazyVGrid(
+                columns: [GridItem(.flexible()), GridItem(.flexible())],
+                spacing: 0
+            ) {
+                ForEach(Array(profileHeroStats.enumerated()), id: \.offset) { index, item in
+                    profileHeroStatCell(item, index: index)
+                        .overlay(alignment: .top) {
+                            Rectangle().fill(profileLine).frame(height: 1)
+                        }
+                }
+            }
+            .accessibilityIdentifier("profile.hero.stats")
+        } else {
+            profileHeroStatsRow
+        }
     }
 
     private func profileHeroStatCell(_ item: ProfileHeroStat, index: Int) -> some View {
@@ -1773,24 +1790,8 @@ private struct NotificationSettingsSheet: View {
                 await notificationService.refreshSettings()
             }
         }
-        .presentationDetents([.height(sheetHeight), .medium, .large])
+        .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
-    }
-
-    private var sheetHeight: CGFloat {
-        if notificationService.isLoadingSettings {
-            return 250
-        }
-        if notificationService.settingsLoadFailed {
-            return 300
-        }
-        if isEnabled {
-            return notificationService.lastError == nil ? 590 : 630
-        }
-        if notificationService.lastError != nil {
-            return 330
-        }
-        return notificationService.authorizationStatus == .denied ? 300 : 285
     }
 
     private var notificationTypesCard: some View {

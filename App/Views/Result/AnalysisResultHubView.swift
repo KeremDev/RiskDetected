@@ -162,7 +162,7 @@ struct AnalysisResultHubView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        RDAdaptiveContainer { profile in
             ScrollViewReader { scrollProxy in
                 ScrollView(showsIndicators: false) {
                     LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
@@ -172,10 +172,10 @@ struct AnalysisResultHubView: View {
 
                         Section {
                             sectionContent
-                                .padding(.horizontal, 20)
+                                .padding(.horizontal, profile.horizontalPadding)
                                 .padding(.bottom, 28)
                         } header: {
-                            sectionSelector
+                            sectionSelector(profile: profile)
                         }
                     }
                 }
@@ -188,10 +188,11 @@ struct AnalysisResultHubView: View {
                 }
             }
             .background(Color.rdResultBackground)
-            reportBar
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                reportBar(profile: profile)
+            }
         }
         .background(Color.rdResultBackground.ignoresSafeArea())
-        .ignoresSafeArea(.container, edges: .bottom)
         .overlay(alignment: .top) {
             if feedbackToastToken != nil {
                 FeedbackThanksToast(language: language)
@@ -294,26 +295,38 @@ struct AnalysisResultHubView: View {
 
     // MARK: Connected section selector
 
-    private var sectionSelector: some View {
+    private func sectionSelector(profile: RDLayoutProfile) -> some View {
         GeometryReader { proxy in
             let count = max(1, hub.sections.count)
             let gaps = CGFloat(max(0, count - 1)) * 6.7
-            // Three tabs fill the width; a fourth has to announce itself. Sizing
-            // for 3.5 leaves the last tab half on screen, which is what tells a
-            // reader the strip scrolls -- a tab entirely past the edge is a tab
-            // nobody finds. The gutter narrows to 14 to buy that half back.
-            let visibleTabs: CGFloat = count <= 3 ? CGFloat(count) : 3.5
-            let fitted = (proxy.size.width - 28 - gaps) / visibleTabs
-            let tabWidth = max(88, fitted)
+            let canFitAll = profile.widthClass == .wide && !profile.isAccessibilityText
+            let fitted = (proxy.size.width - (profile.horizontalPadding * 2) - gaps) / CGFloat(count)
+            let tabWidth = canFitAll ? max(92, fitted) : max(104, fitted)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(alignment: .bottom, spacing: 6.7) {
-                    ForEach(hub.sections) { section in
-                        sectionTab(section, width: tabWidth)
+            ScrollViewReader { tabProxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .bottom, spacing: 6.7) {
+                        ForEach(hub.sections) { section in
+                            sectionTab(
+                                section,
+                                width: tabWidth,
+                                height: profile.isAccessibilityText ? 116 : 92
+                            )
+                            .id(section.id)
+                        }
+                    }
+                    .padding(.horizontal, profile.horizontalPadding)
+                    .frame(
+                        minWidth: proxy.size.width,
+                        minHeight: profile.isAccessibilityText ? 124 : 100,
+                        alignment: .bottomLeading
+                    )
+                }
+                .onChange(of: selectedSection) { section in
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        tabProxy.scrollTo(section, anchor: .center)
                     }
                 }
-                .padding(.horizontal, 14)
-                .frame(minWidth: proxy.size.width, minHeight: 96, alignment: .bottomLeading)
             }
             // Keep the shared rail behind the tabs. The selected tab's white
             // bottom mask interrupts the rail and connects it to the content.
@@ -323,14 +336,18 @@ struct AnalysisResultHubView: View {
                     .frame(height: 1.5)
             }
         }
-        .frame(height: 96)
+        .frame(height: profile.isAccessibilityText ? 124 : 100)
         .background(Color.rdResultBackground)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("result.hub.section_selector")
         .zIndex(20)
     }
 
-    private func sectionTab(_ section: AnalysisResultSection, width: CGFloat) -> some View {
+    private func sectionTab(
+        _ section: AnalysisResultSection,
+        width: CGFloat,
+        height: CGFloat
+    ) -> some View {
         let selected = selectedSection == section.id
         let tabSurface = selected ? Color.rdResultElevatedSurface : Color.rdResultSurface
         return Button {
@@ -361,14 +378,16 @@ struct AnalysisResultHubView: View {
                 Text(section.id.compactTitle(language: language))
                     .font(referenceFont(11.5, .heavy))
                     .foregroundStyle(Color.rdResultPrimaryText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.68)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text("\(section.count) \(section.id.countLabel(language: language, count: section.count))")
                     .font(referenceFont(10, .semibold))
                     .foregroundStyle(Color.rdResultSecondaryText)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
             }
-            .frame(width: width, height: selected ? 84 : 72)
+            .frame(width: width, height: height)
             .background(
                 Group {
                     if selected {
@@ -397,7 +416,7 @@ struct AnalysisResultHubView: View {
                         .frame(height: 2.5)
                 }
             }
-            .padding(.bottom, selected ? 0 : 8)
+            .padding(.bottom, 0)
         }
         .buttonStyle(.plain)
         .zIndex(selected ? 2 : 1)
@@ -969,7 +988,7 @@ struct AnalysisResultHubView: View {
                      : isExpert ? copy("analysis.result_hub.v2.uzman.gorusu.130b1c61", "Uzman Görüşü", "Expert Advice") : copy("analysis.result_hub.v2.onayl.defter.ca441ca5", "Onaylı Defter", "Safety Log"))
                     .font(referenceFont(16, .black))
                     .foregroundStyle(.white)
-                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
                 premiumPill
                 Text(isTraining
                      ? copy("analysis.result_hub.v2.analizde.gorulen.tehlike.ve.ekipmanlara.go.ffeb2cda", "Analizde görülen tehlike ve ekipmanlara göre, ilgili çalışan gruplarına hangi eğitimlerin anlamlı olduğunu gösterir. Kişilerin mevcut belgeleri hakkında bir tespit içermez.", "Shows which training is meaningful for each group of workers, based on the hazards and equipment seen in the analysis. It makes no claim about anyone's existing certificates.")
@@ -1692,12 +1711,11 @@ struct AnalysisResultHubView: View {
                 if activeSection.access == .full {
                     Text(item.displayTitle(language: language))
                         .font(referenceFont(14, .black)).foregroundStyle(ink).padding(.top, 10)
-                        .lineLimit(3)
                         .fixedSize(horizontal: false, vertical: true)
                     if let summary = expertSummaryText(for: item) {
                         Text(summary)
                             .font(referenceFont(12, .regular)).foregroundStyle(Color.rdResultSecondaryText)
-                            .lineSpacing(3).padding(.top, 6).lineLimit(3)
+                            .lineSpacing(3).padding(.top, 6)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     expertRecommendationPreview(item).padding(.top, 13)
@@ -2108,38 +2126,48 @@ struct AnalysisResultHubView: View {
 
     // MARK: Bottom report CTA
 
-    private var reportBar: some View {
+    private func reportBar(profile: RDLayoutProfile) -> some View {
         VStack(spacing: 6) {
-            HStack(spacing: 10) {
-                bottomBackButton
+            AnyLayout(
+                profile.isAccessibilityText
+                    ? AnyLayout(VStackLayout(spacing: 8))
+                    : AnyLayout(HStackLayout(spacing: 10))
+            ) {
+                bottomBackButton(profile: profile)
                 reportActionButton
             }
             if selectedSection != .approvedNotebook {
-                HStack(spacing: 10) {
-                    Color.clear.frame(width: 66, height: 1)
-                    Text(selectedCountText)
-                        .font(referenceFont(10.5, .bold))
-                        .foregroundStyle(Color.rdResultSecondaryText)
-                        .frame(maxWidth: .infinity)
-                }
+                Text(selectedCountText)
+                    .font(referenceFont(10.5, .bold))
+                    .foregroundStyle(Color.rdResultSecondaryText)
+                    .frame(maxWidth: .infinity)
             }
         }
-        .padding(.horizontal, 20).padding(.top, 9).padding(.bottom, 18)
+        .padding(.horizontal, profile.horizontalPadding).padding(.top, 9).padding(.bottom, 10)
         .background(Color.rdResultElevatedSurface.shadow(.drop(color: Color.black.opacity(0.22), radius: 9, y: -6)))
     }
 
-    private var bottomBackButton: some View {
+    private func bottomBackButton(profile: RDLayoutProfile) -> some View {
         Button(action: onBack) {
-            VStack(spacing: 1) {
-                Image(systemName: "chevron.left")
-                    .font(RDTypography.font(size: 15, weight: .black))
-                Text(copy("analysis.result_hub.v2.geri.don.be8542b6", "Geri Dön", "Go Back"))
-                    .font(referenceFont(8.5, .heavy))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+            Group {
+                if profile.isAccessibilityText {
+                    Label(
+                        copy("analysis.result_hub.v2.geri.don.be8542b6", "Geri Dön", "Go Back"),
+                        systemImage: "chevron.left"
+                    )
+                    .font(referenceFont(12, .heavy))
+                } else {
+                    VStack(spacing: 1) {
+                        Image(systemName: "chevron.left")
+                            .font(RDTypography.font(size: 15, weight: .black))
+                        Text(copy("analysis.result_hub.v2.geri.don.be8542b6", "Geri Dön", "Go Back"))
+                            .font(referenceFont(8.5, .heavy))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
             }
             .foregroundStyle(activeStrong)
-            .frame(width: 66, height: 50)
+            .frame(maxWidth: profile.isAccessibilityText ? .infinity : 66, minHeight: 50)
             .background(activeTint)
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
@@ -2176,15 +2204,18 @@ struct AnalysisResultHubView: View {
                         .font(RDTypography.font(size: 18, weight: .regular))
                     Text(activeSection.access == .teaser ? copy("analysis.result_hub.v2.plus.pro.ile.ac.ad2bd639", "Plus / Pro ile Aç", "Unlock with Plus / Pro") : copy("analysis.result_hub.v2.rapor.olustur.e0a43f76", "Rapor Oluştur", "Create Report"))
                         .font(referenceFont(15.5, .heavy))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.74)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .foregroundStyle(.white).frame(maxWidth: .infinity)
                 Image(systemName: "paperplane.fill")
                     .font(RDTypography.font(size: 17, weight: .regular)).foregroundStyle(Color(hex: "#111111"))
                     .frame(width: 38, height: 38).background(Color.white).clipShape(RoundedRectangle(cornerRadius: 11))
             }
-            .padding(.trailing, 6).frame(height: 50)
+            .padding(.leading, 10)
+            .padding(.trailing, 6)
+            .padding(.vertical, 6)
+            .frame(minHeight: 50)
             .background(selectedIDs.isEmpty && activeSection.access == .full ? Color(hex: "#6D6D6D") : Color(hex: "#111111"))
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .shadow(color: Color.black.opacity(0.28), radius: 8, x: 4, y: 7)
@@ -2958,7 +2989,7 @@ struct DislikeFeedbackPanel: View {
                     .accessibilityLabel(copy("analysis.result_hub.v2.geri.bildiriminiz.7698d8e8", "Geri bildiriminiz", "Your feedback"))
                     .accessibilityIdentifier("feedback.custom.note")
             }
-            .frame(height: 84)
+            .frame(minHeight: 84)
             .background(Color.rdResultSubtleSurface)
             .overlay {
                 RoundedRectangle(cornerRadius: 12)
@@ -3078,7 +3109,7 @@ private enum ReferenceReportSheetLayout {
             .compactMap { $0 as? UIWindowScene }
             .flatMap(\.windows)
             .first(where: \UIWindow.isKeyWindow)
-        let screenHeight = window?.bounds.height ?? UIScreen.main.bounds.height
+        let screenHeight = window?.bounds.height ?? 844
         let topInset = window?.safeAreaInsets.top ?? 47
         let bottomInset = window?.safeAreaInsets.bottom ?? 34
 
@@ -3250,10 +3281,6 @@ private struct ReferenceReportSheet: View {
             .reportSheetMeasuredHeight(.footer)
         }
         .background(Color.rdResultBackground)
-        // A fixed-height sheet normally reserves another content inset above its
-        // own home-indicator area. Drawing the surface through that inset removes
-        // the apparent second footer while UIKit still keeps the gesture region.
-        .ignoresSafeArea(.container, edges: .bottom)
         .accessibilityIdentifier("result.report_sheet")
         .onPreferenceChange(ReferenceReportSheetRegionHeightKey.self) { heights in
             updatePreferredHeight(using: heights)

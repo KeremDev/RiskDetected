@@ -18,7 +18,7 @@ struct ProfessionalProgressProfileSection: View {
         }
         .sheet(isPresented: $showBadges) {
             ProfessionalProgressBadgesView(summary: summary)
-                .presentationDetents([.height(360)])
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showCompetencies) {
@@ -54,7 +54,7 @@ struct ProfessionalProgressProfileSection: View {
                     await onRefresh()
                 }
             }
-            .presentationDetents([.height(330)])
+            .presentationDetents([.medium, .large])
             .presentationDragIndicator(.hidden)
         }
         .task(id: summary.pendingCelebration?.id) {

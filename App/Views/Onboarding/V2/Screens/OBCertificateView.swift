@@ -4,6 +4,7 @@ struct OBCertificateView: View {
     @ObservedObject var state: OnboardingV2State
     let onBack: () -> Void
     let onNext: () -> Void
+    @Environment(\.rdLayoutProfile) private var layoutProfile
 
     private let helmetItems: [(cert: OBCertificate, title: String, sub: String, hatColor: Color, brimColor: Color)] = [
         (.A, RDLocalization.string("onboarding.obcertificate.view.a.sinifi.isg.uzmani.4ac7f66b", table: .onboarding, fallback: "A Sınıfı İSG Uzmanı"), RDLocalization.string("onboarding.obcertificate.view.cok.tehlikeli.sinifta.yetkili.aaaf50c7", table: .onboarding, fallback: "Çok tehlikeli sınıfta yetkili."),
@@ -65,7 +66,7 @@ struct OBCertificateView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, layoutProfile.horizontalPadding)
                 .padding(.bottom, 24)
             }
 

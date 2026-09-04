@@ -24,6 +24,7 @@ struct RiskDetailView: View {
     @EnvironmentObject private var app: AppState
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.rdLayoutProfile) private var layoutProfile
     @State private var method: RiskMethod
     @State private var reaction: AnalysisItemReaction
     @State private var isReactionSaving = false
@@ -238,7 +239,7 @@ struct RiskDetailView: View {
         // The HTML's 252 pt hero includes the status-bar region. SwiftUI shifts
         // ignored-safe-area content upward, so the safe-area allowance keeps
         // the visible hero at the reference height on Dynamic Island devices.
-        .frame(height: 296)
+        .frame(height: layoutProfile.heightClass == .short ? 252 : 296)
         .clipped()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("result.detail.photo_card")

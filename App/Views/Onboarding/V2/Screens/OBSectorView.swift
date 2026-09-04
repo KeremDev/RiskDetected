@@ -5,7 +5,12 @@ struct OBSectorView: View {
     let onBack: () -> Void
     let onNext: () -> Void
 
-    private let columns = [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
+    @Environment(\.rdLayoutProfile) private var layoutProfile
+    private var columns: [GridItem] {
+        layoutProfile.isAccessibilityText
+            ? [GridItem(.flexible(), spacing: 8)]
+            : [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -63,7 +68,7 @@ struct OBSectorView: View {
                 OBSelectionCounter(count: state.sectors.count, suffix: RDLocalization.string("onboarding.obsector.view.sektor.secildi.69792ff7", table: .onboarding, fallback: "sektör seçildi"))
             }
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, layoutProfile.horizontalPadding)
 
             Spacer(minLength: 8)
 
@@ -122,16 +127,15 @@ struct OBSectorView: View {
                     Text(s.label)
                         .font(RDTypography.font(size: RDFontScale.size(12.5), weight: .semibold))
                         .foregroundStyle(Color.rdOnyx)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
+                        .fixedSize(horizontal: false, vertical: true)
                     Text(s.sub)
                         .font(RDTypography.font(size: RDFontScale.size(10.5)))
                         .foregroundStyle(Color.rdSlate)
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 78, alignment: .topLeading)
+            .frame(minHeight: 78, alignment: .topLeading)
             .padding(9)
             .background(Color.rdWhite)
             .clipShape(RoundedRectangle(cornerRadius: 13))

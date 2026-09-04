@@ -194,7 +194,7 @@ struct ResultView: View {
     @State private var reportCompanyLogo: UIImage?
     @State private var reportQuotaExhausted: Bool = false
     @State private var freeRiskAnalysisTrialUsed: Bool = false
-    @State private var reportSettingsDetent: PresentationDetent = .height(430)
+    @State private var reportSettingsDetent: PresentationDetent = .medium
     @State private var expandedPhotoPreview: ResultPhotoPreview?
     @State private var resultHub: AnalysisResultHubResponse?
     @State private var resultHubLoadError: String?
@@ -439,7 +439,7 @@ struct ResultView: View {
                 },
                 onClose: { showReportSettings = false }
             )
-            .presentationDetents([.height(430), .large], selection: $reportSettingsDetent)
+            .presentationDetents([.medium, .large], selection: $reportSettingsDetent)
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -1292,7 +1292,7 @@ struct ResultView: View {
     private func openReportSettings() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         reportOptions = resolvedReportOptions(defaultReportOptions(kind: .standard), company: selectedReportCompany)
-        reportSettingsDetent = .height(430)
+        reportSettingsDetent = .medium
         showReportSettings = true
 
         Task {
@@ -1302,7 +1302,7 @@ struct ResultView: View {
             await loadInitialReportCompanyIfNeeded()
             guard showReportSettings else { return }
             reportOptions = resolvedReportOptions(reportOptions, company: selectedReportCompany)
-            reportSettingsDetent = reportOptions.kind == .riskAnalysis ? .large : .height(430)
+            reportSettingsDetent = reportOptions.kind == .riskAnalysis ? .large : .medium
             if !reportQuotaExhausted {
                 _ = try? await loadProfileLogoIfNeeded()
             }
@@ -1648,7 +1648,7 @@ struct ResultView: View {
                    await refreshReportQuotaState() {
                     pdfGeneration.stop()
                     reportOptions = defaultReportOptions(kind: .standard)
-                    reportSettingsDetent = .height(430)
+                    reportSettingsDetent = .medium
                     showReportSettings = true
                     return
                 }
@@ -1766,7 +1766,7 @@ struct ResultView: View {
                 if !shouldBypassReportQuota(for: resolvedOptions),
                    await refreshReportQuotaState() {
                     reportOptions.kind = .standard
-                    reportSettingsDetent = .height(430)
+                    reportSettingsDetent = .medium
                     showReportSettings = true
                     isExcelGenerating = false
                     return
@@ -1811,14 +1811,14 @@ struct ResultView: View {
             freeRiskAnalysisTrialUsed = true
             reportQuotaExhausted = false
             reportOptions.kind = .standard
-            reportSettingsDetent = .height(430)
+            reportSettingsDetent = .medium
             showReportSettings = true
             return true
         }
         guard AppErrorMessage.isReportQuotaExceeded(error.localizedDescription) else { return false }
         reportQuotaExhausted = true
         reportOptions.kind = .standard
-        reportSettingsDetent = .height(430)
+        reportSettingsDetent = .medium
         showReportSettings = true
         return true
     }
@@ -1862,7 +1862,7 @@ struct ResultView: View {
         await refreshFreeRiskAnalysisTrialState()
         guard freeRiskAnalysisTrialUsed else { return false }
         reportOptions.kind = .standard
-        reportSettingsDetent = .height(430)
+        reportSettingsDetent = .medium
         showReportSettings = true
         pdfError = AppErrorMessage.make(
             rawMessage: "free_risk_analysis_trial_exhausted:1/1",
@@ -2233,7 +2233,7 @@ struct ReportSettingsSheet: View {
                 }
                 .padding(.horizontal, 14)
                 .padding(.top, 12)
-                .padding(.bottom, 96)
+                .padding(.bottom, 20)
                 .keyboardAdaptivePadding(extra: 16)
             }
             .scrollDismissesKeyboard(.interactively)
@@ -3284,7 +3284,7 @@ private struct FindingEditorSheet: View {
                     }
                 }
                 .padding(18)
-                .padding(.bottom, 96)
+                .padding(.bottom, 20)
             }
             .background(editorBackground)
             .safeAreaInset(edge: .bottom, spacing: 0) {

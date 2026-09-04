@@ -155,7 +155,7 @@ struct RootView: View {
                     }
                 }
             )
-            .presentationDetents([.height(notice.changeType == .explicitConsent ? 360 : 320), .medium])
+            .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
             .interactiveDismissDisabled(
                 notice.changeType == .materialTerms

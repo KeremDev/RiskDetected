@@ -2,6 +2,7 @@ import SwiftUI
 
 struct OBPlanSummaryView: View {
     @EnvironmentObject private var app: AppState
+    @Environment(\.rdLayoutProfile) private var layoutProfile
     @ObservedObject var state: OnboardingV2State
     let onNext: () -> Void
 
@@ -44,7 +45,7 @@ struct OBPlanSummaryView: View {
 
                         Spacer(minLength: 12)
                     }
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, layoutProfile.horizontalPadding)
                 }
 
                 OBFooter {
@@ -103,31 +104,27 @@ struct OBPlanSummaryView: View {
                         Text(context.eyebrow)
                             .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold))
                             .foregroundStyle(Color.rdGreenDark)
-                            .lineLimit(1)
+                            .fixedSize(horizontal: false, vertical: true)
 
                         Text(context.headline)
                             .font(RDTypography.font(size: RDFontScale.size(24), weight: .semibold))
                             .tracking(-0.6)
                             .foregroundStyle(Color.rdOnyx)
                             .multilineTextAlignment(.center)
-                            .lineLimit(3)
-                            .minimumScaleFactor(0.78)
+                            .fixedSize(horizontal: false, vertical: true)
 
                         Text(context.subtitle)
                             .font(RDTypography.font(size: RDFontScale.size(13.5)))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.center)
                             .lineSpacing(3)
-                            .lineLimit(4)
-                            .minimumScaleFactor(0.82)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        metadataTags(context.chips)
                     }
                 }
                 .padding(.horizontal, 18)
                 .padding(.vertical, 18)
-            }
-            .overlay(alignment: .topTrailing) {
-                metadataTags(context.chips)
-                    .padding(.top, 24)
             }
             .frame(maxWidth: .infinity)
             .shadow(color: .black.opacity(0.035), radius: 8, y: 3)
@@ -135,35 +132,19 @@ struct OBPlanSummaryView: View {
     }
 
     private func metadataTags(_ values: [String]) -> some View {
-        VStack(alignment: .trailing, spacing: 5) {
-            ForEach(values, id: \.self) { value in
-                Text(value)
-                    .font(RDTypography.font(size: RDFontScale.size(9.5), weight: .semibold))
-                    .foregroundStyle(Color.rdSlate)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.76)
-                    .padding(.leading, 9)
-                    .padding(.trailing, 10)
-                    .frame(height: 22)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .background(Color(hex: "#FFF6D8"))
-                    .clipShape(
-                        UnevenRoundedRectangle(
-                            topLeadingRadius: 10,
-                            bottomLeadingRadius: 10,
-                            bottomTrailingRadius: 0,
-                            topTrailingRadius: 0
-                        )
-                    )
-                    .overlay(
-                        UnevenRoundedRectangle(
-                            topLeadingRadius: 10,
-                            bottomLeadingRadius: 10,
-                            bottomTrailingRadius: 0,
-                            topTrailingRadius: 0
-                        )
-                        .stroke(Color.rdOnyx.opacity(0.08), lineWidth: 1)
-                    )
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(values, id: \.self) { value in
+                    Text(value)
+                        .font(RDTypography.font(size: RDFontScale.size(9.5), weight: .semibold))
+                        .foregroundStyle(Color.rdSlate)
+                        .fixedSize(horizontal: true, vertical: true)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color(hex: "#FFF6D8"))
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(Color.rdOnyx.opacity(0.08), lineWidth: 1))
+                }
             }
         }
     }
@@ -231,13 +212,11 @@ struct OBPlanSummaryView: View {
                 Text(step.title)
                     .font(RDTypography.font(size: RDFontScale.size(14.5), weight: .semibold))
                     .foregroundStyle(Color.rdOnyx)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.82)
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(step.subtitle)
                     .font(RDTypography.font(size: RDFontScale.size(12.5)))
                     .foregroundStyle(Color.rdSlate)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.82)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer(minLength: 0)
@@ -254,8 +233,7 @@ struct OBPlanSummaryView: View {
             Text(RDLocalization.string("onboarding.obplan.summary.view.planini.hesabina.kaydedelim.7.gun.ucretsiz.denem.ae67c90f", table: .onboarding, fallback: "Son Aşama 🙂 Planını hesabına kaydedelim; sana özel analizler ve raporlar sunalım."))
                 .font(RDTypography.font(size: RDFontScale.size(12.5), weight: .medium))
                 .foregroundStyle(Color.rdSlate)
-                .lineLimit(3)
-                .minimumScaleFactor(0.82)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 13)
         .padding(.vertical, 12)

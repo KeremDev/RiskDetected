@@ -6,7 +6,11 @@ import UIKit
 /// sizes and weights through this single mapping.
 enum RDTypography {
     static func font(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
-        .custom(postScriptName(for: weight), size: size)
+        .custom(
+            postScriptName(for: weight),
+            size: size,
+            relativeTo: relativeTextStyle(for: size)
+        )
     }
 
     static func font(
@@ -15,6 +19,14 @@ enum RDTypography {
         design _: Font.Design = .default
     ) -> Font {
         font(size, weight)
+    }
+
+    static func font(
+        size: CGFloat,
+        weight: Font.Weight = .regular,
+        relativeTo textStyle: Font.TextStyle
+    ) -> Font {
+        .custom(postScriptName(for: weight), size: size, relativeTo: textStyle)
     }
 
     static func font(
@@ -73,6 +85,19 @@ enum RDTypography {
         case .largeTitle, .title, .title2: return .bold
         case .title3, .headline: return .semibold
         default: return .regular
+        }
+    }
+
+    private static func relativeTextStyle(for size: CGFloat) -> Font.TextStyle {
+        switch size {
+        case 28...: return .largeTitle
+        case 22..<28: return .title2
+        case 20..<22: return .title3
+        case 17..<20: return .body
+        case 15..<17: return .subheadline
+        case 13..<15: return .footnote
+        case 12..<13: return .caption
+        default: return .caption2
         }
     }
 }

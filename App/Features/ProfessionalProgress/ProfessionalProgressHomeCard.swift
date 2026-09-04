@@ -12,6 +12,7 @@ struct ProfessionalProgressHomeCard: View {
     var onTap: (() -> Void)?
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.rdLayoutProfile) private var layoutProfile
     @State private var animateProgress = true
     @State private var animateStripMarker = false
 
@@ -162,7 +163,11 @@ struct ProfessionalProgressHomeCard: View {
         let accentSoft = Color.rdPlanPlusSoft
         let ink = Color.rdBlack
 
-        return HStack(spacing: 12) {
+        return AnyLayout(
+            layoutProfile.prefersStackedControls
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+                : AnyLayout(HStackLayout(spacing: 12))
+        ) {
             titleTile(accent: accent, accentSoft: accentSoft)
 
             VStack(alignment: .leading, spacing: 10) {
@@ -179,8 +184,7 @@ struct ProfessionalProgressHomeCard: View {
                     Text(nextTitleLabel)
                         .font(RDTypography.font(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.72)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 GeometryReader { geo in
@@ -330,7 +334,7 @@ struct ProfessionalProgressHomeCard: View {
                     .minimumScaleFactor(0.72)
             }
         }
-        .frame(width: 105)
+        .frame(maxWidth: layoutProfile.prefersStackedControls ? .infinity : 105)
         .frame(minHeight: 124)
         .padding(.vertical, 10)
         .background {

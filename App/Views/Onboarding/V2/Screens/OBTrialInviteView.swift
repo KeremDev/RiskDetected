@@ -5,6 +5,7 @@ import SwiftUI
 // big green CTA → footer legal links.
 struct OBTrialInviteView: View {
     @EnvironmentObject private var app: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let onContinue: () -> Void
     var onDismiss: () -> Void = {}
     var onPrivacy: () -> Void = {}
@@ -16,54 +17,55 @@ struct OBTrialInviteView: View {
     // Phone deck state — every cycle, the next phone slides forward while
     // the previous front recedes. Creates a continuous three-screen loop.
     @State private var frontPhone: DeckPhone = .a
+    @State private var swapTask: Task<Void, Never>?
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
             backdrop
 
-            VStack(spacing: 0) {
-                Spacer(minLength: 32)
+            OBScreenScaffold(background: .clear) { _ in
+                EmptyView()
+            } content: { profile in
+                VStack(spacing: profile.isCompact ? 16 : 24) {
+                    title
+                        .padding(.horizontal, profile.horizontalPadding + 8)
+                        .padding(.top, profile.isCompact ? 46 : 60)
+                        .obStage(delay: 0.08)
 
-                title
-                    .padding(.horizontal, 28)
-                    .obStage(delay: 0.08)
+                    phonePreview(profile: profile)
+                        .obStage(delay: 0.2)
 
-                Spacer(minLength: 24)
+                    noPaymentLine
+                        .padding(.horizontal, profile.horizontalPadding)
+                        .obStage(delay: 0.32)
 
-                phonePreview
-                    .obStage(delay: 0.2)
-
-                Spacer(minLength: 28)
-
-                noPaymentLine
-                    .padding(.bottom, 14)
-                    .obStage(delay: 0.32)
-
-                OBPrimaryButton(title: RDLocalization.string("onboarding.obtrial.invite.view.0.00.ye.dene.c364ad31", table: .onboarding, fallback: "0.00 TL'ye dene"), trailingIcon: "arrow.right", style: .onyx, accessibilityID: "onboarding.trial_invite.cta") {
-                    record(.trialInviteCtaTap)
-                    onContinue()
+                    footerLinks
+                        .padding(.horizontal, profile.horizontalPadding)
+                        .padding(.bottom, profile.sectionSpacing)
+                        .obStage(delay: 0.48)
                 }
-                .padding(.horizontal, 24)
-                .obStage(delay: 0.4)
+            } footer: { _ in
+                VStack(spacing: 4) {
+                    OBPrimaryButton(title: RDLocalization.string("onboarding.obtrial.invite.view.0.00.ye.dene.c364ad31", table: .onboarding, fallback: "0.00 TL'ye dene"), trailingIcon: "arrow.right", style: .onyx, accessibilityID: "onboarding.trial_invite.cta") {
+                        record(.trialInviteCtaTap)
+                        onContinue()
+                    }
+                    .obStage(delay: 0.4)
 
-                Button {
-                    OBHaptic.soft()
-                    onDismiss()
-                } label: {
-                    Text(RDLocalization.string("onboarding.obtimeline.paywall.view.simdilik.ucretsiz.devam.et.b59d7d99", table: .onboarding, fallback: "Ücretsiz Devam Et"))
-                        .font(RDTypography.font(size: RDFontScale.size(12), weight: .semibold))
-                        .foregroundStyle(Color.rdSlate.opacity(0.72))
-                        .underline(true, color: Color.rdSlate.opacity(0.46))
-                        .frame(height: 34)
+                    Button {
+                        OBHaptic.soft()
+                        onDismiss()
+                    } label: {
+                        Text(RDLocalization.string("onboarding.obtimeline.paywall.view.simdilik.ucretsiz.devam.et.b59d7d99", table: .onboarding, fallback: "Ücretsiz Devam Et"))
+                            .font(RDTypography.font(size: RDFontScale.size(12), weight: .semibold))
+                            .foregroundStyle(Color.rdSlate.opacity(0.72))
+                            .underline(true, color: Color.rdSlate.opacity(0.46))
+                            .frame(minHeight: 44)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("onboarding.trial_invite.continue_free")
+                    .obStage(delay: 0.44)
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("onboarding.trial_invite.continue_free")
-                .obStage(delay: 0.44)
-
-                footerLinks
-                    .padding(.top, 14)
-                    .padding(.bottom, 24)
-                    .obStage(delay: 0.48)
             }
 
             dismissButton
@@ -71,6 +73,10 @@ struct OBTrialInviteView: View {
                 .padding(.trailing, 18)
         }
         .onAppear { logViewIfNeeded() }
+        .onDisappear {
+            swapTask?.cancel()
+            swapTask = nil
+        }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("onboarding.trial_invite")
     }
@@ -117,8 +123,11 @@ struct OBTrialInviteView: View {
 
     // Centered phone mockup container — optional asset slots for screenshots.
     // Drop `TrialPreviewA`, `TrialPreviewB` and `TrialPreviewC` into Assets.xcassets to fill.
-    private var phonePreview: some View {
-        ZStack {
+    private func phonePreview(profile: RDLayoutProfile) -> some View {
+        let phoneWidth: CGFloat = profile.heightClass == .short ? 174 : (profile.widthClass == .narrow ? 190 : 210)
+        let phoneHeight = phoneWidth * 2
+
+        return ZStack {
             // Soft green glow behind phones
             Ellipse()
                 .fill(Color.rdGreen.opacity(0.25))
@@ -128,7 +137,7 @@ struct OBTrialInviteView: View {
 
             ForEach(DeckPhone.allCases) { phone in
                 let placement = deckPlacement(for: phone)
-                phoneBezel(for: phone)
+                phoneBezel(for: phone, width: phoneWidth, height: phoneHeight)
                     .scaleEffect(placement.scale)
                     .opacity(placement.opacity)
                     .rotationEffect(.degrees(placement.rotation))
@@ -136,8 +145,12 @@ struct OBTrialInviteView: View {
                     .zIndex(placement.zIndex)
             }
         }
-        .frame(maxWidth: .infinity)
-        .onAppear { startSwapLoop() }
+        .frame(maxWidth: .infinity, minHeight: phoneHeight + 18)
+        .onAppear {
+            if !reduceMotion {
+                startSwapLoop()
+            }
+        }
     }
 
     private enum DeckPhone: Int, CaseIterable, Identifiable {
@@ -175,9 +188,15 @@ struct OBTrialInviteView: View {
     }
 
     private func startSwapLoop() {
-        Task { @MainActor in
+        guard swapTask == nil else { return }
+        swapTask = Task { @MainActor in
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 2_400_000_000)
+                do {
+                    try await Task.sleep(nanoseconds: 2_400_000_000)
+                } catch {
+                    return
+                }
+                guard !Task.isCancelled else { return }
                 withAnimation(.spring(response: 0.85, dampingFraction: 0.78)) {
                     frontPhone = frontPhone.next
                 }
@@ -185,30 +204,30 @@ struct OBTrialInviteView: View {
         }
     }
 
-    private func phoneBezel(for phone: DeckPhone) -> some View {
-        RoundedRectangle(cornerRadius: 38, style: .continuous)
-            .fill(Color(hex: "#16191A"))
-            .frame(width: 230, height: 460)
-            .overlay(
-                RoundedRectangle(cornerRadius: 38, style: .continuous)
-                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
-            )
-            .shadow(color: .black.opacity(0.6), radius: 30, y: 12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .fill(Color(hex: "#0B0D0E"))
-                    .overlay(
-                        screenContent(for: phone)
-                            .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
-                    )
-                    .padding(10)
-            )
-            .overlay(
-                Capsule()
-                    .fill(Color.black)
-                    .frame(width: 90, height: 26)
-                    .offset(y: -212)
-            )
+    private func phoneBezel(for phone: DeckPhone, width: CGFloat, height: CGFloat) -> some View {
+        let outerShape = RoundedRectangle(cornerRadius: 38, style: .continuous)
+        let screenShape = RoundedRectangle(cornerRadius: 30, style: .continuous)
+        let islandWidth = width * 0.39
+        let islandHeight = max(20, width * 0.11)
+        let islandOffset = -(height / 2) + max(18, width * 0.10)
+
+        return ZStack {
+            outerShape.fill(Color(hex: "#16191A"))
+
+            screenShape
+                .fill(Color(hex: "#0B0D0E"))
+                .overlay(screenContent(for: phone).clipShape(screenShape))
+                .padding(10)
+
+            Capsule()
+                .fill(Color.black)
+                .frame(width: islandWidth, height: islandHeight)
+                .offset(y: islandOffset)
+
+            outerShape.stroke(Color.white.opacity(0.06), lineWidth: 1)
+        }
+        .frame(width: width, height: height)
+        .shadow(color: .black.opacity(0.6), radius: 30, y: 12)
     }
 
     // Screen mockup — image asset takes priority if available, else
@@ -294,15 +313,21 @@ struct OBTrialInviteView: View {
     }
 
     private var footerLinks: some View {
-        HStack(spacing: 16) {
-            footerLink(RDLocalization.string("onboarding.obtrial.invite.view.gizlilik.politikasi.b57b93a6", table: .onboarding, fallback: "Gizlilik Politikası"), action: onPrivacy)
-                .accessibilityIdentifier("onboarding.trial_invite.privacy")
-            footerLink(RDLocalization.string("onboarding.obtrial.invite.view.geri.yukle.baead888", table: .onboarding, fallback: "Geri Yükle"), action: onRestore)
-                .accessibilityIdentifier("onboarding.trial_invite.restore")
-            footerLink(RDLocalization.string("onboarding.obtrial.invite.view.sartlar.de56b87b", table: .onboarding, fallback: "Şartlar"), action: onTerms)
-                .accessibilityIdentifier("onboarding.trial_invite.terms")
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 16) { footerLinkItems }
+            VStack(spacing: 4) { footerLinkItems }
         }
         .font(RDTypography.font(size: RDFontScale.size(11), weight: .medium))
+    }
+
+    @ViewBuilder
+    private var footerLinkItems: some View {
+        footerLink(RDLocalization.string("onboarding.obtrial.invite.view.gizlilik.politikasi.b57b93a6", table: .onboarding, fallback: "Gizlilik Politikası"), action: onPrivacy)
+            .accessibilityIdentifier("onboarding.trial_invite.privacy")
+        footerLink(RDLocalization.string("onboarding.obtrial.invite.view.geri.yukle.baead888", table: .onboarding, fallback: "Geri Yükle"), action: onRestore)
+            .accessibilityIdentifier("onboarding.trial_invite.restore")
+        footerLink(RDLocalization.string("onboarding.obtrial.invite.view.sartlar.de56b87b", table: .onboarding, fallback: "Şartlar"), action: onTerms)
+            .accessibilityIdentifier("onboarding.trial_invite.terms")
     }
 
     private func footerLink(_ text: String, action: @escaping () -> Void) -> some View {
@@ -310,6 +335,7 @@ struct OBTrialInviteView: View {
             Text(text)
                 .foregroundStyle(Color.rdSlate)
                 .underline()
+                .frame(minHeight: 44)
         }
         .buttonStyle(.plain)
     }

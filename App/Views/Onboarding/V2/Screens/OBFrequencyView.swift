@@ -4,6 +4,7 @@ struct OBFrequencyView: View {
     @ObservedObject var state: OnboardingV2State
     let onBack: () -> Void
     let onNext: () -> Void
+    @Environment(\.rdLayoutProfile) private var layoutProfile
 
     var body: some View {
         VStack(spacing: 0) {
@@ -42,7 +43,7 @@ struct OBFrequencyView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, layoutProfile.horizontalPadding)
                 .padding(.bottom, 16)
             }
 
@@ -73,12 +74,11 @@ struct OBFrequencyView: View {
                     Text(f.title)
                         .font(RDTypography.font(size: RDFontScale.size(16), weight: .semibold))
                         .foregroundStyle(Color.rdOnyx)
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
                     Text(f.sub)
                         .font(RDTypography.font(size: RDFontScale.size(13)))
                         .foregroundStyle(Color.rdSlate)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")

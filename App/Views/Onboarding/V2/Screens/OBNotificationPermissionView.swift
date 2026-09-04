@@ -7,38 +7,33 @@ struct OBNotificationPermissionView: View {
     let onContinue: () -> Void
 
     var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                VStack(spacing: 0) {
+        ZStack {
+            OBScreenScaffold(background: .white) { _ in
+                EmptyView()
+            } content: { profile in
+                VStack(spacing: profile.isCompact ? 28 : 46) {
                     headline
-                        .padding(.top, proxy.safeAreaInsets.top + 52)
-                        .padding(.horizontal, 34)
+                        .padding(.top, profile.isCompact ? 28 : 52)
+                        .padding(.horizontal, profile.horizontalPadding + 10)
                         .obStage(delay: 0.08)
 
-                    Spacer(minLength: 46)
-
-                    VStack(spacing: 36) {
+                    VStack(spacing: profile.isCompact ? 22 : 36) {
                         OBAnimatedReminderBell()
                         subcopy
+                            .padding(.horizontal, profile.horizontalPadding)
                     }
                     .frame(maxWidth: .infinity)
                     .obStage(delay: 0.18)
-
-                    Spacer(minLength: 28)
-
-                    footer
-                        .padding(.horizontal, 28)
-                        .padding(.bottom, max(2, proxy.safeAreaInsets.bottom - 10))
-                        .obStage(delay: 0.3)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white)
-
-                Color.clear
-                    .frame(width: 1, height: 1)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityIdentifier("onboarding.notification_permission")
+            } footer: { _ in
+                footer
+                    .obStage(delay: 0.3)
             }
+
+            Color.clear
+                .frame(width: 1, height: 1)
+                .accessibilityElement(children: .ignore)
+                .accessibilityIdentifier("onboarding.notification_permission")
         }
     }
 
@@ -85,7 +80,8 @@ struct OBNotificationPermissionView: View {
                     .font(RDTypography.font(size: RDFontScale.size(18), weight: .bold))
                     .foregroundStyle(Color.white)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 60)
+                    .padding(.vertical, 16)
+                    .frame(minHeight: 60)
                     .background(Color.rdOnyx)
                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .shadow(color: Color.rdOnyx.opacity(0.20), radius: 22, y: 8)

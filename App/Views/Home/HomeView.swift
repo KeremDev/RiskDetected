@@ -61,13 +61,12 @@ private struct AnalysisPhotoDraft: Identifiable {
 }
 
 private let freeQuotaCachePrefix = "rd.home.freeQuota"
-private let analysisSectorSheetHeight: CGFloat = 600
-private let analysisCanvasSheetHeight: CGFloat = 360
 
 struct HomeView: View {
     @EnvironmentObject var app: AppState
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.rdLayoutProfile) private var layoutProfile
 
     @State private var selectedCanvases: Set<AnalysisCanvas> = [.general]
     @State private var showCanvasSheet = false
@@ -162,9 +161,9 @@ struct HomeView: View {
                     generatedReportsSection
                         .padding(.top, 20)
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, layoutProfile.horizontalPadding)
                 .padding(.top, 4)
-                .padding(.bottom, RDTabBar.contentClearance)
+                .padding(.bottom, 24)
                 .keyboardAdaptivePadding(extra: 16)
                 .background(Color.rdWhite)
             }
@@ -226,36 +225,32 @@ struct HomeView: View {
             handleQuickScanRequest()
         }
         .sheet(isPresented: $showSourceDialog, onDismiss: presentPendingPhotoTrayDestinationIfNeeded) {
-            PhotoMediaTraySheet(
-                photos: selectedPhotos,
-                maxPhotoCount: maxSelectablePhotos,
-                visibleSlotCount: visiblePhotoSlotCount,
-                canAddMore: selectedPhotos.count < maxSelectablePhotos,
-                onCamera: openCameraFromPhotoTray,
-                onGallery: openGalleryFromPhotoTray,
-                onAnnotate: { id in
-                    startAnnotatingPhoto(id, returnToPhotoTray: true)
-                },
-                onRemove: removePhoto,
-                onMove: movePhoto,
-                onLockedSlot: {
-                    beginPaywallEntry(at: .homePhotoTrayLockedSlot)
-                    pendingPhotoTrayDismissDestination = .paywall
-                    showSourceDialog = false
-                },
-                onStartAnalysis: {
-                    pendingPhotoTrayDismissDestination = .preAnalysis
-                    showSourceDialog = false
-                },
-                onClose: { showSourceDialog = false }
-            )
-            .presentationDetents([
-                .height(PhotoMediaTraySheet.detentHeight(
-                    photosCount: selectedPhotos.count,
+            RDAdaptiveContainer { _ in
+                PhotoMediaTraySheet(
+                    photos: selectedPhotos,
                     maxPhotoCount: maxSelectablePhotos,
-                    visibleSlotCount: visiblePhotoSlotCount
-                ))
-            ])
+                    visibleSlotCount: visiblePhotoSlotCount,
+                    canAddMore: selectedPhotos.count < maxSelectablePhotos,
+                    onCamera: openCameraFromPhotoTray,
+                    onGallery: openGalleryFromPhotoTray,
+                    onAnnotate: { id in
+                        startAnnotatingPhoto(id, returnToPhotoTray: true)
+                    },
+                    onRemove: removePhoto,
+                    onMove: movePhoto,
+                    onLockedSlot: {
+                        beginPaywallEntry(at: .homePhotoTrayLockedSlot)
+                        pendingPhotoTrayDismissDestination = .paywall
+                        showSourceDialog = false
+                    },
+                    onStartAnalysis: {
+                        pendingPhotoTrayDismissDestination = .preAnalysis
+                        showSourceDialog = false
+                    },
+                    onClose: { showSourceDialog = false }
+                )
+            }
+            .presentationDetents([.fraction(0.72), .large])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -278,7 +273,7 @@ struct HomeView: View {
                     }
                 }
             )
-            .presentationDetents([.height(analysisCanvasSheetHeight), .large])
+            .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -293,7 +288,7 @@ struct HomeView: View {
                     }
                 }
             )
-            .presentationDetents([.height(analysisSectorSheetHeight)])
+            .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -607,7 +602,7 @@ struct HomeView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 178)
+        .frame(minHeight: layoutProfile.isAccessibilityText ? 224 : 178)
         .background(Color.clear)
         .contentShape(RoundedRectangle(cornerRadius: 18))
         .overlay(
@@ -795,7 +790,7 @@ struct HomeView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(height: 220)
+        .frame(minHeight: layoutProfile.isAccessibilityText ? 286 : 220)
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 20)
@@ -2538,41 +2533,14 @@ private struct PhotoMediaTraySheet: View {
     let onClose: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
-
-    static func detentHeight(
-        photosCount: Int,
-        maxPhotoCount: Int,
-        visibleSlotCount: Int
-    ) -> CGFloat {
-        let gridSpacing: CGFloat = 14
-        let slotCount = max(visibleSlotCount, min(maxPhotoCount, photosCount + 1))
-        let rowCount = max(1, Int(ceil(Double(slotCount) / 3.0)))
-        let contentWidth = UIScreen.main.bounds.width - 40
-        let availableWidth = contentWidth - (gridSpacing * 2)
-        let tileSize = max(88, min(112, floor(availableWidth / 3)))
-        let gridHeight = (CGFloat(rowCount) * tileSize) + (CGFloat(max(rowCount - 1, 0)) * gridSpacing) + 6
-        let hasLockedSlots = slotCount > maxPhotoCount
-        let verticalSpacing = CGFloat(hasLockedSlots ? 4 : 3) * 14
-        let upgradePromptHeight: CGFloat = hasLockedSlots ? 38 : 0
-
-        let contentHeight =
-            18 + // top padding
-            46 + // header
-            46 + // source buttons
-            gridHeight +
-            upgradePromptHeight +
-            58 + // primary button
-            verticalSpacing +
-            8 // bottom padding
-
-        return ceil(min(max(contentHeight, 330), 500))
-    }
+    @Environment(\.rdLayoutProfile) private var layoutProfile
 
     private var isDarkMode: Bool { colorScheme == .dark }
     private var trayBackground: Color { isDarkMode ? Color(hex: "#151819") : Color.rdWhite }
     private var trayPrimaryText: Color { isDarkMode ? Color.white : Color.rdOnyx }
     private var traySecondaryText: Color { isDarkMode ? Color.white.opacity(0.64) : Color.rdSlate }
     private var traySurface: Color { isDarkMode ? Color.white.opacity(0.08) : Color.rdFog }
+    private var traySourceSurface: Color { isDarkMode ? Color.white.opacity(0.10) : Color.rdWhite }
     private var trayTileSurface: Color { isDarkMode ? Color.white.opacity(0.06) : Color.rdWhite }
     private var trayLockedSurface: Color { isDarkMode ? Color.white.opacity(0.07) : Color.rdFog }
     private var trayStroke: Color { isDarkMode ? Color.white.opacity(0.13) : Color.rdLine }
@@ -2580,45 +2548,50 @@ private struct PhotoMediaTraySheet: View {
     private var trayCTA: Color { isDarkMode ? Color.rdGreen : Color.rdOnyx }
 
     var body: some View {
-        VStack(spacing: 14) {
-            header
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 14) {
+                header
 
-            HStack(spacing: 10) {
-                sourceButton(
-                    title: RDLocalization.string("analysis.home.view.kamera.0bbfe23e", table: .analysis, fallback: "Kamera"),
-                    icon: "camera.fill",
-                    accessibilityID: "home.photo_tray.camera",
-                    action: onCamera
-                )
-                sourceButton(
-                    title: RDLocalization.string("analysis.home.view.galeri.a1a2ff1c", table: .analysis, fallback: "Galeri"),
-                    icon: "photo.on.rectangle.angled",
-                    accessibilityID: "home.photo_tray.gallery",
-                    action: onGallery
-                )
-            }
-            .disabled(!canAddMore)
+                HStack(spacing: 10) {
+                    sourceButton(
+                        title: RDLocalization.string("analysis.home.view.kamera.0bbfe23e", table: .analysis, fallback: "Kamera"),
+                        icon: "camera.fill",
+                        accessibilityID: "home.photo_tray.camera",
+                        action: onCamera
+                    )
+                    sourceButton(
+                        title: RDLocalization.string("analysis.home.view.galeri.a1a2ff1c", table: .analysis, fallback: "Galeri"),
+                        icon: "photo.on.rectangle.angled",
+                        accessibilityID: "home.photo_tray.gallery",
+                        action: onGallery
+                    )
+                }
+                .disabled(!canAddMore)
 
-            LazyVGrid(columns: gridColumns, alignment: .center, spacing: gridSpacing) {
-                ForEach(0..<sheetSlotCount, id: \.self) { index in
-                    slot(at: index, tileSize: tileSize)
-                        .accessibilityIdentifier("home.photo_slot.\(index + 1)")
+                LazyVGrid(columns: gridColumns, alignment: .center, spacing: gridSpacing) {
+                    ForEach(0..<sheetSlotCount, id: \.self) { index in
+                        slot(at: index, tileSize: tileSize)
+                            .accessibilityIdentifier("home.photo_slot.\(index + 1)")
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 2)
+                .padding(.bottom, 4)
+
+                if hasLockedSlots {
+                    multiPhotoUpgradePrompt
                 }
             }
-            .frame(maxWidth: .infinity)
-            .padding(.top, 2)
-            .padding(.bottom, 4)
-
-            if hasLockedSlots {
-                multiPhotoUpgradePrompt
-            }
-
-            primaryButton
+            .padding(.horizontal, layoutProfile.horizontalPadding)
+            .padding(.top, 18)
+            .padding(.bottom, 16)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 18)
-        .padding(.bottom, 8)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            primaryButton
+                .padding(.horizontal, layoutProfile.horizontalPadding)
+                .padding(.vertical, 10)
+                .background(trayBackground.shadow(.drop(color: .black.opacity(0.08), radius: 8, y: -3)))
+        }
         .background(trayBackground)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("home.photo_tray")
@@ -2653,7 +2626,7 @@ private struct PhotoMediaTraySheet: View {
     private var gridSpacing: CGFloat { 14 }
 
     private var tileSize: CGFloat {
-        let contentWidth = UIScreen.main.bounds.width - 40
+        let contentWidth = layoutProfile.containerSize.width - (layoutProfile.horizontalPadding * 2)
         let availableWidth = contentWidth - (gridSpacing * 2)
         return max(88, min(112, floor(availableWidth / 3)))
     }
@@ -2698,7 +2671,7 @@ private struct PhotoMediaTraySheet: View {
             .foregroundStyle(trayIconText)
             .frame(maxWidth: .infinity)
             .frame(height: 46)
-            .background(traySurface)
+            .background(traySourceSurface)
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
                     .stroke(trayStroke, lineWidth: 1)

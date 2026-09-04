@@ -23,71 +23,75 @@ struct OnboardingView: View {
     ]
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                RDLogo(size: 18)
-                Spacer()
-                Button(RDLocalization.string("onboarding.onboarding.view.atla.e25539b1", table: .onboarding, fallback: "Atla")) { app.finishOnboarding() }
-                    .font(RDTypography.font(size: RDFontScale.size(15), weight: .medium, design: .rounded))
-                    .foregroundStyle(Color.rdSlate)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-
-            Spacer(minLength: 0)
-
-            VStack(spacing: 36) {
-                OnboardingArt(kind: slides[step].art)
-                    .frame(height: 280)
-                    .id(step)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
-
-                VStack(spacing: 14) {
-                    Text(slides[step].title)
-                        .font(RDTypography.font(size: RDFontScale.size(28), weight: .bold, design: .rounded))
-                        .tracking(-0.6)
-                        .foregroundStyle(Color.rdBlack)
-                        .multilineTextAlignment(.center)
-                    Text(slides[step].body)
-                        .font(RDTypography.font(size: RDFontScale.size(16), design: .rounded))
+        RDAdaptiveContainer { profile in
+            VStack(spacing: 0) {
+                HStack {
+                    RDLogo(size: 18)
+                    Spacer()
+                    Button(RDLocalization.string("onboarding.onboarding.view.atla.e25539b1", table: .onboarding, fallback: "Atla")) { app.finishOnboarding() }
+                        .font(RDTypography.font(size: RDFontScale.size(15), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(2)
-                        .frame(maxWidth: 320)
+                        .frame(minWidth: 44, minHeight: 44)
                 }
-                .id("text\(step)")
-                .transition(.opacity)
-            }
-            .padding(.horizontal, 24)
-            .animation(.easeInOut(duration: 0.32), value: step)
+                .padding(.horizontal, profile.horizontalPadding)
 
-            Spacer(minLength: 0)
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: profile.isCompact ? 22 : 36) {
+                        OnboardingArt(kind: slides[step].art, size: profile.heightClass == .short ? 220 : 280)
+                            .id(step)
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
 
-            VStack(spacing: 22) {
-                HStack(spacing: 6) {
-                    ForEach(0..<slides.count, id: \.self) { i in
-                        Capsule()
-                            .fill(i == step ? Color.rdBlack : Color.rdLine)
-                            .frame(width: i == step ? 22 : 6, height: 6)
-                            .animation(.easeInOut(duration: 0.24), value: step)
+                        VStack(spacing: 14) {
+                            Text(slides[step].title)
+                                .font(RDTypography.font(size: RDFontScale.size(28), weight: .bold, design: .rounded))
+                                .tracking(-0.6)
+                                .foregroundStyle(Color.rdBlack)
+                                .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text(slides[step].body)
+                                .font(RDTypography.font(size: RDFontScale.size(16), design: .rounded))
+                                .foregroundStyle(Color.rdSlate)
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: 360)
+                        }
+                        .id("text\(step)")
+                        .transition(.opacity)
                     }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, profile.horizontalPadding)
+                    .padding(.vertical, profile.sectionSpacing)
+                    .animation(.easeInOut(duration: 0.32), value: step)
                 }
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    VStack(spacing: 16) {
+                        HStack(spacing: 6) {
+                            ForEach(0..<slides.count, id: \.self) { i in
+                                Capsule()
+                                    .fill(i == step ? Color.rdBlack : Color.rdLine)
+                                    .frame(width: i == step ? 22 : 6, height: 6)
+                                    .animation(.easeInOut(duration: 0.24), value: step)
+                            }
+                        }
 
-                RDButton(title: step == slides.count - 1 ? RDLocalization.string("onboarding.onboarding.view.baslayalim.b166d890", table: .onboarding, fallback: "Başlayalım") : RDLocalization.string("onboarding.onboarding.view.devam.a5bee993", table: .onboarding, fallback: "Devam"),
-                         style: .primary,
-                         trailingIcon: "arrow.right") {
-                    if step < slides.count - 1 {
-                        withAnimation { step += 1 }
-                    } else {
-                        app.finishOnboarding()
+                        RDButton(title: step == slides.count - 1 ? RDLocalization.string("onboarding.onboarding.view.baslayalim.b166d890", table: .onboarding, fallback: "Başlayalım") : RDLocalization.string("onboarding.onboarding.view.devam.a5bee993", table: .onboarding, fallback: "Devam"),
+                                 style: .primary,
+                                 trailingIcon: "arrow.right") {
+                            if step < slides.count - 1 {
+                                withAnimation { step += 1 }
+                            } else {
+                                app.finishOnboarding()
+                            }
+                        }
                     }
+                    .padding(.horizontal, profile.horizontalPadding)
+                    .padding(.vertical, 10)
+                    .background(Color.rdPaper)
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 28)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.rdPaper)
+        .background(Color.rdPaper.ignoresSafeArea())
     }
 }
 
@@ -101,6 +105,7 @@ enum OnboardingArtKind { case photo, canvas, method, risk, pdf }
 
 struct OnboardingArt: View {
     let kind: OnboardingArtKind
+    var size: CGFloat = 280
 
     var body: some View {
         ZStack {
@@ -116,7 +121,7 @@ struct OnboardingArt: View {
             case .pdf: pdfArt
             }
         }
-        .frame(width: 280, height: 280)
+        .frame(width: size, height: size)
     }
 
     @ViewBuilder

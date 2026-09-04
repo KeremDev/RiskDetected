@@ -125,16 +125,16 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("in_app_paywall.restore").exists)
         XCTAssertTrue(waitFor("in_app_paywall.privacy").exists)
 
-        tap("in_app_paywall.terms")
+        tapScrolling("in_app_paywall.terms")
         XCTAssertTrue(waitFor("Yasal Bilgilendirme", timeout: 4).exists)
         XCTAssertTrue(waitFor("Kullanım Koşulları").exists)
         tap("Pencereyi kapat")
 
-        tap("in_app_paywall.plan.monthly")
+        tapScrolling("in_app_paywall.plan.monthly")
         XCTAssertTrue(waitFor("in_app_paywall.plan.monthly", timeout: 6).isSelected)
         XCTAssertFalse(app.staticTexts["₺199,99"].waitForExistence(timeout: 1))
 
-        tap("in_app_paywall.plan.yearly")
+        tapScrolling("in_app_paywall.plan.yearly")
         XCTAssertTrue(waitFor("in_app_paywall.plan.yearly", timeout: 6).isSelected)
         XCTAssertFalse(app.staticTexts["₺1.999,99"].waitForExistence(timeout: 1))
         XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 12).exists)
@@ -255,7 +255,72 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("tab.quick_scan").isHittable)
         tapTab(.profile)
         XCTAssertTrue(waitFor("profile.root", timeout: 8).exists)
-        XCTAssertTrue(waitFor("profile.row.preferences").isHittable)
+        tapScrolling("profile.row.preferences", timeout: 14)
+        XCTAssertTrue(waitFor("Preferences", timeout: 6).exists)
+    }
+
+    func testResponsivePaywallAtLargestDynamicTypeKeepsPlansCTAAndLegalReachable() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_FREE_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+            "-UIPreferredContentSizeCategoryName",
+            "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge",
+        ])
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        tap("Yükselt", timeout: 10)
+
+        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 10).exists)
+        let cta = waitFor("in_app_paywall.cta", timeout: 12)
+        XCTAssertTrue(cta.isHittable)
+        XCTAssertGreaterThanOrEqual(cta.frame.height, 44)
+        XCTAssertLessThanOrEqual(cta.frame.maxY, app.frame.maxY)
+
+        tapScrolling("in_app_paywall.plan.monthly", timeout: 14)
+        XCTAssertTrue(waitFor("in_app_paywall.plan.monthly", timeout: 6).isSelected)
+        XCTAssertTrue(waitFor("in_app_paywall.cta", timeout: 6).isHittable)
+
+        tapScrolling("in_app_paywall.terms", timeout: 14)
+        XCTAssertTrue(waitFor("Yasal Bilgilendirme", timeout: 6).exists)
+        XCTAssertTrue(waitFor("Kullanım Koşulları", timeout: 4).exists)
+        tap("Pencereyi kapat")
+        XCTAssertTrue(waitFor("in_app_paywall.cta", timeout: 6).isHittable)
+    }
+
+    func testResponsiveResultHubAtLargestDynamicTypeKeepsTabsAndReportActionReachable() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+            "-UIPreferredContentSizeCategoryName",
+            "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge",
+        ])
+
+        let selector = waitFor("result.hub.section_selector", timeout: 12)
+        XCTAssertTrue(selector.exists)
+
+        let reportAction = waitFor("result.hub.report", timeout: 8)
+        XCTAssertTrue(reportAction.isHittable)
+        XCTAssertGreaterThanOrEqual(reportAction.frame.height, 44)
+        XCTAssertLessThanOrEqual(reportAction.frame.maxY, app.frame.maxY)
+
+        let riskSection = waitFor("result.hub.section.risk_analysis", timeout: 6)
+        XCTAssertTrue(hasUsableHitFrame(riskSection), "Initial risk section should be visible")
+
+        for section in [
+            "result.hub.section.expert_recommendations",
+            "result.hub.section.approved_notebook",
+            "result.hub.section.training_recommendations",
+        ] {
+            tapHorizontallyScrolling(section, in: "result.hub.section_selector", timeout: 10)
+            let selected = waitFor(section, timeout: 4)
+            XCTAssertTrue(hasUsableHitFrame(selected), "Section should be visible after selection: \(section)")
+            XCTAssertTrue(waitFor("result.hub.report", timeout: 4).isHittable)
+        }
+
+        for _ in 0..<5 { app.swipeUp() }
+        XCTAssertTrue(waitFor("result.hub.report", timeout: 4).isHittable)
     }
 
     func testEnglishPseudolocalizationKeepsPrimaryNavigationReachable() throws {
@@ -1227,14 +1292,14 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("in_app_paywall.feature_marquee", timeout: 8).exists)
         XCTAssertTrue(waitFor("in_app_paywall.auto_renew", timeout: 6).exists)
 
-        tap("in_app_paywall.plan.monthly")
+        tapScrolling("in_app_paywall.plan.monthly")
         XCTAssertTrue(waitFor("in_app_paywall.feature_marquee", timeout: 6).exists)
 
         tapScrolling("in_app_paywall.plus.pro_link", timeout: 12)
         XCTAssertTrue(waitFor("in_app_paywall.pro", timeout: 8).exists)
         XCTAssertTrue(waitFor("in_app_paywall.feature_marquee", timeout: 6).exists)
 
-        tap("in_app_paywall.plan.monthly")
+        tapScrolling("in_app_paywall.plan.monthly")
         XCTAssertTrue(waitFor("in_app_paywall.feature_marquee", timeout: 6).exists)
         XCTAssertTrue(waitFor("in_app_paywall.auto_renew", timeout: 6).exists)
     }
@@ -1270,12 +1335,12 @@ final class RiskDetectedUITests: XCTestCase {
         tap("Yükselt")
         XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 8).exists)
 
-        tap("in_app_paywall.terms")
+        tapScrolling("in_app_paywall.terms")
         XCTAssertTrue(waitFor("Yasal Bilgilendirme", timeout: 6).exists)
         XCTAssertTrue(waitFor("Kullanım Koşulları", timeout: 4).exists)
         tap("Pencereyi kapat")
 
-        tap("in_app_paywall.privacy")
+        tapScrolling("in_app_paywall.privacy")
         XCTAssertTrue(waitFor("Yasal Bilgilendirme", timeout: 6).exists)
         XCTAssertTrue(waitFor("Gizlilik Politikası", timeout: 4).exists)
         tap("Pencereyi kapat")
@@ -1284,7 +1349,7 @@ final class RiskDetectedUITests: XCTestCase {
 
         // Geri yükleme mağazaya gider; simülatörde oturum olmadığı için sonuç bir
         // uyarı satırıdır. Beklenen davranış paywall'ın açık ve kullanılabilir kalması.
-        tap("in_app_paywall.restore")
+        tapScrolling("in_app_paywall.restore")
         XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 10).exists)
         XCTAssertTrue(waitFor("in_app_paywall.cta", timeout: 6).exists)
     }
@@ -1303,16 +1368,22 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("Firma yönetimi").exists)
         XCTAssertTrue(waitFor("Günlük analiz").exists)
 
-        let multiPhotoAnalysis = waitFor("Çoklu Fotoğraf Analizi")
         let plusCTA = waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 12)
+        XCTAssertTrue(plusCTA.isHittable)
+        var multiPhotoAnalysis = waitFor("Çoklu Fotoğraf Analizi")
+        for _ in 0..<5 where !hasUsableHitFrame(multiPhotoAnalysis) {
+            app.swipeUp()
+            multiPhotoAnalysis = waitFor("Çoklu Fotoğraf Analizi", timeout: 1)
+        }
+        XCTAssertTrue(hasUsableHitFrame(multiPhotoAnalysis))
         XCTAssertLessThan(multiPhotoAnalysis.frame.maxY, plusCTA.frame.minY)
 
-        tap("in_app_paywall.terms")
+        tapScrolling("in_app_paywall.terms")
         XCTAssertTrue(waitFor("Yasal Bilgilendirme", timeout: 4).exists)
         XCTAssertTrue(waitFor("Kullanım Koşulları").exists)
         tap("Pencereyi kapat")
 
-        tap("in_app_paywall.plan.monthly")
+        tapScrolling("in_app_paywall.plan.monthly")
         XCTAssertTrue(waitFor("PLUS Abonelik Avantajları").exists)
         XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 12).exists)
 
@@ -1336,19 +1407,19 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 8).exists)
         XCTAssertEqual(waitFor("in_app_paywall.plan.yearly", timeout: 8).label, "Yıllık")
 
-        tap("in_app_paywall.plan.monthly")
+        tapScrolling("in_app_paywall.plan.monthly")
         XCTAssertTrue(waitFor("in_app_paywall.plan.monthly", timeout: 6).isSelected)
 
-        tap("in_app_paywall.plan.yearly")
+        tapScrolling("in_app_paywall.plan.yearly")
         XCTAssertTrue(waitFor("in_app_paywall.plan.yearly", timeout: 6).isSelected)
 
         tapScrolling("in_app_paywall.plus.pro_link", timeout: 12)
         XCTAssertTrue(waitFor("in_app_paywall.pro", timeout: 8).exists)
 
-        tap("in_app_paywall.plan.monthly")
+        tapScrolling("in_app_paywall.plan.monthly")
         XCTAssertTrue(waitFor("in_app_paywall.plan.monthly", timeout: 6).isSelected)
 
-        tap("in_app_paywall.plan.yearly")
+        tapScrolling("in_app_paywall.plan.yearly")
         XCTAssertTrue(waitFor("in_app_paywall.plan.yearly", timeout: 6).isSelected)
         XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 12).exists)
     }
@@ -1404,7 +1475,7 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 15).exists)
         attachScreenshot("05-plus-yillik-paywall")
 
-        tap("in_app_paywall.plan.monthly")
+        tapScrolling("in_app_paywall.plan.monthly")
         XCTAssertTrue(waitFor("PLUS Abonelik Avantajları").exists)
         attachScreenshot("06-plus-aylik-paywall")
 
@@ -1412,7 +1483,7 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("in_app_paywall.pro", timeout: 8).exists)
         attachScreenshot("07-pro-yillik-paywall")
 
-        tap("in_app_paywall.plan.monthly")
+        tapScrolling("in_app_paywall.plan.monthly")
         XCTAssertTrue(waitFor("PRO Abonelik Avantajları").exists)
         attachScreenshot("08-pro-aylik-paywall")
 
@@ -1813,7 +1884,7 @@ final class RiskDetectedUITests: XCTestCase {
         tap("6-15")
         tap("Planımı Hazırla")
 
-        XCTAssertTrue(waitFor("onboarding.personal_plan.create_account", timeout: 12).exists)
+        XCTAssertTrue(waitFor("onboarding.personal_plan.create_account", timeout: 22).exists)
     }
 
     @discardableResult
@@ -1996,6 +2067,71 @@ final class RiskDetectedUITests: XCTestCase {
 
     private func tapScrolling(_ identifier: String, timeout: TimeInterval = 8) {
         let deadline = Date().addingTimeInterval(timeout)
+        var fallbackScrollsUp = true
+        repeat {
+            var firstExisting: XCUIElement?
+            for query in matchingQueries(identifier) {
+                for index in 0..<query.count {
+                    let element = query.element(boundBy: index)
+                    guard element.exists else { continue }
+                    if firstExisting == nil { firstExisting = element }
+                    if hasUsableHitFrame(element),
+                       isUnobscuredByPinnedBottomAction(element, targetIdentifier: identifier),
+                       element.isHittable {
+                        element.tap()
+                        return
+                    }
+                }
+            }
+
+            if let firstExisting, !firstExisting.frame.isEmpty {
+                if firstExisting.frame.midY > app.frame.midY {
+                    app.swipeUp()
+                } else {
+                    app.swipeDown()
+                }
+            } else if fallbackScrollsUp {
+                app.swipeUp()
+                fallbackScrollsUp = false
+            } else {
+                app.swipeDown()
+                fallbackScrollsUp = true
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+        } while Date() < deadline
+
+        XCTFail("Element is not hittable after scrolling: \(identifier)")
+    }
+
+    private func isUnobscuredByPinnedBottomAction(
+        _ element: XCUIElement,
+        targetIdentifier: String
+    ) -> Bool {
+        let pinnedActionIdentifiers = [
+            "in_app_paywall.cta",
+            "result.hub.report",
+            "onboarding.trial_invite.cta",
+            "onboarding.notification_permission.cta",
+        ]
+
+        for identifier in pinnedActionIdentifiers where identifier != targetIdentifier {
+            let action = app.buttons[identifier]
+            guard action.exists, !action.frame.isEmpty else { continue }
+            if element.frame.maxY > action.frame.minY - 4 {
+                return false
+            }
+        }
+        return true
+    }
+
+    private func tapHorizontallyScrolling(
+        _ identifier: String,
+        in containerIdentifier: String,
+        timeout: TimeInterval = 8
+    ) {
+        let deadline = Date().addingTimeInterval(timeout)
+        let container = waitFor(containerIdentifier, timeout: timeout)
+
         repeat {
             for query in matchingQueries(identifier) {
                 for index in 0..<query.count {
@@ -2007,11 +2143,11 @@ final class RiskDetectedUITests: XCTestCase {
                     }
                 }
             }
-            app.swipeUp()
+            container.swipeLeft()
             RunLoop.current.run(until: Date().addingTimeInterval(0.25))
         } while Date() < deadline
 
-        XCTFail("Element is not hittable after scrolling: \(identifier)")
+        XCTFail("Element is not hittable after horizontal scrolling: \(identifier)")
     }
 
     private func longPress(_ identifier: String, timeout: TimeInterval = 6) {

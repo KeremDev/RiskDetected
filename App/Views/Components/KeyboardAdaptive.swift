@@ -4,42 +4,46 @@ import UIKit
 
 final class KeyboardObserver: ObservableObject {
     @Published private(set) var height: CGFloat = 0
+    @Published private(set) var animationDuration: TimeInterval = 0.25
 
     private var cancellables: Set<AnyCancellable> = []
 
     init() {
-        let willChange = NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)
-        let willHide = NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
-
-        willChange
-            .merge(with: willHide)
+        NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)
+            .merge(with: NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification))
             .receive(on: RunLoop.main)
-            .sink { [weak self] notification in
-                self?.handle(notification)
-            }
+            .sink { [weak self] notification in self?.handle(notification) }
             .store(in: &cancellables)
     }
 
     private func handle(_ notification: Notification) {
+        if let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval {
+            animationDuration = duration
+        }
         guard notification.name != UIResponder.keyboardWillHideNotification,
-              let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else {
+              let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+              let window = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .flatMap(\.windows)
+                .first(where: \.isKeyWindow) else {
             height = 0
             return
         }
 
-        let screenHeight = UIScreen.main.bounds.height
-        height = max(0, screenHeight - frame.minY)
+        let frameInWindow = window.convert(keyboardFrame, from: nil)
+        height = max(0, window.bounds.maxY - frameInWindow.minY)
     }
 }
 
 private struct KeyboardAdaptivePaddingModifier: ViewModifier {
-    @StateObject private var keyboard = KeyboardObserver()
     var extra: CGFloat
 
     func body(content: Content) -> some View {
         content
-            .padding(.bottom, keyboard.height > 0 ? keyboard.height + extra : 0)
-            .animation(.easeOut(duration: 0.22), value: keyboard.height)
+            // SwiftUI'nin keyboard safe-area daraltmasını kullan. Ekran koordinatından
+            // elle klavye yüksekliği çıkarmak sheet ve Display Zoom altında iki kez inset
+            // uygulanmasına yol açıyordu.
+            .padding(.bottom, extra)
     }
 }
 

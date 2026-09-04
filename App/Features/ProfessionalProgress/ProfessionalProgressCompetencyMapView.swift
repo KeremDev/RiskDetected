@@ -3,6 +3,7 @@ import SwiftUI
 struct ProfessionalProgressCompetencyMapView: View {
     let competencies: [ProfessionalProgressCompetencyStat]
     var compact: Bool = false
+    @Environment(\.rdLayoutProfile) private var layoutProfile
 
     var body: some View {
         VStack(alignment: .leading, spacing: RDSpacing.sm) {
@@ -57,7 +58,11 @@ struct ProfessionalProgressCompetencyMapView: View {
         let total = chartTotal(rows)
 
         return VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center, spacing: 16) {
+            AnyLayout(
+                layoutProfile.prefersStackedControls
+                    ? AnyLayout(VStackLayout(alignment: .leading, spacing: 16))
+                    : AnyLayout(HStackLayout(alignment: .center, spacing: 16))
+            ) {
                 donutChart(rows: rows, total: total)
 
                 VStack(alignment: .leading, spacing: 10) {
@@ -71,10 +76,9 @@ struct ProfessionalProgressCompetencyMapView: View {
                     }
 
                     LazyVGrid(
-                        columns: [
-                            GridItem(.flexible(), spacing: 7),
-                            GridItem(.flexible(), spacing: 7)
-                        ],
+                        columns: layoutProfile.isAccessibilityText
+                            ? [GridItem(.flexible(), spacing: 7)]
+                            : [GridItem(.flexible(), spacing: 7), GridItem(.flexible(), spacing: 7)],
                         alignment: .leading,
                         spacing: 7
                     ) {

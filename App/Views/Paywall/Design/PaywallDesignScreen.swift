@@ -67,16 +67,15 @@ struct PaywallDesignScreen: View {
         showsTrialTimeline && selectedBilling == .yearly
     }
 
-    /// PLUS tasarımında plan kartları ile çapraz satış arası 24pt, PRO'da 22pt.
-    private var plansBottomPadding: CGFloat {
-        screen == .plus ? 24 : 22
-    }
-
     var body: some View {
-        VStack(spacing: 0) {
+        RDAdaptiveContainer { profile in
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 0) {
-                    PaywallDesignHero(label: heroLabel, onClose: onClose)
+                    PaywallDesignHero(
+                        label: heroLabel,
+                        height: profile.paywallHeroHeight,
+                        onClose: onClose
+                    )
 
                     PaywallDesignSocialProof()
 
@@ -101,52 +100,62 @@ struct PaywallDesignScreen: View {
                         accent: accent
                     )
 
-                    HStack(spacing: 10) {
+                    AnyLayout(
+                        profile.prefersStackedControls
+                            ? AnyLayout(VStackLayout(spacing: 12))
+                            : AnyLayout(HStackLayout(spacing: 10))
+                    ) {
                         planCard(annual, billing: .yearly, identifier: "in_app_paywall.plan.yearly")
                         planCard(monthly, billing: .monthly, identifier: "in_app_paywall.plan.monthly")
                     }
-                    .padding(.top, 22)
-                    .padding(.horizontal, PaywallDesignMetric.screenPadding)
-                    .padding(.bottom, plansBottomPadding)
+                    .padding(.top, profile.isCompact ? 16 : 22)
+                    .padding(.horizontal, profile.horizontalPadding)
+                    .padding(.bottom, profile.isCompact ? 18 : 24)
 
                     if let crossSell {
                         crossSellCard(crossSell)
-                            .padding(.horizontal, PaywallDesignMetric.screenPadding)
-                            .padding(.bottom, 22)
+                            .padding(.horizontal, profile.horizontalPadding)
+                            .padding(.bottom, profile.sectionSpacing)
                     }
+
+                    PaywallDesignLegalFooter(
+                        renewalPrice: renewalPrice,
+                        onRestore: onRestore,
+                        onTerms: onTerms,
+                        onPrivacy: onPrivacy,
+                        onManageSubscription: onManageSubscription
+                    )
+                    .padding(.horizontal, profile.horizontalPadding)
+                    .padding(.bottom, profile.sectionSpacing)
                 }
             }
             // Ekran değiştiğinde (PLUS ↔ PRO) kaydırma konumu başa dönsün;
             // aksi halde kullanıcı yeni ekranın ortasına düşüyor.
             .id(screen)
 
-            PaywallDesignFooter(
-                ctaTitle: cta.title,
-                ctaAccessibilityIdentifier: cta.accessibilityIdentifier,
-                isLoading: cta.isLoading,
-                isDisabled: cta.isDisabled,
-                accent: accent,
-                notice: notice,
-                errorMessage: errorMessage,
-                renewalPrice: renewalPrice,
-                onCTA: onCTA,
-                onRestore: onRestore,
-                onTerms: onTerms,
-                onPrivacy: onPrivacy,
-                onManageSubscription: onManageSubscription
-            )
-            .zIndex(2)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                PaywallDesignFooter(
+                    ctaTitle: cta.title,
+                    ctaAccessibilityIdentifier: cta.accessibilityIdentifier,
+                    isLoading: cta.isLoading,
+                    isDisabled: cta.isDisabled,
+                    accent: accent,
+                    notice: notice,
+                    errorMessage: errorMessage,
+                    onCTA: onCTA
+                )
+            }
         }
-        .background(Color.white)
-        .ignoresSafeArea()
+        .background(Color.white.ignoresSafeArea())
         .preferredColorScheme(.light)
         // Ekran kimliği görünmez bir işaretçiye verilir; kök görünüme verilirse
         // SwiftUI bu kimliği tüm alt öğelere yayıp kendi kimliklerini eziyor.
         .overlay(alignment: .top) {
-            Color.clear
-                .frame(width: 1, height: 1)
-                .accessibilityElement(children: .ignore)
-                .accessibilityIdentifier("in_app_paywall.\(screen.rawValue)")
+            if screen == .plus {
+                screenMarker("in_app_paywall.plus")
+            } else {
+                screenMarker("in_app_paywall.pro")
+            }
         }
     }
 
@@ -194,5 +203,13 @@ struct PaywallDesignScreen: View {
             accessibilityIdentifier: crossSell.accessibilityIdentifier,
             onTap: onCrossSell
         )
+    }
+
+    private func screenMarker(_ identifier: String) -> some View {
+        Color.clear
+            .frame(width: 1, height: 1)
+            .accessibilityElement(children: .ignore)
+            .accessibilityIdentifier(identifier)
+            .id(identifier)
     }
 }

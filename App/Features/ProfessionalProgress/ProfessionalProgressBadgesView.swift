@@ -4,12 +4,15 @@ struct ProfessionalProgressBadgesView: View {
     let badges: [ProfessionalProgressBadge]
     private let summary: ProfessionalProgressSummary?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.rdLayoutProfile) private var layout
 
-    private let columns = [
-        GridItem(.flexible(), spacing: RDSpacing.sm),
-        GridItem(.flexible(), spacing: RDSpacing.sm),
-        GridItem(.flexible(), spacing: RDSpacing.sm)
-    ]
+    private var columns: [GridItem] {
+        let count = layout.widthClass == .narrow || layout.isAccessibilityText ? 2 : 3
+        return Array(
+            repeating: GridItem(.flexible(), spacing: RDSpacing.sm),
+            count: count
+        )
+    }
 
     init(badges: [ProfessionalProgressBadge], summary: ProfessionalProgressSummary? = nil) {
         self.badges = badges
@@ -92,7 +95,7 @@ struct ProfessionalProgressBadgesView: View {
                 .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 108)
+        .frame(minHeight: 108)
         .padding(.horizontal, 6)
         .background(badge.cardBackground)
         .overlay(

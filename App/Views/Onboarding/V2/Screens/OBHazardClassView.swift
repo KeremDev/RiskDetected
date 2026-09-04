@@ -4,6 +4,7 @@ struct OBHazardClassView: View {
     @ObservedObject var state: OnboardingV2State
     let onBack: () -> Void
     let onNext: () -> Void
+    @Environment(\.rdLayoutProfile) private var layoutProfile
 
     private let items: [(cls: OBHazardClass, icon: String, sub: String)] = [
         (.critical, "exclamationmark.triangle.fill", RDLocalization.string("onboarding.obhazard.class.view.petrokimya.maden.insaat.fabrika.vb.34e41743", table: .onboarding, fallback: "Petrokimya, maden, inşaat, fabrika vb.")),
@@ -61,7 +62,7 @@ struct OBHazardClassView: View {
                     OBSelectionCounter(count: state.hazards.count, suffix: RDLocalization.string("onboarding.obhazard.class.view.sinif.secildi.1b7300f0", table: .onboarding, fallback: "sınıf seçildi"))
                         .padding(.top, 6)
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, layoutProfile.horizontalPadding)
                 .padding(.bottom, 24)
             }
 

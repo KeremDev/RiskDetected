@@ -112,7 +112,7 @@ struct HistoryView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
-                .padding(.bottom, RDTabBar.contentClearance)
+                .padding(.bottom, 24)
             }
         }
         .background(Color.rdPaper)

@@ -6,8 +6,9 @@ struct CompanyPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     static func presentationDetents(for accessTier: SubscriptionTier, allowNoCompany: Bool = true) -> Set<PresentationDetent> {
-        guard accessTier.isPaid else { return [.height(330)] }
-        return allowNoCompany ? [.height(330), .medium] : [.height(315), .medium]
+        _ = accessTier
+        _ = allowNoCompany
+        return [.medium, .large]
     }
 
     let title: String

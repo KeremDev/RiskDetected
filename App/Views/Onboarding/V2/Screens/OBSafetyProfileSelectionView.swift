@@ -4,6 +4,7 @@ struct OBSafetyProfileSelectionView: View {
     @ObservedObject var state: OnboardingV2State
     let onBack: () -> Void
     let onNext: () -> Void
+    @Environment(\.rdLayoutProfile) private var layoutProfile
 
     var body: some View {
         VStack(spacing: 0) {
@@ -81,7 +82,7 @@ struct OBSafetyProfileSelectionView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 4)
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, layoutProfile.horizontalPadding)
                 .padding(.bottom, 24)
             }
 

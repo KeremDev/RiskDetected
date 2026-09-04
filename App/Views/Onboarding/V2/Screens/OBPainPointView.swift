@@ -2,6 +2,7 @@ import SwiftUI
 
 struct OBPainPointView: View {
     let onNext: () -> Void
+    @Environment(\.rdLayoutProfile) private var layoutProfile
 
     @State private var checked: [Bool] = [false, false, false]
     @State private var shimmer: CGFloat = -1.0
@@ -89,7 +90,7 @@ struct OBPainPointView: View {
                         .padding(.top, 8)
                         .obStage(delay: 0.62)
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, layoutProfile.horizontalPadding)
                 .padding(.bottom, 16)
             }
 

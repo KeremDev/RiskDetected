@@ -78,45 +78,47 @@ struct OnboardingViewV2: View {
     }
 
     var body: some View {
-        ZStack {
-            currentScreen
-                .transition(.asymmetric(
-                    insertion: .opacity.combined(with: .move(edge: .trailing)),
-                    removal: .opacity.combined(with: .move(edge: .leading))
-                ))
-                .id(state.step)
+        RDAdaptiveContainer { _ in
+            ZStack {
+                currentScreen
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .trailing)),
+                        removal: .opacity.combined(with: .move(edge: .leading))
+                    ))
+                    .id(state.step)
 
-            if showSkipConfirmation {
-                OBSkipConfirmationView(
-                    onCancel: {
-                        withAnimation(.obSpring) {
-                            showSkipConfirmation = false
+                if showSkipConfirmation {
+                    OBSkipConfirmationView(
+                        onCancel: {
+                            withAnimation(.obSpring) {
+                                showSkipConfirmation = false
+                            }
+                        },
+                        onConfirm: {
+                            OBHaptic.light()
+                            OnboardingAnswersService.shared.clearPendingDraft()
+                            withAnimation(.obSpring) {
+                                showSkipConfirmation = false
+                            }
+                            onFinish()
                         }
-                    },
-                    onConfirm: {
-                        OBHaptic.light()
-                        OnboardingAnswersService.shared.clearPendingDraft()
-                        withAnimation(.obSpring) {
-                            showSkipConfirmation = false
-                        }
-                        onFinish()
-                    }
-                )
-                .transition(.opacity.combined(with: .scale(scale: 0.98)))
-                .zIndex(10)
-            }
+                    )
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                    .zIndex(10)
+                }
 
-            if Self.isUITestLaunch {
-                Color.clear
-                    .frame(width: 1, height: 1)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityIdentifier("onboarding.v2")
+                if Self.isUITestLaunch {
+                    Color.clear
+                        .frame(width: 1, height: 1)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityIdentifier("onboarding.v2")
+                }
             }
+            .animation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.42), value: state.step)
+            .animation(.obSpring, value: showSkipConfirmation)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(state.step == 11 ? Color(hex: "#0B0D0E") : Color.rdPaper)
         }
-        .animation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.42), value: state.step)
-        .animation(.obSpring, value: showSkipConfirmation)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(state.step == 11 ? Color(hex: "#0B0D0E") : Color.rdPaper)
         .environment(\.colorScheme, .light)
         .preferredColorScheme(.light)
         .sheet(item: $selectedLegalDocument) { kind in

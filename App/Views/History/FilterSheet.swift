@@ -12,6 +12,12 @@ struct FilterSheet: View {
     private let kindOptions = [RDLocalization.string("localizable.filter.sheet.genel.ca283d14", table: .localizable, fallback: "Genel"), "KKD", RDLocalization.string("localizable.filter.sheet.isaretleme.81bc8740", table: .localizable, fallback: "İşaretleme"), RDLocalization.string("localizable.filter.sheet.sektor.0d1f5675", table: .localizable, fallback: "Sektör"), RDLocalization.string("localizable.filter.sheet.acil.eb5edb91", table: .localizable, fallback: "Acil"), RDLocalization.string("localizable.filter.sheet.prosedur.3d2127b9", table: .localizable, fallback: "Prosedür")]
 
     var body: some View {
+        RDAdaptiveContainer { layout in
+            sheetContent(layout)
+        }
+    }
+
+    private func sheetContent(_ layout: RDLayoutProfile) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 12) {
@@ -38,7 +44,7 @@ struct FilterSheet: View {
                         Image(systemName: "xmark")
                             .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rdBlack)
-                            .frame(width: 38, height: 38)
+                            .frame(width: 44, height: 44)
                             .background(Color.rdWhite)
                             .clipShape(Circle())
                             .shadow(color: Color.rdOnyx.opacity(0.10), radius: 8, x: 0, y: 4)
@@ -55,7 +61,7 @@ struct FilterSheet: View {
                 }
 
                 section(RDLocalization.string("localizable.filter.sheet.risk.seviyesi.be00fbef", table: .localizable, fallback: "Risk seviyesi")) {
-                    HStack(spacing: 6) {
+                    FlowLayout(spacing: 6, lineSpacing: 6) {
                         ForEach([RiskLevel.critical, .high, .medium, .low], id: \.self) { lvl in
                             riskChip(level: lvl)
                         }
@@ -69,39 +75,48 @@ struct FilterSheet: View {
                     }
                 }
 
-                HStack(spacing: 8) {
-                    Button {
-                        dateFilter = RDLocalization.string("localizable.filter.sheet.tumu.8f51a7df", table: .localizable, fallback: "Tümü")
-                        selectedLevels = []
-                        selectedKinds = []
-                    } label: {
-                        Text(RDLocalization.string("localizable.filter.sheet.sifirla.77de5bea", table: .localizable, fallback: "Sıfırla"))
-                            .font(RDTypography.font(size: RDFontScale.size(14), weight: .bold, design: .rounded))
-                            .foregroundStyle(Color.rdBlack)
-                            .frame(width: 92, height: 48)
-                            .background(Color.rdFog)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(Color.rdLine, lineWidth: 1)
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                Group {
+                    if layout.prefersStackedControls {
+                        VStack(spacing: 8) { filterActions }
+                    } else {
+                        HStack(spacing: 8) { filterActions }
                     }
-                    .buttonStyle(RDPressableButtonStyle())
-
-                    RDButton(title: RDLocalization.string("localizable.filter.sheet.12.sonucu.goster.d4e56bf2", table: .localizable, fallback: "12 sonucu göster"), style: .primary) {
-                        onConfirm()
-                        dismiss()
-                    }
-                    .frame(maxWidth: .infinity)
                 }
                 .padding(.top, 6)
 
                 Color.clear.frame(height: 16)
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, layout.horizontalPadding)
             .padding(.top, 4)
         }
         .background(Color.rdPaper)
+    }
+
+    @ViewBuilder
+    private var filterActions: some View {
+        Button {
+            dateFilter = RDLocalization.string("localizable.filter.sheet.tumu.8f51a7df", table: .localizable, fallback: "Tümü")
+            selectedLevels = []
+            selectedKinds = []
+        } label: {
+            Text(RDLocalization.string("localizable.filter.sheet.sifirla.77de5bea", table: .localizable, fallback: "Sıfırla"))
+                .font(RDTypography.font(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdBlack)
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .background(Color.rdFog)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.rdLine, lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(RDPressableButtonStyle())
+
+        RDButton(title: RDLocalization.string("localizable.filter.sheet.12.sonucu.goster.d4e56bf2", table: .localizable, fallback: "12 sonucu göster"), style: .primary) {
+            onConfirm()
+            dismiss()
+        }
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Helpers
@@ -130,7 +145,7 @@ struct FilterSheet: View {
                     Text(opt)
                         .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                         .padding(.horizontal, 14)
-                        .frame(height: 34)
+                        .frame(minHeight: 44)
                         .foregroundStyle(active ? .white : Color.rdCharcoal)
                         .background(
                             Capsule()
@@ -157,7 +172,7 @@ struct FilterSheet: View {
                     .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
             }
             .padding(.horizontal, 12)
-            .frame(height: 34)
+            .frame(minHeight: 44)
             .foregroundStyle(active ? .white : Color.rdCharcoal)
             .background(
                 Capsule()

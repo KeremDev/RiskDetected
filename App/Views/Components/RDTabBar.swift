@@ -28,15 +28,13 @@ enum RDTab: String, CaseIterable, Identifiable {
 }
 
 struct RDTabBar: View {
-    static let contentClearance: CGFloat = 104
-
-    private static let containerHeight: CGFloat = 86
     private static let horizontalPadding: CGFloat = 18
     private static let itemSpacing: CGFloat = 10
-    private static let pillHeight: CGFloat = 52
-    private static let quickScanSize: CGFloat = 52
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.rdLayoutProfile) private var layoutProfile
+    @ScaledMetric(relativeTo: .body) private var scaledPillHeight: CGFloat = 52
+    @ScaledMetric(relativeTo: .body) private var scaledQuickScanSize: CGFloat = 52
     @Namespace private var activeHighlight
 
     @Binding var active: RDTab
@@ -47,10 +45,9 @@ struct RDTabBar: View {
             tabPill
             quickScanButton
         }
-        .padding(.horizontal, Self.horizontalPadding)
-        .padding(.top, 8)
-        .padding(.bottom, 24)
-        .frame(height: Self.containerHeight, alignment: .top)
+        .padding(.horizontal, layoutProfile.widthClass == .narrow ? 12 : Self.horizontalPadding)
+        .padding(.vertical, 8)
+        .background(Color.clear)
     }
 
     private var tabPill: some View {
@@ -61,7 +58,7 @@ struct RDTabBar: View {
         }
         .padding(4)
         .frame(maxWidth: .infinity)
-        .frame(height: Self.pillHeight)
+        .frame(height: pillHeight)
         .background(.ultraThinMaterial, in: Capsule())
         .overlay {
             Capsule()
@@ -114,7 +111,7 @@ struct RDTabBar: View {
                     .symbolRenderingMode(.monochrome)
                     .foregroundStyle(Color.rdGreen)
             }
-            .frame(width: Self.quickScanSize, height: Self.quickScanSize)
+            .frame(width: quickScanSize, height: quickScanSize)
             .contentShape(Circle())
             .rdCardShadow(colorScheme: colorScheme, radius: 4, x: 5, y: 7)
         }
@@ -143,6 +140,14 @@ struct RDTabBar: View {
 
     private var quickScanStroke: Color {
         Color.white.opacity(colorScheme == .dark ? 0.14 : 0.82)
+    }
+
+    private var pillHeight: CGFloat {
+        max(52, min(scaledPillHeight, 68))
+    }
+
+    private var quickScanSize: CGFloat {
+        max(52, min(scaledQuickScanSize, 68))
     }
 }
 

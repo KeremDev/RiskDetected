@@ -41,7 +41,7 @@ struct ProfessionalProgressTitlesSheet: View {
         .background(Color.rdWhite)
         .sheet(isPresented: $showRankGuide) {
             ProfessionalProgressRankGuideSheet(summary: summary)
-                .presentationDetents([.height(560), .large])
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
     }
