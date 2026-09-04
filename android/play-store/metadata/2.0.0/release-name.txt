@@ -1,1 +1,1 @@
-2.0.0 (11) — Bildirim, Rapor ve Koyu Tema
+2.0.0 (12) — Koyu Tema ve Rapor Düzeltmeleri

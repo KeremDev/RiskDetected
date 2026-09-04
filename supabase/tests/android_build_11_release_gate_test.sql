@@ -25,12 +25,15 @@ select ok(
     select 1
     from public.app_feature_flags
     where key = 'android_release_policy'
-      and (value->>'latest_build')::integer = 11
-      and value->>'policy_version' = 'production-2.0.0-vc11'
+      -- Newer builds advertise themselves through their own release-policy migration; this
+      -- guard tracks "build 11 or newer is live", the newest build's exact state is asserted by
+      -- its own test.
+      and (value->>'latest_build')::integer >= 11
+      and value->>'policy_version' like 'production-2.0.0-vc%'
       and coalesce((value->>'soft_update_enabled')::boolean, true) = false
       and coalesce((value->>'hard_update_enabled')::boolean, true) = false
   ),
-  'build 11 is advertised without forcing or nudging an update'
+  'build 11 or newer is advertised without forcing or nudging an update'
 );
 select ok(
   (select coalesce((value->>'min_android_version_code')::integer, 2147483647) <= 11
