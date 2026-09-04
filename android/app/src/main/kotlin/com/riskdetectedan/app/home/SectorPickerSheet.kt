@@ -164,7 +164,7 @@ private fun SectorCard(item: AnalysisSectorPickerItem, selected: Boolean, onClic
         Text(
             rdAnalysisSectorTitle(item.sector.id, item.sector.titleTr),
             style = RdFontStyle.Footnote.toTextStyle(),
-            color = if (selected) androidx.compose.ui.graphics.Color.White else colors.onyx,
+            color = if (selected) androidx.compose.ui.graphics.Color.White else colors.black,
             maxLines = 2,
         )
     }

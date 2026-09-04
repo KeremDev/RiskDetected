@@ -1,5 +1,5 @@
 Kapalı test kullanıcılarımızın geri bildirimleri doğrultusunda:
 • Analiz ve rapor bildirimleri artık cihazınıza ulaşıyor; gönderimi engelleyen hata giderildi.
-• Tüm bildirimler tek bir sistem kanalında toplandı.
-• Üyelik ekranlarında plan ve ödeme dönemi seçimleri daha doğru işleniyor.
-• Genel kararlılık iyileştirmeleri.
+• Standart rapor artık risk analizi tablosundan bağımsız, her zaman açık.
+• Koyu temada okunmayan yazılar, kartlar ve butonlar düzeltildi.
+• Analiz sonucundaki fotoğraf tam ekran açılabiliyor.

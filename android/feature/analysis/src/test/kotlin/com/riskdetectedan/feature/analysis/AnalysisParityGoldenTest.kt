@@ -260,7 +260,7 @@ class AnalysisParityGoldenTest {
             capabilities = PlanCapabilities.forTier(SubscriptionTier.Free),
             reportState = ResultReportUiState.Idle,
             reportSetup = ResultReportSetup(
-                quotaUsage = ReportQuotaUsage(standardUsed = 0, standardLimit = 1, riskTrialUsed = false),
+                quotaUsage = ReportQuotaUsage(standardUsed = 0, standardLimit = null, riskTrialUsed = false),
             ),
             darkTheme = true,
             resultHub = resultHub.copy(tier = "free"),
@@ -281,7 +281,7 @@ class AnalysisParityGoldenTest {
             capabilities = PlanCapabilities.forTier(SubscriptionTier.Free),
             reportState = ResultReportUiState.Idle,
             reportSetup = ResultReportSetup(
-                quotaUsage = ReportQuotaUsage(standardUsed = 0, standardLimit = 1, riskTrialUsed = true),
+                quotaUsage = ReportQuotaUsage(standardUsed = 0, standardLimit = null, riskTrialUsed = true),
             ),
             resultHub = resultHub.copy(tier = "free"),
         )

@@ -173,9 +173,9 @@ private fun CanvasCard(canvas: AnalysisCanvas, isActive: Boolean, isLocked: Bool
     val accent = if (canvas.minTier == SubscriptionTier.Pro) colors.green else colors.planPlus
     val accentDark = if (canvas.minTier == SubscriptionTier.Pro) colors.greenDark else colors.planPlusDark
     val accentSoft = if (canvas.minTier == SubscriptionTier.Pro) colors.greenSoft else colors.planPlusSoft
-    val background = if (isActive) colors.onyx else colors.white
+    val background = if (isActive) colors.selected else colors.white
     val textColor = if (isActive) Color.White else colors.black
-    val borderColor = if (isActive) colors.onyx else if (canvas.isPaid) accent.copy(alpha = 0.55f) else colors.line
+    val borderColor = if (isActive) colors.selected else if (canvas.isPaid) accent.copy(alpha = 0.55f) else colors.line
     val iconBg = if (isActive) colors.green else if (canvas.isPaid) accentSoft else colors.fog
     val iconTint = if (isActive) Color.White else if (canvas.isPaid) accentDark else colors.black
 

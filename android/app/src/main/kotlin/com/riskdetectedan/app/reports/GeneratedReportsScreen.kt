@@ -932,7 +932,7 @@ private fun ReportSourceSheet(
                 },
                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).height(56.dp).testTag("report-source-primary"),
                 shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = colors.onyx, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(containerColor = colors.cta, contentColor = Color.White),
             ) {
                 Icon(if (format == ReportFormat.Pdf) Icons.Filled.Description else Icons.Filled.TableChart, null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(10.dp))

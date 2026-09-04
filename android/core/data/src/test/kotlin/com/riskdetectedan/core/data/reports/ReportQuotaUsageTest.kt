@@ -20,14 +20,21 @@ class ReportQuotaUsageTest {
 
     @Test
     fun `standard quota is exhausted at the backend limit`() {
-        assertTrue(ReportQuotaUsage(standardUsed = 1, standardLimit = 1, riskTrialUsed = false).isStandardQuotaExhausted)
         assertTrue(ReportQuotaUsage(standardUsed = 151, standardLimit = 150, riskTrialUsed = true).isStandardQuotaExhausted)
     }
 
     @Test
     fun `remaining standard quota is not exhausted independently of risk trial`() {
         assertFalse(ReportQuotaUsage(standardUsed = 149, standardLimit = 150, riskTrialUsed = true).isStandardQuotaExhausted)
-        assertFalse(ReportQuotaUsage(standardUsed = 0, standardLimit = 1, riskTrialUsed = false).isStandardQuotaExhausted)
+    }
+
+    /** The free plan is metered on analyses and on the one-time risk-assessment table; a spent
+     * risk-table gift must never lock the standard PDF (`check_report_quota_eligibility`
+     * returns period="unlimited" for it). */
+    @Test
+    fun `free standard reports are never exhausted`() {
+        assertFalse(ReportQuotaUsage(standardUsed = 0, standardLimit = null, riskTrialUsed = true).isStandardQuotaExhausted)
+        assertFalse(ReportQuotaUsage(standardUsed = 12, standardLimit = null, riskTrialUsed = true).isStandardQuotaExhausted)
     }
 
     @Test

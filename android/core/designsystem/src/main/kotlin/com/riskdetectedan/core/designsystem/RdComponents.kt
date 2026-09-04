@@ -82,7 +82,7 @@ fun RdListRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(RdRadius.lg))
             .background(colors.white)
-            .border(1.dp, colors.onyx.copy(alpha = 0.06f), RoundedCornerShape(RdRadius.lg)),
+            .border(1.dp, colors.black.copy(alpha = 0.06f), RoundedCornerShape(RdRadius.lg)),
         onClick = onClick ?: {},
     ) {
         Row(
@@ -187,7 +187,7 @@ fun RdSectionCard(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(RdRadius.lg))
                 .background(colors.white)
-                .border(1.dp, colors.onyx.copy(alpha = 0.06f), RoundedCornerShape(RdRadius.lg))
+                .border(1.dp, colors.black.copy(alpha = 0.06f), RoundedCornerShape(RdRadius.lg))
                 .padding(RdSpacing.md),
             content = content,
         )

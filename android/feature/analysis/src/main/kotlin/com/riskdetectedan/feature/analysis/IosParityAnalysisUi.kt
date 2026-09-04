@@ -127,6 +127,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.riskdetectedan.core.data.analysis.AnalysisCanvas
@@ -168,6 +170,11 @@ import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.UUID
+
+/** The analysing card is a dark photo surface with white content in both appearances, so its
+ * gradient is fixed rather than themed — the brand ink/graphite tokens invert in dark mode. */
+private val AnalysisHeroTop = Color(0xFF1A1D1F)
+private val AnalysisHeroBottom = Color(0xFF0B0D0E)
 
 private enum class ParityRiskMethod(val wire: String) { FineKinney("fine_kinney"), Matrix5x5("matrix_5x5") }
 internal enum class ParityReportKind { Standard, RiskAnalysis }
@@ -315,12 +322,12 @@ internal fun IosParityAnalyzingView(
                     Modifier.size(246.dp)
                         .shadow(20.dp, RoundedCornerShape(24.dp), ambientColor = colors.onyx.copy(.12f), spotColor = colors.onyx.copy(.14f))
                         .clip(RoundedCornerShape(24.dp))
-                        .background(Brush.linearGradient(listOf(colors.graphite, colors.onyx)))
+                        .background(Brush.linearGradient(listOf(AnalysisHeroTop, AnalysisHeroBottom)))
                         .border(2.dp, colors.green.copy(.75f), RoundedCornerShape(24.dp)),
                 ) {
                     if (bitmap != null) {
                         Image(bitmap, null, Modifier.fillMaxSize().blur(7.dp), contentScale = ContentScale.Crop)
-                        Box(Modifier.fillMaxSize().background(colors.onyx.copy(.24f)))
+                        Box(Modifier.fillMaxSize().background(Color.Black.copy(.24f)))
                     }
                     Box(
                         Modifier.fillMaxWidth().height(64.dp)
@@ -335,7 +342,7 @@ internal fun IosParityAnalyzingView(
                     Column(
                         Modifier.align(Alignment.Center).width(210.dp)
                             .clip(RoundedCornerShape(22.dp))
-                            .background(colors.onyx.copy(.58f))
+                            .background(Color.Black.copy(.58f))
                             .border(1.dp, colors.white.copy(.14f), RoundedCornerShape(22.dp))
                             .padding(horizontal = 18.dp, vertical = 18.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -2522,7 +2529,28 @@ private fun ResultMetaSurface(
 private fun PhotoMosaic(photos: List<ByteArray>) {
     val colors = RdTheme.colors
     val images = remember(photos) { photos.mapNotNull { bytes -> runCatching { BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() }.getOrNull() } }
-    Box(Modifier.size(78.dp).clip(RoundedCornerShape(13.dp)).background(colors.fog)) {
+    var viewerIndex by remember(images) { mutableStateOf<Int?>(null) }
+
+    viewerIndex?.let { index ->
+        PhotoViewerDialog(
+            images = images,
+            initialIndex = index,
+            onDismiss = { viewerIndex = null },
+        )
+    }
+
+    Box(
+        Modifier.size(78.dp).clip(RoundedCornerShape(13.dp)).background(colors.fog)
+            .then(
+                if (images.isEmpty()) {
+                    Modifier
+                } else {
+                    Modifier.clickable(
+                        onClickLabel = stringResource(RdR.string.rd_kaynak_fotograf),
+                    ) { viewerIndex = 0 }
+                },
+            ),
+    ) {
         if (images.isEmpty()) {
             Icon(Icons.Filled.PhotoLibrary, null, tint = colors.slate, modifier = Modifier.align(Alignment.Center).size(26.dp))
         } else if (images.size == 1) {
@@ -2534,6 +2562,66 @@ private fun PhotoMosaic(photos: List<ByteArray>) {
                     Image(images[1], null, Modifier.weight(1f).fillMaxWidth(), contentScale = ContentScale.Crop)
                     if (images.size > 2) Image(images[2], null, Modifier.weight(1f).fillMaxWidth(), contentScale = ContentScale.Crop)
                     else Box(Modifier.weight(1f).fillMaxWidth().background(colors.fog))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Full-screen photo viewer for the result header thumbnail. The analysed photo is the evidence
+ * behind every finding, and at 78 dp it can't be read — tapping the mosaic opens it here, with
+ * the close control iOS uses (an X in the top-right) and a swipeable strip when the analysis
+ * carries more than one photo.
+ */
+@Composable
+private fun PhotoViewerDialog(
+    images: List<androidx.compose.ui.graphics.ImageBitmap>,
+    initialIndex: Int,
+    onDismiss: () -> Unit,
+) {
+    if (images.isEmpty()) return
+    var index by remember(images, initialIndex) { mutableStateOf(initialIndex.coerceIn(0, images.lastIndex)) }
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.96f))) {
+            Image(
+                images[index],
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize().padding(vertical = 56.dp),
+                contentScale = ContentScale.Fit,
+            )
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier.align(Alignment.TopEnd).padding(14.dp).size(38.dp)
+                    .clip(CircleShape).background(Color.White.copy(alpha = 0.16f)),
+            ) {
+                Icon(
+                    Icons.Filled.Close,
+                    contentDescription = stringResource(RdR.string.rd_kapat),
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            if (images.size > 1) {
+                Row(
+                    Modifier.align(Alignment.BottomCenter).padding(bottom = 22.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    images.forEachIndexed { position, thumbnail ->
+                        Image(
+                            thumbnail,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp).clip(RoundedCornerShape(10.dp))
+                                .border(
+                                    if (position == index) 2.dp else 1.dp,
+                                    if (position == index) Color.White else Color.White.copy(alpha = 0.35f),
+                                    RoundedCornerShape(10.dp),
+                                )
+                                .clickable { index = position },
+                            contentScale = ContentScale.Crop,
+                        )
+                    }
                 }
             }
         }
@@ -4055,7 +4143,7 @@ private fun ReportGenerationOverlay(format: ResultReportFormat, progress: Float)
         format == ResultReportFormat.Pdf -> stringResource(RdR.string.rd_pdf_hazir)
         else -> stringResource(RdR.string.rd_excel_hazir)
     }
-    Box(Modifier.fillMaxSize().background(colors.onyx.copy(.22f)), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxSize().background(Color.Black.copy(.22f)), contentAlignment = Alignment.Center) {
         Column(
             Modifier.padding(horizontal = 28.dp).fillMaxWidth().heightIn(max = 470.dp)
                 .shadow(34.dp, RoundedCornerShape(30.dp)).clip(RoundedCornerShape(30.dp))

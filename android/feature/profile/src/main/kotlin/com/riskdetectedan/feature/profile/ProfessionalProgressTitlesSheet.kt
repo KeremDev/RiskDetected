@@ -133,7 +133,7 @@ private fun ProfessionalProgressSheetCard(summary: ProfessionalProgressSummary, 
             style = RdFontStyle.Caption.toTextStyle().copy(fontWeight = FontWeight.SemiBold), color = colors.slate,
         )
         Box(Modifier.fillMaxWidth().height(14.dp).clip(CircleShape).background(colors.black.copy(alpha = .10f))) {
-            Box(Modifier.fillMaxWidth(summary.titleProgress.toFloat()).height(14.dp).clip(CircleShape).background(colors.black))
+            Box(Modifier.fillMaxWidth(summary.titleProgress.toFloat()).height(14.dp).clip(CircleShape).background(colors.cta))
         }
     }
 }
@@ -159,7 +159,7 @@ private fun ProfessionalTitleTile(title: ProfessionalProgressTitle, summary: Pro
         Box(Modifier.size(62.dp), contentAlignment = Alignment.Center) {
             Box(
                 Modifier.size(if (current) 58.dp else 50.dp).clip(CircleShape)
-                    .background(if (earned) colors.onyx else colors.fog)
+                    .background(if (earned) colors.selected else colors.fog)
                     .border(if (current) 3.dp else 1.dp, if (current) colors.planPlus else colors.line, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {

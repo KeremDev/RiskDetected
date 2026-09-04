@@ -443,7 +443,7 @@ private fun AnalysisErrorCard(
                 onClick = onUpgrade,
                 modifier = Modifier.fillMaxWidth().padding(top = RdSpacing.sm),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = colors.onyx,
+                    containerColor = colors.cta,
                     contentColor = Color.White,
                 ),
             ) {
@@ -576,7 +576,7 @@ private fun ResultMetaCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(RdRadius.lg))
             .background(colors.white)
-            .border(1.dp, colors.onyx.copy(alpha = 0.06f), RoundedCornerShape(RdRadius.lg))
+            .border(1.dp, colors.black.copy(alpha = 0.06f), RoundedCornerShape(RdRadius.lg))
             .padding(RdSpacing.md),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(RdSpacing.sm)) {
@@ -678,7 +678,7 @@ private fun ResultDistributionCard(findings: List<Finding>, method: ResultRiskMe
     val topScore = top?.let { resultScore(it, method) } ?: 0.0
     Column(
         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(RdRadius.lg)).background(colors.white)
-            .border(1.dp, colors.onyx.copy(alpha = 0.06f), RoundedCornerShape(RdRadius.lg)).padding(RdSpacing.md),
+            .border(1.dp, colors.black.copy(alpha = 0.06f), RoundedCornerShape(RdRadius.lg)).padding(RdSpacing.md),
     ) {
         Text(stringResource(if (method == ResultRiskMethod.FineKinney) RdR.string.rd_fk_upper else RdR.string.rd_matrix_upper), style = RdFontStyle.Caption.toTextStyle(), color = colors.slate)
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
@@ -741,7 +741,7 @@ private fun FindingRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(RdRadius.lg))
             .background(colors.white)
-            .border(1.dp, colors.onyx.copy(alpha = 0.06f), RoundedCornerShape(RdRadius.lg))
+            .border(1.dp, colors.black.copy(alpha = 0.06f), RoundedCornerShape(RdRadius.lg))
             .clickable { showDetail = true }
             .padding(RdSpacing.md),
     ) {

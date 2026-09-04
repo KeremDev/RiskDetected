@@ -196,6 +196,25 @@ val DarkRdColors = RdColors(
     sectionNotebookAccent = hex("#C98294"),
     sectionNotebookStrong = hex("#E0A1B0"),
     sectionNotebookTint = hex("#321820"),
+    // Risk semantics carry the light palette's values as defaults, which left every severity
+    // chip, quota lock and warning card rendering dark-red-on-dark (or pastel-on-dark) in dark
+    // mode — the locked "Ücretsiz hak doldu" card was unreadable. These are the same hues lifted
+    // to dark-surface contrast; light mode keeps the defaults above.
+    critical = hex("#FF6B5E"),
+    high = hex("#F5A44B"),
+    medium = hex("#E3C24C"),
+    low = hex("#55C489"),
+    info = hex("#6BA5FF"),
+    unknown = hex("#9AA3AD"),
+    criticalBg = hex("#2E1614"),
+    highBg = hex("#2E2210"),
+    mediumBg = hex("#2B270F"),
+    lowBg = hex("#14291E"),
+    unknownBg = hex("#1D2321"),
+    criticalText = hex("#FF9A90"),
+    highText = hex("#F2BE7C"),
+    mediumText = hex("#E4D089"),
+    lowText = hex("#8FD8AC"),
 )
 
 val LocalRdColors = staticCompositionLocalOf { LightRdColors }

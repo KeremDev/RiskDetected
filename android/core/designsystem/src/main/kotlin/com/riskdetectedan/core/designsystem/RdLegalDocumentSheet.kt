@@ -113,10 +113,10 @@ fun RdLegalDocumentSheet(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(if (active) colors.onyx else colors.white)
+                                .background(if (active) colors.selected else colors.white)
                                 .border(
                                     1.dp,
-                                    if (active) colors.onyx else colors.line,
+                                    if (active) colors.selected else colors.line,
                                     RoundedCornerShape(12.dp),
                                 )
                                 .clickable { selectedKind = doc.kind }

@@ -291,7 +291,7 @@ private fun PrimaryButton(hasPhotos: Boolean, onClick: () -> Unit) {
             .fillMaxWidth()
             .height(58.dp)
             .clip(RoundedCornerShape(24.dp))
-            .background(colors.onyx)
+            .background(colors.cta)
             .clickable(onClick = onClick),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,

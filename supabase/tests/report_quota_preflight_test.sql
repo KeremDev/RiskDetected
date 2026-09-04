@@ -48,7 +48,7 @@ select extensions.is(
     'pdf'
   )->>'allowed')::boolean,
   true,
-  'new free user can create the daily standard report'
+  'new free user can create a standard report'
 );
 
 insert into public.usage_events (user_id, feature, event_type, metadata)
@@ -60,13 +60,13 @@ values (
 );
 
 select extensions.is(
-  public.check_report_quota_eligibility(
+  (public.check_report_quota_eligibility(
     '00000000-0000-4000-8000-000000001901'::uuid,
     'standard',
     'pdf'
-  )->>'error_code',
-  'report_quota_exceeded',
-  'exhausted free daily quota is rejected before report download'
+  )->>'allowed')::boolean,
+  true,
+  'a used standard report never blocks the next one on free'
 );
 
 select extensions.is(

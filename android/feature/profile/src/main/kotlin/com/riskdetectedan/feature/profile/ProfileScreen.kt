@@ -609,7 +609,7 @@ private fun ProfileHero(
                     .fillMaxSize()
                     .shadow(12.dp, CircleShape)
                     .clip(CircleShape)
-                    .background(colors.onyx)
+                    .background(colors.cta)
                     .border(5.dp, colors.white, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
@@ -618,7 +618,7 @@ private fun ProfileHero(
                     ProfileAvatarImage(path = path, modifier = Modifier.fillMaxSize().clip(CircleShape))
                 }
                 if (isSavingAvatar) {
-                    Box(modifier = Modifier.fillMaxSize().background(colors.onyx.copy(alpha = 0.5f)), contentAlignment = Alignment.Center) {
+                    Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
@@ -629,7 +629,7 @@ private fun ProfileHero(
                     .size(27.dp)
                     .offset(x = 3.dp, y = 3.dp)
                     .clip(CircleShape)
-                    .background(colors.onyx)
+                    .background(colors.cta)
                     .border(3.dp, colors.white, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
@@ -890,7 +890,18 @@ private fun ProfessionalProgressSection(
                             .fillMaxWidth(progress.titleProgress.toFloat().coerceIn(0f, 1f))
                             .height(15.dp)
                             .clip(RoundedCornerShape(50))
-                            .background(Brush.horizontalGradient(listOf(Color(0xFF050607), Color(0xFF202426), Color(0xFF050607)))),
+                            .background(
+                                // The bar filled itself with a fixed near-black gradient, which
+                                // vanished against the dark surface. Dark mode gets the brand
+                                // green the rest of its accents use.
+                                Brush.horizontalGradient(
+                                    if (RdTheme.isDark) {
+                                        listOf(colors.greenDark, colors.green, colors.greenDark)
+                                    } else {
+                                        listOf(Color(0xFF050607), Color(0xFF202426), Color(0xFF050607))
+                                    },
+                                ),
+                            ),
                     )
                 }
                 Row(
@@ -1028,7 +1039,7 @@ private fun SubscriptionStatusCard(profile: UserProfile, onPaywall: () -> Unit) 
     val accent = when (profile.tier) {
         SubscriptionTier.Plus -> colors.planPlus
         SubscriptionTier.Pro -> colors.green
-        SubscriptionTier.Free -> colors.onyx
+        SubscriptionTier.Free -> colors.black
     }
     val soft = when (profile.tier) {
         SubscriptionTier.Plus -> colors.planPlusSoft

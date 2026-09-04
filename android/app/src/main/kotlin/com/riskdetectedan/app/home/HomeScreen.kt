@@ -527,14 +527,14 @@ private fun FreeQuotaHint(quota: DailyQuotaUsage, onClick: () -> Unit) {
         },
         icon = Icons.Filled.CardGiftcard,
         iconTint = androidx.compose.ui.graphics.Color.White,
-        iconBackground = if (quota.isExhausted) colors.critical else colors.onyx,
+        iconBackground = if (quota.isExhausted) colors.critical else colors.cta,
         onClick = onClick,
         trailing = {
             Box(
                 modifier = Modifier
                     .size(width = 42.dp, height = 32.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(if (quota.isExhausted) colors.critical else colors.onyx),
+                    .background(if (quota.isExhausted) colors.critical else colors.cta),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(

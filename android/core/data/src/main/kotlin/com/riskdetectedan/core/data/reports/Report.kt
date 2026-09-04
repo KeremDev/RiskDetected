@@ -61,10 +61,14 @@ data class Report(
  * revalidated by the Edge Function/database trigger. */
 data class ReportQuotaUsage(
     val standardUsed: Int,
-    val standardLimit: Int,
+    /** null = no cap. Free accounts carry no standard-report quota: the plan is metered on
+     * analyses and on the one-time risk-assessment table, and a standard PDF only re-renders
+     * findings the account already produced under those limits. */
+    val standardLimit: Int?,
     val riskTrialUsed: Boolean,
 ) {
-    val isStandardQuotaExhausted: Boolean get() = standardUsed >= standardLimit
+    val isStandardQuotaExhausted: Boolean
+        get() = standardLimit != null && standardUsed >= standardLimit
 }
 
 internal object ReportQuotaWindow {
@@ -186,7 +190,7 @@ class ReportsRepository @Inject constructor(
                 }.countOrNull()?.toInt() ?: 0
             }
             val limit = when (tier) {
-                SubscriptionTier.Free -> 1
+                SubscriptionTier.Free -> null
                 SubscriptionTier.Plus -> 150
                 SubscriptionTier.Pro -> 750
             }

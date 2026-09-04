@@ -1,1 +1,1 @@
-2.0.0 (11) — Bildirim Teslimi Düzeltmesi
+2.0.0 (11) — Bildirim, Rapor ve Koyu Tema
