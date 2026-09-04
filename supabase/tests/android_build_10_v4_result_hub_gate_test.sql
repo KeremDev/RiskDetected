@@ -54,14 +54,17 @@ select ok(
     select 1
     from public.app_feature_flags
     where key='android_release_policy'
-      and (value->>'latest_build')::integer = 10
+      -- Later builds advertise themselves through their own release-policy migration, so this
+      -- guard tracks "build 10 or newer is live", not "build 10 exactly"; the exact state of the
+      -- newest build is asserted by that build's own test.
+      and (value->>'latest_build')::integer >= 10
       and (value->>'minimum_supported_build')::integer <= 10
       and coalesce((value->>'soft_update_enabled')::boolean, true) = false
       and coalesce((value->>'hard_update_enabled')::boolean, true) = false
       and value->>'app_store_url' = 'https://play.google.com/store/apps/details?id=com.riskdetectedan.app'
-      and value->>'policy_version' = 'production-2.0.0-vc10'
+      and value->>'policy_version' like 'production-2.0.0-vc%'
   ),
-  'live build 10 is advertised without forcing or nudging an update'
+  'build 10 or newer is advertised without forcing or nudging an update'
 );
 select ok(
   not exists (

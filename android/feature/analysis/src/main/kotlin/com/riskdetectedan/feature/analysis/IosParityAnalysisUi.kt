@@ -176,6 +176,10 @@ import java.util.UUID
 private val AnalysisHeroTop = Color(0xFF1A1D1F)
 private val AnalysisHeroBottom = Color(0xFF0B0D0E)
 
+/** Scrims over photos stay the brand ink in both appearances; they used the ink *token*, which
+ * inverts in dark mode and turned every photo overlay into a white wash. */
+private val AnalysisScrim = Color(0xFF0B0D0E)
+
 private enum class ParityRiskMethod(val wire: String) { FineKinney("fine_kinney"), Matrix5x5("matrix_5x5") }
 internal enum class ParityReportKind { Standard, RiskAnalysis }
 
@@ -327,7 +331,7 @@ internal fun IosParityAnalyzingView(
                 ) {
                     if (bitmap != null) {
                         Image(bitmap, null, Modifier.fillMaxSize().blur(7.dp), contentScale = ContentScale.Crop)
-                        Box(Modifier.fillMaxSize().background(Color.Black.copy(.24f)))
+                        Box(Modifier.fillMaxSize().background(AnalysisScrim.copy(.24f)))
                     }
                     Box(
                         Modifier.fillMaxWidth().height(64.dp)
@@ -342,7 +346,7 @@ internal fun IosParityAnalyzingView(
                     Column(
                         Modifier.align(Alignment.Center).width(210.dp)
                             .clip(RoundedCornerShape(22.dp))
-                            .background(Color.Black.copy(.58f))
+                            .background(AnalysisScrim.copy(.58f))
                             .border(1.dp, colors.white.copy(.14f), RoundedCornerShape(22.dp))
                             .padding(horizontal = 18.dp, vertical = 18.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -4143,7 +4147,7 @@ private fun ReportGenerationOverlay(format: ResultReportFormat, progress: Float)
         format == ResultReportFormat.Pdf -> stringResource(RdR.string.rd_pdf_hazir)
         else -> stringResource(RdR.string.rd_excel_hazir)
     }
-    Box(Modifier.fillMaxSize().background(Color.Black.copy(.22f)), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxSize().background(AnalysisScrim.copy(.22f)), contentAlignment = Alignment.Center) {
         Column(
             Modifier.padding(horizontal = 28.dp).fillMaxWidth().heightIn(max = 470.dp)
                 .shadow(34.dp, RoundedCornerShape(30.dp)).clip(RoundedCornerShape(30.dp))
