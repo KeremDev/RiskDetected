@@ -634,11 +634,19 @@ export function routeV5Findings(
       const band = bandsFor(fk, m5p * m5s);
       const criticality = criticalityForSeverity(s.value);
       const candidateID = crypto.randomUUID();
+      // finding_key is guaranteed only within a single provider response. An
+      // engine run spans every photo, while the database key is unique for the
+      // whole run. Prefixing the photo index prevents two photos that both
+      // emit a common key (for example "open_edge") from rolling back the
+      // completed analysis during finalization.
+      const candidateKey = `p${photoIndex}:${
+        finding.finding_key || candidateID
+      }`.slice(0, 200);
 
       candidates.push({
         id: candidateID,
         photo_index: photoIndex,
-        candidate_key: finding.finding_key || `p${photoIndex}:${candidateID}`,
+        candidate_key: candidateKey,
         module_id: "free_engine",
         raw_label: title.text,
         condition_code: "free_engine_finding",

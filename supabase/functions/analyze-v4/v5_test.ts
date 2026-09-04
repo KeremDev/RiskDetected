@@ -93,6 +93,18 @@ Deno.test("modelin bulgusu olduğu gibi rapora geçer", () => {
   assertStringIncludes(item.recommended_measures[1].text, "Eğitim:");
 });
 
+Deno.test("çoklu fotoğrafta aynı finding_key aday anahtarını çakıştırmaz", () => {
+  const routed = routeV5Findings([
+    { photoIndex: 1, output: parseV5Output(envelope([finding()])) },
+    { photoIndex: 2, output: parseV5Output(envelope([finding()])) },
+    { photoIndex: 3, output: parseV5Output(envelope([finding()])) },
+  ]);
+  const keys = routed.candidates.map((candidate) => candidate.candidate_key);
+
+  assertEquals(keys, ["p1:f1", "p2:f1", "p3:f1"]);
+  assertEquals(new Set(keys).size, keys.length);
+});
+
 Deno.test("bulgular skora göre sıralanır, modelin sırasına göre değil", () => {
   const routed = routeV5Findings([{
     photoIndex: 1,
