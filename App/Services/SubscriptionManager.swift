@@ -234,6 +234,11 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
                 ? offerings.current
                 : offerings.offering(identifier: configuredOfferingID)
             let allPackages = selectedOffering?.availablePackages ?? []
+            // A configured trial is not necessarily available to this App Store
+            // account. Unknown/ineligible customers see the regular store price.
+            let eligibility = await Purchases.shared.checkTrialOrIntroDiscountEligibility(
+                productIdentifiers: allPackages.map { $0.storeProduct.productIdentifier }
+            )
             #if DEBUG
             let selectedOfferingLabel = selectedOffering?.identifier ?? "nil"
             Self.writeDiagnostics("RD_REVENUECAT_SELECTED_OFFERING \(selectedOfferingLabel)")
@@ -255,7 +260,8 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
                         subtitle: Self.subtitle(for: package),
                         productIdentifier: package.storeProduct.productIdentifier,
                         priceAmount: package.storeProduct.price,
-                        introductoryFreeTrialDays: Self.introductoryFreeTrialDays(for: package)
+                        introductoryFreeTrialDays: eligibility[package.storeProduct.productIdentifier]?.status == .eligible
+                            ? Self.introductoryFreeTrialDays(for: package) : nil
                     )
                 )
 

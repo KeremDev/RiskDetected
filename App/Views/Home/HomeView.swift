@@ -429,7 +429,7 @@ struct HomeView: View {
                 },
                 notice: nil
             )
-            .preferredColorScheme(preferredModalColorScheme)
+            .preferredColorScheme(.dark)
         }
         .alert(analysisErrorTitle, isPresented: .init(
             get: { analysisError != nil },
@@ -2316,7 +2316,7 @@ private struct HomeHeader: View {
                             showPaywall = false
                             Task { await app.auth.refreshProfile() }
                         })
-            .preferredColorScheme(preferredModalColorScheme)
+            .preferredColorScheme(.dark)
         }
     }
 }

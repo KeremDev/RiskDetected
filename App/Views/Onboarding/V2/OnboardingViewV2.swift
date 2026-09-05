@@ -119,8 +119,8 @@ struct OnboardingViewV2: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(state.step == 11 ? Color(hex: "#0B0D0E") : Color.rdPaper)
         }
-        .environment(\.colorScheme, .light)
-        .preferredColorScheme(.light)
+        .environment(\.colorScheme, state.step == 11 ? .dark : .light)
+        .preferredColorScheme(state.step == 11 ? .dark : .light)
         .sheet(item: $selectedLegalDocument) { kind in
             LegalInfoSheet(initialDocument: kind) {
                 selectedLegalDocument = nil

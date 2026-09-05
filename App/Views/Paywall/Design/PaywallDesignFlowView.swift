@@ -30,7 +30,7 @@ struct PaywallDesignFlowView: View {
     @State private var processingOverlayMessage = RDLocalization.string("paywall.in.app.paywall.view.lutfen.bekleyin.aboneliginiz.app.store.uzerinden.1e66715b", table: .paywall, fallback: "Lütfen bekleyin, aboneliğiniz App Store üzerinden kontrol ediliyor.")
     @State private var processingOverlayToken = UUID()
 
-    private let variantID = "claude_design_paywall_v1"
+    private let variantID = PaywallTrackingPolicy.variantID
     private let manageSubscriptionURL = URL(string: "https://apps.apple.com/account/subscriptions")!
 
     // MARK: - Ekran seçimi
@@ -55,16 +55,6 @@ struct PaywallDesignFlowView: View {
         ZStack {
             PaywallDesignScreen(
                 screen: activeScreen,
-                heroLabel: heroLabel,
-                tierName: tierName(activeScreen.tier),
-                accent: accent,
-                selectedBackground: selectedBackground,
-                showsTrialTimeline: trialDays != nil,
-                trialDays: trialDays ?? 7,
-                timelineFeatures: PaywallDesignCopy.timelineFeatures(for: activeScreen.tier),
-                comparisonLeft: comparisonColumns.left,
-                comparisonRight: comparisonColumns.right,
-                comparisonRows: comparisonRows,
                 annual: planOption(for: .yearly),
                 monthly: planOption(for: .monthly),
                 selectedBilling: activeBilling,
@@ -131,7 +121,7 @@ struct PaywallDesignFlowView: View {
             }
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
-            .preferredColorScheme(.light)
+            .preferredColorScheme(.dark)
         }
         .onChange(of: app.subscriptionPackages) { _ in
             alignBillingWithAvailablePackage()
@@ -157,7 +147,6 @@ struct PaywallDesignFlowView: View {
     /// App Store'da tanımlı ücretsiz deneme gün sayısı. Teklif yoksa nil olur ve
     /// ekran deneme anlatımı yerine karşılaştırma tablosunu gösterir.
     private var trialDays: Int? {
-        guard activeScreen == .plus else { return nil }
         #if DEBUG
         // Simülatörde StoreKit tanıtım teklifi dönmediği için deneme anlatımı hiçbir
         // testte render edilemiyordu. Bu bayrak yalnızca DEBUG'da ve yalnızca görünümü
@@ -166,7 +155,7 @@ struct PaywallDesignFlowView: View {
             return 7
         }
         #endif
-        return selectedPackage(for: .plus, billing: .yearly)?.introductoryFreeTrialDays
+        return selectedPackage(for: activeScreen, billing: .yearly)?.introductoryFreeTrialDays
     }
 
     private var heroLabel: String {
@@ -364,7 +353,7 @@ struct PaywallDesignFlowView: View {
             let price = selectedPackage?.displayPrice
         else { return nil }
 
-        if activeScreen == .plus, activeBilling == .yearly, let trialDays {
+        if activeBilling == .yearly, let trialDays {
             return RDLocalization.format(
                 "paywall.design.footer.trial_disclosure_yearly_format",
                 table: .paywall,
@@ -422,10 +411,14 @@ struct PaywallDesignFlowView: View {
                 ? RDLocalization.string("paywall.in.app.paywall.view.fiyat.yukleniyor.9767cab5", table: .paywall, fallback: "Fiyat yükleniyor...")
                 : RDLocalization.string("paywall.in.app.paywall.view.tekrar.dene.a5447e51", table: .paywall, fallback: "Tekrar dene")
         }
-        if activeScreen == .plus, activeBilling == .yearly, trialDays != nil {
+        if activeBilling == .yearly, trialDays != nil {
             return RDLocalization.string("paywall.design.cta.start_trial", table: .paywall, fallback: "Ücretsiz Denemeyi Başlat")
         }
-        return RDLocalization.string("paywall.in.app.paywall.view.aboneligi.baslat.229585df", table: .paywall, fallback: "Aboneliği Başlat")
+        return RDLocalization.string(
+            activeScreen == .plus ? "paywall.dark.plus.cta" : "paywall.dark.pro.cta",
+            table: .paywall,
+            fallback: activeScreen == .plus ? "PLUS'a Geç" : "PRO'ya Geç"
+        )
     }
 
     private var primaryButtonDisabled: Bool {
@@ -507,6 +500,9 @@ struct PaywallDesignFlowView: View {
     }
 
     private func handlePrimaryAction() {
+        #if DEBUG
+        if CommandLine.arguments.contains("RD_UI_TEST_PAYWALL_PRICES") { return }
+        #endif
         guard !isWorking else { return }
         logPaywallEvent(.ctaTap)
         if selectedPackage == nil {
@@ -596,7 +592,7 @@ struct PaywallDesignFlowView: View {
                     fallbackTitle: RDLocalization.string("paywall.in.app.paywall.view.satin.alma.dogrulanamadi.2601825b", table: .paywall, fallback: "Satın alma doğrulanamadı")
                 ).message
                 logPaywallEvent(
-                    .purchaseFailed,
+                    PaywallTrackingPolicy.purchaseErrorEvent(for: classification.kind),
                     screen: purchaseScreen,
                     billing: purchaseBilling,
                     purchaseError: errorMessage

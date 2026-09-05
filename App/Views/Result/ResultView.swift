@@ -487,7 +487,7 @@ struct ResultView: View {
                             Task { await app.auth.refreshProfile() }
                         },
                         resultHubContext: resultHubPaywallContext)
-            .preferredColorScheme(preferredModalColorScheme)
+            .preferredColorScheme(.dark)
         }
         .fullScreenCover(item: $expandedPhotoPreview) { preview in
             ResultPhotoPreviewView(image: preview.image) {

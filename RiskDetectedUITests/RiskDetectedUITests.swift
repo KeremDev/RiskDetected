@@ -16,6 +16,48 @@ final class RiskDetectedUITests: XCTestCase {
         app = nil
     }
 
+    func testDarkPaywallPricesComparisonAndAllVariants() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER", "RD_UI_TEST_LIGHT_MODE", "RD_UI_TEST_PAYWALL_PRICES"])
+        tap("Yükselt")
+        let cta = waitFor("in_app_paywall.cta", timeout: 12)
+        XCTAssertTrue(waitFor("Ücretsiz Denemeyi Başlat", timeout: 8).exists)
+        for id in ["in_app_paywall.plan.yearly", "in_app_paywall.plan.monthly", "in_app_paywall.plus.pro_link"] {
+            let element = waitFor(id)
+            XCTAssertTrue(element.isHittable, id)
+            XCTAssertLessThan(element.frame.maxY, cta.frame.minY, id)
+        }
+        XCTAssertTrue(waitFor("in_app_paywall.purchase_disclosure").label.contains("₺2.499,99"))
+        attachScreenshot("dark-paywall-plus-yearly")
+        tap("in_app_paywall.compare")
+        XCTAssertTrue(waitFor("Günlük analiz").exists)
+        XCTAssertTrue(waitFor("Derin Araştırma").exists)
+        attachScreenshot("dark-paywall-comparison")
+        tap("in_app_paywall.compare.close")
+        tap("in_app_paywall.plan.monthly")
+        XCTAssertTrue(waitFor("in_app_paywall.plan.monthly").isSelected)
+        XCTAssertFalse(app.staticTexts["in_app_paywall.no_charge"].exists)
+        XCTAssertTrue(waitFor("in_app_paywall.purchase_disclosure").label.contains("₺249,99"))
+        attachScreenshot("dark-paywall-plus-monthly")
+        tap("in_app_paywall.plus.pro_link")
+        XCTAssertTrue(waitFor("in_app_paywall.pro").exists)
+        XCTAssertTrue(waitFor("in_app_paywall.purchase_disclosure").label.contains("₺4.999,99"))
+        attachScreenshot("dark-paywall-pro-yearly")
+        tap("in_app_paywall.plan.monthly")
+        XCTAssertTrue(waitFor("in_app_paywall.purchase_disclosure").label.contains("₺499,99"))
+        attachScreenshot("dark-paywall-pro-monthly")
+        XCTAssertTrue(waitFor("in_app_paywall.restore").isHittable)
+        tap("in_app_paywall.pro.plus_link")
+        XCTAssertTrue(waitFor("in_app_paywall.plan.yearly").isSelected)
+    }
+
+    func testDarkPaywallIneligibleCustomerDoesNotSeeTrialPromise() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER", "RD_UI_TEST_PAYWALL_PRICES", "RD_UI_TEST_NO_TRIAL"])
+        tap("Yükselt")
+        XCTAssertTrue(waitFor("PLUS'a Geç", timeout: 8).exists)
+        XCTAssertFalse(app.staticTexts["in_app_paywall.no_charge"].exists)
+        XCTAssertFalse(waitFor("in_app_paywall.purchase_disclosure").label.contains("ücretsiz"))
+    }
+
     func testEnglishPDFReportExtractionHasNoTurkishRegulatoryTemplateLeak() throws {
         app = XCUIApplication()
         app.launchArguments = [
@@ -117,11 +159,13 @@ final class RiskDetectedUITests: XCTestCase {
 
         // Onboarding 11. adım Claude Design paywall akışını kullanır.
         XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 12).exists)
-        XCTAssertTrue(waitFor("PLUS Abonelik Avantajları", timeout: 8).exists)
+        XCTAssertTrue(waitFor("İş Güvenliğinde Güven", timeout: 8).exists)
         XCTAssertTrue(waitFor("in_app_paywall.plan.yearly").exists)
         XCTAssertTrue(waitFor("in_app_paywall.plan.monthly").exists)
+        tap("in_app_paywall.compare")
         XCTAssertTrue(waitFor("Firma yönetimi").exists)
         XCTAssertTrue(waitFor("Çoklu Fotoğraf Analizi").exists)
+        tap("in_app_paywall.compare.close")
         XCTAssertTrue(waitFor("in_app_paywall.restore").exists)
         XCTAssertTrue(waitFor("in_app_paywall.privacy").exists)
 
@@ -1252,88 +1296,6 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("profile.row.companies").exists)
     }
 
-    /// Deneme zaman çizelgesi yalnızca App Store gerçek bir tanıtım teklifi döndürdüğünde
-    /// görünüyor; simülatörde bu hiç olmadığı için ekranın bu hâli test edilemiyordu.
-    /// `RD_UI_TEST_FORCE_TRIAL_TIMELINE` (yalnızca DEBUG) sadece görünümü açar.
-    func testTrialTimelinePaywallShowsFeatureMarqueeInsteadOfGrid() throws {
-        launchMainApp(extraArguments: [
-            "RD_UI_TEST_FREE_TIER",
-            "RD_UI_TEST_FORCE_TRIAL_TIMELINE",
-        ])
-
-        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
-        tap("Yükselt")
-
-        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 8).exists)
-        XCTAssertTrue(waitFor("in_app_paywall.trial_timeline", timeout: 8).exists)
-        XCTAssertTrue(waitFor("Ücretsiz Deneme Nasıl Çalışır?", timeout: 4).exists)
-        XCTAssertTrue(waitFor("Bugün", timeout: 4).exists)
-        XCTAssertTrue(waitFor("5. Gün", timeout: 4).exists)
-        XCTAssertTrue(waitFor("7. Gün", timeout: 4).exists)
-
-        // Özellikler artık kayan şeritte; "Bugün" altındaki ızgara kaldırıldı.
-        XCTAssertTrue(waitFor("in_app_paywall.feature_marquee", timeout: 6).exists)
-
-        // iPhone 13 sınıfı ekranlarda PLUS → PRO geçiş kartı ilk açılışta CTA'nın
-        // arkasında kalmamalı. Üretimde fiyat açıklaması CTA alanını büyüttüğü için
-        // burada ayrıca küçük bir güvenlik payı bırakılır.
-        let proLink = waitFor("in_app_paywall.plus.pro_link", timeout: 6)
-        let cta = waitFor("in_app_paywall.cta", timeout: 6)
-        XCTAssertTrue(proLink.isHittable)
-        XCTAssertLessThanOrEqual(proLink.frame.maxY + 20, cta.frame.minY)
-
-        let screenshot = XCTAttachment(screenshot: app.screenshot())
-        screenshot.name = "trial-timeline-with-feature-marquee"
-        screenshot.lifetime = .keepAlways
-        add(screenshot)
-    }
-
-    /// Şerit artık deneme anlatımına bağlı değil: PLUS/PRO ve yıllık/aylık dört
-    /// kombinasyonun hepsinde görünür; hukuki bağlantılar CTA altında sabit kalır.
-    func testFeatureMarqueeAppearsOnEveryPaywallVariant() throws {
-        launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER"])
-
-        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
-        tap("Yükselt")
-
-        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 8).exists)
-        XCTAssertTrue(waitFor("in_app_paywall.feature_marquee", timeout: 8).exists)
-        XCTAssertTrue(waitFor("in_app_paywall.restore", timeout: 6).exists)
-        XCTAssertFalse(exists("in_app_paywall.auto_renew", timeout: 1))
-
-        tapScrolling("in_app_paywall.plan.monthly")
-        XCTAssertTrue(waitFor("in_app_paywall.feature_marquee", timeout: 6).exists)
-
-        tapScrolling("in_app_paywall.plus.pro_link", timeout: 12)
-        XCTAssertTrue(waitFor("in_app_paywall.pro", timeout: 8).exists)
-        XCTAssertTrue(waitFor("in_app_paywall.feature_marquee", timeout: 6).exists)
-
-        tapScrolling("in_app_paywall.plan.monthly")
-        XCTAssertTrue(waitFor("in_app_paywall.feature_marquee", timeout: 6).exists)
-        XCTAssertTrue(waitFor("in_app_paywall.restore", timeout: 6).exists)
-    }
-
-    /// Şeridin yalnız var olması yeterli değil: eski `repeatForever` uygulaması bazı
-    /// cihazlarda görünür fakat sabit kalıyordu. Aynı kırpılmış alanın iki farklı andaki
-    /// piksel özetleri gerçekten hareket olduğunu doğrular.
-    func testFeatureMarqueeContinuesMovingAfterPaywallRenders() throws {
-        launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER"])
-
-        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
-        tap("Yükselt")
-
-        let marquee = waitFor("in_app_paywall.feature_marquee", timeout: 8)
-        XCTAssertTrue(marquee.exists)
-        XCTAssertFalse(marquee.frame.isEmpty)
-
-        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
-        let firstDigest = try screenshotDigest(in: marquee.frame)
-        RunLoop.current.run(until: Date().addingTimeInterval(1.2))
-        let secondDigest = try screenshotDigest(in: marquee.frame)
-
-        XCTAssertNotEqual(firstDigest, secondDigest, "Paywall özellik şeridi görünür fakat hareket etmiyor")
-    }
-
     /// Alt bardaki dört bağlantı: Koşullar ve Gizlilik uygulama içi hukuki metni
     /// alttan açılan ekranda gösterir, Geri Yükle mağaza akışını başlatır ve
     /// İptal Hakkı abonelik yönetimine gider (dışarı çıktığı için yalnızca varlığı denenir).
@@ -1363,49 +1325,7 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("in_app_paywall.cta", timeout: 6).exists)
     }
 
-    func testInAppPaywallClaudePlusAndProRenderWithFreeTier() throws {
-        launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER"])
 
-        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
-        tap("Yükselt")
-
-        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 8).exists)
-        XCTAssertTrue(waitFor("PLUS Abonelik Avantajları", timeout: 8).exists)
-        XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 15).exists)
-        XCTAssertFalse(app.staticTexts["₺199,99"].exists)
-        XCTAssertFalse(app.staticTexts["₺1.999,99"].exists)
-        XCTAssertTrue(waitFor("Firma yönetimi").exists)
-        XCTAssertTrue(waitFor("Günlük analiz").exists)
-
-        let plusCTA = waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 12)
-        XCTAssertTrue(plusCTA.isHittable)
-        var multiPhotoAnalysis = waitFor("Çoklu Fotoğraf Analizi")
-        for _ in 0..<5 where !hasUsableHitFrame(multiPhotoAnalysis) {
-            app.swipeUp()
-            multiPhotoAnalysis = waitFor("Çoklu Fotoğraf Analizi", timeout: 1)
-        }
-        XCTAssertTrue(hasUsableHitFrame(multiPhotoAnalysis))
-        XCTAssertLessThan(multiPhotoAnalysis.frame.maxY, plusCTA.frame.minY)
-
-        tapScrolling("in_app_paywall.terms")
-        XCTAssertTrue(waitFor("Yasal Bilgilendirme", timeout: 4).exists)
-        XCTAssertTrue(waitFor("Kullanım Koşulları").exists)
-        tap("Pencereyi kapat")
-
-        tapScrolling("in_app_paywall.plan.monthly")
-        XCTAssertTrue(waitFor("PLUS Abonelik Avantajları").exists)
-        XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 12).exists)
-
-        tapScrolling("in_app_paywall.plus.pro_link", timeout: 12)
-        XCTAssertTrue(waitFor("in_app_paywall.pro", timeout: 8).exists)
-        XCTAssertTrue(waitFor("PRO Abonelik Avantajları").exists)
-        XCTAssertTrue(waitFor("Odaklı Analiz").exists)
-        XCTAssertTrue(waitFor("Limitsiz").exists)
-
-        tapScrolling("in_app_paywall.pro.plus_link", timeout: 12)
-        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 8).exists)
-        XCTAssertTrue(waitFor("PLUS Abonelik Avantajları").exists)
-    }
 
     func testPaywallYearlyMonthlyToggleForPlusAndPro() throws {
         launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER"])
@@ -1454,7 +1374,7 @@ final class RiskDetectedUITests: XCTestCase {
 
         tap("onboarding.notification_permission.cta")
         XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 12).exists)
-        XCTAssertTrue(waitFor("PLUS Abonelik Avantajları", timeout: 8).exists)
+        XCTAssertTrue(waitFor("İş Güvenliğinde Güven", timeout: 8).exists)
         XCTAssertTrue(waitFor("in_app_paywall.plan.yearly").exists)
         XCTAssertTrue(waitFor("in_app_paywall.plan.monthly").exists)
         attachScreenshot("03-onboarding-paywall")
@@ -1485,7 +1405,7 @@ final class RiskDetectedUITests: XCTestCase {
         attachScreenshot("05-plus-yillik-paywall")
 
         tapScrolling("in_app_paywall.plan.monthly")
-        XCTAssertTrue(waitFor("PLUS Abonelik Avantajları").exists)
+        XCTAssertTrue(waitFor("İş Güvenliğinde Güven").exists)
         attachScreenshot("06-plus-aylik-paywall")
 
         tapScrolling("in_app_paywall.plus.pro_link", timeout: 12)
@@ -1493,7 +1413,7 @@ final class RiskDetectedUITests: XCTestCase {
         attachScreenshot("07-pro-yillik-paywall")
 
         tapScrolling("in_app_paywall.plan.monthly")
-        XCTAssertTrue(waitFor("PRO Abonelik Avantajları").exists)
+        XCTAssertTrue(waitFor("İş Güvenliğinde Hâkimiyet").exists)
         attachScreenshot("08-pro-aylik-paywall")
 
         launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_PHOTO_TRAY", "RD_UI_TEST_LIGHT_MODE"])

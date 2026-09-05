@@ -561,6 +561,29 @@ final class AppState: ObservableObject {
     }
 
     func refreshSubscriptionOfferings() async {
+        #if DEBUG
+        // Deterministic presentation fixtures. No RevenueCat product IDs are used,
+        // so these packages cannot start a real store transaction.
+        if Self.isUITestLaunch && CommandLine.arguments.contains("RD_UI_TEST_PAYWALL_PRICES") {
+            subscriptionPackages = [.plus, .pro].flatMap { (tier: SubscriptionTier) in
+                [SubscriptionPlanPackage(
+                    id: "fixture_\(tier.rawValue)_annual", tier: tier, title: tier.title,
+                    price: tier == .plus ? "₺2.499,99" : "₺4.999,99",
+                    monthlyEquivalentPrice: tier == .plus ? "₺208,33" : "₺416,67",
+                    subtitle: "annual", productIdentifier: "fixture_\(tier.rawValue)_annual",
+                    priceAmount: tier == .plus ? 2499.99 : 4999.99,
+                    introductoryFreeTrialDays: tier == .plus && !CommandLine.arguments.contains("RD_UI_TEST_NO_TRIAL") ? 7 : nil
+                ), SubscriptionPlanPackage(
+                    id: "fixture_\(tier.rawValue)_monthly", tier: tier, title: tier.title,
+                    price: tier == .plus ? "₺249,99" : "₺499,99", monthlyEquivalentPrice: nil,
+                    subtitle: "monthly", productIdentifier: "fixture_\(tier.rawValue)_monthly",
+                    priceAmount: tier == .plus ? 249.99 : 499.99
+                )]
+            }
+            subscriptionOfferingsLoadState = .loaded
+            return
+        }
+        #endif
         guard let userID = auth.session?.user.id else {
             subscriptionPackages = []
             subscriptionOfferingsLoadState = .failed(RDLocalization.string("localizable.app.state.app.store.fiyatlari.icin.tekrar.giris.yapman.ger.8a6258a3", table: .localizable, fallback: "App Store fiyatları için tekrar giriş yapman gerekiyor."))

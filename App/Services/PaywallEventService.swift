@@ -1,25 +1,6 @@
 import Foundation
 import OSLog
 
-enum PaywallEventName: String, Codable {
-    case entryTap = "entry_tap"
-    case view
-    case close
-    case ctaTap = "cta_tap"
-    case planSelect = "plan_select"
-    case billingSelect = "billing_select"
-    case purchaseStarted = "purchase_started"
-    case purchaseSucceeded = "purchase_succeeded"
-    case purchaseFailed = "purchase_failed"
-    case purchaseCancelled = "purchase_cancelled"
-    case paymentPending = "payment_pending"
-    case restoreTap = "restore_tap"
-    case personalPlanView = "personal_plan_view"
-    case personalPlanContinue = "personal_plan_continue"
-    case trialInviteView = "trial_invite_view"
-    case trialInviteCtaTap = "trial_invite_cta_tap"
-}
-
 enum PaywallEntrySurface: String, Codable {
     case home, analyses, reports, profile
     case analysisResults = "analysis_results"
@@ -200,6 +181,8 @@ final class PaywallEventService {
 
     private static let pendingEventsKey = "rd.paywall.pendingEvents"
     private static let pendingEntryKey = "rd.paywall.pendingEntry"
+    private static let pendingEntryOwnerKey = "rd.paywall.pendingEntryOwner"
+    private static let anonymousSessionKey = "rd.paywall.anonymousSession"
     private static let pendingEntryLifetime: TimeInterval = 5 * 60
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "PaywallEventService")
 
@@ -253,7 +236,7 @@ final class PaywallEventService {
             .entryTap,
             funnelSessionID: context.funnelSessionID,
             source: source,
-            variantID: "claude_design_paywall_v1",
+            variantID: PaywallTrackingPolicy.variantID,
             segmentKey: nil,
             selectedTier: targetTier,
             billing: nil,
@@ -274,6 +257,10 @@ final class PaywallEventService {
     }
 
     func consumePendingEntry(preferredFunnelSessionID: UUID? = nil) -> PaywallEntryContext? {
+        guard let ownerData = defaults.data(forKey: Self.pendingEntryOwnerKey),
+              let owner = try? decoder.decode(PaywallEventOwnership.self, from: ownerData),
+              owner == currentOwnership || (supabase.currentUserID.map { owner.belongs(to: $0) } ?? false)
+        else { return nil }
         guard let data = defaults.data(forKey: Self.pendingEntryKey),
               let context = try? decoder.decode(PaywallEntryContext.self, from: data)
         else {
@@ -306,6 +293,7 @@ final class PaywallEventService {
     ) {
         let pending = PendingPaywallEvent(
             clientEventID: UUID().uuidString,
+            ownership: currentOwnership,
             funnelSessionID: funnelSessionID.uuidString,
             source: source.rawValue,
             variantID: variantID,
@@ -338,7 +326,7 @@ final class PaywallEventService {
         deliveryRetryTask = nil
         guard !isFlushingPendingEvents,
               let userID = supabase.currentUserID,
-              !pendingEvents().isEmpty
+              pendingEvents().contains(where: { $0.ownership?.belongs(to: userID) == true })
         else { return }
 
         isFlushingPendingEvents = true
@@ -380,15 +368,18 @@ final class PaywallEventService {
             isFlushingPendingEvents = false
             if deliveryFailed {
                 scheduleDeliveryRetry()
-            } else if pendingEvents().isEmpty {
+            } else if !pendingEvents().contains(where: { $0.ownership?.belongs(to: userID) == true }) {
                 deliveryRetryAttempt = 0
+                // Another account may have signed in while a request was in flight.
+                if supabase.currentUserID != userID { flushPendingIfPossible() }
             } else {
                 // Covers an event enqueued after the drain observed an empty queue.
                 flushPendingIfPossible()
             }
         }
 
-        while supabase.currentUserID == userID, let event = pendingEvents().first {
+        while supabase.currentUserID == userID,
+              let event = pendingEvents().first(where: { $0.ownership?.belongs(to: userID) == true }) {
             let payload = payload(from: event, userID: userID)
             do {
                 try await supabase.client
@@ -412,8 +403,8 @@ final class PaywallEventService {
 
     private func scheduleDeliveryRetry() {
         guard deliveryRetryTask == nil,
-              supabase.currentUserID != nil,
-              !pendingEvents().isEmpty
+              let userID = supabase.currentUserID,
+              pendingEvents().contains(where: { $0.ownership?.belongs(to: userID) == true })
         else { return }
 
         let cappedAttempt = min(deliveryRetryAttempt, 6)
@@ -430,9 +421,47 @@ final class PaywallEventService {
     private func persistPendingEntry(_ context: PaywallEntryContext) {
         do {
             defaults.set(try encoder.encode(context), forKey: Self.pendingEntryKey)
+            defaults.set(try encoder.encode(currentOwnership), forKey: Self.pendingEntryOwnerKey)
         } catch {
             Self.logger.error("Paywall entry context encode failed. error=\(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    private var anonymousSessionID: UUID {
+        if let raw = defaults.string(forKey: Self.anonymousSessionKey), let id = UUID(uuidString: raw) { return id }
+        let id = UUID()
+        defaults.set(id.uuidString, forKey: Self.anonymousSessionKey)
+        return id
+    }
+
+    private var currentOwnership: PaywallEventOwnership {
+        PaywallEventOwnership(userID: supabase.currentUserID,
+                              anonymousSessionID: supabase.currentUserID == nil ? anonymousSessionID : nil)
+    }
+
+    /// Bind only this anonymous onboarding journey, never another account's queue
+    /// or legacy rows with unknown ownership. Such rows remain on disk, unsent.
+    func authenticationChanged(userID: UUID?, endedSession: Bool) {
+        if endedSession {
+            defaults.set(UUID().uuidString, forKey: Self.anonymousSessionKey)
+            defaults.removeObject(forKey: Self.pendingEntryKey)
+            defaults.removeObject(forKey: Self.pendingEntryOwnerKey)
+        }
+        guard let userID else { return }
+        let anonymousID = anonymousSessionID
+        var events = pendingEvents()
+        for index in events.indices {
+            events[index].ownership = events[index].ownership?.assigned(to: userID, anonymousSessionID: anonymousID)
+        }
+        persistPendingEvents(events, eventNameForLog: "bind_onboarding_owner")
+        if let data = defaults.data(forKey: Self.pendingEntryOwnerKey),
+           let owner = try? decoder.decode(PaywallEventOwnership.self, from: data),
+           let bound = try? encoder.encode(owner.assigned(to: userID, anonymousSessionID: anonymousID)) {
+            defaults.set(bound, forKey: Self.pendingEntryOwnerKey)
+        }
+        // An anonymous journey can be claimed by only one login.
+        defaults.set(UUID().uuidString, forKey: Self.anonymousSessionKey)
+        flushPendingIfPossible()
     }
 
     private func enqueuePendingEvent(_ event: PendingPaywallEvent) {
@@ -484,6 +513,7 @@ final class PaywallEventService {
 
 private struct PendingPaywallEvent: Codable {
     var clientEventID: String?
+    var ownership: PaywallEventOwnership?
     let funnelSessionID: String
     let source: String
     let variantID: String

@@ -56,7 +56,7 @@ struct MainTabView: View {
                     Task { await app.refreshPlanState() }
                 }
             )
-            .preferredColorScheme(preferredModalColorScheme)
+            .preferredColorScheme(.dark)
         }
     }
 

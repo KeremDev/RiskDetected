@@ -140,7 +140,7 @@ struct RiskDetailView: View {
                     Task { await app.auth.refreshProfile() }
                 }
             )
-            .preferredColorScheme(preferredModalColorScheme)
+            .preferredColorScheme(.dark)
         }
     }
 

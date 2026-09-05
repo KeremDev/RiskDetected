@@ -1,8 +1,5 @@
 import SwiftUI
 
-/// Claude Design paywall ekranının veri güdümlü gövdesi.
-/// Aynı düzen hem PLUS hem PRO tasarımını üretir; fark
-/// vurgu rengi, karşılaştırma sütunları ve çapraz satış kartıdır.
 struct PaywallDesignPlanOption: Equatable {
     var title: String
     var price: String
@@ -21,11 +18,7 @@ struct PaywallDesignCTAState: Equatable {
 }
 
 struct PaywallDesignCrossSell: Equatable {
-    enum Style: Equatable {
-        case pro
-        case plus
-    }
-
+    enum Style: Equatable { case pro, plus }
     var style: Style
     var prefix: String
     var highlight: String
@@ -33,18 +26,10 @@ struct PaywallDesignCrossSell: Equatable {
     var accessibilityIdentifier: String
 }
 
+/// Native implementation of Paywall.dc.html. Store data and purchase actions stay
+/// in PaywallDesignFlowView; the same screen serves onboarding and in-app entry.
 struct PaywallDesignScreen: View {
     var screen: InAppPaywallScreen
-    var heroLabel: String
-    var tierName: String
-    var accent: Color
-    var selectedBackground: Color
-    var showsTrialTimeline: Bool
-    var trialDays: Int
-    var timelineFeatures: [PaywallDesignFeature]
-    var comparisonLeft: PaywallDesignComparisonTable.Column
-    var comparisonRight: PaywallDesignComparisonTable.Column
-    var comparisonRows: [PaywallDesignComparisonRow]
     var annual: PaywallDesignPlanOption
     var monthly: PaywallDesignPlanOption
     var selectedBilling: InAppPaywallBilling
@@ -52,7 +37,6 @@ struct PaywallDesignScreen: View {
     var notice: String?
     var errorMessage: String?
     var crossSell: PaywallDesignCrossSell?
-
     var onClose: () -> Void
     var onSelectBilling: (InAppPaywallBilling) -> Void
     var onCTA: () -> Void
@@ -62,149 +46,446 @@ struct PaywallDesignScreen: View {
     var onManageSubscription: () -> Void
     var onCrossSell: () -> Void
 
-    private var showsTimeline: Bool {
-        showsTrialTimeline && selectedBilling == .yearly
+    @State private var showsComparison = false
+
+    private var accent: Color { screen == .plus ? DarkPaywallStyle.gold : DarkPaywallStyle.green }
+    private var tier: String { screen == .plus ? "PLUS" : "PRO" }
+    private var hasTrial: Bool {
+        selectedBilling == .yearly && annual.trialNote != nil && cta.purchaseDisclosure != nil
     }
 
     var body: some View {
         RDAdaptiveContainer { profile in
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 0) {
-                    PaywallDesignHero(
-                        label: heroLabel,
-                        height: profile.paywallHeroHeight,
-                        onClose: onClose
-                    )
-
-                    PaywallDesignSocialProof()
-
-                    if showsTimeline {
-                        PaywallDesignTrialTimeline(
-                            trialDays: trialDays,
-                            tierName: tierName,
-                            accent: accent
-                        )
-                    } else {
-                        PaywallDesignComparisonTable(
-                            left: comparisonLeft,
-                            right: comparisonRight,
-                            rows: comparisonRows
-                        )
-                    }
-
-                    // Şerit her iki anlatımın da altında durur: PLUS/PRO, yıllık/aylık
-                    // fark etmeksizin paketin kapsamı akarken görünür.
-                    PaywallDesignFeatureMarquee(
-                        features: timelineFeatures,
-                        accent: accent
-                    )
-
-                    AnyLayout(
-                        profile.prefersStackedControls
-                            ? AnyLayout(VStackLayout(spacing: profile.usesCompactPaywallLayout ? 8 : 12))
-                            : AnyLayout(HStackLayout(spacing: profile.usesCompactPaywallLayout ? 8 : 10))
-                    ) {
-                        planCard(annual, billing: .yearly, identifier: "in_app_paywall.plan.yearly")
-                        planCard(monthly, billing: .monthly, identifier: "in_app_paywall.plan.monthly")
-                    }
-                    .padding(.top, profile.usesCompactPaywallLayout ? 10 : (profile.isCompact ? 16 : 22))
+            VStack(spacing: 0) {
+                topBar
                     .padding(.horizontal, profile.horizontalPadding)
-                    .padding(.bottom, profile.usesCompactPaywallLayout ? 10 : (profile.isCompact ? 18 : 24))
-
-                    if let crossSell {
-                        crossSellCard(crossSell)
-                            .padding(.horizontal, profile.horizontalPadding)
-                            .padding(.bottom, profile.usesCompactPaywallLayout ? 8 : profile.sectionSpacing)
+                // The inner GeometryReader receives the remaining space AFTER the
+                // footer inset. On larger phones the plans rest above the footer;
+                // on short screens or large text all content remains scrollable.
+                GeometryReader { available in
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: 0) {
+                            introduction(compact: profile.usesCompactPaywallLayout)
+                            Spacer(minLength: profile.usesCompactPaywallLayout ? 8 : 16)
+                            VStack(spacing: 10) {
+                                DarkPaywallPlanRow(option: annual, selected: selectedBilling == .yearly,
+                                                   compact: profile.usesCompactPaywallLayout,
+                                                   identifier: "in_app_paywall.plan.yearly") {
+                                    onSelectBilling(.yearly)
+                                }
+                                DarkPaywallPlanRow(option: monthly, selected: selectedBilling == .monthly,
+                                                   compact: profile.usesCompactPaywallLayout,
+                                                   identifier: "in_app_paywall.plan.monthly") {
+                                    onSelectBilling(.monthly)
+                                }
+                                if let crossSell { crossSellCard(crossSell) }
+                            }
+                            .disabled(cta.isLoading)
+                        }
+                        .padding(.horizontal, profile.horizontalPadding)
+                        .padding(.top, 10)
+                        .padding(.bottom, 8)
+                        .frame(minHeight: available.size.height, alignment: .top)
                     }
-
+                    .id(screen)
                 }
             }
-            // Ekran değiştiğinde (PLUS ↔ PRO) kaydırma konumu başa dönsün;
-            // aksi halde kullanıcı yeni ekranın ortasına düşüyor.
-            .id(screen)
-
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                PaywallDesignFooter(
-                    ctaTitle: cta.title,
-                    purchaseDisclosure: cta.purchaseDisclosure,
-                    ctaAccessibilityIdentifier: cta.accessibilityIdentifier,
-                    isLoading: cta.isLoading,
-                    isDisabled: cta.isDisabled,
-                    accent: accent,
-                    notice: notice,
-                    errorMessage: errorMessage,
-                    onCTA: onCTA,
-                    onRestore: onRestore,
-                    onTerms: onTerms,
-                    onPrivacy: onPrivacy,
-                    onManageSubscription: onManageSubscription
-                )
+                footer.padding(.horizontal, profile.horizontalPadding)
+                    .background(Color.black)
             }
         }
-        .background(Color.white.ignoresSafeArea())
-        .preferredColorScheme(.light)
-        // Ekran kimliği görünmez bir işaretçiye verilir; kök görünüme verilirse
-        // SwiftUI bu kimliği tüm alt öğelere yayıp kendi kimliklerini eziyor.
+        .foregroundStyle(.white)
+        .background(Color.black.ignoresSafeArea())
+        .preferredColorScheme(.dark)
+        .sheet(isPresented: $showsComparison) {
+            DarkPaywallComparisonSheet()
+                .preferredColorScheme(.dark)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+        }
         .overlay(alignment: .top) {
-            if screen == .plus {
-                screenMarker("in_app_paywall.plus")
-            } else {
-                screenMarker("in_app_paywall.pro")
-            }
+            Color.clear.frame(width: 1, height: 1)
+                .accessibilityElement(children: .ignore)
+                .accessibilityIdentifier(screen == .plus ? "in_app_paywall.plus" : "in_app_paywall.pro")
         }
     }
 
-    private func planCard(
-        _ option: PaywallDesignPlanOption,
-        billing: InAppPaywallBilling,
-        identifier: String
-    ) -> some View {
-        PaywallDesignPlanCard(
-            title: option.title,
-            price: option.price,
-            caption: option.caption,
-            trialNote: option.trialNote,
-            badge: option.badgeLabel.map { (label: $0, discount: option.badgeDiscount ?? "") },
-            accent: accent,
-            selectedBackground: selectedBackground,
-            isSelected: selectedBilling == billing,
-            accessibilityIdentifier: identifier,
-            onTap: { onSelectBilling(billing) }
-        )
+    private var topBar: some View {
+        HStack {
+            Button(action: onClose) {
+                Image(systemName: "xmark").font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(DarkPaywallStyle.secondary)
+                    .frame(width: 30, height: 30)
+                    .background(.white.opacity(0.08), in: Circle())
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(cta.isLoading)
+            .accessibilityLabel(DarkPaywallStyle.copy("close"))
+            .accessibilityIdentifier("in_app_paywall.close")
+            Spacer(minLength: 0)
+            Label(tier, systemImage: screen == .plus ? "crown.fill" : "star.fill")
+                .modifier(DarkPaywallFont(size: 11.5, weight: .bold))
+                .tracking(1.3)
+                .foregroundStyle(accent)
+                .padding(.horizontal, 11).padding(.vertical, 6)
+                .background(accent.opacity(0.12), in: Capsule())
+                .overlay(Capsule().stroke(accent.opacity(0.3), lineWidth: 1))
+            Spacer(minLength: 0)
+            Color.clear.frame(width: 44, height: 44)
+        }
     }
 
-    private func crossSellCard(_ crossSell: PaywallDesignCrossSell) -> some View {
-        let isPro = crossSell.style == .pro
-        let border = isPro ? PaywallDesignColor.green : PaywallDesignColor.amber
-        let background = isPro ? PaywallDesignColor.greenCardBg : PaywallDesignColor.amberCardBg
-        let highlightColor = isPro ? PaywallDesignColor.green : PaywallDesignColor.amberInk
-
-        return PaywallDesignUpsellCard(
-            icon: Group {
-                if isPro {
-                    PaywallDesignStarIcon(color: PaywallDesignColor.green)
-                } else {
-                    PaywallDesignCrownIcon(color: PaywallDesignColor.amber)
+    private func introduction(compact: Bool) -> some View {
+        VStack(spacing: compact ? 8 : 12) {
+            DarkPaywallAvatars(compact: compact)
+            Image("PaywallUsersBadge")
+                .resizable().scaledToFit()
+                .frame(width: compact ? 200 : 220)
+                .blendMode(.screen)
+                .accessibilityLabel(DarkPaywallStyle.copy("users"))
+            Text(DarkPaywallStyle.copy(screen == .plus ? "plus.headline" : "pro.headline"))
+                .modifier(DarkPaywallFont(size: compact ? 28 : 30, weight: .heavy))
+                .tracking(-0.7)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("in_app_paywall.headline")
+            VStack(alignment: .leading, spacing: compact ? 6 : 7) {
+                ForEach(Array(features.enumerated()), id: \.offset) { _, feature in
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Image(systemName: "checkmark").accessibilityHidden(true)
+                        Text(feature).fixedSize(horizontal: false, vertical: true)
+                    }
+                    .modifier(DarkPaywallFont(size: 13, weight: .medium))
+                    .foregroundStyle(DarkPaywallStyle.primary)
                 }
-            },
-            borderColor: border,
-            background: background,
-            text: Text(crossSell.prefix)
-                + Text(crossSell.highlight)
-                    .font(RDTypography.font(size: 13, weight: .heavy))
-                    .foregroundColor(highlightColor)
-                + Text(crossSell.suffix),
-            chevronColor: border,
-            accessibilityIdentifier: crossSell.accessibilityIdentifier,
-            onTap: onCrossSell
-        )
+            }
+            Button { showsComparison = true } label: {
+                Text(DarkPaywallStyle.copy("compare"))
+                    .underline()
+                    .modifier(DarkPaywallFont(size: 12.5, weight: .semibold))
+                    .foregroundStyle(DarkPaywallStyle.secondary)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("in_app_paywall.compare")
+        }
+        .frame(maxWidth: .infinity)
     }
 
-    private func screenMarker(_ identifier: String) -> some View {
-        Color.clear
-            .frame(width: 1, height: 1)
+    private var features: [String] {
+        let prefix = screen == .plus ? "plus.feature." : "pro.feature."
+        return (1...4).map { DarkPaywallStyle.copy(prefix + String($0)) }
+    }
+
+    private func crossSellCard(_ cross: PaywallDesignCrossSell) -> some View {
+        let color = cross.style == .pro ? DarkPaywallStyle.green : DarkPaywallStyle.gold
+        return Button(action: onCrossSell) {
+            HStack(spacing: 10) {
+                Image(systemName: cross.style == .pro ? "star.fill" : "crown.fill")
+                    .font(.system(size: 13)).foregroundStyle(color)
+                    .frame(width: 26, height: 26)
+                    .background(color.opacity(0.16), in: RoundedRectangle(cornerRadius: 8))
+                Text(cross.prefix + cross.highlight + cross.suffix)
+                    .modifier(DarkPaywallFont(size: 12.5, weight: .semibold))
+                    .foregroundStyle(DarkPaywallStyle.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .multilineTextAlignment(.leading)
+                Image(systemName: "chevron.right").font(.system(size: 13))
+                    .foregroundStyle(DarkPaywallStyle.secondary)
+            }
+            .padding(.horizontal, 13).padding(.vertical, 11)
+            .frame(minHeight: 44)
+            .background(color.opacity(0.07), in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(color.opacity(0.22), lineWidth: 1))
+            .contentShape(RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(cross.accessibilityIdentifier)
+    }
+
+    private var footer: some View {
+        VStack(spacing: 4) {
+            if let message = errorMessage ?? notice {
+                Text(message)
+                    .modifier(DarkPaywallFont(size: 12, weight: .medium))
+                    .foregroundStyle(errorMessage == nil ? DarkPaywallStyle.primary : Color(red: 1, green: 0.55, blue: 0.55))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(8)
+            }
+            if hasTrial {
+                Text(DarkPaywallStyle.copy("no_charge"))
+                    .modifier(DarkPaywallFont(size: 11, weight: .bold))
+                    .foregroundStyle(DarkPaywallStyle.green)
+                    .accessibilityIdentifier("in_app_paywall.no_charge")
+            }
+            Button(action: onCTA) {
+                HStack(spacing: 8) {
+                    if cta.isLoading { ProgressView().tint(.black) }
+                    Text(cta.title)
+                        .modifier(DarkPaywallFont(size: 17, weight: .bold))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if !cta.isLoading { Image(systemName: "arrow.right").font(.system(size: 15, weight: .semibold)) }
+                }
+                .foregroundStyle(cta.isDisabled ? Color.white.opacity(0.5) : Color.black)
+                .padding(.horizontal, 12).padding(.vertical, 12)
+                .frame(maxWidth: .infinity, minHeight: 52)
+                .background(cta.isDisabled ? Color.white.opacity(0.12) : DarkPaywallStyle.cream,
+                            in: RoundedRectangle(cornerRadius: 16))
+            }
+            .buttonStyle(.plain).disabled(cta.isDisabled)
+            .accessibilityIdentifier(cta.accessibilityIdentifier)
+            if let disclosure = cta.purchaseDisclosure {
+                Text(disclosure)
+                    .modifier(DarkPaywallFont(size: 10.5, weight: .medium))
+                    .foregroundStyle(DarkPaywallStyle.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("in_app_paywall.purchase_disclosure")
+            }
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) { legalButtons }
+                VStack(spacing: 0) { legalButtons }
+            }
+            .disabled(cta.isLoading)
+        }
+        .padding(.top, 8)
+        .overlay(alignment: .top) { Rectangle().fill(.white.opacity(0.07)).frame(height: 1) }
+    }
+
+    @ViewBuilder private var legalButtons: some View {
+        legalLink("privacy", onPrivacy)
+        legalLink("terms", onTerms)
+        legalLink("restore", onRestore)
+        legalLink("manage", onManageSubscription)
+    }
+
+    private func legalLink(_ key: String, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(RDLocalization.string("paywall.design.footer.\(key)", table: .paywall, fallback: key))
+                .modifier(DarkPaywallFont(size: 10.5, weight: .medium))
+                .foregroundStyle(DarkPaywallStyle.secondary)
+                .fixedSize(horizontal: true, vertical: false)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("in_app_paywall.\(key)")
+    }
+}
+
+private enum DarkPaywallStyle {
+    static let cream = Color(hex: "F5F2EA")
+    static let gold = Color(hex: "F5A524")
+    static let green = Color(hex: "22C55E")
+    static let primary = Color(hex: "EBEBF5").opacity(0.86)
+    static let secondary = Color(hex: "EBEBF5").opacity(0.6)
+    static func copy(_ key: String) -> String {
+        RDLocalization.string("paywall.dark.\(key)", table: .paywall, fallback: key)
+    }
+}
+
+/// The supplied design uses the native iOS font, with Dynamic Type preserved.
+private struct DarkPaywallFont: ViewModifier {
+    @ScaledMetric private var size: CGFloat
+    private let weight: Font.Weight
+    init(size: CGFloat, weight: Font.Weight) {
+        _size = ScaledMetric(wrappedValue: size, relativeTo: .body)
+        self.weight = weight
+    }
+    func body(content: Content) -> some View { content.font(.system(size: size, weight: weight)) }
+}
+
+private struct DarkPaywallAvatars: View {
+    var compact: Bool
+    var body: some View {
+        ZStack(alignment: .top) {
+            HStack(spacing: -22) {
+                ForEach(1...4, id: \.self) { i in avatar("PaywallJoinAvatarBack\(i)", size: 48) }
+            }.opacity(0.4).blur(radius: 0.3)
+            HStack(spacing: -14) {
+                ForEach(1...4, id: \.self) { i in avatar("PaywallJoinAvatar\(i)", size: compact ? 60 : 66) }
+            }.padding(.top, 9)
+                .overlay(alignment: .bottom) {
+                    Text(DarkPaywallStyle.copy("join"))
+                        .modifier(DarkPaywallFont(size: 11, weight: .bold))
+                        .padding(.horizontal, 14).padding(.vertical, 5)
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .overlay(Capsule().stroke(.white.opacity(0.25), lineWidth: 1))
+                        .offset(y: 11)
+                }
+        }.padding(.bottom, 11)
             .accessibilityElement(children: .ignore)
-            .accessibilityIdentifier(identifier)
-            .id(identifier)
+            .accessibilityLabel(DarkPaywallStyle.copy("join"))
+    }
+    private func avatar(_ name: String, size: CGFloat) -> some View {
+        Image(name).resizable().scaledToFill().frame(width: size, height: size).clipShape(Circle())
+    }
+}
+
+private struct DarkPaywallPlanRow: View {
+    var option: PaywallDesignPlanOption
+    var selected: Bool
+    var compact: Bool
+    var identifier: String
+    var action: () -> Void
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundStyle(selected ? DarkPaywallStyle.cream : Color.white.opacity(0.3))
+                AnyLayout(dynamicTypeSize.isAccessibilitySize
+                          ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+                          : AnyLayout(HStackLayout(spacing: 8))) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(option.title).modifier(DarkPaywallFont(size: 16, weight: .bold))
+                        if let note = option.trialNote {
+                            Text(note).modifier(DarkPaywallFont(size: 11.5, weight: .medium))
+                                .foregroundStyle(DarkPaywallStyle.green)
+                        }
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(alignment: dynamicTypeSize.isAccessibilitySize ? .leading : .trailing, spacing: 2) {
+                        Text(option.price).modifier(DarkPaywallFont(size: 15, weight: .bold))
+                        Text(option.caption).modifier(DarkPaywallFont(size: 11, weight: .medium))
+                            .foregroundStyle(DarkPaywallStyle.secondary)
+                    }
+                }
+                .fixedSize(horizontal: false, vertical: true)
+            }
+            .foregroundStyle(.white)
+            .multilineTextAlignment(.leading)
+            .padding(.horizontal, 16).padding(.vertical, compact ? 12 : 15)
+            .frame(maxWidth: .infinity, minHeight: 58)
+            .background(selected ? DarkPaywallStyle.cream.opacity(0.08) : Color.white.opacity(0.035),
+                        in: RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16)
+                .stroke(selected ? DarkPaywallStyle.cream : Color.white.opacity(0.13), lineWidth: 1.5))
+            .overlay(alignment: .top) {
+                if let discount = option.badgeDiscount {
+                    Text(discount).modifier(DarkPaywallFont(size: 10.5, weight: .heavy))
+                        .foregroundStyle(.black).padding(.horizontal, 10).padding(.vertical, 3)
+                        .background(DarkPaywallStyle.green, in: Capsule()).offset(y: -10)
+                }
+            }
+            .overlay(alignment: .topTrailing) {
+                if let badge = option.badgeLabel {
+                    Text(badge).modifier(DarkPaywallFont(size: 8, weight: .heavy))
+                        .foregroundStyle(.black).padding(.horizontal, 6).padding(.vertical, 3)
+                        .background(DarkPaywallStyle.gold, in: RoundedRectangle(cornerRadius: 5))
+                        .padding(.trailing, 12).offset(y: -6)
+                }
+            }
+            .padding(.top, option.badgeLabel == nil ? 0 : 10)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(option.title)
+        .accessibilityValue([option.price, option.caption, option.trialNote].compactMap { $0 }.joined(separator: ", "))
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityIdentifier(identifier)
+    }
+}
+
+/// Reuses the live application's comparison data, not the mock's sample quotas.
+private struct DarkPaywallComparisonSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    private var rows: [(String, PaywallDesignMark, PaywallDesignMark, PaywallDesignMark)] {
+        let plus = PaywallDesignCopy.freeVersusPlusRows
+        let pro = PaywallDesignCopy.plusVersusProRows
+        let premiumSections: [(String, PaywallDesignMark, PaywallDesignMark, PaywallDesignMark)] = [
+            (DarkPaywallStyle.copy("expert"), .cross, .check(.green), .check(.green)),
+            (DarkPaywallStyle.copy("training"), .cross, .check(.green), .check(.green)),
+            (DarkPaywallStyle.copy("notebook"), .cross, .check(.green), .check(.green)),
+        ]
+        return plus.map { row in
+            (row.title, row.left, row.right, pro.first { $0.title == row.title }?.right ?? row.right)
+        } + pro.filter { proRow in !plus.contains { $0.title == proRow.title } }.map {
+            ($0.title, .cross, $0.left, $0.right)
+        } + premiumSections
+    }
+    var body: some View {
+        RDAdaptiveContainer { _ in
+            ScrollView {
+                VStack(spacing: 16) {
+                    Text(DarkPaywallStyle.copy("compare"))
+                        .modifier(DarkPaywallFont(size: 17, weight: .heavy))
+                    if !dynamicTypeSize.isAccessibilitySize {
+                        HStack(spacing: 6) {
+                            Text(DarkPaywallStyle.copy("feature"))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Text("FREE").frame(width: 52)
+                            Text("PLUS").foregroundStyle(DarkPaywallStyle.gold).frame(width: 52)
+                            Text("PRO").foregroundStyle(DarkPaywallStyle.green).frame(width: 52)
+                        }.modifier(DarkPaywallFont(size: 10.5, weight: .bold))
+                    }
+                    ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                        if dynamicTypeSize.isAccessibilitySize {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text(row.0).modifier(DarkPaywallFont(size: 13, weight: .semibold))
+                                .fixedSize(horizontal: false, vertical: true)
+                            AnyLayout(dynamicTypeSize.isAccessibilitySize
+                                      ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10))
+                                      : AnyLayout(HStackLayout(spacing: 10))) {
+                                value(row.1, title: "FREE", color: DarkPaywallStyle.secondary)
+                                value(row.2, title: "PLUS", color: DarkPaywallStyle.gold)
+                                value(row.3, title: "PRO", color: DarkPaywallStyle.green)
+                            }
+                        }.frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.vertical, 8)
+                            .overlay(alignment: .bottom) { Divider().overlay(.white.opacity(0.08)) }
+                        } else {
+                            HStack(spacing: 6) {
+                                Text(row.0).modifier(DarkPaywallFont(size: 12.5, weight: .medium))
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                mark(row.1).foregroundStyle(DarkPaywallStyle.secondary).frame(width: 52)
+                                mark(row.2).foregroundStyle(DarkPaywallStyle.green).frame(width: 52)
+                                mark(row.3).foregroundStyle(DarkPaywallStyle.green).frame(width: 52)
+                            }.padding(.vertical, 8)
+                                .overlay(alignment: .bottom) { Divider().overlay(.white.opacity(0.08)) }
+                        }
+                    }
+                }.padding(20)
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                Button { dismiss() } label: {
+                    Text(DarkPaywallStyle.copy("close"))
+                        .modifier(DarkPaywallFont(size: 15, weight: .bold))
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
+                }.buttonStyle(.plain).padding(16)
+                    .accessibilityIdentifier("in_app_paywall.compare.close")
+            }
+        }.foregroundStyle(.white).background(Color(hex: "131316").ignoresSafeArea())
+    }
+    private func value(_ mark: PaywallDesignMark, title: String, color: Color) -> some View {
+        HStack(spacing: 5) {
+            Text(title)
+            switch mark {
+            case .cross: Image(systemName: "minus").accessibilityLabel(DarkPaywallStyle.copy("unavailable"))
+            case .check: Image(systemName: "checkmark").accessibilityLabel(DarkPaywallStyle.copy("included"))
+            case let .text(text, _): Text(text)
+            }
+        }.modifier(DarkPaywallFont(size: 11, weight: .bold))
+            .foregroundStyle(color).frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+    }
+    @ViewBuilder private func mark(_ value: PaywallDesignMark) -> some View {
+        Group {
+            switch value {
+            case .cross: Image(systemName: "minus").accessibilityLabel(DarkPaywallStyle.copy("unavailable"))
+            case .check: Image(systemName: "checkmark").accessibilityLabel(DarkPaywallStyle.copy("included"))
+            case let .text(text, _): Text(text).fixedSize(horizontal: false, vertical: true)
+            }
+        }.modifier(DarkPaywallFont(size: 11, weight: .bold))
     }
 }

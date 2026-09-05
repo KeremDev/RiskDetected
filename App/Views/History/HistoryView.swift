@@ -158,7 +158,7 @@ struct HistoryView: View {
                             showPaywall = false
                             Task { await app.auth.refreshProfile() }
                         })
-            .preferredColorScheme(preferredModalColorScheme)
+            .preferredColorScheme(.dark)
         }
         .fullScreenCover(isPresented: $showResult) {
             ResultView(

@@ -234,7 +234,7 @@ struct ReportView: View {
                             showPaywall = false
                             Task { await app.auth.refreshProfile() }
                         })
-            .preferredColorScheme(preferredModalColorScheme)
+            .preferredColorScheme(.dark)
         }
     }
 

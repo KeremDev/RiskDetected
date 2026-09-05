@@ -112,7 +112,7 @@ struct ProfileView: View {
                                 await loadStats()
                             }
                         })
-            .preferredColorScheme(preferredModalColorScheme)
+            .preferredColorScheme(.dark)
         }
         .sheet(isPresented: $showDataControls, onDismiss: cleanupExportedDataFile) {
             ProfileDataControlsSheet(
