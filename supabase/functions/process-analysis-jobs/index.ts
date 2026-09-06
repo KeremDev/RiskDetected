@@ -618,7 +618,9 @@ async function drainQueueMessages(params: {
           generation,
           workerAttempt,
           jobMode: isRepairJob ? "repair" : "analysis",
-          eventType: "provider_background_pending",
+          eventType: responseCode === "v5_retry_pending"
+            ? "claim_released_for_retry"
+            : "provider_background_pending",
           httpStatus: responseStatus,
           responseCode,
           claimAction: `release_and_defer_${retryAfterSeconds}s`,

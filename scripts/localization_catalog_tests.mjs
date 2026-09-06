@@ -301,16 +301,18 @@ test("L10N-005", "backend user-facing literal scan matches approved baseline", (
 test("L10N-006", "PDF/XLSX literal scan matches approved baseline", () => {
   assertLiteralSurfaceSnapshot(
     ["pdf", "xlsx"],
-    438,
-    "6f40593cc5751dd0070eafddda06dd3930b7a99c3a73a1fff3d812aac551586f",
+    // Multiline console diagnostics are not PDF/XLSX document copy (12 removed).
+    426,
+    "c35d1ac19eb517e01f22dc84f25d8255dc75cd8465a260807ac85841b3f44671",
   );
 });
 
 test("L10N-007", "notification/email literal scan matches approved baseline", () => {
   assertLiteralSurfaceSnapshot(
     ["notification", "push", "email"],
-    62,
-    "18dddd05d75d08ce31c7c786e19ecc7c68de7783468f713a16fa3c7ecccb3a55",
+    // Five baseline diagnostics were logs, not notification/email messages.
+    57,
+    "eb36ad1476cfc38f7097e290a5ee00950be8e821629c6a73068faae877dd562e",
   );
 });
 
@@ -772,7 +774,7 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
       }
     }
   }
-  assert.equal(rows.length, 2_361, "Turkish localized-unit count");
+  assert.equal(rows.length, 2_387, "Turkish localized-unit count");
   assert.equal(
     createHash("sha256").update(rows.join("\n")).digest("hex"),
     // 2026-08-19: "Fine-Kinney" dort anahtarda makine cevirisiyle "Ince Kinney"
@@ -792,7 +794,10 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
     // 2026-08-30: yeni sonuc merkezi ve bulgu detay ekranlarindaki kullanici
     // metinleri Analysis kataloguna tasindi; rapor saha-dogrulamasi etiketi eklendi.
     // 2026-08-30: egitim onerileri filtresine varsayilan "Tumu" secenegi eklendi.
-    "ff65d442afed2c81e4c3cf160ec9d377e1ff7e64bf31819eeed4fff8d70a0cc9",
+    // 2026-09-06: reviewed against 12d85089: exactly 26 new Paywall units
+    // (24 dark-paywall labels/features, trial and cancellation disclosures).
+    // All other Turkish catalog units are unchanged; owner-requested copy.
+    "4c07bb59d61233843a9125b02f5b7f46f27102e7172cfb5f18d7e5506ec19e7d",
     "Turkish catalog snapshot changed",
   );
   assert.equal(

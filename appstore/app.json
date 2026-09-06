@@ -5,9 +5,9 @@
   "platform": "IOS",
   "primary_locale": "tr",
   "release": {
-    "version": "2.0.0",
-    "build_number": "88",
-    "build_id": "147a6c03-e37a-4482-bb16-91fee4377493",
+    "version": "2.0.1",
+    "build_number": "89",
+    "build_id": "29c24224-bbba-4756-bb07-34300084a624",
     "release_type": "AFTER_APPROVAL",
     "copyright": "2026 RiskDetected"
   },

@@ -362,6 +362,15 @@ struct PaywallDesignFlowView: View {
             )
         }
 
+        guard let renewalPriceText else { return nil }
+        if activeScreen == .pro || activeBilling == .monthly {
+            return RDLocalization.format(
+                "paywall.design.footer.cancellable_disclosure_format",
+                table: .paywall,
+                fallback: "%1$@ · İstediğin zaman iptal edebilirsin.",
+                arguments: [renewalPriceText]
+            )
+        }
         return renewalPriceText
     }
 

@@ -271,6 +271,14 @@
         }
       }
     },
+    "paywall.dark.reports": {
+      "comment": "Premium PDF/Excel report export row in the plan comparison; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "PDF/Excel Rapor" } },
+        "en": { "stringUnit": { "state": "translated", "value": "PDF/Excel Reports" } }
+      }
+    },
     "paywall.dark.plus.feature.1": {
       "comment": "Dark paywall plus.feature.1; placeholders: none",
       "extractionState": "manual",
@@ -278,13 +286,13 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Net risk analizi"
+            "value": "Gerçek risk analizi"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Clear risk analysis"
+            "value": "Real risk analysis"
           }
         }
       }
@@ -314,13 +322,13 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Daha az belirsizlik"
+            "value": "Derin araştırma tespitleri"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Less uncertainty"
+            "value": "In-depth research findings"
           }
         }
       }
@@ -332,13 +340,13 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sağlam karar zemini"
+            "value": "PDF/Excel Rapor&Paylaşma"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A solid basis for decisions"
+            "value": "PDF/Excel reports & sharing"
           }
         }
       }
@@ -350,13 +358,13 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Derin risk görünümü"
+            "value": "Detaylı risk tespitleri"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Deeper risk insights"
+            "value": "Detailed risk findings"
           }
         }
       }
@@ -368,13 +376,13 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bütüncül değerlendirme desteği"
+            "value": "Bütüncül/Kapsayıcı tehlikeler"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Comprehensive assessment support"
+            "value": "Comprehensive hazard coverage"
           }
         }
       }
@@ -386,13 +394,13 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Düzenli firma yönetimi"
+            "value": "Sınırsız özellikler"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Organized company management"
+            "value": "Unlimited features"
           }
         }
       }
@@ -404,13 +412,13 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Güçlü süreç kontrolü"
+            "value": "Güçlü model desteği"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Strong process control"
+            "value": "Powerful AI model support"
           }
         }
       }
@@ -735,6 +743,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Koşullar"
+          }
+        }
+      }
+    },
+    "paywall.design.footer.cancellable_disclosure_format": {
+      "comment": "CTA disclosure for PLUS monthly and PRO monthly/yearly; placeholder: %1$@ is the localized store price with billing period. Do not translate or reformat the supplied price.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · You can cancel anytime."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · İstediğin zaman iptal edebilirsin."
           }
         }
       }

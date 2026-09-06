@@ -9,6 +9,33 @@ import {
   reconcileWithAuthoritativeState,
 } from "./dispatch-policy.ts";
 
+Deno.test("V5 durable retry releases and defers without terminal failure", () => {
+  assertEquals(
+    isProviderBackgroundPendingResponse({
+      httpStatus: 202,
+      responseBodyParsed: true,
+      responseCode: "v5_retry_pending",
+    }),
+    true,
+  );
+  assertEquals(
+    isProviderBackgroundPendingResponse({
+      httpStatus: 500,
+      responseBodyParsed: true,
+      responseCode: "v5_retry_pending",
+    }),
+    false,
+  );
+  assertEquals(
+    isExplicitVNextFailure({
+      httpStatus: 202,
+      responseBodyParsed: true,
+      responseCode: "v5_retry_pending",
+    }),
+    false,
+  );
+});
+
 Deno.test("coverage quality retries use the repair queue message read count", () => {
   assertEquals(
     forceCoverageQualityFallback({

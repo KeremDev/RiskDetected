@@ -16,7 +16,8 @@ export function isProviderBackgroundPendingResponse(params: {
   responseCode: string | null;
 }): boolean {
   return params.httpStatus === 202 && params.responseBodyParsed &&
-    params.responseCode === "provider_background_pending";
+    (params.responseCode === "provider_background_pending" ||
+      params.responseCode === "v5_retry_pending");
 }
 
 export function providerBackgroundRetrySeconds(value: unknown): number {

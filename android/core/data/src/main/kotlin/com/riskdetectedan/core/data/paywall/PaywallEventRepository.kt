@@ -5,6 +5,7 @@ import android.util.Log
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -48,6 +49,10 @@ import javax.inject.Singleton
 private const val SOURCE = "in_app"
 private const val VARIANT_ID = "android_default_v1"
 private const val TAG = "PaywallEvents"
+
+/** Other accounts' durable events remain queued without blocking the signed-in account. */
+internal fun <T> nextPaywallEventForUser(events: List<T>, userId: String?, owner: (T) -> String): T? =
+    userId?.takeIf { it.isNotBlank() }?.let { id -> events.firstOrNull { owner(it) == id } }
 
 enum class PaywallEventName(val wireValue: String) {
     EntryTap("entry_tap"),
@@ -142,6 +147,16 @@ class PaywallEventRepository @Inject constructor(
     private val retryAttempt = AtomicInteger(0)
     @Volatile private var retryJob: Job? = null
 
+    init {
+        deliveryScope.launch {
+            client.auth.sessionStatus.collect { flushPending() }
+        }
+    }
+
+    private fun nextPendingForCurrentUser(): PaywallEventPayload? = synchronized(queueLock) {
+        nextPaywallEventForUser(readPendingLocked(), client.auth.currentUserOrNull()?.id) { it.userId }
+    }
+
     fun record(
         event: PaywallEventName,
         userId: String,
@@ -189,7 +204,7 @@ class PaywallEventRepository @Inject constructor(
             var deliveryFailed = false
             try {
                 while (true) {
-                    val next = synchronized(queueLock) { readPendingLocked().firstOrNull() } ?: break
+                    val next = nextPendingForCurrentUser() ?: break
                     try {
                         client.postgrest.from("paywall_events").upsert(next) {
                             onConflict = "client_event_id"
@@ -197,6 +212,9 @@ class PaywallEventRepository @Inject constructor(
                         }
                         acknowledge(next.clientEventId)
                     } catch (t: Throwable) {
+                        // Auth may have changed while the request was in flight. Leave the old
+                        // row untouched and continue with the new owner's queue.
+                        if (client.auth.currentUserOrNull()?.id != next.userId) continue
                         deliveryFailed = true
                         Log.e(TAG, "Paywall event delivery deferred: ${next.eventName}", t)
                         break
@@ -209,7 +227,7 @@ class PaywallEventRepository @Inject constructor(
                 // exponential retry so delivery also recovers while the app stays foregrounded.
                 if (deliveryFailed) {
                     scheduleRetry()
-                } else if (synchronized(queueLock) { readPendingLocked().isNotEmpty() }) {
+                } else if (nextPendingForCurrentUser() != null) {
                     flushPending()
                 } else {
                     retryAttempt.set(0)
@@ -219,7 +237,7 @@ class PaywallEventRepository @Inject constructor(
     }
 
     private fun scheduleRetry() {
-        if (synchronized(queueLock) { readPendingLocked().isEmpty() }) return
+        if (nextPendingForCurrentUser() == null) return
         val attempt = retryAttempt.getAndUpdate { current -> (current + 1).coerceAtMost(6) }
         val delayMillis = (5_000L * (1L shl attempt.coerceAtMost(6))).coerceAtMost(300_000L)
         retryJob?.cancel()

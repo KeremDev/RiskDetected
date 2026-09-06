@@ -9,7 +9,7 @@ export type AIExecutionRoute =
   | typeof CANCELLED_PLUS_TRIAL_ROUTE;
 
 export type AnalysisComputeProfile = "premium" | "economy";
-export type AnalysisProviderPool = "paid_standard" | "paid_flex";
+export type AnalysisProviderPool = "paid_standard" | "paid_flex" | "free_standard";
 export type AnalysisServiceTier = "standard" | "flex";
 
 export type TrustedAnalysisComputeRouting = {

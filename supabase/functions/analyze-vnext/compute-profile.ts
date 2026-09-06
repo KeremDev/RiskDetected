@@ -135,7 +135,7 @@ export function resolveVNextConfig(
     selected.primary_provider,
     provider(engineConfig.primary_provider, "gemini"),
   );
-  const primaryModel = String(
+  let primaryModel = String(
     selected.primary_model ?? engineConfig.primary_model ??
       (primaryProvider === "gemini" ? "gemini-2.5-flash" : "gpt-5.6-luna"),
   );
@@ -223,13 +223,43 @@ export function resolveVNextConfig(
     ? String(selected.openai_reasoning_effort) as OpenAIReasoningEffort
     : "high";
   const flexEnabled = engineConfig.paid_flex_enabled === true;
-  const requestedServiceTier: AnalysisServiceTier = computeProfile ===
+  let requestedServiceTier: AnalysisServiceTier = computeProfile ===
         "economy" && flexEnabled && primaryProvider === "gemini"
     ? "flex"
     : "standard";
-  const providerPool: AnalysisProviderPool = requestedServiceTier === "flex"
+  let providerPool: AnalysisProviderPool = requestedServiceTier === "flex"
     ? "paid_flex"
     : "paid_standard";
+
+  // Free API billing is a credential/project choice, never service_tier=free.
+  // Product entitlement is independent from provider billing. A cancelled trial
+  // stays PLUS; only an explicitly attested, newly pinned route changes pool.
+  const repeatFree = engineConfig.v5_free_repeat_enabled === true &&
+    routing.product_plan === "free" &&
+    routing.ai_execution_route === "free_legacy" &&
+    routing.first_paid_ai_eligible === false;
+  const cancelledPlusTrial =
+    engineConfig.v5_cancelled_plus_trial_free_enabled === true &&
+    routing.product_plan === "plus" &&
+    routing.ai_execution_route === "cancelled_plus_trial_free" &&
+    routing.cancelled_plus_trial_free_candidate === true &&
+    routing.cancelled_plus_trial_free_enabled === true;
+  if (
+    engineConfig.engine_mode === "free" &&
+    routing.source === "trusted_analyze_enqueue" &&
+    routing.snapshot_version === 1 &&
+    (repeatFree || cancelledPlusTrial) &&
+    routing.provider_pool === "free_standard"
+  ) {
+    if (primaryProvider !== "gemini") {
+      throw new Error("free_pool_requires_gemini");
+    }
+    primaryModel = "gemini-3.5-flash-lite";
+    fallbackProvider = "gemini";
+    fallbackModel = primaryModel;
+    requestedServiceTier = "standard";
+    providerPool = "free_standard";
+  }
 
   return {
     primaryProvider,

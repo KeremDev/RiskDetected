@@ -140,7 +140,7 @@ struct AnalysisResultHubView: View {
             "\($0.id.uuidString.lowercased()):\(($0.userReaction ?? .none).rawValue)"
         }.joined(separator: "|")
     }
-    private var isFreeTier: Bool { (hub.tier ?? "").lowercased() == "free" }
+    private var isFreeTier: Bool { membershipTier == .free }
     private var isPlusTier: Bool { (hub.tier ?? "").lowercased() == "plus" }
     private var membershipTier: SubscriptionTier {
         switch (hub.tier ?? "").lowercased() {
@@ -867,29 +867,15 @@ struct AnalysisResultHubView: View {
                 .lineLimit(1)
 
             ZStack {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(title)
-                        .font(referenceFont(13, .bold))
-                        .foregroundStyle(Color.rdResultPrimaryText)
-                        .lineLimit(2)
-
-                    if let audience = item.audienceLabel, !audience.isEmpty {
-                        HStack(spacing: 5) {
-                            Image(systemName: "person.2.fill")
-                            Text(audience)
-                        }
-                        .font(referenceFont(11, .medium))
-                        .foregroundStyle(activeStrong)
-                        .lineLimit(2)
+                // Blur is visual decoration, not an access boundary. Do not
+                // construct premium text or audience/duration labels for Free.
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(0..<5, id: \.self) { index in
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.rdResultSecondaryText.opacity(0.25))
+                            .frame(height: 11)
+                            .padding(.trailing, index.isMultiple(of: 2) ? 0 : 44)
                     }
-
-                    Text(item.text ?? "")
-                        .font(referenceFont(12, .regular))
-                        .foregroundStyle(Color.rdResultSecondaryText)
-                        .lineSpacing(4)
-                        .lineLimit(5)
-
-                    trainingDurationRow(item)
                 }
                 .frame(maxWidth: .infinity, minHeight: 148, alignment: .topLeading)
                 .blur(radius: 5.5)

@@ -42,6 +42,12 @@ import {
 import { sendStructuredGemini, thinkingTelemetry } from "./provider.ts";
 import { buildV5Prompt, buildV5SplitPrompt } from "./v5-prompt.ts";
 import {
+  runV5PhotoAttempt,
+  v5AttemptLimit,
+  v5ProviderKey,
+  V5RetryPending,
+} from "./v5-execution.ts";
+import {
   V5_ENGINE_MODE,
   V5_PROMPT_VERSION,
   V5_RESPONSE_SCHEMA,
@@ -186,7 +192,7 @@ async function recordAttempt(supabase: any, params: {
     | "verification_pass";
   number: number;
   model: string;
-  state: "persisted" | "failed";
+  state: "received" | "persisted" | "failed";
   /**
    * Only usage, ids and timings are read here, so the free engine's
    * schema-agnostic response satisfies this without carrying a v4 output.
@@ -253,10 +259,10 @@ async function checkpointPhoto(supabase: any, params: {
   engineRunID: string;
   photo: PhotoInput;
   model: string;
-  status: "completed" | "failed";
+  status: "running" | "completed" | "failed";
   attemptCount: number;
-  output?: ProviderPhotoOutput;
-  result?: V4ProviderResult;
+  output?: unknown;
+  result?: Omit<V4ProviderResult, "output">;
   errorCode?: string;
 }): Promise<string | null> {
   const serialized = params.output ? JSON.stringify(params.output) : "";
@@ -820,7 +826,15 @@ serve(async (req) => {
     if (config.primaryProvider !== "gemini") {
       throw new Error("v4_gemini_only_contract");
     }
-    const key = providerKey();
+    if (
+      config.providerPool === "free_standard" &&
+      analysis.plan_at_creation !== record(snapshot.compute_routing).product_plan
+    ) {
+      throw new Error("free_pool_plan_mismatch");
+    }
+    const key = config.providerPool === "free_standard"
+      ? v5ProviderKey(config.providerPool, (name) => Deno.env.get(name))
+      : providerKey();
     if (!key) throw new Error("missing_ai_secret");
     const sectorSelection = resolveVNextSectorSelection(
       analysis.analysis_sector,
@@ -848,8 +862,10 @@ serve(async (req) => {
           ? engineConfig
             .v5_gemini_thinking_level as typeof config.geminiThinkingLevel
           : config.geminiThinkingLevel;
-      const outputs = await Promise.all(photos.map(async (photo) => {
-        const attemptID = crypto.randomUUID();
+      const priorPhotos: Record<string, unknown>[] =
+        (Array.isArray(begin.photo_runs) ? begin.photo_runs : [])
+          .map(record);
+      const settled = await Promise.allSettled(photos.map(async (photo) => {
         const prompt = buildV5Prompt({
           photoIndex: photo.photoIndex,
           photoCount: photos.length,
@@ -857,107 +873,114 @@ serve(async (req) => {
           sectorID,
           analysisContext: String(analysis.canvas ?? "general"),
         });
-        const telemetry = {
-          attemptID,
-          userID,
-          engineRunID: engineRunID!,
-          photoRunID: null,
-          kind: "primary" as const,
-          number: 1,
+        const request = {
+          apiKey: key,
           model: config.primaryModel,
-          computeProfile: config.computeProfile,
-          providerPool: config.providerPool,
-          requestedTier: config.requestedServiceTier,
-          promptSHA256: v5PromptSHA,
-          promptBundleSHA256: v5PromptSHA,
+          prompt,
+          imageData: photo.base64,
+          mimeType: photo.mimeType,
+          timeoutMs: 110_000,
+          thinkingBudget: config.geminiThinkingBudget,
+          thinkingLevel: freeThinkingLevel,
           maxOutputTokens: freeMaxOutputTokens,
+          serviceTier: config.requestedServiceTier,
+          billingTier: config.providerPool === "free_standard"
+            ? "free" as const
+            : "paid" as const,
         };
-        let response;
-        try {
-          response = await sendStructuredGemini({
-            apiKey: key,
-            model: config.primaryModel,
-            prompt,
-            imageData: photo.base64,
-            mimeType: photo.mimeType,
-            timeoutMs: 110_000,
-            thinkingBudget: config.geminiThinkingBudget,
-            // An eighteen-layer sweep is a reasoning task. At MEDIUM the model
-            // spent 1616 thinking tokens and returned two foreground findings
-            // out of eighteen layers; the contract engine's default was tuned
-            // for a much shorter contract.
-            thinkingLevel: freeThinkingLevel,
-            maxOutputTokens: freeMaxOutputTokens,
-            serviceTier: config.requestedServiceTier,
-          }, V5_RESPONSE_SCHEMA);
-        } catch (error) {
-          const providerError = error instanceof V4ProviderError
-            ? error
-            : new V4ProviderError(
-              error instanceof Error ? error.message : "v5_provider_failed",
-              "v5_provider_failed",
-              null,
-              0,
-              false,
-            );
-          await recordAttempt(supabase, {
-            ...telemetry,
-            state: "failed",
-            error: providerError,
-          });
-          throw providerError;
-        }
-        try {
-          const output = parseV5Output(response.text);
-          await recordAttempt(supabase, {
-            ...telemetry,
-            state: "persisted",
-            result: {
-              ...response,
-              requestedServiceTier: config.requestedServiceTier,
-            },
-          });
-          return {
-            photoIndex: photo.photoIndex,
-            output,
-            usage: response.usage,
-            finishReason: response.finishReason,
-          };
-        } catch (error) {
-          // The call was made and billed, so the usage travels with the
-          // failure. v4 lost exactly this twice and could not say afterwards
-          // whether a schema rejection had cost anything.
-          //
-          // Truncation is not malformed output and must not be filed as such.
-          // Thinking counts against maxOutputTokens: in analysis 58cbe261 the
-          // model spent 10577 reasoning tokens of a 12288 budget and the JSON
-          // was cut at 1694 visible tokens, which surfaced as
-          // v5_output_not_json and read like a contract failure.
-          const truncated = response.finishReason === "MAX_TOKENS" ||
-            response.usage.reasoningTokens + response.usage.outputTokens >=
-              freeMaxOutputTokens - 64;
-          const providerError = new V4ProviderError(
-            `${
-              error instanceof Error ? error.message : "v5_schema_invalid"
-            }:finish=${response.finishReason}:think=${response.usage.reasoningTokens}:out=${response.usage.outputTokens}:cap=${freeMaxOutputTokens}`,
-            truncated ? "v5_output_truncated" : "v5_schema_invalid",
-            response.httpStatus,
-            response.durationMs,
-            true,
-            response.usage,
-            response.providerRequestID,
-            [],
-            null,
-            response.effectiveServiceTier,
-          );
-          await recordAttempt(supabase, {
-            ...telemetry,
-            state: "failed",
-            error: providerError,
-          });
-          throw providerError;
-        }
+        // No key or raw photo enters a persisted identity or telemetry field.
+        const identity = await sha256Text(JSON.stringify({
+          prompt,
+          model: request.model,
+          pool: config.providerPool,
+          serviceTier: request.serviceTier,
+          thinking: freeThinkingLevel,
+          thinkingBudget: request.thinkingBudget,
+          maxOutputTokens: freeMaxOutputTokens,
+          mimeType: photo.mimeType,
+          imageHash: await sha256Text(photo.base64),
+        }));
+        const prior = priorPhotos.find((row) =>
+          Number(row.photo_index) === photo.photoIndex &&
+          row.storage_path === photo.storagePath
+        );
+        let photoRunID: string | null = null;
+        const result = await runV5PhotoAttempt({
+          model: config.primaryModel,
+          identity,
+          previous: prior?.normalized_output,
+          maxAttempts: v5AttemptLimit(snapshot, config),
+          maxOutputTokens: freeMaxOutputTokens,
+          call: () => sendStructuredGemini(request, V5_RESPONSE_SCHEMA),
+          checkpoint: async (state) => {
+            photoRunID = await checkpointPhoto(supabase, {
+              userID,
+              engineRunID: engineRunID!,
+              photo,
+              model: config.primaryModel,
+              status: state.status,
+              attemptCount: state.attemptCount,
+              output: state,
+              errorCode: state.errorCode,
+              result: {
+                providerRequestID: null,
+                durationMs: 0,
+                httpStatus: 200,
+                requestedServiceTier: config.requestedServiceTier,
+                effectiveServiceTier: config.requestedServiceTier,
+                usage: state.usage,
+              },
+            });
+          },
+          recordAttempt: (event) =>
+            recordAttempt(supabase, {
+              attemptID: event.id,
+              userID,
+              engineRunID: engineRunID!,
+              photoRunID,
+              kind: event.kind,
+              number: event.number,
+              model: config.primaryModel,
+              state: event.state,
+              computeProfile: config.computeProfile,
+              providerPool: config.providerPool,
+              requestedTier: config.requestedServiceTier,
+              fallbackReason: event.reason,
+              promptSHA256: v5PromptSHA,
+              promptBundleSHA256: v5PromptSHA,
+              maxOutputTokens: freeMaxOutputTokens,
+              error: event.error,
+              result: event.response
+                ? {
+                  ...event.response,
+                  requestedServiceTier: config.requestedServiceTier,
+                }
+                : undefined,
+            }),
+        });
+        return { photoIndex: photo.photoIndex, ...result };
       }));
+      // Wait for every photo to checkpoint before releasing the claim. One
+      // photo failing must not leave other paid calls running unobserved.
+      const failures = settled.filter((entry) => entry.status === "rejected");
+      const terminal = failures.find((entry) =>
+        !(entry.reason instanceof V5RetryPending)
+      );
+      if (terminal) throw terminal.reason;
+      if (failures.length) {
+        return json(202, {
+          ok: true,
+          code: "v5_retry_pending",
+          retry_after_seconds: Math.max(
+            ...failures.map((entry) =>
+              (entry.reason as V5RetryPending).retryAfterSeconds
+            ),
+          ),
+        });
+      }
+      const outputs = settled.flatMap((entry) =>
+        entry.status === "fulfilled" ? [entry.value] : []
+      );
 
       // The follow-up call, only where the primary answer packed hazards into
       // one record. Seven rounds of prompt rules did not move the model off
@@ -970,7 +993,8 @@ serve(async (req) => {
       // analysis 078cd96f the primary pass alone produced seven findings, so
       // how far one request gets on its own is worth measuring before paying
       // for two.
-      const splitPassEnabled = engineConfig.v5_split_pass_enabled !== false;
+      const splitPassEnabled = engineConfig.v5_split_pass_enabled !== false &&
+        config.providerPool !== "free_standard";
       for (
         let index = 0;
         splitPassEnabled && index < outputs.length;
@@ -1142,6 +1166,11 @@ serve(async (req) => {
           critical_silent_drop_count: 0,
           provider_usage: {
             compute_profile: config.computeProfile,
+            provider_pool: config.providerPool,
+            requested_service_tier: config.requestedServiceTier,
+            attempt_counts: outputs.map((entry) =>
+              entry.attemptCount
+            ),
             photo_count: photos.length,
             // Read from the same branch the request took, so the trace reports
             // the lever that was actually sent rather than a config value the
@@ -1155,9 +1184,7 @@ serve(async (req) => {
             // length ceiling is its own; MAX_TOKENS means we capped it. Six
             // runs sat within 4% of 3200 visible tokens against a 32768 budget
             // and the cause was being deduced rather than read.
-            finish_reasons: outputs.map((entry) =>
-              entry.finishReason
-            ),
+            finish_reasons: outputs.map((entry) => entry.finishReason),
             stopped_naturally: outputs.every((entry) =>
               entry.finishReason === "STOP"
             ),

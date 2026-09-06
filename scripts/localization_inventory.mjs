@@ -615,7 +615,58 @@ function scanMarkdown(path, entries) {
   });
 }
 
-function scanTypeScript(path, entries) {
+// Console arguments are operational diagnostics, including multiline calls.
+// Preserve offsets/newlines so candidates after a log retain their source line.
+function maskConsoleCalls(source) {
+  const masked = source.split("");
+  const nonCode = new Set();
+  let sourceQuote = null;
+  let sourceEscaped = false;
+  let comment = null;
+  for (let index = 0; index < source.length; index++) {
+    const char = source[index];
+    const next = source[index + 1];
+    if (comment) {
+      nonCode.add(index);
+      if (comment === "line" && char === "\n") comment = null;
+      else if (comment === "block" && char === "*" && next === "/") {
+        nonCode.add(++index);
+        comment = null;
+      }
+    } else if (sourceQuote) {
+      nonCode.add(index);
+      if (sourceEscaped) sourceEscaped = false;
+      else if (char === "\\") sourceEscaped = true;
+      else if (char === sourceQuote) sourceQuote = null;
+    } else if (char === '"' || char === "'" || char === "`") {
+      nonCode.add(index);
+      sourceQuote = char;
+    } else if (char === "/" && (next === "/" || next === "*")) {
+      nonCode.add(index);
+      nonCode.add(++index);
+      comment = next === "/" ? "line" : "block";
+    }
+  }
+  for (const match of source.matchAll(/\bconsole\.(?:log|warn|error|info|debug)\s*\(/g)) {
+    if (nonCode.has(match.index) || masked[match.index] === " ") continue;
+    let depth = 1;
+    let end = match.index + match[0].length;
+    for (; end < source.length && depth > 0; end++) {
+      const char = source[end];
+      if (nonCode.has(end)) continue;
+      if (char === "(") depth++;
+      else if (char === ")") depth--;
+    }
+    // Malformed source must not hide the remainder of a file.
+    if (depth !== 0) continue;
+    for (let index = match.index; index < end; index++) {
+      if (source[index] !== "\n" && source[index] !== "\r") masked[index] = " ";
+    }
+  }
+  return masked.join("");
+}
+
+export function scanTypeScript(path, entries) {
   const sourceFile = relative(ROOT, path);
   // These modules are versioned AI prompts or deterministic safety-domain
   // catalogues. They are validated by their schema/linter tests and are not
@@ -625,7 +676,13 @@ function scanTypeScript(path, entries) {
     sourceFile.startsWith("supabase/functions/analyze-v4/") ||
     sourceFile.startsWith("supabase/functions/_shared/training-recommendations/") ||
     sourceFile.startsWith("supabase/functions/_shared/approved-book/") ||
-    sourceFile === "supabase/functions/_shared/approved-notebook-projector.ts";
+    sourceFile === "supabase/functions/_shared/approved-notebook-projector.ts" ||
+    // Explicit files only: new API handlers in these directories must still
+    // be scanned. These Turkish safety catalogues/renderers have dedicated
+    // v5_expert_training and approved-notebook-advisory-language tests.
+    sourceFile === "supabase/functions/_shared/expert-recommendations/registry.tr.ts" ||
+    sourceFile === "supabase/functions/_shared/expert-recommendations/engine.ts" ||
+    sourceFile === "supabase/functions/_shared/approved-notebook-advisory-language.ts";
   if (internalSafetyContent) return;
   if (
     sourceFile ===
@@ -637,7 +694,7 @@ function scanTypeScript(path, entries) {
   const knownOutputSurface =
     /(?:generate-excel-report|register-report|send-push-notification|send-report-ready-notification|send-trial-reminder|send-welcome-email)/u
       .test(sourceFile);
-  const lines = readFileSync(path, "utf8").split(/\r?\n/);
+  const lines = maskConsoleCalls(readFileSync(path, "utf8")).split(/\r?\n/);
   let machinePromptBlock = false;
   lines.forEach((line, index) => {
     const trimmed = line.trimStart();
@@ -656,7 +713,7 @@ function scanTypeScript(path, entries) {
     if (machinePromptBlock) return;
     if (
       trimmed.startsWith("//") || trimmed.startsWith("/*") ||
-      trimmed.startsWith("*") || /console\.(?:warn|error|info|debug)\s*\(/u.test(line)
+      trimmed.startsWith("*")
     ) return;
     const regex = /(["'`])((?:\\.|(?!\1).)*)\1/g;
     for (const match of line.matchAll(regex)) {
@@ -957,6 +1014,6 @@ function main() {
   );
 }
 
-if (pathToFileURL(process.argv[1]).href === import.meta.url) {
+if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
   main();
 }

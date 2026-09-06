@@ -154,6 +154,7 @@ const GEMINI_RESPONSE_SCHEMA = {
   required: ["items"],
 };
 
+// localization-inventory: machine-prompt-begin
 function notebookAdvisoryPrompt(
   candidates: NotebookAdvisoryCandidate[],
 ): string {
@@ -184,6 +185,8 @@ Kesin kurallar:
 Girdi JSON:
 ${JSON.stringify(input)}`;
 }
+
+// localization-inventory: machine-prompt-end
 
 export async function generateNotebookAdvisoryBatch(
   candidates: NotebookAdvisoryCandidate[],

@@ -1,14 +1,17 @@
 import type { AnalysisServiceTier } from "../_shared/analysis-compute-profile.ts";
 import type { GeminiThinkingLevel } from "../analyze-vnext/compute-profile.ts";
-import { sendGeminiGenerateContent } from "../_shared/gemini-provider-client.ts";
+import {
+  geminiRetryAfterMilliseconds,
+  sendGeminiGenerateContent,
+} from "../_shared/gemini-provider-client.ts";
 import { outputLanguageFailure } from "./language-contract.ts";
 import {
   CORE_MODULE_IDS,
   DYNAMIC_MODULE_IDS,
   MODULE_OUTCOMES,
   type ProviderPhotoOutput,
-  V4_PROVIDER_CONTRACT_VERSION,
   V4_GEMINI3_RESPONSE_SCHEMA,
+  V4_PROVIDER_CONTRACT_VERSION,
   V4_PROVIDER_RESPONSE_SCHEMA,
   type V4ModuleID,
 } from "./contracts.ts";
@@ -51,6 +54,7 @@ export class V4ProviderError extends Error {
     readonly schemaIssues: readonly string[] = [],
     readonly recoverableOutput: ProviderPhotoOutput | null = null,
     readonly effectiveServiceTier: AnalysisServiceTier | null = null,
+    readonly retryAfterMs: number = 0,
   ) {
     super(message);
   }
@@ -391,6 +395,7 @@ export type StructuredGeminiCall = {
   thinkingLevel: GeminiThinkingLevel;
   maxOutputTokens: number;
   serviceTier: AnalysisServiceTier;
+  billingTier?: "paid" | "free";
 };
 
 export type StructuredGeminiResponse = {
@@ -418,6 +423,15 @@ export async function sendStructuredGemini(
   params: StructuredGeminiCall,
   responseSchema: unknown,
 ): Promise<StructuredGeminiResponse> {
+  if (params.billingTier === "free" && params.serviceTier !== "standard") {
+    throw new V4ProviderError(
+      "Free API cannot request Flex",
+      "free_pool_tier_invalid",
+      null,
+      0,
+      false,
+    );
+  }
   const started = Date.now();
   let response: Response;
   try {
@@ -470,6 +484,10 @@ export async function sendStructuredGemini(
       response.status === 429 || response.status >= 500,
       undefined,
       requestID,
+      [],
+      null,
+      null,
+      geminiRetryAfterMilliseconds(response.headers),
     );
   }
   const envelope = object(JSON.parse(body));
@@ -481,12 +499,13 @@ export async function sendStructuredGemini(
   // tokens at the same time -- which is exactly how the first flash-lite run
   // left us unable to say whether the per-part field had been honoured or
   // silently dropped.
-  const imageTokens = (Array.isArray(metadata.promptTokensDetails)
-    ? metadata.promptTokensDetails
-    : [])
-    .map(object)
-    .filter((entry) => String(entry.modality ?? "").toUpperCase() === "IMAGE")
-    .reduce((total, entry) => total + count(entry.tokenCount), 0);
+  const imageTokens =
+    (Array.isArray(metadata.promptTokensDetails)
+      ? metadata.promptTokensDetails
+      : [])
+      .map(object)
+      .filter((entry) => String(entry.modality ?? "").toUpperCase() === "IMAGE")
+      .reduce((total, entry) => total + count(entry.tokenCount), 0);
   // finishReason separates a model that broke the contract from one that was
   // cut off mid-JSON. Both surface as provider_schema_invalid, and the
   // gemini-3.7-flash trial hit that twice with no way to tell which -- the
@@ -523,17 +542,28 @@ export async function sendStructuredGemini(
     : params.serviceTier;
   const usage: V4ProviderUsage = {
     ...baseUsage,
-    costUSD: geminiCost(params.model, effectiveServiceTier, baseUsage),
+    costUSD: params.billingTier === "free"
+      ? 0
+      : geminiCost(params.model, effectiveServiceTier, baseUsage),
     standardEquivalentCostUSD: geminiCost(params.model, "standard", baseUsage),
   };
   const text = structuredText(envelope);
   if (!text) {
+    const blocked = Boolean(object(envelope.promptFeedback).blockReason) ||
+      [
+        "SAFETY",
+        "RECITATION",
+        "BLOCKLIST",
+        "PROHIBITED_CONTENT",
+        "SPII",
+        "IMAGE_SAFETY",
+      ].includes(finishReason);
     throw new V4ProviderError(
       "Provider output missing",
-      "provider_output_missing",
+      blocked ? "provider_output_blocked" : "provider_output_missing",
       200,
       durationMs,
-      true,
+      !blocked,
       usage,
       requestID,
     );
@@ -549,15 +579,23 @@ export async function sendStructuredGemini(
   };
 }
 
-export async function callV4Gemini(params: StructuredGeminiCall & {
-  requiredModules?: readonly V4ModuleID[];
-  /** Set for calls whose module_coverage is never consumed. */
-  skipCoverageContract?: boolean;
-  /** Analysis output language. A mismatch is retryable, like a schema failure. */
-  expectedLanguage?: string;
-}): Promise<V4ProviderResult> {
-  const { text, usage, providerRequestID: requestID, durationMs, httpStatus, effectiveServiceTier } =
-    await sendStructuredGemini(params, schemaFor(params.model));
+export async function callV4Gemini(
+  params: StructuredGeminiCall & {
+    requiredModules?: readonly V4ModuleID[];
+    /** Set for calls whose module_coverage is never consumed. */
+    skipCoverageContract?: boolean;
+    /** Analysis output language. A mismatch is retryable, like a schema failure. */
+    expectedLanguage?: string;
+  },
+): Promise<V4ProviderResult> {
+  const {
+    text,
+    usage,
+    providerRequestID: requestID,
+    durationMs,
+    httpStatus,
+    effectiveServiceTier,
+  } = await sendStructuredGemini(params, schemaFor(params.model));
   try {
     const parsed = parseOutput(
       text,

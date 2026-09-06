@@ -84,7 +84,7 @@ struct PaywallDesignScreen: View {
                         }
                         .padding(.horizontal, profile.horizontalPadding)
                         .padding(.top, 10)
-                        .padding(.bottom, 8)
+                        .padding(.bottom, 24)
                         .frame(minHeight: available.size.height, alignment: .top)
                     }
                     .id(screen)
@@ -93,6 +93,9 @@ struct PaywallDesignScreen: View {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 footer.padding(.horizontal, profile.horizontalPadding)
                     .background(Color.black)
+                    // Reclaim part of the bottom inset without moving link hit areas
+                    // into the home-indicator region.
+                    .padding(.bottom, -min(profile.safeAreaInsets.bottom, 18))
             }
         }
         .foregroundStyle(.white)
@@ -101,7 +104,6 @@ struct PaywallDesignScreen: View {
         .sheet(isPresented: $showsComparison) {
             DarkPaywallComparisonSheet()
                 .preferredColorScheme(.dark)
-                .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
         .overlay(alignment: .top) {
@@ -152,19 +154,24 @@ struct PaywallDesignScreen: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("in_app_paywall.headline")
-            VStack(alignment: .leading, spacing: compact ? 6 : 7) {
+            VStack(alignment: .center, spacing: compact ? 6 : 7) {
                 ForEach(Array(features.enumerated()), id: \.offset) { _, feature in
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Image(systemName: "checkmark").accessibilityHidden(true)
-                        Text(feature).fixedSize(horizontal: false, vertical: true)
+                        Text(feature)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    .modifier(DarkPaywallFont(size: 13, weight: .medium))
+                    .modifier(DarkPaywallFont(size: 13, weight: .regular))
                     .foregroundStyle(DarkPaywallStyle.primary)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .center)
             Button { showsComparison = true } label: {
-                Text(DarkPaywallStyle.copy("compare"))
-                    .underline()
+                HStack(spacing: 6) {
+                    Image(systemName: "list.bullet.rectangle").accessibilityHidden(true)
+                    Text(DarkPaywallStyle.copy("compare")).underline()
+                }
                     .modifier(DarkPaywallFont(size: 12.5, weight: .semibold))
                     .foregroundStyle(DarkPaywallStyle.secondary)
                     .frame(minHeight: 44)
@@ -209,7 +216,7 @@ struct PaywallDesignScreen: View {
     }
 
     private var footer: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 2) {
             if let message = errorMessage ?? notice {
                 Text(message)
                     .modifier(DarkPaywallFont(size: 12, weight: .medium))
@@ -234,8 +241,8 @@ struct PaywallDesignScreen: View {
                     if !cta.isLoading { Image(systemName: "arrow.right").font(.system(size: 15, weight: .semibold)) }
                 }
                 .foregroundStyle(cta.isDisabled ? Color.white.opacity(0.5) : Color.black)
-                .padding(.horizontal, 12).padding(.vertical, 12)
-                .frame(maxWidth: .infinity, minHeight: 52)
+                .padding(.horizontal, 12).padding(.vertical, 10)
+                .frame(maxWidth: .infinity, minHeight: 48)
                 .background(cta.isDisabled ? Color.white.opacity(0.12) : DarkPaywallStyle.cream,
                             in: RoundedRectangle(cornerRadius: 16))
             }
@@ -398,6 +405,7 @@ private struct DarkPaywallPlanRow: View {
 private struct DarkPaywallComparisonSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @State private var contentHeight: CGFloat = 520
     private var rows: [(String, PaywallDesignMark, PaywallDesignMark, PaywallDesignMark)] {
         let plus = PaywallDesignCopy.freeVersusPlusRows
         let pro = PaywallDesignCopy.plusVersusProRows
@@ -405,6 +413,7 @@ private struct DarkPaywallComparisonSheet: View {
             (DarkPaywallStyle.copy("expert"), .cross, .check(.green), .check(.green)),
             (DarkPaywallStyle.copy("training"), .cross, .check(.green), .check(.green)),
             (DarkPaywallStyle.copy("notebook"), .cross, .check(.green), .check(.green)),
+            (DarkPaywallStyle.copy("reports"), .cross, .check(.green), .check(.green)),
         ]
         return plus.map { row in
             (row.title, row.left, row.right, pro.first { $0.title == row.title }?.right ?? row.right)
@@ -415,8 +424,8 @@ private struct DarkPaywallComparisonSheet: View {
     var body: some View {
         RDAdaptiveContainer { _ in
             ScrollView {
-                VStack(spacing: 16) {
-                    Text(DarkPaywallStyle.copy("compare"))
+                VStack(spacing: 4) {
+                    Label(DarkPaywallStyle.copy("compare"), systemImage: "list.bullet.rectangle")
                         .modifier(DarkPaywallFont(size: 17, weight: .heavy))
                     if !dynamicTypeSize.isAccessibilitySize {
                         HStack(spacing: 6) {
@@ -450,22 +459,33 @@ private struct DarkPaywallComparisonSheet: View {
                                 mark(row.1).foregroundStyle(DarkPaywallStyle.secondary).frame(width: 52)
                                 mark(row.2).foregroundStyle(DarkPaywallStyle.green).frame(width: 52)
                                 mark(row.3).foregroundStyle(DarkPaywallStyle.green).frame(width: 52)
-                            }.padding(.vertical, 8)
+                            }.padding(.vertical, 5)
                                 .overlay(alignment: .bottom) { Divider().overlay(.white.opacity(0.08)) }
                         }
                     }
-                }.padding(20)
-            }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
                 Button { dismiss() } label: {
                     Text(DarkPaywallStyle.copy("close"))
                         .modifier(DarkPaywallFont(size: 15, weight: .bold))
                         .frame(maxWidth: .infinity, minHeight: 48)
                         .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
-                }.buttonStyle(.plain).padding(16)
+                }.buttonStyle(.plain).padding(.top, 6)
                     .accessibilityIdentifier("in_app_paywall.compare.close")
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 0)
+                .background {
+                    GeometryReader { content in
+                        Color.clear.preference(key: DarkPaywallComparisonHeightKey.self,
+                                               value: content.size.height)
+                    }
+                }
             }
         }.foregroundStyle(.white).background(Color(hex: "131316").ignoresSafeArea())
+            .onPreferenceChange(DarkPaywallComparisonHeightKey.self) {
+                if $0 > 0 { contentHeight = $0.rounded(.up) }
+            }
+            .presentationDetents(dynamicTypeSize.isAccessibilitySize ? [.large] : [.height(contentHeight)])
     }
     private func value(_ mark: PaywallDesignMark, title: String, color: Color) -> some View {
         HStack(spacing: 5) {
@@ -487,5 +507,12 @@ private struct DarkPaywallComparisonSheet: View {
             case let .text(text, _): Text(text).fixedSize(horizontal: false, vertical: true)
             }
         }.modifier(DarkPaywallFont(size: 11, weight: .bold))
+    }
+}
+
+private struct DarkPaywallComparisonHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
