@@ -42,7 +42,7 @@ begin
       or v_value->>'rollout_mode' <> 'build_allowlist'
       or coalesce((v_value->>'kill_switch')::boolean, true)
       or not (coalesce(v_value->'enabled_android_builds', '[]'::jsonb) ?& array['7','8','9','10','11','12'])
-      or not (coalesce(v_value->'enabled_ios_builds', '[]'::jsonb) ?& array['87','88','89'])
+      or not (coalesce(v_value->'enabled_ios_builds', '[]'::jsonb) ?& array['87','88'])
     then
       raise exception 'Android build 12 release reconciliation failed for %', v_key;
     end if;

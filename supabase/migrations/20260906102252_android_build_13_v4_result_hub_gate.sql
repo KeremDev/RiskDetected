@@ -1,7 +1,8 @@
 -- RiskDetected Android 2.0.1 (versionCode 13) analysis gate.
 --
 -- V4 and the result hub use build allowlists. Admit build 13 to the contracts already active
--- for Android 7-12 and iOS 87-89 without advertising the build before Google Play accepts it.
+-- for Android 7-12 while preserving the existing iOS allowlist without advertising the build
+-- before Google Play accepts it. Clean local databases contain iOS 87-88; production also has 89.
 do $preflight$
 declare
   v_key text;
@@ -40,7 +41,7 @@ begin
     or coalesce(v_value->>'required_api_contract', '') <> '3'
     or coalesce(v_value->>'required_capability', '') <> 'safety_claim_v4_scoreless'
     or not (coalesce(v_value->'enabled_android_builds', '[]'::jsonb) ?& array['7', '8', '9', '10', '11', '12'])
-    or not (coalesce(v_value->'enabled_ios_builds', '[]'::jsonb) ?& array['87', '88', '89'])
+    or not (coalesce(v_value->'enabled_ios_builds', '[]'::jsonb) ?& array['87', '88'])
   then
     raise exception 'Android build 13 V4 preflight state mismatch';
   end if;
@@ -54,7 +55,7 @@ begin
     or coalesce(v_value->>'kill_switch', 'true') <> 'false'
     or coalesce(v_value->>'required_capability', '') <> 'analysis_result_hub_v1'
     or not (coalesce(v_value->'enabled_android_builds', '[]'::jsonb) ?& array['7', '8', '9', '10', '11', '12'])
-    or not (coalesce(v_value->'enabled_ios_builds', '[]'::jsonb) ?& array['87', '88', '89'])
+    or not (coalesce(v_value->'enabled_ios_builds', '[]'::jsonb) ?& array['87', '88'])
   then
     raise exception 'Android build 13 result-hub preflight state mismatch';
   end if;
