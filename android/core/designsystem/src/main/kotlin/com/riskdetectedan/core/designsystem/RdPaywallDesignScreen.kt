@@ -496,7 +496,7 @@ private fun DarkPaywallPlanRow(
                 tint = if (selected) DarkPaywallColor.Cream else Color.White.copy(alpha = 0.30f),
                 modifier = Modifier.size(22.dp),
             )
-            BoxWithConstraints(modifier = Modifier.weight(1f)) {
+            Box(modifier = Modifier.weight(1f)) {
                 // iOS only changes this HStack into a VStack for accessibility Dynamic Type.
                 // Keeping the normal layout horizontal is what preserves the title-left / price-
                 // right hierarchy on every phone width.
