@@ -156,6 +156,9 @@ jobs:
       - name: Environment and legal isolation
         run: ./gradlew :app:verifyEnvironmentIsolation :app:verifyAndroidLegalBundle --stacktrace
 
+      - name: Install source scan dependency
+        run: sudo apt-get update && sudo apt-get install --yes ripgrep
+
       - name: Source secret, PII log and AD_ID scan
         run: bash scripts/scan-source-secrets-and-pii.sh
 

@@ -4,6 +4,11 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 android_dir="$(cd "$script_dir/.." && pwd)"
 
+command -v rg >/dev/null || {
+  echo "ripgrep (rg) is required for Android source secret and PII scanning." >&2
+  exit 127
+}
+
 runtime_roots=(
   "$android_dir/app/src"
   "$android_dir/core"
