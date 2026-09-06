@@ -40,6 +40,7 @@ import com.riskdetectedan.core.data.progress.ProfessionalProgressBadge
 import com.riskdetectedan.core.designsystem.RiskDetectedTheme
 import com.riskdetectedan.core.designsystem.RdPaywallDesignColor
 import com.riskdetectedan.core.designsystem.RdPaywallDesignGlyph
+import com.riskdetectedan.core.designsystem.RdPaywallDesignTag
 import com.riskdetectedan.core.designsystem.RdPaywallFeatureIcon
 import com.riskdetectedan.core.designsystem.RiskDetectedLightOnlyTheme
 import com.riskdetectedan.core.designsystem.LocalRdConfettiSnapshotElapsedMillis
@@ -340,9 +341,9 @@ class OnboardingGoldenTest {
     @Test
     fun onboarding_timeline_yearly_store_loaded_light() {
         composeRule.setContent { RiskDetectedLightOnlyTheme { OBTimelinePaywallPreviewSurface() } }
-        // Deneme anlatımı yalnızca mağazadan gerçek bir teklif geldiğinde görünür.
+        // Deneme metni yalnızca mağazadan gerçek bir teklif geldiğinde görünür.
         composeRule.onNodeWithText("Ücretsiz Denemeyi Başlat").assertIsDisplayed()
-        composeRule.onNodeWithText("Ücretsiz Deneme Nasıl Çalışır?").assertIsDisplayed()
+        composeRule.onNodeWithText("İş Güvenliğinde Güven").assertIsDisplayed()
         composeRule.onNodeWithText("7 gün ücretsiz").assertIsDisplayed()
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
@@ -354,8 +355,9 @@ class OnboardingGoldenTest {
                 OBTimelinePaywallPreviewSurface(trialDays = null)
             }
         }
-        // Play bu hesap için deneme döndürmediğinde deneme vaadi yerine karşılaştırma gösterilir.
-        composeRule.onNodeWithText("PLUS Abonelik Avantajları").assertIsDisplayed()
+        // Play bu hesap için deneme döndürmediğinde deneme vaadi gösterilmez.
+        composeRule.onNodeWithText("İş Güvenliğinde Güven").assertIsDisplayed()
+        composeRule.onNodeWithText("PLUS'a Geç").assertIsDisplayed()
         assertEquals(0, composeRule.onAllNodesWithText("Ücretsiz Denemeyi Başlat").fetchSemanticsNodes().size)
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
@@ -447,22 +449,26 @@ class OnboardingGoldenTest {
                 PaywallParityPreviewSurface(
                     plan = PaywallPlan.Plus,
                     billing = PaywallBilling.Yearly,
-                    formattedPrice = "₺1.499,99",
-                    monthlyEquivalent = "₺124,99",
+                    formattedPrice = "₺2.499,99",
+                    monthlyPrice = "₺249,99",
+                    monthlyEquivalent = "₺208,33",
                     trialDays = 7,
                     discountPercent = 17,
                 )
             }
         }
 
-        // Gerçek bir Play teklifi verildiğinde PLUS yıllık ekranı deneme anlatımını gösterir.
-        composeRule.onNodeWithText("Ücretsiz Deneme Nasıl Çalışır?").assertIsDisplayed()
+        // Gerçek bir Play teklifi verildiğinde PLUS yıllık ekranı mağaza koşullarını korur.
+        composeRule.onNodeWithText("İş Güvenliğinde Güven").assertIsDisplayed()
+        composeRule.onNodeWithText("Gerçek risk analizi").assertIsDisplayed()
         composeRule.onNodeWithText("%17 İndirim").assertIsDisplayed()
-        composeRule.onNodeWithText("₺124,99 / Ay").assertIsDisplayed()
+        composeRule.onNodeWithText("₺208,33 / Ay").assertIsDisplayed()
         composeRule.onNodeWithText("Ücretsiz Denemeyi Başlat").assertIsDisplayed()
-        // Şerit paket duyarlı: PRO'ya özel özellikler PLUS ekranında hiç geçmez.
-        assertEquals(0, composeRule.onAllNodesWithText("Odaklı Analiz").fetchSemanticsNodes().size)
-        assertEquals(0, composeRule.onAllNodesWithText("Derin Araştırma").fetchSemanticsNodes().size)
+        composeRule.onNodeWithText("Şu An Ödeme Alınmaz").assertIsDisplayed()
+        composeRule.onNodeWithText(
+            "7 gün ücretsiz, ardından ₺2.499,99 / yıl. İstediğin zaman iptal edebilirsin.",
+        ).assertIsDisplayed()
+        assertEquals(0, composeRule.onAllNodesWithText("Sınırsız özellikler").fetchSemanticsNodes().size)
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
 
@@ -486,12 +492,13 @@ class OnboardingGoldenTest {
             }
         }
 
-        composeRule.onNodeWithText("How does the free trial work?").assertIsDisplayed()
+        composeRule.onNodeWithText("Confidence in Workplace Safety").assertIsDisplayed()
+        composeRule.onNodeWithText("Real risk analysis").assertIsDisplayed()
         composeRule.onNodeWithText("Start free trial").assertIsDisplayed()
         composeRule.onNodeWithText("17% off").assertIsDisplayed()
         assertEquals(
             0,
-            composeRule.onAllNodesWithText("Ücretsiz Deneme Nasıl Çalışır?").fetchSemanticsNodes().size,
+            composeRule.onAllNodesWithText("İş Güvenliğinde Güven").fetchSemanticsNodes().size,
         )
     }
 
@@ -544,16 +551,85 @@ class OnboardingGoldenTest {
                 PaywallParityPreviewSurface(
                     plan = PaywallPlan.Pro,
                     billing = PaywallBilling.Monthly,
-                    formattedPrice = "₺2.499,99",
+                    formattedPrice = "₺4.999,99",
+                    monthlyPrice = "₺499,99",
+                    monthlyEquivalent = "₺416,67",
+                    discountPercent = 17,
                 )
             }
         }
 
         composeRule.onNodeWithText("PRO").assertIsDisplayed()
-        // PRO ekranında deneme anlatımı yok; PLUS ile karşılaştırma tablosu gösterilir.
-        // "Odaklı Analiz" hem karşılaştırma satırında hem de akan şeritte geçiyor;
-        // tablodaki satır için ilk düğüm yeterli.
-        composeRule.onAllNodesWithText("Odaklı Analiz")[0].assertIsDisplayed()
+        composeRule.onNodeWithText("İş Güvenliğinde Hâkimiyet").assertIsDisplayed()
+        composeRule.onNodeWithText("Sınırsız özellikler").assertIsDisplayed()
+        composeRule.onNodeWithText("PRO'ya Geç").assertIsDisplayed()
+        composeRule.onNodeWithText("₺499,99 / ay · İstediğin zaman iptal edebilirsin.").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun paywall_comparison_sheet_dark() {
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                PaywallParityPreviewSurface(
+                    plan = PaywallPlan.Plus,
+                    billing = PaywallBilling.Monthly,
+                    formattedPrice = "₺249,99",
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag(RdPaywallDesignTag.Compare).performClick()
+        composeRule.onNodeWithTag(RdPaywallDesignTag.ComparisonTable).assertIsDisplayed()
+        composeRule.onNodeWithText("PDF/Excel Rapor").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    @Config(
+        application = Application::class,
+        sdk = [35],
+        qualifiers = "tr-rTR-w384dp-h592dp-xhdpi",
+    )
+    fun paywall_plus_small_screen_large_text_dark() {
+        composeRule.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 1.3f)) {
+                RiskDetectedLightOnlyTheme {
+                    PaywallParityPreviewSurface(
+                        plan = PaywallPlan.Plus,
+                        billing = PaywallBilling.Yearly,
+                        formattedPrice = "₺1.499,99",
+                        monthlyEquivalent = "₺124,99",
+                        trialDays = 7,
+                        discountPercent = 17,
+                    )
+                }
+            }
+        }
+
+        composeRule.onNodeWithTag(RdPaywallDesignTag.Cta).assertIsDisplayed()
+        composeRule.onNodeWithTag(RdPaywallDesignTag.Close).assertIsDisplayed()
+        composeRule.onNodeWithText("İş Güvenliğinde Güven").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    @Config(
+        application = Application::class,
+        sdk = [35],
+        qualifiers = "tr-rTR-w384dp-h592dp-xhdpi",
+    )
+    fun pain_point_checks_completed_small_screen() {
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                OBPainPointScreen(
+                    onNext = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Devam").assertIsDisplayed()
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
 

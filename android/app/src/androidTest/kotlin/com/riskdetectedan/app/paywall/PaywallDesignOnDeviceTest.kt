@@ -50,11 +50,9 @@ class PaywallDesignOnDeviceTest {
         val resources = InstrumentationRegistry.getInstrumentation().targetContext.resources
         val startTrial = resources.getString(RdR.string.rd_paywall_design_cta_start_trial)
         val startSubscription = resources.getString(RdR.string.rd_aboneligi_baslat)
-        val trialHero = resources.getString(RdR.string.rd_paywall_design_hero_trial)
-        val trialDay = resources.getString(RdR.string.rd_paywall_design_timeline_day_format, "7")
         val trialNote = resources.getString(RdR.string.rd_paywall_design_plan_trial_note_format, "7")
         val discount = resources.getString(RdR.string.rd_paywall_design_plan_discount_format, "17")
-        val plusBenefits = resources.getString(RdR.string.rd_paywall_design_hero_benefits_format, "PLUS")
+        val close = resources.getString(RdR.string.rd_paywall_dark_close)
 
         composeRule.setContent {
             RiskDetectedLightOnlyTheme {
@@ -100,28 +98,30 @@ class PaywallDesignOnDeviceTest {
             }
         }
 
-        // 1) PLUS + yıllık: gerçek Play teklifi varsayımıyla deneme anlatımı görünür.
+        // 1) PLUS + yıllık: deneme, indirim ve CTA gerçek Play teklifi varsayımıyla görünür.
         composeRule.onNodeWithTag(RdPaywallDesignTag.Plus).assertIsDisplayed()
-        composeRule.onNodeWithTag(RdPaywallDesignTag.TrialTimeline).assertIsDisplayed()
+        composeRule.onNodeWithTag(RdPaywallDesignTag.HeroLabel).performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag(RdPaywallDesignTag.PlanYearly).performScrollTo().assertIsDisplayed()
         capture("plus_yearly")
-        composeRule.onNodeWithText(trialHero).assertIsDisplayed()
-        composeRule.onNodeWithText(trialDay).assertIsDisplayed()
-        composeRule.onNodeWithText(trialNote).assertIsDisplayed()
+        composeRule.onNodeWithText(trialNote).performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText(startTrial).assertIsDisplayed()
-        composeRule.onNodeWithText(discount).assertIsDisplayed()
+        composeRule.onNodeWithText(discount).performScrollTo().assertIsDisplayed()
 
-        // 2) Aylığa geçince deneme anlatımı yerini karşılaştırma tablosuna bırakır.
+        // 2) Aylık seçim CTA'yı günceller; karşılaştırma ayrı, açık kullanıcı eylemiyle açılır.
         composeRule.onNodeWithTag(RdPaywallDesignTag.PlanMonthly).performClick()
+        composeRule.onNodeWithText(startSubscription).assertIsDisplayed()
+        composeRule.onNodeWithTag(RdPaywallDesignTag.Compare).performScrollTo().performClick()
+        composeRule.waitForIdle()
         composeRule.onNodeWithTag(RdPaywallDesignTag.ComparisonTable).assertIsDisplayed()
-        composeRule.onNodeWithText(plusBenefits).assertIsDisplayed()
-        capture("plus_monthly")
+        composeRule.onNodeWithText(close).performScrollTo().performClick()
+        composeRule.waitForIdle()
 
         // 3) Çapraz satış PRO ekranını açar.
         composeRule.onNodeWithTag(RdPaywallDesignTag.CrossSellPro).performScrollTo().performClick()
         composeRule.waitForIdle()
         composeRule.onNodeWithTag(RdPaywallDesignTag.Pro).assertIsDisplayed()
         composeRule.onNodeWithTag(RdPaywallDesignTag.HeroLabel).performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithTag(RdPaywallDesignTag.ComparisonTable).performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag(RdPaywallDesignTag.Compare).performScrollTo().assertIsDisplayed()
         capture("pro_yearly")
 
         // 4) Yasal/abonelik bağlantıları her iki ekranda da erişilebilir olmalı.

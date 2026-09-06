@@ -282,13 +282,24 @@ fun rdPaywallDesignState(
         cta = cta,
         notice = notice,
         errorMessage = errorMessage,
-        renewalPrice = when (selectedBilling) {
-            RdPaywallDesignBilling.Yearly -> yearlyPrice?.let {
-                stringResource(R.string.rd_paywall_design_footer_renewal_yearly_format, it)
-            }
-            RdPaywallDesignBilling.Monthly -> monthlyPrice?.let {
-                stringResource(R.string.rd_paywall_design_footer_renewal_monthly_format, it)
-            }
+        purchaseDisclosure = when {
+            selectedBilling == RdPaywallDesignBilling.Yearly && trialDays != null && yearlyPrice != null ->
+                stringResource(
+                    R.string.rd_paywall_dark_trial_disclosure_yearly_format,
+                    trialDays,
+                    yearlyPrice,
+                )
+            selectedBilling == RdPaywallDesignBilling.Yearly && yearlyPrice != null ->
+                stringResource(
+                    R.string.rd_paywall_dark_cancellable_disclosure_format,
+                    stringResource(R.string.rd_paywall_design_footer_renewal_yearly_format, yearlyPrice),
+                )
+            selectedBilling == RdPaywallDesignBilling.Monthly && monthlyPrice != null ->
+                stringResource(
+                    R.string.rd_paywall_dark_cancellable_disclosure_format,
+                    stringResource(R.string.rd_paywall_design_footer_renewal_monthly_format, monthlyPrice),
+                )
+            else -> null
         },
         crossSell = crossSell,
     )

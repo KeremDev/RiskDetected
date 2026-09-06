@@ -58,6 +58,58 @@
 
 final result: passed
 
+---
+
+# Android Paywall Plan-Card Parity QA
+
+Date: 2026-09-06
+
+## Comparison target
+
+- Live iOS source-of-truth captures from `RiskDetectedUITests/testDarkPaywallPricesComparisonAndAllVariants` on `RD QA iPhone 16 Pro` (`393 x 852 pt`):
+  - `artifacts/android-paywall-card-parity-20260906/ios-attachments/B506202B-5329-4A25-B978-377E75C99580.png` — PLUS yearly selected.
+  - `artifacts/android-paywall-card-parity-20260906/ios-attachments/E9A79F38-EFEB-4475-97F5-32659038FB5F.png` — PRO monthly selected.
+- Android implementation captures at the matching `393 x 852 dp` viewport:
+  - `android/app/src/test/screenshots/debug/com.riskdetectedan.app.visual.OnboardingGoldenTest.paywall_plus_yearly_gold_light.png`.
+  - `android/app/src/test/screenshots/debug/com.riskdetectedan.app.visual.OnboardingGoldenTest.paywall_pro_monthly_green_light.png`.
+- Combined same-state comparisons, inspected with iOS on the left and Android on the right:
+  - `artifacts/android-paywall-card-parity-20260906/qa-plus-ios-left-android-right.png`.
+  - `artifacts/android-paywall-card-parity-20260906/qa-pro-ios-left-android-right.png`.
+- Density normalization: iOS `1206 x 2622 px`; Android `1179 x 2556 px` (`3x`). Android was normalized to `1206 x 2622 px` for the full-view comparison.
+- User-directed Popular-badge refinement evidence, previous version left and revised version right:
+  - Full view: `artifacts/android-paywall-card-parity-20260906/qa-popular-badge-before-left-after-right.png`.
+  - Focused card edge: `artifacts/android-paywall-card-parity-20260906/qa-popular-badge-focused-before-left-after-right.png`.
+- States: PLUS yearly selected and PRO monthly selected, portrait, dark appearance.
+
+## Findings and fixes
+
+- P1 layout — Android changed the title/price HStack into a vertical stack based on remaining card width. iOS only stacks at accessibility Dynamic Type sizes. Fixed so normal phone widths always keep the plan name on the left and the price/caption column trailing on the right.
+- P1 badge geometry — Android applied the top inset, clipping, surface, and border to one container, so the discount and popular badges could not float over the card edge like iOS. Fixed by separating the card surface from the outer selectable container.
+- P2 comparison data — the deterministic Android preview reused the yearly total in the monthly row and omitted the PRO annual discount badge. Added independent monthly preview pricing and aligned both fixtures with the exact iOS reference values.
+- P2 Popular-badge scale/alignment — the first parity pass left the gold badge slightly too large and its center below the card's top border. Reduced it to a fixed `18 dp` height with `7.25 sp` text, then used a `9 dp` top inset and `-9 dp` offset. Pixel inspection confirms the badge spans `y=1346...1399` while the border begins at `y=1373`, so the border crosses the badge's `1372.5 px` center.
+- No actionable P0, P1, or P2 mismatch remains in the requested monthly/yearly selection-card scope.
+
+## Required fidelity surfaces
+
+- Typography: the existing shared Mulish family, weights, sizes, and two-line annual hierarchy match the iOS component contract; normal-size price columns remain unwrapped.
+- Spacing and layout: `12 dp` icon/content spacing, `16 dp` horizontal padding, `16 dp` radius, `1.5 dp` border, `10 dp` inter-card gap, and the centered/trailing badge positions are retained. The Popular badge now straddles the top border equally.
+- Colors and states: selected cream surface/border/icon, unselected translucent surface/border/icon, green trial copy, green discount capsule, and gold popular badge match the iOS tokens.
+- Icons and behavior: checked and unchecked radio states remain selectable, expose selected semantics, and retain the full card hit target.
+- Responsiveness: normal phone widths preserve the horizontal hierarchy; `1.3x` accessibility text keeps the existing stacked fallback and scrollable content with the CTA pinned.
+
+## Verification
+
+- iOS reference UI test: `1` test executed, `0` failures, five screenshots exported from the result bundle.
+- Focused Android Roborazzi verification: `2` tests executed with exact-pixel threshold `0`, both passed after recording the corrected baselines.
+- Kotlin compilation, Turkish/English resource verification, and Android legal-bundle verification passed as dependencies of the focused visual run.
+- No Android release bundle or Play Console submission was performed during this approval step.
+
+## Open questions
+
+- Awaiting visual approval before the Android release build.
+
+final result: passed
+
 # Android Sector Selection and Start Scan Parity QA
 
 ## Comparison target

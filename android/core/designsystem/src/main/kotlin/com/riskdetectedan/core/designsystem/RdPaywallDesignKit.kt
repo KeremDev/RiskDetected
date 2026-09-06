@@ -1481,6 +1481,7 @@ object RdPaywallDesignTag {
     const val AutoRenew = "in_app_paywall.auto_renew"
     const val FeatureMarquee = "in_app_paywall.feature_marquee"
     const val ComparisonTable = "in_app_paywall.comparison_table"
+    const val Compare = "in_app_paywall.compare"
     const val PlanYearly = "in_app_paywall.plan.yearly"
     const val PlanMonthly = "in_app_paywall.plan.monthly"
     const val CrossSellPro = "in_app_paywall.plus.pro_link"

@@ -441,5 +441,11 @@
   "rd_result_draft": "Draft",
   "rd_result_expert_approval": "Expert Review",
   "rd_score_report_title": "Create a report",
-  "rd_score_detailed_analysis_title": "Detailed analysis"
+  "rd_score_detailed_analysis_title": "Detailed analysis",
+  "rd_pdf_excel_rapor": "PDF/Excel Report",
+  "rd_result_upgrade_pro": "Upgrade to PRO",
+  "rd_paywall_dark_expert": "Expert Opinion",
+  "rd_paywall_dark_pro_cta": "Get PRO",
+  "rd_paywall_dark_reports": "PDF/Excel Reports",
+  "rd_paywall_dark_trial_disclosure_yearly_format": "%1$d days free, then %2$s / year. Cancel any time."
 }

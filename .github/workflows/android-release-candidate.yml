@@ -7,7 +7,7 @@ on:
         description: "Play Console'da kullanılmamış versionCode"
         required: true
         type: string
-        default: "10"
+        default: "13"
 
 permissions:
   contents: read
@@ -42,14 +42,14 @@ jobs:
         run: |
           actual=$(sed -n 's/^[[:space:]]*versionCode = \([0-9][0-9]*\)$/\1/p' android/app/build.gradle.kts)
           test "$actual" = "$EXPECTED_VERSION_CODE"
-          grep -q 'versionName = "2.0.0"' android/app/build.gradle.kts
+          grep -q 'versionName = "2.0.1"' android/app/build.gradle.kts
 
       - name: Verify production release notes
         run: |
-          test "$(wc -m < android/play-store/metadata/2.0.0/release-notes-tr.txt)" -le 500
-          test "$(wc -m < android/play-store/metadata/2.0.0/release-notes-en.txt)" -le 500
-          grep -q 'Kapalı test kullanıcılarımızın geri bildirimleri doğrultusunda' android/play-store/metadata/2.0.0/release-notes-tr.txt
-          grep -q 'Based on feedback from our closed-test users' android/play-store/metadata/2.0.0/release-notes-en.txt
+          test "$(wc -m < android/play-store/metadata/2.0.1/release-notes-tr.txt)" -le 500
+          test "$(wc -m < android/play-store/metadata/2.0.1/release-notes-en.txt)" -le 500
+          grep -q 'Üyelik ekranı' android/play-store/metadata/2.0.1/release-notes-tr.txt
+          grep -q 'membership screen' android/play-store/metadata/2.0.1/release-notes-en.txt
 
       - name: Verify unique migration timestamps
         run: |
@@ -247,7 +247,7 @@ jobs:
         run: |
           payload=$(jq -cn --arg build "$EXPECTED_VERSION_CODE" '{
             client_platform:"android",
-            client_app_version:"2.0.0",
+            client_app_version:"2.0.1",
             client_app_build:$build,
             api_contract_version:3,
             client_capabilities:{
@@ -305,7 +305,7 @@ jobs:
       - name: Upload release candidate evidence
         uses: actions/upload-artifact@v4
         with:
-          name: riskdetected-android-2.0.0-vc${{ inputs.expected_version_code }}-release-candidate
+          name: riskdetected-android-2.0.1-vc${{ inputs.expected_version_code }}-release-candidate
           retention-days: 30
           if-no-files-found: error
           path: |
@@ -316,4 +316,4 @@ jobs:
             android/app/build/outputs/native-debug-symbols/release/native-debug-symbols.zip
             android/app/build/outputs/native-debug-symbols/release/native-debug-symbols-unavailable.txt
             android/app/build/reports/lint-results-release.html
-            android/play-store/metadata/2.0.0
+            android/play-store/metadata/2.0.1

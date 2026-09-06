@@ -234,6 +234,7 @@ private fun PaywallDesignSurface(
         ),
         cta = RdPaywallDesignCta(
             title = ctaTitle(
+                plan = selectedPlan,
                 isPurchasing = isPurchasing,
                 currentPlanIncludesSelection = currentPlanIncludesSelection,
                 hasPackage = selectedPackage != null,
@@ -277,6 +278,7 @@ private fun PaywallDesignSurface(
 
 @Composable
 private fun ctaTitle(
+    plan: PaywallPlan,
     isPurchasing: Boolean,
     currentPlanIncludesSelection: Boolean,
     hasPackage: Boolean,
@@ -288,7 +290,10 @@ private fun ctaTitle(
     !hasPackage && hasLoadError -> stringResource(RdR.string.rd_tekrar_dene)
     !hasPackage -> stringResource(RdR.string.rd_paywall_design_cta_price_loading)
     offersTrial -> stringResource(RdR.string.rd_paywall_design_cta_start_trial)
-    else -> stringResource(RdR.string.rd_aboneligi_baslat)
+    else -> stringResource(
+        if (plan == PaywallPlan.Plus) RdR.string.rd_paywall_dark_plus_cta
+        else RdR.string.rd_paywall_dark_pro_cta,
+    )
 }
 
 /**
@@ -300,6 +305,7 @@ fun PaywallParityPreviewSurface(
     plan: PaywallPlan,
     billing: PaywallBilling,
     formattedPrice: String,
+    monthlyPrice: String = formattedPrice,
     monthlyEquivalent: String? = null,
     trialDays: Int? = null,
     discountPercent: Int? = null,
@@ -309,12 +315,13 @@ fun PaywallParityPreviewSurface(
         selectedBilling = billing.designBilling,
         yearlyPrice = formattedPrice,
         yearlyMonthlyEquivalent = monthlyEquivalent,
-        monthlyPrice = formattedPrice,
+        monthlyPrice = monthlyPrice,
         trialDays = trialDays,
         discountPercent = discountPercent,
         priceUnavailableText = stringResource(RdR.string.rd_paywall_design_price_loading),
         cta = RdPaywallDesignCta(
             title = ctaTitle(
+                plan = plan,
                 isPurchasing = false,
                 currentPlanIncludesSelection = false,
                 hasPackage = true,

@@ -115,7 +115,10 @@ fun OBTimelinePaywallScreen(
                 selectedPackage == null -> stringResource(RdR.string.rd_tekrar_dene)
                 trialDays != null && selectedBilling == OBPaywallBilling.Yearly ->
                     stringResource(RdR.string.rd_paywall_design_cta_start_trial)
-                else -> stringResource(RdR.string.rd_aboneligi_baslat)
+                else -> stringResource(
+                    if (selectedPlan == OBPaywallPlan.Plus) RdR.string.rd_paywall_dark_plus_cta
+                    else RdR.string.rd_paywall_dark_pro_cta,
+                )
             },
             isLoading = isPurchasing,
             isDisabled = isPurchasing || isLoading || (selectedPackage != null && activity == null),
@@ -192,7 +195,7 @@ fun OBTimelinePaywallPreviewSurface(
             title = if (trialDays != null) {
                 stringResource(RdR.string.rd_paywall_design_cta_start_trial)
             } else {
-                stringResource(RdR.string.rd_aboneligi_baslat)
+                stringResource(RdR.string.rd_paywall_dark_plus_cta)
             },
         ),
     )
