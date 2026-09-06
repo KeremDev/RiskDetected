@@ -91,3 +91,26 @@ Deno.test("attested iOS release policy stays safe for build 62 and App Review", 
   assertStringIncludes(normalizedSQL, "'soft_update_enabled', true");
   assertStringIncludes(normalizedSQL, "apps.apple.com/tr/app/riskdetected");
 });
+
+Deno.test("live iOS build 88 is not offered the unreleased build 89", async () => {
+  const reconciliationMigration = await readTextIfAllowed(
+    new URL(
+      "../../migrations/20260906181130_reconcile_ios_build_88_release_policy.sql",
+      import.meta.url,
+    ),
+  );
+  if (reconciliationMigration == null) return;
+
+  const normalizedSQL = reconciliationMigration
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+  assertStringIncludes(normalizedSQL, "'minimum_supported_build', 88");
+  assertStringIncludes(normalizedSQL, "'latest_build', 88");
+  assertStringIncludes(normalizedSQL, "'hard_update_enabled', true");
+  assertStringIncludes(normalizedSQL, "'soft_update_enabled', true");
+  assertStringIncludes(
+    normalizedSQL,
+    "'policy_version', 'build-88-appstore-general-release-reconciled'",
+  );
+});
