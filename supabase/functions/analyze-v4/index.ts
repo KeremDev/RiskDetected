@@ -828,7 +828,8 @@ serve(async (req) => {
     }
     if (
       config.providerPool === "free_standard" &&
-      analysis.plan_at_creation !== record(snapshot.compute_routing).product_plan
+      analysis.plan_at_creation !==
+        record(snapshot.compute_routing).product_plan
     ) {
       throw new Error("free_pool_plan_mismatch");
     }
