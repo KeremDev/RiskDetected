@@ -139,5 +139,7 @@ Deno.test("published iOS build 89 keeps build 88 supported and validates analysi
   assertStringIncludes(normalizedSQL, "analysis_engine_v4");
   assertStringIncludes(normalizedSQL, "analysis_result_hub_v1");
   assertStringIncludes(normalizedSQL, "enabled_ios_builds");
+  assertStringIncludes(normalizedSQL, "jsonb_array_elements_text");
+  assertStringIncludes(normalizedSQL, "'[\"89\"]'::jsonb");
   assertStringIncludes(normalizedSQL, "? '89'");
 });
