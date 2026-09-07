@@ -114,3 +114,30 @@ Deno.test("live iOS build 88 is not offered the unreleased build 89", async () =
     "'policy_version', 'build-88-appstore-general-release-reconciled'",
   );
 });
+
+Deno.test("published iOS build 89 keeps build 88 supported and validates analysis gates", async () => {
+  const releaseMigration = await readTextIfAllowed(
+    new URL(
+      "../../migrations/20260907020258_publish_ios_build_89_release_policy.sql",
+      import.meta.url,
+    ),
+  );
+  if (releaseMigration == null) return;
+
+  const normalizedSQL = releaseMigration
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+  assertStringIncludes(normalizedSQL, "'minimum_supported_build', 88");
+  assertStringIncludes(normalizedSQL, "'latest_build', 89");
+  assertStringIncludes(normalizedSQL, "'hard_update_enabled', true");
+  assertStringIncludes(normalizedSQL, "'soft_update_enabled', true");
+  assertStringIncludes(
+    normalizedSQL,
+    "'policy_version', 'build-89-appstore-general-release'",
+  );
+  assertStringIncludes(normalizedSQL, "analysis_engine_v4");
+  assertStringIncludes(normalizedSQL, "analysis_result_hub_v1");
+  assertStringIncludes(normalizedSQL, "enabled_ios_builds");
+  assertStringIncludes(normalizedSQL, "? '89'");
+});
