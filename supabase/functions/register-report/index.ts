@@ -50,7 +50,8 @@ type ReportContentScope =
   | "legacy_combined"
   | "risk_analysis"
   | "expert_recommendations"
-  | "approved_notebook";
+  | "approved_notebook"
+  | "training_recommendations";
 
 type ReportIntent = {
   id: string;
@@ -247,7 +248,7 @@ function normalizeMethod(value: unknown): "fine_kinney" | "matrix_5x5" {
 
 function normalizeContentScope(value: unknown): ReportContentScope {
   return value === "risk_analysis" || value === "expert_recommendations" ||
-      value === "approved_notebook"
+      value === "approved_notebook" || value === "training_recommendations"
     ? value
     : "legacy_combined";
 }

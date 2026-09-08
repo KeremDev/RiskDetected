@@ -143,3 +143,32 @@ Deno.test("published iOS build 89 keeps build 88 supported and validates analysi
   assertStringIncludes(normalizedSQL, "'[\"89\"]'::jsonb");
   assertStringIncludes(normalizedSQL, "? '89'");
 });
+
+Deno.test("published iOS build 90 keeps build 88 supported and opens both analysis gates", async () => {
+  const releaseMigration = await readTextIfAllowed(
+    new URL(
+      "../../migrations/20260908040102_publish_ios_build_90_release_policy.sql",
+      import.meta.url,
+    ),
+  );
+  if (releaseMigration == null) return;
+
+  const normalizedSQL = releaseMigration
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+  assertStringIncludes(normalizedSQL, "'minimum_supported_build', 88");
+  assertStringIncludes(normalizedSQL, "'latest_build', 90");
+  assertStringIncludes(normalizedSQL, "'hard_update_enabled', true");
+  assertStringIncludes(normalizedSQL, "'soft_update_enabled', true");
+  assertStringIncludes(
+    normalizedSQL,
+    "'policy_version', 'build-90-appstore-general-release'",
+  );
+  assertStringIncludes(normalizedSQL, "analysis_engine_v4");
+  assertStringIncludes(normalizedSQL, "analysis_result_hub_v1");
+  assertStringIncludes(normalizedSQL, "enabled_ios_builds");
+  assertStringIncludes(normalizedSQL, "jsonb_array_elements_text");
+  assertStringIncludes(normalizedSQL, "'[\"90\"]'::jsonb");
+  assertStringIncludes(normalizedSQL, "? '90'");
+});

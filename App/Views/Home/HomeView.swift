@@ -250,7 +250,6 @@ struct HomeView: View {
                     onClose: { showSourceDialog = false }
                 )
             }
-            .presentationDetents([.fraction(0.72), .large])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -273,7 +272,6 @@ struct HomeView: View {
                     }
                 }
             )
-            .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
         }
@@ -2548,7 +2546,7 @@ private struct PhotoMediaTraySheet: View {
     private var trayCTA: Color { isDarkMode ? Color.rdGreen : Color.rdOnyx }
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
+        RDContentSizedSheet {
             VStack(spacing: 14) {
                 header
 
@@ -2585,14 +2583,14 @@ private struct PhotoMediaTraySheet: View {
             .padding(.horizontal, layoutProfile.horizontalPadding)
             .padding(.top, 18)
             .padding(.bottom, 16)
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+        } footer: {
             primaryButton
                 .padding(.horizontal, layoutProfile.horizontalPadding)
-                .padding(.vertical, 10)
+                .padding(.top, 6)
+                .padding(.bottom, 6)
                 .background(trayBackground.shadow(.drop(color: .black.opacity(0.08), radius: 8, y: -3)))
         }
-        .background(trayBackground)
+        .background(trayBackground.ignoresSafeArea())
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("home.photo_tray")
     }

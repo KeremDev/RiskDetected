@@ -17,7 +17,8 @@ struct CanvasSheet: View {
     )
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        RDContentSizedSheet {
+          VStack(alignment: .leading, spacing: 0) {
             // Başlık
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -68,10 +69,11 @@ struct CanvasSheet: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 1)
             }
+            .frame(height: 168)
             .padding(.bottom, 12)
-
-            Spacer(minLength: 0)
-
+          }
+          .padding(.top, 8)
+        } footer: {
             // Onay butonu
             RDButton(
                 title: RDLocalization.string("analysis.canvas.sheet.onayla.ve.devam.et.8d924a02", table: .analysis, fallback: "Onayla ve devam et"),
@@ -86,9 +88,8 @@ struct CanvasSheet: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
+            .padding(.bottom, 6)
         }
-        .padding(.top, 8)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color.rdPaper.ignoresSafeArea())
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("canvas_sheet")

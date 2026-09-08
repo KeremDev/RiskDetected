@@ -180,6 +180,7 @@ enum AppClientMetadata {
             "report_snapshot_v2": true,
             "safety_claim_v4_scoreless": true,
             "analysis_result_hub_v1": true,
+            "training_reports_v1": true,
             "global_localization_wave1":
                 RDGlobalLocalizationBuildGate.isCompiledIn
         ]
@@ -749,6 +750,7 @@ final class AnalysisService {
                 RDConfig.generateExcelReportFunctionName,
                 options: FunctionInvokeOptions(body: body)
             )
+            MetaAppEventsService.shared.reportCreated(id: response.report.id, format: "xlsx")
             return response.report
         } catch let FunctionsError.httpError(code, data) {
             let payload = Self.functionErrorPayload(from: data)
@@ -926,6 +928,7 @@ final class AnalysisService {
                         RDConfig.registerReportFunctionName,
                         options: FunctionInvokeOptions(body: payload)
                     )
+                    MetaAppEventsService.shared.reportCreated(id: row.id, format: "pdf")
                     return row
                 } catch {
                     lastMetadataError = error
@@ -2400,6 +2403,15 @@ final class AnalysisService {
                     statusSnapshot: snapshot
                 )
                 InFlightAnalysisStore.shared.clear(analysisID: analysisID)
+                MetaAppEventsService.shared.analysisCompleted(id: analysisID)
+                if let userID = supabase.currentUserID {
+                    Task { [weak self] in
+                        guard let self,
+                              let count = try? await self.countRows(table: "analyses", filters: { $0.eq("status", value: "completed") }),
+                              count == 1, self.supabase.currentUserID == userID else { return }
+                        MetaAppEventsService.shared.firstAnalysis(userID: userID)
+                    }
+                }
                 return bundle
             case "failed":
                 InFlightAnalysisStore.shared.clear(analysisID: analysisID)

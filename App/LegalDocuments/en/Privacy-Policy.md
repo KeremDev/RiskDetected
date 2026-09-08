@@ -1,9 +1,9 @@
 # RiskDetected Privacy Policy
 
-Effective date: 31 July 2026  
+Effective date: 8 September 2026  
 Document set: en-global-v1  
-Version: privacy-en-2026-07-31.1  
-Last updated: 31 July 2026
+Version: privacy-en-2026-09-08.1  
+Last updated: 8 September 2026
 
 This Privacy Policy explains how RiskDetected collects, uses, stores,
 discloses and deletes personal information in the RiskDetected mobile
@@ -350,3 +350,7 @@ the document set, version and checksum shown to the user.
 Please describe the request and the country whose privacy law you believe
 applies. RiskDetected may request information needed to verify identity and
 respond securely.
+
+## iOS advertising and conversion measurement — 8 September 2026
+
+RiskDetected for iOS uses Meta App Events to measure app advertising and in-app conversions. Launch, registration, completed analysis, report creation, trial and subscription events may be shared with Meta together with app/device metadata, an SDK installation identifier, product, currency and verified transaction amount. This integration does not send site photographs, analysis/report content, your name or email address. This version does not collect IDFA or request cross-app tracking permission. SDK event use is limited to analytics and conversion measurement. Apple’s privacy-preserving SKAdNetwork mechanism supports install measurement; individual cross-app advertising matching is not the intended use.

@@ -1092,6 +1092,52 @@ final class RiskDetectedUITests: XCTestCase {
         add(reportSheet)
     }
 
+    func testIOSSheetsFitContentAtExtraLargeText() throws {
+        let textSize = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryXL"]
+        launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_RESULT", "RD_UI_TEST_RESULT_HUB", "RD_UI_TEST_LIGHT_MODE"] + textSize)
+        tap("result.hub.report", timeout: 12)
+        let riskCard = waitFor("result.report_sheet.option.riskTable")
+        attachScreenshot("ios-xl-report-options-before-measure")
+        let cta = waitFor("Rapor türü seçin")
+        XCTAssertTrue(riskCard.isHittable)
+        XCTAssertGreaterThanOrEqual(cta.frame.minY - riskCard.frame.maxY, 0)
+        XCTAssertLessThan(cta.frame.minY - riskCard.frame.maxY, 28)
+        attachScreenshot("ios-xl-report-options")
+        riskCard.tap()
+        let format = waitFor("result.report_sheet.format")
+        let expandedCTA = waitFor("PDF Raporu Oluştur")
+        XCTAssertTrue(format.isHittable)
+        XCTAssertGreaterThanOrEqual(expandedCTA.frame.minY - format.frame.maxY, 0)
+        XCTAssertLessThan(expandedCTA.frame.minY - format.frame.maxY, 28)
+        attachScreenshot("ios-xl-report-expanded")
+
+        launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_RESULT", "RD_UI_TEST_RESULT_HUB", "RD_UI_TEST_LIGHT_MODE"] + textSize)
+        tap("result.hub.section.training_recommendations", timeout: 12)
+        attachScreenshot("ios-xl-training")
+        tap("result.hub.report")
+        XCTAssertTrue(waitFor("PDF Raporu Oluştur").isEnabled, "Plus can export training recommendations")
+        attachScreenshot("ios-xl-training-report")
+
+        for tier in ["RD_UI_TEST_FREE_TIER", "RD_UI_TEST_PRO_TIER"] {
+            launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_RESULT", "RD_UI_TEST_RESULT_HUB", "RD_UI_TEST_LIGHT_MODE", tier] + textSize)
+            tap("result.hub.section.training_recommendations", timeout: 12)
+            tap("result.hub.report")
+            if tier == "RD_UI_TEST_FREE_TIER" {
+                XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 12).exists)
+            } else {
+                XCTAssertTrue(waitFor("PDF Raporu Oluştur").isEnabled)
+            }
+        }
+
+        for fixture in ["RD_UI_TEST_OPEN_PHOTO_TRAY", "RD_UI_TEST_PHOTO_TRAY_WITH_PHOTOS", "RD_UI_TEST_OPEN_CANVAS_SHEET"] {
+            launchMainApp(extraArguments: [fixture, "RD_UI_TEST_LIGHT_MODE"] + textSize)
+            let action = waitFor(fixture == "RD_UI_TEST_OPEN_CANVAS_SHEET" ? "canvas_sheet.confirm" : "home.photo_tray.primary", timeout: 12)
+            XCTAssertTrue(action.isHittable)
+            XCTAssertLessThan(app.frame.maxY - action.frame.maxY, 65)
+            attachScreenshot("ios-xl-\(fixture)")
+        }
+    }
+
     func testResultHubRiskReportSheetIsCompactAndEmphasizesRiskTable() throws {
         launchMainApp(extraArguments: [
             "RD_UI_TEST_OPEN_RESULT",

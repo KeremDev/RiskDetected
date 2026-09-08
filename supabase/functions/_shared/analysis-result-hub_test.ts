@@ -1,10 +1,30 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import {
+  canReportSection,
   redactFindingForFree,
   resolveResultHubTier,
   resultHubGateOpen,
   sectionAccess,
 } from "./analysis-result-hub.ts";
+
+Deno.test("training reports require a paid plan and a capable renderer", () => {
+  for (const tier of ["free", "plus", "pro"] as const) {
+    assertEquals(
+      canReportSection("training_recommendations", tier, true),
+      tier !== "free",
+    );
+    assertEquals(
+      canReportSection("training_recommendations", tier, false),
+      false,
+    );
+    assertEquals(canReportSection("risk_analysis", tier), true);
+    assertEquals(
+      canReportSection("expert_recommendations", tier),
+      tier !== "free",
+    );
+    assertEquals(canReportSection("approved_notebook", tier), tier !== "free");
+  }
+});
 
 Deno.test("cancelled renewal remains product paid until active period expires", () => {
   assertEquals(

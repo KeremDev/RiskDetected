@@ -265,6 +265,7 @@ final class AnalysisResultHubService {
         let isFree = CommandLine.arguments.contains("RD_UI_TEST_FREE_TIER") ||
             ProcessInfo.processInfo.environment["RD_UI_TEST_FREE_TIER"] == "1"
         let premiumAccess = isFree ? "teaser" : "full"
+        let isPro = CommandLine.arguments.contains("RD_UI_TEST_PRO_TIER") || ProcessInfo.processInfo.environment["RD_UI_TEST_PRO_TIER"] == "1"
         let premiumCanEdit = isFree ? "false" : "true"
         let isSingleFinding = CommandLine.arguments.contains("RD_UI_TEST_SINGLE_FINDING") ||
             ProcessInfo.processInfo.environment["RD_UI_TEST_SINGLE_FINDING"] == "1"
@@ -286,7 +287,7 @@ final class AnalysisResultHubService {
           "ui_version": "analysis-result-hub-v1",
           "analysis_id": "\(analysisID.uuidString)",
           "analysis_edit_version": 0,
-          "tier": "\(isFree ? "free" : "plus")",
+          "tier": "\(isFree ? "free" : isPro ? "pro" : "plus")",
           "language": "\(language.rawValue)",
           "disclaimers": {
             "expert": "Bu içerik bağlayıcı uzman görüşü değildir; saha teyidi ve uzman değerlendirmesi gerekir.",
@@ -307,7 +308,7 @@ final class AnalysisResultHubService {
               ]
             },
             {
-              "id": "training_recommendations", "access": "\(premiumAccess)", "count": 2, "can_edit": false, "can_report": false,
+              "id": "training_recommendations", "access": "\(premiumAccess)", "count": 2, "can_edit": false, "can_report": \(!isFree),
               "items": [
                 {"id":"40000000-0000-4000-8000-000000000001","analysis_id":"\(analysisID.uuidString)","title":"Yüksekte Güvenli Çalışma Eğitimi","category_label":"Göreve özgü uygulamalı eğitim","audience_label":"İskele kuran ve kullanan çalışanlar","text":"Açık kenar, güvenli erişim ve düşmeye karşı koruma tedbirlerini saha uygulamasıyla pekiştirir.","duration_label":"Eğitim süresi","duration_value":"En az 8 saat","duration_note":"İşyeri riskleri değiştiğinde yenilenir.","source_photo_indices":[1],"display_order":0},
                 {"id":"40000000-0000-4000-8000-000000000002","analysis_id":"\(analysisID.uuidString)","title":"Düzen ve Temizlik Farkındalığı","category_label":"Saha güvenliği","audience_label":"Sahada görevli tüm çalışanlar","text":"Geçiş yollarında malzeme birikimini, takılma tehlikelerini ve güvenli depolama uygulamalarını kapsar.","source_photo_indices":[2],"display_order":1}

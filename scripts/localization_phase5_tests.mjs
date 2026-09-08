@@ -19,7 +19,7 @@ const test = (name, body) => {
 const manifest = JSON.parse(read("App/LegalDocuments/en/manifest.json"));
 const legalApproval = JSON.parse(
   read(
-    "docs/localization/phase-5/LEGAL_COUNSEL_APPROVAL_2026-07-31_V2.json",
+    "docs/localization/phase-5/LEGAL_COUNSEL_APPROVAL_2026-09-08_META.json",
   ),
 );
 const legalService = read("App/Services/LegalDocumentService.swift");
@@ -108,20 +108,20 @@ test("English legal review and production publication are approved", () => {
     manifest.reviewer_qualification,
     "Hukuk belgelerini inceleme ve onaylama yetkinliğine sahip.",
   );
-  assert.equal(manifest.reviewed_at, "2026-07-31T08:02:40Z");
+  assert.equal(manifest.reviewed_at, "2026-09-08T10:16:12Z");
   assert.equal(
     manifest.counsel_approval_record_path,
-    "docs/localization/phase-5/LEGAL_COUNSEL_APPROVAL_2026-07-31_V2.json",
+    "docs/localization/phase-5/LEGAL_COUNSEL_APPROVAL_2026-09-08_META.json",
   );
   assert.equal(
     manifest.counsel_approval_record_sha256,
     sha256(
       read(
-        "docs/localization/phase-5/LEGAL_COUNSEL_APPROVAL_2026-07-31_V2.json",
+        "docs/localization/phase-5/LEGAL_COUNSEL_APPROVAL_2026-09-08_META.json",
       ),
     ),
   );
-  assert.equal(manifest.public_urls_verified_at, "2026-07-31T08:08:29Z");
+  assert.equal(manifest.public_urls_verified_at, "2026-09-08T10:19:53Z");
   assert.deepEqual(manifest.public_urls, {
     terms:
       "https://riskdetected.com/legal-documents/en/Terms-of-Use.md",
@@ -141,7 +141,7 @@ test("English legal approval and manifest cover every exact document hash", () =
   assert.equal(legalApproval.reviewer_name, "Kerem");
   assert.equal(
     legalApproval.reviewed_preapproval_manifest_sha256,
-    "5a07bc27485e34dd9c3accad1507c5d02823c8cad7c99b5e0a9e1fdf48ef3397",
+    "008108dcb03fcc6db4955dbdc97c4e8f2091d78c8807832713de3ca9c051ad07",
   );
   for (const document of manifest.documents) {
     const data = read(`App/LegalDocuments/${document.path}`);

@@ -392,6 +392,9 @@ final class AuthService: ObservableObject {
         }
 
         await recordFirstSeenDeviceRegionIfNeeded(userID: user.id)
+        if profile?.id == user.id {
+            MetaAppEventsService.shared.registration(userID: user.id, createdAt: user.createdAt, lastSignInAt: user.lastSignInAt)
+        }
         schedulePlatformTelemetryIfNeeded(userID: user.id)
     }
 

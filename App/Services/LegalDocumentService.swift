@@ -146,7 +146,7 @@ enum RDLegalReleaseGate {
             let sources = [
                 ("kvkk", LegalAcceptanceService.kvkkVersion, "KVKK-Aydinlatma-ve-Acik-Riza-Metni"),
                 ("terms", LegalAcceptanceService.termsVersion, "Kullanim-Kosullari"),
-                ("privacy", "privacy-2026-06-10", "Gizlilik-Politikasi"),
+                ("privacy", "privacy-ios-2026-09-08", "Gizlilik-Politikasi"),
                 ("consent", LegalAcceptanceService.aiProcessingVersion, "Acik-Riza-Beyani"),
             ]
             let entries = sources.compactMap { kind, version, fileName -> String? in
@@ -279,7 +279,7 @@ enum LegalDocumentKind: String, CaseIterable, Codable, Identifiable {
         case .kvkk: return LegalAcceptanceService.kvkkVersion
         case .consent: return LegalAcceptanceService.aiProcessingVersion
         case .terms: return LegalAcceptanceService.termsVersion
-        case .privacy: return "privacy-2026-06-10"
+        case .privacy: return "privacy-ios-2026-09-08"
         }
     }
 

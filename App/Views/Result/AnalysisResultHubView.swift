@@ -68,8 +68,6 @@ struct AnalysisResultHubView: View {
     @State private var reportSheetPresented = false
     @State private var reportKind: AnalysisResultHubReportKind?
     @State private var reportFormat = "pdf"
-    @State private var reportSheetHeight = ReferenceReportSheetLayout.initialHeight
-    @State private var reportSheetDetent: PresentationDetent = .height(ReferenceReportSheetLayout.compactHeight)
     @State private var funnelSessionID = UUID()
     @State private var selectedTrainingGroup: String?
 
@@ -148,17 +146,6 @@ struct AnalysisResultHubView: View {
         case "plus": return .plus
         default: return .free
         }
-    }
-    private var reportSheetDetents: Set<PresentationDetent> {
-        if selectedSection != .riskAnalysis {
-            return [ReferenceReportSheetLayout.nonRiskDetent]
-        }
-
-        // Keep the currently selected value registered while the measured height
-        // changes. This prevents UIKit from jumping to an unrelated detent during
-        // the same layout transaction. `.large` remains a user-expandable escape
-        // hatch when future report fields exceed the available fitted height.
-        return [.height(reportSheetHeight), reportSheetDetent, .large]
     }
 
     var body: some View {
@@ -256,8 +243,6 @@ struct AnalysisResultHubView: View {
                 selectedCompany: $selectedCompany,
                 reportKind: $reportKind,
                 reportFormat: $reportFormat,
-                preferredHeight: $reportSheetHeight,
-                selectedDetent: $reportSheetDetent,
                 onClose: { reportSheetPresented = false },
                 onUpgrade: {
                     reportSheetPresented = false
@@ -274,7 +259,6 @@ struct AnalysisResultHubView: View {
                     onCreateReport(selectedSection, Array(selectedIDs), format, reportKind)
                 }
             )
-            .presentationDetents(reportSheetDetents, selection: $reportSheetDetent)
             .presentationDragIndicator(.hidden)
         }
         .sheet(item: $editingNotebook) { item in notebookEditor(item) }
@@ -295,13 +279,16 @@ struct AnalysisResultHubView: View {
 
     // MARK: Connected section selector
 
+    @ScaledMetric(relativeTo: .caption) private var sectionTabHeight: CGFloat = 80
+    @ScaledMetric(relativeTo: .caption) private var sectionTitleHeight: CGFloat = 30
+
     private func sectionSelector(profile: RDLayoutProfile) -> some View {
         GeometryReader { proxy in
             let count = max(1, hub.sections.count)
             let gaps = CGFloat(max(0, count - 1)) * 6.7
-            let canFitAll = profile.widthClass == .wide && !profile.isAccessibilityText
+            let canFitAll = profile.widthClass != .narrow && !profile.isAccessibilityText
             let fitted = (proxy.size.width - (profile.horizontalPadding * 2) - gaps) / CGFloat(count)
-            let tabWidth = canFitAll ? max(92, fitted) : max(104, fitted)
+            let tabWidth = canFitAll ? fitted : max(profile.isAccessibilityText ? 160 : 104, fitted)
 
             ScrollViewReader { tabProxy in
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -310,7 +297,7 @@ struct AnalysisResultHubView: View {
                             sectionTab(
                                 section,
                                 width: tabWidth,
-                                height: profile.isAccessibilityText ? 116 : 92
+                                height: sectionTabHeight
                             )
                             .id(section.id)
                         }
@@ -318,7 +305,7 @@ struct AnalysisResultHubView: View {
                     .padding(.horizontal, profile.horizontalPadding)
                     .frame(
                         minWidth: proxy.size.width,
-                        minHeight: profile.isAccessibilityText ? 124 : 100,
+                        minHeight: sectionTabHeight + 8,
                         alignment: .bottomLeading
                     )
                 }
@@ -336,7 +323,7 @@ struct AnalysisResultHubView: View {
                     .frame(height: 1.5)
             }
         }
-        .frame(height: profile.isAccessibilityText ? 124 : 100)
+        .frame(height: sectionTabHeight + 8)
         .background(Color.rdResultBackground)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("result.hub.section_selector")
@@ -371,20 +358,22 @@ struct AnalysisResultHubView: View {
                 }
             }
         } label: {
-            VStack(spacing: 5) {
+            VStack(spacing: 4) {
                 Image(systemName: sectionIcon(section.id))
-                    .font(RDTypography.font(size: 20, weight: .regular))
+                    .font(RDTypography.font(size: 18, weight: .regular))
                     .foregroundStyle(selected ? sectionAccentColor(section.id) : Color.rdResultPrimaryText)
                 Text(section.id.compactTitle(language: language))
-                    .font(referenceFont(11.5, .heavy))
+                    .font(referenceFont(11, .heavy))
                     .foregroundStyle(Color.rdResultPrimaryText)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .minimumScaleFactor(0.85)
+                    .frame(height: sectionTitleHeight)
                 Text("\(section.count) \(section.id.countLabel(language: language, count: section.count))")
-                    .font(referenceFont(10, .semibold))
+                    .font(referenceFont(9.5, .semibold))
                     .foregroundStyle(Color.rdResultSecondaryText)
-                    .lineLimit(2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                     .multilineTextAlignment(.center)
             }
             .frame(width: width, height: height)
@@ -392,10 +381,6 @@ struct AnalysisResultHubView: View {
                 Group {
                     if selected {
                         ConnectedTabFill(cornerRadius: 8)
-                            .fill(tabSurface)
-                    }
-                    else {
-                        RoundedRectangle(cornerRadius: 6)
                             .fill(tabSurface)
                     }
                 }
@@ -961,7 +946,8 @@ struct AnalysisResultHubView: View {
     private var nonRiskSummary: some View {
         let isExpert = selectedSection == .expertRecommendations
         let isTraining = selectedSection == .trainingRecommendations
-        return HStack(alignment: .top, spacing: 11) {
+        return VStack(alignment: .leading, spacing: 10) {
+          HStack(alignment: .top, spacing: 11) {
             Image(systemName: isTraining
                   ? "graduationcap"
                   : isExpert ? "lightbulb" : "book.closed")
@@ -976,12 +962,6 @@ struct AnalysisResultHubView: View {
                     .foregroundStyle(.white)
                     .fixedSize(horizontal: false, vertical: true)
                 premiumPill
-                Text(isTraining
-                     ? copy("analysis.result_hub.v2.analizde.gorulen.tehlike.ve.ekipmanlara.go.ffeb2cda", "Analizde görülen tehlike ve ekipmanlara göre, ilgili çalışan gruplarına hangi eğitimlerin anlamlı olduğunu gösterir. Kişilerin mevcut belgeleri hakkında bir tespit içermez.", "Shows which training is meaningful for each group of workers, based on the hazards and equipment seen in the analysis. It makes no claim about anyone's existing certificates.")
-                     : isExpert ? copy("analysis.result_hub.v2.analiz.yapt.g.n.z.fotograflar.ozelinde.uzm.8a305d0f", "Analiz yaptığınız fotoğraflar özelinde uzmanlık gerektiren bilgilerin yer aldığı alandır. İşyerinize uygunluğunu kontrol ediniz. PLUS ve PRO üyelerine özeldir.", "This area contains expert information specific to the photos you analyzed. Check that it is suitable for your workplace. Available exclusively to PLUS and PRO members.")
-                     : copy("analysis.result_hub.v2.analiz.bulgular.ndan.uretilen.uzman.degerl.c8db360c", "Analiz bulgularından üretilen, uzman değerlendirmesine sunulan defter taslakları.", "Safety Log drafts created from analysis findings for expert review."))
-                    .font(referenceFont(11, .medium)).foregroundStyle(.white.opacity(0.78)).lineSpacing(1)
-                    .fixedSize(horizontal: false, vertical: true)
             }
             .layoutPriority(1)
             Spacer(minLength: 0)
@@ -999,6 +979,13 @@ struct AnalysisResultHubView: View {
             }
             .foregroundStyle(.white)
             .fixedSize(horizontal: true, vertical: false)
+          }
+          Text(isTraining
+               ? copy("analysis.result_hub.v2.analizde.gorulen.tehlike.ve.ekipmanlara.go.ffeb2cda", "Analizde görülen tehlike ve ekipmanlara göre, ilgili çalışan gruplarına hangi eğitimlerin anlamlı olduğunu gösterir. Kişilerin mevcut belgeleri hakkında bir tespit içermez.", "Shows which training is meaningful for each group of workers, based on the hazards and equipment seen in the analysis. It makes no claim about anyone's existing certificates.")
+               : isExpert ? copy("analysis.result_hub.v2.analiz.yapt.g.n.z.fotograflar.ozelinde.uzm.8a305d0f", "Analiz yaptığınız fotoğraflar özelinde uzmanlık gerektiren bilgilerin yer aldığı alandır. İşyerinize uygunluğunu kontrol ediniz. PLUS ve PRO üyelerine özeldir.", "This area contains expert information specific to the photos you analyzed. Check that it is suitable for your workplace. Available exclusively to PLUS and PRO members.")
+               : copy("analysis.result_hub.v2.analiz.bulgular.ndan.uretilen.uzman.degerl.c8db360c", "Analiz bulgularından üretilen, uzman değerlendirmesine sunulan defter taslakları.", "Safety Log drafts created from analysis findings for expert review."))
+              .font(referenceFont(11, .medium)).foregroundStyle(.white.opacity(0.78)).lineSpacing(1)
+              .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 14).padding(.vertical, 12)
         .frame(maxWidth: .infinity, minHeight: 88)
@@ -2129,7 +2116,7 @@ struct AnalysisResultHubView: View {
                     .frame(maxWidth: .infinity)
             }
         }
-        .padding(.horizontal, profile.horizontalPadding).padding(.top, 9).padding(.bottom, 10)
+        .padding(.horizontal, profile.horizontalPadding).padding(.top, 9).padding(.bottom, 2)
         .background(Color.rdResultElevatedSurface.shadow(.drop(color: Color.black.opacity(0.22), radius: 9, y: -6)))
     }
 
@@ -2178,9 +2165,6 @@ struct AnalysisResultHubView: View {
             } else if !selectedIDs.isEmpty {
                 reportKind = selectedSection == .riskAnalysis ? nil : .section
                 reportFormat = "pdf"
-                let initialHeight = ReferenceReportSheetLayout.initialHeight(for: selectedSection)
-                reportSheetHeight = initialHeight
-                reportSheetDetent = .height(initialHeight)
                 reportSheetPresented = true
             }
         } label: {
@@ -3078,66 +3062,6 @@ struct FeedbackThanksToast: View {
 
 // MARK: Report sheet
 
-private enum ReferenceReportSheetLayout {
-    static let compactHeight: CGFloat = 364
-    static let nonRiskHeight: CGFloat = 338
-    static let initialHeight = compactHeight
-    static let compactDetent: PresentationDetent = .height(compactHeight)
-    static let nonRiskDetent: PresentationDetent = .height(nonRiskHeight)
-
-    static func initialHeight(for section: AnalysisResultSectionID) -> CGFloat {
-        section == .riskAnalysis ? compactHeight : nonRiskHeight
-    }
-
-    @MainActor
-    static func fittedHeight(for measuredContentHeight: CGFloat) -> CGFloat {
-        let window = UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows)
-            .first(where: \UIWindow.isKeyWindow)
-        let screenHeight = window?.bounds.height ?? 844
-        let topInset = window?.safeAreaInsets.top ?? 47
-        let bottomInset = window?.safeAreaInsets.bottom ?? 34
-
-        // A custom detent excludes the system bottom safe-area. The sheet itself
-        // draws through that area, so subtract it once and retain a small optical
-        // buffer for shadows and fractional layout rounding.
-        let requested = ceil(measuredContentHeight - bottomInset + 12)
-        let maximum = screenHeight - topInset - bottomInset - 12
-        return min(maximum, max(compactHeight, requested))
-    }
-}
-
-private enum ReferenceReportSheetMeasuredRegion: Hashable {
-    case header
-    case content
-    case footer
-}
-
-private struct ReferenceReportSheetRegionHeightKey: PreferenceKey {
-    static var defaultValue: [ReferenceReportSheetMeasuredRegion: CGFloat] = [:]
-
-    static func reduce(
-        value: inout [ReferenceReportSheetMeasuredRegion: CGFloat],
-        nextValue: () -> [ReferenceReportSheetMeasuredRegion: CGFloat]
-    ) {
-        value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
-    }
-}
-
-private extension View {
-    func reportSheetMeasuredHeight(_ region: ReferenceReportSheetMeasuredRegion) -> some View {
-        background {
-            GeometryReader { proxy in
-                Color.clear.preference(
-                    key: ReferenceReportSheetRegionHeightKey.self,
-                    value: [region: proxy.size.height]
-                )
-            }
-        }
-    }
-}
-
 private struct ReferenceReportSheet: View {
     let section: AnalysisResultSectionID
     let language: RDLanguage
@@ -3151,8 +3075,6 @@ private struct ReferenceReportSheet: View {
     @Binding var selectedCompany: Company?
     @Binding var reportKind: AnalysisResultHubReportKind?
     @Binding var reportFormat: String
-    @Binding var preferredHeight: CGFloat
-    @Binding var selectedDetent: PresentationDetent
     let onClose: () -> Void
     let onUpgrade: () -> Void
     let onGenerate: () -> Void
@@ -3180,7 +3102,8 @@ private struct ReferenceReportSheet: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        RDContentSizedSheet {
+          VStack(spacing: 0) {
             VStack(spacing: 0) {
                 Capsule().fill(Color.rdResultLine).frame(width: 42, height: 5).padding(.top, 10)
                 HStack(spacing: 13) {
@@ -3218,8 +3141,6 @@ private struct ReferenceReportSheet: View {
                 }
                 .padding(.horizontal, 20).padding(.top, 11)
             }
-            .reportSheetMeasuredHeight(.header)
-            ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 12) {
                     if isRisk {
                         reportTypeCard(
@@ -3248,8 +3169,8 @@ private struct ReferenceReportSheet: View {
                     }
                 }
                 .padding(.horizontal, 20).padding(.top, 14).padding(.bottom, 4)
-                .reportSheetMeasuredHeight(.content)
-            }
+          }
+        } footer: {
             Button {
                 if canGenerate { onGenerate() } else if !canReport { onUpgrade() }
             } label: {
@@ -3262,15 +3183,12 @@ private struct ReferenceReportSheet: View {
             }
             .buttonStyle(.plain).disabled(!canGenerate && canReport)
             .accessibilityIdentifier("result.report_sheet.generate")
-            .padding(.horizontal, 20).padding(.top, 6).padding(.bottom, 24)
+            .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 6)
             .background(Color.rdResultElevatedSurface.shadow(.drop(color: Color.black.opacity(0.20), radius: 9, y: -6)))
-            .reportSheetMeasuredHeight(.footer)
         }
         .background(Color.rdResultBackground)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("result.report_sheet")
-        .onPreferenceChange(ReferenceReportSheetRegionHeightKey.self) { heights in
-            updatePreferredHeight(using: heights)
-        }
         .sheet(isPresented: $companyPickerPresented) {
             ReferenceCompanyPickerSheet(
                 language: language,
@@ -3293,31 +3211,6 @@ private struct ReferenceReportSheet: View {
             )
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
-        }
-    }
-
-    private func updatePreferredHeight(
-        using heights: [ReferenceReportSheetMeasuredRegion: CGFloat]
-    ) {
-        guard isRisk else { return }
-        guard let headerHeight = heights[.header],
-              let contentHeight = heights[.content],
-              let footerHeight = heights[.footer],
-              headerHeight > 0,
-              contentHeight > 0,
-              footerHeight > 0 else { return }
-
-        let fittedHeight = ReferenceReportSheetLayout.fittedHeight(
-            for: headerHeight + contentHeight + footerHeight
-        )
-        guard abs(fittedHeight - preferredHeight) > 1 else { return }
-
-        // Preference callbacks occur during layout. Defer the detent mutation to
-        // the next main-loop turn so the new height and selected detent become
-        // valid in the same presentation update without a UIKit fallback jump.
-        DispatchQueue.main.async {
-            preferredHeight = fittedHeight
-            selectedDetent = .height(fittedHeight)
         }
     }
 

@@ -158,7 +158,7 @@ final class AnalysisResultHubPDFService {
 
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("RiskDetected-Reports", isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let prefix = section == .riskAnalysis ? "RA" : section == .expertRecommendations ? "UG" : "OD"
+        let prefix = section == .riskAnalysis ? "RA" : section == .expertRecommendations ? "UG" : section == .trainingRecommendations ? "EO" : "OD"
         let url = folder.appendingPathComponent("\(prefix)-\(analysisTitle.safeFileComponent)-\(UUID().uuidString.prefix(8)).pdf")
         try data.write(to: url, options: .atomic)
         return url
@@ -212,7 +212,7 @@ final class AnalysisResultHubPDFService {
         """
         let items = try JSONDecoder().decode([AnalysisResultHubItem].self, from: Data(json.utf8))
         let service = AnalysisResultHubPDFService.shared
-        let urls = [
+        var urls = [
             try service.generate(
                 section: .riskAnalysis,
                 items: [items[0]],
@@ -273,6 +273,17 @@ final class AnalysisResultHubPDFService {
                 userInfo: [NSLocalizedDescriptionKey: "Expert report detail sections are incomplete"]
             )
         }
+        let trainingJSON = """
+        {"id":"00000000-0000-0000-0000-000000000104","title":"Güvenli Çalışma Eğitimi","category_label":"Uygulamalı eğitim","audience_label":"İskele çalışanları","text":"Güvenli erişim ve düşmeye karşı koruma uygulamaları.","duration_value":"En az 8 saat","duration_note":"Riskler değiştiğinde yenilenir."}
+        """
+        let training = try JSONDecoder().decode(AnalysisResultHubItem.self, from: Data(trainingJSON.utf8))
+        let trainingURL = try service.generate(section: .trainingRecommendations, items: [training], analysisTitle: "Eğitim Planı", method: .fineKinney, language: .turkish)
+        let trainingText = PDFDocument(url: trainingURL)?.string ?? ""
+        guard ["İskele çalışanları", "Güvenli erişim", "En az 8 saat", "Riskler değiştiğinde"].allSatisfy(trainingText.contains),
+              trainingURL.lastPathComponent.hasPrefix("EO-") else {
+            throw NSError(domain: "AnalysisResultHubPDFService", code: 4, userInfo: [NSLocalizedDescriptionKey: "Training report fields are incomplete"])
+        }
+        urls.append(trainingURL)
         return urls
     }
     #endif
@@ -284,6 +295,15 @@ final class AnalysisResultHubPDFService {
         language: RDLanguage
     ) -> [(label: String, value: String, color: String)] {
         let isTR = language == .turkish
+        if section == .trainingRecommendations {
+            return [
+                (isTR ? "Kategori" : "Category", item.categoryLabel ?? "", "slate"),
+                (isTR ? "Hedef Çalışan Grubu" : "Target Audience", item.audienceLabel ?? "", "ink"),
+                (isTR ? "Eğitim Önerisi" : "Training Recommendation", item.text ?? "", "ink"),
+                (item.durationLabel ?? (isTR ? "Eğitim Süresi" : "Training Duration"), item.durationValue ?? "", "slate"),
+                (isTR ? "Süre Notu" : "Duration Note", item.durationNote ?? "", "slate")
+            ].filter { !$0.1.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        }
         if section == .approvedNotebook {
             var rows = [
                 (isTR ? "Tespit" : "Finding", item.findingText ?? "", "ink"),

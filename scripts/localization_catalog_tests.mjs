@@ -302,8 +302,9 @@ test("L10N-006", "PDF/XLSX literal scan matches approved baseline", () => {
   assertLiteralSurfaceSnapshot(
     ["pdf", "xlsx"],
     // Multiline console diagnostics are not PDF/XLSX document copy (12 removed).
-    426,
-    "c35d1ac19eb517e01f22dc84f25d8255dc75cd8465a260807ac85841b3f44671",
+    // Training Recommendations export adds 11 reviewed TR/EN XLSX literals.
+    437,
+    "e9acc2e255581c1bf75311baccb57d755fd03c374dc7c7139733dbfd07c63fd7",
   );
 });
 
@@ -797,6 +798,7 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
     // 2026-09-06: reviewed against 12d85089: exactly 26 new Paywall units
     // (24 dark-paywall labels/features, trial and cancellation disclosures).
     // All other Turkish catalog units are unchanged; owner-requested copy.
+    // 2026-09-08: ATT prompt removed; original catalog snapshot restored.
     "4c07bb59d61233843a9125b02f5b7f46f27102e7172cfb5f18d7e5506ec19e7d",
     "Turkish catalog snapshot changed",
   );

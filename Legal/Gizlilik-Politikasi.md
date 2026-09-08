@@ -1,7 +1,7 @@
 # RiskDetected Gizlilik Politikası
 
-Yürürlük tarihi: 8 Temmuz 2026
-Belge sürümü: privacy-2026-07-08
+Yürürlük tarihi: 8 Eylül 2026
+Belge sürümü: privacy-ios-2026-09-08
 
 Bu Gizlilik Politikası, RiskDetected mobil uygulaması ve bağlantılı hizmetlerde hangi
 verilerin toplandığını, neden kullanıldığını, kimlerle paylaşılabileceğini, ne kadar
@@ -202,3 +202,7 @@ Hesap silme, destek veya iletişim talebi olarak yürütülmez. Hesabınızı ve
 bağlı uygulama verilerini silmek için uygulama içinde Profil > Hesabımı sil / Delete
 Account yolunu kullanabilirsiniz. E-posta, destek kanalı veya web sitesi hesap silme
 için zorunlu değildir.
+
+## iOS reklam ve dönüşüm ölçümü — 8 Eylül 2026
+
+RiskDetected iOS uygulaması, uygulama reklamlarının performansını ve uygulama içi dönüşümleri ölçmek için Meta App Events SDK kullanır. Uygulama açılışı, kayıt, analiz tamamlama, rapor oluşturma, deneme ve abonelik başlangıcı olayları; uygulama/cihaz bilgileri, SDK kurulum tanımlayıcısı ve ilgili ürün, para birimi ve doğrulanmış işlem tutarı Meta’ya iletilebilir. Saha fotoğrafları, analiz/rapor içerikleri, adınız ve e-posta adresiniz bu entegrasyonla gönderilmez. Bu sürüm reklam kimliğini (IDFA) toplamaz ve uygulamalar arası takip izni istemez. Meta SDK olay kullanımı analiz ve dönüşüm ölçümüyle sınırlandırılır. Reklam kurulumu ölçümünde Apple’ın gizlilik korumalı SKAdNetwork mekanizmasından yararlanılır; kişi bazında reklam eşleştirmesi hedeflenmez.

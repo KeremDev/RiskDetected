@@ -49,12 +49,14 @@ struct RiskDetectedApp: App {
                 .environmentObject(networkMonitor)
                 .preferredColorScheme(appState.themePreference.colorScheme)
                 .onOpenURL { url in
+                    MetaAppEventsService.shared.handle(url)
                     if !GoogleSignInService.handle(url) {
                         SupabaseService.shared.handleAuthURL(url)
                     }
                 }
                 .onChange(of: scenePhase) { phase in
                     guard phase == .active else { return }
+                    MetaAppEventsService.shared.activate()
                     PaywallEventService.shared.flushPendingIfPossible()
                     Task {
                         await NotificationService.shared.handleAppBecameActive()
@@ -145,7 +147,7 @@ private struct ResultHubPDFSelfTestView: View {
                     let urls = try await Task.detached(priority: .userInitiated) {
                         try AnalysisResultHubPDFService.runResultHubVisualSelfTest()
                     }.value
-                    status = urls.count == 4 ? "RESULT_HUB_PDF_OK" : "RESULT_HUB_PDF_FAILED: count"
+                    status = urls.count == 5 ? "RESULT_HUB_PDF_OK" : "RESULT_HUB_PDF_FAILED: count"
                 } catch {
                     status = "RESULT_HUB_PDF_FAILED: \(error.localizedDescription)"
                 }

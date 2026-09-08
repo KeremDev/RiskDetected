@@ -6,6 +6,67 @@ import {
 import XLSX from "npm:xlsx-js-style@1.2.0";
 import { makeEnglishWorkbook, makeResultSectionWorkbook } from "./index.ts";
 
+Deno.test("training XLSX preserves audience, recommendation and duration in TR and EN", () => {
+  for (const language of ["tr", "en"] as const) {
+    const workbook = makeResultSectionWorkbook({
+      id: "11111111-1111-4111-8111-111111111111",
+      user_id: "22222222-2222-4222-8222-222222222222",
+      analysis_id: "33333333-3333-4333-8333-333333333333",
+      content_scope: "training_recommendations",
+      format: "xlsx",
+      selected_item_keys: ["44444444-4444-4444-8444-444444444444"],
+      content_snapshot: {
+        items: [{
+          title: "Training sample",
+          category_label: "Task safety",
+          audience_label: "Operators",
+          text: "Practice safe isolation",
+          duration_value: "8 hours",
+          duration_note: "Refresh after changes",
+        }],
+      },
+      source_edit_version: 0,
+      projection_version: null,
+      tier_snapshot: "plus",
+    }, {
+      id: "33333333-3333-4333-8333-333333333333",
+      user_id: "22222222-2222-4222-8222-222222222222",
+      title: "Inspection",
+    }, {
+      language,
+      locale: language === "tr" ? "tr-TR" : "en-001",
+      safetyProfileID: "tr-isg-v1",
+      safetyProfileVersion: 1,
+      regulatorySectionsEnabled: false,
+      snapshot: {
+        schema_version: 1,
+        output_language: language,
+        output_locale: language === "tr" ? "tr-TR" : "en-001",
+      },
+    }, "RD-EO-2026-0001");
+    const parsed = XLSX.read(
+      XLSX.write(workbook, { bookType: "xlsx", type: "buffer" }),
+      { type: "buffer" },
+    );
+    const sheetName = language === "tr"
+      ? "Eğitim Önerileri"
+      : "Training Recommendations";
+    assertEquals(parsed.SheetNames[0], sheetName);
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(parsed.Sheets[sheetName], {
+      header: 1,
+    });
+    assertEquals(rows[6], [
+      1,
+      "Training sample",
+      "Task safety",
+      "Operators",
+      "Practice safe isolation",
+      "8 hours",
+      "Refresh after changes",
+    ]);
+  }
+});
+
 Deno.test("English XLSX parser sees localized sheets and no TR regulatory template", () => {
   const workbook = makeEnglishWorkbook(
     {

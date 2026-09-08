@@ -422,6 +422,21 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
             )
             throw mappedError
         }
+        if let transaction = result.transaction {
+            let entitlement = result.customerInfo.entitlements.active.values.first {
+                $0.productIdentifier == package.storeProduct.productIdentifier
+            }
+            let subscription = result.customerInfo.subscriptionsByProductIdentifier[package.storeProduct.productIdentifier]
+            // Never substitute list price for a discounted/introductory transaction.
+            let paidPrice = subscription?.storeTransactionId == transaction.transactionIdentifier ? subscription?.price : nil
+            MetaAppEventsService.shared.purchase(
+                transactionID: transaction.transactionIdentifier,
+                productID: package.storeProduct.productIdentifier,
+                isTrial: entitlement?.periodType == .trial,
+                price: paidPrice?.amount,
+                currency: paidPrice?.currency
+            )
+        }
         return apply(result.customerInfo, preferredProductIdentifier: package.storeProduct.productIdentifier)
     }
 

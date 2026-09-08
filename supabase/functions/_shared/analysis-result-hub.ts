@@ -21,6 +21,15 @@ export function isPaidTier(tier: ResultHubTier): boolean {
   return tier === "plus" || tier === "pro";
 }
 
+export function canReportSection(
+  section: ResultHubSection,
+  tier: ResultHubTier,
+  supportsTrainingReports = false,
+): boolean {
+  return (section === "risk_analysis" || isPaidTier(tier)) &&
+    (section !== "training_recommendations" || supportsTrainingReports);
+}
+
 export function resolveResultHubTier(
   subscription: {
     tier?: string | null;

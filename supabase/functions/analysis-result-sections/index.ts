@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   ANALYSIS_RESULT_CONTRACT_VERSION,
   ANALYSIS_RESULT_UI_VERSION,
+  canReportSection,
   findingSection,
   isPaidTier,
   redactFindingForFree,
@@ -474,6 +475,7 @@ function sectionPayload(
   section: ResultHubSection,
   tier: ResultHubTier,
   items: Record<string, unknown>[],
+  supportsTrainingReports = false,
 ) {
   const access = sectionAccess(section, tier);
   return {
@@ -481,14 +483,11 @@ function sectionPayload(
     access,
     count: items.length,
     // Training cards are advice about people, not findings about the site.
-    // They are not editable -- editing one would mean editing the catalogue --
-    // and not offered to the report builder.
+    // They are not editable, but paid members can export their recommendations.
     can_edit: section === "training_recommendations"
       ? false
       : isPaidTier(tier) && access === "full",
-    can_report: section === "training_recommendations"
-      ? false
-      : section === "risk_analysis" || isPaidTier(tier),
+    can_report: canReportSection(section, tier, supportsTrainingReports),
     items,
   };
 }
@@ -556,6 +555,7 @@ async function handleLoad(context: Context) {
         "training_recommendations",
         context.tier,
         sections.training,
+        context.body.client_capabilities?.training_reports_v1 === true,
       ),
       {
         ...sectionPayload("approved_notebook", context.tier, sections.notebook),
