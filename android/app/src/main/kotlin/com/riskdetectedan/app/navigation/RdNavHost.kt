@@ -48,6 +48,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 @Composable
 @OptIn(ExperimentalSerializationApi::class)
 fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
+    val diagnostics: com.riskdetectedan.app.telemetry.FlowDiagnosticsViewModel = hiltViewModel()
     val navController = rememberNavController()
     val bootstrapState by viewModel.state.collectAsState()
 
@@ -113,6 +114,7 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
             // Retained as a typed direct-camera entry point. The center quick-scan action no
             // longer uses it: live iOS first returns to Home and opens the source chooser there.
             CaptureScreen(
+                onDiagnostic = diagnostics::record,
                 onPhotoCaptured = { file ->
                     navController.navigate(Analysis(photoPaths = listOf(file.absolutePath)))
                 },
@@ -127,6 +129,7 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
             // stacking on top of it, so Annotate's own popBackStack() (cancel/analyze) lands
             // straight back on MainShell's tray sheet, not back on the camera.
             CaptureScreen(
+                onDiagnostic = diagnostics::record,
                 onPhotoCaptured = { file ->
                     navController.navigate(Annotate(photoPath = file.absolutePath)) {
                         popUpTo<CaptureForTray> { inclusive = true }

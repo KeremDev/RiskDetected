@@ -376,10 +376,13 @@ val androidLegalBundleApproved =
 val androidLegalPublicUrlsVerified =
     !Regex("\"public_urls_verified_at\"\\s*:\\s*null").containsMatchIn(legalManifestText) &&
         !Regex("\"public_urls_verified_at\"\\s*:\\s*null").containsMatchIn(englishLegalManifestText)
+val metaEventsTransportSmokeMode =
+    providers.gradleProperty("rdMetaEventsTransportSmoke").orNull == "true"
 
 android {
     namespace = "com.riskdetectedan.app"
     compileSdk = 37
+    testBuildType = if (metaEventsTransportSmokeMode) "metaSmoke" else "debug"
 
     // Reuse the counsel-approved English legal set that iOS ships. Android keeps its own
     // Turkish bundle under app/src/main/assets/legal and reads this shared set under /en.
@@ -393,6 +396,7 @@ android {
         versionName = "2.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["facebookSdkAutoInitEnabled"] = "false"
 
         ndk {
             debugSymbolLevel = "SYMBOL_TABLE"
@@ -421,6 +425,7 @@ android {
             versionNameSuffix = "-debug"
             manifestPlaceholders["firebaseMessagingAutoInitEnabled"] = "false"
             manifestPlaceholders["firebaseCrashlyticsCollectionEnabled"] = "false"
+            manifestPlaceholders["facebookSdkAutoInitEnabled"] = "false"
             buildConfigField("String", "ENVIRONMENT_NAME", "staging".asBuildConfigString())
             buildConfigField("String", "SUPABASE_URL", stagingSupabaseUrl.asBuildConfigString())
             buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", stagingSupabasePublishableKey.asBuildConfigString())
@@ -432,6 +437,16 @@ android {
             buildConfigField("String", "BUILD_SHA", buildSha.asBuildConfigString())
             configure<CrashlyticsExtension> {
                 mappingFileUploadEnabled = false
+            }
+        }
+        if (metaEventsTransportSmokeMode) {
+            create("metaSmoke") {
+                initWith(getByName("debug"))
+                // Meta Test Events matches the package registered in the Meta app. This
+                // opt-in, local-only variant keeps debug behavior but uses that exact package.
+                applicationIdSuffix = ""
+                versionNameSuffix = "-meta-smoke"
+                matchingFallbacks += listOf("debug")
             }
         }
         create("qa") {
@@ -457,6 +472,7 @@ android {
             isShrinkResources = true
             manifestPlaceholders["firebaseMessagingAutoInitEnabled"] = "true"
             manifestPlaceholders["firebaseCrashlyticsCollectionEnabled"] = "true"
+            manifestPlaceholders["facebookSdkAutoInitEnabled"] = "true"
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             if (releaseSigningConfigured) {
                 signingConfig = signingConfigs.getByName("upload")
@@ -578,7 +594,7 @@ val verifyAndroidLegalBundle = tasks.register<VerifyAndroidLegalBundleTask>("ver
     legalAssetsDirectory.set(layout.projectDirectory.dir("src/main/assets/legal"))
     approvalRecord.set(rootProject.layout.projectDirectory.file("../docs/android/ANDROID_LEGAL_APPROVAL_RECORD_2026-08-09.json"))
     englishLegalDirectory.set(rootProject.layout.projectDirectory.dir("../App/LegalDocuments"))
-    englishApprovalRecord.set(rootProject.layout.projectDirectory.file("../docs/localization/phase-5/LEGAL_COUNSEL_APPROVAL_2026-07-31_V2.json"))
+    englishApprovalRecord.set(rootProject.layout.projectDirectory.file("../docs/localization/phase-5/LEGAL_COUNSEL_APPROVAL_2026-09-08_META.json"))
     legalMigration.set(rootProject.layout.projectDirectory.file("../supabase/migrations/20260809184500_android_legal_update_policy.sql"))
     releasePolicyFunction.set(rootProject.layout.projectDirectory.file("../supabase/functions/app-release-policy/index.ts"))
 }
@@ -679,4 +695,6 @@ dependencies {
     androidTestImplementation(libs.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.facebook.core)
+    androidTestImplementation("androidx.localbroadcastmanager:localbroadcastmanager:1.0.0")
 }

@@ -27,6 +27,7 @@ dependencies {
     ksp(libs.hilt.android.compiler)
 
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.kotlinx.serialization.json)
 
     implementation(libs.supabase.postgrest)
@@ -37,6 +38,7 @@ dependencies {
 
     implementation(libs.revenuecat.purchases)
     implementation(libs.install.referrer)
+    implementation(libs.facebook.core)
 
     testImplementation(project(":core:testing"))
     testImplementation(libs.robolectric)

@@ -28,6 +28,7 @@ firebaseBom = "34.17.0"
 googleServices = "4.5.0"
 firebaseCrashlyticsPlugin = "3.0.7"
 installReferrer = "2.2"
+facebookAndroidSdk = "18.3.0"
 playReview = "2.0.2"
 playAppUpdate = "2.1.0"
 junit = "4.13.2"
@@ -102,6 +103,7 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
 install-referrer = { module = "com.android.installreferrer:installreferrer", version.ref = "installReferrer" }
+facebook-core = { module = "com.facebook.android:facebook-core", version.ref = "facebookAndroidSdk" }
 play-review = { module = "com.google.android.play:review", version.ref = "playReview" }
 play-app-update = { module = "com.google.android.play:app-update", version.ref = "playAppUpdate" }
 play-app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "playAppUpdate" }

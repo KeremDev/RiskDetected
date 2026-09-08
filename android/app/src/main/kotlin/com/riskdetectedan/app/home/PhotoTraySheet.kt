@@ -16,7 +16,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -44,6 +45,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.platform.LocalDensity
 import com.riskdetectedan.core.designsystem.RdFontStyle
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
@@ -51,6 +54,12 @@ import com.riskdetectedan.core.designsystem.toTextStyle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import java.io.File
+
+/** Reads the raw system inset instead of Modifier.navigationBarsPadding(). The app root already
+ * consumes safeDrawing, while ModalBottomSheet renders in its own edge-to-edge window; relying on
+ * the remaining inset therefore returned zero on three-button-navigation devices. */
+internal fun photoTrayBottomPadding(systemNavigationInset: Dp): Dp =
+    maxOf(RdSpacing.xl, systemNavigationInset + RdSpacing.sm)
 
 /**
  * Port of HomeView.swift's inline `PhotoMediaTraySheet` (Faz O — the real multi-photo picker,
@@ -86,13 +95,18 @@ fun PhotoTraySheet(
     val canAddMore = photoPaths.size < maxPhotoCount
     val slotCount = maxOf(visibleSlotCount, minOf(maxPhotoCount, photoPaths.size + 1))
     val hasLockedSlots = slotCount > maxPhotoCount
+    val density = LocalDensity.current
+    val systemNavigationInset = with(density) {
+        WindowInsets.navigationBars.getBottom(this).toDp()
+    }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
             .padding(horizontal = RdSpacing.lg)
-            .padding(top = RdSpacing.md, bottom = RdSpacing.lg),
+            // The drag handle already owns the sheet's top spacing. The former extra 16dp made
+            // the title visibly float too far below it on compact Android screens.
+            .padding(top = 0.dp, bottom = photoTrayBottomPadding(systemNavigationInset)),
     ) {
         Row(verticalAlignment = Alignment.Top) {
             Column(modifier = Modifier.weight(1f)) {

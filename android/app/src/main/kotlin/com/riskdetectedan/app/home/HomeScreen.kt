@@ -159,6 +159,7 @@ fun HomeScreen(
     var showTitlesSheet by rememberSaveable { mutableStateOf(false) }
     val titlesSheetState = rememberModalBottomSheetState()
     LaunchedEffect(Unit) {
+        photoTrayViewModel.record("home", "completed")
         // These ViewModels are scoped to the MainShell back-stack entry and survive a pushed
         // analysis/result route. Refresh on every real Home re-entry so a just-completed
         // analysis/report is visible immediately instead of leaving the pre-analysis empty
@@ -197,8 +198,10 @@ fun HomeScreen(
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(),
     ) { uris ->
+        photoTrayViewModel.record("photo_import", if (uris.isEmpty()) "cancelled" else "started")
         val remaining = maxPhotoCount - trayPhotoPaths.size
         val savedPaths = uris.take(maxOf(0, remaining)).mapNotNull { uri ->
+            try {
             context.contentResolver.openInputStream(uri)?.use { stream ->
                 val bitmap = BitmapFactory.decodeStream(stream)
                 if (bitmap != null) {
@@ -211,6 +214,14 @@ fun HomeScreen(
                     null
                 }
             }
+            } catch (_: Exception) {
+                null
+            }
+        }
+        if (uris.isNotEmpty()) {
+            val failed = savedPaths.size != uris.take(maxOf(0, remaining)).size || savedPaths.isEmpty()
+            photoTrayViewModel.record("photo_import", if (failed) "failed" else "completed", if (failed) "io" else "none")
+            if (failed) android.widget.Toast.makeText(context, RdR.string.rd_fotograf_okunamadi, android.widget.Toast.LENGTH_LONG).show()
         }
         if (savedPaths.isNotEmpty()) onAnnotatePhotos(savedPaths)
     }
@@ -218,6 +229,8 @@ fun HomeScreen(
     /** Real port of `beginPreAnalysisSelection()` — the real order is sector sheet *first*, then
      * [CanvasSheet] (see [SectorPickerSheet]'s doc comment for why this used to be reversed). */
     fun beginPreAnalysisSelection() {
+        photoTrayViewModel.record("analysis_cta", "started")
+        if (isFreeQuotaExhausted) photoTrayViewModel.record("analysis_validation", "blocked", "quota")
         if (isFreeQuotaExhausted) onUpgrade("home_analysis_start_quota") else showSectorSheet = true
     }
 
@@ -286,7 +299,9 @@ fun HomeScreen(
         Spacer(Modifier.height(14.dp))
         HomeStartScanButton(
             onClick = {
+                if (trayPhotoPaths.isEmpty()) photoTrayViewModel.record("analysis_cta", "started")
                 if (isFreeQuotaExhausted) {
+                    photoTrayViewModel.record("analysis_validation", "blocked", "quota")
                     onUpgrade("home_analysis_start_quota")
                 } else if (trayPhotoPaths.isEmpty()) {
                     showPhotoTray = true
@@ -423,7 +438,10 @@ fun HomeScreen(
                     // the sheet reopens automatically on the way back, now showing the new photo.
                     onNavigateToCamera()
                 },
-                onGallery = { galleryLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                onGallery = {
+                    photoTrayViewModel.record("photo_picker", "started")
+                    galleryLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                },
                 onRemove = photoTrayViewModel::removePhoto,
                 onMove = photoTrayViewModel::movePhoto,
                 onLockedSlot = {

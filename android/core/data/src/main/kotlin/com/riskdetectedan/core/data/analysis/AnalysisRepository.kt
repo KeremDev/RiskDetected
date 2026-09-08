@@ -146,6 +146,30 @@ class AnalysisRepository @Inject constructor(
     private val client: SupabaseClient,
     private val environmentConfig: RdEnvironmentConfig,
 ) {
+    /**
+     * Owner-scoped first-analysis check used only after a terminal `completed` response. The
+     * query stops at two rows because the caller only needs to distinguish exactly one from
+     * zero/many; RLS remains authoritative and no row identifier leaves the device.
+     */
+    suspend fun hasExactlyOneCompletedAnalysis(userId: String): RdResult<Boolean> = try {
+        val rows = client.postgrest.from("analyses")
+            .select(Columns.list("id")) {
+                filter {
+                    eq("user_id", userId)
+                    eq("status", "completed")
+                }
+                limit(2)
+            }
+            .decodeList<CreatedAnalysisRow>()
+        RdResult.Success(rows.size == 1)
+    } catch (t: Throwable) {
+        RdResult.Failure(
+            code = "analysis_count_failed",
+            message = t.message ?: "analysis_count_failed",
+            cause = t,
+        )
+    }
+
     /** Result header metadata used by the Android result surface. RLS keeps this ownership-bound. */
     suspend fun fetchResultSummary(analysisId: String): RdResult<AnalysisResultSummary> = try {
         val row = client.postgrest.from("analyses")

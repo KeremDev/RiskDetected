@@ -31,6 +31,7 @@ import com.riskdetectedan.core.data.profile.ProfileRepository
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.data.release.AndroidRuntimeGateName
 import com.riskdetectedan.core.data.release.ReleasePolicyRepository
+import com.riskdetectedan.core.data.telemetry.MetaAppEventsService
 import com.riskdetectedan.core.designsystem.R as RdR
 import com.riskdetectedan.core.designsystem.rdAnalysisSectorTitleResource
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -77,6 +78,8 @@ class AnalysisViewModel @Inject constructor(
     private val planCapabilitiesRepository: PlanCapabilitiesRepository,
     private val releasePolicyRepository: ReleasePolicyRepository,
     private val resultHubRepository: AnalysisResultHubRepository,
+    private val flowEvents: com.riskdetectedan.core.data.telemetry.ClientFlowEvents,
+    private val metaAppEvents: MetaAppEventsService,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<CreateAnalysisUiState>(CreateAnalysisUiState.Idle)
@@ -139,8 +142,10 @@ class AnalysisViewModel @Inject constructor(
         analysisMode: String = "standard",
     ) {
         if (!AnalysisSubmissionGuard.canStart(_state.value)) return
+        flowEvents.record("analysis_validation", "started", photoCount = photoPaths.size)
         val userId = authRepository.currentUserId
         if (userId == null) {
+            flowEvents.record("analysis_validation", "blocked", "auth")
             _state.value = CreateAnalysisUiState.Failed(
                 AppErrorMessages.make(
                     context.getString(RdR.string.rd_once_giris_yapmalisin),
@@ -154,6 +159,7 @@ class AnalysisViewModel @Inject constructor(
         // regardless of tier (the tier-based 1/3 cap is a *lower* bound gate, this is the
         // absolute ceiling AnalysisService.swift itself enforces before ever calling the server).
         if (photoPaths.size > 3) {
+            flowEvents.record("analysis_validation", "blocked", "photo_limit")
             _state.value = CreateAnalysisUiState.Failed(
                 AppErrorMessages.make(
                     context.getString(RdR.string.rd_en_fazla_uc_fotograf),
@@ -168,6 +174,7 @@ class AnalysisViewModel @Inject constructor(
         viewModelScope.launch {
             val runtimeGate = releasePolicyRepository.resolveGate(AndroidRuntimeGateName.AnalysisSubmit)
             if (!runtimeGate.enabled) {
+                flowEvents.record("analysis_validation", "blocked", "runtime_gate")
                 _state.value = CreateAnalysisUiState.Failed(
                     AppErrorMessages.make(
                         context.getString(RdR.string.rd_android_analiz_kapali_format, runtimeGate.reason),
@@ -202,6 +209,7 @@ class AnalysisViewModel @Inject constructor(
                 ?: selectedLocalization?.safetyProfileVersion
                 ?: RdClientMetadata.SAFETY_PROFILE_VERSION
             if (analysisMode == "detailed" && !capabilities.canUseDetailedAnalysis) {
+                flowEvents.record("analysis_validation", "blocked", "membership")
                 _state.value = CreateAnalysisUiState.Failed(
                     AppErrorMessages.make(
                         context.getString(RdR.string.rd_detayli_analiz_uyelik_gerekir),
@@ -211,6 +219,7 @@ class AnalysisViewModel @Inject constructor(
                 return@launch
             }
             if (photoPaths.size > capabilities.maxPhotosPerAnalysis) {
+                flowEvents.record("analysis_validation", "blocked", "photo_limit")
                 _state.value = CreateAnalysisUiState.Failed(
                     AppErrorMessages.make(
                         context.getString(
@@ -248,8 +257,10 @@ class AnalysisViewModel @Inject constructor(
                 clientSubmissionId = pendingSubmission.submissionId,
                 primaryMethod = riskMethod,
             )
+            flowEvents.record("analysis_create", "started", photoCount = photoPaths.size)
             val analysisId = when (val created = analysisRepository.createAnalysis(request)) {
                 is RdResult.Failure -> {
+                    flowEvents.record("analysis_create", "failed", "backend")
                     _state.value = CreateAnalysisUiState.Failed(
                         AppErrorMessages.make(
                             created.message,
@@ -264,6 +275,7 @@ class AnalysisViewModel @Inject constructor(
 
             val files = photoPaths.map { File(it) }.filter { it.exists() }
             if (files.isEmpty()) {
+                flowEvents.record("analysis_prepare", "failed", "no_photo")
                 _state.value = CreateAnalysisUiState.CreatedWithoutPhoto(analysisId)
                 return@launch
             }
@@ -283,15 +295,23 @@ class AnalysisViewModel @Inject constructor(
             )
 
             _state.value = CreateAnalysisUiState.UploadingPhoto
+            flowEvents.record("analysis_upload", "started", photoCount = files.size)
             val uploadedPaths = mutableListOf<String>()
             for ((index, file) in files.withIndex()) {
-                val jpegBytes = file.readBytes()
+                val jpegBytes = try { file.readBytes() } catch (_: java.io.IOException) {
+                    flowEvents.record("analysis_prepare", "failed", "io")
+                    val message = context.getString(RdR.string.rd_analiz_basarisiz)
+                    failAnalysisAndCleanup(userId, analysisId, uploadedPaths, message)
+                    _state.value = CreateAnalysisUiState.Failed(AppErrorMessages.make(message, context = message))
+                    return@launch
+                }
                 when (
                     val uploadResult =
                         photoRepository.uploadPhoto(userId, analysisId, sequenceIndex = index + 1, jpegBytes)
                 ) {
                     is RdResult.Success -> uploadedPaths.add(uploadResult.value)
                     is RdResult.Failure -> {
+                        flowEvents.record("analysis_upload", "failed", "network")
                         val error = AppErrorMessages.make(
                             uploadResult.message,
                             context = context.getString(RdR.string.rd_analiz_tamamlanamadi),
@@ -304,6 +324,7 @@ class AnalysisViewModel @Inject constructor(
             }
 
             _state.value = CreateAnalysisUiState.Submitting
+            flowEvents.record("analysis_submit", "started", photoCount = files.size)
             when (
                 val submitResult = analysisRepository.submitAnalyze(
                     analysisId = analysisId,
@@ -327,6 +348,7 @@ class AnalysisViewModel @Inject constructor(
                     // probe status a few times before trusting the client-side failure. If it
                     // recovers, fall straight through to polling below as if submit succeeded.
                     if (!probeSubmissionRecovery(analysisId)) {
+                        flowEvents.record("analysis_submit", "failed", "backend")
                         val error = AppErrorMessages.make(
                             submitResult.message,
                             context = context.getString(RdR.string.rd_analiz_tamamlanamadi),
@@ -373,6 +395,7 @@ class AnalysisViewModel @Inject constructor(
      * `resumeAnalysis`'s caller-side clear).
      */
     private suspend fun pollAndHandleResult(analysisId: String, photoCount: Int) {
+        flowEvents.record("analysis_result", "started", photoCount = photoCount)
         _state.value = CreateAnalysisUiState.Polling(analysisId)
         val status = analysisRepository.pollAnalysisStatus(analysisId, photoCount = photoCount)
         // Real port of iOS's clear-call placement: `completed`/`failed` (genuinely terminal
@@ -425,6 +448,21 @@ class AnalysisViewModel @Inject constructor(
                 )
         }
         _state.value = nextState
+        flowEvents.record("analysis_result", if (nextState is CreateAnalysisUiState.Completed) "completed" else "failed",
+            if (status is AnalysisStatus.TimedOut) "timeout" else if (nextState is CreateAnalysisUiState.Completed) "none" else "backend", photoCount)
+        if (nextState is CreateAnalysisUiState.Completed) {
+            metaAppEvents.analysisCompleted(analysisId)
+            authRepository.currentUserId?.let { userId ->
+                // Counting is best effort and must not delay result presentation or turn a
+                // successful analysis into an error when the network is temporarily unavailable.
+                viewModelScope.launch {
+                    val first = analysisRepository.hasExactlyOneCompletedAnalysis(userId)
+                    if ((first as? RdResult.Success)?.value == true) {
+                        metaAppEvents.firstAnalysis(userId)
+                    }
+                }
+            }
+        }
     }
 
     /** Loads the same result metadata and source photographs iOS keeps in AnalysisResultBundle. */

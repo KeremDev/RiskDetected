@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Meta client identifiers are public mobile-SDK configuration, never the App Secret. -->
+    <string name="facebook_app_id" translatable="false">1704205447330558</string>
+    <string name="facebook_client_token" translatable="false">f6f4965c24873f6bff7d961a5aa79e38</string>
+</resources>

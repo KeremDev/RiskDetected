@@ -23,6 +23,7 @@ import com.riskdetectedan.core.data.reports.PdfReportInput
 import com.riskdetectedan.core.data.reports.ReportQuotaUsage
 import com.riskdetectedan.core.data.reports.ReportsRepository
 import com.riskdetectedan.core.data.store.ReviewEligibilityRepository
+import com.riskdetectedan.core.data.telemetry.MetaAppEventsService
 import com.riskdetectedan.core.designsystem.R as RdR
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -99,6 +100,7 @@ class ResultReportViewModel @Inject constructor(
     private val pdfReportGenerator: PdfReportGenerator,
     private val reviewEligibilityRepository: ReviewEligibilityRepository,
     private val resultHubRepository: AnalysisResultHubRepository,
+    private val metaAppEvents: MetaAppEventsService,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<ResultReportUiState>(ResultReportUiState.Idle)
@@ -172,6 +174,10 @@ class ResultReportViewModel @Inject constructor(
             progressJob = null
             when (result) {
                 is RdResult.Success -> {
+                    metaAppEvents.reportCreated(
+                        reportId = result.value.reportId,
+                        format = if (format == ResultReportFormat.Pdf) "pdf" else "xlsx",
+                    )
                     authoritativeRequest.contentScope?.let { section ->
                         resultHubRepository.recordEvent(
                             analysisId = authoritativeRequest.analysisId,

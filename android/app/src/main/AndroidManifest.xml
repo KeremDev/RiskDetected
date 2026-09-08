@@ -1,14 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Meta App Events is intentionally measurement-only: never let an SDK dependency merge
+         Google Advertising ID access into RiskDetected. -->
+    <uses-permission
+        android:name="com.google.android.gms.permission.AD_ID"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.ACCESS_ADSERVICES_AD_ID"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.ACCESS_ADSERVICES_CUSTOM_AUDIENCE"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.ACCESS_ADSERVICES_TOPICS"
+        tools:node="remove" />
 
     <!-- required=false: System Photo Picker (master §15.3) is a valid capture path without a
          camera, so this must stay installable on camera-less devices (e.g. Chrome OS). -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <!-- App Events test/attribution can resolve the installed Facebook app on Android 11+.
+         This is package visibility only: it adds no Facebook Login activity or permission. -->
+    <queries>
+        <package android:name="com.facebook.katana" />
+    </queries>
 
     <application
         android:name=".RiskDetectedApplication"
@@ -29,6 +50,24 @@
         <meta-data
             android:name="firebase_crashlytics_collection_enabled"
             android:value="${firebaseCrashlyticsCollectionEnabled}" />
+        <meta-data
+            android:name="com.facebook.sdk.ApplicationId"
+            android:value="@string/facebook_app_id" />
+        <meta-data
+            android:name="com.facebook.sdk.ClientToken"
+            android:value="@string/facebook_client_token" />
+        <meta-data
+            android:name="com.facebook.sdk.AutoInitEnabled"
+            android:value="${facebookSdkAutoInitEnabled}" />
+        <meta-data
+            android:name="com.facebook.sdk.AutoLogAppEventsEnabled"
+            android:value="false" />
+        <meta-data
+            android:name="com.facebook.sdk.AdvertiserIDCollectionEnabled"
+            android:value="false" />
+        <meta-data
+            android:name="com.facebook.sdk.AutoAppLinkEnabled"
+            android:value="false" />
         <!-- FCM renders background/killed-state notifications itself. These defaults keep that
              system-rendered path visually identical to our foreground notification path. -->
         <meta-data

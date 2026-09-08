@@ -60,6 +60,59 @@ final result: passed
 
 ---
 
+# Android Photo Tray Insets and Camera Orientation QA
+
+Date: 2026-09-08
+
+## Comparison target
+
+- Reported empty state: `/Users/keremkayalar/Downloads/f018a18d-6f82-4f33-89bc-53a2f269a636.JPG`.
+- Reported filled state: `/Users/keremkayalar/Downloads/afaff291-8c02-4187-b0d8-7fffb293e974.JPG`.
+- Corrected empty state: `artifacts/android-photo-tray-hotfix-20260908/empty-720x1600.png`.
+- Corrected filled state: `artifacts/android-photo-tray-hotfix-20260908/filled-720x1600.png`.
+- Source and normalized implementation captures are both `720 x 1600 px`, portrait, Turkish, light appearance, with three-button system navigation.
+- Implementation was exercised on Android 13 / API 33 at `1080 x 2400 px`, `420 dpi`; screenshots were proportionally normalized to the source resolution.
+
+## Findings and fixes
+
+- P1 CTA/system-navigation collision: the source `Fotoğraf ekle` and `Analize geç` actions entered the three-button navigation region. The sheet now reserves the raw navigation-bar inset plus `12 dp`; the verified CTA bounds end at `y=2116` while the system navigation begins at `y=2274` on the native `1080 x 2400` capture.
+- P2 title spacing: the content column duplicated the Material sheet drag-handle spacing with an extra `16 dp` top inset. That duplicate inset was removed, bringing `Fotoğraflar` closer to the handle without changing the existing type hierarchy.
+- P1 camera orientation: CameraX JPEGs can contain landscape pixel data plus an EXIF portrait transform. The annotation path decoded only the pixels and later flattened the incorrect orientation. Camera rotation now follows the display and the saved JPEG's EXIF transform is baked into pixels before preview, annotation, or upload.
+- No iOS source or UI was changed for this request.
+
+## Required fidelity surfaces
+
+- Typography and copy: existing localized Turkish copy and shared RiskDetected font styles are retained.
+- Spacing and layout: existing source buttons, three-slot grid, upgrade prompt, CTA height, radii, and horizontal margins are unchanged; only the duplicated top inset and unsafe bottom inset behavior changed.
+- Colors and icons: existing paper, fog, amber, black CTA, Material camera/gallery/lock/add icons, and disabled states are unchanged.
+- Interaction states: empty and one-photo variants both retain their source behavior and are visible above three-button navigation.
+- Media fidelity: portrait and landscape camera captures are normalized from EXIF metadata once, before the current annotation workflow can discard that metadata.
+
+## Comparison history
+
+- Iteration 1 — P1/P2: source captures showed both CTAs intersecting the system menu and excess space between the drag handle and title.
+- Iteration 2 — the inset and top-spacing changes were exercised on an API 26 compact emulator using three-button navigation.
+- Iteration 3 — both states were re-captured in Turkish at the exact `9:20` source aspect on API 33 with three-button navigation. Same-input source/implementation inspection found no remaining P0/P1/P2 issue in the requested sheet scope.
+
+## Verification
+
+- Empty and filled state UI hierarchies: `artifacts/android-photo-tray-hotfix-20260908/empty-20x9.xml` and `artifacts/android-photo-tray-hotfix-20260908/filled-20x9.xml`.
+- Focused EXIF regression test verifies a `300 x 200` JPEG tagged `ORIENTATION_ROTATE_90` becomes `200 x 300` with `ORIENTATION_NORMAL`.
+- Focused inset tests cover `48 dp` three-button navigation and the gesture-navigation minimum.
+- Debug app install and real emulator rendering passed; no release bundle or Play Console submission was performed.
+
+## Open questions
+
+- None.
+
+## Follow-up polish
+
+- None required for this requested scope.
+
+final result: passed
+
+---
+
 # Android Paywall Plan-Card Parity QA
 
 Date: 2026-09-06

@@ -21,17 +21,23 @@ import javax.inject.Inject
  * existing single-photo flow.
  */
 @HiltViewModel
-class PhotoTrayViewModel @Inject constructor() : ViewModel() {
+class PhotoTrayViewModel @Inject constructor(
+    private val events: com.riskdetectedan.core.data.telemetry.ClientFlowEvents,
+) : ViewModel() {
+    fun record(stage: String, outcome: String, reason: String = "none") =
+        events.record(stage, outcome, reason, _photoPaths.value.size)
 
     private val _photoPaths = MutableStateFlow<List<String>>(emptyList())
     val photoPaths: StateFlow<List<String>> = _photoPaths.asStateFlow()
 
     fun addPhoto(path: String) {
         _photoPaths.value = _photoPaths.value + path
+        record("photo_ready", "completed")
     }
 
     fun addPhotos(paths: List<String>) {
         _photoPaths.value = _photoPaths.value + paths
+        record("photo_ready", "completed")
     }
 
     fun removePhoto(path: String) {

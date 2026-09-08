@@ -179,6 +179,7 @@ struct HomeView: View {
         }
         .onAppear {
             closeFreeQuotaEntryPointsIfNeeded()
+            ClientFlowEvents.shared.record("home", "completed")
             preparePhotoTrayFixtureIfNeeded()
             prepareCanvasSheetFixtureIfNeeded()
             handlePendingQuickScanOnAppear()
@@ -295,6 +296,7 @@ struct HomeView: View {
             onDismiss: consumePendingPhotoImportAfterPickerDismissal
         ) {
             CameraPicker { image in
+                ClientFlowEvents.shared.record("photo_import", image == nil ? "cancelled" : "completed", photoCount: image == nil ? 0 : 1)
                 if let image {
                     pendingPhotoImport = PendingPhotoImport(
                         images: [image],
@@ -1106,8 +1108,10 @@ struct HomeView: View {
 
     /// RDLocalization.string("analysis.home.view.taramayi.baslat.e82526ee", table: .analysis, fallback: "Taramayı Başlat") → foto yoksa medya tray; varsa sektör veya canvas seçimine geçer.
     private func startAnalysisFlow() {
+        ClientFlowEvents.shared.record("analysis_cta", "started", photoCount: selectedPhotos.count)
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         if app.requiresExplicitSafetyProfileSelection {
+            ClientFlowEvents.shared.record("analysis_validation", "blocked", reason: "safety_profile")
             presentAnalysisError(
                 AppErrorMessage.make(
                     rawMessage: RDLocalization.string("analysis.home.view.choose.a.safety.terminology.profile.in.profile.b.e12b8d4c", table: .analysis, fallback: "Analize başlamadan önce Profil'de bir güvenlik terminolojisi profili seçin."),
@@ -1118,6 +1122,7 @@ struct HomeView: View {
             return
         }
         if !app.currentTier.isPaid, quotaUsage?.isExhausted == true {
+            ClientFlowEvents.shared.record("analysis_validation", "blocked", reason: "quota")
             showQuotaPaywall(entryPoint: .homeAnalysisStartQuota)
             return
         }
@@ -1468,6 +1473,7 @@ struct HomeView: View {
     }
 
     private func presentCameraPicker() {
+        ClientFlowEvents.shared.record("photo_picker", "started")
         showCameraPicker = false
         pendingPhotoImport = nil
         DispatchQueue.main.async {
@@ -1477,6 +1483,7 @@ struct HomeView: View {
     }
 
     private func presentGalleryPicker() {
+        ClientFlowEvents.shared.record("photo_picker", "started")
         showGalleryPicker = false
         pendingPhotoImport = nil
         DispatchQueue.main.async {
@@ -1503,6 +1510,7 @@ struct HomeView: View {
         let drafts = images.prefix(allowedCount).map { AnalysisPhotoDraft(image: $0) }
         guard !drafts.isEmpty else { return }
         selectedPhotos.append(contentsOf: drafts)
+        ClientFlowEvents.shared.record("photo_ready", "completed", photoCount: selectedPhotos.count)
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         if images.count > allowedCount {
             analysisErrorTitle = RDLocalization.string("analysis.home.view.fotograf.limiti.03ab1131", table: .analysis, fallback: "Fotoğraf limiti")

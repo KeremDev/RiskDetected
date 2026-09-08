@@ -162,8 +162,8 @@ const DEFAULT_ANDROID_LEGAL_POLICY_EN: AndroidLegalPolicy = {
   enabled: false,
   document_set_id: "en-global-v1",
   manifest_checksum:
-    "6b30e321170934890adbbbd747be09fb1f3c8959026cf8bb856d086901d8d704",
-  policy_version: "android-legal-en-2026-07-31.1",
+    "7b3b45cc5009ec440d997de06d099141d1dfc66789a3d065b577fd0886d48201",
+  policy_version: "android-legal-en-2026-09-08.1",
   message_tr: userFacingCopy("legalDocumentsUpdated", "tr"),
   message_en: userFacingCopy("legalDocumentsUpdated", "en"),
   documents: [
@@ -176,9 +176,9 @@ const DEFAULT_ANDROID_LEGAL_POLICY_EN: AndroidLegalPolicy = {
     },
     {
       kind: "privacy",
-      version: "privacy-en-2026-07-31.1",
+      version: "privacy-en-2026-09-08.1",
       checksum:
-        "ef3d7e01b2b3c09603ff79c7f14bac631493feece7c1a0d6b0bd9a5f0e76ece4",
+        "0a89801e437ea931eedaa00d564b9d4742d1e53fe1aff07c3b16771ad73c51d1",
       change_type: "material_privacy",
     },
     {

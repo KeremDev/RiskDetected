@@ -246,6 +246,9 @@ final class AnalysisService {
         title: String? = nil,
         onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)? = nil
     ) async throws -> AnalysisResultBundle {
+        var diagnosticStage = "analysis_validation"
+        ClientFlowEvents.shared.record(diagnosticStage, "started", photoCount: images.count)
+        do {
         guard !canvases.isEmpty else {
             throw AnalysisError.invalidInput(RDLocalization.string("analysis.analysis.service.en.az.bir.analiz.odagi.secmelisin.554e3daf", table: .analysis, fallback: "En az bir analiz odağı seçmelisin."))
         }
@@ -259,6 +262,8 @@ final class AnalysisService {
         // 1) Fotoğrafları analiz kaydı açılmadan önce hazırla.
         // Hazırlık başarısız olursa DB'de boş pending analiz bırakmayız.
         onProgress?(.preparingInput)
+        diagnosticStage = "analysis_prepare"
+        ClientFlowEvents.shared.record(diagnosticStage, "started", photoCount: images.count)
         let preparedPhotos = try await Self.makePreparedJPEGPhotos(from: images)
         let totalPayloadBytes = preparedPhotos.reduce(0) { $0 + $1.encodedByteCount }
         if totalPayloadBytes > Self.maxInlinePhotoPayloadBytes {
@@ -267,6 +272,8 @@ final class AnalysisService {
 
         // 2) Analyses kaydı (kind=photo, status=pending)
         onProgress?(.creatingAnalysis)
+        diagnosticStage = "analysis_create"
+        ClientFlowEvents.shared.record(diagnosticStage, "started", photoCount: images.count)
         let resolvedTitle = title ?? defaultTitle(for: canvases)
         let analysisID = try await createAnalysis(
             userID: userID,
@@ -293,6 +300,8 @@ final class AnalysisService {
         let requestID = UUID().uuidString
         let supportID = AppErrorMessage.newSupportID()
         var uploadedPhotoPaths: [String] = []
+        diagnosticStage = "analysis_upload"
+        ClientFlowEvents.shared.record(diagnosticStage, "started", photoCount: images.count)
         do {
             onProgress?(.uploadingPhotos)
             uploadedPhotoPaths = try await uploadPhotosForAnalysis(
@@ -318,6 +327,8 @@ final class AnalysisService {
         }
 
         onProgress?(.submitting)
+        diagnosticStage = "analysis_submit"
+        ClientFlowEvents.shared.record(diagnosticStage, "started", photoCount: images.count)
         do {
             try await invokeAnalyze(
                 analysisID: analysisID, canvases: canvases,
@@ -338,7 +349,10 @@ final class AnalysisService {
                 onProgress: onProgress
             )
             if queuedOrLater {
-                return try await waitForCompletedResult(analysisID: analysisID, photoCount: images.count, onProgress: onProgress)
+                diagnosticStage = "analysis_result"
+                let result = try await waitForCompletedResult(analysisID: analysisID, photoCount: images.count, onProgress: onProgress)
+                ClientFlowEvents.shared.record(diagnosticStage, "completed", photoCount: images.count)
+                return result
             }
             let markedFailed = await markAnalysisSubmissionFailedIfStillPending(
                 analysisID: analysisID,
@@ -359,7 +373,16 @@ final class AnalysisService {
         }
 
         // 4) Backend kuyruğa aldıktan sonra sonucu DB status ile izle.
-        return try await waitForCompletedResult(analysisID: analysisID, photoCount: images.count, onProgress: onProgress)
+        diagnosticStage = "analysis_result"
+        ClientFlowEvents.shared.record(diagnosticStage, "started", photoCount: images.count)
+        let result = try await waitForCompletedResult(analysisID: analysisID, photoCount: images.count, onProgress: onProgress)
+        ClientFlowEvents.shared.record(diagnosticStage, "completed", photoCount: images.count)
+        return result
+        } catch {
+            ClientFlowEvents.shared.record(diagnosticStage, error is CancellationError ? "cancelled" : "failed",
+                reason: (error as? URLError) != nil ? "network" : "unknown", photoCount: images.count)
+            throw error
+        }
     }
 
     /// Geçmiş analizleri listeler.

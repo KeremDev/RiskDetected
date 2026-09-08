@@ -1,5 +1,16 @@
 # Google Play Data Safety owner onay paketi
 
+> **8 Eylül 2026 Meta App Events farkı:** Bu belgedeki 11 Ağustos Play Console taslak
+> durumu, Meta Android SDK eklenmeden önceki beyandır ve artık yeni SDK içeren bir build için
+> tek başına geçerli değildir. Play incelemesine göndermeden önce Uygulama işlemleri, İşlem geçmişi
+> ve Cihaz veya diğer kimlikler veri türlerine **Analiz** ile **Reklam veya pazarlama** amaçları
+> eklenmelidir. Meta'ya aktarımın Google'ın hizmet sağlayıcı istisnasına girip girmediği, hesapta
+> kabul edilen güncel Meta Business Tools/Data Processing şartlarıyla teyit edilmelidir; teyit
+> edilene kadar `shared=yes` daha korumacı beyandır. Klasik ve Privacy Sandbox reklam kimliği
+> izinleri, Topics ve Custom Audience izinleri birleşmiş manifestten çıkarılmıştır; yalnız
+> toplulaştırılmış Attribution Reporting izni korunur. Teknik kanıt ve release kapısı için
+> `docs/META_ANDROID_INTEGRATION_2026-09-08.md` esas alınır.
+
 İmzalı release AAB'nin SDK, merged manifest ve ağ envanteri tarandı. Aşağıdaki kapsam Play
 Console formuna girilecek owner onay paketidir; form gönderimi ve Google'ın güncel soru akışındaki
 son seçimler Play Console'da ayrıca kaydedilecektir.

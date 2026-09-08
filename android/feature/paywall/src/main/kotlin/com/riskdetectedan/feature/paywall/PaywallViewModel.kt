@@ -377,6 +377,7 @@ class PaywallViewModel @Inject constructor(
         _isPurchasing.value = true
         _purchaseError.value = null
         viewModelScope.launch {
+            try {
             if (!ensurePaymentsGateOpen()) return@launch
             recordResultHubEvent("checkout_started")
             recordEvent(
@@ -444,6 +445,9 @@ class PaywallViewModel @Inject constructor(
                         fallbackTitle = context.getString(RdR.string.rd_satin_alma_dogrulanamadi),
                     )
                 }
+            }
+            } finally {
+                _isPurchasing.value = false
             }
         }
     }

@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import PhotosUI
+import AVFoundation
 
 /// Kamera için `UIImagePickerController` sarmalı.
 /// PHPicker kamerayı desteklemediği için kameraya bu kullanılır.
@@ -8,6 +9,9 @@ struct CameraPicker: UIViewControllerRepresentable {
     var onPick: (UIImage?) -> Void
 
     func makeUIViewController(context: Context) -> UIImagePickerController {
+        if AVCaptureDevice.authorizationStatus(for: .video) == .denied || AVCaptureDevice.authorizationStatus(for: .video) == .restricted {
+            ClientFlowEvents.shared.record("photo_picker", "blocked", reason: "permission")
+        }
         let picker = UIImagePickerController()
         picker.sourceType = .camera
         picker.cameraCaptureMode = .photo
@@ -112,23 +116,30 @@ struct MultiGalleryPicker: UIViewControllerRepresentable {
 
         func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
             guard !results.isEmpty else {
+                ClientFlowEvents.shared.record("photo_import", "cancelled")
                 onPick([])
                 return
             }
 
             let group = DispatchGroup()
+            let lock = NSLock()
             var images = Array<UIImage?>(repeating: nil, count: results.count)
             for (index, result) in results.enumerated() {
                 let provider = result.itemProvider
                 guard provider.canLoadObject(ofClass: UIImage.self) else { continue }
                 group.enter()
                 provider.loadObject(ofClass: UIImage.self) { object, _ in
+                    lock.lock()
                     images[index] = object as? UIImage
+                    lock.unlock()
                     group.leave()
                 }
             }
 
             group.notify(queue: .main) {
+                let count = images.compactMap { $0 }.count
+                ClientFlowEvents.shared.record("photo_import", count == results.count ? "completed" : "failed",
+                    reason: count == results.count ? "none" : "io", photoCount: count)
                 self.onPick(images.compactMap { $0 })
             }
         }

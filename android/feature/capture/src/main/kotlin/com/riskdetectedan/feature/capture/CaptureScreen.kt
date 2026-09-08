@@ -6,6 +6,8 @@ import androidx.compose.ui.res.stringResource
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.view.Surface
+import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -57,6 +59,8 @@ import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.toTextStyle
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -73,7 +77,8 @@ import java.util.Locale
  * shutter button) rather than a custom illustration.
  */
 @Composable
-fun CaptureScreen(onPhotoCaptured: (File) -> Unit = {}, onBack: (() -> Unit)? = null) {
+fun CaptureScreen(onPhotoCaptured: (File) -> Unit = {}, onBack: (() -> Unit)? = null,
+    onDiagnostic: (String, String, String) -> Unit = { _, _, _ -> }) {
     val context = LocalContext.current
     val colors = RdTheme.colors
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
@@ -87,9 +92,13 @@ fun CaptureScreen(onPhotoCaptured: (File) -> Unit = {}, onBack: (() -> Unit)? = 
     }
     val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
-    ) { granted -> hasCameraPermission = granted }
+    ) { granted ->
+        hasCameraPermission = granted
+        if (!granted) onDiagnostic("photo_picker", "blocked", "permission")
+    }
 
     LaunchedEffect(Unit) {
+        onDiagnostic("photo_picker", "started", "none")
         if (!hasCameraPermission) permissionLauncher.launch(Manifest.permission.CAMERA)
     }
 
@@ -147,7 +156,14 @@ fun CaptureScreen(onPhotoCaptured: (File) -> Unit = {}, onBack: (() -> Unit)? = 
                     val preview = Preview.Builder().build().also {
                         it.surfaceProvider = previewView.surfaceProvider
                     }
-                    val capture = ImageCapture.Builder().build()
+                    val capture = ImageCapture.Builder()
+                        .setTargetRotation(previewView.display?.rotation ?: Surface.ROTATION_0)
+                        .build()
+                    // Keep the capture rotation aligned when the device changes orientation while
+                    // the camera is open. The normalization below remains the final safety net.
+                    previewView.addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
+                        view.display?.let { capture.targetRotation = it.rotation }
+                    }
                     imageCapture = capture
                     try {
                         cameraProvider.unbindAll()
@@ -158,6 +174,7 @@ fun CaptureScreen(onPhotoCaptured: (File) -> Unit = {}, onBack: (() -> Unit)? = 
                             capture,
                         )
                     } catch (_: Exception) {
+                        onDiagnostic("photo_picker", "failed", "io")
                         // Camera bind failures surface as a black preview — acceptable for this
                         // skeleton; real error UX lands with the rest of the capture flow.
                     }
@@ -222,11 +239,24 @@ fun CaptureScreen(onPhotoCaptured: (File) -> Unit = {}, onBack: (() -> Unit)? = 
                             ContextCompat.getMainExecutor(context),
                             object : ImageCapture.OnImageSavedCallback {
                                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                                    isCapturing = false
-                                    coroutineScope.launch { onPhotoCaptured(outputFile) }
+                                    coroutineScope.launch {
+                                        val normalized = withContext(Dispatchers.IO) {
+                                            normalizeCapturedPhoto(outputFile)
+                                        }
+                                        isCapturing = false
+                                        normalized.onSuccess { photo ->
+                                            if (photo != outputFile) outputFile.delete()
+                                            onDiagnostic("photo_import", "completed", "none")
+                                            onPhotoCaptured(photo)
+                                        }.onFailure {
+                                            onDiagnostic("photo_import", "failed", "io")
+                                            Toast.makeText(context, RdR.string.rd_fotograf_okunamadi, Toast.LENGTH_LONG).show()
+                                        }
+                                    }
                                 }
 
                                 override fun onError(exception: ImageCaptureException) {
+                                    onDiagnostic("photo_import", "failed", "io")
                                     isCapturing = false
                                 }
                             },

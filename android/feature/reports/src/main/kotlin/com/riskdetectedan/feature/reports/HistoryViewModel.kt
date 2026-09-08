@@ -27,6 +27,7 @@ import com.riskdetectedan.core.data.reports.ReportsRepository
 import com.riskdetectedan.core.data.release.AndroidRuntimeGateName
 import com.riskdetectedan.core.data.release.ReleasePolicyRepository
 import com.riskdetectedan.core.data.store.ReviewEligibilityRepository
+import com.riskdetectedan.core.data.telemetry.MetaAppEventsService
 import com.riskdetectedan.core.designsystem.R as RdR
 import com.riskdetectedan.core.designsystem.rdAnalysisCanvasTitleResource
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -72,6 +73,7 @@ class HistoryViewModel @Inject constructor(
     private val releasePolicyRepository: ReleasePolicyRepository,
     private val pdfReportGenerator: PdfReportGenerator,
     private val reviewEligibilityRepository: ReviewEligibilityRepository,
+    private val metaAppEvents: MetaAppEventsService,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<HistoryUiState>(HistoryUiState.Loading)
@@ -202,7 +204,11 @@ class HistoryViewModel @Inject constructor(
                 companyId = companyId,
                 localization = localization,
             )) {
-                is RdResult.Success -> result.value
+                is RdResult.Success -> result.value.also {
+                    // The backend has created the report row at this boundary. A later local
+                    // download failure must not erase that real conversion.
+                    metaAppEvents.reportCreated(it.id, "xlsx")
+                }
                 is RdResult.Failure -> {
                     _reportError.value = AppErrorMessages.make(
                         result.message,
@@ -363,6 +369,7 @@ class HistoryViewModel @Inject constructor(
                 )
             ) {
                 is RdResult.Success -> {
+                    metaAppEvents.reportCreated(registered.value.id, "pdf")
                     _reportFile.value = ReportFile(
                         bytes = generatedPdf.bytes,
                         fileName = registered.value.fileName ?: fileNameSlug,
