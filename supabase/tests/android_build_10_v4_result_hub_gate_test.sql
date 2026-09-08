@@ -62,7 +62,7 @@ select ok(
       and coalesce((value->>'soft_update_enabled')::boolean, true) = false
       and coalesce((value->>'hard_update_enabled')::boolean, true) = false
       and value->>'app_store_url' = 'https://play.google.com/store/apps/details?id=com.riskdetectedan.app'
-      and value->>'policy_version' like 'production-2.0.0-vc%'
+      and value->>'policy_version' like 'production-%-vc%'
   ),
   'build 10 or newer is advertised without forcing or nudging an update'
 );

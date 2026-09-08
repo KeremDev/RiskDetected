@@ -65,10 +65,32 @@ if rg -n --glob '*.kt' --glob '!**/build/**' -i "$unsafe_log_pattern" "${runtime
   exit 1
 fi
 
-if rg -n --glob 'AndroidManifest.xml' 'com\.google\.android\.gms\.permission\.AD_ID' "${runtime_roots[@]}"; then
-  echo "AD_ID permission is forbidden for Android v1." >&2
-  exit 1
-fi
+# SDK manifests may request AD_ID, so the app manifest carries an explicit tools:node="remove"
+# override. Validate the source declaration structurally: an actual request is forbidden, while
+# the removal guard is required to remain expressible in source and is verified again below on
+# the merged APK.
+python3 - "${runtime_roots[@]}" <<'PY'
+import pathlib
+import sys
+import xml.etree.ElementTree as ET
+
+ANDROID_NAME = "{http://schemas.android.com/apk/res/android}name"
+TOOLS_NODE = "{http://schemas.android.com/tools}node"
+AD_ID_PERMISSION = "com.google.android.gms.permission.AD_ID"
+
+for root in map(pathlib.Path, sys.argv[1:]):
+    for path in root.rglob("AndroidManifest.xml"):
+        if "build" in path.parts:
+            continue
+        manifest = ET.parse(path).getroot()
+        for declaration in manifest:
+            if not declaration.tag.endswith("uses-permission"):
+                continue
+            if declaration.attrib.get(ANDROID_NAME) != AD_ID_PERMISSION:
+                continue
+            if declaration.attrib.get(TOOLS_NODE) != "remove":
+                raise SystemExit(f"AD_ID permission request is forbidden in {path}")
+PY
 
 if rg -n 'firebase[-.]analytics' \
   "$android_dir/build.gradle.kts" \
@@ -89,4 +111,4 @@ if [[ $# -gt 0 ]]; then
   fi
 fi
 
-echo "Android source secret, PII-log and AD_ID scan passed."
+echo "Android source secret, PII-log and AD_ID boundary scan passed."

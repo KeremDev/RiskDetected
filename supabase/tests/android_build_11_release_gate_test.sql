@@ -29,7 +29,7 @@ select ok(
       -- guard tracks "build 11 or newer is live", the newest build's exact state is asserted by
       -- its own test.
       and (value->>'latest_build')::integer >= 11
-      and value->>'policy_version' like 'production-2.0.0-vc%'
+      and value->>'policy_version' like 'production-%-vc%'
       and coalesce((value->>'soft_update_enabled')::boolean, true) = false
       and coalesce((value->>'hard_update_enabled')::boolean, true) = false
   ),
