@@ -108,8 +108,8 @@ class HistoryViewModel @Inject constructor(
     private val _companies = MutableStateFlow<List<Company>>(emptyList())
     val companies: StateFlow<List<Company>> = _companies.asStateFlow()
 
-    private val _userTier = MutableStateFlow(SubscriptionTier.Free)
-    val userTier: StateFlow<SubscriptionTier> = _userTier.asStateFlow()
+    private val _userTier = MutableStateFlow<SubscriptionTier?>(null)
+    val userTier: StateFlow<SubscriptionTier?> = _userTier.asStateFlow()
 
     private val _profile = MutableStateFlow<UserProfile?>(null)
     val profile: StateFlow<UserProfile?> = _profile.asStateFlow()
@@ -164,11 +164,19 @@ class HistoryViewModel @Inject constructor(
                 )
             }
             _companies.value = (companyRepository.listCompanies() as? RdResult.Success)?.value.orEmpty()
-            val profile = (profileRepository.fetchProfile(userId) as? RdResult.Success)?.value
-            _profile.value = profile
-            val tier = profile?.tier ?: SubscriptionTier.Free
-            _userTier.value = tier
-            _reportQuotaUsage.value = (reportsRepository.fetchQuotaUsage(userId, tier) as? RdResult.Success)?.value
+            when (val profileResult = profileRepository.fetchProfile(userId)) {
+                is RdResult.Success -> {
+                    val profile = profileResult.value
+                    _profile.value = profile
+                    _userTier.value = profile.tier
+                    _reportQuotaUsage.value = (
+                        reportsRepository.fetchQuotaUsage(userId, profile.tier) as? RdResult.Success
+                    )?.value
+                }
+                // Preserve the last authoritative membership instead of replacing a paid user
+                // with Free on a transient profile/network failure.
+                is RdResult.Failure -> Unit
+            }
         }
     }
 

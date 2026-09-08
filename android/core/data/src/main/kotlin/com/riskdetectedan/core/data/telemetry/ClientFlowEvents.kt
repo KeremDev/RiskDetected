@@ -65,6 +65,7 @@ class ClientFlowEvents @Inject constructor(
     private fun flush() {
         synchronized(lock) { if (flushing) return; save(read()); flushing = true }
         scope.launch {
+            var stoppedAfterFailures = false
             try {
                 var failures = 0
                 while (isActive) {
@@ -79,11 +80,26 @@ class ClientFlowEvents @Inject constructor(
                         failures = 0
                     } catch (e: Exception) {
                         if (e is CancellationException && e !is TimeoutCancellationException) throw e
-                        if (++failures >= 3) break
+                        if (++failures >= 3) {
+                            stoppedAfterFailures = true
+                            break
+                        }
                         delay(5_000L * failures)
                     }
                 }
-            } finally { synchronized(lock) { flushing = false } }
+            } finally {
+                val shouldRestart = synchronized(lock) {
+                    flushing = false
+                    !stoppedAfterFailures && read().any {
+                        it.user_id == client.auth.currentUserOrNull()?.id
+                    }
+                }
+                // An event can be queued after the loop observes an empty queue but before
+                // `flushing` is cleared. Re-checking after the atomic transition closes that
+                // lost-wakeup window. A three-failure stop intentionally waits for a later event
+                // or auth transition so a persistent outage cannot create a hot retry loop.
+                if (shouldRestart) flush()
+            }
         }
     }
 

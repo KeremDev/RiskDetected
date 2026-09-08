@@ -161,6 +161,7 @@ class BillingRepository @Inject constructor(
             installAttributionRepository.applyToRevenueCatIfConfigured()
             RdResult.Success(Unit)
         } catch (t: Throwable) {
+            if (t is CancellationException) throw t
             RdResult.Failure("billing_login_failed", t.message ?: "billing_login_failed", t)
         }
     }
@@ -190,6 +191,7 @@ class BillingRepository @Inject constructor(
         }
         RdResult.Success(packages)
     } catch (t: Throwable) {
+        if (t is CancellationException) throw t
         RdResult.Failure("billing_offerings_failed", t.message ?: "billing_offerings_failed", t)
     }
 
@@ -320,6 +322,7 @@ class BillingRepository @Inject constructor(
             syncBackendSubscriptionWithRetry(tier)
         }
     } catch (t: Throwable) {
+        if (t is CancellationException) throw t
         RdResult.Failure("billing_restore_failed", t.message ?: "billing_restore_failed", t)
     }
 
@@ -328,12 +331,14 @@ class BillingRepository @Inject constructor(
         val tier = tierFromCustomerInfo(customerInfo)
         validateReceiptOwner(customerInfo, tier) ?: RdResult.Success(tier)
     } catch (t: Throwable) {
+        if (t is CancellationException) throw t
         RdResult.Failure("billing_customer_info_failed", t.message ?: "billing_customer_info_failed", t)
     }
 
     suspend fun currentSubscriptionState(): RdResult<BillingSubscriptionState> = try {
         RdResult.Success(subscriptionStateFromCustomerInfo(Purchases.sharedInstance.awaitCustomerInfo()))
     } catch (t: Throwable) {
+        if (t is CancellationException) throw t
         RdResult.Failure("billing_customer_info_failed", t.message ?: "billing_customer_info_failed", t)
     }
 
@@ -353,6 +358,7 @@ class BillingRepository @Inject constructor(
         }
         RdResult.Success(Unit)
     } catch (t: Throwable) {
+        if (t is CancellationException) throw t
         RdResult.Failure(
             code = "billing_backend_reconcile_failed",
             message = t.message ?: "billing_backend_reconcile_failed",
@@ -399,6 +405,7 @@ class BillingRepository @Inject constructor(
         }
         validateBackendSubscriptionTier(expectedTier, response.tier)
     } catch (t: Throwable) {
+        if (t is CancellationException) throw t
         val rawMessage = t.message ?: "Abonelik backend tarafında doğrulanamadı."
         val isTierMismatch = rawMessage.contains("revenuecat_tier_mismatch", ignoreCase = true) ||
             rawMessage.contains("backend_tier_mismatch", ignoreCase = true)
@@ -418,6 +425,7 @@ class BillingRepository @Inject constructor(
             currentAppUserId = null
             RdResult.Success(Unit)
         } catch (t: Throwable) {
+            if (t is CancellationException) throw t
             RdResult.Failure("billing_logout_failed", t.message ?: "billing_logout_failed", t)
         }
     }

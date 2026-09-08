@@ -218,7 +218,7 @@ fun ReportsScreen(
                         )
 
                         HistoryFilterSurface(
-                            showCompanyButton = userTier.isPaid,
+                            showCompanyButton = userTier?.isPaid == true,
                             companySelected = selectedCompany != null,
                             onCompanyButtonClick = { showCompanyFilter = true },
                             search = search,

@@ -183,29 +183,41 @@ class AnalysisViewModel @Inject constructor(
                 )
                 return@launch
             }
-            val profile = (profileRepository.fetchProfile(userId) as? RdResult.Success)?.value
-            val tier = profile?.tier ?: SubscriptionTier.Free
+            val profile = when (val result = profileRepository.fetchProfile(userId)) {
+                is RdResult.Success -> result.value
+                is RdResult.Failure -> {
+                    flowEvents.record("analysis_validation", "failed", "network", photoPaths.size)
+                    _state.value = CreateAnalysisUiState.Failed(
+                        AppErrorMessages.make(
+                            result.message,
+                            context = context.getString(RdR.string.rd_analiz_tamamlanamadi),
+                        ),
+                    )
+                    return@launch
+                }
+            }
+            val tier = profile.tier
             val capabilities = resolveCapabilities(tier)
             _capabilities.value = capabilities
-            val riskMethod = profile?.preferredMethod
+            val riskMethod = profile.preferredMethod
                 ?.takeIf { it == "fine_kinney" || it == "matrix_5x5" }
                 ?: RdClientMetadata.DEFAULT_RISK_METHOD
-            val selectedLocalization = profile?.safetyProfileId
+            val selectedLocalization = profile.safetyProfileId
                 ?.let(RdClientMetadata::localizationForSafetyProfile)
-            val submissionAppLanguage = profile?.appLanguage
+            val submissionAppLanguage = profile.appLanguage
                 ?.takeIf { it == "tr" || it == "en" }
                 ?: selectedLocalization?.appLanguage
                 ?: RdClientMetadata.APP_LANGUAGE
-            val submissionOutputLocale = profile?.preferredContentLocale
+            val submissionOutputLocale = profile.preferredContentLocale
                 ?: selectedLocalization?.contentLocale
                 ?: RdClientMetadata.CONTENT_LOCALE
-            val submissionCountry = profile?.workJurisdictionCountry
+            val submissionCountry = profile.workJurisdictionCountry
                 ?: selectedLocalization?.workJurisdictionCountry
                 ?: RdClientMetadata.WORK_JURISDICTION_COUNTRY
-            val submissionSafetyProfileId = profile?.safetyProfileId
+            val submissionSafetyProfileId = profile.safetyProfileId
                 ?: selectedLocalization?.safetyProfileId
                 ?: RdClientMetadata.SAFETY_PROFILE_ID
-            val submissionSafetyProfileVersion = profile?.safetyProfileVersion
+            val submissionSafetyProfileVersion = profile.safetyProfileVersion
                 ?: selectedLocalization?.safetyProfileVersion
                 ?: RdClientMetadata.SAFETY_PROFILE_VERSION
             if (analysisMode == "detailed" && !capabilities.canUseDetailedAnalysis) {
@@ -589,7 +601,13 @@ class AnalysisViewModel @Inject constructor(
         val userId = authRepository.currentUserId ?: return
         _state.value = CreateAnalysisUiState.LoadingCompletedResult(analysisId)
         viewModelScope.launch {
-            _capabilities.value = resolveCapabilities(userId)
+            when (val result = resolveCapabilities(userId)) {
+                is RdResult.Success -> _capabilities.value = result.value
+                is RdResult.Failure -> {
+                    _state.value = membershipResolutionFailure(result)
+                    return@launch
+                }
+            }
             val findings = (findingsRepository.fetchFindings(analysisId) as? RdResult.Success)?.value.orEmpty()
             _findings.value = findings
             loadResultContext(analysisId)
@@ -610,7 +628,13 @@ class AnalysisViewModel @Inject constructor(
         val inFlight = inFlightStore.load(userId) ?: return false
         _state.value = CreateAnalysisUiState.Polling(inFlight.analysisId)
         viewModelScope.launch {
-            _capabilities.value = resolveCapabilities(userId)
+            when (val result = resolveCapabilities(userId)) {
+                is RdResult.Success -> _capabilities.value = result.value
+                is RdResult.Failure -> {
+                    _state.value = membershipResolutionFailure(result)
+                    return@launch
+                }
+            }
             pollAndHandleResult(inFlight.analysisId, photoCount = inFlight.photoCount)
         }
         return true
@@ -723,16 +747,25 @@ class AnalysisViewModel @Inject constructor(
         _updateError.value = null
     }
 
-    private suspend fun resolveCapabilities(userId: String): PlanCapabilities {
-        val tier = (profileRepository.fetchProfile(userId) as? RdResult.Success)?.value?.tier
-            ?: SubscriptionTier.Free
-        return resolveCapabilities(tier)
+    private suspend fun resolveCapabilities(userId: String): RdResult<PlanCapabilities> {
+        return when (val profile = profileRepository.fetchProfile(userId)) {
+            is RdResult.Success -> RdResult.Success(resolveCapabilities(profile.value.tier))
+            is RdResult.Failure -> profile
+        }
     }
 
     private suspend fun resolveCapabilities(tier: SubscriptionTier): PlanCapabilities {
         return (planCapabilitiesRepository.fetchCapabilities(tier) as? RdResult.Success)?.value
             ?: PlanCapabilities.forTier(tier)
     }
+
+    private fun membershipResolutionFailure(failure: RdResult.Failure): CreateAnalysisUiState.Failed =
+        CreateAnalysisUiState.Failed(
+            AppErrorMessages.make(
+                failure.message,
+                context = context.getString(RdR.string.rd_analiz_tamamlanamadi),
+            ),
+        )
 }
 
 internal object AnalysisRecoveryPolicy {

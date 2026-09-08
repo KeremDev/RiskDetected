@@ -114,6 +114,7 @@ class ResultReportViewModel @Inject constructor(
         val userId = authRepository.currentUserId ?: return
         viewModelScope.launch {
             val profile = (profileRepository.fetchProfile(userId) as? RdResult.Success)?.value
+                ?: _setup.value.profile
             val companies = (companyRepository.listCompanies(includeArchived = false) as? RdResult.Success)
                 ?.value.orEmpty()
             val quotaUsage = (reportsRepository.fetchQuotaUsage(

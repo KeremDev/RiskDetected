@@ -47,10 +47,8 @@ class HomeTierViewModel @Inject constructor(
     fun refresh() {
         val userId = authRepository.currentUserId ?: return
         viewModelScope.launch {
-            // Same passive reconciliation as iOS app entry: refreshes RevenueCat
-            // cancellation intent, while the following profile read remains the
-            // only authority that can unlock paid UI/capabilities.
-            billingRepository.reconcileBackendSubscription()
+            // Resolve the authoritative profile first so passive RevenueCat reconciliation cannot
+            // hold the Home membership state in an artificial Free/loading state on a slow call.
             when (val result = profileRepository.fetchProfile(userId)) {
                 is RdResult.Success -> {
                     _profile.value = result.value
@@ -60,6 +58,9 @@ class HomeTierViewModel @Inject constructor(
                 }
                 is RdResult.Failure -> Unit
             }
+            // Same passive reconciliation as iOS app entry. It can repair backend state, but the
+            // profile snapshot above remains the only authority that unlocks paid capabilities.
+            billingRepository.reconcileBackendSubscription()
         }
     }
 }

@@ -4,8 +4,8 @@ import com.riskdetectedan.core.designsystem.R as RdR
 
 import androidx.compose.ui.res.stringResource
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import android.content.Context
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -47,6 +47,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -74,9 +75,11 @@ import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.toTextStyle
 import com.riskdetectedan.feature.reports.HistoryUiState
 import com.riskdetectedan.feature.reports.HistoryViewModel
-import java.io.ByteArrayOutputStream
+import com.riskdetectedan.feature.capture.prepareAnalysisPhoto
 import java.io.File
-import java.util.UUID
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Real visual+flow rebuild (2026-08-08) matching the actual iOS Home screenshot the owner
@@ -152,9 +155,14 @@ fun HomeScreen(
         ?: localPhotoCapabilities.visiblePhotoSlotsInUI
     // iOS intentionally shows the value of multi-photo analysis to free members: one usable
     // slot and two locked previews. Capability enforcement remains one photo for Free.
-    val maxPhotoCount = if (userTier.isPaid) resolvedMaxPhotoCount else 1
-    val visiblePhotoSlots = if (userTier.isPaid) resolvedVisiblePhotoSlots else 3
-    val isFreeQuotaExhausted = !userTier.isPaid && quota?.isExhausted == true
+    val isMembershipResolved = fetchedProfile != null
+    val maxPhotoCount = if (isMembershipResolved && userTier.isPaid) resolvedMaxPhotoCount else 1
+    val visiblePhotoSlots = when {
+        !isMembershipResolved -> 1
+        userTier.isPaid -> resolvedVisiblePhotoSlots
+        else -> 3
+    }
+    val isFreeQuotaExhausted = isMembershipResolved && !userTier.isPaid && quota?.isExhausted == true
 
     var showTitlesSheet by rememberSaveable { mutableStateOf(false) }
     val titlesSheetState = rememberModalBottomSheetState()
@@ -191,6 +199,7 @@ fun HomeScreen(
     // leaving the iOS-parity Continue button below the fold until the user dragged the sheet.
     // iOS presents this picker at a fixed 600pt detent, so enter directly at the expanded anchor.
     val sectorSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val galleryImportScope = rememberCoroutineScope()
 
     // Real port of `appendPickedPhotos(images, shouldAnnotate: true, ...)` — every gallery-picked
     // photo queues through Annotate before it lands in the tray, same as a freshly captured one
@@ -200,30 +209,20 @@ fun HomeScreen(
     ) { uris ->
         photoTrayViewModel.record("photo_import", if (uris.isEmpty()) "cancelled" else "started")
         val remaining = maxPhotoCount - trayPhotoPaths.size
-        val savedPaths = uris.take(maxOf(0, remaining)).mapNotNull { uri ->
-            try {
-            context.contentResolver.openInputStream(uri)?.use { stream ->
-                val bitmap = BitmapFactory.decodeStream(stream)
-                if (bitmap != null) {
-                    val output = ByteArrayOutputStream()
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, output)
-                    val file = File(context.cacheDir, "tray_${UUID.randomUUID()}.jpg")
-                    file.writeBytes(output.toByteArray())
-                    file.absolutePath
-                } else {
-                    null
+        val acceptedUris = uris.take(maxOf(0, remaining))
+        if (acceptedUris.isNotEmpty()) {
+            galleryImportScope.launch {
+                val savedPaths = withContext(Dispatchers.IO) {
+                    acceptedUris.mapNotNull { uri -> importGalleryPhoto(context, uri) }
                 }
-            }
-            } catch (_: Exception) {
-                null
+                val failed = savedPaths.size != acceptedUris.size || savedPaths.isEmpty()
+                photoTrayViewModel.record("photo_import", if (failed) "failed" else "completed", if (failed) "io" else "none")
+                if (failed) {
+                    android.widget.Toast.makeText(context, RdR.string.rd_fotograf_okunamadi, android.widget.Toast.LENGTH_LONG).show()
+                }
+                if (savedPaths.isNotEmpty()) onAnnotatePhotos(savedPaths)
             }
         }
-        if (uris.isNotEmpty()) {
-            val failed = savedPaths.size != uris.take(maxOf(0, remaining)).size || savedPaths.isEmpty()
-            photoTrayViewModel.record("photo_import", if (failed) "failed" else "completed", if (failed) "io" else "none")
-            if (failed) android.widget.Toast.makeText(context, RdR.string.rd_fotograf_okunamadi, android.widget.Toast.LENGTH_LONG).show()
-        }
-        if (savedPaths.isNotEmpty()) onAnnotatePhotos(savedPaths)
     }
 
     /** Real port of `beginPreAnalysisSelection()` — the real order is sector sheet *first*, then
@@ -238,8 +237,11 @@ fun HomeScreen(
     // the source/tray chooser; an existing draft continues with sector then canvas. Keeping the
     // request as a monotonically increasing key also makes repeated taps observable while Home
     // remains the active tab.
-    LaunchedEffect(quickScanRequestKey) {
+    LaunchedEffect(quickScanRequestKey, fetchedProfile?.tier) {
         if (quickScanRequestKey <= 0) return@LaunchedEffect
+        // Keep the request pending until membership is authoritative. Treating null as Free here
+        // could incorrectly send a paid user to the quota paywall during a slow profile fetch.
+        if (!isMembershipResolved) return@LaunchedEffect
         val latestQuota = if (!userTier.isPaid) quotaViewModel.refreshAndGet() else quota
         when (
             QuickScanReducer.decide(
@@ -291,7 +293,7 @@ fun HomeScreen(
             )
         }
 
-        if (quota != null && !userTier.isPaid) {
+        if (quota != null && isMembershipResolved && !userTier.isPaid) {
             Spacer(Modifier.height(10.dp))
             FreeQuotaHint(quota = quota!!, onClick = { if (quota!!.isExhausted) onUpgrade("home_quota_hint") })
         }
@@ -299,11 +301,19 @@ fun HomeScreen(
         Spacer(Modifier.height(14.dp))
         HomeStartScanButton(
             onClick = {
-                if (trayPhotoPaths.isEmpty()) photoTrayViewModel.record("analysis_cta", "started")
-                if (isFreeQuotaExhausted) {
+                if (!isMembershipResolved) {
+                    tierViewModel.refresh()
+                    android.widget.Toast.makeText(
+                        context,
+                        RdR.string.rd_profil_islemi_tamamlanamadi,
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
+                } else if (isFreeQuotaExhausted) {
+                    if (trayPhotoPaths.isEmpty()) photoTrayViewModel.record("analysis_cta", "started")
                     photoTrayViewModel.record("analysis_validation", "blocked", "quota")
                     onUpgrade("home_analysis_start_quota")
                 } else if (trayPhotoPaths.isEmpty()) {
+                    photoTrayViewModel.record("analysis_cta", "started")
                     showPhotoTray = true
                 } else {
                     beginPreAnalysisSelection()
@@ -445,8 +455,17 @@ fun HomeScreen(
                 onRemove = photoTrayViewModel::removePhoto,
                 onMove = photoTrayViewModel::movePhoto,
                 onLockedSlot = {
-                    showPhotoTray = false
-                    onUpgrade("home_photo_tray_locked_slot")
+                    if (isMembershipResolved) {
+                        showPhotoTray = false
+                        onUpgrade("home_photo_tray_locked_slot")
+                    } else {
+                        tierViewModel.refresh()
+                        android.widget.Toast.makeText(
+                            context,
+                            RdR.string.rd_profil_islemi_tamamlanamadi,
+                            android.widget.Toast.LENGTH_SHORT,
+                        ).show()
+                    }
                 },
                 onStartAnalysis = {
                     // Mirrors continueFromPhotoTrayToAnalysis() -> beginPreAnalysisSelection():
@@ -465,6 +484,24 @@ fun HomeScreen(
                 ProfessionalTitlesSheet(progress = summary)
             }
         }
+    }
+}
+
+private fun importGalleryPhoto(context: Context, uri: Uri): String? {
+    val source = File.createTempFile("rd_gallery_source_", ".bin", context.cacheDir)
+    return try {
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            source.outputStream().use { output -> input.copyTo(output) }
+        } ?: error("gallery_photo_stream_unavailable")
+        val prepared = prepareAnalysisPhoto(
+            source = source,
+            forceJpegEncoding = true,
+        ).getOrThrow()
+        if (prepared != source) source.delete()
+        prepared.absolutePath
+    } catch (_: Exception) {
+        source.delete()
+        null
     }
 }
 

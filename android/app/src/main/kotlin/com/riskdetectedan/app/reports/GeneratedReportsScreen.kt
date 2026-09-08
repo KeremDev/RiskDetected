@@ -336,7 +336,7 @@ fun GeneratedReportsScreen(
                                         onSearchChange = { search = it },
                                         activeFilter = activeFilter,
                                         onFilterSelect = { activeFilter = it },
-                                        showCompanyButton = userTier != SubscriptionTier.Free,
+                                        showCompanyButton = userTier?.isPaid == true,
                                         companySelected = selectedArchiveCompany != null,
                                         onCompanyClick = { showArchiveCompanyFilter = true },
                                     )
@@ -403,9 +403,10 @@ fun GeneratedReportsScreen(
     }
 
     selectedAnalysis?.let { item ->
+        val resolvedTier = userTier ?: return@let
         ReportSourceSheet(
             item = item,
-            tier = userTier,
+            tier = resolvedTier,
             companies = companies,
             profile = profile,
             previewState = reportPreview,

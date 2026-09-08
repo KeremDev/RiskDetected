@@ -1,5 +1,6 @@
 package com.riskdetectedan.app.push
 
+import android.app.Application
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
@@ -17,7 +18,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
+// Notification rendering and manifest metadata do not require the production Hilt application.
+// A plain Application keeps this Robolectric test isolated from Supabase session storage.
+@Config(sdk = [35], application = Application::class)
 class NotificationBrandingTest {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()

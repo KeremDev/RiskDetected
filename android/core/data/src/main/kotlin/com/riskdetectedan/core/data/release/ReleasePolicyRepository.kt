@@ -15,6 +15,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -234,6 +235,7 @@ class ReleasePolicyRepository @Inject constructor(
             ),
         )
     } catch (t: Throwable) {
+        if (t is CancellationException) throw t
         _androidRuntimeGates.value = AndroidRuntimeGates.CLOSED
         RdResult.Failure("release_policy_fetch_failed", t.message ?: "release_policy_fetch_failed", t)
     }

@@ -172,3 +172,78 @@ Deno.test("published iOS build 90 keeps build 88 supported and opens both analys
   assertStringIncludes(normalizedSQL, "'[\"90\"]'::jsonb");
   assertStringIncludes(normalizedSQL, "? '90'");
 });
+
+Deno.test("published iOS build 91 keeps build 88 supported and opens both analysis gates", async () => {
+  const releaseMigration = await readTextIfAllowed(
+    new URL(
+      "../../migrations/20260908235200_publish_ios_build_91_release_policy.sql",
+      import.meta.url,
+    ),
+  );
+  if (releaseMigration == null) return;
+
+  const normalizedSQL = releaseMigration
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+  assertStringIncludes(normalizedSQL, "'minimum_supported_build', 88");
+  assertStringIncludes(normalizedSQL, "'latest_build', 91");
+  assertStringIncludes(normalizedSQL, "'hard_update_enabled', true");
+  assertStringIncludes(normalizedSQL, "'soft_update_enabled', true");
+  assertStringIncludes(
+    normalizedSQL,
+    "'policy_version', 'build-91-appstore-general-release'",
+  );
+  assertStringIncludes(normalizedSQL, "analysis_engine_v4");
+  assertStringIncludes(normalizedSQL, "analysis_result_hub_v1");
+  assertStringIncludes(normalizedSQL, "enabled_ios_builds");
+  assertStringIncludes(normalizedSQL, "jsonb_array_elements_text");
+  assertStringIncludes(normalizedSQL, "'[\"91\"]'::jsonb");
+  assertStringIncludes(normalizedSQL, "? '91'");
+});
+
+Deno.test("live Android build 13 is reconciled without enabling update prompts", async () => {
+  const releaseMigration = await readTextIfAllowed(
+    new URL(
+      "../../migrations/20260909000000_publish_android_build_13_release_policy.sql",
+      import.meta.url,
+    ),
+  );
+  if (releaseMigration == null) return;
+
+  const normalizedSQL = releaseMigration
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+  assertStringIncludes(normalizedSQL, "'latest_build', 13");
+  assertStringIncludes(normalizedSQL, "'soft_update_enabled', false");
+  assertStringIncludes(normalizedSQL, "'hard_update_enabled', false");
+  assertStringIncludes(
+    normalizedSQL,
+    "'policy_version', 'production-2.0.1-vc13'",
+  );
+});
+
+Deno.test("Android build 14 opens analysis gates without being advertised early", async () => {
+  const gateMigration = await readTextIfAllowed(
+    new URL(
+      "../../migrations/20260909000500_android_build_14_v4_result_hub_gate.sql",
+      import.meta.url,
+    ),
+  );
+  if (gateMigration == null) return;
+
+  const normalizedSQL = gateMigration
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+  assertStringIncludes(normalizedSQL, "analysis_engine_v4");
+  assertStringIncludes(normalizedSQL, "analysis_result_hub_v1");
+  assertStringIncludes(normalizedSQL, "'[\"14\"]'::jsonb");
+  assertStringIncludes(
+    normalizedSQL,
+    "?& array['7','8','9','10','11','12','13','14']",
+  );
+  assertStringIncludes(normalizedSQL, "<> 13");
+  assertStringIncludes(normalizedSQL, "'production-2.0.1-vc13'");
+});

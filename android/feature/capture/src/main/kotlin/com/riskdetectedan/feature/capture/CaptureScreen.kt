@@ -152,20 +152,19 @@ fun CaptureScreen(onPhotoCaptured: (File) -> Unit = {}, onBack: (() -> Unit)? = 
                 val previewView = PreviewView(ctx)
                 val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
                 cameraProviderFuture.addListener({
-                    val cameraProvider = cameraProviderFuture.get()
-                    val preview = Preview.Builder().build().also {
-                        it.surfaceProvider = previewView.surfaceProvider
-                    }
-                    val capture = ImageCapture.Builder()
-                        .setTargetRotation(previewView.display?.rotation ?: Surface.ROTATION_0)
-                        .build()
-                    // Keep the capture rotation aligned when the device changes orientation while
-                    // the camera is open. The normalization below remains the final safety net.
-                    previewView.addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
-                        view.display?.let { capture.targetRotation = it.rotation }
-                    }
-                    imageCapture = capture
                     try {
+                        val cameraProvider = cameraProviderFuture.get()
+                        val preview = Preview.Builder().build().also {
+                            it.surfaceProvider = previewView.surfaceProvider
+                        }
+                        val capture = ImageCapture.Builder()
+                            .setTargetRotation(previewView.display?.rotation ?: Surface.ROTATION_0)
+                            .build()
+                        // Keep the capture rotation aligned when the device changes orientation
+                        // while the camera is open. Normalization remains the final safety net.
+                        previewView.addOnLayoutChangeListener { view, _, _, _, _, _, _, _, _ ->
+                            view.display?.let { capture.targetRotation = it.rotation }
+                        }
                         cameraProvider.unbindAll()
                         cameraProvider.bindToLifecycle(
                             lifecycleOwner,
@@ -173,10 +172,10 @@ fun CaptureScreen(onPhotoCaptured: (File) -> Unit = {}, onBack: (() -> Unit)? = 
                             preview,
                             capture,
                         )
+                        imageCapture = capture
                     } catch (_: Exception) {
+                        imageCapture = null
                         onDiagnostic("photo_picker", "failed", "io")
-                        // Camera bind failures surface as a black preview — acceptable for this
-                        // skeleton; real error UX lands with the rest of the capture flow.
                     }
                 }, ContextCompat.getMainExecutor(ctx))
                 previewView
@@ -249,6 +248,7 @@ fun CaptureScreen(onPhotoCaptured: (File) -> Unit = {}, onBack: (() -> Unit)? = 
                                             onDiagnostic("photo_import", "completed", "none")
                                             onPhotoCaptured(photo)
                                         }.onFailure {
+                                            outputFile.delete()
                                             onDiagnostic("photo_import", "failed", "io")
                                             Toast.makeText(context, RdR.string.rd_fotograf_okunamadi, Toast.LENGTH_LONG).show()
                                         }

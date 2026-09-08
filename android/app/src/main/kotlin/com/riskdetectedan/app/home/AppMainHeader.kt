@@ -75,7 +75,9 @@ fun AppMainHeader(
             alignment = Alignment.CenterStart,
         )
         Spacer(Modifier.weight(1f))
-        if (currentTier != SubscriptionTier.Pro) {
+        // A null profile means membership is still unresolved. Do not present a paid user with a
+        // transient Free/upgrade state while the authoritative profile request is in flight.
+        if (profile != null && currentTier != SubscriptionTier.Pro) {
             Row(
                 modifier = Modifier
                     .shadow(

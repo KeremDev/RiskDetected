@@ -6,26 +6,38 @@ import android.graphics.Matrix
 import androidx.exifinterface.media.ExifInterface
 import java.io.File
 import java.io.FileOutputStream
-import kotlin.math.ceil
 import kotlin.math.max
 
 private const val MAX_CAPTURE_LONG_EDGE = 2400
 
 /**
- * Bakes CameraX's EXIF transform into JPEG pixels before preview, annotation and upload.
- * BitmapFactory ignores EXIF orientation; without this step a portrait camera photo was flattened
- * as landscape by AnnotateScreen and the cropped landscape pixels reached the analysis backend.
+ * Prepares a camera or gallery image for preview, annotation and upload.
+ *
+ * BitmapFactory ignores EXIF orientation, and decoding an unrestricted modern camera image can
+ * exhaust the app heap. This function therefore bakes the EXIF transform into the JPEG pixels and
+ * bounds the decoded long edge. [forceJpegEncoding] is used for gallery imports because a picked
+ * HEIC/PNG is first copied to a temporary file and must not be uploaded with JPEG file metadata
+ * while retaining its original byte encoding.
  */
-internal fun normalizeCapturedPhoto(source: File): Result<File> = runCatching {
+fun prepareAnalysisPhoto(
+    source: File,
+    forceJpegEncoding: Boolean = false,
+): Result<File> = runCatching {
     val exif = ExifInterface(source)
     val rotation = exif.rotationDegrees
     val flipped = exif.isFlipped
-    if (rotation == 0 && !flipped) return@runCatching source
 
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     BitmapFactory.decodeFile(source.absolutePath, bounds)
     check(bounds.outWidth > 0 && bounds.outHeight > 0) { "captured_photo_unreadable" }
-    val sample = max(1, ceil(max(bounds.outWidth, bounds.outHeight) / MAX_CAPTURE_LONG_EDGE.toFloat()).toInt())
+    val needsResize = max(bounds.outWidth, bounds.outHeight) > MAX_CAPTURE_LONG_EDGE
+    if (rotation == 0 && !flipped && !needsResize && !forceJpegEncoding) {
+        return@runCatching source
+    }
+    var sample = 1
+    while (max(bounds.outWidth, bounds.outHeight) / sample > MAX_CAPTURE_LONG_EDGE) {
+        sample *= 2
+    }
     val original = checkNotNull(
         BitmapFactory.decodeFile(source.absolutePath, BitmapFactory.Options().apply { inSampleSize = sample }),
     ) { "captured_photo_unreadable" }
@@ -53,3 +65,5 @@ internal fun normalizeCapturedPhoto(source: File): Result<File> = runCatching {
         original.recycle()
     }
 }
+
+internal fun normalizeCapturedPhoto(source: File): Result<File> = prepareAnalysisPhoto(source)
