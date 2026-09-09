@@ -247,3 +247,31 @@ Deno.test("Android build 14 opens analysis gates without being advertised early"
   assertStringIncludes(normalizedSQL, "<> 13");
   assertStringIncludes(normalizedSQL, "'production-2.0.1-vc13'");
 });
+
+Deno.test("published Android build 14 becomes current without enabling update prompts", async () => {
+  const releaseMigration = await readTextIfAllowed(
+    new URL(
+      "../../migrations/20260909033144_publish_android_build_14_release_policy.sql",
+      import.meta.url,
+    ),
+  );
+  if (releaseMigration == null) return;
+
+  const normalizedSQL = releaseMigration
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+  assertStringIncludes(normalizedSQL, "'latest_build', 14");
+  assertStringIncludes(normalizedSQL, "'soft_update_enabled', false");
+  assertStringIncludes(normalizedSQL, "'hard_update_enabled', false");
+  assertStringIncludes(
+    normalizedSQL,
+    "'policy_version', 'production-2.0.2-vc14'",
+  );
+  assertStringIncludes(normalizedSQL, "analysis_engine_v4");
+  assertStringIncludes(normalizedSQL, "analysis_result_hub_v1");
+  assertStringIncludes(
+    normalizedSQL,
+    "?& array['7','8','9','10','11','12','13','14']",
+  );
+});
