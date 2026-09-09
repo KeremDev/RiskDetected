@@ -36,7 +36,7 @@ function sourceBetween(start: string, end: string): string {
 
 Deno.test("Phase 4 validates output before usage success and persistence", () => {
   const providerBlock = sourceBetween(
-    "const out = await callAIForAnalysis(",
+    "const out = isCoverageQualityRepair && multiPhotoCoveragePolicy",
     "} catch (err) {",
   );
   const validationIndex = providerBlock.indexOf(
@@ -94,7 +94,7 @@ Deno.test("AI-016 and AI-017 preserve plan limits and exact photo coverage", () 
 Deno.test("language repair is one direct call on the same provider, model and key", () => {
   const repairBlock = sourceBetween(
     "const callSameProviderLanguageRepair = async",
-    "const effectiveRepairPhotoIndices",
+    "const callPinnedCoverageQualityRepair",
   );
   assertStringIncludes(
     repairBlock,
@@ -117,6 +117,36 @@ Deno.test("language repair is one direct call on the same provider, model and ke
     indexSource,
     "outputLanguage: localizationSnapshot.output_language",
   );
+});
+
+Deno.test("contract repair transforms prior JSON without sending photos again", () => {
+  const validationBlock = sourceBetween(
+    "const validatedOutput = await validateAIOutputWithSingleRepair",
+    "coverageContractReport = exactCoverageContractEnabled",
+  );
+  assertStringIncludes(validationBlock, "rejectedOutput: geminiResult");
+  assertStringIncludes(validationBlock, "parts: []");
+  assertEquals(validationBlock.includes("parts: aiImageParts"), false);
+  assertStringIncludes(validationBlock, "safeFallbackCopy:");
+});
+
+Deno.test("validated repair salvage and aggregate provider counts are audited", () => {
+  for (
+    const field of [
+      "validated_repair_salvage_used",
+      "validated_repair_salvage_code",
+      "repair_integrity_error_code",
+      "repair_integrity_error_path",
+    ]
+  ) {
+    assertStringIncludes(indexSource, `inputAudit.${field} =`);
+  }
+  const failureBlock = sourceBetween(
+    "} catch (validationError) {",
+    "throw validationError;",
+  );
+  assertStringIncludes(failureBlock, "provider_request_count_total");
+  assertStringIncludes(failureBlock, "priorProviderRequestCount +");
 });
 
 Deno.test("AI-019 retries preserve the same prompt, context and output-language options", () => {
@@ -191,7 +221,9 @@ Deno.test("AI-020 provider fallbacks preserve the same locale-bound request", ()
   }
 });
 
-Deno.test("failed language repair is fail closed and cannot enter coverage fallback", () => {
+Deno.test("only an unusable schema can reach the stable contract error path", () => {
+  assertStringIncludes(indexSource, "safeFallbackCopy:");
+  assertStringIncludes(indexSource, "deterministic_fallback_strategy");
   assertStringIncludes(
     indexSource,
     "!(err instanceof OutputLanguageContractError)",

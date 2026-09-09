@@ -45,6 +45,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install source-scan tooling
+        run: sudo apt-get update && sudo apt-get install --yes ripgrep
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -60,12 +63,16 @@ jobs:
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Pin screenshot-test environment
+      - name: Pin deterministic test environment
         run: |
           echo "LANG=C.UTF-8" >> "$GITHUB_ENV"
           echo "LC_ALL=C.UTF-8" >> "$GITHUB_ENV"
           echo "TZ=Europe/Istanbul" >> "$GITHUB_ENV"
-          echo "JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8 -Duser.language=tr -Duser.country=TR -Duser.timezone=Europe/Istanbul" >> "$GITHUB_ENV"
+          # Native libraries resolve the operating-system name through the JVM locale.
+          # Turkish lowercases "Linux" to "lınux", causing Conscrypt's JNI lookup to fail.
+          # Robolectric UI locales are selected in the tests and resources, independently
+          # from this process-level locale.
+          echo "JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8 -Duser.language=en -Duser.country=US -Duser.timezone=Europe/Istanbul" >> "$GITHUB_ENV"
 
       - name: Verify environment isolation
         run: ./gradlew :app:verifyEnvironmentIsolation --stacktrace

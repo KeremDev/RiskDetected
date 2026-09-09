@@ -28,6 +28,50 @@ extension View {
     func obStage(delay: Double = 0) -> some View { modifier(OBStageModifier(delay: delay)) }
 }
 
+// MARK: - Adaptive screen scaffold
+
+/// Onboarding ekranlarının kendi container ölçüsünden beslenen ortak iskeleti.
+/// Header sabit kalır, uzun içerik kayar ve ana aksiyon home indicator ile çakışmaz.
+struct OBScreenScaffold<Header: View, Content: View, Footer: View>: View {
+    var background: Color = .rdPaper
+    private let header: (RDLayoutProfile) -> Header
+    private let content: (RDLayoutProfile) -> Content
+    private let footer: (RDLayoutProfile) -> Footer
+
+    init(
+        background: Color = .rdPaper,
+        @ViewBuilder header: @escaping (RDLayoutProfile) -> Header,
+        @ViewBuilder content: @escaping (RDLayoutProfile) -> Content,
+        @ViewBuilder footer: @escaping (RDLayoutProfile) -> Footer
+    ) {
+        self.background = background
+        self.header = header
+        self.content = content
+        self.footer = footer
+    }
+
+    var body: some View {
+        RDAdaptiveContainer { profile in
+            VStack(spacing: 0) {
+                header(profile)
+
+                ScrollView(showsIndicators: false) {
+                    content(profile)
+                        .frame(maxWidth: .infinity)
+                        .padding(.bottom, profile.sectionSpacing)
+                }
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                footer(profile)
+                    .padding(.horizontal, profile.horizontalPadding)
+                    .padding(.vertical, profile.isCompact ? 8 : 12)
+                    .background(background.shadow(.drop(color: .black.opacity(0.06), radius: 8, y: -3)))
+            }
+            .background(background)
+        }
+    }
+}
+
 // MARK: - Top bar (back + progress)
 
 struct OBTopBar: View {
@@ -37,6 +81,7 @@ struct OBTopBar: View {
     var trailingLabel: String?  // "01 / 05" or "HAZIR"
     var trailingDone: Bool = false
     var onBack: (() -> Void)?
+    @Environment(\.rdLayoutProfile) private var layoutProfile
 
     var body: some View {
         HStack(spacing: 14) {
@@ -45,7 +90,7 @@ struct OBTopBar: View {
                     OBHaptic.soft(); onBack()
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: RDFontScale.size(17), weight: .semibold))
+                        .font(RDTypography.font(size: RDFontScale.size(17), weight: .semibold))
                         .foregroundStyle(Color.rdOnyx)
                         .frame(width: 40, height: 40)
                         .background(Color.clear)
@@ -64,23 +109,23 @@ struct OBTopBar: View {
                 if trailingDone {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark")
-                            .font(.system(size: RDFontScale.size(10), weight: .bold))
+                            .font(RDTypography.font(size: RDFontScale.size(10), weight: .bold))
                         Text(trailingLabel)
-                            .font(.system(size: RDFontScale.size(11), weight: .semibold))
+                            .font(RDTypography.font(size: RDFontScale.size(11), weight: .semibold))
                             .tracking(0.6)
                     }
                     .foregroundStyle(Color.rdGreenDark)
                 } else {
                     Text(trailingLabel)
-                        .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .monospaced))
+                        .font(RDTypography.font(size: RDFontScale.size(11), weight: .semibold, design: .monospaced))
                         .tracking(0.6)
                         .foregroundStyle(Color.rdSlate)
                 }
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 16)
-        .padding(.bottom, 20)
+        .padding(.horizontal, layoutProfile.horizontalPadding)
+        .padding(.top, layoutProfile.isCompact ? 8 : 16)
+        .padding(.bottom, layoutProfile.isCompact ? 12 : 20)
     }
 }
 
@@ -114,7 +159,7 @@ struct OBProgress: View {
                 ZStack {
                     Circle().fill(Color.rdGreen)
                     Image(systemName: "checkmark")
-                        .font(.system(size: RDFontScale.size(7), weight: .bold))
+                        .font(RDTypography.font(size: RDFontScale.size(7), weight: .bold))
                         .foregroundStyle(.white)
                 }
                 .frame(width: 16, height: 16)
@@ -214,11 +259,11 @@ struct OBCard<Leading: View, Trailing: View>: View {
                 leading
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: RDFontScale.size(16), weight: .semibold))
+                        .font(RDTypography.font(size: RDFontScale.size(16), weight: .semibold))
                         .foregroundStyle(Color.rdOnyx)
                     if let subtitle {
                         Text(subtitle)
-                            .font(.system(size: RDFontScale.size(13)))
+                            .font(RDTypography.font(size: RDFontScale.size(13)))
                             .foregroundStyle(Color.rdSlate)
                     }
                 }
@@ -253,7 +298,7 @@ struct OBCard<Leading: View, Trailing: View>: View {
                 )
             if isSelected {
                 Image(systemName: "checkmark")
-                    .font(.system(size: RDFontScale.size(12), weight: .bold))
+                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold))
                     .foregroundStyle(.white)
                     .transition(.scale.combined(with: .opacity))
             }
@@ -319,18 +364,22 @@ struct OBPrimaryButton: View {
                 }
 
                 Text(displayTitle)
-                    .font(.system(size: RDFontScale.size(16), weight: .semibold))
+                    .font(RDTypography.font(size: RDFontScale.size(16), weight: .semibold))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 if let trailingIcon, !isLoading {
                     Image(systemName: trailingIcon)
-                        .font(.system(size: RDFontScale.size(15), weight: .semibold))
+                        .font(RDTypography.font(size: RDFontScale.size(15), weight: .semibold))
                         .offset(x: enabled ? arrowOffset : 0)
                         .opacity(enabled ? arrowOpacity : 1)
                 }
             }
             .foregroundStyle(textColor)
             .frame(maxWidth: .infinity)
-            .frame(height: 56)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 14)
+            .frame(minHeight: 56)
             .background(bgColor)
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .shadow(color: shadowColor, radius: 16, y: 6)
@@ -405,11 +454,12 @@ private func obIdentifierSlug(_ value: String) -> String {
 
 struct OBFooter<Content: View>: View {
     @ViewBuilder var content: Content
+    @Environment(\.rdLayoutProfile) private var layoutProfile
     var body: some View {
         VStack(spacing: 12) { content }
-            .padding(.horizontal, 24)
-            .padding(.top, 12)
-            .padding(.bottom, 28)
+            .padding(.horizontal, layoutProfile.horizontalPadding)
+            .padding(.top, layoutProfile.isCompact ? 8 : 12)
+            .padding(.bottom, layoutProfile.isCompact ? 12 : 20)
     }
 }
 
@@ -423,15 +473,15 @@ struct OBSelectionCounter: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: RDFontScale.size(13)))
+                .font(RDTypography.font(size: RDFontScale.size(13)))
                 .foregroundStyle(Color.rdSlate)
             HStack(spacing: 4) {
                 Text("\(count)")
-                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .monospaced))
+                    .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold, design: .monospaced))
                     .foregroundStyle(Color.rdOnyx)
                     .scaleEffect(pulse ? 1.18 : 1.0)
                 Text(suffix)
-                    .font(.system(size: RDFontScale.size(13), weight: .medium))
+                    .font(RDTypography.font(size: RDFontScale.size(13), weight: .medium))
                     .foregroundStyle(Color.rdSlate)
             }
         }
@@ -453,7 +503,7 @@ struct OBHeroSplashChar: View {
         ZStack {
             Circle().fill(Color(hex: "#EAF8EE")).frame(width: 88, height: 88)
             Image(systemName: "person.fill.badge.plus")
-                .font(.system(size: RDFontScale.size(36), weight: .bold))
+                .font(RDTypography.font(size: RDFontScale.size(36), weight: .bold))
                 .foregroundStyle(Color.rdGreen)
         }
     }
@@ -558,7 +608,7 @@ struct OBHeroHazard: View {
 
     private func triangle(_ c: Color, size: CGFloat) -> some View {
         Image(systemName: "exclamationmark.triangle.fill")
-            .font(.system(size: size, weight: .bold))
+            .font(RDTypography.font(size: size, weight: .bold))
             .foregroundStyle(c)
     }
 }
@@ -796,12 +846,12 @@ struct OBHeroAuth: View {
     var body: some View {
         ZStack {
             Image(systemName: isClosed ? "lock.fill" : "lock.open.fill")
-                .font(.system(size: RDFontScale.size(46), weight: .bold))
+                .font(RDTypography.font(size: RDFontScale.size(46), weight: .bold))
                 .foregroundStyle(Color.rdOnyx)
                 .id(isClosed)
 
             Image(systemName: "checkmark")
-                .font(.system(size: RDFontScale.size(16), weight: .heavy))
+                .font(RDTypography.font(size: RDFontScale.size(16), weight: .heavy))
                 .foregroundStyle(Color(hex: "#4FE07E"))
                 .scaleEffect(checkScale)
                 .opacity(checkOpacity)

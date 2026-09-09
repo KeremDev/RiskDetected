@@ -15,6 +15,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -128,6 +129,7 @@ data class AndroidLegalPolicy(
     @SerialName("manifest_checksum") val manifestChecksum: String = "",
     @SerialName("policy_version") val policyVersion: String = "",
     @SerialName("message_tr") val messageTr: String = "",
+    @SerialName("message_en") val messageEn: String = "",
     val documents: List<AndroidLegalDocumentPolicy> = emptyList(),
 ) {
     val requiresAcknowledgement: Boolean
@@ -141,6 +143,13 @@ data class AndroidLegalPolicy(
 
     val identity: String
         get() = listOf(policyVersion, documentSetId, manifestChecksum).joinToString("|")
+
+    val localizedMessage: String
+        get() = if (RdClientMetadata.APP_LANGUAGE == "en") {
+            messageEn.ifBlank { messageTr }
+        } else {
+            messageTr
+        }
 }
 
 data class ReleasePolicySnapshot(
@@ -226,6 +235,7 @@ class ReleasePolicyRepository @Inject constructor(
             ),
         )
     } catch (t: Throwable) {
+        if (t is CancellationException) throw t
         _androidRuntimeGates.value = AndroidRuntimeGates.CLOSED
         RdResult.Failure("release_policy_fetch_failed", t.message ?: "release_policy_fetch_failed", t)
     }

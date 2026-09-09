@@ -11,6 +11,8 @@ import com.riskdetectedan.core.data.onboarding.OnboardingFrequency
 import com.riskdetectedan.core.data.onboarding.OnboardingHazardClass
 import com.riskdetectedan.core.data.onboarding.OnboardingPlan
 import com.riskdetectedan.core.data.onboarding.OnboardingSector
+import com.riskdetectedan.core.data.onboarding.OnboardingProfessionalRole
+import com.riskdetectedan.core.data.onboarding.OnboardingSafetyProfile
 import com.riskdetectedan.core.data.profile.ProfileRepository
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.common.RdResult
@@ -66,6 +68,16 @@ class OnboardingFlowViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             hazards = if (current.contains(value)) current - value else current + value,
         )
+        persistDraft()
+    }
+
+    fun setProfessionalRole(value: OnboardingProfessionalRole) {
+        _uiState.value = _uiState.value.copy(professionalRole = value)
+        persistDraft()
+    }
+
+    fun setSafetyProfile(value: OnboardingSafetyProfile) {
+        _uiState.value = _uiState.value.copy(safetyProfile = value)
         persistDraft()
     }
 

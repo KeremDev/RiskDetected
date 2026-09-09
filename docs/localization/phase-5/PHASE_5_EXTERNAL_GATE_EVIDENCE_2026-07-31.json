@@ -1,26 +1,26 @@
 {
   "schema_version": 1,
   "project_ref": "ppcrzemgiztzcgddbins",
-  "updated_at": "2026-07-31T08:08:29Z",
+  "updated_at": "2026-09-08T10:19:53Z",
   "production_read_only_snapshot_path": "docs/localization/phase-5/PHASE_5_PRODUCTION_READONLY_2026-07-31.json",
   "production_read_only_snapshot_sha256": "856e32db49114b783336b00493c4367c7237569391943effb4c101e62d306fd6",
   "legal": {
     "manifest_path": "App/LegalDocuments/en/manifest.json",
     "counsel_review_evidence": {
-      "approval_record_path": "docs/localization/phase-5/LEGAL_COUNSEL_APPROVAL_2026-07-31_V2.json",
-      "approval_record_sha256": "54ade7d6aae5615bcd5a1ce2f3191c1fecb77d9080ff61edf88b948afe129161",
+      "approval_record_path": "docs/localization/phase-5/LEGAL_COUNSEL_APPROVAL_2026-09-08_META.json",
+      "approval_record_sha256": "30b3e642499728f56fcaf70b148bce07b86c647b9e57706e33f9e319f36f9e4c",
       "decision": "approved",
       "reviewer_name": "Kerem",
       "reviewer_qualification": "Hukuk belgelerini inceleme ve onaylama yetkinliğine sahip.",
-      "reviewed_at": "2026-07-31T08:02:40Z",
-      "reviewed_preapproval_manifest_sha256": "5a07bc27485e34dd9c3accad1507c5d02823c8cad7c99b5e0a9e1fdf48ef3397"
+      "reviewed_at": "2026-09-08T10:16:12Z",
+      "reviewed_preapproval_manifest_sha256": "008108dcb03fcc6db4955dbdc97c4e8f2091d78c8807832713de3ca9c051ad07"
     },
     "public_url_evidence": {
       "status": "verified",
-      "verified_at": "2026-07-31T08:08:29Z",
-      "verification_path": "docs/localization/phase-5/ENGLISH_LEGAL_PRODUCTION_VERIFICATION_2026-07-31.json",
-      "verification_sha256": "5440c9d1fcb982ebacf854dc35b69c78cc511c61b9c4ffb6cc124c93e3b9e178",
-      "deployment_id": "dpl_9HvH32vh8YTTmmLFdJY9d9SSaxqS"
+      "verified_at": "2026-09-08T10:19:53Z",
+      "verification_path": "docs/localization/phase-5/ENGLISH_LEGAL_PRODUCTION_VERIFICATION_2026-09-08_META.json",
+      "verification_sha256": "e618ff6e0e8ed02713d474022defa5ef24f8dd760613ff9444b7cf8189a5bc5b",
+      "deployment_id": "dpl_CrDmmoN83mbonM7CaDAFfVKZDzof"
     }
   },
   "notification_copy": {

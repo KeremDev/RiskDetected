@@ -4,6 +4,7 @@ struct OBHazardClassView: View {
     @ObservedObject var state: OnboardingV2State
     let onBack: () -> Void
     let onNext: () -> Void
+    @Environment(\.rdLayoutProfile) private var layoutProfile
 
     private let items: [(cls: OBHazardClass, icon: String, sub: String)] = [
         (.critical, "exclamationmark.triangle.fill", RDLocalization.string("onboarding.obhazard.class.view.petrokimya.maden.insaat.fabrika.vb.34e41743", table: .onboarding, fallback: "Petrokimya, maden, inşaat, fabrika vb.")),
@@ -21,13 +22,13 @@ struct OBHazardClassView: View {
                         OBHeroTile { OBHeroHazard() }
                             .obStage(delay: 0.08)
                         Text(RDLocalization.string("onboarding.obhazard.class.view.hangi.tehlike.sinifinda.calisiyorsun.79f6293b", table: .onboarding, fallback: "Hangi tehlike sınıfında çalışıyorsun?"))
-                            .font(.system(size: RDFontScale.size(28), weight: .semibold))
+                            .font(RDTypography.font(size: RDFontScale.size(28), weight: .semibold))
                             .tracking(-0.8)
                             .foregroundStyle(Color.rdOnyx)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.14)
                         Text(RDLocalization.string("onboarding.obhazard.class.view.birden.fazla.secebilirsin.9a89b3cb", table: .onboarding, fallback: "Birden fazla seçebilirsin."))
-                            .font(.system(size: RDFontScale.size(15)))
+                            .font(RDTypography.font(size: RDFontScale.size(15)))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.22)
@@ -61,7 +62,7 @@ struct OBHazardClassView: View {
                     OBSelectionCounter(count: state.hazards.count, suffix: RDLocalization.string("onboarding.obhazard.class.view.sinif.secildi.1b7300f0", table: .onboarding, fallback: "sınıf seçildi"))
                         .padding(.top, 6)
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, layoutProfile.horizontalPadding)
                 .padding(.bottom, 24)
             }
 
@@ -79,7 +80,7 @@ struct OBHazardClassView: View {
         ZStack {
             RoundedRectangle(cornerRadius: 12).fill(cls.bgColor)
             Image(systemName: icon)
-                .font(.system(size: RDFontScale.size(20)))
+                .font(RDTypography.font(size: RDFontScale.size(20)))
                 .foregroundStyle(cls.color)
         }
         .frame(width: 44, height: 44)

@@ -5,7 +5,12 @@ struct OBSectorView: View {
     let onBack: () -> Void
     let onNext: () -> Void
 
-    private let columns = [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
+    @Environment(\.rdLayoutProfile) private var layoutProfile
+    private var columns: [GridItem] {
+        layoutProfile.isAccessibilityText
+            ? [GridItem(.flexible(), spacing: 8)]
+            : [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -16,7 +21,7 @@ struct OBSectorView: View {
                     OBHeroTile { OBHeroSector() }
                         .obStage(delay: 0.08)
                     Text(RDLocalization.string("onboarding.obsector.view.hangi.sektorlerde.calisiyorsun.bab57f6f", table: .onboarding, fallback: "Hangi sektörlerde çalışıyorsun?"))
-                        .font(.system(size: RDFontScale.size(24), weight: .semibold))
+                        .font(RDTypography.font(size: RDFontScale.size(24), weight: .semibold))
                         .tracking(-0.6)
                         .foregroundStyle(Color.rdOnyx)
                         .multilineTextAlignment(.center)
@@ -24,7 +29,7 @@ struct OBSectorView: View {
                         .frame(maxWidth: .infinity)
                         .obStage(delay: 0.14)
                     Text(RDLocalization.string("onboarding.obsector.view.birden.fazla.secebilirsin.her.analiz.oncesinde.o.1577398e", table: .onboarding, fallback: "Birden fazla seçebilirsin. Her analiz öncesinde, o fotoğrafı hangi sektör kapsamında değerlendirmek istediğini ayrıca soracağız."))
-                        .font(.system(size: RDFontScale.size(14)))
+                        .font(RDTypography.font(size: RDFontScale.size(14)))
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
                         .lineSpacing(2)
@@ -63,7 +68,7 @@ struct OBSectorView: View {
                 OBSelectionCounter(count: state.sectors.count, suffix: RDLocalization.string("onboarding.obsector.view.sektor.secildi.69792ff7", table: .onboarding, fallback: "sektör seçildi"))
             }
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, layoutProfile.horizontalPadding)
 
             Spacer(minLength: 8)
 
@@ -80,9 +85,9 @@ struct OBSectorView: View {
     private var moreSectorsHint: some View {
         HStack(spacing: 5) {
             Image(systemName: "chevron.down")
-                .font(.system(size: RDFontScale.size(11), weight: .bold))
+                .font(RDTypography.font(size: RDFontScale.size(11), weight: .bold))
             Text(RDLocalization.string("onboarding.obsector.view.daha.fazla.sektor.7386ba43", table: .onboarding, fallback: "Daha fazla sektör"))
-                .font(.system(size: RDFontScale.size(11), weight: .semibold))
+                .font(RDTypography.font(size: RDFontScale.size(11), weight: .semibold))
         }
         .foregroundStyle(Color.rdSlate)
         .padding(.horizontal, 10)
@@ -113,25 +118,24 @@ struct OBSectorView: View {
                     RoundedRectangle(cornerRadius: 8)
                         .fill(selected ? Color.rdOnyx : Color.rdFog)
                     Image(systemName: s.icon)
-                        .font(.system(size: RDFontScale.size(13), weight: .regular))
+                        .font(RDTypography.font(size: RDFontScale.size(13), weight: .regular))
                         .foregroundStyle(selected ? .white : Color.rdGraphite)
                 }
                 .frame(width: 26, height: 26)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(s.label)
-                        .font(.system(size: RDFontScale.size(12.5), weight: .semibold))
+                        .font(RDTypography.font(size: RDFontScale.size(12.5), weight: .semibold))
                         .foregroundStyle(Color.rdOnyx)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
+                        .fixedSize(horizontal: false, vertical: true)
                     Text(s.sub)
-                        .font(.system(size: RDFontScale.size(10.5)))
+                        .font(RDTypography.font(size: RDFontScale.size(10.5)))
                         .foregroundStyle(Color.rdSlate)
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 78, alignment: .topLeading)
+            .frame(minHeight: 78, alignment: .topLeading)
             .padding(9)
             .background(Color.rdWhite)
             .clipShape(RoundedRectangle(cornerRadius: 13))
@@ -146,7 +150,7 @@ struct OBSectorView: View {
                     ZStack {
                         Circle().fill(Color.rdOnyx)
                         Image(systemName: "checkmark")
-                            .font(.system(size: RDFontScale.size(10), weight: .heavy))
+                            .font(RDTypography.font(size: RDFontScale.size(10), weight: .heavy))
                             .foregroundStyle(.white)
                     }
                     .frame(width: 18, height: 18)

@@ -532,3 +532,74 @@ Deno.test("localization rollout requires compiled capability and all global gate
   assertEquals([...androidSameBuildAndHash.enabledProfileIDs], []);
   assertEquals(androidSameBuildAndHash.queueSnapshotAuthorityEnabled, false);
 });
+
+Deno.test("min_build rollout releases past the reviewer cohort, allowlist does not", async () => {
+  const makeSupabase = (value: Record<string, unknown>) => ({
+    from: () => ({
+      select: () => ({
+        in: () =>
+          Promise.resolve({
+            data: [
+              "localization_v2",
+              "english_product_enabled",
+              "global_localization_wave1",
+              "localization_queue_payload_v1",
+              "safety_profile_en_intl_enabled",
+            ].map((key) => ({ key, value })),
+            error: null,
+          }),
+      }),
+    }),
+  });
+  const outsider = {
+    userHash: "someone-else",
+    clientBuild: "84",
+    platform: "ios",
+    globalLocalizationCapability: true,
+    approvedSafetyProfileSourceSHA256: safetyProfileSourceSHA256,
+  };
+
+  // min_build: kohort disindaki kullanici da acilir (bilincli yayin karari).
+  const released = await loadLocalizationRolloutPolicy(
+    makeSupabase({
+      rollout_mode: "min_build",
+      min_ios_build: 80,
+      enabled_user_hashes: ["reviewer-hash"],
+    }),
+    outsider,
+  );
+  assertEquals([...released.enabledProfileIDs], ["en-intl-generic-v1"]);
+
+  // min_build ama build tabani altinda: kapali kalir.
+  const belowFloor = await loadLocalizationRolloutPolicy(
+    makeSupabase({
+      rollout_mode: "min_build",
+      min_ios_build: 80,
+      enabled_user_hashes: ["reviewer-hash"],
+    }),
+    { ...outsider, clientBuild: "79" },
+  );
+  assertEquals([...belowFloor.enabledProfileIDs], []);
+
+  // allowlist: yayin oncesi mod, kohort disi kullaniciya kapali kalir.
+  const preRelease = await loadLocalizationRolloutPolicy(
+    makeSupabase({
+      rollout_mode: "allowlist",
+      enabled_user_hashes: ["reviewer-hash"],
+    }),
+    outsider,
+  );
+  assertEquals([...preRelease.enabledProfileIDs], []);
+
+  // min_build olsa bile kill switch her seyi kapatir.
+  const killed = await loadLocalizationRolloutPolicy(
+    makeSupabase({
+      rollout_mode: "min_build",
+      min_ios_build: 80,
+      kill_switch: true,
+      enabled_user_hashes: ["reviewer-hash"],
+    }),
+    outsider,
+  );
+  assertEquals([...killed.enabledProfileIDs], []);
+});

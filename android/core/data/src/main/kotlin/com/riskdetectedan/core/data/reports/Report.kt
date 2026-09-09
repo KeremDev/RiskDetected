@@ -2,6 +2,7 @@ package com.riskdetectedan.core.data.reports
 
 import com.riskdetectedan.core.common.RdClientMetadata
 import com.riskdetectedan.core.common.RdEnvironmentConfig
+import com.riskdetectedan.core.common.RdLocalizationContext
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import io.github.jan.supabase.SupabaseClient
@@ -60,10 +61,14 @@ data class Report(
  * revalidated by the Edge Function/database trigger. */
 data class ReportQuotaUsage(
     val standardUsed: Int,
-    val standardLimit: Int,
+    /** null = no cap. Free accounts carry no standard-report quota: the plan is metered on
+     * analyses and on the one-time risk-assessment table, and a standard PDF only re-renders
+     * findings the account already produced under those limits. */
+    val standardLimit: Int?,
     val riskTrialUsed: Boolean,
 ) {
-    val isStandardQuotaExhausted: Boolean get() = standardUsed >= standardLimit
+    val isStandardQuotaExhausted: Boolean
+        get() = standardLimit != null && standardUsed >= standardLimit
 }
 
 internal object ReportQuotaWindow {
@@ -93,6 +98,7 @@ private data class GenerateExcelReportBody(
     @SerialName("prepared_title_override") val preparedTitleOverride: String? = null,
     @SerialName("certificate_number_override") val certificateNumberOverride: String? = null,
     @SerialName("company_logo_base64") val companyLogoBase64: String? = null,
+    @SerialName("export_intent_id") val exportIntentId: String? = null,
     @SerialName("request_id") val requestId: String,
     @SerialName("support_id") val supportId: String,
     @SerialName("client_app_version") val clientAppVersion: String,
@@ -147,6 +153,9 @@ private data class RegisterReportBody(
     @SerialName("safety_profile_version") val safetyProfileVersion: Int,
     @SerialName("request_id") val requestId: String,
     @SerialName("support_id") val supportId: String,
+    @SerialName("export_intent_id") val exportIntentId: String? = null,
+    @SerialName("content_scope") val contentScope: String? = null,
+    @SerialName("selected_item_keys") val selectedItemKeys: List<String>? = null,
 )
 
 @Singleton
@@ -181,7 +190,7 @@ class ReportsRepository @Inject constructor(
                 }.countOrNull()?.toInt() ?: 0
             }
             val limit = when (tier) {
-                SubscriptionTier.Free -> 1
+                SubscriptionTier.Free -> null
                 SubscriptionTier.Plus -> 150
                 SubscriptionTier.Pro -> 750
             }
@@ -209,8 +218,11 @@ class ReportsRepository @Inject constructor(
     suspend fun generateExcelReport(
         analysisId: String,
         method: String = "fine_kinney",
+        reportKind: String = "risk_analysis",
+        exportIntentId: String? = null,
         companyId: String? = null,
-        reportLanguage: String = "tr",
+        localization: RdLocalizationContext = RdClientMetadata.localization(),
+        reportLanguage: String = localization.appLanguage,
         companyNameOverride: String? = null,
         companyInfoOverride: String? = null,
         preparedByOverride: String? = null,
@@ -223,7 +235,7 @@ class ReportsRepository @Inject constructor(
             body = GenerateExcelReportBody(
                 analysisId = analysisId,
                 method = method,
-                reportKind = "risk_analysis",
+                reportKind = reportKind,
                 reportLanguage = reportLanguage,
                 companyId = companyId,
                 companyNameOverride = companyNameOverride?.takeIf { it.isNotBlank() },
@@ -234,6 +246,7 @@ class ReportsRepository @Inject constructor(
                 companyLogoBase64 = companyLogoOverrideBytes?.let {
                     android.util.Base64.encodeToString(it, android.util.Base64.NO_WRAP)
                 },
+                exportIntentId = exportIntentId,
                 requestId = UUID.randomUUID().toString(),
                 supportId = UUID.randomUUID().toString(),
                 clientAppVersion = environmentConfig.appVersionName,
@@ -241,11 +254,11 @@ class ReportsRepository @Inject constructor(
                 clientPlatform = RdClientMetadata.PLATFORM,
                 apiContractVersion = RdClientMetadata.API_CONTRACT_VERSION,
                 clientCapabilities = RdClientMetadata.capabilities,
-                appLanguage = RdClientMetadata.APP_LANGUAGE,
-                contentLocale = RdClientMetadata.CONTENT_LOCALE,
-                workJurisdictionCountry = RdClientMetadata.WORK_JURISDICTION_COUNTRY,
-                safetyProfileId = RdClientMetadata.SAFETY_PROFILE_ID,
-                safetyProfileVersion = RdClientMetadata.SAFETY_PROFILE_VERSION,
+                appLanguage = localization.appLanguage,
+                contentLocale = localization.contentLocale,
+                workJurisdictionCountry = localization.workJurisdictionCountry,
+                safetyProfileId = localization.safetyProfileId,
+                safetyProfileVersion = localization.safetyProfileVersion,
             ),
         ).body<GenerateExcelReportResult>()
 
@@ -310,7 +323,11 @@ class ReportsRepository @Inject constructor(
         title: String,
         pageCount: Int,
         companyId: String? = null,
-        reportLanguage: String = "tr",
+        localization: RdLocalizationContext = RdClientMetadata.localization(),
+        reportLanguage: String = localization.appLanguage,
+        exportIntentId: String? = null,
+        contentScope: String? = null,
+        selectedItemKeys: List<String>? = null,
     ): RdResult<Report> {
         val storagePath = "${userId.lowercase()}/${analysisId.lowercase()}/$fileNameSlug"
         try {
@@ -343,13 +360,16 @@ class ReportsRepository @Inject constructor(
                     clientPlatform = RdClientMetadata.PLATFORM,
                     apiContractVersion = RdClientMetadata.API_CONTRACT_VERSION,
                     clientCapabilities = RdClientMetadata.capabilities,
-                    appLanguage = RdClientMetadata.APP_LANGUAGE,
-                    contentLocale = RdClientMetadata.CONTENT_LOCALE,
-                    workJurisdictionCountry = RdClientMetadata.WORK_JURISDICTION_COUNTRY,
-                    safetyProfileId = RdClientMetadata.SAFETY_PROFILE_ID,
-                    safetyProfileVersion = RdClientMetadata.SAFETY_PROFILE_VERSION,
+                    appLanguage = localization.appLanguage,
+                    contentLocale = localization.contentLocale,
+                    workJurisdictionCountry = localization.workJurisdictionCountry,
+                    safetyProfileId = localization.safetyProfileId,
+                    safetyProfileVersion = localization.safetyProfileVersion,
                     requestId = requestId,
                     supportId = supportId,
+                    exportIntentId = exportIntentId,
+                    contentScope = contentScope,
+                    selectedItemKeys = selectedItemKeys,
                 ),
             ).body<Report>()
             RdResult.Success(row)

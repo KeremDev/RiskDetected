@@ -270,6 +270,7 @@ select is(
   'completed',
   'analysis reaches completed'
 );
+select set_config('app.analysis_checkpoint_refinalize_id', '', true);
 select throws_ok(
   $$
     update public.analyses

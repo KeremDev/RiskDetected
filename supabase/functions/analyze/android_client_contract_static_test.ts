@@ -51,19 +51,32 @@ Deno.test("Android client fixture matches the frozen Kotlin request contract", a
   if (metadata == null || analysis == null) return;
 
   assertStringIncludes(metadata, 'const val PLATFORM = "android"');
-  assertStringIncludes(metadata, "const val API_CONTRACT_VERSION = 2");
-  assertStringIncludes(metadata, 'const val APP_LANGUAGE = "tr"');
-  assertStringIncludes(metadata, 'const val CONTENT_LOCALE = "tr-TR"');
-  assertStringIncludes(metadata, 'const val WORK_JURISDICTION_COUNTRY = "TR"');
+  assertStringIncludes(metadata, "const val API_CONTRACT_VERSION = 3");
+  assertStringIncludes(metadata, '"safety_claim_v4_scoreless" to true');
   assertStringIncludes(
     metadata,
-    'const val SAFETY_PROFILE_ID = "tr-tr-current-v1"',
+    "fun localization(locale: Locale = Locale.getDefault())",
+  );
+  assertStringIncludes(metadata, 'appLanguage = "tr"');
+  assertStringIncludes(metadata, 'contentLocale = "tr-TR"');
+  assertStringIncludes(metadata, 'workJurisdictionCountry = "TR"');
+  assertStringIncludes(
+    metadata,
+    'safetyProfileId = "tr-tr-current-v1"',
+  );
+  assertStringIncludes(
+    metadata,
+    '"US" -> englishContext("en-US", "US", "en-us-generic-v1")',
+  );
+  assertStringIncludes(
+    metadata,
+    "val APP_LANGUAGE: String get() = localization().appLanguage",
   );
   assertStringIncludes(metadata, '"multi_photo_analysis" to true');
   assertStringIncludes(metadata, '"multi_photo_coverage_v2" to true');
   assertStringIncludes(metadata, '"editable_findings" to true');
   assertStringIncludes(metadata, '"report_snapshot_v2" to true');
-  assertStringIncludes(metadata, '"global_localization_wave1" to false');
+  assertStringIncludes(metadata, '"global_localization_wave1" to true');
 
   assertStringIncludes(analysis, "clientPlatform = RdClientMetadata.PLATFORM");
   assertStringIncludes(

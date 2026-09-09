@@ -43,7 +43,8 @@ Deno.test("iOS sends dynamic build metadata without hardcoded build gate", async
     source,
     'object(forInfoDictionaryKey: "CFBundleVersion")',
   );
-  assertStringIncludes(source, "static let apiContractVersion = 2");
+  assertStringIncludes(source, "static let apiContractVersion = 3");
+  assertStringIncludes(source, '"safety_claim_v4_scoreless": true');
   assertStringIncludes(source, "let client_app_build: String");
   assertStringIncludes(source, "let api_contract_version: Int");
   assert(!source.includes("build == 63"));
@@ -184,7 +185,7 @@ Deno.test("atomic finding contract keeps independently correctable hazards separ
 
   assertStringIncludes(
     source,
-    'const ATOMIC_FINDING_POLICY_VERSION = "distinct-physical-hazard-v1"',
+    'const ATOMIC_FINDING_POLICY_VERSION = "distinct-physical-hazard-v3"',
   );
   assertStringIncludes(
     source,
@@ -193,6 +194,10 @@ Deno.test("atomic finding contract keeps independently correctable hazards separ
   assertStringIncludes(
     source,
     "korkuluk eksikliği ile sabitlenmemiş merdiven aynı yüksekte çalışma katmanında olsa da ayrı fiziksel tehlikelerdir",
+  );
+  assertStringIncludes(
+    source,
+    "bağımsız müdahale gerektiren ikinci bir fiziksel koşul ekliyorsa iki ayrı bulgu oluştur",
   );
   assertStringIncludes(
     source,
@@ -488,7 +493,7 @@ Deno.test("analysis schema and policy use single and multi photo targets", async
   );
   assertStringIncludes(
     source,
-    'const LAYER_AUDIT_POLICY_VERSION = "single-pass-12-layer-audit-v4"',
+    'const LAYER_AUDIT_POLICY_VERSION = "single-pass-12-layer-audit-v5"',
   );
   assertStringIncludes(source, "const SINGLE_PHOTO_TARGET_MIN = 1");
   assertStringIncludes(source, "const SINGLE_PHOTO_TARGET_MAX = 14");
@@ -509,13 +514,26 @@ Deno.test("AI timeout and token budgets are explicit", async () => {
   const workerSource = await readTextIfAllowed(
     new URL("../process-analysis-jobs/index.ts", import.meta.url),
   );
-  if (analyzeSource == null || workerSource == null) return;
+  const providerPolicySource = await readTextIfAllowed(
+    new URL("../_shared/provider-execution-policy.ts", import.meta.url),
+  );
+  if (
+    analyzeSource == null || workerSource == null ||
+    providerPolicySource == null
+  ) return;
 
   assertStringIncludes(analyzeSource, "const MAIN_AI_TIMEOUT_MS = 120_000");
   assertStringIncludes(analyzeSource, "const REPAIR_AI_TIMEOUT_MS = 45_000");
+  // The repair budget moved from a hard-coded 1024 to the
+  // `repair_thinking_budget` flag; 1024 remains the floor for repair calls that
+  // request nothing of their own.
   assertStringIncludes(
     analyzeSource,
-    "thinkingBudget: isRepairPass ? 1024 : normalizeThinkingBudget(",
+    "isRepairPass ? MINIMAL_REPAIR_THINKING_BUDGET : 3072,",
+  );
+  assertStringIncludes(
+    analyzeSource,
+    "const MINIMAL_REPAIR_THINKING_BUDGET = 1024;",
   );
   assertStringIncludes(analyzeSource, "return 14_000");
   assertStringIncludes(analyzeSource, "return 16_000");
@@ -527,11 +545,19 @@ Deno.test("AI timeout and token budgets are explicit", async () => {
   assertStringIncludes(analyzeSource, 'finishReason === "MAX_TOKENS"');
   assertStringIncludes(
     workerSource,
-    "const ANALYZE_WORKER_TIMEOUT_MS = 135_000",
+    "const LEGACY_ANALYZE_WORKER_TIMEOUT_MS = 210_000",
+  );
+  assertStringIncludes(
+    providerPolicySource,
+    "export const ANALYZE_NESTED_REQUEST_TIMEOUT_MS = 145_000",
   );
   assertStringIncludes(
     workerSource,
-    "const ANALYSIS_JOB_VISIBILITY_TIMEOUT_SECONDS = 180",
+    "nestedAnalysisTimeoutMs(analysisFunctionName)",
+  );
+  assertStringIncludes(
+    workerSource,
+    "const ANALYSIS_JOB_VISIBILITY_TIMEOUT_SECONDS = 240",
   );
   assertStringIncludes(
     workerSource,
@@ -594,13 +620,17 @@ Deno.test("single-pass layer audit is flag gated and schema bounded", async () =
   assertStringIncludes(source, "options.isRepairPass !== true");
 });
 
-Deno.test("layer audit degrades to legacy schema and audits malformed coverage", async () => {
+Deno.test("layer audit fallback preserves layer and expert contracts", async () => {
   const source = await readTextIfAllowed(
     new URL("./index.ts", import.meta.url),
   );
   if (source == null) return;
 
-  assertStringIncludes(source, "res.status === 400 && schemaAuditEnabled");
+  assertStringIncludes(source, 'layerAuditSchemaMode = "relaxed"');
+  assertStringIncludes(source, 'layerAuditSchemaMode = "json_only"');
+  assertStringIncludes(source, "configuredResponseSchema");
+  assertStringIncludes(source, '"layer_schema_json_fallback"');
+  assert(!source.includes("schemaAuditEnabled = false"));
   assertStringIncludes(source, "layerAuditSchemaFallbackUsed = true");
   assertStringIncludes(source, "layerAuditSchemaFallbackError");
   assertStringIncludes(source, "applyInspectionLayerEvidenceGuard(");
@@ -622,6 +652,11 @@ Deno.test("layer audit degrades to legacy schema and audits malformed coverage",
   assertStringIncludes(
     source,
     "repairEnabled: layerAuditEnabled\n      ? false",
+  );
+  assertStringIncludes(source, "repair_authority_complete");
+  assertStringIncludes(
+    source,
+    "coverage_quality_incomplete_authority_photo_indices",
   );
 });
 
@@ -782,7 +817,10 @@ Deno.test("iOS result model and UI preserve field verification flag", async () =
   assertStringIncludes(resultSource, "localPreviewImage(forSourceIndex:");
   assertStringIncludes(riskDetailSource, "var photoIndex: Int = 1");
   assertStringIncludes(riskDetailSource, "result.detail.photo_index.");
-  assertStringIncludes(riskDetailSource, "RDCard(showsShadow: false)");
+  assertStringIncludes(
+    riskDetailSource,
+    '.accessibilityIdentifier("result.detail.expert_summary")',
+  );
 });
 
 Deno.test("Android build-allowlist gate mirrors iOS's, closed by default", async () => {

@@ -55,6 +55,26 @@ type RequestBody = {
   client_capabilities?: Record<string, unknown>;
   request_id?: string;
   support_id?: string;
+  export_intent_id?: string;
+};
+
+type ReportContentScope =
+  | "risk_analysis"
+  | "expert_recommendations"
+  | "approved_notebook"
+  | "training_recommendations";
+
+type ReportIntent = {
+  id: string;
+  user_id: string;
+  analysis_id: string;
+  content_scope: ReportContentScope;
+  format: "pdf" | "xlsx";
+  selected_item_keys: string[];
+  content_snapshot: Record<string, unknown>;
+  source_edit_version: number;
+  projection_version: string | null;
+  tier_snapshot: PlanTier;
 };
 
 type AnalysisRow = Record<string, unknown> & {
@@ -373,6 +393,44 @@ async function sendReportReadyPush(params: {
 function safeText(value: unknown, fallback = ""): string {
   if (value === null || value === undefined) return fallback;
   return String(value);
+}
+
+function isUUID(value: unknown): value is string {
+  return typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      .test(value);
+}
+
+function snapshotItems(intent: ReportIntent | null): Record<string, unknown>[] {
+  const items = intent?.content_snapshot?.items;
+  return Array.isArray(items)
+    ? items.filter((item): item is Record<string, unknown> =>
+      item != null && typeof item === "object" && !Array.isArray(item)
+    )
+    : [];
+}
+
+function resultSectionMeasureText(
+  item: Record<string, unknown>,
+  kind: "corrective" | "preventive",
+): string {
+  const measures = Array.isArray(item.recommended_measures)
+    ? item.recommended_measures
+    : [];
+  return [
+    ...new Set(
+      measures
+        .filter((measure): measure is Record<string, unknown> =>
+          measure != null && typeof measure === "object" &&
+          !Array.isArray(measure)
+        )
+        .filter((measure) =>
+          safeText(measure.kind).trim().toLowerCase() === kind
+        )
+        .map((measure) => safeText(measure.text).trim())
+        .filter(Boolean),
+    ),
+  ].join("\n\n");
 }
 
 function bool(value: unknown, fallback: boolean): boolean {
@@ -1138,6 +1196,178 @@ function appendSheet(
   return sheet;
 }
 
+export function makeResultSectionWorkbook(
+  intent: ReportIntent,
+  analysis: AnalysisRow,
+  localization: ReportLocalizationContext,
+  documentNo: string,
+): XLSX.WorkBook {
+  const workbook = XLSX.utils.book_new();
+  applyWorkbookDefaults(workbook);
+  const isTR = localization.language === "tr";
+  const notebook = intent.content_scope === "approved_notebook";
+  const training = intent.content_scope === "training_recommendations";
+  const sectionTitle = training
+    ? (isTR ? "Eğitim Önerileri" : "Training Recommendations")
+    : notebook
+    ? userFacingCopy("resultNotebookSectionTitle", localization.language)
+    : userFacingCopy("resultExpertSectionTitle", localization.language);
+  const disclaimer = training
+    ? (isTR
+      ? "Analizde görülen tehlike ve ekipmanlara dayalı eğitim önerileridir. Mevcut belgeler hakkında tespit içermez."
+      : "Training recommendations based on observed hazards and equipment. No assessment of existing certificates is made.")
+    : notebook
+    ? userFacingCopy("resultNotebookDisclaimer", localization.language)
+    : userFacingCopy("resultExpertDisclaimer", localization.language);
+  const items = snapshotItems(intent);
+  const headers = training
+    ? (isTR
+      ? [
+        "No",
+        "Eğitim",
+        "Kategori",
+        "Hedef Çalışan Grubu",
+        "Eğitim Önerisi",
+        "Süre",
+        "Süre Notu",
+      ]
+      : [
+        "No",
+        "Training",
+        "Category",
+        "Target Audience",
+        "Recommendation",
+        "Duration",
+        "Duration Note",
+      ])
+    : notebook
+    ? [
+      userFacingCopy("resultHeaderNumber", localization.language),
+      userFacingCopy("resultHeaderFinding", localization.language),
+      userFacingCopy("resultHeaderRecommendation", localization.language),
+      userFacingCopy("resultHeaderBasis", localization.language),
+      userFacingCopy("resultHeaderSourceItems", localization.language),
+    ]
+    : [
+      userFacingCopy("resultHeaderNumber", localization.language),
+      userFacingCopy("resultHeaderTitle", localization.language),
+      userFacingCopy("resultHeaderDescription", localization.language),
+      userFacingCopy("resultHeaderExpertRecommendation", localization.language),
+      userFacingCopy("resultHeaderCorrectiveAction", localization.language),
+      userFacingCopy("resultHeaderPreventiveAction", localization.language),
+      userFacingCopy("resultHeaderRootCause", localization.language),
+      userFacingCopy("resultHeaderRegulatoryReferences", localization.language),
+      userFacingCopy("resultHeaderStatus", localization.language),
+    ];
+  const rows: unknown[][] = [
+    [sectionTitle],
+    [safeText(analysis.title, sectionTitle)],
+    [documentNo],
+    [disclaimer],
+    [],
+    headers,
+  ];
+  for (const [index, item] of items.entries()) {
+    rows.push(
+      training
+        ? [
+          index + 1,
+          safeText(item.title),
+          safeText(item.category_label),
+          safeText(item.audience_label),
+          safeText(item.text),
+          safeText(item.duration_value),
+          safeText(item.duration_note),
+        ]
+        : notebook
+        ? [
+          index + 1,
+          safeText(item.finding_text),
+          safeText(item.recommendation_text),
+          safeText(item.reference_text),
+          Array.isArray(item.source_finding_ids)
+            ? item.source_finding_ids.length
+            : 0,
+        ]
+        : [
+          index + 1,
+          safeText(item.title),
+          safeText(item.description),
+          safeText(item.recommended_action),
+          resultSectionMeasureText(item, "corrective") ||
+          safeText(item.recommended_action),
+          resultSectionMeasureText(item, "preventive"),
+          safeText(item.root_cause_text),
+          safeText(item.references_text, safeText(item.reference_text)),
+          item.needs_field_verification === false
+            ? userFacingCopy(
+              "resultExpertReviewCompleted",
+              localization.language,
+            )
+            : userFacingCopy(
+              "resultFieldVerificationRequired",
+              localization.language,
+            ),
+        ],
+    );
+  }
+  const sheet = appendSheet(
+    workbook,
+    training
+      ? (isTR ? "Eğitim Önerileri" : "Training Recommendations")
+      : notebook
+      ? userFacingCopy("resultNotebookSheetName", localization.language)
+      : userFacingCopy("resultExpertSheetName", localization.language),
+    rows,
+  );
+  const columnWidths = training
+    ? [8, 34, 28, 36, 68, 22, 42]
+    : notebook
+    ? [8, 34, 58, 58, 18]
+    : [8, 32, 52, 42, 52, 52, 40, 48, 24];
+  const lastColumn = XLSX.utils.encode_col(headers.length - 1);
+  setCols(sheet, columnWidths);
+  setRows(sheet, [
+    38,
+    24,
+    20,
+    42,
+    10,
+    36,
+    ...rows.slice(6).map((row) =>
+      estimatedRowHeight(
+        row.slice(1).map((value, index) => ({
+          value,
+          width: columnWidths[index + 1],
+        })),
+        { min: notebook ? 58 : 72, max: 260, base: 10, lineHeight: 14 },
+      )
+    ),
+  ]);
+  addMerges(sheet, [
+    `A1:${lastColumn}1`,
+    `A2:${lastColumn}2`,
+    `A3:${lastColumn}3`,
+    `A4:${lastColumn}4`,
+  ]);
+  setStyle(sheet, `A1:${lastColumn}1`, styles.title);
+  setStyle(sheet, `A2:${lastColumn}4`, styles.subtitle);
+  setStyle(sheet, `A6:${lastColumn}6`, styles.tableHeader);
+  if (items.length > 0) {
+    setStyle(
+      sheet,
+      `A7:${lastColumn}${items.length + 6}`,
+      styles.tableCell,
+    );
+    setStyle(sheet, `A7:A${items.length + 6}`, styles.tableNumber);
+  }
+  sheet["!autofilter"] = {
+    ref: `A6:${lastColumn}${Math.max(6, items.length + 6)}`,
+  };
+  sheet["!freeze"] = { xSplit: 0, ySplit: 6 };
+  return workbook;
+}
+
 function setCols(sheet: XLSX.WorkSheet, widths: number[]) {
   sheet["!cols"] = widths.map((wch) => ({ wch }));
 }
@@ -1164,7 +1394,9 @@ function setStyle(
   for (let row = decoded.s.r; row <= decoded.e.r; row++) {
     for (let col = decoded.s.c; col <= decoded.e.c; col++) {
       const address = XLSX.utils.encode_cell({ r: row, c: col });
-      ensureCell(sheet, address).s = style;
+      // XLSX serialization normalizes colors in-place; keep shared templates
+      // unchanged when another report is generated by the same warm worker.
+      ensureCell(sheet, address).s = structuredClone(style);
     }
   }
 }
@@ -3085,6 +3317,33 @@ export async function handleGenerateExcelReportRequest(req: Request) {
     });
   }
 
+  let reportIntent: ReportIntent | null = null;
+  if (body.export_intent_id != null) {
+    if (!isUUID(body.export_intent_id)) {
+      return json(400, { error: "invalid_report_intent" });
+    }
+    const { data: intentData, error: intentError } = await supabase.rpc(
+      "result_hub_get_report_intent",
+      { p_user_id: user.id, p_intent_id: body.export_intent_id },
+    );
+    if (intentError || !intentData) {
+      return json(404, { error: "report_intent_not_found" });
+    }
+    reportIntent = intentData as ReportIntent;
+    if (
+      reportIntent.analysis_id.toLowerCase() !== analysisID.toLowerCase() ||
+      reportIntent.format !== "xlsx"
+    ) {
+      return json(409, { error: "report_intent_mismatch" });
+    }
+    const { data: existingReport } = await supabase.from("reports")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("export_intent_id", reportIntent.id)
+      .maybeSingle();
+    if (existingReport) return json(200, existingReport);
+  }
+
   const reportLocalization = resolveReportLocalization({
     localizationSnapshot: (analysis as AnalysisRow).localization_snapshot,
     requestedLanguage: body.report_language,
@@ -3207,8 +3466,41 @@ export async function handleGenerateExcelReportRequest(req: Request) {
       companyProfile?.certificate_number ?? null,
   };
 
+  if (reportIntent) {
+    const { data: quota, error: quotaError } = await supabase.rpc(
+      "check_report_quota_eligibility_v2",
+      {
+        p_user_id: user.id,
+        p_kind: reportIntent.content_scope === "risk_analysis"
+          ? "riskAnalysis"
+          : "standard",
+        p_format: "xlsx",
+        p_content_scope: reportIntent.content_scope,
+      },
+    );
+    const decision = quota as Record<string, unknown> | null;
+    if (quotaError || !decision) {
+      return json(500, { error: "report_quota_check_failed" });
+    }
+    if (decision.allowed !== true) {
+      const code = safeText(decision.error_code, "report_quota_exceeded");
+      return json(code === "premium_required" ? 403 : 429, {
+        error: code,
+        message: code === "premium_required"
+          ? userFacingCopy(
+            "reportPremiumRequired",
+            reportLocalization.context.language,
+          )
+          : userFacingCopy(
+            "reportQuotaExceeded",
+            reportLocalization.context.language,
+          ),
+      });
+    }
+  }
+
   let freeRiskAnalysisTrialAvailable = false;
-  if (planTier === "free") {
+  if (!reportIntent && planTier === "free") {
     const { count: trialCount, error: trialCountError } = await supabase
       .from("usage_events")
       .select("id", { count: "exact", head: true })
@@ -3238,7 +3530,9 @@ export async function handleGenerateExcelReportRequest(req: Request) {
   }
 
   const reportLimit = monthlyReportLimit(planTier);
-  if (reportLimit !== null && !freeRiskAnalysisTrialAvailable) {
+  if (
+    !reportIntent && reportLimit !== null && !freeRiskAnalysisTrialAvailable
+  ) {
     const { count: reportCount, error: reportCountError } = await supabase
       .from("usage_events")
       .select("id", { count: "exact", head: true })
@@ -3268,13 +3562,34 @@ export async function handleGenerateExcelReportRequest(req: Request) {
 
   const archiveSuffix = archiveFileSuffix(requestID);
   const methodCode = method === "matrix_5x5" ? "5X5" : "FK";
-  const documentNo = `XLSX-${methodCode}-${
+  let documentNo = `XLSX-${methodCode}-${
     analysisID.slice(0, 8).toUpperCase()
   }-${archiveSuffix.slice(-8).toUpperCase()}`;
-  const workbook = reportLocalization.context.language === "en"
+  if (reportIntent) {
+    const { data, error } = await supabase.rpc("next_report_document_no_v2", {
+      p_user_id: user.id,
+      p_content_scope: reportIntent.content_scope,
+    });
+    if (error || typeof data !== "string") {
+      return json(500, { error: "document_no_failed" });
+    }
+    documentNo = data;
+  }
+  const reportFindings = reportIntent?.content_scope === "risk_analysis"
+    ? snapshotItems(reportIntent) as FindingRow[]
+    : (findings ?? []) as FindingRow[];
+  const workbook = reportIntent &&
+      reportIntent.content_scope !== "risk_analysis"
+    ? makeResultSectionWorkbook(
+      reportIntent,
+      analysis as AnalysisRow,
+      reportLocalization.context,
+      documentNo,
+    )
+    : reportLocalization.context.language === "en"
     ? makeEnglishWorkbook(
       analysis as AnalysisRow,
-      (findings ?? []) as FindingRow[],
+      reportFindings,
       effectiveProfile,
       method,
       requestID,
@@ -3284,7 +3599,7 @@ export async function handleGenerateExcelReportRequest(req: Request) {
     )
     : makeWorkbook(
       analysis as AnalysisRow,
-      (findings ?? []) as FindingRow[],
+      reportFindings,
       effectiveProfile,
       method,
       requestID,
@@ -3295,9 +3610,21 @@ export async function handleGenerateExcelReportRequest(req: Request) {
     await loadCompanyLogo(supabase, effectiveProfile, user.id);
   const rawBytes = workbookBuffer(workbook);
   const bytes = logo ? await embedCompanyLogo(rawBytes, logo) : rawBytes;
-  const fileStem = reportLocalization.context.language === "en"
-    ? "risk-assessment"
-    : "risk-analizi";
+  const fileStem = reportIntent?.content_scope === "training_recommendations"
+    ? (reportLocalization.context.language === "en"
+      ? "training-recommendations"
+      : "egitim-onerileri")
+    : reportIntent?.content_scope === "expert_recommendations"
+    ? (reportLocalization.context.language === "en"
+      ? "expert-recommendations"
+      : "uzman-gorusu")
+    : reportIntent?.content_scope === "approved_notebook"
+    ? (reportLocalization.context.language === "en"
+      ? "safety-log"
+      : "onayli-defter-taslagi")
+    : (reportLocalization.context.language === "en"
+      ? "risk-assessment"
+      : "risk-analizi");
   const fileName = `${
     safeFilePart(safeText((analysis as AnalysisRow).title, fileStem))
   }-${method}-${fileStem}-${archiveSuffix}.xlsx`;
@@ -3330,7 +3657,22 @@ export async function handleGenerateExcelReportRequest(req: Request) {
   }
 
   const shouldStoreSnapshot = await reportSnapshotV2Enabled(supabase, body);
-  const snapshotColumns = shouldStoreSnapshot
+  const snapshotColumns = reportIntent
+    ? {
+      findings_snapshot_json: snapshotItems(reportIntent),
+      analysis_edit_version: reportIntent.source_edit_version,
+      generated_from_user_edited_findings: reportIntent.source_edit_version > 0,
+      visible_findings_count: reportIntent.selected_item_keys.length,
+      report_page_count: 1,
+      content_scope: reportIntent.content_scope,
+      projection_version: reportIntent.projection_version,
+      selected_item_keys: reportIntent.selected_item_keys,
+      content_snapshot_json: reportIntent.content_snapshot,
+      entitlement_tier_snapshot: reportIntent.tier_snapshot,
+      selection_count: reportIntent.selected_item_keys.length,
+      export_intent_id: reportIntent.id,
+    }
+    : shouldStoreSnapshot
     ? {
       findings_snapshot_json: findings ?? [],
       photos_snapshot_json: photos ?? [],
@@ -3347,8 +3689,9 @@ export async function handleGenerateExcelReportRequest(req: Request) {
       source_photo_count: Array.isArray(photos) ? photos.length : null,
       visible_findings_count: Array.isArray(findings) ? findings.length : null,
       report_page_count: 1,
+      content_scope: "legacy_combined",
     }
-    : {};
+    : { content_scope: "legacy_combined" };
 
   const { data: report, error: reportError } = await supabase
     .from("reports")
@@ -3357,9 +3700,31 @@ export async function handleGenerateExcelReportRequest(req: Request) {
       analysis_id: analysisID,
       document_no: documentNo,
       format: "xlsx",
-      kind: "risk_analysis",
+      kind: reportIntent?.content_scope === "risk_analysis"
+        ? "risk_analysis"
+        : "standard",
       method,
-      title: safeText((analysis as AnalysisRow).title, "Risk Analizi"),
+      title: safeText(
+        (analysis as AnalysisRow).title,
+        reportIntent?.content_scope === "training_recommendations"
+          ? (reportLocalization.context.language === "en"
+            ? "Training Recommendations"
+            : "Eğitim Önerileri")
+          : reportIntent?.content_scope === "expert_recommendations"
+          ? userFacingCopy(
+            "resultExpertSectionTitle",
+            reportLocalization.context.language,
+          )
+          : reportIntent?.content_scope === "approved_notebook"
+          ? userFacingCopy(
+            "resultNotebookSectionTitle",
+            reportLocalization.context.language,
+          )
+          : userFacingCopy(
+            "resultRiskAnalysisTitle",
+            reportLocalization.context.language,
+          ),
+      ),
       storage_path: storagePath,
       file_name: fileName,
       mime_type: XLSX_MIME,
@@ -3428,6 +3793,23 @@ export async function handleGenerateExcelReportRequest(req: Request) {
       request_id: requestID,
       support_id: supportID,
     });
+  }
+
+  if (reportIntent) {
+    const { error: consumeError } = await supabase.rpc(
+      "result_hub_consume_report_intent",
+      {
+        p_user_id: user.id,
+        p_intent_id: reportIntent.id,
+        p_status: "consumed",
+      },
+    );
+    if (consumeError) {
+      console.warn(
+        "XLSX report intent consume failed",
+        JSON.stringify({ report_id: report.id, intent_id: reportIntent.id }),
+      );
+    }
   }
 
   if (company && !(analysis as AnalysisRow).company_id) {

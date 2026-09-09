@@ -1,6 +1,7 @@
 import CryptoKit
 import Foundation
 import Security
+import UIKit
 import XCTest
 
 final class RiskDetectedUITests: XCTestCase {
@@ -13,6 +14,84 @@ final class RiskDetectedUITests: XCTestCase {
     override func tearDownWithError() throws {
         app?.terminate()
         app = nil
+    }
+
+    func testDarkPaywallPricesComparisonAndAllVariants() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER", "RD_UI_TEST_LIGHT_MODE", "RD_UI_TEST_PAYWALL_PRICES"])
+        tap("Yükselt")
+        let cta = waitFor("in_app_paywall.cta", timeout: 12)
+        XCTAssertTrue(waitFor("Ücretsiz Denemeyi Başlat", timeout: 8).exists)
+        for id in ["in_app_paywall.plan.yearly", "in_app_paywall.plan.monthly", "in_app_paywall.plus.pro_link"] {
+            let element = waitFor(id)
+            XCTAssertTrue(element.isHittable, id)
+            XCTAssertLessThan(element.frame.maxY, cta.frame.minY, id)
+        }
+        XCTAssertTrue(waitFor("in_app_paywall.purchase_disclosure").label.contains("₺2.499,99"))
+        attachScreenshot("dark-paywall-plus-yearly")
+        tap("in_app_paywall.compare")
+        XCTAssertTrue(waitFor("Günlük analiz").exists)
+        XCTAssertTrue(waitFor("Derin Araştırma").exists)
+        XCTAssertTrue(waitFor("PDF/Excel Rapor").exists)
+        attachScreenshot("dark-paywall-comparison")
+        tap("in_app_paywall.compare.close")
+        tap("in_app_paywall.plan.monthly")
+        XCTAssertTrue(waitFor("in_app_paywall.plan.monthly").isSelected)
+        XCTAssertFalse(app.staticTexts["in_app_paywall.no_charge"].exists)
+        XCTAssertTrue(waitFor("in_app_paywall.purchase_disclosure").label.contains("₺249,99"))
+        XCTAssertTrue(waitFor("in_app_paywall.purchase_disclosure").label.contains("İstediğin zaman iptal edebilirsin."))
+        attachScreenshot("dark-paywall-plus-monthly")
+        tap("in_app_paywall.plus.pro_link")
+        XCTAssertTrue(waitFor("in_app_paywall.pro").exists)
+        XCTAssertTrue(waitFor("in_app_paywall.purchase_disclosure").label.contains("₺4.999,99"))
+        XCTAssertTrue(waitFor("in_app_paywall.purchase_disclosure").label.contains("İstediğin zaman iptal edebilirsin."))
+        attachScreenshot("dark-paywall-pro-yearly")
+        tap("in_app_paywall.plan.monthly")
+        XCTAssertTrue(waitFor("in_app_paywall.purchase_disclosure").label.contains("₺499,99"))
+        XCTAssertTrue(waitFor("in_app_paywall.purchase_disclosure").label.contains("İstediğin zaman iptal edebilirsin."))
+        attachScreenshot("dark-paywall-pro-monthly")
+        XCTAssertTrue(waitFor("in_app_paywall.restore").isHittable)
+        tap("in_app_paywall.pro.plus_link")
+        XCTAssertTrue(waitFor("in_app_paywall.plan.yearly").isSelected)
+    }
+
+    func testEnglishDarkPaywallUpdatedCopyAndDisclosures() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_FREE_TIER", "RD_UI_TEST_PAYWALL_PRICES",
+        ] + englishLaunchArguments)
+        tap("Upgrade")
+        for text in ["Real risk analysis", "Strong expert support",
+                     "In-depth research findings", "PDF/Excel reports & sharing"] {
+            XCTAssertTrue(waitFor(text).exists)
+        }
+        XCTAssertTrue(waitFor("in_app_paywall.purchase_disclosure").label.contains("days free, then"))
+        tap("in_app_paywall.compare")
+        XCTAssertTrue(waitFor("PDF/Excel Reports").exists)
+        tap("in_app_paywall.compare.close")
+        tap("in_app_paywall.plan.monthly")
+        let plusDisclosure = waitFor("in_app_paywall.purchase_disclosure")
+        XCTAssertTrue(plusDisclosure.label.contains("You can cancel anytime."))
+        XCTAssertTrue(plusDisclosure.label.contains("/ month"))
+        attachScreenshot("localized-paywall-plus-monthly-en")
+        tap("in_app_paywall.plus.pro_link")
+        for text in ["Detailed risk findings", "Comprehensive hazard coverage",
+                     "Unlimited features", "Powerful AI model support"] {
+            XCTAssertTrue(waitFor(text).exists)
+        }
+        XCTAssertTrue(waitFor("in_app_paywall.purchase_disclosure").label.contains("/ year"))
+        XCTAssertTrue(waitFor("in_app_paywall.purchase_disclosure").label.contains("You can cancel anytime."))
+        tap("in_app_paywall.plan.monthly")
+        XCTAssertTrue(waitFor("in_app_paywall.purchase_disclosure").label.contains("/ month"))
+        XCTAssertTrue(waitFor("in_app_paywall.purchase_disclosure").label.contains("You can cancel anytime."))
+        attachScreenshot("localized-paywall-pro-monthly-en")
+        XCTAssertTrue(waitFor("in_app_paywall.restore").isHittable)
+    }
+
+    func testDarkPaywallIneligibleCustomerDoesNotSeeTrialPromise() throws {
+        launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER", "RD_UI_TEST_PAYWALL_PRICES", "RD_UI_TEST_NO_TRIAL"])
+        tap("Yükselt")
+        XCTAssertTrue(waitFor("PLUS'a Geç", timeout: 8).exists)
+        XCTAssertFalse(app.staticTexts["in_app_paywall.no_charge"].exists)
+        XCTAssertFalse(waitFor("in_app_paywall.purchase_disclosure").label.contains("ücretsiz"))
     }
 
     func testEnglishPDFReportExtractionHasNoTurkishRegulatoryTemplateLeak() throws {
@@ -32,6 +111,21 @@ final class RiskDetectedUITests: XCTestCase {
         let status = app.staticTexts["pdf_report_localization.status"]
         XCTAssertTrue(status.waitForExistence(timeout: 20))
         XCTAssertEqual(status.label, "PDF_REPORT_LOCALIZATION_OK")
+    }
+
+    func testResultHubGeneratesThreePDFScopesAndEnglishSafetyLog() throws {
+        app = XCUIApplication()
+        app.launchArguments = [
+            "RD_UI_TEST_RESULT_HUB_PDF",
+            "-UIViewAnimationEnabled", "NO",
+            "-ApplePersistenceIgnoreState", "YES",
+        ]
+        app.launchEnvironment["RD_UI_TEST_RESULT_HUB_PDF"] = "1"
+        launchPreparedApp()
+
+        let status = app.staticTexts["result_hub_pdf.status"]
+        XCTAssertTrue(status.waitForExistence(timeout: 20))
+        XCTAssertEqual(status.label, "RESULT_HUB_PDF_OK")
     }
 
     func testFreeTierPaywallUsesRetryWhenStorePriceUnavailable() throws {
@@ -59,6 +153,27 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("E-posta ile devam et").exists)
     }
 
+    func testStandaloneAuthHighlightsEmailAndGoogleActions() throws {
+        app = XCUIApplication()
+        app.launchArguments = [
+            "RD_UI_TEST_AUTH",
+            "RD_UI_TEST_LIGHT_MODE",
+            "-UIViewAnimationEnabled", "NO",
+            "-ApplePersistenceIgnoreState", "YES",
+        ]
+        app.launchEnvironment["RD_UI_TEST_AUTH"] = "1"
+        app.launchEnvironment["RD_UI_TEST_LIGHT_MODE"] = "1"
+        launchPreparedApp()
+
+        XCTAssertTrue(waitFor("root.auth", timeout: 10).exists)
+        XCTAssertTrue(
+            waitForOne(["auth.email.start", "E-posta ile giriş yap"]).isHittable
+        )
+        XCTAssertTrue(
+            waitForOne(["auth.google", "Google ile devam et"]).isHittable
+        )
+    }
+
     func testTrialInviteAndTimelinePaywallRenderWithAuthBypass() throws {
         launchApp(extraArguments: ["RD_UI_TEST_BYPASS_AUTH"])
 
@@ -78,31 +193,31 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("Bildirimleri Aç").exists)
         tap("onboarding.notification_permission.cta")
 
-        XCTAssertTrue(waitFor("Yıllık", timeout: 8).exists)
-        XCTAssertTrue(waitFor("Aylık").exists)
-        XCTAssertTrue(waitFor("Devam Et", timeout: 12).exists)
-        XCTAssertTrue(waitFor("Hatırlatma Gönderilir").exists)
-        XCTAssertTrue(waitFor("Deneme süresinin 5. gününde size hatırlatma gönderilir.").exists)
-        XCTAssertTrue(waitFor("Hesabınız Aktif").exists)
-        XCTAssertTrue(waitFor("Deneme süresi sonunda hesabınız Plus olarak aktiflenir.").exists)
-        XCTAssertTrue(waitFor("Geri yükle").exists)
-        XCTAssertTrue(waitFor("Kullanım Şartları").exists)
-        XCTAssertTrue(waitFor("Gizlilik Politikası").exists)
-        XCTAssertTrue(waitFor("Firma Yönetimi").exists)
+        // Onboarding 11. adım Claude Design paywall akışını kullanır.
+        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 12).exists)
+        XCTAssertTrue(waitFor("İş Güvenliğinde Güven", timeout: 8).exists)
+        XCTAssertTrue(waitFor("in_app_paywall.plan.yearly").exists)
+        XCTAssertTrue(waitFor("in_app_paywall.plan.monthly").exists)
+        tap("in_app_paywall.compare")
+        XCTAssertTrue(waitFor("Firma yönetimi").exists)
         XCTAssertTrue(waitFor("Çoklu Fotoğraf Analizi").exists)
+        tap("in_app_paywall.compare.close")
+        XCTAssertTrue(waitFor("in_app_paywall.restore").exists)
+        XCTAssertTrue(waitFor("in_app_paywall.privacy").exists)
 
-        tap("Kullanım Şartları")
+        tapScrolling("in_app_paywall.terms")
         XCTAssertTrue(waitFor("Yasal Bilgilendirme", timeout: 4).exists)
         XCTAssertTrue(waitFor("Kullanım Koşulları").exists)
         tap("Pencereyi kapat")
 
-        tap("Aylık")
-        XCTAssertFalse(app.staticTexts["₺199,99/ay — istediğin zaman iptal"].waitForExistence(timeout: 1))
-        XCTAssertTrue(waitForOne(["App Store fiyatı yükleniyor", "Fiyat alınamadı"], timeout: 8).exists)
+        tapScrolling("in_app_paywall.plan.monthly")
+        XCTAssertTrue(waitFor("in_app_paywall.plan.monthly", timeout: 6).isSelected)
+        XCTAssertFalse(app.staticTexts["₺199,99"].waitForExistence(timeout: 1))
 
-        tap("Yıllık")
-        XCTAssertFalse(app.staticTexts["7 gün ücretsiz, sonra ₺1.999,99 (₺166,67/ay)"].waitForExistence(timeout: 1))
-        XCTAssertTrue(waitForOne(["App Store fiyatı yükleniyor", "Fiyat alınamadı"], timeout: 8).exists)
+        tapScrolling("in_app_paywall.plan.yearly")
+        XCTAssertTrue(waitFor("in_app_paywall.plan.yearly", timeout: 6).isSelected)
+        XCTAssertFalse(app.staticTexts["₺1.999,99"].waitForExistence(timeout: 1))
+        XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 12).exists)
     }
 
     func testOnboardingAllQuestionScreensAndAuthEmailPanelRender() throws {
@@ -136,6 +251,11 @@ final class RiskDetectedUITests: XCTestCase {
         tap("Planımı Hazırla")
 
         XCTAssertTrue(waitFor("onboarding.loading", timeout: 8).exists)
+        // Adım metinleri seçim etiketini yer tutucuyla alır; uç uca eklenirse
+        // araya boşluk girmiyordu ("İnşaatiçin risk analiz şablonları...").
+        XCTAssertTrue(waitFor("İnşaat için risk analiz şablonları yükleniyor...", timeout: 6).exists)
+        XCTAssertTrue(waitFor("A Sınıfı için rapor formatı kişiselleştiriliyor...", timeout: 6).exists)
+
         XCTAssertTrue(waitFor("onboarding.personal_plan", timeout: 12).exists)
         tap("onboarding.personal_plan.create_account")
 
@@ -144,6 +264,7 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("onboarding.auth.google").exists)
         XCTAssertTrue(waitFor("E-posta ile devam et").exists)
         XCTAssertTrue(waitFor("onboarding.auth.sign_in_existing").exists)
+        XCTAssertTrue(waitFor("896 şablon · İnşaat · A Sınıfı").exists)
     }
 
     func testEnglishOnboardingUsesRoleAndRequiresExplicitSafetyProfile() throws {
@@ -214,7 +335,72 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("tab.quick_scan").isHittable)
         tapTab(.profile)
         XCTAssertTrue(waitFor("profile.root", timeout: 8).exists)
-        XCTAssertTrue(waitFor("profile.row.preferences").isHittable)
+        tapScrolling("profile.row.preferences", timeout: 14)
+        XCTAssertTrue(waitFor("Preferences", timeout: 6).exists)
+    }
+
+    func testResponsivePaywallAtLargestDynamicTypeKeepsPlansCTAAndLegalReachable() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_FREE_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+            "-UIPreferredContentSizeCategoryName",
+            "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge",
+        ])
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        tap("Yükselt", timeout: 10)
+
+        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 10).exists)
+        let cta = waitFor("in_app_paywall.cta", timeout: 12)
+        XCTAssertTrue(cta.isHittable)
+        XCTAssertGreaterThanOrEqual(cta.frame.height, 44)
+        XCTAssertLessThanOrEqual(cta.frame.maxY, app.frame.maxY)
+
+        tapScrolling("in_app_paywall.plan.monthly", timeout: 14)
+        XCTAssertTrue(waitFor("in_app_paywall.plan.monthly", timeout: 6).isSelected)
+        XCTAssertTrue(waitFor("in_app_paywall.cta", timeout: 6).isHittable)
+
+        tapScrolling("in_app_paywall.terms", timeout: 14)
+        XCTAssertTrue(waitFor("Yasal Bilgilendirme", timeout: 6).exists)
+        XCTAssertTrue(waitFor("Kullanım Koşulları", timeout: 4).exists)
+        tap("Pencereyi kapat")
+        XCTAssertTrue(waitFor("in_app_paywall.cta", timeout: 6).isHittable)
+    }
+
+    func testResponsiveResultHubAtLargestDynamicTypeKeepsTabsAndReportActionReachable() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+            "-UIPreferredContentSizeCategoryName",
+            "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge",
+        ])
+
+        let selector = waitFor("result.hub.section_selector", timeout: 12)
+        XCTAssertTrue(selector.exists)
+
+        let reportAction = waitFor("result.hub.report", timeout: 8)
+        XCTAssertTrue(reportAction.isHittable)
+        XCTAssertGreaterThanOrEqual(reportAction.frame.height, 44)
+        XCTAssertLessThanOrEqual(reportAction.frame.maxY, app.frame.maxY)
+
+        let riskSection = waitFor("result.hub.section.risk_analysis", timeout: 6)
+        XCTAssertTrue(hasUsableHitFrame(riskSection), "Initial risk section should be visible")
+
+        for section in [
+            "result.hub.section.expert_recommendations",
+            "result.hub.section.approved_notebook",
+            "result.hub.section.training_recommendations",
+        ] {
+            tapHorizontallyScrolling(section, in: "result.hub.section_selector", timeout: 10)
+            let selected = waitFor(section, timeout: 4)
+            XCTAssertTrue(hasUsableHitFrame(selected), "Section should be visible after selection: \(section)")
+            XCTAssertTrue(waitFor("result.hub.report", timeout: 4).isHittable)
+        }
+
+        for _ in 0..<5 { app.swipeUp() }
+        XCTAssertTrue(waitFor("result.hub.report", timeout: 4).isHittable)
     }
 
     func testEnglishPseudolocalizationKeepsPrimaryNavigationReachable() throws {
@@ -477,7 +663,10 @@ final class RiskDetectedUITests: XCTestCase {
     }
 
     func testHomePhotoUploadReturnsToTrayAfterAnnotation() throws {
-        launchMainApp(extraArguments: ["RD_UI_TEST_DIRECT_HOME_PHOTO_PICK"])
+        launchMainApp(
+            extraArguments: ["RD_UI_TEST_DIRECT_HOME_PHOTO_PICK"],
+            disablesAnimations: false
+        )
 
         XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
         tap("home.photo_tray.open")
@@ -488,6 +677,32 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("home.photo_tray", timeout: 10).exists)
         XCTAssertTrue(waitFor("1/3").exists)
         XCTAssertTrue(waitFor("Analize geç").exists)
+    }
+
+    /// Galeri tam ekranı, işaretleme tam ekranı ve fotoğraf tepsisi gerçek kapanış
+    /// animasyonlarıyla sırayla sunulmalı; hiçbir adım ana ekranda beklememeli.
+    func testGalleryImportReturnsToPhotoTrayWithoutSecondScanTap() throws {
+        launchMainApp(
+            extraArguments: ["RD_UI_TEST_SIMULATED_GALLERY_IMPORT"],
+            disablesAnimations: false
+        )
+
+        XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
+        tap("home.photo_tray.open")
+        XCTAssertTrue(waitFor("İşaretlemeyi kaydet", timeout: 8).exists)
+
+        for index in 1...3 {
+            tap("İşaretlemeyi kaydet", timeout: 8)
+            if index < 3 {
+                RunLoop.current.run(until: Date().addingTimeInterval(0.8))
+                XCTAssertTrue(waitFor("İşaretlemeyi kaydet", timeout: 8).exists)
+            }
+        }
+
+        XCTAssertTrue(waitFor("home.photo_tray", timeout: 10).exists)
+        XCTAssertTrue(waitFor("3/3").exists)
+        XCTAssertTrue(waitFor("Analize geç").exists)
+        XCTAssertFalse(app.buttons["home.start_scan"].isHittable)
     }
 
     func testPhotoTrayWithExistingPhotosFixtureRenders() throws {
@@ -515,12 +730,13 @@ final class RiskDetectedUITests: XCTestCase {
     }
 
     func testAnalyzingProgressCompletesIntoResult() throws {
-        launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_ANALYZING_COMPLETES"])
+        launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_ANALYZING_COMPLETES", "RD_UI_TEST_RESULT_HUB"])
 
         XCTAssertTrue(waitFor("analysis.loading", timeout: 10).exists)
         XCTAssertTrue(waitFor("analysis.progress.percent", timeout: 4).exists)
         XCTAssertTrue(waitFor("Sonuç hazırlanıyor", timeout: 8).exists)
-        XCTAssertTrue(waitFor("Analiz Sonucu", timeout: 12).exists)
+        XCTAssertTrue(waitFor("result.hub.section_selector", timeout: 12).exists)
+        XCTAssertFalse(app.otherElements["result.hub.error"].exists)
     }
 
     func testE2ERealThreePhotoAnalysisCompletes() throws {
@@ -583,13 +799,571 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("Saha teyidi", timeout: 4).exists)
     }
 
+    func testResultHubPaidFixtureShowsThreeSectionsAndSelectableReport() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        XCTAssertTrue(waitFor("Risk Analizi, 3 Bulgu", timeout: 10).exists)
+        XCTAssertTrue(waitFor("Uzman Görüşü Önerileri, 2 Öneri", timeout: 4).exists)
+        XCTAssertTrue(waitFor("Onaylı Defter Önerisi, 2 Kayıt", timeout: 4).exists)
+        XCTAssertTrue(waitFor("result.hub.bottom_back", timeout: 4).exists)
+        XCTAssertTrue(waitFor("Geri dön", timeout: 4).exists)
+        let reportButton = waitFor("Rapor Oluştur · 3/3", timeout: 4)
+        XCTAssertTrue(reportButton.exists)
+        XCTAssertLessThanOrEqual(
+            app.frame.maxY - reportButton.frame.maxY,
+            48,
+            "Rapor eylemi ekranın altında gereksiz bir boşluk bırakmamalı"
+        )
+    }
+
+    func testResultHubDislikeFeedbackIsCompactSupportsNoteAndShowsTimedThanks() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        XCTAssertTrue(waitFor("Risk Analizi, 3 Bulgu", timeout: 10).exists)
+        tapScrolling("Beğenme", timeout: 10)
+
+        let feedbackTitle = waitFor("NEYİ GELİŞTİREBİLİRİZ?", timeout: 6)
+        XCTAssertTrue(
+            waitFor(
+                "Gelişmemize yardımcı ol, böylelikle bir sonraki analizinde mükemmele biraz daha yaklaşabilelim. Teşekkürler.",
+                timeout: 4
+            ).exists
+        )
+        let longestReason = waitFor("feedback.reason.wrong_recommendation", timeout: 4)
+        let customReason = waitFor("feedback.custom.toggle", timeout: 4)
+        XCTAssertLessThanOrEqual(longestReason.frame.height, 52)
+        XCTAssertLessThan(
+            customReason.frame.maxY - feedbackTitle.frame.minY,
+            app.frame.height * 0.48,
+            "Hazır nedenler ekranın büyük bölümünü kaplamamalı."
+        )
+        attachScreenshot("feedback-sheet-compact")
+
+        tap("feedback.custom.toggle")
+        let noteField = waitFor("feedback.custom.note", timeout: 6)
+        noteField.tap()
+        noteField.typeText("Koruma onerisi daha acik olabilir.")
+        XCTAssertTrue(waitFor("feedback.custom.submit", timeout: 4).isEnabled)
+        attachScreenshot("feedback-sheet-custom-note")
+        tap("feedback.custom.submit")
+
+        let thanks = waitFor("feedback.success.toast", timeout: 6)
+        XCTAssertTrue(thanks.label.contains("Teşekkürler"))
+        XCTAssertTrue(thanks.label.contains("en kısa sürede inceleyeceğiz"))
+        attachScreenshot("feedback-thanks-toast")
+
+        RunLoop.current.run(until: Date().addingTimeInterval(7.5))
+        XCTAssertFalse(app.descendants(matching: .any)["feedback.success.toast"].exists)
+    }
+
+    func testResultHubBottomBackReturnsToPreviousScreen() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        XCTAssertTrue(waitFor("Risk Analizi, 3 Bulgu", timeout: 10).exists)
+        tap("result.hub.bottom_back", timeout: 6)
+
+        XCTAssertTrue(waitFor("main_tab.home", timeout: 8).exists)
+        XCTAssertFalse(app.descendants(matching: .any)["result.hub.section_selector"].exists)
+    }
+
+    func testResultHubFreePlacesPremiumDeepAnalysisCardAfterSecondFinding() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_FREE_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        XCTAssertTrue(waitFor("result.hub.analysis_info_card", timeout: 10).exists)
+        XCTAssertTrue(waitFor("result.hub.analysis_photo.1", timeout: 6).exists)
+        XCTAssertTrue(waitFor("result.hub.analysis_photo.2", timeout: 6).exists)
+        XCTAssertTrue(waitFor("result.hub.analysis_photo.3", timeout: 6).exists)
+        XCTAssertFalse(app.descendants(matching: .any)["result.hub.analysis_photo.4"].exists)
+
+        let analysisInfoCard = waitFor("result.hub.analysis_info_card", timeout: 6)
+        let riskSummary = waitFor("result.hub.risk_summary", timeout: 6)
+        XCTAssertLessThan(
+            analysisInfoCard.frame.midY,
+            riskSummary.frame.midY,
+            "Analiz başlığı kartı mavi risk özetinden önce yer almalı"
+        )
+
+        let metadataAttachment = XCTAttachment(screenshot: app.screenshot())
+        metadataAttachment.name = "result-hub-analysis-info-card"
+        metadataAttachment.lifetime = .keepAlways
+        add(metadataAttachment)
+
+        for _ in 0..<3 { app.swipeUp() }
+        let secondFinding = waitFor("result.hub.item.10000000-0000-4000-8000-000000000002", timeout: 6)
+        let premiumCard = waitFor("result.hub.premium_deep_analysis_card", timeout: 6)
+        let thirdFinding = waitFor("result.hub.item.10000000-0000-4000-8000-000000000003", timeout: 6)
+
+        let premiumCardAttachment = XCTAttachment(screenshot: app.screenshot())
+        premiumCardAttachment.name = "result-hub-premium-card-after-second-finding"
+        premiumCardAttachment.lifetime = .keepAlways
+        add(premiumCardAttachment)
+
+        let premiumCardFocusedAttachment = XCTAttachment(screenshot: premiumCard.screenshot())
+        premiumCardFocusedAttachment.name = "result-hub-premium-card-focused"
+        premiumCardFocusedAttachment.lifetime = .keepAlways
+        add(premiumCardFocusedAttachment)
+
+        // SwiftUI blur extends the accessibility frame by two points. Compare
+        // centers so the test validates list order instead of the blur halo.
+        XCTAssertGreaterThan(premiumCard.frame.midY, secondFinding.frame.midY)
+        XCTAssertLessThan(premiumCard.frame.midY, thirdFinding.frame.midY)
+        XCTAssertTrue(premiumCard.label.contains("derin Analiz ve derin araştırma"))
+    }
+
+    func testResultHubFreePlacesPremiumDeepAnalysisCardAfterOnlyFinding() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_SINGLE_FINDING",
+            "RD_UI_TEST_FREE_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        let firstFinding = waitFor("result.hub.item.10000000-0000-4000-8000-000000000001", timeout: 10)
+        let premiumCard = waitFor("result.hub.premium_deep_analysis_card", timeout: 8)
+
+        let premiumCardAttachment = XCTAttachment(screenshot: app.screenshot())
+        premiumCardAttachment.name = "result-hub-premium-card-after-only-finding"
+        premiumCardAttachment.lifetime = .keepAlways
+        add(premiumCardAttachment)
+
+        XCTAssertGreaterThan(premiumCard.frame.midY, firstFinding.frame.midY)
+        XCTAssertFalse(app.descendants(matching: .any)["result.hub.item.10000000-0000-4000-8000-000000000002"].exists)
+    }
+
+    func testResultHubPaidDoesNotShowPremiumDeepAnalysisCard() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        XCTAssertTrue(waitFor("result.hub.item.10000000-0000-4000-8000-000000000001", timeout: 10).exists)
+        for _ in 0..<4 { app.swipeUp() }
+        XCTAssertFalse(app.descendants(matching: .any)["result.hub.premium_deep_analysis_card"].exists)
+    }
+
+    func testResultHubHeaderStaysAbovePinnedSectionSelectorWithoutGap() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_FREE_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        let header = waitFor("result.hub.header", timeout: 10)
+        let selector = waitFor("result.hub.section_selector", timeout: 10)
+        XCTAssertTrue(waitFor("result.hub.back", timeout: 4).exists)
+        XCTAssertTrue(waitFor("Geri dön", timeout: 4).exists)
+        XCTAssertTrue(waitFor("Yükselt", timeout: 4).exists)
+
+        app.swipeUp()
+        RunLoop.current.run(until: Date().addingTimeInterval(0.4))
+
+        XCTAssertTrue(header.exists)
+        XCTAssertTrue(selector.exists)
+        XCTAssertLessThanOrEqual(
+            abs(selector.frame.minY - header.frame.maxY),
+            2,
+            "Sabit bölüm seçicisi ile opak sonuç header'ı arasında içerik gösteren bir boşluk kalmamalı"
+        )
+
+        let stickyHeader = XCTAttachment(screenshot: app.screenshot())
+        stickyHeader.name = "result-hub-sticky-header"
+        stickyHeader.lifetime = .keepAlways
+        add(stickyHeader)
+    }
+
+    func testResultHubRiskCardsUseMethodSpecificBandNames() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        XCTAssertTrue(waitFor("TOLERANS DIŞI", timeout: 10).exists)
+        XCTAssertTrue(waitFor("ÖNEMLİ RİSK", timeout: 4).exists)
+
+        tap("5x5 Matris, R = O × Ş", timeout: 6)
+        XCTAssertTrue(waitFor("ORTA RİSK", timeout: 4).exists)
+    }
+
+    func testResultHubRiskCardPreviewsCorrectiveActionAndOpensDetails() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        XCTAssertTrue(
+            waitFor(
+                "Üst ve ara korkuluk ile topuk levhasından oluşan uygun kenar koruması kurulmalıdır.",
+                timeout: 10
+            ).exists,
+            "Numaralı düzeltici önlemde liste işareti değil gerçek ilk cümle gösterilmeli"
+        )
+        XCTAssertTrue(waitFor("Devamı için tıklayın", timeout: 4).exists)
+        tapScrolling("result.hub.item.corrective_preview.10000000-0000-4000-8000-000000000001", timeout: 8)
+        XCTAssertTrue(waitFor("result.detail.close", timeout: 8).exists)
+    }
+
+    func testResultHubExpertCardUsesCompactPreviewAndOpensFindingDetails() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        tap("Uzman Görüşü Önerileri, 2 Öneri", timeout: 10)
+        let previewID = "result.hub.item.expert_preview.20000000-0000-4000-8000-000000000001"
+        XCTAssertTrue(waitFor(previewID, timeout: 6).exists)
+        XCTAssertTrue(waitFor("Devamı için tıklayın", timeout: 4).exists)
+
+        tapScrolling(previewID, timeout: 8)
+        XCTAssertTrue(waitFor("result.detail.close", timeout: 8).exists)
+        XCTAssertTrue(waitFor("result.detail.expert_summary", timeout: 4).exists)
+        XCTAssertTrue(waitFor("İskele Kurulum Güvencesinin Doğrulanması", timeout: 4).exists)
+        XCTAssertTrue(waitFor("Kurulum planı ve saha koşulları birlikte kontrol edilmelidir.", timeout: 4).exists)
+    }
+
+    func testResultHubReferenceVisualStates() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        XCTAssertTrue(waitFor("Risk Analizi, 3 Bulgu", timeout: 10).exists)
+        let riskMain = XCTAttachment(screenshot: app.screenshot())
+        riskMain.name = "01-paid-risk-main"
+        riskMain.lifetime = .keepAlways
+        add(riskMain)
+
+        tapScrolling("Açık Kenarda Düşme Tehlikesi", timeout: 8)
+        XCTAssertTrue(waitFor("result.detail.close", timeout: 8).exists)
+        let riskDetail = XCTAttachment(screenshot: app.screenshot())
+        riskDetail.name = "02-paid-risk-detail"
+        riskDetail.lifetime = .keepAlways
+        add(riskDetail)
+        tap("result.detail.close", timeout: 4)
+
+        tap("Uzman Görüşü Önerileri, 2 Öneri", timeout: 6)
+        let expert = XCTAttachment(screenshot: app.screenshot())
+        expert.name = "03-paid-expert"
+        expert.lifetime = .keepAlways
+        add(expert)
+
+        tap("Onaylı Defter Önerisi, 2 Kayıt", timeout: 6)
+        let notebook = XCTAttachment(screenshot: app.screenshot())
+        notebook.name = "04-paid-notebook"
+        notebook.lifetime = .keepAlways
+        add(notebook)
+
+        tap("Rapor Oluştur", timeout: 6)
+        XCTAssertTrue(waitFor("Raporunu oluştur ve paylaş", timeout: 6).exists)
+        let reportSheet = XCTAttachment(screenshot: app.screenshot())
+        reportSheet.name = "05-paid-report-sheet"
+        reportSheet.lifetime = .keepAlways
+        add(reportSheet)
+    }
+
+    func testIOSSheetsFitContentAtExtraLargeText() throws {
+        let textSize = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryXL"]
+        launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_RESULT", "RD_UI_TEST_RESULT_HUB", "RD_UI_TEST_LIGHT_MODE"] + textSize)
+        tap("result.hub.report", timeout: 12)
+        let riskCard = waitFor("result.report_sheet.option.riskTable")
+        attachScreenshot("ios-xl-report-options-before-measure")
+        let cta = waitFor("Rapor türü seçin")
+        XCTAssertTrue(riskCard.isHittable)
+        XCTAssertGreaterThanOrEqual(cta.frame.minY - riskCard.frame.maxY, 0)
+        XCTAssertLessThan(cta.frame.minY - riskCard.frame.maxY, 28)
+        attachScreenshot("ios-xl-report-options")
+        riskCard.tap()
+        let format = waitFor("result.report_sheet.format")
+        let expandedCTA = waitFor("PDF Raporu Oluştur")
+        XCTAssertTrue(format.isHittable)
+        XCTAssertGreaterThanOrEqual(expandedCTA.frame.minY - format.frame.maxY, 0)
+        XCTAssertLessThan(expandedCTA.frame.minY - format.frame.maxY, 28)
+        attachScreenshot("ios-xl-report-expanded")
+
+        launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_RESULT", "RD_UI_TEST_RESULT_HUB", "RD_UI_TEST_LIGHT_MODE"] + textSize)
+        tap("result.hub.section.training_recommendations", timeout: 12)
+        attachScreenshot("ios-xl-training")
+        tap("result.hub.report")
+        XCTAssertTrue(waitFor("PDF Raporu Oluştur").isEnabled, "Plus can export training recommendations")
+        attachScreenshot("ios-xl-training-report")
+
+        for tier in ["RD_UI_TEST_FREE_TIER", "RD_UI_TEST_PRO_TIER"] {
+            launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_RESULT", "RD_UI_TEST_RESULT_HUB", "RD_UI_TEST_LIGHT_MODE", tier] + textSize)
+            tap("result.hub.section.training_recommendations", timeout: 12)
+            tap("result.hub.report")
+            if tier == "RD_UI_TEST_FREE_TIER" {
+                XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 12).exists)
+            } else {
+                XCTAssertTrue(waitFor("PDF Raporu Oluştur").isEnabled)
+            }
+        }
+
+        for fixture in ["RD_UI_TEST_OPEN_PHOTO_TRAY", "RD_UI_TEST_PHOTO_TRAY_WITH_PHOTOS", "RD_UI_TEST_OPEN_CANVAS_SHEET"] {
+            launchMainApp(extraArguments: [fixture, "RD_UI_TEST_LIGHT_MODE"] + textSize)
+            let action = waitFor(fixture == "RD_UI_TEST_OPEN_CANVAS_SHEET" ? "canvas_sheet.confirm" : "home.photo_tray.primary", timeout: 12)
+            XCTAssertTrue(action.isHittable)
+            XCTAssertLessThan(app.frame.maxY - action.frame.maxY, 65)
+            attachScreenshot("ios-xl-\(fixture)")
+        }
+    }
+
+    func testResultHubRiskReportSheetIsCompactAndEmphasizesRiskTable() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        XCTAssertTrue(waitFor("Risk Analizi, 3 Bulgu", timeout: 10).exists)
+        tap("Rapor Oluştur · 3/3", timeout: 6)
+
+        XCTAssertTrue(waitFor("result.report_sheet", timeout: 6).exists)
+        let standardCard = waitFor("result.report_sheet.option.standard", timeout: 4)
+        let riskTableCard = waitFor("result.report_sheet.option.riskTable", timeout: 4)
+        XCTAssertTrue(
+            waitFor(
+                "Analizlerini Fine-Kinney veya 5x5 Matris ile hesapla, PDF ya da Excel olarak rapor oluştur ve paylaş.",
+                timeout: 4
+            ).exists
+        )
+        XCTAssertGreaterThanOrEqual(standardCard.frame.height, 76)
+        XCTAssertGreaterThanOrEqual(riskTableCard.frame.height, 116)
+        XCTAssertGreaterThan(riskTableCard.frame.height, standardCard.frame.height + 32)
+
+        let compactGenerateButton = waitFor("Rapor türü seçin", timeout: 4)
+        let compactContentGap = compactGenerateButton.frame.minY - riskTableCard.frame.maxY
+        XCTAssertGreaterThanOrEqual(compactContentGap, 0)
+        XCTAssertLessThan(
+            compactContentGap,
+            24,
+            "The compact report sheet must hug its cards instead of reserving an empty large-detent region"
+        )
+        let compactBottomGap = app.frame.maxY - compactGenerateButton.frame.maxY
+        XCTAssertLessThan(
+            compactBottomGap,
+            20,
+            "The compact footer must not reserve a second blank region below its button"
+        )
+
+        let compactSheet = XCTAttachment(screenshot: app.screenshot())
+        compactSheet.name = "risk-report-sheet-compact"
+        compactSheet.lifetime = .keepAlways
+        add(compactSheet)
+
+        riskTableCard.tap()
+        XCTAssertTrue(waitFor("YÖNTEM", timeout: 4).exists)
+        let formatControl = waitFor("result.report_sheet.format", timeout: 4)
+        let expandedGenerateButton = waitFor("PDF Raporu Oluştur", timeout: 4)
+        let expandedContentGap = expandedGenerateButton.frame.minY - formatControl.frame.maxY
+        XCTAssertGreaterThanOrEqual(expandedContentGap, 0)
+        XCTAssertLessThan(
+            expandedContentGap,
+            24,
+            "The expanded risk-table sheet must stop immediately after the visible controls"
+        )
+        let expandedBottomGap = app.frame.maxY - expandedGenerateButton.frame.maxY
+        XCTAssertLessThan(
+            expandedBottomGap,
+            20,
+            "The expanded footer must not reserve a second blank region below its button"
+        )
+        let expandedSheet = XCTAttachment(screenshot: app.screenshot())
+        expandedSheet.name = "risk-report-sheet-expanded"
+        expandedSheet.lifetime = .keepAlways
+        add(expandedSheet)
+    }
+
+    func testResultHubRemainsPortraitWhenDeviceTurnsLandscape() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        XCTAssertTrue(waitFor("Risk Analizi, 3 Bulgu", timeout: 10).exists)
+        addTeardownBlock { XCUIDevice.shared.orientation = .portrait }
+
+        XCUIDevice.shared.orientation = .landscapeLeft
+        XCTAssertTrue(
+            waitFor("Risk Analizi, 3 Bulgu", timeout: 4).exists,
+            "Result hub must remain alive when the physical device turns"
+        )
+        XCTAssertEqual(app.state, .runningForeground)
+        XCTAssertLessThan(
+            app.frame.width,
+            app.frame.height,
+            "The iPhone interface must remain portrait-only"
+        )
+    }
+
+    func testResultHubEnglishFixtureUsesSafetyLogTerminology() throws {
+        launchMainApp(extraArguments: englishLaunchArguments + [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        XCTAssertTrue(waitFor("Risk Analysis, 3 Findings", timeout: 10).exists)
+        XCTAssertTrue(waitFor("Expert Recommendations, 2 Recommendations", timeout: 4).exists)
+        XCTAssertTrue(waitFor("Safety Log Recommendation, 2 Entries", timeout: 4).exists)
+        XCTAssertTrue(waitFor("Create Report · 3/3", timeout: 4).exists)
+    }
+
+    func testApprovedNotebookIsReadOnlyAndHasNoSelectionOrFeedbackControls() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_PRO_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        tap("Onaylı Defter Önerisi, 2 Kayıt", timeout: 10)
+        XCTAssertTrue(waitFor("ONAYLI DEFTER KAYITLARI", timeout: 4).exists)
+
+        XCTAssertFalse(app.buttons["Tümünü bırak"].exists)
+        XCTAssertFalse(app.buttons["Tümünü seç"].exists)
+        XCTAssertFalse(app.buttons["Rapordan çıkar"].exists)
+        XCTAssertFalse(app.buttons["Rapora ekle"].exists)
+        XCTAssertFalse(app.buttons["Düzenle"].exists)
+        XCTAssertFalse(app.buttons["Sil"].exists)
+        XCTAssertFalse(app.buttons["Beğen"].exists)
+        XCTAssertFalse(app.buttons["Beğenme"].exists)
+        XCTAssertFalse(app.staticTexts["2/2 kayıt seçili"].exists)
+        XCTAssertTrue(waitFor("Rapor Oluştur", timeout: 4).exists)
+    }
+
+    func testResultHubFreeFixtureRedactsPremiumSectionsAndOpensPaywall() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_FREE_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        tap("Uzman Görüşü Önerileri, 2 Öneri", timeout: 10)
+        let expertTeaser = waitFor(
+            "result.hub.item.premium_teaser.20000000-0000-4000-8000-000000000001",
+            timeout: 6
+        )
+        XCTAssertTrue(expertTeaser.label.hasPrefix("İskele Kurulum"))
+        XCTAssertFalse(expertTeaser.label.contains("Güvencesinin"))
+        XCTAssertFalse(expertTeaser.label.contains("İskelenin kurulum"))
+        XCTAssertTrue(waitFor("Plus / Pro ile Aç", timeout: 4).exists)
+        XCTAssertFalse(app.buttons["Beğen"].exists)
+        XCTAssertFalse(app.buttons["Beğenme"].exists)
+
+        tap("Onaylı Defter Önerisi, 2 Kayıt", timeout: 6)
+        let notebookTeaser = waitFor("result.hub.notebook.premium_teaser", timeout: 6)
+        XCTAssertTrue(notebookTeaser.label.contains("Çalışma platformunun erişilebilir açık kenarında"))
+
+        tap("Uzman Görüşü Önerileri, 2 Öneri", timeout: 6)
+        tap("Plus / Pro ile Aç", timeout: 4)
+        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 10).exists)
+    }
+
+    func testFreeTrainingRecommendationsHideDetailsAndOpenPlusPaywall() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT", "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_FREE_TIER", "RD_UI_TEST_LIGHT_MODE",
+        ])
+        tapScrolling("result.hub.section.training_recommendations", timeout: 10)
+        let teaser = waitFor("result.hub.training.premium_teaser.40000000-0000-4000-8000-000000000001", timeout: 8)
+        XCTAssertTrue(teaser.label.hasPrefix("Yüksekte Güvenli"))
+        XCTAssertFalse(teaser.label.contains("Çalışma Eğitimi"))
+        XCTAssertFalse(app.staticTexts["İskele kuran ve kullanan çalışanlar"].exists)
+        XCTAssertFalse(app.staticTexts["Açık kenar, güvenli erişim ve düşmeye karşı koruma tedbirlerini saha uygulamasıyla pekiştirir."].exists)
+        XCTAssertFalse(app.staticTexts["En az 8 saat"].exists)
+        tapScrolling("result.hub.training.card.40000000-0000-4000-8000-000000000001", timeout: 8)
+        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 10).exists)
+    }
+
+    func testResultHubFreeGiftBadgeSitsBelowFullRiskTableTitle() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_FREE_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        tap("Rapor Oluştur · 3/3", timeout: 10)
+        let title = waitFor("result.report_sheet.option.riskTable.title", timeout: 6)
+        let gift = waitFor("result.report_sheet.option.riskTable.gift", timeout: 6)
+
+        XCTAssertEqual(title.label, "Risk Analizi Tablosu")
+        XCTAssertGreaterThanOrEqual(
+            gift.frame.minY,
+            title.frame.maxY,
+            "Hediye etiketi başlıkla aynı satırda sıkışmamalı"
+        )
+    }
+
+    func testFreeRiskDetailLocksRealRegulatoryContentWithPremiumOverlay() throws {
+        launchMainApp(extraArguments: [
+            "RD_UI_TEST_OPEN_RESULT",
+            "RD_UI_TEST_RESULT_HUB",
+            "RD_UI_TEST_FREE_TIER",
+            "RD_UI_TEST_LIGHT_MODE",
+        ])
+
+        tapScrolling("result.hub.item.details.10000000-0000-4000-8000-000000000001", timeout: 10)
+        XCTAssertTrue(waitFor("result.detail.close", timeout: 8).exists)
+        let premiumReferences = waitFor("result.detail.references.premium_lock", timeout: 12)
+        XCTAssertTrue(premiumReferences.label.contains("Mevzuat"))
+
+        app.swipeUp()
+        RunLoop.current.run(until: Date().addingTimeInterval(0.4))
+
+        let premiumReferencesAttachment = XCTAttachment(screenshot: app.screenshot())
+        premiumReferencesAttachment.name = "free-regulatory-premium-lock-visible"
+        premiumReferencesAttachment.lifetime = .keepAlways
+        add(premiumReferencesAttachment)
+
+        let premiumReferencesFocusedAttachment = XCTAttachment(screenshot: premiumReferences.screenshot())
+        premiumReferencesFocusedAttachment.name = "free-regulatory-premium-lock-focused"
+        premiumReferencesFocusedAttachment.lifetime = .keepAlways
+        add(premiumReferencesFocusedAttachment)
+    }
+
     func testResultFindingDetailUsesSourcePhoto() throws {
         launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_RESULT"])
 
         XCTAssertTrue(waitFor("Analiz Sonucu", timeout: 8).exists)
         tapScrolling("result.finding.1.card", timeout: 10)
         XCTAssertTrue(waitFor("result.detail.photo_index.3", timeout: 8).exists)
-        XCTAssertTrue(waitFor("Foto 3", timeout: 4).exists)
         XCTAssertTrue(waitFor("result.detail.close", timeout: 4).exists)
     }
 
@@ -621,51 +1395,36 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("profile.row.companies").exists)
     }
 
-    func testInAppPaywallClaudePlusAndProRenderWithFreeTier() throws {
+    /// Alt bardaki dört bağlantı: Koşullar ve Gizlilik uygulama içi hukuki metni
+    /// alttan açılan ekranda gösterir, Geri Yükle mağaza akışını başlatır ve
+    /// İptal Hakkı abonelik yönetimine gider (dışarı çıktığı için yalnızca varlığı denenir).
+    func testPaywallFooterLinksOpenInAppLegalSheets() throws {
         launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER"])
 
         XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
         tap("Yükselt")
+        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 8).exists)
 
-        XCTAssertTrue(waitFor("İlk haftanız bizden.", timeout: 8).exists)
-        XCTAssertTrue(waitFor("Neler dahil?").exists)
-        XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 15).exists)
-        XCTAssertFalse(app.staticTexts["₺199,99"].exists)
-        XCTAssertFalse(app.staticTexts["₺1.999,99"].exists)
-        XCTAssertTrue(waitFor("Firma yönetimi").exists)
-        let multiPhotoAnalysis = waitFor("Çoklu Fotoğraf Analizi")
-        let plusCTA = waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 12)
-        XCTAssertLessThan(multiPhotoAnalysis.frame.maxY, plusCTA.frame.minY)
-
-        tap("Şartlar")
-        XCTAssertTrue(waitFor("Yasal Bilgilendirme", timeout: 4).exists)
-        XCTAssertTrue(waitFor("Kullanım Koşulları").exists)
+        tapScrolling("in_app_paywall.terms")
+        XCTAssertTrue(waitFor("Yasal Bilgilendirme", timeout: 6).exists)
+        XCTAssertTrue(waitFor("Kullanım Koşulları", timeout: 4).exists)
         tap("Pencereyi kapat")
 
-        tap("Aylık")
-        XCTAssertTrue(waitFor("Plus’a abone olun.").exists)
-        XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 12).exists)
+        tapScrolling("in_app_paywall.privacy")
+        XCTAssertTrue(waitFor("Yasal Bilgilendirme", timeout: 6).exists)
+        XCTAssertTrue(waitFor("Gizlilik Politikası", timeout: 4).exists)
+        tap("Pencereyi kapat")
 
-        tap("in_app_paywall.plus.pro_link")
-        XCTAssertTrue(waitFor("Limitsiz Özellikler").exists)
-        XCTAssertTrue(waitFor("Tüm Plus özellikleri dahil").exists)
-        tap("Aylık")
-        XCTAssertFalse(app.staticTexts["Tüm Pro özellikleri aylık ₺499,99 ile."].waitForExistence(timeout: 1))
-        XCTAssertTrue(waitForOne([
-            "Tüm Pro özellikleri aylık fiyat yükleniyor ile.",
-            "Tüm Pro özellikleri aylık fiyat alınamadı ile."
-        ], timeout: 8).exists)
-        tap("Yıllık")
-        XCTAssertFalse(app.staticTexts["Yıllık ₺4.999,99 ile tüm Pro özellikleri."].waitForExistence(timeout: 1))
-        XCTAssertTrue(waitForOne([
-            "Yıllık fiyat yükleniyor ile tüm Pro özellikleri.",
-            "Yıllık fiyat alınamadı ile tüm Pro özellikleri."
-        ], timeout: 8).exists)
-        XCTAssertTrue(waitFor("Plus aboneliğini incele").exists)
+        XCTAssertTrue(waitFor("in_app_paywall.manage", timeout: 4).exists)
 
-        tap("in_app_paywall.pro.plus_link")
-        XCTAssertTrue(waitFor("İlk haftanız bizden.").exists)
+        // Geri yükleme mağazaya gider; simülatörde oturum olmadığı için sonuç bir
+        // uyarı satırıdır. Beklenen davranış paywall'ın açık ve kullanılabilir kalması.
+        tapScrolling("in_app_paywall.restore")
+        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 10).exists)
+        XCTAssertTrue(waitFor("in_app_paywall.cta", timeout: 6).exists)
     }
+
+
 
     func testPaywallYearlyMonthlyToggleForPlusAndPro() throws {
         launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER"])
@@ -674,25 +1433,23 @@ final class RiskDetectedUITests: XCTestCase {
         tap("Yükselt")
 
         XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 8).exists)
-        tap("Aylık")
-        XCTAssertTrue(waitFor("Plus’a abone olun.").exists)
-        tap("Yıllık")
-        XCTAssertTrue(waitFor("İlk haftanız bizden.").exists)
+        XCTAssertEqual(waitFor("in_app_paywall.plan.yearly", timeout: 8).label, "Yıllık")
 
-        tap("in_app_paywall.plus.pro_link")
+        tapScrolling("in_app_paywall.plan.monthly")
+        XCTAssertTrue(waitFor("in_app_paywall.plan.monthly", timeout: 6).isSelected)
+
+        tapScrolling("in_app_paywall.plan.yearly")
+        XCTAssertTrue(waitFor("in_app_paywall.plan.yearly", timeout: 6).isSelected)
+
+        tapScrolling("in_app_paywall.plus.pro_link", timeout: 12)
         XCTAssertTrue(waitFor("in_app_paywall.pro", timeout: 8).exists)
-        tap("Aylık")
-        XCTAssertFalse(app.staticTexts["Tüm Pro özellikleri aylık ₺499,99 ile."].waitForExistence(timeout: 1))
-        XCTAssertTrue(waitForOne([
-            "Tüm Pro özellikleri aylık fiyat yükleniyor ile.",
-            "Tüm Pro özellikleri aylık fiyat alınamadı ile."
-        ], timeout: 8).exists)
-        tap("Yıllık")
-        XCTAssertFalse(app.staticTexts["Yıllık ₺4.999,99 ile tüm Pro özellikleri."].waitForExistence(timeout: 1))
-        XCTAssertTrue(waitForOne([
-            "Yıllık fiyat yükleniyor ile tüm Pro özellikleri.",
-            "Yıllık fiyat alınamadı ile tüm Pro özellikleri."
-        ], timeout: 8).exists)
+
+        tapScrolling("in_app_paywall.plan.monthly")
+        XCTAssertTrue(waitFor("in_app_paywall.plan.monthly", timeout: 6).isSelected)
+
+        tapScrolling("in_app_paywall.plan.yearly")
+        XCTAssertTrue(waitFor("in_app_paywall.plan.yearly", timeout: 6).isSelected)
+        XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 12).exists)
     }
 
     func testCaptureAccountCreationFollowUpScreens() throws {
@@ -715,11 +1472,10 @@ final class RiskDetectedUITests: XCTestCase {
         attachScreenshot("02-bildirimleri-ac")
 
         tap("onboarding.notification_permission.cta")
-        XCTAssertTrue(waitFor("Yıllık", timeout: 8).exists)
-        XCTAssertTrue(waitFor("Aylık").exists)
-        XCTAssertTrue(waitFor("Devam Et", timeout: 12).exists)
-        XCTAssertTrue(waitFor("Hatırlatma Gönderilir").exists)
-        XCTAssertTrue(waitFor("Hesabınız Aktif").exists)
+        XCTAssertTrue(waitFor("in_app_paywall.plus", timeout: 12).exists)
+        XCTAssertTrue(waitFor("İş Güvenliğinde Güven", timeout: 8).exists)
+        XCTAssertTrue(waitFor("in_app_paywall.plan.yearly").exists)
+        XCTAssertTrue(waitFor("in_app_paywall.plan.monthly").exists)
         attachScreenshot("03-onboarding-paywall")
     }
 
@@ -747,19 +1503,16 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitForOne(["Fiyat yükleniyor...", "Tekrar dene"], timeout: 15).exists)
         attachScreenshot("05-plus-yillik-paywall")
 
-        tap("Aylık")
-        XCTAssertTrue(waitFor("Plus’a abone olun.").exists)
+        tapScrolling("in_app_paywall.plan.monthly")
+        XCTAssertTrue(waitFor("İş Güvenliğinde Güven").exists)
         attachScreenshot("06-plus-aylik-paywall")
 
-        tap("in_app_paywall.plus.pro_link")
+        tapScrolling("in_app_paywall.plus.pro_link", timeout: 12)
         XCTAssertTrue(waitFor("in_app_paywall.pro", timeout: 8).exists)
         attachScreenshot("07-pro-yillik-paywall")
 
-        tap("Aylık")
-        XCTAssertTrue(waitForOne([
-            "Tüm Pro özellikleri aylık fiyat yükleniyor ile.",
-            "Tüm Pro özellikleri aylık fiyat alınamadı ile."
-        ], timeout: 8).exists)
+        tapScrolling("in_app_paywall.plan.monthly")
+        XCTAssertTrue(waitFor("İş Güvenliğinde Hâkimiyet").exists)
         attachScreenshot("08-pro-aylik-paywall")
 
         launchMainApp(extraArguments: ["RD_UI_TEST_OPEN_PHOTO_TRAY", "RD_UI_TEST_LIGHT_MODE"])
@@ -895,11 +1648,9 @@ final class RiskDetectedUITests: XCTestCase {
         launchMainApp(extraArguments: ["RD_UI_TEST_FREE_TIER", "RD_UI_TEST_LONG_REPORT_FIELDS", "RD_UI_TEST_REPORT_LOGO"])
 
         XCTAssertTrue(waitFor("root.main", timeout: 10).exists)
-        app.swipeUp()
-        app.coordinate(withNormalizedOffset: CGVector(dx: 0.22, dy: 0.53)).tap()
-        XCTAssertTrue(waitFor("Analiz Sonucu", timeout: 8).exists)
-
-        tapScrolling("Rapor Oluştur", timeout: 10)
+        tapTab(.reports)
+        tap("report.analysis.row.00000000-0000-0000-0000-00000000A201", timeout: 8)
+        tap("report.source_sheet.open_settings")
         XCTAssertTrue(waitFor("report.settings", timeout: 8).exists)
         XCTAssertTrue(waitFor("Hoş geldin, 1 risk analizi oluşturma hakkını hemen kullan!").exists)
         XCTAssertTrue(waitFor("Tebrikler! Bir tane risk analizi oluşturma hakkı tanımlandı. Hemen deneyebilirsin.").exists)
@@ -913,11 +1664,14 @@ final class RiskDetectedUITests: XCTestCase {
         XCTAssertTrue(waitFor("document_preview.close", timeout: 12).exists)
         tap("document_preview.close")
 
-        tapScrolling("Rapor Oluştur", timeout: 10)
+        tap("report.source_sheet.open_settings")
         XCTAssertTrue(waitFor("report.settings", timeout: 8).exists)
         XCTAssertFalse(app.staticTexts["Hoş geldin, 1 risk analizi oluşturma hakkını hemen kullan!"].exists)
         XCTAssertTrue(waitFor("Bir kez tanımlanan hakkını kullandın. Risk analizi tabloları Plus ile devam eder.").exists)
         XCTAssertTrue(waitFor("Hızlı Uygunsuzluk Raporu, ek bilgi girmeden oluşturulur.").exists)
+        tap("report.settings.kind.standard")
+        tap("Rapor oluştur")
+        XCTAssertTrue(waitFor("document_preview.close", timeout: 20).exists)
     }
 
     func testProfileAccountDeletionVisibleAndCopyWithBypass() throws {
@@ -974,6 +1728,63 @@ final class RiskDetectedUITests: XCTestCase {
 
         XCTAssertTrue(waitFor("canvas_sheet", timeout: 8).exists)
         XCTAssertTrue(waitFor("Odaklı Analiz").exists)
+    }
+
+    func testPreAnalysisSheetsKeepPrimaryActionsCloseToBottomEdge() throws {
+        launchMainApp(
+            extraArguments: ["RD_UI_TEST_PHOTO_TRAY_WITH_PHOTOS"],
+            disablesAnimations: false
+        )
+
+        let photoCTA = waitFor("home.photo_tray.primary", timeout: 10)
+        XCTAssertLessThanOrEqual(
+            app.frame.maxY - photoCTA.frame.maxY,
+            48,
+            "Fotoğraf sheet'inde CTA altında gereksiz boşluk kalmamalı."
+        )
+        attachScreenshot("pre-analysis-photo-sheet-compact-bottom")
+        photoCTA.tap()
+
+        XCTAssertTrue(waitFor("analysis_sector_picker", timeout: 8).exists)
+        tap("analysis_sector_chip_construction")
+        let sectorCTA = waitFor("analysis_sector_continue_button")
+        XCTAssertLessThanOrEqual(
+            app.frame.maxY - sectorCTA.frame.maxY,
+            48,
+            "Sektör sheet'inde CTA altında gereksiz boşluk kalmamalı."
+        )
+        attachScreenshot("pre-analysis-sector-sheet-compact-bottom")
+
+        launchMainApp(
+            extraArguments: ["RD_UI_TEST_OPEN_CANVAS_SHEET"],
+            disablesAnimations: false
+        )
+
+        XCTAssertTrue(waitFor("canvas_sheet", timeout: 10).exists)
+        let canvasCTA = waitFor("canvas_sheet.confirm")
+        XCTAssertLessThanOrEqual(
+            app.frame.maxY - canvasCTA.frame.maxY,
+            48,
+            "Odaklı analiz sheet'inde CTA altında gereksiz boşluk kalmamalı."
+        )
+        XCTAssertEqual(canvasCTA.label, "Onayla ve devam et")
+        attachScreenshot("pre-analysis-canvas-sheet-black-compact-bottom")
+    }
+
+    /// Gerçek cihaz animasyonuyla fotoğraf tepsisi kapanmadan ikinci sheet'i açmaya
+    /// çalışmak ilk dokunuşu yutuyordu. Animasyonları özellikle açık bırakarak iki
+    /// fotoğraflı tepsiden sektör seçicinin tek dokunuşla sunulduğunu doğrular.
+    func testMultiPhotoTrayFirstTapPresentsSectorPickerWithAnimationsEnabled() throws {
+        launchMainApp(
+            extraArguments: ["RD_UI_TEST_PHOTO_TRAY_WITH_PHOTOS"],
+            disablesAnimations: false
+        )
+
+        XCTAssertTrue(waitFor("home.photo_tray", timeout: 10).exists)
+        tap("home.photo_tray.primary")
+
+        XCTAssertTrue(waitFor("analysis_sector_picker", timeout: 8).exists)
+        XCTAssertFalse(isEnabled("analysis_sector_continue_button"))
     }
 
     func testActiveAnalysisSectorSingleSelectionReplacesPreviousChoice() throws {
@@ -1046,16 +1857,20 @@ final class RiskDetectedUITests: XCTestCase {
 
     private func launchMainApp(
         extraArguments: [String] = [],
-        environment: [String: String] = [:]
+        environment: [String: String] = [:],
+        disablesAnimations: Bool = true
     ) {
         app = XCUIApplication()
-        app.launchArguments = [
+        var arguments = [
             "RD_UI_TEST_MAIN",
             "RD_UI_TEST_COMPANY_FIXTURES",
             "RD_UI_TEST_REPORT_FIXTURES",
-            "-UIViewAnimationEnabled", "NO",
             "-ApplePersistenceIgnoreState", "YES",
-        ] + extraArguments
+        ]
+        if disablesAnimations {
+            arguments.append(contentsOf: ["-UIViewAnimationEnabled", "NO"])
+        }
+        app.launchArguments = arguments + extraArguments
         app.launchEnvironment["RD_UI_TEST_MAIN"] = "1"
         app.launchEnvironment["RD_UI_TEST_COMPANY_FIXTURES"] = "1"
         app.launchEnvironment["RD_UI_TEST_REPORT_FIXTURES"] = "1"
@@ -1098,7 +1913,7 @@ final class RiskDetectedUITests: XCTestCase {
         tap("6-15")
         tap("Planımı Hazırla")
 
-        XCTAssertTrue(waitFor("onboarding.personal_plan.create_account", timeout: 12).exists)
+        XCTAssertTrue(waitFor("onboarding.personal_plan.create_account", timeout: 22).exists)
     }
 
     @discardableResult
@@ -1255,8 +2070,123 @@ final class RiskDetectedUITests: XCTestCase {
         add(attachment)
     }
 
+    private func screenshotDigest(in frame: CGRect) throws -> String {
+        let image = XCUIScreen.main.screenshot().image
+        let cgImage = try XCTUnwrap(image.cgImage)
+        let screenFrame = app.frame
+        XCTAssertFalse(screenFrame.isEmpty)
+
+        let scaleX = CGFloat(cgImage.width) / screenFrame.width
+        let scaleY = CGFloat(cgImage.height) / screenFrame.height
+        let pixelBounds = CGRect(x: 0, y: 0, width: cgImage.width, height: cgImage.height)
+        let pixelRect = CGRect(
+            x: (frame.minX - screenFrame.minX) * scaleX,
+            y: (frame.minY - screenFrame.minY) * scaleY,
+            width: frame.width * scaleX,
+            height: frame.height * scaleY
+        )
+        .integral
+        .intersection(pixelBounds)
+
+        XCTAssertFalse(pixelRect.isEmpty)
+        let cropped = try XCTUnwrap(cgImage.cropping(to: pixelRect))
+        let png = try XCTUnwrap(UIImage(cgImage: cropped).pngData())
+        return Data(SHA256.hash(data: png)).base64EncodedString()
+    }
+
     private func tapScrolling(_ identifier: String, timeout: TimeInterval = 8) {
         let deadline = Date().addingTimeInterval(timeout)
+        var fallbackScrollsUp = true
+        repeat {
+            var firstExisting: XCUIElement?
+            for query in matchingQueries(identifier) {
+                for index in 0..<query.count {
+                    let element = query.element(boundBy: index)
+                    guard element.exists else { continue }
+                    if firstExisting == nil { firstExisting = element }
+                    if hasUsableHitFrame(element),
+                       isUnobscuredByPinnedBottomAction(element, targetIdentifier: identifier),
+                       element.isHittable {
+                        element.tap()
+                        return
+                    }
+                }
+            }
+
+            if let firstExisting, !firstExisting.frame.isEmpty {
+                if identifier.hasPrefix("result.hub.item.") {
+                    // Small drags avoid jumping from below the footer to behind the
+                    // sticky header in one full-screen swipe on compact iPhones.
+                    let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65))
+                    let endY: CGFloat = firstExisting.frame.midY > app.frame.midY ? 0.45 : 0.85
+                    start.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: endY)), withVelocity: .slow, thenHoldForDuration: 0.1)
+                } else if firstExisting.frame.midY > app.frame.midY {
+                    app.swipeUp()
+                } else {
+                    app.swipeDown()
+                }
+            } else if fallbackScrollsUp {
+                app.swipeUp()
+                fallbackScrollsUp = false
+            } else {
+                app.swipeDown()
+                fallbackScrollsUp = true
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+        } while Date() < deadline
+
+        XCTFail("Element is not hittable after scrolling: \(identifier)")
+    }
+
+    private func isUnobscuredByPinnedBottomAction(
+        _ element: XCUIElement,
+        targetIdentifier: String
+    ) -> Bool {
+        // XCTest can report a scrolled card's button as hittable while its frame is
+        // behind the pinned section selector. Tapping then selects a different tab.
+        if targetIdentifier.hasPrefix("result.hub.item.") {
+            let header = app.descendants(matching: .any)["result.hub.section_selector"].firstMatch
+            if header.exists, !header.frame.isEmpty, element.frame.minY < header.frame.maxY + 4 {
+                return false
+            }
+        }
+        let paywallFooterLinks = [
+            "in_app_paywall.restore",
+            "in_app_paywall.terms",
+            "in_app_paywall.privacy",
+            "in_app_paywall.manage",
+        ]
+        let pinnedActionIdentifiers = [
+            "in_app_paywall.cta",
+            "result.hub.report",
+            "onboarding.trial_invite.cta",
+            "onboarding.notification_permission.cta",
+        ]
+
+        for identifier in pinnedActionIdentifiers where identifier != targetIdentifier {
+            // Hukuki bağlantılar artık CTA'nın altında, aynı sabit footer'ın parçası.
+            // Bu nedenle CTA'dan daha aşağıda olmaları bir örtüşme değildir.
+            if identifier == "in_app_paywall.cta",
+               paywallFooterLinks.contains(targetIdentifier) {
+                continue
+            }
+            let action = app.buttons[identifier]
+            guard action.exists, !action.frame.isEmpty else { continue }
+            if element.frame.maxY > action.frame.minY - 4 {
+                return false
+            }
+        }
+        return true
+    }
+
+    private func tapHorizontallyScrolling(
+        _ identifier: String,
+        in containerIdentifier: String,
+        timeout: TimeInterval = 8
+    ) {
+        let deadline = Date().addingTimeInterval(timeout)
+        let container = waitFor(containerIdentifier, timeout: timeout)
+
         repeat {
             for query in matchingQueries(identifier) {
                 for index in 0..<query.count {
@@ -1268,11 +2198,11 @@ final class RiskDetectedUITests: XCTestCase {
                     }
                 }
             }
-            app.swipeUp()
+            container.swipeLeft()
             RunLoop.current.run(until: Date().addingTimeInterval(0.25))
         } while Date() < deadline
 
-        XCTFail("Element is not hittable after scrolling: \(identifier)")
+        XCTFail("Element is not hittable after horizontal scrolling: \(identifier)")
     }
 
     private func longPress(_ identifier: String, timeout: TimeInterval = 6) {

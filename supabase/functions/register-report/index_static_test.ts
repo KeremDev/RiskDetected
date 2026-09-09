@@ -113,7 +113,7 @@ Deno.test("register-report rejects exhausted quota before Storage download", asy
   if (source == null) return;
 
   const quotaIndex = source.indexOf(
-    '.rpc("check_report_quota_eligibility"',
+    '.rpc("check_report_quota_eligibility_v2"',
   );
   const downloadIndex = source.indexOf(".download(storagePath)");
   assert(quotaIndex >= 0 && quotaIndex < downloadIndex);
@@ -122,6 +122,42 @@ Deno.test("register-report rejects exhausted quota before Storage download", asy
   assertStringIncludes(
     source,
     'await supabase.storage.from("reports").remove([storagePath]);',
+  );
+});
+
+Deno.test("register-report is idempotent for client retries", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(source, '.eq("request_id", requestID)');
+  assertStringIncludes(source, '.eq("analysis_id", analysisID)');
+  assertStringIncludes(source, 'error: "report_idempotency_check_failed"');
+  assertStringIncludes(source, "return json(200, existingRequestReport)");
+});
+
+Deno.test("register-report compares report intent UUIDs canonically", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(
+    source,
+    "reportIntent.analysis_id.toLowerCase() !== analysisID.toLowerCase()",
+  );
+});
+
+Deno.test("register-report uses the report kind authorized by the export intent", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(
+    source,
+    "normalizeKind(reportIntent.content_snapshot.report_kind)",
   );
 });
 

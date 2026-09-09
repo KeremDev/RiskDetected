@@ -26,6 +26,10 @@
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array><string>fb2138752823371873</string></array>
+		</dict>
+		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
@@ -50,6 +54,20 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>GIDClientID</key>
 	<string>200539603330-p0o5ddmuqf1m7fobof5omtca28k0mk7b.apps.googleusercontent.com</string>
+	<key>FacebookAppID</key>
+	<string>2138752823371873</string>
+	<key>FacebookClientToken</key>
+	<string>aec255ed79804a762faf4d5a08d4f6cb</string>
+	<key>FacebookDisplayName</key>
+	<string>RiskDetected</string>
+	<key>FacebookAutoLogAppEventsEnabled</key>
+	<false/>
+	<key>FBSDKAemAutoSetupEnabled</key>
+	<false/>
+	<key>FacebookAdvertiserIDCollectionEnabled</key>
+	<false/>
+	<key>FacebookSKAdNetworkReportEnabled</key>
+	<true/>
 	<key>GIDServerClientID</key>
 	<string>200539603330-52rbngma5qs4717qnhff1rgr3pu9rv5i.apps.googleusercontent.com</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
@@ -79,13 +97,20 @@
 	<true/>
 	<key>UIFileSharingEnabled</key>
 	<false/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Mulish-Regular.ttf</string>
+		<string>Mulish-Medium.ttf</string>
+		<string>Mulish-SemiBold.ttf</string>
+		<string>Mulish-Bold.ttf</string>
+		<string>Mulish-ExtraBold.ttf</string>
+		<string>Mulish-Black.ttf</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>

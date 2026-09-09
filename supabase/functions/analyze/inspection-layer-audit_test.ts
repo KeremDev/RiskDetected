@@ -196,3 +196,102 @@ Deno.test("evidence guard leaves complete coverage unchanged when disabled", () 
   assertEquals(guarded.applied, false);
   assertEquals(guarded.findings, findings);
 });
+
+Deno.test("re-examination accepts a checked_no_hazard layer as field-verifiable", () => {
+  // The live case: excavation_confined_special_work came back
+  // checked_no_hazard on a photo that had produced a slope-stability finding
+  // on two earlier runs of the same image.
+  const normalized = normalizeInspectionLayers(completeFixture());
+  const findings = [{
+    title: "Şev stabilitesi riski",
+    confidence: 0.92,
+    inspection_layer_keys: ["excavation_confined_special_work"],
+  }];
+
+  const blocked = applyInspectionLayerEvidenceGuard(findings, normalized, true);
+  assertEquals(blocked.findings.length, 0);
+  assertEquals(blocked.rejected_non_actionable_count, 1);
+  assertEquals(blocked.reexamined_checked_layer_count, 0);
+
+  const reopened = applyInspectionLayerEvidenceGuard(
+    findings,
+    normalized,
+    true,
+    true,
+  );
+  assertEquals(reopened.findings.length, 1);
+  assertEquals(reopened.reexamined_checked_layer_count, 1);
+  assertEquals(reopened.findings[0].confidence, 0.69);
+  assertEquals(reopened.findings[0].needs_field_verification, true);
+});
+
+Deno.test("re-examination never reopens a not_visible layer", () => {
+  // not_visible means the layer could not be seen. There is no judgement to
+  // question, so a finding built on it would be invention.
+  const fixture = completeFixture().map((layer) =>
+    layer.layer_key === "fire_explosion"
+      ? { ...layer, status: "not_visible" }
+      : layer
+  );
+  const normalized = normalizeInspectionLayers(fixture);
+  const findings = [{
+    title: "Yangın yükü",
+    confidence: 0.9,
+    inspection_layer_keys: ["fire_explosion"],
+  }];
+
+  const guarded = applyInspectionLayerEvidenceGuard(
+    findings,
+    normalized,
+    true,
+    true,
+  );
+  assertEquals(guarded.findings.length, 0);
+  assertEquals(guarded.rejected_non_actionable_count, 1);
+  assertEquals(guarded.reexamined_checked_layer_count, 0);
+});
+
+Deno.test("re-examination does not downgrade a finding on an actionable layer", () => {
+  const normalized = normalizeInspectionLayers(completeFixture());
+  const actionableKey = INSPECTION_LAYER_KEYS[3];
+  const findings = [{
+    title: "Doğrudan görülen tehlike",
+    confidence: 0.95,
+    inspection_layer_keys: [actionableKey],
+  }];
+
+  const guarded = applyInspectionLayerEvidenceGuard(
+    findings,
+    normalized,
+    true,
+    true,
+  );
+  assertEquals(guarded.findings.length, 1);
+  assertEquals(guarded.findings[0].confidence, 0.95);
+  assertEquals(guarded.findings[0].needs_field_verification, undefined);
+  assertEquals(guarded.reexamined_checked_layer_count, 0);
+});
+
+Deno.test("a finding spanning an uncertain and a checked layer counts once", () => {
+  const fixture = completeFixture().map((layer) =>
+    layer.layer_key === "ppe" ? { ...layer, status: "uncertain" } : layer
+  );
+  const normalized = normalizeInspectionLayers(fixture);
+  const findings = [{
+    title: "KKD ve makine koruyucusu",
+    confidence: 0.9,
+    inspection_layer_keys: ["ppe", "machinery_equipment"],
+  }];
+
+  const guarded = applyInspectionLayerEvidenceGuard(
+    findings,
+    normalized,
+    true,
+    true,
+  );
+  assertEquals(guarded.findings.length, 1);
+  assertEquals(guarded.marked_uncertain_count, 1);
+  // It would have been accepted on the uncertain layer alone, so it is not a
+  // recovery and must not inflate the recovered count.
+  assertEquals(guarded.reexamined_checked_layer_count, 0);
+});

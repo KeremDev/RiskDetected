@@ -3,6 +3,7 @@ package com.riskdetectedan.core.data.legal
 import android.content.Context
 import android.util.Log
 import com.riskdetectedan.core.common.RdEnvironmentConfig
+import com.riskdetectedan.core.common.RdClientMetadata
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.release.AndroidLegalPolicy
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -20,21 +21,18 @@ import javax.inject.Singleton
 import kotlin.math.min
 import kotlin.math.pow
 
-/**
- * Android's Turkish legal document set (DEC-10, migration 20260807214500). Only the Turkish
- * branch is ported — mirrors this port's existing pattern of shipping the Turkish path first and
- * leaving English legal review as a separate, not-yet-started track (same simplification as
- * onboarding's Turkish-only build, feature #5). Version strings match the ones already recorded
- * in `android/app/src/main/assets/legal/manifest.json`'s `documents[].version` — keep both in
- * sync by hand if the bundled text ever changes; the checksum below is computed from the actual
- * files, so a text change against a stale version string would need a new version + new manifest
- * entry anyway, same discipline LegalAcceptanceService.swift's own version constants follow.
- */
+/** Android-specific Turkish versions. English reuses the approved `en-global-v1` versions. */
 object LegalAndroidVersions {
     const val KVKK = "kvkk-android-2026-08-09"
     const val TERMS = "terms-android-2026-08-09"
     const val PRIVACY = "privacy-android-2026-08-09"
     const val CONSENT = "consent-android-2026-08-09"
+}
+
+private object LegalEnglishVersions {
+    const val TERMS = "terms-en-2026-07-31.1"
+    const val PRIVACY = "privacy-en-2026-07-31.1"
+    const val CONSENT = "ai-data-en-2026-07-31.1"
 }
 
 /** Mirrors RDLegalSetAuditMetadata (LegalDocumentService.swift). */
@@ -44,41 +42,50 @@ data class LegalAcceptanceAudit(
     val manifestChecksum: String,
 )
 
-/**
- * Mirrors RDLegalReleaseGate.acceptanceAuditMetadata's Turkish branch (LegalDocumentService.swift
- * lines ~145-173) exactly: hash each bundled file, build `"kind|version|sha256"` entries, sort
- * them, join with `\n`, hash the result. iOS's English branch (manifest.json approval gate,
- * public-URL checksum verification) has no Android port — there is no English document set here
- * yet, matching this port's existing Turkish-first scope.
- */
+/** Mirrors iOS's locale-specific legal-set audit: hash bundled bytes, canonicalize identities. */
 object LegalDocumentSet {
-    const val DOCUMENT_SET_ID = "tr-android-v1"
-    const val LOCALE = "tr"
+    private data class Source(val kind: String, val version: String, val path: String)
 
-    private val sources = listOf(
-        Triple("kvkk", LegalAndroidVersions.KVKK, "legal/KVKK-Aydinlatma-ve-Acik-Riza-Metni.md"),
-        Triple("terms", LegalAndroidVersions.TERMS, "legal/Kullanim-Kosullari.md"),
-        Triple("privacy", LegalAndroidVersions.PRIVACY, "legal/Gizlilik-Politikasi.md"),
-        Triple("consent", LegalAndroidVersions.CONSENT, "legal/Acik-Riza-Beyani.md"),
-    )
+    private fun documentSetId(): String = if (RdClientMetadata.APP_LANGUAGE == "en") {
+        "en-global-v1"
+    } else {
+        "tr-android-v1"
+    }
+
+    fun locale(): String = if (RdClientMetadata.APP_LANGUAGE == "en") "en" else "tr"
+
+    private fun sources(): List<Source> = if (RdClientMetadata.APP_LANGUAGE == "en") {
+        listOf(
+            Source("terms", LegalEnglishVersions.TERMS, "en/Terms-of-Use.md"),
+            Source("privacy", LegalEnglishVersions.PRIVACY, "en/Privacy-Policy.md"),
+            Source("consent", LegalEnglishVersions.CONSENT, "en/AI-and-Data-Processing-Notice.md"),
+        )
+    } else {
+        listOf(
+            Source("kvkk", LegalAndroidVersions.KVKK, "legal/KVKK-Aydinlatma-ve-Acik-Riza-Metni.md"),
+            Source("terms", LegalAndroidVersions.TERMS, "legal/Kullanim-Kosullari.md"),
+            Source("privacy", LegalAndroidVersions.PRIVACY, "legal/Gizlilik-Politikasi.md"),
+            Source("consent", LegalAndroidVersions.CONSENT, "legal/Acik-Riza-Beyani.md"),
+        )
+    }
 
     /** Returns null if any bundled file is missing/unreadable — mirrors the Swift
      * `guard entries.count == sources.count` fail-closed behavior exactly (a partial audit
      * record is worse than none: it would silently under-represent what the user actually
      * agreed to). */
     fun acceptanceAuditMetadata(context: Context): LegalAcceptanceAudit? {
-        val entries = sources.map { (kind, version, path) ->
+        val entries = sources().map { source ->
             val bytes = try {
-                context.assets.open(path).use { it.readBytes() }
+                context.assets.open(source.path).use { it.readBytes() }
             } catch (t: Throwable) {
                 return null
             }
-            "$kind|$version|${sha256Hex(bytes)}"
+            "${source.kind}|${source.version}|${sha256Hex(bytes)}"
         }
         val canonical = entries.sorted().joinToString("\n")
         return LegalAcceptanceAudit(
-            documentSetID = DOCUMENT_SET_ID,
-            locale = LOCALE,
+            documentSetID = documentSetId(),
+            locale = locale(),
             manifestChecksum = sha256Hex(canonical.toByteArray(Charsets.UTF_8)),
         )
     }
@@ -150,7 +157,7 @@ class LegalAcceptanceRepository @Inject constructor(
             ?: return RdResult.Failure("legal_documents_unavailable", "legal_documents_unavailable")
         if (
             audit.documentSetID != policy.documentSetId ||
-            audit.locale != LegalDocumentSet.LOCALE ||
+            audit.locale != LegalDocumentSet.locale() ||
             audit.manifestChecksum != policy.manifestChecksum
         ) {
             return RdResult.Failure("legal_documents_outdated", "legal_documents_outdated")
@@ -180,7 +187,7 @@ class LegalAcceptanceRepository @Inject constructor(
                         version = document.version,
                         changeType = document.changeType,
                         documentSetId = policy.documentSetId,
-                        documentLocale = LegalDocumentSet.LOCALE,
+                        documentLocale = audit.locale,
                         documentChecksum = document.checksum,
                         action = action,
                         source = "android_legal_update_notice",
@@ -197,6 +204,9 @@ class LegalAcceptanceRepository @Inject constructor(
     }
 
     suspend fun recordLoginNoticeAcceptanceIfNeeded(userId: String) {
+        // English consent is explicit and document-specific through acknowledgeLegalUpdate;
+        // the legacy `consents` row below is the Turkish continued-use audit only.
+        if (RdClientMetadata.APP_LANGUAGE == "en") return
         if (userId in recordedUsers || userId in recordingUsers) return
         val now = System.currentTimeMillis()
         nextRetryAtMillis[userId]?.let { if (it > now) return }

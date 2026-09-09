@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const DEFAULT_MATRIX = resolve(
   ROOT,
-  "docs/localization/phase-8/WAVE1_COMPLETION_MATRIX_2026-08-02_BUILD80.json",
+  "docs/localization/phase-8/WAVE1_COMPLETION_MATRIX_2026-08-20_BUILD86.json",
 );
 const APP_CONFIG = JSON.parse(
   readFileSync(resolve(ROOT, "appstore/app.json"), "utf8"),

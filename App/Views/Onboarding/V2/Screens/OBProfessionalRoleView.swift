@@ -4,6 +4,7 @@ struct OBProfessionalRoleView: View {
     @ObservedObject var state: OnboardingV2State
     let onBack: () -> Void
     let onNext: () -> Void
+    @Environment(\.rdLayoutProfile) private var layoutProfile
 
     var body: some View {
         VStack(spacing: 0) {
@@ -13,20 +14,20 @@ struct OBProfessionalRoleView: View {
                 VStack(spacing: 20) {
                     VStack(spacing: 12) {
                         Image(systemName: "person.text.rectangle.fill")
-                            .font(.system(size: 34, weight: .semibold))
+                            .font(RDTypography.font(size: 34, weight: .semibold))
                             .foregroundStyle(Color.rdGreenDark)
                             .frame(width: 76, height: 76)
                             .background(Color.rdGreenSoft)
                             .clipShape(RoundedRectangle(cornerRadius: 22))
 
                         Text(RDLocalization.string("onboarding.obprofessional.role.view.what.best.describes.your.role.cb5ef255", table: .onboarding, fallback: "Rolünüzü en iyi ne tanımlar?"))
-                            .font(.system(size: RDFontScale.size(28), weight: .semibold))
+                            .font(RDTypography.font(size: RDFontScale.size(28), weight: .semibold))
                             .tracking(-0.8)
                             .foregroundStyle(Color.rdOnyx)
                             .multilineTextAlignment(.center)
 
                         Text(RDLocalization.string("onboarding.obprofessional.role.view.choose.the.closest.option.this.does.not.verify.a.a568fb3b", table: .onboarding, fallback: "En yakın seçeneği seçin. Bu, bir lisansı veya mesleki durumu doğrulamaz."))
-                            .font(.system(size: RDFontScale.size(15)))
+                            .font(RDTypography.font(size: RDFontScale.size(15)))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.center)
                     }
@@ -42,7 +43,7 @@ struct OBProfessionalRoleView: View {
                                 accessibilityID: "onboarding.role.\(role.rawValue)",
                                 leading: {
                                     Image(systemName: roleIcon(role))
-                                        .font(.system(size: 18, weight: .semibold))
+                                        .font(RDTypography.font(size: 18, weight: .semibold))
                                         .foregroundStyle(Color.rdGreenDark)
                                         .frame(width: 44, height: 44)
                                         .background(Color.rdGreenSoft)
@@ -57,7 +58,7 @@ struct OBProfessionalRoleView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, layoutProfile.horizontalPadding)
                 .padding(.bottom, 24)
             }
 

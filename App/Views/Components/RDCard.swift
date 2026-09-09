@@ -40,7 +40,7 @@ struct RDPlaceholderPhoto: View {
             stripes
             if let label {
                 Text(label)
-                    .font(.system(size: RDFontScale.size(11), weight: .medium, design: .monospaced))
+                    .font(RDTypography.font(size: RDFontScale.size(11), weight: .medium, design: .monospaced))
                     .foregroundStyle(Color.rdSlate)
                     .tracking(1.6)
                     .textCase(.uppercase)
@@ -76,7 +76,7 @@ struct RDPlaceholderPhoto: View {
     VStack(spacing: 16) {
         RDCard {
             VStack(alignment: .leading, spacing: 8) {
-                Text(RDLocalization.string("localizable.rdcard.card.title.a9771b20", table: .localizable, fallback: "Kart başlığı")).font(.system(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
+                Text(RDLocalization.string("localizable.rdcard.card.title.a9771b20", table: .localizable, fallback: "Kart başlığı")).font(RDTypography.font(size: RDFontScale.size(17), weight: .semibold, design: .rounded))
                 Text(RDLocalization.string("localizable.rdcard.body.text.cb0e2867", table: .localizable, fallback: "Gövde metni")).foregroundStyle(Color.rdSlate)
             }
         }

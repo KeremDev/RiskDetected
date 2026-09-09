@@ -1,0 +1,858 @@
+import type { Criticality, RoutedItem } from "./contracts.ts";
+import { expertRecommendationsFor } from "../_shared/expert-recommendations/index.ts";
+import {
+  isExpertAssetFamily,
+  V5_LAYER_BOOK_CODES,
+  V5_RECORDS_LAYER,
+} from "./v5-taxonomy.ts";
+import {
+  FK_FREQUENCY,
+  FK_PROBABILITY,
+  FK_SEVERITY,
+  V5_MAX_FINDINGS,
+  V5_MAX_POSITIVE_CONTROLS,
+  type V5Finding,
+  type V5LayerScan,
+  type V5PhotoOutput,
+} from "./v5-contracts.ts";
+
+// The server's whole job in the free engine: check that what came back is
+// usable, do the arithmetic the report's totals depend on, and remove the two
+// things the model is not allowed to publish. It does not decide what the
+// hazards are, how severe they are, or what to do about them.
+
+function text(value: unknown, max = 1200): string {
+  return typeof value === "string"
+    ? value.replace(/\s+/gu, " ").trim().slice(0, max)
+    : "";
+}
+
+function textList(value: unknown, max = 6): string[] {
+  return Array.isArray(value)
+    ? value.map((entry) => text(entry, 400)).filter(Boolean).slice(0, max)
+    : [];
+}
+
+// Citations were stripped here until the operator decided the report should
+// carry them: Turkish legislation, the regulations under it, and TS / TS EN /
+// ISO / IEC standards, written by the model into its own field and rendered as
+// the finding's "Dayanak". The prompt carries the guard that matters -- name
+// the regulation you are sure of and never invent an article number -- and a
+// wrong number is now visible in the report rather than silently deleted from
+// it. What stays below is the other claim class, which is about the
+// photograph rather than the law.
+
+/**
+ * A nonconformity asserted about something the photograph cannot show.
+ *
+ * Recommending a record is a control. Declaring that the record is missing is
+ * a compliance finding made from a photograph, which is the one thing a
+ * photograph cannot support.
+ */
+const ASSERTS_INVISIBLE_ABSENCE =
+  /(?:e[ğg]itim|sertifika|belge|yetki\s*belges|periyodik\s*kontrol|muayene\s*raporu|[öo]l[çc][üu]m|kalibrasyon|risk\s*de[ğg]erlendirmes)\w*\s+(?:[^.]{0,24}?)(?:yok|yoktur|bulunmuyor|bulunmamakta|eksik|yap[ıi]lmam[ıi][şs]|al[ıi]nmam[ıi][şs]|mevcut\s*de[ğg]il|ge[çc]ersiz)/iu;
+
+export type SanitizeResult = { text: string; removed: string[] };
+
+/**
+ * Sentence by sentence, so one bad clause costs a clause and not a finding.
+ *
+ * v4's linter rejected a whole control line and fell back to a catalog
+ * sentence. That trade made sense when the catalog was the baseline. Here
+ * there is no catalog to fall back to, and dropping the model's text would
+ * leave the reader with nothing, so the offending sentence is removed and the
+ * rest published.
+ */
+export function sanitizeFreeText(
+  raw: string,
+  keepLineBreaks = false,
+): SanitizeResult {
+  const value = keepLineBreaks
+    ? String(raw ?? "").split("\n").map((line) => text(line, 400)).filter(
+      Boolean,
+    ).join("\n")
+    : text(raw);
+  if (!value) return { text: "", removed: [] };
+  const sentences = keepLineBreaks
+    ? value.split("\n")
+    : value.split(/(?<=[.!?])\s+/u).filter(Boolean);
+  const removed: string[] = [];
+  const kept = sentences.filter((sentence) => {
+    if (ASSERTS_INVISIBLE_ABSENCE.test(sentence)) {
+      removed.push("asserts_invisible_absence");
+      return false;
+    }
+    return true;
+  });
+  return { text: kept.join(keepLineBreaks ? "\n" : " ").trim(), removed };
+}
+
+/**
+ * The model does not always end a sentence, and this text gets joined to
+ * another one. Analysis 5eae6972 published "Yüksekte çalışma prosedürlerinin
+ * uygulanması ve denetlenmesi Eğitim: Yüksekte güvenli çalışma eğitimi" --
+ * two sentences run together, in the card the reader acts from.
+ */
+function endSentence(value: string): string {
+  const trimmed = value.trim().replace(/[;,\s]+$/u, "");
+  if (!trimmed) return "";
+  return /[.!?:]$/u.test(trimmed) ? trimmed : `${trimmed}.`;
+}
+
+/** Nearest allowed value. An off-scale number is a slip, not a reason to drop. */
+export function snapToScale(
+  value: unknown,
+  scale: readonly number[],
+  fallback: number,
+): { value: number; snapped: boolean } {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return { value: fallback, snapped: true };
+  if (scale.includes(numeric)) return { value: numeric, snapped: false };
+  const nearest = scale.reduce((best, candidate) =>
+    Math.abs(candidate - numeric) < Math.abs(best - numeric) ? candidate : best
+  );
+  return { value: nearest, snapped: true };
+}
+
+export function bandsFor(fk: number, m5: number) {
+  const fkBand = fk <= 70
+    ? "low"
+    : fk <= 200
+    ? "medium"
+    : fk <= 400
+    ? "high"
+    : "critical";
+  const m5Band = m5 <= 4
+    ? "low"
+    : m5 <= 9
+    ? "medium"
+    : m5 <= 19
+    ? "high"
+    : "critical";
+  return { fkBand, m5Band } as const;
+}
+
+/**
+ * Criticality follows severity, because in this engine severity is the model's
+ * statement about how bad the outcome is and nothing else carries that.
+ */
+export function criticalityForSeverity(severity: number): Criticality {
+  if (severity >= 40) return "fatal";
+  if (severity >= 15) return "permanent";
+  if (severity >= 7) return "serious";
+  return "ordinary";
+}
+
+/**
+ * Corner box in, offset box out.
+ *
+ * The operator's contract asks the model for {x_min, y_min, x_max, y_max};
+ * everything downstream -- the candidates table, the app's overlay -- has
+ * always spoken {x, y, width, height}. Converting here keeps the change at the
+ * boundary instead of spreading a second coordinate convention through the
+ * report.
+ */
+function cornerBoxToRegion(
+  value: unknown,
+): { x: number; y: number; width: number; height: number } | undefined {
+  const box = (value ?? {}) as Record<string, unknown>;
+  const numbers = ["x_min", "y_min", "x_max", "y_max"].map((key) =>
+    Number(box[key])
+  );
+  if (numbers.some((entry) => !Number.isFinite(entry))) return undefined;
+  const [xMin, yMin, xMax, yMax] = numbers;
+  const x = Math.min(xMin, xMax);
+  const y = Math.min(yMin, yMax);
+  const width = Math.abs(xMax - xMin);
+  const height = Math.abs(yMax - yMin);
+  if (width <= 0 || height <= 0) return undefined;
+  return { x, y, width, height };
+}
+
+/**
+ * Did the model echo the prompt's own example back at us?
+ *
+ * The operator's document carried a JSON skeleton with placeholder strings,
+ * and in analysis 6f72a303 gemini-3.5-flash-lite returned "Tam iki cümle." as
+ * the scene summary -- the placeholder, verbatim, straight into the analysis's
+ * ai_summary where the reader sees it. The same run produced 860 output tokens
+ * and two shallow findings, having spent its attention mirroring a skeleton
+ * the response schema already enforced. The example is gone; this stays as the
+ * tripwire, because a placeholder reaching the reader is the loudest possible
+ * symptom of the model copying rather than looking.
+ */
+const PLACEHOLDER_TEXT =
+  /^(?:tam iki c[üu]mle|k[ıi]sa ba[şs]l[ıi]k|g[öo]r[üu]n[üu]r kan[ıi]t, konum ve maruziyet|kaynak → temas|iki-[üu][çc] kelime|g[öo]r[üu]n[üu]r en yak[ıi]n neden|foto[ğg]rafa dayal[ıi] gerek[çc]e|birinci somut ad[ıi]m)/iu;
+
+export function looksLikePlaceholder(value: string): boolean {
+  return PLACEHOLDER_TEXT.test(value.trim());
+}
+
+export function parseV5Output(raw: string): V5PhotoOutput {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("v5_output_not_json");
+  }
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("v5_output_not_object");
+  }
+  const envelope = parsed as Record<string, unknown>;
+  const findings = Array.isArray(envelope.findings) ? envelope.findings : null;
+  if (!findings) throw new Error("v5_findings_missing");
+  return {
+    scene_summary: text(envelope.scene_summary, 600),
+    findings: findings.slice(0, V5_MAX_FINDINGS).map((entry) => {
+      const finding = (entry ?? {}) as Record<string, unknown>;
+      const kinney = (finding.fine_kinney ?? {}) as Record<string, unknown>;
+      return {
+        finding_key: text(finding.finding_key, 120),
+        layers: (Array.isArray(finding.layers) ? finding.layers : [])
+          .map((entry) => Number(entry)).filter((entry) =>
+            Number.isFinite(entry)
+          ),
+        title: text(finding.title, 200),
+        category: text(finding.category, 80),
+        description: text(finding.description, 1600),
+        event_path: text(finding.event_path, 600),
+        root_cause: text(finding.root_cause, 600),
+        regulatory_references: textList(finding.regulatory_references, 4),
+        fine_kinney: {
+          "olasılık": Number(kinney["olasılık"]),
+          frekans: Number(kinney.frekans),
+          "şiddet": Number(kinney["şiddet"]),
+          "gerekçe": text(kinney["gerekçe"], 400),
+        },
+        immediate_control: text(finding.immediate_control, 400),
+        corrective_steps: textList(finding.corrective_steps, 5),
+        preventive_measure: text(finding.preventive_measure, 600),
+        training_recommendation: text(finding.training_recommendation, 300),
+        ppe_recommendation: text(finding.ppe_recommendation, 300),
+        evidence_region: finding
+          .evidence_region as V5Finding["evidence_region"],
+        confidence: Number.isFinite(Number(finding.confidence))
+          ? Math.min(1, Math.max(0, Number(finding.confidence)))
+          : 0.6,
+        needs_field_verification: finding.needs_field_verification === true,
+      } satisfies V5Finding;
+    }),
+    layer_scan: (Array.isArray(envelope.layer_scan) ? envelope.layer_scan : [])
+      .slice(0, 32).map((entry) => {
+        const row = (entry ?? {}) as Record<string, unknown>;
+        return {
+          layer: Number(row.layer),
+          result: String(row.result ?? ""),
+          note: text(row.note, 200),
+        } as V5LayerScan;
+      }).filter((row) => Number.isFinite(row.layer)),
+    positive_controls:
+      (Array.isArray(envelope.positive_controls)
+        ? envelope.positive_controls
+        : []).slice(0, V5_MAX_POSITIVE_CONTROLS).map((entry) => {
+          const control = (entry ?? {}) as Record<string, unknown>;
+          return {
+            title: text(control.title, 200),
+            description: text(control.description, 600),
+          };
+        }).filter((control) => control.title && control.description),
+    observed_assets: (Array.isArray(envelope.observed_assets)
+      ? envelope.observed_assets
+      : []).map((entry) => text(entry, 64)).filter(isExpertAssetFamily),
+  };
+}
+
+/**
+ * Layers the model called hazardous and then wrote no finding for.
+ *
+ * In analysis 88a9c731 layer 5 came back tehlike_var with the note "Zeminde
+ * dağınık kablolar ve nemli ortam etkileşimi vardır" and no finding followed:
+ * the model had seen the cable and the damp and recorded it in the wrong
+ * array. That is v4's oldest failure in a new place -- there it was a hazard
+ * written into module_coverage instead of candidates -- and the fix is the
+ * same one, findings first and the record second.
+ *
+ * Measured here rather than repaired: inventing the finding the model did not
+ * write would be the server making a safety claim of its own.
+ */
+export function unfulfilledHazardLayers(output: V5PhotoOutput): number[] {
+  const answered = new Set(
+    output.findings.flatMap((finding) => finding.layers),
+  );
+  return output.layer_scan
+    .filter((row) => row.result === "tehlike_var" && !answered.has(row.layer))
+    .map((row) => row.layer);
+}
+
+/**
+ * Records findings that also claim a physical layer.
+ *
+ * Layer 19 asks whether a document exists. In analysis 71021610 the model
+ * bound it to layer 7 and published "Kaldırma Ekipmanları Periyodik Kontrol
+ * Doğrulaması" -- a man welding under a suspended tank, turned into a
+ * paperwork item. The physical hazard left the report through the records
+ * layer, which is the one way this section can do harm.
+ */
+export const RECORDS_LAYER = 19;
+
+export function recordsFindingsAbsorbingHazards(
+  output: V5PhotoOutput,
+): string[] {
+  return output.findings
+    .filter((finding) =>
+      finding.layers.includes(RECORDS_LAYER) && finding.layers.length > 1
+    )
+    .map((finding) => finding.finding_key);
+}
+
+/**
+ * Findings that carry more than one hazard layer.
+ *
+ * Seven rounds of prompt rules could not move the model off roughly 3200
+ * visible tokens and four findings: it satisfied each rule by packing layers
+ * together, and when packing was forbidden it marked fewer layers hazardous
+ * instead. Analysis c6cbe445 settled that nothing truncates it -- finishReason
+ * STOP, 3295 tokens of a 32768 budget -- and analysis 2e350e22 ruled out
+ * thinking competing for the same budget, since MEDIUM produced less of both.
+ *
+ * What is left is a length prior no instruction reaches, so the second look is
+ * structural. These are the findings a follow-up call is asked to split, and
+ * it only runs when there are any.
+ */
+export function packedFindings(output: V5PhotoOutput): V5Finding[] {
+  const hazardLayers = new Set(
+    output.layer_scan.filter((row) => row.result === "tehlike_var").map((row) =>
+      row.layer
+    ),
+  );
+  return output.findings.filter((finding) =>
+    finding.layers.filter((layer) => hazardLayers.has(layer)).length > 1
+  );
+}
+
+/**
+ * Replaces packed findings with the split ones, keeping everything else.
+ *
+ * Guarded rather than trusted: the replacement must produce more findings than
+ * it replaced and every one of them must answer a single hazard layer.
+ * Otherwise the primary output stands, because a second call that packs again
+ * has told us nothing and must not cost the reader the first answer.
+ */
+export function applySplitFindings(
+  output: V5PhotoOutput,
+  split: V5Finding[],
+): { output: V5PhotoOutput; applied: boolean; reason: string } {
+  const packed = packedFindings(output);
+  if (packed.length === 0) {
+    return { output, applied: false, reason: "no_packed" };
+  }
+  const hazardLayers = new Set(
+    output.layer_scan.filter((row) => row.result === "tehlike_var").map((row) =>
+      row.layer
+    ),
+  );
+  const covered = new Set(packed.flatMap((finding) => finding.layers));
+  const usable = split.filter((finding) =>
+    finding.title.trim() && finding.immediate_control.trim() &&
+    finding.layers.filter((layer) => hazardLayers.has(layer)).length === 1 &&
+    finding.layers.some((layer) => covered.has(layer))
+  );
+  if (usable.length <= packed.length) {
+    return { output, applied: false, reason: "split_not_larger" };
+  }
+  const packedKeys = new Set(packed.map((finding) => finding.finding_key));
+  return {
+    output: {
+      ...output,
+      findings: [
+        ...output.findings.filter((finding) =>
+          !packedKeys.has(finding.finding_key)
+        ),
+        ...usable,
+      ],
+    },
+    applied: true,
+    reason: `split_${packed.length}_into_${usable.length}`,
+  };
+}
+
+export type V5Routed = {
+  candidates: Record<string, unknown>[];
+  items: RoutedItem[];
+  droppedFindings: Array<{ finding_key: string; reason: string }>;
+  sanitizedCount: number;
+  snappedCount: number;
+  /** Registry cards published into Uzman Görüşü. */
+  expertCardCount: number;
+  /** Families the model saw that the registry cannot speak about yet. */
+  expertFamiliesWithoutEntry: string[];
+  /**
+   * The model's own records findings, dropped because the registry covered the
+   * same ground in more detail.
+   */
+  recordsFindingsSuperseded: string[];
+};
+
+/**
+ * The canonical block the training catalogue and the approved-book engine read.
+ *
+ * v4 wrote this off a mechanism taxonomy the free engine does not have. The
+ * layers are the replacement: a fixed nineteen-value vocabulary, enforced by
+ * the response schema, present in every run. Without this block
+ * `adaptTrainingItems` returns an empty list and the training section is not
+ * missing rows, it is switched off -- even the three `always: true` cards never
+ * reach the reader, because the early return sits in front of them.
+ */
+function bookSourceFor(params: {
+  finding: V5Finding;
+  photoIndex: number;
+  peopleVisible: number;
+  criticality: Criticality;
+  itemClass: "observed_finding" | "assurance_requirement";
+}): Record<string, unknown> {
+  const codes = params.finding.layers
+    .map((layer) => V5_LAYER_BOOK_CODES[layer])
+    .filter(Boolean);
+  const primary = codes[0];
+  return {
+    schema: "book-source-v1",
+    // A records finding answers layer 19, which has no module of its own; it
+    // is a paperwork item and contributes nothing to what anyone is taught.
+    module_id: primary?.moduleID ?? "people_exposure",
+    item_class: params.itemClass,
+    condition_code: "free_engine_finding",
+    mechanism_code: codes.find((entry) => entry.mechanismCode)?.mechanismCode ??
+      null,
+    evidence_level: "E5",
+    criticality: params.criticality,
+    occlusion: "none",
+    asset_ref: null,
+    asset_family: null,
+    assurance_topic_id:
+      codes.find((entry) => entry.assuranceTopicID)?.assuranceTopicID ?? null,
+    barrier_components_absent: [],
+    confidence: {
+      visibility: params.finding.confidence,
+      localization: params.finding.confidence,
+      mechanism: params.finding.confidence,
+    },
+    visually_resolvable: !params.finding.needs_field_verification,
+    requires_document_or_measurement:
+      params.itemClass === "assurance_requirement",
+    accessible_event_path: true,
+    people_visible: params.peopleVisible,
+    photo_index: params.photoIndex,
+    scan_layers: params.finding.layers,
+  };
+}
+
+/**
+ * A finding that only answers layer 19 is a question about a document.
+ *
+ * It was being published as a scored site hazard: analysis 1f6c5ea2 gave
+ * "Kaldırma Ekipmanları İçin Periyodik Kontrol Doğrulaması" a Fine-Kinney score
+ * of 30 and counted it in the total. Scoring a paperwork check misstates the
+ * site's risk and files the item under the wrong section; `assurance_requirement`
+ * is the class the hub already routes to Uzman Görüşü.
+ *
+ * The prompt guarantees the shape this reads -- "kayıt doğrulaması bulguları
+ * yalnız layers: [19] taşır" -- so a finding that mixes 19 with a physical
+ * layer stays a scored finding, which is the safe direction to be wrong in.
+ */
+function isRecordsOnly(finding: V5Finding): boolean {
+  return finding.layers.length > 0 &&
+    finding.layers.every((layer) => layer === V5_RECORDS_LAYER);
+}
+
+/**
+ * The model's findings become the report's findings, in its own order of
+ * severity, with the arithmetic done here.
+ *
+ * A finding is dropped only when it has no title, no description or no control
+ * left after sanitising -- that is, when there is nothing to publish. It is
+ * never dropped for being unusual, small, distant or hard to categorise, which
+ * is the whole difference from the contract engine.
+ */
+export function routeV5Findings(
+  outputs: Array<{ photoIndex: number; output: V5PhotoOutput }>,
+): V5Routed {
+  const candidates: Record<string, unknown>[] = [];
+  const scored: Array<{ item: RoutedItem; fk: number }> = [];
+  const assurance: RoutedItem[] = [];
+  const droppedFindings: Array<{ finding_key: string; reason: string }> = [];
+  const recordsFindingsSuperseded: string[] = [];
+  let sanitizedCount = 0;
+  let snappedCount = 0;
+
+  // The registry speaks in standards and intervals; the model's own records
+  // finding says "check the paperwork". Where the registry has something to
+  // say, publishing both is the report noise this engine exists to avoid.
+  const expert = expertRecommendationsFor(
+    outputs.flatMap((entry) => entry.output.observed_assets ?? []),
+  );
+  const registryCovered = expert.recommendations.length > 0;
+
+  for (const { photoIndex, output } of outputs) {
+    // Layer 1 is the person in the hazard line. Its hazard verdict is the only
+    // people signal this engine has, and the training catalogue uses it to
+    // choose between the direct and the conditional phrasing of a card.
+    const peopleVisible = output.layer_scan.some((row) =>
+        row.layer === 1 && row.result === "tehlike_var"
+      )
+      ? 1
+      : 0;
+    for (const finding of output.findings) {
+      const title = sanitizeFreeText(finding.title);
+      const description = sanitizeFreeText(finding.description);
+      const control = sanitizeFreeText(finding.immediate_control);
+      const rootCause = sanitizeFreeText(finding.root_cause);
+      // One dayanak per line. Joined with a space, analysis 6f72a303 published
+      // "6331 Sayılı İSG Kanunu — Madde 4 Elle Taşıma İşleri Yönetmeliği":
+      // two separate references read as one sentence naming the wrong article.
+      const references = sanitizeFreeText(
+        finding.regulatory_references.map(endSentence).filter(Boolean).join(
+          "\n",
+        ),
+        true,
+      );
+      const preventive = sanitizeFreeText(finding.preventive_measure);
+      const steps = finding.corrective_steps.map((step) =>
+        sanitizeFreeText(step)
+      );
+      const training = sanitizeFreeText(finding.training_recommendation ?? "");
+      const ppe = sanitizeFreeText(finding.ppe_recommendation ?? "");
+      const removed = [
+        title,
+        description,
+        control,
+        rootCause,
+        references,
+        preventive,
+        training,
+        ppe,
+        ...steps,
+      ].flatMap((entry) => entry.removed);
+      sanitizedCount += removed.length;
+
+      if (!title.text || !description.text || !control.text) {
+        droppedFindings.push({
+          finding_key: finding.finding_key,
+          reason: !title.text
+            ? "empty_title"
+            : !description.text
+            ? "empty_description"
+            : "empty_control",
+        });
+        continue;
+      }
+
+      if (isRecordsOnly(finding)) {
+        if (registryCovered) {
+          recordsFindingsSuperseded.push(finding.finding_key);
+          continue;
+        }
+        assurance.push({
+          id: crypto.randomUUID(),
+          item_class: "assurance_requirement",
+          is_scored: false,
+          criticality: "ordinary",
+          ordinal: 0,
+          title: title.text.slice(0, 200),
+          category: finding.category || "Periyodik Kontroller",
+          description: description.text,
+          recommended_action: control.text,
+          recommended_measures: [
+            ...(steps.some((entry) => entry.text)
+              ? [{
+                kind: "corrective" as const,
+                title: "Düzeltici Önlem",
+                text: steps.map((entry) => entry.text).filter(Boolean).map((
+                  line,
+                  index,
+                ) => `${index + 1}. ${endSentence(line)}`).join("\n"),
+              }]
+              : []),
+            ...(preventive.text
+              ? [{
+                kind: "preventive" as const,
+                title: "Önleyici Kontrol",
+                text: endSentence(preventive.text),
+              }]
+              : []),
+          ],
+          references_text: references.text,
+          root_cause_text: rootCause.text,
+          confidence: finding.confidence,
+          ai_confidence: finding.confidence,
+          // A record nobody can see from a photograph is always a field check.
+          needs_field_verification: true,
+          source_photo_indices: [photoIndex],
+          display_group: "assurance_requirement",
+          display_order: 0,
+          internal_priority: {
+            engine_mode: "free",
+            finding_key: finding.finding_key,
+            scan_layers: finding.layers,
+            control_source: "model",
+            sanitized: removed,
+            scale_snapped: false,
+            book_source: bookSourceFor({
+              finding,
+              photoIndex,
+              peopleVisible,
+              criticality: "ordinary",
+              itemClass: "assurance_requirement",
+            }),
+          },
+        });
+        continue;
+      }
+
+      const p = snapToScale(finding.fine_kinney["olasılık"], FK_PROBABILITY, 3);
+      const f = snapToScale(finding.fine_kinney.frekans, FK_FREQUENCY, 3);
+      const s = snapToScale(finding.fine_kinney["şiddet"], FK_SEVERITY, 7);
+      snappedCount += [p, f, s].filter((entry) => entry.snapped).length;
+      const m5p = p.value <= 0.5
+        ? 1
+        : p.value === 1
+        ? 2
+        : p.value === 3
+        ? 3
+        : p.value === 6
+        ? 4
+        : 5;
+      const m5s = s.value <= 3
+        ? 1
+        : s.value === 7
+        ? 2
+        : s.value === 15
+        ? 3
+        : s.value === 40
+        ? 4
+        : 5;
+      const fk = p.value * f.value * s.value;
+      const band = bandsFor(fk, m5p * m5s);
+      const criticality = criticalityForSeverity(s.value);
+      const candidateID = crypto.randomUUID();
+      // finding_key is guaranteed only within a single provider response. An
+      // engine run spans every photo, while the database key is unique for the
+      // whole run. Prefixing the photo index prevents two photos that both
+      // emit a common key (for example "open_edge") from rolling back the
+      // completed analysis during finalization.
+      const candidateKey = `p${photoIndex}:${
+        finding.finding_key || candidateID
+      }`.slice(0, 200);
+
+      candidates.push({
+        id: candidateID,
+        photo_index: photoIndex,
+        candidate_key: candidateKey,
+        module_id: "free_engine",
+        raw_label: title.text,
+        condition_code: "free_engine_finding",
+        evidence_level: "E5",
+        criticality,
+        evidence_region: cornerBoxToRegion(finding.evidence_region) ?? null,
+        affirmative_cues: [description.text],
+        counter_cues: [],
+        // The contract states the chain as one line rather than three fields.
+        event_path: { summary: finding.event_path },
+        resolvability: {
+          confidence: finding.confidence,
+          needs_field_verification: finding.needs_field_verification,
+        },
+        fine_kinney_rationale: finding.fine_kinney["gerekçe"],
+      });
+
+      const correctiveText = [
+        ...steps.map((entry) => entry.text).filter(Boolean),
+        ...(ppe.text ? [`Kişisel koruyucu donanım: ${ppe.text}`] : []),
+      ].map((line, index) => `${index + 1}. ${endSentence(line)}`).join("\n");
+      const preventiveText = [
+        endSentence(preventive.text),
+        ...(training.text ? [`Eğitim: ${endSentence(training.text)}`] : []),
+      ].filter(Boolean).join(" ");
+
+      scored.push({
+        fk,
+        item: {
+          id: crypto.randomUUID(),
+          candidate_id: candidateID,
+          item_class: "observed_finding",
+          is_scored: true,
+          criticality,
+          ordinal: 0,
+          title: title.text.slice(0, 200),
+          category: finding.category || "Genel",
+          description: description.text,
+          recommended_action: control.text,
+          recommended_measures: [
+            ...(correctiveText
+              ? [{
+                kind: "corrective" as const,
+                title: "Düzeltici Önlem",
+                text: correctiveText,
+              }]
+              : []),
+            ...(preventiveText
+              ? [{
+                kind: "preventive" as const,
+                title: "Önleyici Kontrol",
+                text: preventiveText,
+              }]
+              : []),
+          ],
+          // The model's own citation, rendered in the app as "Dayanak".
+          references_text: references.text,
+          root_cause_text: rootCause.text,
+          confidence: finding.confidence,
+          ai_confidence: finding.confidence,
+          needs_field_verification: finding.needs_field_verification,
+          source_photo_indices: [photoIndex],
+          display_group: "observed_finding",
+          display_order: 0,
+          fk_probability: p.value,
+          fk_frequency: f.value,
+          fk_severity: s.value,
+          fk_band: band.fkBand,
+          m5_probability: m5p,
+          m5_severity: m5s,
+          m5_band: band.m5Band,
+          score_payload: {
+            fk_probability: p.value,
+            fk_frequency: f.value,
+            fk_severity: s.value,
+            fk_band: band.fkBand,
+            m5_probability: m5p,
+            m5_severity: m5s,
+            m5_band: band.m5Band,
+            fine_kinney_rationale: finding.fine_kinney["gerekçe"],
+          },
+          internal_priority: {
+            engine_mode: "free",
+            finding_key: finding.finding_key,
+            // Which scan layer produced this. unfulfilledHazardLayers checks
+            // the same binding across the whole output; this makes it
+            // readable per item afterwards.
+            scan_layers: finding.layers,
+            control_source: "model",
+            sanitized: removed,
+            scale_snapped: [p, f, s].some((entry) => entry.snapped),
+            book_source: bookSourceFor({
+              finding,
+              photoIndex,
+              peopleVisible,
+              criticality,
+              itemClass: "observed_finding",
+            }),
+          },
+        },
+      });
+    }
+  }
+
+  // The model was asked to order by severity; the arithmetic decides the
+  // report. Where the two disagree the score wins, because the totals and the
+  // bands the reader sees are computed from it.
+  scored.sort((a, b) => b.fk - a.fk);
+  const items: RoutedItem[] = scored.map((entry, index) => ({
+    ...entry.item,
+    ordinal: index + 1,
+    display_order: index + 1,
+  }));
+
+  let order = items.length;
+
+  // The model's own records findings, kept only where the registry was silent.
+  for (const item of assurance) {
+    order += 1;
+    items.push({ ...item, ordinal: order, display_order: order });
+  }
+
+  // The expert section proper: a paragraph per equipment family the model
+  // reported seeing, written here rather than by the model. Every standard
+  // number, interval and measurement in it is ours -- the model contributed the
+  // family code and nothing else.
+  const photoIndices = outputs.map((entry) => entry.photoIndex);
+  for (const card of expert.recommendations) {
+    order += 1;
+    items.push({
+      id: crypto.randomUUID(),
+      item_class: "assurance_requirement",
+      is_scored: false,
+      criticality: "ordinary",
+      ordinal: order,
+      title: card.title,
+      category: card.categoryLabel,
+      description: card.text,
+      recommended_action: card.action,
+      recommended_measures: [
+        { kind: "corrective", title: "Kayıt Yoksa", text: card.ifAbsent },
+        { kind: "preventive", title: "Süreklilik", text: card.ongoing },
+      ],
+      references_text: card.references,
+      // The reason this item exists is visible in the photograph and stated in
+      // the first sentence, so there is no hidden cause to name here.
+      root_cause_text: "",
+      confidence: 1,
+      ai_confidence: 1,
+      needs_field_verification: true,
+      source_photo_indices: photoIndices,
+      display_group: "assurance_requirement",
+      display_order: order,
+      internal_priority: {
+        engine_mode: "free",
+        control_source: "registry",
+        expert_family: card.family,
+        expert_class: card.recommendationClass,
+        // The Onaylı Defter's one-line pair. Written for the registry entry,
+        // not sliced from `description` or `recommended_action` above: those
+        // are the specialist's full paragraph, and a paragraph cut mid-clause
+        // reads worse in a logbook than a sentence written for the purpose.
+        notebook_tespit: card.notebookTespit,
+        notebook_oneri: card.notebookOneri,
+      },
+    });
+  }
+
+  for (const { photoIndex, output } of outputs) {
+    for (const control of output.positive_controls) {
+      const description = sanitizeFreeText(control.description);
+      const title = sanitizeFreeText(control.title);
+      if (!title.text || !description.text) continue;
+      order += 1;
+      items.push({
+        id: crypto.randomUUID(),
+        item_class: "positive_control",
+        is_scored: false,
+        criticality: "ordinary",
+        ordinal: order,
+        title: title.text.slice(0, 200),
+        category: "Olumlu kontrol",
+        description: description.text,
+        recommended_action: "",
+        recommended_measures: [],
+        references_text: "",
+        root_cause_text: "",
+        confidence: 0.8,
+        ai_confidence: 0.8,
+        needs_field_verification: false,
+        source_photo_indices: [photoIndex],
+        display_group: "positive_control",
+        display_order: order,
+        internal_priority: { engine_mode: "free" },
+      });
+    }
+  }
+
+  return {
+    candidates,
+    items,
+    droppedFindings,
+    sanitizedCount,
+    snappedCount,
+    expertCardCount: expert.recommendations.length,
+    expertFamiliesWithoutEntry: expert.familiesWithoutEntry,
+    recordsFindingsSuperseded,
+  };
+}

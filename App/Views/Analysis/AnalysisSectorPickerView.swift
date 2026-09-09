@@ -33,11 +33,11 @@ struct AnalysisSectorPickerView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(RDLocalization.string("analysis.analysis.sector.picker.view.analiz.kapsamini.sec.7753a6c8", table: .analysis, fallback: "Analiz kapsamını seç"))
-                .font(.system(size: RDFontScale.size(22), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(22), weight: .bold, design: .rounded))
                 .tracking(-0.4)
                 .foregroundStyle(Color.rdBlack)
             Text(RDLocalization.string("analysis.analysis.sector.picker.view.bu.fotografi.hangi.sektorun.saha.kosullarina.gor.c6c832db", table: .analysis, fallback: "Bu fotoğrafı hangi sektörün saha koşullarına göre değerlendirelim? Risk öncelikleri ve öneriler seçtiğin sektöre göre uyarlanır."))
-                .font(.system(size: RDFontScale.size(14), design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(14), design: .rounded))
                 .foregroundStyle(Color.rdSlate)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -57,7 +57,6 @@ struct AnalysisSectorPickerView: View {
         .disabled(selected == nil)
         .opacity(selected == nil ? 0.45 : 1)
         .padding(.horizontal, 20)
-        .padding(.bottom, 14)
     }
 
     private var sectorGridSection: some View {
@@ -90,11 +89,11 @@ struct AnalysisSectorPickerView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Image(systemName: item.sector.icon)
-                        .font(.system(size: RDFontScale.size(chipIconSize), weight: .semibold))
+                        .font(RDTypography.font(size: RDFontScale.size(chipIconSize), weight: .semibold))
                         .foregroundStyle(iconColor(for: item.sector))
                     if let badge = primaryBadge(for: item.badges) {
                         Text(badge.compactLabel)
-                            .font(.system(size: RDFontScale.size(8), weight: .heavy, design: .rounded))
+                            .font(RDTypography.font(size: RDFontScale.size(8), weight: .heavy, design: .rounded))
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                             .foregroundStyle(isSelected ? Color.rdBlack : Color.rdSlate)
@@ -106,7 +105,7 @@ struct AnalysisSectorPickerView: View {
                     Spacer(minLength: 0)
                 }
                 Text(item.sector.label())
-                    .font(.system(size: RDFontScale.size(chipTitleSize), weight: .semibold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(chipTitleSize), weight: .semibold, design: .rounded))
                     .foregroundStyle(isSelected ? Color.white : Color.rdBlack)
                     .multilineTextAlignment(.leading)
                     .lineLimit(2)
@@ -203,17 +202,17 @@ struct AnalysisSectorPickerSheet: View {
                             .frame(width: 22)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(item.sector.label())
-                                .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
+                                .font(RDTypography.font(size: RDFontScale.size(15), weight: .semibold, design: .rounded))
                                 .foregroundStyle(Color.rdBlack)
                             Text(item.sector.subtitle)
-                                .font(.system(size: RDFontScale.size(12), design: .rounded))
+                                .font(RDTypography.font(size: RDFontScale.size(12), design: .rounded))
                                 .foregroundStyle(Color.rdSlate)
                         }
                         Spacer(minLength: 0)
                         if let badge = item.badges.contains(.recommended) ? AnalysisSectorBadge.recommended :
                             item.badges.contains(.lastUsed) ? AnalysisSectorBadge.lastUsed : nil {
                             Text(badge.label)
-                                .font(.system(size: RDFontScale.size(10), weight: .bold, design: .rounded))
+                                .font(RDTypography.font(size: RDFontScale.size(10), weight: .bold, design: .rounded))
                                 .foregroundStyle(Color.rdSlate)
                         }
                         if selected == item.sector {

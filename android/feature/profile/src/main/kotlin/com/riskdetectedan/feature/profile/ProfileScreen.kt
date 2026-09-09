@@ -45,8 +45,10 @@ import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.MilitaryTech
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Person
@@ -86,6 +88,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
@@ -103,6 +106,7 @@ import com.riskdetectedan.core.data.progress.ProfessionalProgressBadge
 import com.riskdetectedan.core.data.progress.ProfessionalProgressCompetencyStat
 import com.riskdetectedan.core.data.progress.ProfessionalProgressProfileRow
 import com.riskdetectedan.core.data.progress.ProfessionalProgressSummary
+import com.riskdetectedan.core.data.progress.ProfessionalProgressTitle
 import com.riskdetectedan.core.designsystem.RdButtonStyle
 import com.riskdetectedan.core.designsystem.RdFontStyle
 import com.riskdetectedan.core.designsystem.RdLegalDocument
@@ -273,10 +277,11 @@ fun ProfileScreen(
                 // the summary only on an explicit close (Tamam / X), never on a plain swipe-away
                 // (see the LaunchedEffect above's doc comment for why that distinction matters).
                 pendingCelebrationBadge?.let { badge ->
-                    val sheetState = rememberModalBottomSheetState()
+                    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
                     ModalBottomSheet(
                         onDismissRequest = { pendingCelebrationBadge = null },
                         sheetState = sheetState,
+                        containerColor = colors.paper,
                     ) {
                         ProfessionalProgressCelebrationSheet(badge = badge) {
                             viewModel.markBadgeSeen(badge)
@@ -372,7 +377,11 @@ fun ProfileLoadedSurface(
         SubscriptionStatusCard(profile = profile, onPaywall = onPaywall)
         progress?.let {
             Spacer(Modifier.height(14.dp))
-            ProfessionalProgressSection(it, onShowCompetencies = onShowCompetencies)
+            ProfessionalProgressSection(
+                progress = it,
+                onShowTitles = onShowTitles,
+                onShowCompetencies = onShowCompetencies,
+            )
         }
         Spacer(Modifier.height(14.dp))
         ProfileMenuSection(title = stringResource(RdR.string.rd_hesap_upper)) {
@@ -382,7 +391,7 @@ fun ProfileLoadedSurface(
                 stringResource(RdR.string.rd_firmalarim),
                 Icons.Filled.Business,
                 detail = if (profile.isPaid) stringResource(RdR.string.rd_yonet) else stringResource(RdR.string.rd_plus_pro),
-                onClick = onManageCompanies,
+                onClick = if (profile.isPaid) onManageCompanies else onPaywall,
             )
             ProfileMenuDivider()
             ProfileMenuRow(stringResource(RdR.string.rd_gecmis_analizler), Icons.Filled.Assessment, detail = stats?.analysisCount?.toString() ?: "—", onClick = onAnalyses)
@@ -600,7 +609,7 @@ private fun ProfileHero(
                     .fillMaxSize()
                     .shadow(12.dp, CircleShape)
                     .clip(CircleShape)
-                    .background(colors.onyx)
+                    .background(colors.cta)
                     .border(5.dp, colors.white, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
@@ -609,7 +618,7 @@ private fun ProfileHero(
                     ProfileAvatarImage(path = path, modifier = Modifier.fillMaxSize().clip(CircleShape))
                 }
                 if (isSavingAvatar) {
-                    Box(modifier = Modifier.fillMaxSize().background(colors.onyx.copy(alpha = 0.5f)), contentAlignment = Alignment.Center) {
+                    Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
@@ -620,7 +629,7 @@ private fun ProfileHero(
                     .size(27.dp)
                     .offset(x = 3.dp, y = 3.dp)
                     .clip(CircleShape)
-                    .background(colors.onyx)
+                    .background(colors.cta)
                     .border(3.dp, colors.white, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
@@ -794,54 +803,65 @@ private fun ProfileHeroStats(
 
 /**
  * Real port of `ProfessionalProgressProfileSection.swift`'s scope (title/MDP core loop text +
- * `competencyPreview` card), minus the `.showcase`-style [ProfessionalProgressHomeCard] (Home's
- * own `.compactStrip` card already carries the real MDP/title-ladder UI — see
- * `app/home/ProfessionalProgressCard.kt` — Profile keeps this plain text line instead of
- * duplicating that whole card, the one deliberate layout simplification here). The competency
- * preview itself is the real donut-chart port ([ProfessionalProgressCompetencyMapView], compact),
+ * `competencyPreview` card). The first card is the `.showcase` title/MDP ladder from iOS and
+ * opens the same title-details sheet when any part of it is tapped. The competency preview is
+ * the real donut-chart port ([ProfessionalProgressCompetencyMapView], compact),
  * not a text summary — "Tümü" opens the full scored-row sheet, matching `showCompetencies`.
  */
 @Composable
-private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary, onShowCompetencies: () -> Unit) {
+private fun ProfessionalProgressSection(
+    progress: ProfessionalProgressSummary,
+    onShowTitles: () -> Unit,
+    onShowCompetencies: () -> Unit,
+) {
     val colors = RdTheme.colors
     val isDark = RdTheme.isDark
-    val progressCardBackground = if (isDark) {
-        listOf(Color(0xFF292416), Color(0xFF1E211E), Color(0xFF17231B))
-    } else {
-        listOf(colors.planPlusSoft, colors.planPlusSoft)
-    }
     Column(verticalArrangement = Arrangement.spacedBy(RdSpacing.sm)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .shadow(5.dp, RoundedCornerShape(RdRadius.lg))
                 .clip(RoundedCornerShape(RdRadius.lg))
-                .background(
-                    Brush.linearGradient(progressCardBackground),
-                )
-                .border(1.dp, colors.planPlus.copy(alpha = if (isDark) 0.40f else 0.28f), RoundedCornerShape(RdRadius.lg))
-                .padding(14.dp),
+                .background(colors.white)
+                .border(1.6.dp, colors.black, RoundedCornerShape(RdRadius.lg))
+                .clickable(onClick = onShowTitles)
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(
                 modifier = Modifier
-                    .size(width = 84.dp, height = 92.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(colors.planPlus.copy(alpha = if (isDark) 0.17f else 0.12f))
-                    .border(1.dp, colors.planPlus.copy(alpha = 0.28f), RoundedCornerShape(14.dp))
-                    .padding(10.dp),
-                verticalArrangement = Arrangement.SpaceBetween,
+                    .width(105.dp)
+                    .height(144.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Brush.linearGradient(listOf(colors.fog.copy(alpha = .70f), colors.white)))
+                    .border(1.dp, colors.black.copy(alpha = .14f), RoundedCornerShape(24.dp))
+                    .padding(horizontal = 8.dp, vertical = 10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
             ) {
-                Icon(Icons.Filled.MilitaryTech, contentDescription = null, tint = colors.planPlus, modifier = Modifier.size(22.dp))
+                Box(
+                    Modifier.size(68.dp).clip(CircleShape)
+                        .background(Brush.radialGradient(listOf(colors.planPlus.copy(.26f), Color(0xFFFF8A3D).copy(.12f), Color.Transparent))),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.LocalFireDepartment,
+                        contentDescription = null,
+                        tint = colors.planPlus,
+                        modifier = Modifier.size(39.dp),
+                    )
+                }
+                Spacer(Modifier.height(7.dp))
                 Text(
                     professionalProgressTitleLabel(progress.currentTitle.key),
-                    style = RdFontStyle.Footnote.toTextStyle().copy(fontWeight = FontWeight.Bold),
-                    color = if (isDark) Color.White else colors.black,
+                    style = RdFontStyle.Callout.toTextStyle().copy(fontWeight = FontWeight.Bold),
+                    color = colors.black,
                     maxLines = 2,
+                    textAlign = TextAlign.Center,
                 )
             }
             Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
                         progress.profile.totalMdp.toString(),
@@ -851,22 +871,66 @@ private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary, o
                     val threshold = progress.nextTitle?.threshold ?: progress.currentTitle.threshold
                     Text(" / $threshold", style = RdFontStyle.Subheadline.toTextStyle(), color = colors.slate)
                 }
+                Text(
+                    progress.nextTitle?.let {
+                        stringResource(
+                            RdR.string.rd_professional_progress_target_format,
+                            professionalProgressTitleLabel(it.key),
+                            progress.nextTitleRemaining,
+                        )
+                    } ?: stringResource(RdR.string.rd_en_yuksek_unvan),
+                    style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 10.sp, fontWeight = FontWeight.SemiBold),
+                    color = colors.slate,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 Box(Modifier.fillMaxWidth().height(15.dp).clip(RoundedCornerShape(50)).background(colors.black.copy(alpha = 0.10f))) {
                     Box(
                         Modifier
                             .fillMaxWidth(progress.titleProgress.toFloat().coerceIn(0f, 1f))
                             .height(15.dp)
                             .clip(RoundedCornerShape(50))
-                            .background(Brush.horizontalGradient(listOf(Color(0xFFFFD36A), colors.planPlus, Color(0xFFFF8A3D)))),
+                            .background(
+                                // The bar filled itself with a fixed near-black gradient, which
+                                // vanished against the dark surface. Dark mode gets the brand
+                                // green the rest of its accents use.
+                                Brush.horizontalGradient(
+                                    if (RdTheme.isDark) {
+                                        listOf(colors.greenDark, colors.green, colors.greenDark)
+                                    } else {
+                                        listOf(Color(0xFF050607), Color(0xFF202426), Color(0xFF050607))
+                                    },
+                                ),
+                            ),
                     )
                 }
-                Text(
-                    progress.nextTitle?.let { stringResource(RdR.string.rd_siradaki_unvan_format, professionalProgressTitleLabel(it.key)) }
-                        ?: stringResource(RdR.string.rd_en_yuksek_unvan),
-                    style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 10.sp),
-                    color = colors.slate,
-                    maxLines = 1,
-                )
+                Row(
+                    Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(colors.fog.copy(.76f))
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    val currentIndex = ProfessionalProgressTitle.entries.indexOf(progress.currentTitle)
+                    ProfessionalProgressTitle.entries.forEachIndexed { index, title ->
+                        val reached = index <= currentIndex
+                        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Box(
+                                Modifier.size(23.dp).clip(CircleShape)
+                                    .background(if (reached) colors.planPlus else colors.fog),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                if (reached) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(11.dp))
+                                else Text((index + 1).toString(), style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 9.sp), color = colors.slate)
+                            }
+                            Spacer(Modifier.height(3.dp))
+                            Text(
+                                professionalProgressStageLabel(title),
+                                style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 7.5.sp, fontWeight = FontWeight.SemiBold),
+                                color = if (reached) colors.black.copy(.78f) else colors.slate.copy(.74f),
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                }
             }
         }
 
@@ -955,13 +1019,27 @@ private fun ProfessionalProgressSection(progress: ProfessionalProgressSummary, o
 }
 
 @Composable
+private fun professionalProgressStageLabel(title: ProfessionalProgressTitle): String = stringResource(
+    when (title) {
+        ProfessionalProgressTitle.Candidate -> RdR.string.rd_progress_stage_candidate
+        ProfessionalProgressTitle.FieldObserver -> RdR.string.rd_progress_stage_field
+        ProfessionalProgressTitle.RiskHunter -> RdR.string.rd_progress_stage_risk
+        ProfessionalProgressTitle.HazardAnalyst -> RdR.string.rd_progress_stage_analysis
+        ProfessionalProgressTitle.SeniorRiskSpecialist -> RdR.string.rd_progress_stage_senior
+        ProfessionalProgressTitle.SafetyStrategist -> RdR.string.rd_progress_stage_strategy
+        ProfessionalProgressTitle.MasterHSESpecialist -> RdR.string.rd_progress_stage_master
+    },
+)
+
+@Composable
 private fun SubscriptionStatusCard(profile: UserProfile, onPaywall: () -> Unit) {
     val colors = RdTheme.colors
+    val locale = LocalConfiguration.current.locales[0]
     val paid = profile.tier.isPaid
     val accent = when (profile.tier) {
         SubscriptionTier.Plus -> colors.planPlus
         SubscriptionTier.Pro -> colors.green
-        SubscriptionTier.Free -> colors.onyx
+        SubscriptionTier.Free -> colors.black
     }
     val soft = when (profile.tier) {
         SubscriptionTier.Plus -> colors.planPlusSoft
@@ -977,7 +1055,7 @@ private fun SubscriptionStatusCard(profile: UserProfile, onPaywall: () -> Unit) 
         SubscriptionPeriodValue.Monthly -> stringResource(RdR.string.rd_aylik_plan)
         SubscriptionPeriodValue.Yearly -> stringResource(RdR.string.rd_yillik_plan)
         SubscriptionPeriodValue.Missing -> stringResource(RdR.string.rd_plan_format, tierLabel)
-        is SubscriptionPeriodValue.Unknown -> period.value.replaceFirstChar { it.titlecase(Locale.forLanguageTag("tr-TR")) }
+        is SubscriptionPeriodValue.Unknown -> period.value.replaceFirstChar { it.titlecase(locale) }
     }
     val renewalLabel = formatSubscriptionRenewal(profile.subscriptionRenewalAt)
         ?: stringResource(RdR.string.rd_google_play_aboneligi_aktif)
@@ -1012,7 +1090,7 @@ private fun SubscriptionStatusCard(profile: UserProfile, onPaywall: () -> Unit) 
         Column(Modifier.weight(1f)) {
             if (!paid) {
                 Text(
-                    tierLabel.uppercase(Locale.forLanguageTag("tr-TR")),
+                    tierLabel.uppercase(locale),
                     style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
                     color = colors.greenDark,
                 )
@@ -1056,13 +1134,16 @@ internal fun subscriptionPeriodValue(raw: String?): SubscriptionPeriodValue {
     }
 }
 
-internal fun formatSubscriptionRenewal(raw: String?): String? {
+internal fun formatSubscriptionRenewal(
+    raw: String?,
+    locale: Locale = Locale.getDefault(),
+): String? {
     val value = raw?.trim().takeUnless { it.isNullOrEmpty() } ?: return null
     val instant = runCatching { Instant.parse(value) }.getOrElse {
         runCatching { OffsetDateTime.parse(value).toInstant() }.getOrNull() ?: return null
     }
     return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
-        .withLocale(Locale.forLanguageTag("tr-TR"))
+        .withLocale(locale)
         .withZone(ZoneId.of("Europe/Istanbul"))
         .format(instant)
 }

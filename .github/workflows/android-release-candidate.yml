@@ -7,7 +7,7 @@ on:
         description: "Play Console'da kullanılmamış versionCode"
         required: true
         type: string
-        default: "4"
+        default: "14"
 
 permissions:
   contents: read
@@ -36,12 +36,32 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify combined mobile release coordinates
+      - name: Verify Android release coordinates
+        env:
+          EXPECTED_VERSION_CODE: ${{ inputs.expected_version_code }}
         run: |
-          grep -q 'versionCode = 5' android/app/build.gradle.kts
-          grep -q 'versionName = "1.5.3"' android/app/build.gradle.kts
-          grep -q 'MARKETING_VERSION = 1.3.2' RiskDetected.xcodeproj/project.pbxproj
-          grep -q 'CURRENT_PROJECT_VERSION = 82' RiskDetected.xcodeproj/project.pbxproj
+          actual=$(sed -n 's/^[[:space:]]*versionCode = \([0-9][0-9]*\)$/\1/p' android/app/build.gradle.kts)
+          test "$actual" = "$EXPECTED_VERSION_CODE"
+          grep -q 'versionName = "2.0.2"' android/app/build.gradle.kts
+
+      - name: Verify production release notes
+        run: |
+          test "$(wc -m < android/play-store/metadata/2.0.2/release-notes-tr.txt)" -le 500
+          test "$(wc -m < android/play-store/metadata/2.0.2/release-notes-en.txt)" -le 500
+          grep -q 'Kararlılık iyileştirmeleri' android/play-store/metadata/2.0.2/release-notes-tr.txt
+          grep -q 'Stability improvements' android/play-store/metadata/2.0.2/release-notes-en.txt
+
+      - name: Verify unique migration timestamps
+        run: |
+          duplicates=$(find supabase/migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' \
+            | cut -d_ -f1 \
+            | sort \
+            | uniq -d)
+          if [[ -n "$duplicates" ]]; then
+            echo "Duplicate Supabase migration timestamps:" >&2
+            echo "$duplicates" >&2
+            exit 1
+          fi
 
       - uses: denoland/setup-deno@v2
         with:
@@ -50,8 +70,38 @@ jobs:
 
       - name: Deno format and changed-worker lint
         run: |
-          deno fmt --check supabase/functions
+          deno fmt --check \
+            supabase/functions/_shared/approved-notebook-advisory-language.ts \
+            supabase/functions/_shared/approved-notebook-advisory-language_test.ts \
+            supabase/functions/_shared/approved-notebook-advisory-snapshot.ts \
+            supabase/functions/_shared/approved-notebook-advisory-snapshot_test.ts \
+            supabase/functions/_shared/approved-notebook-projector.ts \
+            supabase/functions/_shared/approved-notebook-projector_test.ts \
+            supabase/functions/_shared/training-recommendations/snapshot.ts \
+            supabase/functions/_shared/training-recommendations/snapshot_test.ts \
+            supabase/functions/analyze-v4/index.ts \
+            supabase/functions/analyze-v4/v5_expert_training_test.ts \
+            supabase/functions/analyze-vnext/index.ts \
+            supabase/functions/analysis-result-sections/index.ts \
+            supabase/functions/analysis-result-sections/index_static_test.ts \
+            supabase/functions/app-release-policy/index.ts \
+            supabase/functions/app-release-policy/index_static_test.ts
           deno lint --rules-exclude=no-import-prefix,no-explicit-any \
+            supabase/functions/_shared/approved-notebook-advisory-language.ts \
+            supabase/functions/_shared/approved-notebook-advisory-language_test.ts \
+            supabase/functions/_shared/approved-notebook-advisory-snapshot.ts \
+            supabase/functions/_shared/approved-notebook-advisory-snapshot_test.ts \
+            supabase/functions/_shared/approved-notebook-projector.ts \
+            supabase/functions/_shared/approved-notebook-projector_test.ts \
+            supabase/functions/_shared/training-recommendations/snapshot.ts \
+            supabase/functions/_shared/training-recommendations/snapshot_test.ts \
+            supabase/functions/analyze-v4/index.ts \
+            supabase/functions/analyze-v4/v5_expert_training_test.ts \
+            supabase/functions/analyze-vnext/index.ts \
+            supabase/functions/analysis-result-sections/index.ts \
+            supabase/functions/analysis-result-sections/index_static_test.ts \
+            supabase/functions/app-release-policy/index.ts \
+            supabase/functions/app-release-policy/index_static_test.ts \
             supabase/functions/request-account-deletion/index.ts \
             supabase/functions/account-deletion-complete/index.ts \
             supabase/functions/process-account-deletion-queue/index.ts
@@ -105,6 +155,9 @@ jobs:
 
       - name: Environment and legal isolation
         run: ./gradlew :app:verifyEnvironmentIsolation :app:verifyAndroidLegalBundle --stacktrace
+
+      - name: Install source scan dependency
+        run: sudo apt-get update && sudo apt-get install --yes ripgrep
 
       - name: Source secret, PII log and AD_ID scan
         run: bash scripts/scan-source-secrets-and-pii.sh
@@ -191,6 +244,51 @@ jobs:
           test -n "$actual"
           test "$actual" = "$expected"
 
+      - name: Verify production admits the release build
+        env:
+          EXPECTED_VERSION_CODE: ${{ inputs.expected_version_code }}
+        run: |
+          payload=$(jq -cn --arg build "$EXPECTED_VERSION_CODE" '{
+            client_platform:"android",
+            client_app_version:"2.0.2",
+            client_app_build:$build,
+            api_contract_version:3,
+            client_capabilities:{
+              multi_photo_analysis:true,
+              multi_photo_coverage_v2:true,
+              editable_findings:true,
+              report_snapshot_v2:true,
+              safety_claim_v4_scoreless:true,
+              analysis_result_hub_v1:true,
+              global_localization_wave1:true
+            },
+            app_language:"en",
+            content_locale:"en-US",
+            work_jurisdiction_country:"US",
+            safety_profile_id:"en-us-generic-v1",
+            safety_profile_version:1,
+            android_legal_context:null
+          }')
+          response=$(curl --fail --silent --show-error \
+            -H "apikey: $RD_PRODUCTION_SUPABASE_PUBLISHABLE_KEY" \
+            -H "Authorization: Bearer $RD_PRODUCTION_SUPABASE_PUBLISHABLE_KEY" \
+            -H "Content-Type: application/json" \
+            "$RD_PRODUCTION_SUPABASE_URL/functions/v1/app-release-policy" \
+            --data "$payload")
+          jq -e --argjson expected "$EXPECTED_VERSION_CODE" '
+            .ok == true and
+            .policy.hard_update_enabled == false and
+            .android_runtime_gates.evaluated_version_code == $expected and
+            ([
+              .android_runtime_gates.client.enabled,
+              .android_runtime_gates.auth.enabled,
+              .android_runtime_gates.analysis_submit.enabled,
+              .android_runtime_gates.payments.enabled,
+              .android_runtime_gates.notifications.enabled,
+              .android_runtime_gates.pdf_reports.enabled
+            ] | all)
+          ' <<< "$response" >/dev/null
+
       - name: Build minified signed AAB and release lint
         run: ./gradlew :app:lintRelease :app:bundleRelease --stacktrace
 
@@ -210,7 +308,7 @@ jobs:
       - name: Upload release candidate evidence
         uses: actions/upload-artifact@v4
         with:
-          name: riskdetected-android-1.5.3-release-candidate
+          name: riskdetected-android-2.0.2-vc${{ inputs.expected_version_code }}-release-candidate
           retention-days: 30
           if-no-files-found: error
           path: |
@@ -221,3 +319,4 @@ jobs:
             android/app/build/outputs/native-debug-symbols/release/native-debug-symbols.zip
             android/app/build/outputs/native-debug-symbols/release/native-debug-symbols-unavailable.txt
             android/app/build/reports/lint-results-release.html
+            android/play-store/metadata/2.0.2

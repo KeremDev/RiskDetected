@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.riskdetectedan.core.data.progress.ProfessionalProgressSummary
 import com.riskdetectedan.core.data.progress.ProfessionalProgressTitle
@@ -43,7 +44,6 @@ import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.toTextStyle
 import com.riskdetectedan.core.designsystem.professionalProgressTitleLabel
 import java.text.NumberFormat
-import java.util.Locale
 
 /**
  * Real port of `ProfessionalProgressHomeCard.swift`'s `.compactStrip` style (the amber MDP card
@@ -58,7 +58,8 @@ fun ProfessionalProgressCard(progress: ProfessionalProgressSummary, onClick: () 
     val accent = colors.planPlus
     val percent = (progress.titleProgress * 100).toInt()
     val nextThreshold = progress.nextTitle?.threshold ?: progress.currentTitle.threshold
-    val formatter = remember { NumberFormat.getIntegerInstance(Locale("tr")) }
+    val locale = LocalConfiguration.current.locales[0]
+    val formatter = remember(locale) { NumberFormat.getIntegerInstance(locale) }
 
     val shape = RoundedCornerShape(RdRadius.lg)
     Row(

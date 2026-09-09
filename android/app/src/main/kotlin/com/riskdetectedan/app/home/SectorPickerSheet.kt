@@ -62,6 +62,7 @@ import com.riskdetectedan.core.designsystem.RdPrimaryButton
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.toTextStyle
+import com.riskdetectedan.core.designsystem.rdAnalysisSectorTitle
 
 /**
  * Real port of `beginPreAnalysisSelection()`'s Home-embedded sector sheet (the first step of the
@@ -161,9 +162,9 @@ private fun SectorCard(item: AnalysisSectorPickerItem, selected: Boolean, onClic
             }
         }
         Text(
-            item.sector.titleTr,
+            rdAnalysisSectorTitle(item.sector.id, item.sector.titleTr),
             style = RdFontStyle.Footnote.toTextStyle(),
-            color = if (selected) androidx.compose.ui.graphics.Color.White else colors.onyx,
+            color = if (selected) androidx.compose.ui.graphics.Color.White else colors.black,
             maxLines = 2,
         )
     }

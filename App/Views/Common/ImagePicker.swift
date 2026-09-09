@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import PhotosUI
+import AVFoundation
 
 /// Kamera için `UIImagePickerController` sarmalı.
 /// PHPicker kamerayı desteklemediği için kameraya bu kullanılır.
@@ -8,6 +9,9 @@ struct CameraPicker: UIViewControllerRepresentable {
     var onPick: (UIImage?) -> Void
 
     func makeUIViewController(context: Context) -> UIImagePickerController {
+        if AVCaptureDevice.authorizationStatus(for: .video) == .denied || AVCaptureDevice.authorizationStatus(for: .video) == .restricted {
+            ClientFlowEvents.shared.record("photo_picker", "blocked", reason: "permission")
+        }
         let picker = UIImagePickerController()
         picker.sourceType = .camera
         picker.cameraCaptureMode = .photo
@@ -29,11 +33,11 @@ struct CameraPicker: UIViewControllerRepresentable {
         func imagePickerController(_ picker: UIImagePickerController,
                                    didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
             let image = info[.originalImage] as? UIImage
-            picker.dismiss(animated: true) { self.onPick(image) }
+            onPick(image)
         }
 
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            picker.dismiss(animated: true) { self.onPick(nil) }
+            onPick(nil)
         }
     }
 }
@@ -64,7 +68,7 @@ struct GalleryPicker: UIViewControllerRepresentable {
 
         func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
             guard let result = results.first else {
-                picker.dismiss(animated: true) { self.onPick(nil) }
+                onPick(nil)
                 return
             }
             let provider = result.itemProvider
@@ -72,11 +76,11 @@ struct GalleryPicker: UIViewControllerRepresentable {
                 provider.loadObject(ofClass: UIImage.self) { object, _ in
                     let img = object as? UIImage
                     DispatchQueue.main.async {
-                        picker.dismiss(animated: true) { self.onPick(img) }
+                        self.onPick(img)
                     }
                 }
             } else {
-                picker.dismiss(animated: true) { self.onPick(nil) }
+                onPick(nil)
             }
         }
     }
@@ -112,26 +116,31 @@ struct MultiGalleryPicker: UIViewControllerRepresentable {
 
         func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
             guard !results.isEmpty else {
-                picker.dismiss(animated: true) { self.onPick([]) }
+                ClientFlowEvents.shared.record("photo_import", "cancelled")
+                onPick([])
                 return
             }
 
             let group = DispatchGroup()
+            let lock = NSLock()
             var images = Array<UIImage?>(repeating: nil, count: results.count)
             for (index, result) in results.enumerated() {
                 let provider = result.itemProvider
                 guard provider.canLoadObject(ofClass: UIImage.self) else { continue }
                 group.enter()
                 provider.loadObject(ofClass: UIImage.self) { object, _ in
+                    lock.lock()
                     images[index] = object as? UIImage
+                    lock.unlock()
                     group.leave()
                 }
             }
 
             group.notify(queue: .main) {
-                picker.dismiss(animated: true) {
-                    self.onPick(images.compactMap { $0 })
-                }
+                let count = images.compactMap { $0 }.count
+                ClientFlowEvents.shared.record("photo_import", count == results.count ? "completed" : "failed",
+                    reason: count == results.count ? "none" : "io", photoCount: count)
+                self.onPick(images.compactMap { $0 })
             }
         }
     }

@@ -10,8 +10,15 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,11 +36,17 @@ import com.riskdetectedan.core.data.analysis.AnalysisSectorPickerItem
 import com.riskdetectedan.core.data.profile.ProfileStats
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.data.profile.UserProfile
+import com.riskdetectedan.core.data.progress.ProfessionalProgressBadge
 import com.riskdetectedan.core.designsystem.RiskDetectedTheme
+import com.riskdetectedan.core.designsystem.RdPaywallDesignColor
+import com.riskdetectedan.core.designsystem.RdPaywallDesignGlyph
+import com.riskdetectedan.core.designsystem.RdPaywallDesignTag
+import com.riskdetectedan.core.designsystem.RdPaywallFeatureIcon
 import com.riskdetectedan.core.designsystem.RiskDetectedLightOnlyTheme
 import com.riskdetectedan.core.designsystem.LocalRdConfettiSnapshotElapsedMillis
 import com.riskdetectedan.app.home.SectorPickerSheet
 import com.riskdetectedan.app.home.PhotoTraySheet
+import com.riskdetectedan.app.home.HomeStartScanButton
 import com.riskdetectedan.app.reports.ExcelGenerationOverlayParityPreviewSurface
 import com.riskdetectedan.app.reports.GeneratedReportsParityPreviewSurface
 import com.riskdetectedan.app.reports.ReportSourceSheetParityPreviewSurface
@@ -43,7 +56,7 @@ import com.riskdetectedan.feature.onboarding.OBCertificateScreen
 import com.riskdetectedan.feature.onboarding.OBFrequencyScreen
 import com.riskdetectedan.feature.onboarding.OBHazardClassScreen
 import com.riskdetectedan.feature.onboarding.OBLoadingScreen
-import com.riskdetectedan.feature.onboarding.OBNotificationPermissionScreen
+import com.riskdetectedan.feature.onboarding.OBNotificationPermissionContent
 import com.riskdetectedan.feature.onboarding.OBPlanSummaryScreen
 import com.riskdetectedan.feature.onboarding.OBTrialInvitePreviewSurface
 import com.riskdetectedan.feature.onboarding.OBTimelinePaywallPreviewSurface
@@ -61,6 +74,7 @@ import com.riskdetectedan.feature.profile.AccountDeletionParityPreviewSurface
 import com.riskdetectedan.feature.profile.CompanyListParityPreviewSurface
 import com.riskdetectedan.feature.profile.ProfileParityPreviewSurface
 import com.riskdetectedan.feature.profile.ProfileLoadedSurface
+import com.riskdetectedan.feature.profile.ProfessionalProgressCelebrationSheet
 import com.riskdetectedan.feature.reports.ReportsParityPreviewSurface
 import org.junit.Rule
 import org.junit.Test
@@ -75,7 +89,7 @@ import org.robolectric.annotation.GraphicsMode
 @Config(
     application = Application::class,
     sdk = [35],
-    qualifiers = "w393dp-h852dp-xxhdpi",
+    qualifiers = "tr-rTR-w393dp-h852dp-xxhdpi",
 )
 class OnboardingGoldenTest {
 
@@ -84,6 +98,20 @@ class OnboardingGoldenTest {
 
     private val exactPixelOptions = RoborazziOptions(
         compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0f),
+    )
+
+    // The profile artwork contains translucent gradients whose native Skia result differs by a
+    // single channel value on Linux. This tightly bounded option is used by that capture only;
+    // the rest of the release golden suite stays exact-pixel.
+    private val crossPlatformGradientOptions = RoborazziOptions(
+        compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.000003f),
+    )
+
+    // ModalBottomSheet is rendered as a second window, so Roborazzi must capture the full screen.
+    // Native Skia differs on a few translucent avatar-edge pixels between macOS and Linux; this
+    // limit permits at most 0.005% changed pixels while still catching any visible UI regression.
+    private val comparisonSheetCrossPlatformOptions = RoborazziOptions(
+        compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.00005f),
     )
 
     @Test
@@ -161,6 +189,44 @@ class OnboardingGoldenTest {
     }
 
     @Test
+    fun sector_grid_font_scale_1_3_keeps_subtitles_visible() {
+        composeRule.setContent {
+            RiskDetectedTheme(darkTheme = false) {
+                val density = LocalDensity.current
+                CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 1.3f)) {
+                    OBSectorScreen(
+                        selected = emptyList(),
+                        onToggle = {},
+                        onNext = {},
+                        onBack = {},
+                    )
+                }
+            }
+        }
+
+        composeRule.onNodeWithText("Şantiye, yapı, hafriyat").assertIsDisplayed()
+        composeRule.onNodeWithText("Fabrika, atölye, üretim hattı").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun home_start_scan_button_has_both_ios_icons_light() {
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                Box(Modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
+                    HomeStartScanButton(onClick = {})
+                }
+            }
+        }
+
+        // The clickable button intentionally merges descendants for accessibility, so inspect
+        // the unmerged tree to guard the two decorative iOS-parity icons independently.
+        composeRule.onNodeWithTag("home_start_scan_sparkles", useUnmergedTree = true).assertIsDisplayed()
+        composeRule.onNodeWithTag("home_start_scan_action_icon", useUnmergedTree = true).assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
     fun frequency_selected_system_dark_stays_light() {
         composeRule.setContent {
             // Mirrors the app route: the outer app theme may be dark, but live iOS pins the
@@ -203,7 +269,10 @@ class OnboardingGoldenTest {
         composeRule.mainClock.autoAdvance = false
         composeRule.setContent {
             RiskDetectedLightOnlyTheme {
-                OBNotificationPermissionScreen(onContinue = {})
+                // The production layout, with only the persistence step stubbed: the screen
+                // itself resolves its recorder through Hilt, which no Robolectric compose
+                // host can provide.
+                OBNotificationPermissionContent(onContinue = {}, recordPermission = { _, _ -> })
             }
         }
 
@@ -234,6 +303,32 @@ class OnboardingGoldenTest {
     }
 
     @Test
+    fun professional_progress_celebration_is_compact_and_confetti_flows_light() {
+        composeRule.mainClock.autoAdvance = false
+        composeRule.setContent {
+            CompositionLocalProvider(LocalRdConfettiSnapshotElapsedMillis provides 1_800L) {
+                RiskDetectedLightOnlyTheme {
+                    ProfessionalProgressCelebrationSheet(
+                        badge = ProfessionalProgressBadge(
+                            id = "badge-1",
+                            badgeKey = "reports:1",
+                            badgeType = "reports",
+                            title = "İlk Adım",
+                            subtitle = "İlk raporunu oluşturdun. Mesleki takip izin başladı.",
+                            iconName = "medal.fill",
+                        ),
+                        onClose = {},
+                    )
+                }
+            }
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("İlk Adım").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
     fun onboarding_auth_provider_buttons_light() {
         composeRule.setContent { RiskDetectedLightOnlyTheme { AuthOnboardingPreviewSurface() } }
         composeRule.onNodeWithText("Google ile devam et").assertIsDisplayed()
@@ -253,7 +348,24 @@ class OnboardingGoldenTest {
     @Test
     fun onboarding_timeline_yearly_store_loaded_light() {
         composeRule.setContent { RiskDetectedLightOnlyTheme { OBTimelinePaywallPreviewSurface() } }
-        composeRule.onNodeWithText("7 Gün Ücretsiz Dene").assertIsDisplayed()
+        // Deneme metni yalnızca mağazadan gerçek bir teklif geldiğinde görünür.
+        composeRule.onNodeWithText("Ücretsiz Denemeyi Başlat").assertIsDisplayed()
+        composeRule.onNodeWithText("İş Güvenliğinde Güven").assertIsDisplayed()
+        composeRule.onNodeWithText("7 gün ücretsiz").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun onboarding_timeline_without_store_trial_shows_comparison_light() {
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                OBTimelinePaywallPreviewSurface(trialDays = null)
+            }
+        }
+        // Play bu hesap için deneme döndürmediğinde deneme vaadi gösterilmez.
+        composeRule.onNodeWithText("İş Güvenliğinde Güven").assertIsDisplayed()
+        composeRule.onNodeWithText("PLUS'a Geç").assertIsDisplayed()
+        assertEquals(0, composeRule.onAllNodesWithText("Ücretsiz Denemeyi Başlat").fetchSemanticsNodes().size)
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
 
@@ -344,12 +456,98 @@ class OnboardingGoldenTest {
                 PaywallParityPreviewSurface(
                     plan = PaywallPlan.Plus,
                     billing = PaywallBilling.Yearly,
-                    formattedPrice = "₺1.499,99",
+                    formattedPrice = "₺2.499,99",
+                    monthlyPrice = "₺249,99",
+                    monthlyEquivalent = "₺208,33",
+                    trialDays = 7,
+                    discountPercent = 17,
                 )
             }
         }
 
-        composeRule.onNodeWithText("PLUS").assertIsDisplayed()
+        // Gerçek bir Play teklifi verildiğinde PLUS yıllık ekranı mağaza koşullarını korur.
+        composeRule.onNodeWithText("İş Güvenliğinde Güven").assertIsDisplayed()
+        composeRule.onNodeWithText("Gerçek risk analizi").assertIsDisplayed()
+        composeRule.onNodeWithText("%17 İndirim").assertIsDisplayed()
+        composeRule.onNodeWithText("₺208,33 / Ay").assertIsDisplayed()
+        composeRule.onNodeWithText("Ücretsiz Denemeyi Başlat").assertIsDisplayed()
+        composeRule.onNodeWithText("Şu An Ödeme Alınmaz").assertIsDisplayed()
+        composeRule.onNodeWithText(
+            "7 gün ücretsiz, ardından ₺2.499,99 / yıl. İstediğin zaman iptal edebilirsin.",
+        ).assertIsDisplayed()
+        assertEquals(0, composeRule.onAllNodesWithText("Sınırsız özellikler").fetchSemanticsNodes().size)
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    @Config(
+        application = Application::class,
+        sdk = [35],
+        qualifiers = "en-rUS-w393dp-h852dp-xxhdpi",
+    )
+    fun paywall_uses_complete_english_resources() {
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                PaywallParityPreviewSurface(
+                    plan = PaywallPlan.Plus,
+                    billing = PaywallBilling.Yearly,
+                    formattedPrice = "\$119.99",
+                    monthlyEquivalent = "\$9.99",
+                    trialDays = 7,
+                    discountPercent = 17,
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Confidence in Workplace Safety").assertIsDisplayed()
+        composeRule.onNodeWithText("Real risk analysis").assertIsDisplayed()
+        composeRule.onNodeWithText("Start free trial").assertIsDisplayed()
+        composeRule.onNodeWithText("17% off").assertIsDisplayed()
+        assertEquals(
+            0,
+            composeRule.onAllNodesWithText("İş Güvenliğinde Güven").fetchSemanticsNodes().size,
+        )
+    }
+
+    /**
+     * Şerit etiketlerinin ikonları sürekli aktığı için paywall goldenlarında aynı anda
+     * yalnızca ilk üçü görünüyor. Bu kare on bir çizgisel ikonun tamamını sabit bir
+     * tabakta toplar; bir path bozulursa burada yakalanır.
+     */
+    @Test
+    fun paywall_feature_marquee_icons_light() {
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                Column(
+                    modifier = Modifier
+                        .background(RdPaywallDesignColor.Surface)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    RdPaywallDesignGlyph.entries.forEach { glyph ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RdPaywallFeatureIcon(
+                                glyph = glyph,
+                                size = 15.dp,
+                                color = RdPaywallDesignColor.Orange,
+                            )
+                            RdPaywallFeatureIcon(
+                                glyph = glyph,
+                                size = 30.dp,
+                                color = RdPaywallDesignColor.Green,
+                            )
+                            Text(glyph.name)
+                        }
+                    }
+                }
+            }
+        }
+
+        composeRule.onNodeWithText("Shield").assertIsDisplayed()
+        composeRule.onNodeWithText("Target").assertIsDisplayed()
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
 
@@ -360,12 +558,85 @@ class OnboardingGoldenTest {
                 PaywallParityPreviewSurface(
                     plan = PaywallPlan.Pro,
                     billing = PaywallBilling.Monthly,
-                    formattedPrice = "₺2.499,99",
+                    formattedPrice = "₺4.999,99",
+                    monthlyPrice = "₺499,99",
+                    monthlyEquivalent = "₺416,67",
+                    discountPercent = 17,
                 )
             }
         }
 
         composeRule.onNodeWithText("PRO").assertIsDisplayed()
+        composeRule.onNodeWithText("İş Güvenliğinde Hâkimiyet").assertIsDisplayed()
+        composeRule.onNodeWithText("Sınırsız özellikler").assertIsDisplayed()
+        composeRule.onNodeWithText("PRO'ya Geç").assertIsDisplayed()
+        composeRule.onNodeWithText("₺499,99 / ay · İstediğin zaman iptal edebilirsin.").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    fun paywall_comparison_sheet_dark() {
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                PaywallParityPreviewSurface(
+                    plan = PaywallPlan.Plus,
+                    billing = PaywallBilling.Monthly,
+                    formattedPrice = "₺249,99",
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag(RdPaywallDesignTag.Compare).performClick()
+        composeRule.onNodeWithTag(RdPaywallDesignTag.ComparisonTable).assertIsDisplayed()
+        composeRule.onNodeWithText("PDF/Excel Rapor").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = comparisonSheetCrossPlatformOptions)
+    }
+
+    @Test
+    @Config(
+        application = Application::class,
+        sdk = [35],
+        qualifiers = "tr-rTR-w384dp-h592dp-xhdpi",
+    )
+    fun paywall_plus_small_screen_large_text_dark() {
+        composeRule.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 1.3f)) {
+                RiskDetectedLightOnlyTheme {
+                    PaywallParityPreviewSurface(
+                        plan = PaywallPlan.Plus,
+                        billing = PaywallBilling.Yearly,
+                        formattedPrice = "₺1.499,99",
+                        monthlyEquivalent = "₺124,99",
+                        trialDays = 7,
+                        discountPercent = 17,
+                    )
+                }
+            }
+        }
+
+        composeRule.onNodeWithTag(RdPaywallDesignTag.Cta).assertIsDisplayed()
+        composeRule.onNodeWithTag(RdPaywallDesignTag.Close).assertIsDisplayed()
+        composeRule.onNodeWithText("İş Güvenliğinde Güven").assertIsDisplayed()
+        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+    }
+
+    @Test
+    @Config(
+        application = Application::class,
+        sdk = [35],
+        qualifiers = "tr-rTR-w384dp-h592dp-xhdpi",
+    )
+    fun pain_point_checks_completed_small_screen() {
+        composeRule.setContent {
+            RiskDetectedLightOnlyTheme {
+                OBPainPointScreen(
+                    onNext = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Devam").assertIsDisplayed()
         composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
     }
 
@@ -551,11 +822,11 @@ class OnboardingGoldenTest {
         assertEquals(1, analysesOpened)
         composeRule.onAllNodesWithText("Aday Uzman")[0].performClick()
         assertEquals(1, titlesOpened)
-        composeRule.onRoot().captureRoboImage(roborazziOptions = exactPixelOptions)
+        composeRule.onRoot().captureRoboImage(roborazziOptions = crossPlatformGradientOptions)
     }
 
     @Test
-    @Config(application = Application::class, sdk = [35], qualifiers = "w320dp-h640dp-xhdpi")
+    @Config(application = Application::class, sdk = [35], qualifiers = "tr-rTR-w320dp-h640dp-xhdpi")
     fun profile_small_font_scale_1_3_light() {
         composeRule.setContent {
             RiskDetectedTheme(darkTheme = false) {

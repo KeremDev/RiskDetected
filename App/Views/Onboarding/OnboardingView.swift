@@ -23,71 +23,75 @@ struct OnboardingView: View {
     ]
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                RDLogo(size: 18)
-                Spacer()
-                Button(RDLocalization.string("onboarding.onboarding.view.atla.e25539b1", table: .onboarding, fallback: "Atla")) { app.finishOnboarding() }
-                    .font(.system(size: RDFontScale.size(15), weight: .medium, design: .rounded))
-                    .foregroundStyle(Color.rdSlate)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-
-            Spacer(minLength: 0)
-
-            VStack(spacing: 36) {
-                OnboardingArt(kind: slides[step].art)
-                    .frame(height: 280)
-                    .id(step)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
-
-                VStack(spacing: 14) {
-                    Text(slides[step].title)
-                        .font(.system(size: RDFontScale.size(28), weight: .bold, design: .rounded))
-                        .tracking(-0.6)
-                        .foregroundStyle(Color.rdBlack)
-                        .multilineTextAlignment(.center)
-                    Text(slides[step].body)
-                        .font(.system(size: RDFontScale.size(16), design: .rounded))
+        RDAdaptiveContainer { profile in
+            VStack(spacing: 0) {
+                HStack {
+                    RDLogo(size: 18)
+                    Spacer()
+                    Button(RDLocalization.string("onboarding.onboarding.view.atla.e25539b1", table: .onboarding, fallback: "Atla")) { app.finishOnboarding() }
+                        .font(RDTypography.font(size: RDFontScale.size(15), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(2)
-                        .frame(maxWidth: 320)
+                        .frame(minWidth: 44, minHeight: 44)
                 }
-                .id("text\(step)")
-                .transition(.opacity)
-            }
-            .padding(.horizontal, 24)
-            .animation(.easeInOut(duration: 0.32), value: step)
+                .padding(.horizontal, profile.horizontalPadding)
 
-            Spacer(minLength: 0)
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: profile.isCompact ? 22 : 36) {
+                        OnboardingArt(kind: slides[step].art, size: profile.heightClass == .short ? 220 : 280)
+                            .id(step)
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
 
-            VStack(spacing: 22) {
-                HStack(spacing: 6) {
-                    ForEach(0..<slides.count, id: \.self) { i in
-                        Capsule()
-                            .fill(i == step ? Color.rdBlack : Color.rdLine)
-                            .frame(width: i == step ? 22 : 6, height: 6)
-                            .animation(.easeInOut(duration: 0.24), value: step)
+                        VStack(spacing: 14) {
+                            Text(slides[step].title)
+                                .font(RDTypography.font(size: RDFontScale.size(28), weight: .bold, design: .rounded))
+                                .tracking(-0.6)
+                                .foregroundStyle(Color.rdBlack)
+                                .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text(slides[step].body)
+                                .font(RDTypography.font(size: RDFontScale.size(16), design: .rounded))
+                                .foregroundStyle(Color.rdSlate)
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: 360)
+                        }
+                        .id("text\(step)")
+                        .transition(.opacity)
                     }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, profile.horizontalPadding)
+                    .padding(.vertical, profile.sectionSpacing)
+                    .animation(.easeInOut(duration: 0.32), value: step)
                 }
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    VStack(spacing: 16) {
+                        HStack(spacing: 6) {
+                            ForEach(0..<slides.count, id: \.self) { i in
+                                Capsule()
+                                    .fill(i == step ? Color.rdBlack : Color.rdLine)
+                                    .frame(width: i == step ? 22 : 6, height: 6)
+                                    .animation(.easeInOut(duration: 0.24), value: step)
+                            }
+                        }
 
-                RDButton(title: step == slides.count - 1 ? RDLocalization.string("onboarding.onboarding.view.baslayalim.b166d890", table: .onboarding, fallback: "Başlayalım") : RDLocalization.string("onboarding.onboarding.view.devam.a5bee993", table: .onboarding, fallback: "Devam"),
-                         style: .primary,
-                         trailingIcon: "arrow.right") {
-                    if step < slides.count - 1 {
-                        withAnimation { step += 1 }
-                    } else {
-                        app.finishOnboarding()
+                        RDButton(title: step == slides.count - 1 ? RDLocalization.string("onboarding.onboarding.view.baslayalim.b166d890", table: .onboarding, fallback: "Başlayalım") : RDLocalization.string("onboarding.onboarding.view.devam.a5bee993", table: .onboarding, fallback: "Devam"),
+                                 style: .primary,
+                                 trailingIcon: "arrow.right") {
+                            if step < slides.count - 1 {
+                                withAnimation { step += 1 }
+                            } else {
+                                app.finishOnboarding()
+                            }
+                        }
                     }
+                    .padding(.horizontal, profile.horizontalPadding)
+                    .padding(.vertical, 10)
+                    .background(Color.rdPaper)
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 28)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.rdPaper)
+        .background(Color.rdPaper.ignoresSafeArea())
     }
 }
 
@@ -101,6 +105,7 @@ enum OnboardingArtKind { case photo, canvas, method, risk, pdf }
 
 struct OnboardingArt: View {
     let kind: OnboardingArtKind
+    var size: CGFloat = 280
 
     var body: some View {
         ZStack {
@@ -116,7 +121,7 @@ struct OnboardingArt: View {
             case .pdf: pdfArt
             }
         }
-        .frame(width: 280, height: 280)
+        .frame(width: size, height: size)
     }
 
     @ViewBuilder
@@ -138,8 +143,8 @@ struct OnboardingArt: View {
 
             // detected badge
             HStack(spacing: 6) {
-                Image(systemName: "sparkles").font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded)).foregroundStyle(Color.rdGreen)
-                Text(RDLocalization.string("onboarding.onboarding.view.tehlike.tespit.edildi.7fe2db41", table: .onboarding, fallback: "Tehlike tespit edildi")).font(.system(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
+                Image(systemName: "sparkles").font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded)).foregroundStyle(Color.rdGreen)
+                Text(RDLocalization.string("onboarding.onboarding.view.tehlike.tespit.edildi.7fe2db41", table: .onboarding, fallback: "Tehlike tespit edildi")).font(RDTypography.font(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
             }
             .padding(.horizontal, 10).padding(.vertical, 6)
             .background(Color.white)
@@ -162,11 +167,11 @@ struct OnboardingArt: View {
                 let c = cards[i]
                 VStack(alignment: .leading) {
                     Image(systemName: c.icon)
-                        .font(.system(size: RDFontScale.size(20), design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(20), design: .rounded))
                         .foregroundStyle(c.color)
                     Spacer()
                     Text(c.title)
-                        .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 }
                 .padding(14)
                 .frame(height: 100)
@@ -186,12 +191,12 @@ struct OnboardingArt: View {
     private var methodArt: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(RDLocalization.string("onboarding.onboarding.view.risk.hesaplamasi.91234ce8", table: .onboarding, fallback: "RİSK HESAPLAMASI"))
-                .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(11), weight: .bold, design: .rounded))
                 .tracking(1)
                 .foregroundStyle(Color.rdSlate)
 
             methodRow(score: "1440", label: RDLocalization.string("onboarding.onboarding.view.f.kinney.7955a88b", table: .onboarding, fallback: "F-KINNEY"), scoreColor: Color.rdCritical,
-                      title: RDLocalization.string("onboarding.onboarding.view.fine.kinney.36094f7d", table: .onboarding, fallback: "İnce Kinney"), formula: RDLocalization.string("onboarding.onboarding.view.r.o.f.s.c031ebce", table: .onboarding, fallback: "R = O × F × Ş"),
+                      title: RDLocalization.string("onboarding.onboarding.view.fine.kinney.36094f7d", table: .onboarding, fallback: "Fine-Kinney"), formula: RDLocalization.string("onboarding.onboarding.view.r.o.f.s.c031ebce", table: .onboarding, fallback: "R = O × F × Ş"),
                       params: [("O", 6), ("F", 6), (RDLocalization.string("onboarding.onboarding.view.s.1a3e180d", table: .onboarding, fallback: "Ş"), 40)])
             methodRow(score: "20", label: RDLocalization.string("onboarding.onboarding.view.5.5.c56e30aa", table: .onboarding, fallback: "5×5"), scoreColor: Color.rdHigh,
                       title: RDLocalization.string("onboarding.onboarding.view.5.5.l.tipi.matris.3525cecd", table: .onboarding, fallback: "5×5 L-Tipi Matris"), formula: RDLocalization.string("onboarding.onboarding.view.r.o.s.0fc90694", table: .onboarding, fallback: "R = O × Ş"),
@@ -218,8 +223,8 @@ struct OnboardingArt: View {
                            params: [(String, Int)]) -> some View {
         HStack(spacing: 10) {
             VStack(spacing: 2) {
-                Text(score).font(.system(size: RDFontScale.size(16), weight: .heavy, design: .monospaced))
-                Text(label).font(.system(size: RDFontScale.size(7), weight: .bold, design: .rounded)).opacity(0.85)
+                Text(score).font(RDTypography.font(size: RDFontScale.size(16), weight: .heavy, design: .monospaced))
+                Text(label).font(RDTypography.font(size: RDFontScale.size(7), weight: .bold, design: .rounded)).opacity(0.85)
             }
             .frame(width: 48, height: 48)
             .background(scoreColor)
@@ -227,12 +232,12 @@ struct OnboardingArt: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
-                Text(formula).font(.system(size: RDFontScale.size(10), design: .monospaced)).foregroundStyle(Color.rdSlate)
+                Text(title).font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                Text(formula).font(RDTypography.font(size: RDFontScale.size(10), design: .monospaced)).foregroundStyle(Color.rdSlate)
                 HStack(spacing: 4) {
                     ForEach(0..<params.count, id: \.self) { i in
                         Text("\(params[i].0)·\(params[i].1)")
-                            .font(.system(size: RDFontScale.size(9), weight: .bold, design: .monospaced))
+                            .font(RDTypography.font(size: RDFontScale.size(9), weight: .bold, design: .monospaced))
                             .padding(.horizontal, 5).padding(.vertical, 2)
                             .background(Color.white)
                             .clipShape(RoundedRectangle(cornerRadius: 4))
@@ -255,14 +260,14 @@ struct OnboardingArt: View {
         ]
         VStack(alignment: .leading, spacing: 10) {
             Text(RDLocalization.string("onboarding.onboarding.view.tespit.edilen.riskler.2a8f4423", table: .onboarding, fallback: "TESPİT EDİLEN RİSKLER"))
-                .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
                 .tracking(1)
                 .foregroundStyle(Color.rdSlate)
             ForEach(0..<rows.count, id: \.self) { i in
                 HStack(spacing: 10) {
                     RDRiskDot(level: rows[i].level)
                     Text(rows[i].text)
-                        .font(.system(size: RDFontScale.size(14), weight: .medium, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(14), weight: .medium, design: .rounded))
                     Spacer()
                     RDChip(level: rows[i].level)
                 }
@@ -286,7 +291,7 @@ struct OnboardingArt: View {
                 HStack {
                     RDLogo(size: 11)
                     Spacer()
-                    Text(RDLocalization.string("onboarding.onboarding.view.rapor.2841.7db67f95", table: .onboarding, fallback: "Rapor #2841")).font(.system(size: RDFontScale.size(8), design: .rounded)).foregroundStyle(Color.rdSlate)
+                    Text(RDLocalization.string("onboarding.onboarding.view.rapor.2841.7db67f95", table: .onboarding, fallback: "Rapor #2841")).font(RDTypography.font(size: RDFontScale.size(8), design: .rounded)).foregroundStyle(Color.rdSlate)
                 }
                 Rectangle().fill(Color.rdFog).frame(height: 6).clipShape(Capsule())
                 Rectangle().fill(Color.rdFog).frame(width: 140, height: 4).clipShape(Capsule())
@@ -317,7 +322,7 @@ struct OnboardingArt: View {
                     .fill(Color.rdGreen)
                     .frame(width: 48, height: 48)
                     .shadow(color: Color.rdGreen.opacity(0.4), radius: 20, y: 8)
-                Image(systemName: "arrow.down.to.line").font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded)).foregroundStyle(.white)
+                Image(systemName: "arrow.down.to.line").font(RDTypography.font(size: RDFontScale.size(20), weight: .bold, design: .rounded)).foregroundStyle(.white)
             }
             .padding(.trailing, 30).padding(.bottom, 36)
         }

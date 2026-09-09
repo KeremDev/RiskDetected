@@ -161,7 +161,7 @@ private extension DateFormatter {
 }
 
 enum AppClientMetadata {
-    static let apiContractVersion = 2
+    static let apiContractVersion = 3
     static let platform = "ios"
 
     static var appVersion: String {
@@ -178,6 +178,9 @@ enum AppClientMetadata {
             "multi_photo_coverage_v2": true,
             "editable_findings": true,
             "report_snapshot_v2": true,
+            "safety_claim_v4_scoreless": true,
+            "analysis_result_hub_v1": true,
+            "training_reports_v1": true,
             "global_localization_wave1":
                 RDGlobalLocalizationBuildGate.isCompiledIn
         ]
@@ -243,6 +246,9 @@ final class AnalysisService {
         title: String? = nil,
         onProgress: (@MainActor (AnalysisProgressUpdate) -> Void)? = nil
     ) async throws -> AnalysisResultBundle {
+        var diagnosticStage = "analysis_validation"
+        ClientFlowEvents.shared.record(diagnosticStage, "started", photoCount: images.count)
+        do {
         guard !canvases.isEmpty else {
             throw AnalysisError.invalidInput(RDLocalization.string("analysis.analysis.service.en.az.bir.analiz.odagi.secmelisin.554e3daf", table: .analysis, fallback: "En az bir analiz odağı seçmelisin."))
         }
@@ -256,6 +262,8 @@ final class AnalysisService {
         // 1) Fotoğrafları analiz kaydı açılmadan önce hazırla.
         // Hazırlık başarısız olursa DB'de boş pending analiz bırakmayız.
         onProgress?(.preparingInput)
+        diagnosticStage = "analysis_prepare"
+        ClientFlowEvents.shared.record(diagnosticStage, "started", photoCount: images.count)
         let preparedPhotos = try await Self.makePreparedJPEGPhotos(from: images)
         let totalPayloadBytes = preparedPhotos.reduce(0) { $0 + $1.encodedByteCount }
         if totalPayloadBytes > Self.maxInlinePhotoPayloadBytes {
@@ -264,6 +272,8 @@ final class AnalysisService {
 
         // 2) Analyses kaydı (kind=photo, status=pending)
         onProgress?(.creatingAnalysis)
+        diagnosticStage = "analysis_create"
+        ClientFlowEvents.shared.record(diagnosticStage, "started", photoCount: images.count)
         let resolvedTitle = title ?? defaultTitle(for: canvases)
         let analysisID = try await createAnalysis(
             userID: userID,
@@ -290,6 +300,8 @@ final class AnalysisService {
         let requestID = UUID().uuidString
         let supportID = AppErrorMessage.newSupportID()
         var uploadedPhotoPaths: [String] = []
+        diagnosticStage = "analysis_upload"
+        ClientFlowEvents.shared.record(diagnosticStage, "started", photoCount: images.count)
         do {
             onProgress?(.uploadingPhotos)
             uploadedPhotoPaths = try await uploadPhotosForAnalysis(
@@ -315,6 +327,8 @@ final class AnalysisService {
         }
 
         onProgress?(.submitting)
+        diagnosticStage = "analysis_submit"
+        ClientFlowEvents.shared.record(diagnosticStage, "started", photoCount: images.count)
         do {
             try await invokeAnalyze(
                 analysisID: analysisID, canvases: canvases,
@@ -335,7 +349,10 @@ final class AnalysisService {
                 onProgress: onProgress
             )
             if queuedOrLater {
-                return try await waitForCompletedResult(analysisID: analysisID, photoCount: images.count, onProgress: onProgress)
+                diagnosticStage = "analysis_result"
+                let result = try await waitForCompletedResult(analysisID: analysisID, photoCount: images.count, onProgress: onProgress)
+                ClientFlowEvents.shared.record(diagnosticStage, "completed", photoCount: images.count)
+                return result
             }
             let markedFailed = await markAnalysisSubmissionFailedIfStillPending(
                 analysisID: analysisID,
@@ -356,7 +373,16 @@ final class AnalysisService {
         }
 
         // 4) Backend kuyruğa aldıktan sonra sonucu DB status ile izle.
-        return try await waitForCompletedResult(analysisID: analysisID, photoCount: images.count, onProgress: onProgress)
+        diagnosticStage = "analysis_result"
+        ClientFlowEvents.shared.record(diagnosticStage, "started", photoCount: images.count)
+        let result = try await waitForCompletedResult(analysisID: analysisID, photoCount: images.count, onProgress: onProgress)
+        ClientFlowEvents.shared.record(diagnosticStage, "completed", photoCount: images.count)
+        return result
+        } catch {
+            ClientFlowEvents.shared.record(diagnosticStage, error is CancellationError ? "cancelled" : "failed",
+                reason: (error as? URLError) != nil ? "network" : "unknown", photoCount: images.count)
+            throw error
+        }
     }
 
     /// Geçmiş analizleri listeler.
@@ -694,6 +720,7 @@ final class AnalysisService {
         method: RiskMethod,
         language: RDLanguage = .turkish,
         companyID: UUID? = nil,
+        exportIntentID: UUID? = nil,
         requestID: String,
         supportID: String
     ) async throws -> ReportRow {
@@ -703,6 +730,7 @@ final class AnalysisService {
             let report_kind: String
             let report_language: String
             let company_id: String?
+            let export_intent_id: String?
             let client_app_version: String
             let client_app_build: String
             let client_platform: String
@@ -730,6 +758,7 @@ final class AnalysisService {
             report_kind: PDFReportKind.riskAnalysis.rawValue,
             report_language: language.rawValue,
             company_id: companyID?.uuidString,
+            export_intent_id: exportIntentID?.uuidString,
             client_app_version: Self.clientAppVersion,
             client_app_build: AppClientMetadata.appBuild,
             client_platform: AppClientMetadata.platform,
@@ -744,6 +773,7 @@ final class AnalysisService {
                 RDConfig.generateExcelReportFunctionName,
                 options: FunctionInvokeOptions(body: body)
             )
+            MetaAppEventsService.shared.reportCreated(id: response.report.id, format: "xlsx")
             return response.report
         } catch let FunctionsError.httpError(code, data) {
             let payload = Self.functionErrorPayload(from: data)
@@ -766,6 +796,9 @@ final class AnalysisService {
         kind: PDFReportKind,
         method: RiskMethod,
         company: Company? = nil,
+        exportIntentID: UUID? = nil,
+        contentScope: AnalysisResultSectionID? = nil,
+        selectedItemKeys: [UUID] = [],
         requestID: String,
         supportID: String
     ) async throws -> ReportRow {
@@ -866,11 +899,14 @@ final class AnalysisService {
             let client_capabilities: [String: Bool]
             let request_id: String
             let support_id: String
+            let export_intent_id: String?
+            let content_scope: String?
+            let selected_item_keys: [String]
         }
 
         let fileSize = data.count
         let payload = RegisterReportPayload(
-            analysis_id: bundle.analysis.id.uuidString,
+            analysis_id: bundle.analysis.id.uuidString.lowercased(),
             kind: kind.rawValue,
             method: Self.databaseReportMethodValue(method),
             report_language: bundle.analysis.resolvedOutputLanguage.rawValue,
@@ -894,7 +930,10 @@ final class AnalysisService {
             api_contract_version: AppClientMetadata.apiContractVersion,
             client_capabilities: AppClientMetadata.capabilities,
             request_id: requestID,
-            support_id: supportID
+            support_id: supportID,
+            export_intent_id: exportIntentID?.uuidString.lowercased(),
+            content_scope: contentScope?.rawValue,
+            selected_item_keys: selectedItemKeys.map { $0.uuidString.lowercased() }
         )
 
         if ReportFailureSimulation.isEnabled(.metadataInsert) {
@@ -904,11 +943,25 @@ final class AnalysisService {
         }
 
         do {
-            let row: ReportRow = try await supabase.functions.invoke(
-                RDConfig.registerReportFunctionName,
-                options: FunctionInvokeOptions(body: payload)
-            )
-            return row
+            let maxMetadataAttempts = 3
+            var lastMetadataError: Error?
+            for attempt in 1...maxMetadataAttempts {
+                do {
+                    let row: ReportRow = try await supabase.functions.invoke(
+                        RDConfig.registerReportFunctionName,
+                        options: FunctionInvokeOptions(body: payload)
+                    )
+                    MetaAppEventsService.shared.reportCreated(id: row.id, format: "pdf")
+                    return row
+                } catch {
+                    lastMetadataError = error
+                    let canRetry = attempt < maxMetadataAttempts && Self.isTransientReportMetadataError(error)
+                    Self.logger.warning("Report metadata attempt failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) attempt=\(attempt) retry=\(canRetry, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+                    guard canRetry else { throw error }
+                    try? await Task.sleep(nanoseconds: UInt64(attempt) * 650_000_000)
+                }
+            }
+            throw lastMetadataError ?? AnalysisError.databaseFailed("report_metadata_retry_failed")
         } catch let FunctionsError.httpError(_, data) {
             let payload = Self.functionErrorPayload(from: data)
             let remoteSupportID = payload.supportID ?? supportID
@@ -992,12 +1045,43 @@ final class AnalysisService {
             lower.contains("504")
     }
 
+    private static func isTransientReportMetadataError(_ error: Error) -> Bool {
+        if let functionsError = error as? FunctionsError {
+            switch functionsError {
+            case .relayError:
+                return true
+            case let .httpError(code, data):
+                if code == 429 {
+                    let payload = functionErrorPayload(from: data)
+                    let message = "\(payload.code ?? "") \(payload.message)"
+                    return !AppErrorMessage.isReportQuotaExceeded(message) &&
+                        !AppErrorMessage.isFreeRiskAnalysisTrialExhausted(message)
+                }
+                return code == 408 || code == 425 || (500...599).contains(code)
+            }
+        }
+        return isTransientReportUploadError(error)
+    }
+
     /// Storage'daki PDF raporu indirir ve geçici dosya URL'i döndürür.
-    func reportFileURL(for report: ReportRow, requestID: String, supportID: String) async throws -> URL {
+    func reportFileURL(
+        for report: ReportRow,
+        requestID: String,
+        supportID: String,
+        source: ReportActivitySource = .unknown
+    ) async throws -> URL {
         let data: Data
         if ReportFailureSimulation.isEnabled(.download) {
             let error = ReportFailureSimulation.simulatedError(.download)
             Self.logger.error("Report download simulation support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            await ReportActivityService.shared.recordDownload(
+                reportID: report.id,
+                succeeded: false,
+                source: source,
+                requestID: requestID,
+                supportID: supportID,
+                failureStage: "simulation"
+            )
             throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.pdf.raporu.indirilemedi.destek.kodu.1.3ab369c0", table: .analysis, fallback: "PDF raporu indirilemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
 
@@ -1007,6 +1091,14 @@ final class AnalysisService {
                 .download(path: report.storagePath)
         } catch {
             Self.logger.error("Report download failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            await ReportActivityService.shared.recordDownload(
+                reportID: report.id,
+                succeeded: false,
+                source: source,
+                requestID: requestID,
+                supportID: supportID,
+                failureStage: "storage_download"
+            )
             throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.pdf.raporu.indirilemedi.destek.kodu.1.3ab369c0", table: .analysis, fallback: "PDF raporu indirilemedi. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
 
@@ -1014,9 +1106,24 @@ final class AnalysisService {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(safeName)
         do {
             try data.write(to: url, options: .atomic)
+            await ReportActivityService.shared.recordDownload(
+                reportID: report.id,
+                succeeded: true,
+                source: source,
+                requestID: requestID,
+                supportID: supportID
+            )
             return url
         } catch {
             Self.logger.error("Report local file write failed support=\(supportID, privacy: .public) request=\(requestID, privacy: .public) report=\(report.id.uuidString, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
+            await ReportActivityService.shared.recordDownload(
+                reportID: report.id,
+                succeeded: false,
+                source: source,
+                requestID: requestID,
+                supportID: supportID,
+                failureStage: "local_file_write"
+            )
             throw AnalysisError.storageFailed(RDLocalization.format("analysis.analysis.service.pdf.dosyasi.paylasim.icin.hazirlanamadi.destek.k.90ef78f6", table: .analysis, fallback: "PDF dosyası paylaşım için hazırlanamadı. Destek kodu: %1$@", arguments: [String(describing: supportID)]))
         }
     }
@@ -2319,6 +2426,15 @@ final class AnalysisService {
                     statusSnapshot: snapshot
                 )
                 InFlightAnalysisStore.shared.clear(analysisID: analysisID)
+                MetaAppEventsService.shared.analysisCompleted(id: analysisID)
+                if let userID = supabase.currentUserID {
+                    Task { [weak self] in
+                        guard let self,
+                              let count = try? await self.countRows(table: "analyses", filters: { $0.eq("status", value: "completed") }),
+                              count == 1, self.supabase.currentUserID == userID else { return }
+                        MetaAppEventsService.shared.firstAnalysis(userID: userID)
+                    }
+                }
                 return bundle
             case "failed":
                 InFlightAnalysisStore.shared.clear(analysisID: analysisID)
@@ -2671,7 +2787,7 @@ final class AnalysisService {
             marker.stroke()
 
             let attributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.monospacedSystemFont(ofSize: 28, weight: .bold),
+                .font: RDTypography.uiFont(size: 28, weight: .bold),
                 .foregroundColor: UIColor.white
             ]
             NSString(string: "UI TEST FOTOĞRAF \(seed + 1)").draw(
@@ -3261,14 +3377,14 @@ struct FindingRow: Codable, Identifiable, Equatable {
     let rootCauseText: String?
     var needsFieldVerification: Bool? = nil
     let confidence: Double
-    let fkProbability: Double
-    let fkFrequency: Double
-    let fkSeverity: Double
-    let fkScore: Double
+    let fkProbability: Double?
+    let fkFrequency: Double?
+    let fkSeverity: Double?
+    let fkScore: Double?
     let fkBand: String
-    let m5Probability: Int
-    let m5Severity: Int
-    let m5Score: Int
+    let m5Probability: Int?
+    let m5Severity: Int?
+    let m5Score: Int?
     let m5Band: String
     var origin: String? = nil
     var sourcePhotoIndices: [Int]? = nil
@@ -3277,6 +3393,8 @@ struct FindingRow: Codable, Identifiable, Equatable {
     var userEditCount: Int? = nil
     var findingVersion: Int? = nil
     var displayOrder: Int? = nil
+    var itemClass: String? = nil
+    var isScored: Bool? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -3307,6 +3425,8 @@ struct FindingRow: Codable, Identifiable, Equatable {
         case userEditCount = "user_edit_count"
         case findingVersion = "finding_version"
         case displayOrder = "display_order"
+        case itemClass = "item_class"
+        case isScored = "is_scored"
     }
 
     /// FindingRow → UI tarafının Finding modeline projeksiyon.
@@ -3322,14 +3442,15 @@ struct FindingRow: Codable, Identifiable, Equatable {
             references: referencesText ?? "",
             rootCause: rootCauseText ?? "",
             needsFieldVerification: needsFieldVerification == true,
+            isScored: isScored != false,
             fk: FineKinneyParams(
-                probability: fkProbability,
-                frequency: fkFrequency,
-                severity: fkSeverity
+                probability: fkProbability ?? 0.2,
+                frequency: fkFrequency ?? 0.5,
+                severity: fkSeverity ?? 1
             ),
             m5: FiveByFiveParams(
-                probability: m5Probability,
-                severity: m5Severity
+                probability: m5Probability ?? 1,
+                severity: m5Severity ?? 1
             )
         )
     }

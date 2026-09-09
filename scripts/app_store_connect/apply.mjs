@@ -37,7 +37,7 @@ const protectedBaselinePath = resolve(
 );
 const evidencePath = resolve(
   ROOT,
-  ".asc/evidence/apply-1.3.0-result.json",
+  `.asc/evidence/apply-${VERSION}-result.json`,
 );
 
 function localeRows(versionID) {
@@ -300,19 +300,20 @@ function uploadScreenshots(versionID, operations) {
     if (!localization) {
       throw new Error(`Version localization is missing for ${locale}.`);
     }
-    runAsc([
-      "screenshots",
-      "upload",
-      "--version-localization",
-      localization.id,
-      "--path",
-      files.directory,
-      "--device-type",
-      "IPHONE_69",
-      "--max-screenshots",
-      String(APP_CONFIG.screenshots.slides_per_locale),
-      "--replace",
-    ]);
+    files.files.forEach((file, index) => {
+      const args = [
+        "screenshots",
+        "upload",
+        "--version-localization",
+        localization.id,
+        "--path",
+        file,
+        "--device-type",
+        "IPHONE_69",
+      ];
+      if (index === 0) args.push("--replace");
+      runAsc(args);
+    });
     operations.push({
       operation: "replace_english_screenshot_set",
       locale,
@@ -326,7 +327,9 @@ assertReleaseCannotRun();
 requireFlag("ASC_ALLOW_MUTATIONS");
 assertLocalePolicy();
 if (process.env.ASC_ALLOW_BUILD_UPLOAD === "1") {
-  throw new Error("Build upload is unnecessary: build 78 already exists.");
+  throw new Error(
+    `Build upload is unnecessary: build ${APP_CONFIG.release.build_number} already exists.`,
+  );
 }
 
 const configs = localeConfigs();
@@ -374,12 +377,12 @@ if (!candidate) {
     "--copyright",
     APP_CONFIG.release.copyright,
     "--release-type",
-    "MANUAL",
+    APP_CONFIG.release.release_type,
   ]);
   operations.push({
     operation: "create_version",
     version: VERSION,
-    release_type: "MANUAL",
+    release_type: APP_CONFIG.release.release_type,
   });
   versionsResponse = runAsc([
     "versions",
@@ -404,11 +407,12 @@ runAsc([
   "--copyright",
   APP_CONFIG.release.copyright,
   "--release-type",
-  "MANUAL",
+  APP_CONFIG.release.release_type,
 ]);
 operations.push({
-  operation: "enforce_manual_release",
+  operation: "enforce_release_type",
   version_id: candidate.id,
+  release_type: APP_CONFIG.release.release_type,
 });
 
 const protectedAfterVersionCreate = captureProtectedState();
@@ -470,7 +474,7 @@ writeJSON(evidencePath, {
   version: VERSION,
   version_id: candidate.id,
   build_id: BUILD_ID,
-  release_type: "MANUAL",
+  release_type: APP_CONFIG.release.release_type,
   review_submission_performed: false,
   release_performed: false,
   protected_locales: APP_CONFIG.protected_locales,

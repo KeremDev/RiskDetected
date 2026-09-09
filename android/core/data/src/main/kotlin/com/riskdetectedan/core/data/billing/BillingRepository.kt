@@ -2,6 +2,8 @@ package com.riskdetectedan.core.data.billing
 
 import android.app.Activity
 import android.content.Context
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import com.riskdetectedan.core.common.RdEnvironment
 import com.riskdetectedan.core.common.RdEnvironmentConfig
 import com.riskdetectedan.core.common.RdClientMetadata
@@ -27,6 +29,9 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.functions.functions
 import io.ktor.client.call.body
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
+import com.riskdetectedan.core.data.telemetry.ClientFlowEvents
+import com.riskdetectedan.core.data.telemetry.MetaAppEventsService
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerialName
@@ -116,10 +121,13 @@ class BillingRepository @Inject constructor(
     private val environmentConfig: RdEnvironmentConfig,
     private val installAttributionRepository: InstallAttributionRepository,
     private val supabaseClient: SupabaseClient,
+    private val flowEvents: ClientFlowEvents,
+    private val metaAppEvents: MetaAppEventsService,
 ) {
     private var isConfigured = false
     private var currentAppUserId: String? = null
     private val backendSyncMutex = Mutex()
+    private val launchGuard = BillingLaunchGuard()
 
     /** Idempotent, same shape as `configureIfNeeded(appUserID:)` — configures once per process
      * with the signed-in user's id as the RevenueCat appUserID, or logs in if a different user
@@ -153,6 +161,7 @@ class BillingRepository @Inject constructor(
             installAttributionRepository.applyToRevenueCatIfConfigured()
             RdResult.Success(Unit)
         } catch (t: Throwable) {
+            if (t is CancellationException) throw t
             RdResult.Failure("billing_login_failed", t.message ?: "billing_login_failed", t)
         }
     }
@@ -182,6 +191,7 @@ class BillingRepository @Inject constructor(
         }
         RdResult.Success(packages)
     } catch (t: Throwable) {
+        if (t is CancellationException) throw t
         RdResult.Failure("billing_offerings_failed", t.message ?: "billing_offerings_failed", t)
     }
 
@@ -189,7 +199,16 @@ class BillingRepository @Inject constructor(
      * Play's billing sheet) — this is the one billing call that can't stay Activity-free, same
      * reasoning as `GoogleAuthClient.requestIdToken(context)` in feature:onboarding: the
      * Activity is supplied by the caller at the point of use, not held or injected here. */
-    suspend fun purchase(activity: Activity, billingPackage: BillingPackage): RdResult<SubscriptionTier> = try {
+    suspend fun purchase(activity: Activity, billingPackage: BillingPackage): RdResult<SubscriptionTier> {
+        if (!launchGuard.acquire()) {
+            flowEvents.record("billing_launch", "blocked", "already_running")
+            return RdResult.Failure("billing_already_running", "Satın alma zaten devam ediyor.")
+        }
+        return try { purchaseExclusively(activity, billingPackage) }
+        finally { launchGuard.release() }
+    }
+
+    private suspend fun purchaseExclusively(activity: Activity, billingPackage: BillingPackage): RdResult<SubscriptionTier> = try {
         val customerInfo = runCatching {
             Purchases.sharedInstance.awaitCustomerInfo(CacheFetchPolicy.FETCH_CURRENT)
         }.getOrNull()
@@ -208,7 +227,18 @@ class BillingRepository @Inject constructor(
                 .oldProductId(oldProductId)
                 .replacementMode(replacementModeFor(currentState.tier, billingPackage.tier))
         }
+        // Recheck AFTER suspending for customer info. A dismissed Activity must not launch Play.
+        // Compose dialogs own window focus while the host remains RESUMED; checking window
+        // focus here would incorrectly block purchases from a bottom-sheet paywall.
+        val resumed = (activity as? LifecycleOwner)?.lifecycle?.currentState
+            ?.isAtLeast(Lifecycle.State.RESUMED) ?: true
+        if (!canLaunchBilling(activity.isFinishing, activity.isDestroyed, resumed)) {
+            flowEvents.record("billing_launch", "blocked", "activity_inactive")
+            return RdResult.Failure("billing_activity_inactive", "Satın alma ekranını yeniden açıp tekrar deneyin.")
+        }
+        flowEvents.record("billing_launch", "started")
         val result = Purchases.sharedInstance.awaitPurchase(purchaseBuilder.build())
+        flowEvents.record("billing_result", "completed")
         val tier = tierFromCustomerInfo(result.customerInfo)
         validateReceiptOwner(result.customerInfo, tier)?.let { return it }
         if (tier != billingPackage.tier) {
@@ -217,8 +247,30 @@ class BillingRepository @Inject constructor(
                 message = "Seçilen plan ile Google Play tarafından doğrulanan plan eşleşmedi.",
             )
         }
-        syncBackendSubscriptionWithRetry(tier)
+        val backendSync = syncBackendSubscriptionWithRetry(tier)
+        if (backendSync is RdResult.Success) {
+            // Only a newly completed, owner-validated Play transaction that the backend also
+            // recognizes is a subscription conversion. Restore/already-entitled/error/cancel
+            // paths never reach this boundary.
+            val transactionId = result.storeTransaction.orderId
+                ?: result.storeTransaction.purchaseToken
+            metaAppEvents.purchase(
+                transactionId = transactionId,
+                productId = billingPackage.productId,
+                isTrial = billingPackage.freeTrialPeriodIso8601 != null,
+                price = billingPackage.priceAmountMicros?.div(1_000_000.0),
+                currency = billingPackage.currencyCode,
+            )
+        }
+        backendSync
     } catch (t: Throwable) {
+        if (t is CancellationException) throw t
+        val kind = PurchaseErrorClassifier.classify(t).kind
+        flowEvents.record("billing_result", when (kind) {
+            PurchaseErrorKind.Cancelled -> "cancelled"
+            PurchaseErrorKind.PaymentPending -> "pending"
+            else -> "failed"
+        }, if (kind == PurchaseErrorKind.Network) "network" else "store")
         RdResult.Failure("billing_purchase_failed", t.message ?: "billing_purchase_failed", t)
     }
 
@@ -270,6 +322,7 @@ class BillingRepository @Inject constructor(
             syncBackendSubscriptionWithRetry(tier)
         }
     } catch (t: Throwable) {
+        if (t is CancellationException) throw t
         RdResult.Failure("billing_restore_failed", t.message ?: "billing_restore_failed", t)
     }
 
@@ -278,12 +331,14 @@ class BillingRepository @Inject constructor(
         val tier = tierFromCustomerInfo(customerInfo)
         validateReceiptOwner(customerInfo, tier) ?: RdResult.Success(tier)
     } catch (t: Throwable) {
+        if (t is CancellationException) throw t
         RdResult.Failure("billing_customer_info_failed", t.message ?: "billing_customer_info_failed", t)
     }
 
     suspend fun currentSubscriptionState(): RdResult<BillingSubscriptionState> = try {
         RdResult.Success(subscriptionStateFromCustomerInfo(Purchases.sharedInstance.awaitCustomerInfo()))
     } catch (t: Throwable) {
+        if (t is CancellationException) throw t
         RdResult.Failure("billing_customer_info_failed", t.message ?: "billing_customer_info_failed", t)
     }
 
@@ -303,6 +358,7 @@ class BillingRepository @Inject constructor(
         }
         RdResult.Success(Unit)
     } catch (t: Throwable) {
+        if (t is CancellationException) throw t
         RdResult.Failure(
             code = "billing_backend_reconcile_failed",
             message = t.message ?: "billing_backend_reconcile_failed",
@@ -349,6 +405,7 @@ class BillingRepository @Inject constructor(
         }
         validateBackendSubscriptionTier(expectedTier, response.tier)
     } catch (t: Throwable) {
+        if (t is CancellationException) throw t
         val rawMessage = t.message ?: "Abonelik backend tarafında doğrulanamadı."
         val isTierMismatch = rawMessage.contains("revenuecat_tier_mismatch", ignoreCase = true) ||
             rawMessage.contains("backend_tier_mismatch", ignoreCase = true)
@@ -368,6 +425,7 @@ class BillingRepository @Inject constructor(
             currentAppUserId = null
             RdResult.Success(Unit)
         } catch (t: Throwable) {
+            if (t is CancellationException) throw t
             RdResult.Failure("billing_logout_failed", t.message ?: "billing_logout_failed", t)
         }
     }

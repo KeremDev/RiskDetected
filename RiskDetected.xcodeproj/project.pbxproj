@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1000001000000000000E001 /* FacebookCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1000001000000000000E101 /* FacebookCore */; };
 		A1000001000000000000B001 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = A1000001000000000000B101 /* Supabase */; };
 		A1000001000000000000B002 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = A1000001000000000000B102 /* GoogleSignIn */; };
 		A1000001000000000000B003 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = A1000001000000000000B103 /* RevenueCat */; };
@@ -64,6 +65,7 @@
 				A1000001000000000000B002 /* GoogleSignIn in Frameworks */,
 				A1000001000000000000B003 /* RevenueCat in Frameworks */,
 				A1000001000000000000B004 /* RevenueCatUI in Frameworks */,
+				A1000001000000000000E001 /* FacebookCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -131,6 +133,7 @@
 				A1000001000000000000B102 /* GoogleSignIn */,
 				A1000001000000000000B103 /* RevenueCat */,
 				A1000001000000000000B104 /* RevenueCatUI */,
+				A1000001000000000000E101 /* FacebookCore */,
 			);
 			productName = RiskDetected;
 			productReference = A1000001000000000000A200 /* RiskDetected.app */;
@@ -227,6 +230,7 @@
 				A1000001000000000000B202 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				A1000001000000000000B203 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
 				A1000001000000000000B204 /* XCRemoteSwiftPackageReference "SnapshotPreviews" */,
+				A1000001000000000000E201 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A1000001000000000000A002 /* Products */;
@@ -283,6 +287,8 @@
 				"$(SRCROOT)/App/Assets.xcassets/Hardhat.imageset",
 				"$(SRCROOT)/App/Assets.xcassets/OBSplashPreview.imageset",
 				"$(SRCROOT)/App/Assets.xcassets/OBSplashSafetyPattern.imageset",
+				"$(SRCROOT)/App/Assets.xcassets/PaywallHeroFace.imageset",
+				"$(SRCROOT)/App/Assets.xcassets/PaywallSocialProof.imageset",
 				"$(SRCROOT)/App/Assets.xcassets/RDLogo.imageset",
 				"$(SRCROOT)/App/Assets.xcassets/SplashBg.imageset",
 				"$(SRCROOT)/App/Assets.xcassets/TrialPreview.imageset",
@@ -315,14 +321,15 @@
 				"$(SRCROOT)/App/Views/Onboarding/V2/Components",
 				"$(SRCROOT)/App/Views/Onboarding/V2/Screens",
 				"$(SRCROOT)/App/Views/Paywall",
+				"$(SRCROOT)/App/Views/Paywall/Design",
 				"$(SRCROOT)/App/Views/Profile",
 				"$(SRCROOT)/App/Views/Report",
 				"$(SRCROOT)/App/Views/Result",
 				"$(SRCROOT)/Config",
 				"$(SRCROOT)/Legal",
 				"$(SRCROOT)/Legal/tr",
-				"$(SRCROOT)/RiskDetectedUITests",
 				"$(SRCROOT)/RiskDetected.xcodeproj/project.pbxproj",
+				"$(SRCROOT)/RiskDetectedUITests",
 				"$(SRCROOT)/docs/localization/baseline/ASC_DISCOVERY_RAW_2026-07-28.json",
 				"$(SRCROOT)/localization",
 				"$(SRCROOT)/localization/generated",
@@ -335,15 +342,18 @@
 				"$(SRCROOT)/supabase/functions/_shared/generated",
 				"$(SRCROOT)/supabase/functions/_shared/localization",
 				"$(SRCROOT)/supabase/functions/account-deletion-complete",
+				"$(SRCROOT)/supabase/functions/analysis-result-sections",
 				"$(SRCROOT)/supabase/functions/analyze",
+				"$(SRCROOT)/supabase/functions/analyze-v4",
+				"$(SRCROOT)/supabase/functions/analyze-vnext",
 				"$(SRCROOT)/supabase/functions/app-release-policy",
 				"$(SRCROOT)/supabase/functions/auth-send-email-hook",
 				"$(SRCROOT)/supabase/functions/firebase-phone-bridge",
 				"$(SRCROOT)/supabase/functions/generate-excel-report",
 				"$(SRCROOT)/supabase/functions/manage-notification-automation",
 				"$(SRCROOT)/supabase/functions/mutate-analysis-finding",
-				"$(SRCROOT)/supabase/functions/process-analysis-jobs",
 				"$(SRCROOT)/supabase/functions/process-account-deletion-queue",
+				"$(SRCROOT)/supabase/functions/process-analysis-jobs",
 				"$(SRCROOT)/supabase/functions/process-notification-automation",
 				"$(SRCROOT)/supabase/functions/register-report",
 				"$(SRCROOT)/supabase/functions/request-account-deletion",
@@ -354,6 +364,7 @@
 				"$(SRCROOT)/supabase/functions/send-trial-reminder-notifications",
 				"$(SRCROOT)/supabase/functions/send-welcome-email",
 				"$(SRCROOT)/supabase/functions/support-contact",
+				"$(SRCROOT)/supabase/functions/sync-revenuecat-attribution",
 				"$(SRCROOT)/supabase/functions/sync-revenuecat-subscription",
 			);
 			name = "Localization release gate";
@@ -463,7 +474,7 @@
 				DEVELOPMENT_TEAM = 68CU98HAY3;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -530,7 +541,7 @@
 				DEVELOPMENT_TEAM = 68CU98HAY3;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -559,7 +570,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = App/RiskDetected.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 82;
+				CURRENT_PROJECT_VERSION = 91;
 				DEVELOPMENT_ASSET_PATHS = "\"App/Preview Content\"";
 				DEVELOPMENT_TEAM = 68CU98HAY3;
 				ENABLE_PREVIEWS = YES;
@@ -573,13 +584,13 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3.2;
+				MARKETING_VERSION = 2.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.riskdetected.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -597,7 +608,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = App/RiskDetected.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 82;
+				CURRENT_PROJECT_VERSION = 91;
 				DEVELOPMENT_ASSET_PATHS = "\"App/Preview Content\"";
 				DEVELOPMENT_TEAM = 68CU98HAY3;
 				ENABLE_PREVIEWS = YES;
@@ -611,13 +622,13 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3.2;
+				MARKETING_VERSION = 2.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.riskdetected.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RISKDETECTED_REVENUECAT_API_KEY = appl_mckFFxUrvtNqzjShezjMIrFmItA;
@@ -780,6 +791,11 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		A1000001000000000000E201 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/facebook/facebook-ios-sdk.git";
+			requirement = { kind = exactVersion; version = 18.1.1; };
+		};
 		A1000001000000000000B201 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase/supabase-swift.git";
@@ -815,6 +831,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		A1000001000000000000E101 /* FacebookCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1000001000000000000E201;
+			productName = FacebookCore;
+		};
 		A1000001000000000000B101 /* Supabase */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A1000001000000000000B201 /* XCRemoteSwiftPackageReference "supabase-swift" */;

@@ -92,7 +92,7 @@ struct SupportContactSheet: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
                 Image(systemName: "headphones")
-                    .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdGreen)
                     .frame(width: 48, height: 48)
                     .background(Color.rdGreenSoft)
@@ -100,10 +100,10 @@ struct SupportContactSheet: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(RDLocalization.string("localizable.support.contact.sheet.riskdetected.destek.e11a7270", table: .localizable, fallback: "RiskDetected destek"))
-                        .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(RDLocalization.string("localizable.support.contact.sheet.konu.mesaj.ve.gerekirse.ekran.goruntusu.ekleyere.4dd76367", table: .localizable, fallback: "Konu, mesaj ve gerekirse ekran görüntüsü ekleyerek bize ulaş."))
-                        .font(.system(size: RDFontScale.size(13), design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(13), design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -140,7 +140,7 @@ struct SupportContactSheet: View {
             sectionLabel(RDLocalization.string("localizable.support.contact.sheet.talep.e2063e6f", table: .localizable, fallback: "Talep"))
             VStack(alignment: .leading, spacing: 7) {
                 Text(RDLocalization.string("localizable.support.contact.sheet.konu.ed0d8962", table: .localizable, fallback: "Konu"))
-                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 TextField(RDLocalization.string("localizable.support.contact.sheet.kisa.bir.konu.yaz.765f1671", table: .localizable, fallback: "Kısa bir konu yaz"), text: $subject)
                     .textInputAutocapitalization(.sentences)
@@ -154,7 +154,7 @@ struct SupportContactSheet: View {
 
             VStack(alignment: .leading, spacing: 7) {
                 Text(RDLocalization.string("localizable.support.contact.sheet.mesaj.35edbcb6", table: .localizable, fallback: "Mesaj"))
-                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 TextEditor(text: $message)
                     .focused($focusedField, equals: .message)
@@ -166,7 +166,7 @@ struct SupportContactSheet: View {
                     .overlay(alignment: .topLeading) {
                         if message.isEmpty {
                             Text(RDLocalization.string("localizable.support.contact.sheet.sorunu.istegini.veya.gordugun.ekrani.anlat.93c57b7b", table: .localizable, fallback: "Sorunu, isteğini veya gördüğün ekranı anlat..."))
-                                .font(.system(size: RDFontScale.size(15), design: .rounded))
+                                .font(RDTypography.font(size: RDFontScale.size(15), design: .rounded))
                                 .foregroundStyle(Color.rdSlate.opacity(0.72))
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 18)
@@ -193,7 +193,7 @@ struct SupportContactSheet: View {
 
             if attachments.count >= 3 {
                 Text(RDLocalization.string("localizable.support.contact.sheet.en.fazla.3.ek.ekleyebilirsin.8ac2432b", table: .localizable, fallback: "En fazla 3 ek ekleyebilirsin."))
-                    .font(.system(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
@@ -222,18 +222,18 @@ struct SupportContactSheet: View {
     private func attachmentRow(_ attachment: SupportAttachmentDraft) -> some View {
         HStack(spacing: 12) {
             Image(systemName: attachment.mimeType.hasPrefix("image/") ? "photo.fill" : "paperclip")
-                .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreen)
                 .frame(width: 44, height: 44)
                 .background(Color.rdGreenSoft)
                 .clipShape(RoundedRectangle(cornerRadius: 13))
             VStack(alignment: .leading, spacing: 2) {
                 Text(attachment.filename)
-                    .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .lineLimit(1)
                 Text(attachment.formattedSize)
-                    .font(.system(size: RDFontScale.size(12), design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(12), design: .rounded))
                     .foregroundStyle(Color.rdSlate)
             }
             Spacer()
@@ -241,7 +241,7 @@ struct SupportContactSheet: View {
                 attachments.removeAll { $0.id == attachment.id }
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .frame(width: 32, height: 32)
                     .background(Color.rdFog)
@@ -264,10 +264,10 @@ struct SupportContactSheet: View {
                         .tint(.white)
                 } else {
                     Image(systemName: "paperplane.fill")
-                        .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                 }
                 Text(isSending ? RDLocalization.string("localizable.support.contact.sheet.gonderiliyor.5ae65683", table: .localizable, fallback: "Gönderiliyor") : RDLocalization.string("localizable.support.contact.sheet.destek.talebi.gonder.0aeffa33", table: .localizable, fallback: "Destek talebi gönder"))
-                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(17), weight: .bold, design: .rounded))
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -282,17 +282,17 @@ struct SupportContactSheet: View {
     private func supportInfoRow(icon: String, title: String, value: String) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreen)
                 .frame(width: 30, height: 30)
                 .background(Color.rdGreenSoft)
                 .clipShape(RoundedRectangle(cornerRadius: 9))
             Text(title)
-                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
             Spacer(minLength: 12)
             Text(value)
-                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .lineLimit(1)
         }
@@ -300,7 +300,7 @@ struct SupportContactSheet: View {
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text.uppercased())
-            .font(.system(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+            .font(RDTypography.font(size: RDFontScale.size(11), weight: .bold, design: .rounded))
             .tracking(0.6)
             .foregroundStyle(Color.rdSlate)
     }
@@ -308,9 +308,9 @@ struct SupportContactSheet: View {
     private func attachmentButton(icon: String, title: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(15), weight: .bold, design: .rounded))
             Text(title)
-                .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(14), weight: .bold, design: .rounded))
         }
         .foregroundStyle(Color.rdBlack)
         .frame(maxWidth: .infinity)
@@ -322,10 +322,10 @@ struct SupportContactSheet: View {
     private func noticeCard(_ text: String, icon: String, color: Color, background: Color) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                 .foregroundStyle(color)
             Text(text)
-                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 .foregroundStyle(color)
                 .fixedSize(horizontal: false, vertical: true)
         }

@@ -26,6 +26,7 @@ import com.riskdetectedan.app.push.PushTokenRegistrar
 import com.riskdetectedan.app.telemetry.PlatformTelemetryRegistrar
 import com.riskdetectedan.app.push.NotificationDeepLinkHandler
 import com.riskdetectedan.app.push.NotificationEngagementRegistrar
+import com.riskdetectedan.app.localization.ProfileLocalizationRegistrar
 import com.riskdetectedan.app.release.ReleaseGate
 import com.riskdetectedan.app.settings.AppearanceMode
 import com.riskdetectedan.app.settings.AppearanceViewModel
@@ -38,6 +39,7 @@ import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.billing.BillingRepository
 import com.riskdetectedan.core.data.notifications.NotificationEngagementRepository
 import com.riskdetectedan.core.data.onboarding.OnboardingAnswersRepository
+import com.riskdetectedan.core.data.paywall.PaywallEventRepository
 import com.riskdetectedan.core.designsystem.RiskDetectedTheme
 import com.riskdetectedan.core.designsystem.RdTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -63,6 +65,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var billingRepository: BillingRepository
     @Inject lateinit var notificationEngagementRepository: NotificationEngagementRepository
     @Inject lateinit var onboardingAnswersRepository: OnboardingAnswersRepository
+    @Inject lateinit var paywallEventRepository: PaywallEventRepository
 
     private val updateResultLauncher = registerForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult(),
@@ -122,6 +125,10 @@ class MainActivity : ComponentActivity() {
                         // Supplies the authorization + foreground heartbeat used by the shared
                         // notification automation eligibility engine.
                         NotificationEngagementRegistrar()
+                        // No UI — repairs a missing profiles.app_language/preferred_content_locale
+                        // pair. Without it the backend refuses to localize (and therefore to
+                        // send) every transactional notification for that account.
+                        ProfileLocalizationRegistrar()
                         // No UI — records a background legal-acceptance audit row (consents
                         // table) for the Turkish document set once signed in. Mirrors
                         // AppState.swift's session-sink call to LegalAcceptanceService; there is
@@ -186,6 +193,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        paywallEventRepository.flushPending()
         if (::playUpdateController.isInitialized) playUpdateController.resumeInterruptedImmediateUpdate()
         if (authRepository.currentUserId != null) {
             // Detect renewal-intent changes immediately after returning from

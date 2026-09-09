@@ -20,9 +20,19 @@ import {
 export { ASC_BUILD_ID, CANDIDATE_BUILD } from "./localization_testflight_rollout_lib.mjs";
 
 const BUNDLE_ID = "com.riskdetected.app";
-const VERSION = "1.3.0";
+const APP_STORE_CONFIG = JSON.parse(
+  readFileSync(new URL("../appstore/app.json", import.meta.url), "utf8"),
+);
+export const RELEASE_VERSION =
+  process.env.RD_RELEASE_VERSION ?? APP_STORE_CONFIG.release.version;
+const reportNow = new Date();
+const reportDate = [
+  reportNow.getFullYear(),
+  String(reportNow.getMonth() + 1).padStart(2, "0"),
+  String(reportNow.getDate()).padStart(2, "0"),
+].join("-");
 const DEFAULT_OUTPUT =
-  `docs/localization/phase-8/PHYSICAL_BUILD_${CANDIDATE_BUILD}_SMOKE_READINESS_2026-08-02.json`;
+  `output/app-review-physical-smoke/PHYSICAL_BUILD_${CANDIDATE_BUILD}_SMOKE_READINESS_${reportDate}.json`;
 
 function readJSON(file) {
   return JSON.parse(readFileSync(file, "utf8"));
@@ -128,7 +138,7 @@ export function findInstalledCandidate(payload) {
   return {
     version,
     build,
-    is_candidate: version === VERSION && build === CANDIDATE_BUILD,
+    is_candidate: version === RELEASE_VERSION && build === CANDIDATE_BUILD,
   };
 }
 
@@ -210,7 +220,7 @@ export function buildPhysicalSmokeEvidence({
   } else if (reachableDevices.length === 0) {
     issues.push("All paired physical iPhones are offline.");
   } else if (candidateDevices.length === 0) {
-    issues.push(`No reachable iPhone has ${VERSION} (${CANDIDATE_BUILD}) installed.`);
+    issues.push(`No reachable iPhone has ${RELEASE_VERSION} (${CANDIDATE_BUILD}) installed.`);
   }
   if (launchRequested && candidateDevices.length > 0 && !launchSucceeded) {
     issues.push("Candidate launch did not succeed on an unlocked device.");
@@ -220,7 +230,7 @@ export function buildPhysicalSmokeEvidence({
   const evidence = {
     schema_version: 1,
     candidate: {
-      version: VERSION,
+      version: RELEASE_VERSION,
       build: CANDIDATE_BUILD,
       asc_build_id: ASC_BUILD_ID,
       bundle_id: BUNDLE_ID,

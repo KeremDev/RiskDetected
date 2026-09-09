@@ -7,33 +7,41 @@ struct MainTabView: View {
     @State private var showPaywall = false
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            Color.rdPaper.ignoresSafeArea()
+        RDAdaptiveContainer { _ in
+            ZStack {
+                Color.rdPaper
 
-            switch app.activeTab {
-            case .home:     HomeView()
-            case .analyses: HistoryView()
-            case .reports:  ReportView()
-            case .profile:  ProfileView()
-            }
-
-            RDTabBar(active: $app.activeTab) {
-                Task {
-                    await handleQuickScanTap()
+                switch app.activeTab {
+                case .home:     HomeView()
+                case .analyses: HistoryView()
+                case .reports:  ReportView()
+                case .profile:  ProfileView()
                 }
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-            }
 
-            if Self.isUITestLaunch {
-                Color.clear
-                    .frame(width: 1, height: 1)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityIdentifier("main_tab.\(app.activeTab.rawValue)")
+                if Self.isUITestLaunch {
+                    Color.clear
+                        .frame(width: 1, height: 1)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityIdentifier("main_tab.\(app.activeTab.rawValue)")
+                }
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                RDTabBar(active: $app.activeTab) {
+                    Task {
+                        await handleQuickScanTap()
+                    }
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                }
             }
         }
-        .ignoresSafeArea(edges: .bottom)
+        .background(Color.rdPaper.ignoresSafeArea())
         .alert(RDLocalization.string("analysis.main.tab.view.ucretsiz.hak.doldu.02b7d919", table: .analysis, fallback: "Ücretsiz hak doldu"), isPresented: $showQuotaAlert) {
             Button(RDLocalization.string("analysis.main.tab.view.yukselt.a7a8cbd7", table: .analysis, fallback: "Yükselt")) {
+                PaywallEventService.shared.beginEntry(
+                    at: .quickScanQuotaAlert,
+                    currentTier: app.currentTier,
+                    targetTier: .plus
+                )
                 showPaywall = true
             }
             Button(RDLocalization.string("analysis.main.tab.view.tamam.ce1433e3", table: .analysis, fallback: "Tamam"), role: .cancel) {}
@@ -48,7 +56,7 @@ struct MainTabView: View {
                     Task { await app.refreshPlanState() }
                 }
             )
-            .preferredColorScheme(preferredModalColorScheme)
+            .preferredColorScheme(.dark)
         }
     }
 

@@ -16,8 +16,9 @@ const appConfig = JSON.parse(
 );
 const finalRoot = resolve(ROOT, appConfig.screenshots.final_root);
 const outputDir = resolve(ROOT, "appstore/screenshots/qa");
-const expectedWidth = 1290;
-const expectedHeight = 2796;
+const [expectedWidth, expectedHeight] = appConfig.screenshots.accepted_pixel_size
+  .split("x")
+  .map(Number);
 const expectedCount = appConfig.screenshots.slides_per_locale;
 const tileWidth = 258;
 const tileHeight = 559;
@@ -91,7 +92,10 @@ for (const locale of appConfig.mutable_locales) {
       .stats();
     const rgb = topStats.channels.slice(0, 3).map((channel) => channel.mean);
     const luminance = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
-    if (luminance < minimumTopRegionLuminance) {
+    if (
+      appConfig.screenshots.theme === "light" &&
+      luminance < minimumTopRegionLuminance
+    ) {
       errors.push(
         `${path} top-region luminance ${luminance.toFixed(1)} is below ` +
           `${minimumTopRegionLuminance}; light-theme export expected.`,
@@ -171,7 +175,7 @@ const manifest = {
   schema_version: 1,
   generated_at: new Date().toISOString(),
   valid: true,
-  theme: "light",
+  theme: appConfig.screenshots.theme,
   expected_dimensions: {
     width: expectedWidth,
     height: expectedHeight,
@@ -192,7 +196,7 @@ writeFileSync(
 );
 
 console.log(
-  `Validated ${files.length} light screenshots across ` +
+  `Validated ${files.length} ${appConfig.screenshots.theme} screenshots across ` +
     `${appConfig.mutable_locales.length} mutable locales.`,
 );
 console.log(`Contact sheet: ${contactSheetPath}`);

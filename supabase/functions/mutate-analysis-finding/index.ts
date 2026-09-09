@@ -8,6 +8,7 @@
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { userFacingCopy } from "../_shared/user-facing-copy.ts";
 
 type MutationAction = "update" | "delete";
 
@@ -299,7 +300,7 @@ function publicBundleSelects() {
     analysis:
       "id,user_id,company_id,title,kind,canvas,status,status_message,ai_summary,total_score_fk,total_score_m5,highest_band_fk,highest_band_m5,finding_count,created_at,analysis_sector,analysis_sector_source,analysis_sector_prompt_version,input_payload_version,photo_count,max_photos_allowed_at_creation,max_findings_per_photo,max_findings_total,generated_findings_count,visible_findings_count,hidden_or_rejected_findings_count,has_user_edits,user_edit_count,analysis_edit_version,plan_at_creation,capability_snapshot,rollout_snapshot",
     findings:
-      "id,analysis_id,ordinal,title,category,description,recommended_action,recommended_measures,references_text,root_cause_text,confidence,needs_field_verification,fk_probability,fk_frequency,fk_severity,fk_score,fk_band,m5_probability,m5_severity,m5_score,m5_band,origin,source_photo_indices,source_photo_observations,ai_confidence,last_user_edit_at,last_user_edit_by,user_edit_count,finding_version,display_group,display_order",
+      "id,analysis_id,ordinal,title,category,description,recommended_action,recommended_measures,references_text,root_cause_text,confidence,needs_field_verification,fk_probability,fk_frequency,fk_severity,fk_score,fk_band,m5_probability,m5_severity,m5_score,m5_band,origin,source_photo_indices,source_photo_observations,ai_confidence,last_user_edit_at,last_user_edit_by,user_edit_count,finding_version,display_group,display_order,item_class,is_scored",
     photos:
       "analysis_id,storage_path,width,height,mime_type,sequence_index,client_photo_id,is_primary,thumbnail_storage_path,annotation_storage_path,user_caption,ai_scene_summary",
     photoSummaries:
@@ -418,7 +419,7 @@ serve(async (req) => {
   const { data: analysis, error: analysisError } = await supabase
     .from("analyses")
     .select(
-      "id,user_id,status,analysis_edit_version,user_edit_count,photo_count",
+      "id,user_id,status,analysis_edit_version,user_edit_count,photo_count,output_language",
     )
     .eq("id", analysisID)
     .eq("user_id", user.id)
@@ -566,6 +567,20 @@ serve(async (req) => {
         "m5_probability",
       );
       const m5S = optionalIntRange(patch.m5_severity, 1, 5, "m5_severity");
+      if (
+        before.is_scored === false &&
+        [fkP, fkF, fkS, m5P, m5S].some((value) => value !== undefined)
+      ) {
+        return json(400, {
+          error: "scoreless_item_score_locked",
+          message: userFacingCopy(
+            "reportScorelessItemLocked",
+            analysis.output_language,
+          ),
+          request_id: requestID,
+          support_id: supportID,
+        });
+      }
       const resolvedM5P = m5P ?? Number(before.m5_probability);
       const resolvedM5S = m5S ?? Number(before.m5_severity);
       if (m5P !== undefined) update.m5_probability = m5P;

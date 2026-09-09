@@ -5,20 +5,25 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.analysis.Finding
+import com.riskdetectedan.core.data.analysis.AnalysisResultHubRepository
+import com.riskdetectedan.core.data.analysis.AnalysisResultSectionId
 import com.riskdetectedan.core.data.auth.AuthRepository
 import com.riskdetectedan.core.data.company.CompanyRepository
 import com.riskdetectedan.core.data.company.Company
 import com.riskdetectedan.core.data.error.AppErrorMessage
 import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.profile.ProfileRepository
+import com.riskdetectedan.core.data.profile.resolvedLocalizationContext
 import com.riskdetectedan.core.data.profile.UserProfile
 import com.riskdetectedan.core.data.release.AndroidRuntimeGateName
 import com.riskdetectedan.core.data.release.ReleasePolicyRepository
 import com.riskdetectedan.core.data.reports.PdfReportFileName
 import com.riskdetectedan.core.data.reports.PdfReportGenerator
 import com.riskdetectedan.core.data.reports.PdfReportInput
+import com.riskdetectedan.core.data.reports.ReportQuotaUsage
 import com.riskdetectedan.core.data.reports.ReportsRepository
 import com.riskdetectedan.core.data.store.ReviewEligibilityRepository
+import com.riskdetectedan.core.data.telemetry.MetaAppEventsService
 import com.riskdetectedan.core.designsystem.R as RdR
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,6 +35,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.UUID
 import javax.inject.Inject
 
 enum class ResultReportFormat { Pdf, Excel }
@@ -42,17 +48,24 @@ data class ResultReportRequest(
     val companyId: String?,
     val findings: List<Finding>,
     val coverPhotoBytes: ByteArray?,
+    val photoBytes: List<ByteArray> = emptyList(),
+    val analysisSummary: String? = null,
+    val analysisSectorLabel: String? = null,
     val companyNameOverride: String? = null,
     val companyInfoOverride: String? = null,
     val companyLogoOverrideBytes: ByteArray? = null,
     val preparedByOverride: String? = null,
     val preparedTitleOverride: String? = null,
     val certificateNumberOverride: String? = null,
+    val contentScope: AnalysisResultSectionId? = null,
+    val selectedItemKeys: List<String> = emptyList(),
+    val exportIntentId: String? = null,
 )
 
 data class ResultReportSetup(
     val profile: UserProfile? = null,
     val companies: List<Company> = emptyList(),
+    val quotaUsage: ReportQuotaUsage? = null,
 )
 
 data class ResultReportFile(
@@ -86,6 +99,8 @@ class ResultReportViewModel @Inject constructor(
     private val releasePolicyRepository: ReleasePolicyRepository,
     private val pdfReportGenerator: PdfReportGenerator,
     private val reviewEligibilityRepository: ReviewEligibilityRepository,
+    private val resultHubRepository: AnalysisResultHubRepository,
+    private val metaAppEvents: MetaAppEventsService,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<ResultReportUiState>(ResultReportUiState.Idle)
@@ -93,14 +108,24 @@ class ResultReportViewModel @Inject constructor(
     private val _setup = MutableStateFlow(ResultReportSetup())
     val setup: StateFlow<ResultReportSetup> = _setup.asStateFlow()
     private var progressJob: Job? = null
+    private val reportFunnelSessionId = UUID.randomUUID().toString()
 
     fun loadSetup() {
         val userId = authRepository.currentUserId ?: return
         viewModelScope.launch {
             val profile = (profileRepository.fetchProfile(userId) as? RdResult.Success)?.value
+                ?: _setup.value.profile
             val companies = (companyRepository.listCompanies(includeArchived = false) as? RdResult.Success)
                 ?.value.orEmpty()
-            _setup.value = ResultReportSetup(profile = profile, companies = companies)
+            val quotaUsage = (reportsRepository.fetchQuotaUsage(
+                userId = userId,
+                tier = profile?.tier ?: _setup.value.profile?.tier ?: com.riskdetectedan.core.data.profile.SubscriptionTier.Free,
+            ) as? RdResult.Success)?.value ?: _setup.value.quotaUsage
+            _setup.value = ResultReportSetup(
+                profile = profile,
+                companies = companies,
+                quotaUsage = quotaUsage,
+            )
         }
     }
 
@@ -109,25 +134,90 @@ class ResultReportViewModel @Inject constructor(
         _state.value = ResultReportUiState.Generating(format, 0.07f)
         startProgress(format)
         viewModelScope.launch {
+            request.contentScope?.let { section ->
+                resultHubRepository.recordEvent(
+                    analysisId = request.analysisId,
+                    name = "report_create_started",
+                    section = section,
+                    funnelSessionId = reportFunnelSessionId,
+                )
+            }
+            val authoritativeRequest = if (request.contentScope != null) {
+                when (val intent = resultHubRepository.createReportIntent(
+                    analysisId = request.analysisId,
+                    section = request.contentScope,
+                    format = if (format == ResultReportFormat.Pdf) "pdf" else "xlsx",
+                    reportKind = if (kind == "risk_analysis") "riskAnalysis" else "standard",
+                    selected = request.selectedItemKeys,
+                )) {
+                    is RdResult.Success -> request.copy(exportIntentId = intent.value.id)
+                    is RdResult.Failure -> {
+                        resultHubRepository.recordEvent(
+                            analysisId = request.analysisId,
+                            name = "report_create_failed",
+                            section = request.contentScope,
+                            funnelSessionId = reportFunnelSessionId,
+                        )
+                        progressJob?.cancel()
+                        progressJob = null
+                        _state.value = ResultReportUiState.Failed(
+                            AppErrorMessages.make(intent.message, context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi)),
+                        )
+                        return@launch
+                    }
+                }
+            } else request
             val result = when (format) {
-                ResultReportFormat.Pdf -> generatePdf(request, kind, method)
-                ResultReportFormat.Excel -> generateExcel(request, method)
+                ResultReportFormat.Pdf -> generatePdf(authoritativeRequest, kind, method)
+                ResultReportFormat.Excel -> generateExcel(authoritativeRequest, method)
             }
             progressJob?.cancel()
             progressJob = null
             when (result) {
                 is RdResult.Success -> {
+                    metaAppEvents.reportCreated(
+                        reportId = result.value.reportId,
+                        format = if (format == ResultReportFormat.Pdf) "pdf" else "xlsx",
+                    )
+                    authoritativeRequest.contentScope?.let { section ->
+                        resultHubRepository.recordEvent(
+                            analysisId = authoritativeRequest.analysisId,
+                            name = "report_create_completed",
+                            section = section,
+                            funnelSessionId = reportFunnelSessionId,
+                        )
+                    }
                     reviewEligibilityRepository.recordSuccessfulReport(result.value.reportId)
+                    if (kind == "risk_analysis") {
+                        markRiskTrialUsedLocally()
+                        loadSetup()
+                    }
                     _state.value = ResultReportUiState.Generating(format, 1f)
                     delay(480)
                     _state.value = ResultReportUiState.Ready(result.value)
                 }
-                is RdResult.Failure -> _state.value = ResultReportUiState.Failed(
-                    AppErrorMessages.make(
-                        result.message,
-                        context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi),
-                    ),
-                )
+                is RdResult.Failure -> {
+                    if (result.code == "free_risk_analysis_trial_exhausted" ||
+                        result.message.contains("free_risk_analysis_trial_exhausted", ignoreCase = true)
+                    ) {
+                        markRiskTrialUsedLocally()
+                        loadSetup()
+                    }
+                    authoritativeRequest.contentScope?.let { section ->
+                        resultHubRepository.recordEvent(
+                            analysisId = authoritativeRequest.analysisId,
+                            name = "report_create_failed",
+                            section = section,
+                            funnelSessionId = reportFunnelSessionId,
+                        )
+                    }
+                    _state.value = ResultReportUiState.Failed(
+                        AppErrorMessages.make(
+                            result.message,
+                            context = context.getString(RdR.string.rd_rapor_islemi_tamamlanamadi),
+                        ),
+                    )
+                }
             }
         }
     }
@@ -138,6 +228,12 @@ class ResultReportViewModel @Inject constructor(
 
     fun clearError() {
         if (_state.value is ResultReportUiState.Failed) _state.value = ResultReportUiState.Idle
+    }
+
+    private fun markRiskTrialUsedLocally() {
+        val current = _setup.value
+        val quota = current.quotaUsage ?: return
+        _setup.value = current.copy(quotaUsage = quota.copy(riskTrialUsed = true))
     }
 
     private fun startProgress(format: ResultReportFormat) {
@@ -174,6 +270,7 @@ class ResultReportViewModel @Inject constructor(
         }
 
         val profile = (profileRepository.fetchProfile(userId) as? RdResult.Success)?.value
+        val localization = profile.resolvedLocalizationContext()
         val company = request.companyId?.let { companyId ->
             (companyRepository.listCompanies(includeArchived = true) as? RdResult.Success)
                 ?.value?.firstOrNull { it.id == companyId }
@@ -185,6 +282,7 @@ class ResultReportViewModel @Inject constructor(
             withContext(Dispatchers.Default) {
                 pdfReportGenerator.generate(
                     PdfReportInput(
+                        analysisId = request.analysisId,
                         kind = kind,
                         method = method,
                         title = request.title,
@@ -203,6 +301,10 @@ class ResultReportViewModel @Inject constructor(
                         certificateNumber = request.certificateNumberOverride?.takeIf { it.isNotBlank() }
                             ?: profile?.certificateNumber,
                         coverPhotoBytes = request.coverPhotoBytes,
+                        coverPhotoBytesList = request.photoBytes,
+                        analysisSummary = request.analysisSummary,
+                        analysisSectorLabel = request.analysisSectorLabel,
+                        languageCode = localization.appLanguage,
                     ),
                 )
             }
@@ -211,6 +313,7 @@ class ResultReportViewModel @Inject constructor(
         }
 
         val fileName = PdfReportFileName.build(request.title, request.analysisId, kind, method)
+        val contentScope = request.contentScope?.wireValue()
         return when (
             val registered = reportsRepository.uploadAndRegisterPdfReport(
                 userId = userId,
@@ -222,6 +325,10 @@ class ResultReportViewModel @Inject constructor(
                 title = request.title,
                 pageCount = generated.pageCount,
                 companyId = request.companyId,
+                localization = localization,
+                exportIntentId = request.exportIntentId,
+                contentScope = contentScope,
+                selectedItemKeys = request.selectedItemKeys.takeIf { request.contentScope != null },
             )
         ) {
             is RdResult.Success -> RdResult.Success(
@@ -237,11 +344,15 @@ class ResultReportViewModel @Inject constructor(
     }
 
     private suspend fun generateExcel(request: ResultReportRequest, method: String): RdResult<ResultReportFile> {
+        val localization = _setup.value.profile.resolvedLocalizationContext()
         val report = when (
             val generated = reportsRepository.generateExcelReport(
                 analysisId = request.analysisId,
                 method = method,
+                reportKind = request.contentScope?.wireValue() ?: "risk_analysis",
+                exportIntentId = request.exportIntentId,
                 companyId = request.companyId,
+                localization = localization,
                 companyNameOverride = request.companyNameOverride,
                 companyInfoOverride = request.companyInfoOverride,
                 preparedByOverride = request.preparedByOverride,
@@ -265,5 +376,12 @@ class ResultReportViewModel @Inject constructor(
             )
             is RdResult.Failure -> RdResult.Failure(downloaded.code, downloaded.message, downloaded.cause)
         }
+    }
+
+    private fun AnalysisResultSectionId.wireValue(): String = when (this) {
+        AnalysisResultSectionId.RiskAnalysis -> "risk_analysis"
+        AnalysisResultSectionId.ExpertRecommendations -> "expert_recommendations"
+        AnalysisResultSectionId.TrainingRecommendations -> "training_recommendations"
+        AnalysisResultSectionId.ApprovedNotebook -> "approved_notebook"
     }
 }

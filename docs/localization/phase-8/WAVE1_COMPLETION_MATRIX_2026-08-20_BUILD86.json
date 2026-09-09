@@ -1,0 +1,487 @@
+{
+  "schema_version": 1,
+  "evaluated_at": "2026-08-20",
+  "source_plan": "docs/RISKDETECTED_GLOBAL_LOCALIZATION_COUNTRY_SAFETY_INTEGRATION_EXECUTION_PLAN_2026-07-28.md",
+  "candidate": {
+    "version": "1.3.4",
+    "build": "86",
+    "version_id": null,
+    "build_id": "423ece5b-78a9-4cde-b074-3db5945a537c"
+  },
+  "protected_store_locales": [
+    "tr"
+  ],
+  "mutable_store_locales": [
+    "en-GB",
+    "en-US",
+    "en-AU",
+    "en-CA"
+  ],
+  "decision": "submit_ready_owner_submission_pending_build80",
+  "requirements": [
+    {
+      "id": "F0-01",
+      "phase": 0,
+      "requirement": "Dedicated feature branch and dirty-worktree preservation",
+      "status": "passed",
+      "evidence": [
+        "git branch: codex/global-localization-wave1",
+        "docs/localization/baseline/BASELINE_2026-07-28.md",
+        "docs/localization/baseline/PHASE_0_COMPLETION_AUDIT_2026-07-28.md"
+      ]
+    },
+    {
+      "id": "F0-02",
+      "phase": 0,
+      "requirement": "Normative source, checksum, schema, migration ledger, Edge Function, feature-flag, ASC and legal baselines",
+      "status": "passed",
+      "evidence": [
+        "docs/specs/CHECKSUMS.sha256",
+        "docs/localization/baseline/MIGRATION_LEDGER_RECONCILIATION_2026-07-28.md",
+        "docs/localization/baseline/EDGE_FUNCTIONS_PRODUCTION_2026-07-28.json",
+        "docs/localization/baseline/FEATURE_FLAGS_PRODUCTION_2026-07-28.json",
+        "docs/localization/baseline/ASC_DISCOVERY_RAW_2026-07-28.json",
+        "docs/localization/baseline/LEGAL_ENDPOINTS_PRODUCTION_2026-07-28.json"
+      ]
+    },
+    {
+      "id": "F0-03",
+      "phase": 0,
+      "requirement": "Baseline tests and release-guard task list",
+      "status": "passed",
+      "evidence": [
+        "docs/localization/baseline/TEST_MANIFEST_2026-07-28.json",
+        "docs/localization/baseline/RELEASE_GUARD_TASKS_2026-07-28.md"
+      ]
+    },
+    {
+      "id": "F1-01",
+      "phase": 1,
+      "requirement": "Single-source six-profile safety contract, glossary, forbidden claims and hierarchy of controls",
+      "status": "passed",
+      "evidence": [
+        "localization/safety-profiles",
+        "docs/localization/phase-1/PHASE_1_COMPLETION_AUDIT_2026-07-28.md",
+        "localization profile contract 17/17"
+      ]
+    },
+    {
+      "id": "F1-02",
+      "phase": 1,
+      "requirement": "Swift and TypeScript codegen parity with immutable source hash",
+      "status": "passed",
+      "evidence": [
+        "App/Generated/SafetyProfiles.generated.swift",
+        "supabase/functions/_shared/generated/safety-profiles.generated.ts",
+        "source SHA-256 3a68229b1860572ff70600287412d3dadf890597698acfc3edb23afc8b9c6932"
+      ]
+    },
+    {
+      "id": "F1-03",
+      "phase": 1,
+      "requirement": "Owned content inventory and hard-coded system string guard",
+      "status": "passed",
+      "evidence": [
+        "localization/content-inventory/app-content.csv",
+        "2374 inventory entries",
+        "unowned P0/P1 = 0",
+        "hard-coded additions = 0"
+      ]
+    },
+    {
+      "id": "F2-01",
+      "phase": 2,
+      "requirement": "Additive nullable localization model, Turkish backfill and default-off flags",
+      "status": "passed",
+      "evidence": [
+        "supabase/migrations/20260728203000_global_localization_context_wave1.sql",
+        "docs/localization/phase-2/PHASE_2_COMPLETION_AUDIT_2026-07-28.md",
+        "docs/localization/phase-2/PRODUCTION_BACKFILL_CARDINALITY_2026-07-28.json"
+      ]
+    },
+    {
+      "id": "F2-02",
+      "phase": 2,
+      "requirement": "Immutable snapshot authority across request, queue, retry and repair",
+      "status": "passed",
+      "evidence": [
+        "supabase/functions/_shared/localization-context-resolver.ts",
+        "Phase 6 Deno 73/73",
+        "Phase 6 pgTAP 45/45"
+      ]
+    },
+    {
+      "id": "F2-03",
+      "phase": 2,
+      "requirement": "Non-TR legislation rejected before quota and queue with stable error",
+      "status": "passed",
+      "evidence": [
+        "CANVAS_NOT_AVAILABLE_FOR_SAFETY_PROFILE contract",
+        "supabase/functions/_shared/localization-context-resolver_test.ts",
+        "docs/localization/phase-2/PHASE_2_TEST_MANIFEST_2026-07-28.json"
+      ]
+    },
+    {
+      "id": "F2-04",
+      "phase": 2,
+      "requirement": "Legacy live build 77 remains unaffected while Build 80 is review-prepared",
+      "status": "passed",
+      "evidence": [
+        "live version 1.2.4 build 77 remains the App Store release",
+        "appstore/app.json production_policy.current_live_build = 77",
+        "Build 80+ localization/multi-photo audit gates are build-scoped and manual-release scoped",
+        "No App Review submission or App Store release performed by automation",
+        ".asc/evidence/verify-1.3.0-result.json: review_submission_not_created and candidate_not_released valid"
+      ]
+    },
+    {
+      "id": "F3-01",
+      "phase": 3,
+      "requirement": "Native tr/en catalogs and per-app language architecture without AppleLanguages or bundle swizzling",
+      "status": "passed",
+      "evidence": [
+        "App/Services/RDLocalization.swift",
+        "Localization catalog and jurisdiction gates 19/19",
+        "docs/localization/phase-3/PHASE_3_COMPLETION_AUDIT_2026-07-28.md"
+      ]
+    },
+    {
+      "id": "F3-02",
+      "phase": 3,
+      "requirement": "Explicit International, UK, US, AU and CA safety-profile selection separate from UI language/storefront",
+      "status": "passed",
+      "evidence": [
+        "App/Views/Onboarding/V2/Screens/OBSafetyProfileSelectionView.swift",
+        "testSafetyProfilePairwiseReleaseMatrix passed",
+        "JUR-008 and JUR-009 passed"
+      ]
+    },
+    {
+      "id": "F3-03",
+      "phase": 3,
+      "requirement": "English P0/P1 UI, accessibility layout and historical Turkish-content labeling",
+      "status": "passed",
+      "evidence": [
+        "Full iOS UI regression: 45 executed, 44 passed, 1 intentional skip, 0 failures",
+        "testEnglishMainAccessibilityLayoutAtLargestDynamicType passed",
+        "testEnglishPseudolocalizationKeepsPrimaryNavigationReachable passed"
+      ]
+    },
+    {
+      "id": "F4-01",
+      "phase": 4,
+      "requirement": "Six-profile prompt, schema, language, terminology, forbidden-claim, regulatory and photo-evidence validators",
+      "status": "passed",
+      "evidence": [
+        "AI localization suite 63/63",
+        "docs/localization/phase-4/PHASE_4_AI_REQUIREMENT_MATRIX_2026-07-29.md"
+      ]
+    },
+    {
+      "id": "F4-02",
+      "phase": 4,
+      "requirement": "One bounded same-route language repair with stable fail-closed behavior and no extra quota",
+      "status": "passed",
+      "evidence": [
+        "supabase/functions/_shared/ai-localization-validation.ts",
+        "supabase/functions/analyze/localization_phase4_static_test.ts"
+      ]
+    },
+    {
+      "id": "F4-03",
+      "phase": 4,
+      "requirement": "Synthetic live AI canary",
+      "status": "passed_with_explicit_owner_waiver",
+      "evidence": [
+        "docs/localization/phase-4/canary/results/smoke-result.json",
+        "docs/localization/phase-4/PHASE_4_EXECUTION_AUDIT_2026-07-28.md",
+        "Owner instructed Phase 4 to be closed using the shortest safe path"
+      ]
+    },
+    {
+      "id": "F5-01",
+      "phase": 5,
+      "requirement": "Snapshot-bound English PDF/XLSX with no Turkish regulatory template leakage",
+      "status": "passed",
+      "evidence": [
+        "report localization tests 5/5",
+        "English XLSX parser test passed",
+        "testEnglishPDFReportExtractionHasNoTurkishRegulatoryTemplateLeak passed"
+      ]
+    },
+    {
+      "id": "F5-02",
+      "phase": 5,
+      "requirement": "Exact-locale push, notification automation, email and support behavior without cross-language fallback",
+      "status": "passed",
+      "evidence": [
+        "docs/localization/phase-5/NOTIFICATION_COPY_PRODUCTION_VERIFICATION_2026-07-31.json",
+        "docs/localization/phase-5/AUTH_EMAIL_HOOK_PRODUCTION_VERIFICATION_2026-07-31.json",
+        "Phase 6 transactional notification/auth email tests"
+      ]
+    },
+    {
+      "id": "F5-03",
+      "phase": 5,
+      "requirement": "Approved and published English legal set with acceptance integrity",
+      "status": "passed",
+      "evidence": [
+        "docs/localization/phase-5/LEGAL_COUNSEL_APPROVAL_2026-07-31_V2.json",
+        "Phase 5 live release gate passed",
+        "https://riskdetected.com/en/privacy",
+        "https://riskdetected.com/en/terms",
+        "https://riskdetected.com/en/ai-notice"
+      ]
+    },
+    {
+      "id": "F5-04",
+      "phase": 5,
+      "requirement": "English paywall/subscriptions without Turkish legislation claims and without product/offer changes",
+      "status": "passed",
+      "evidence": [
+        "docs/localization/phase-5/ASC_INTRODUCTORY_OFFER_READONLY_2026-07-30.json",
+        "Phase 5 gates 12/12",
+        "App Store Connect English subscription localizations verified"
+      ]
+    },
+    {
+      "id": "F6-01",
+      "phase": 6,
+      "requirement": "Integrated localization, jurisdiction, AI, reports, notifications, security and regression automation",
+      "status": "passed",
+      "evidence": [
+        "Localization profiles 17/17",
+        "Catalog/jurisdiction 19/19",
+        "AI localization 63/63",
+        "Phase 6 Deno 73/73",
+        "Phase 6 pgTAP 45/45",
+        "Post-security pgTAP 342/342"
+      ]
+    },
+    {
+      "id": "F6-02",
+      "phase": 6,
+      "requirement": "Six-profile pairwise UI matrix and P0 flows",
+      "status": "passed",
+      "evidence": [
+        "Xcode simulator build/run succeeded with no diagnostics",
+        "Full UI regression 45 executed, 0 failures",
+        "testSafetyProfilePairwiseReleaseMatrix passed"
+      ]
+    },
+    {
+      "id": "F6-03",
+      "phase": 6,
+      "requirement": "Security review and remediation",
+      "status": "passed",
+      "evidence": [
+        "Codex security scan c3474e6e-4a78-4d39-be9f-af6d20df9e3c",
+        "docs/security/CODEX_SECURITY_REMEDIATION_2026-08-01.md",
+        "6/6 findings remediated"
+      ]
+    },
+    {
+      "id": "F6-04",
+      "phase": 6,
+      "requirement": "Nine-stage rollout validation plus Build 80 real-device review-path evidence",
+      "status": "passed",
+      "evidence": [
+        "docs/localization/phase-6/TESTFLIGHT_ROLLOUT_THRESHOLDS_2026-08-01.json",
+        "docs/localization/phase-6/testflight-rollout/TESTFLIGHT_ROLLOUT_MANIFEST.json: status passed, completed_stages 9/9, issues empty",
+        "Owner-approved accelerated validation policy remains recorded for stages 2-9",
+        "docs/localization/phase-8/PHYSICAL_BUILD_80_SMOKE_READINESS_2026-08-02.json: candidate_install_count=1",
+        "Build 80 physical English International analysis id 0854fa06-4ea5-462d-82e8-ad1e67e8fc2b completed with 4 findings",
+        "Build 80 multi-photo layer audit enabled, compact schema true, 6144 thinking budget, fallback false",
+        "No Beta App Review, App Review or release submission performed"
+      ]
+    },
+    {
+      "id": "F6-05",
+      "phase": 6,
+      "requirement": "Release-candidate blocker list is empty for Build 80",
+      "status": "passed",
+      "evidence": [
+        "output/app-review-preflight/App_Review_Preflight_Evidence_2026-08-02-build80.md: 47 PASS, 0 HOLD, 0 FAIL, 2 WARN",
+        "asc validate: 0 errors, 0 blocking",
+        "ASC verify: 102/102 checks green",
+        "Only owner-reserved Add for Review and post-approval manual release remain"
+      ]
+    },
+    {
+      "id": "F7-01",
+      "phase": 7,
+      "requirement": "Independent approved metadata for en-GB, en-US, en-AU and en-CA",
+      "status": "passed",
+      "evidence": [
+        "appstore/versions/1.3.0/en-GB.json",
+        "appstore/versions/1.3.0/en-US.json",
+        "appstore/versions/1.3.0/en-AU.json",
+        "appstore/versions/1.3.0/en-CA.json",
+        "ASC read-after-write 102/102"
+      ]
+    },
+    {
+      "id": "F7-02",
+      "phase": 7,
+      "requirement": "Five real-UI synthetic-data light screenshots per English locale",
+      "status": "passed",
+      "evidence": [
+        "appstore/screenshots/qa/manifest.json",
+        "appstore/screenshots/qa/contact-sheet.png",
+        "20 App Store screenshots with matching checksums"
+      ]
+    },
+    {
+      "id": "F7-03",
+      "phase": 7,
+      "requirement": "Idempotent guarded ASC automation with read-after-write and no release command",
+      "status": "passed",
+      "evidence": [
+        "scripts/app_store_connect/apply.mjs",
+        "scripts/app_store_connect/verify.mjs",
+        ".asc/evidence/apply-1.3.0-result.json: 35 guarded operations",
+        ".asc/evidence/verify-1.3.0-result.json: 102 checks green",
+        "review submission and release absent"
+      ]
+    },
+    {
+      "id": "F7-04",
+      "phase": 7,
+      "requirement": "Manual release candidate with build 80 attached and no submission/release",
+      "status": "passed",
+      "evidence": [
+        "Version 1.3.0 PREPARE_FOR_SUBMISSION",
+        "Build 80 VALID",
+        "Build ID 71cc9591-32b9-4fee-b6c4-8c4d30713b23 attached",
+        "Release type MANUAL",
+        "Review state NOT_SUBMITTED",
+        ".asc/evidence/review-status-build80.json",
+        ".asc/evidence/build80-info.json"
+      ]
+    },
+    {
+      "id": "F7-05",
+      "phase": 7,
+      "requirement": "Turkish App Store metadata, subscription copy and screenshots are not changed",
+      "status": "passed",
+      "evidence": [
+        "protected_locale_mutations_detected=false",
+        "appstore/versions/1.3.0/tr.json SHA-256 e49f652e9ed8c15552a2764d04f0834a133bedc5e77899c91441aa7c2eb9dd22",
+        "No Turkish final screenshot directory",
+        "Apple-managed subscription draft copies contain identical Turkish name/description values"
+      ]
+    },
+    {
+      "id": "F7-06",
+      "phase": 7,
+      "requirement": "Apple validation and subscription validation for Build 80",
+      "status": "passed_with_non_blocking_warnings",
+      "evidence": [
+        ".asc/evidence/validate-1.3.0-build80.json: 0 errors, 0 blocking, 5 non-blocking warnings",
+        ".asc/evidence/validate-subscriptions-build80.json: 0 errors, 0 blocking, optional promotional-image warnings only",
+        "output/app-review-preflight/App_Review_Preflight_Evidence_2026-08-02-build80.md: 0 HOLD, 0 FAIL"
+      ]
+    },
+    {
+      "id": "GATE-01",
+      "phase": "review_submission_gate",
+      "requirement": "Human language, safety, legal, ASO and screenshot approvals",
+      "status": "passed",
+      "evidence": [
+        "Safety source approved by Kerem for language, safety and product",
+        "Notification copy approved by Kerem",
+        "Legal documents approved by Kerem",
+        "Metadata and screenshots approved by Kerem"
+      ]
+    },
+    {
+      "id": "GATE-02",
+      "phase": "review_submission_gate",
+      "requirement": "App Review demo account can execute the uploaded English review path",
+      "status": "passed",
+      "evidence": [
+        "Demo account configured in App Review Information fields without persisting secret in repo",
+        "Review notes describe the English review path and do not include demo credentials",
+        "Physical English International analysis id 0854fa06-4ea5-462d-82e8-ad1e67e8fc2b completed",
+        "Language validation passed in one attempt with zero repairs",
+        "Multi-photo layer audit telemetry complete: compact schema true, fallback false, 6144 thinking budget",
+        "Temporary tester hash was removed after validation; persistent rollout remains scoped"
+      ]
+    },
+    {
+      "id": "GATE-03",
+      "phase": "review_submission_gate",
+      "requirement": "Review-candidate physical-device/simulator smoke for Build 80",
+      "status": "passed",
+      "evidence": [
+        "docs/localization/phase-8/PHYSICAL_BUILD_80_SMOKE_READINESS_2026-08-02.json: status passed, candidate_install_count=1",
+        "RiskDetected 1.3.0 (80) installed on a physical iPhone",
+        "One real two-photo English analysis completed on the physical device",
+        "Backend read-back: exact en/en-001/International analysis completed with four findings",
+        "Focused simulator/review-path validation remains covered by Phase 6 evidence"
+      ]
+    },
+    {
+      "id": "GATE-04",
+      "phase": "review_submission_gate",
+      "requirement": "App Privacy declaration publish state",
+      "status": "passed",
+      "evidence": [
+        "Authenticated browser read-back: Published 2 months ago by Kerem Kayalar",
+        ".asc/evidence/app-privacy-browser-readback-2026-08-02.json",
+        ".asc/evidence/app-privacy-published-2026-08-02.png",
+        "Privacy Policy URL visible: https://riskdetected.com/gizlilik",
+        "No privacy or Turkish metadata mutation performed"
+      ]
+    },
+    {
+      "id": "AUTH-01",
+      "phase": "owner_control",
+      "requirement": "App Review submission",
+      "status": "deferred_until_explicit_owner_instruction",
+      "evidence": [
+        "Review state NOT_SUBMITTED",
+        "Automation refuses review submission",
+        "Owner will press Add for Review manually"
+      ]
+    },
+    {
+      "id": "AUTH-02",
+      "phase": "owner_control",
+      "requirement": "Final App Store release",
+      "status": "reserved_to_owner_after_approval",
+      "evidence": [
+        "Release type MANUAL",
+        "No release performed",
+        "Owner will explicitly request production flag activation after Apple approval"
+      ]
+    }
+  ],
+  "blocking_requirement_ids": [],
+  "evidence_gap_requirement_ids": [],
+  "owner_reserved_requirement_ids": [
+    "AUTH-01",
+    "AUTH-02"
+  ],
+  "carried_forward_from": {
+    "matrix": "docs/localization/phase-8/WAVE1_COMPLETION_MATRIX_2026-08-02_BUILD80.json",
+    "candidate": "1.3.0 (80)",
+    "reason": "Wave 1 kapsami build 80'den beri degismedi: bu adayin getirdigi degisiklikler (platform analytics, Apple Ads attribution, Claude Design paywall, Fine-Kinney lokalizasyon duzeltmesi) Wave 1 gereksinimlerinin hicbirinin kapsamina girmiyor.",
+    "requirement_verdicts_re_adjudicated": false,
+    "re_verified_for_this_candidate": [
+      "candidate triple (ASC builds listesinden dogrulandi; 84 VALID)",
+      "version_id yok: aday yalnizca TestFlight'a yuklendi, App Store surumu olusturulmadi"
+    ]
+  },
+  "prior_candidate_evidence": {
+    "asc_apply": ".asc/evidence/apply-1.3.0-result.json",
+    "asc_verify": ".asc/evidence/verify-1.3.0-result.json",
+    "asc_validate": ".asc/evidence/validate-1.3.0-build80.json",
+    "asc_review_status": ".asc/evidence/review-status-build80.json",
+    "app_privacy": ".asc/evidence/app-privacy-browser-readback-2026-08-02.json",
+    "physical_readiness": "docs/localization/phase-8/PHYSICAL_BUILD_80_SMOKE_READINESS_2026-08-02.json",
+    "app_review_preflight": "output/app-review-preflight/App_Review_Preflight_Evidence_2026-08-02-build80.md",
+    "final_readiness": "docs/localization/phase-8/BUILD80_FINAL_SUBMIT_READINESS_2026-08-02.md",
+    "english_analysis_id": "0854fa06-4ea5-462d-82e8-ad1e67e8fc2b"
+  }
+}

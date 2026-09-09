@@ -50,10 +50,9 @@ import kotlinx.coroutines.delay
  * `summary.pendingCelebration` (first unseen real badge row) is non-null, matches `onClose`'s
  * `markBadgeSeen` + refresh pair exactly (see [ProfileScreen]'s wiring). Confetti burst is a real
  * (not decorative-only) Compose animation, [RdConfettiView] (`core:designsystem`, extracted
- * 2026-08-09 so `OBPlanSummaryScreen`'s own reveal moment could reuse the same real burst instead
- * of rebuilding it) — 8 pieces, per-piece delay/color/rotation lifted straight from the Swift
- * `ConfettiPiece` literals, rather than the SwiftUI-specific `.spring().delay()` modifier chain
- * it can't share verbatim.
+ * 2026-08-09 so `OBPlanSummaryScreen`'s own reveal moment could reuse the same system). This
+ * presentation uses its long top-down flow mode: particles are recycled above the sheet, fall
+ * through the celebration content and fade before the lower edge instead of stopping in place.
  */
 @Composable
 fun ProfessionalProgressCelebrationSheet(badge: ProfessionalProgressBadge, onClose: () -> Unit) {
@@ -72,14 +71,17 @@ fun ProfessionalProgressCelebrationSheet(badge: ProfessionalProgressBadge, onClo
     Box(modifier = Modifier.fillMaxWidth().background(colors.paper)) {
         RdConfettiView(
             isActive = animate,
-            modifier = Modifier.fillMaxWidth().height(168.dp).padding(horizontal = RdSpacing.lg, vertical = RdSpacing.sm),
+            modifier = Modifier.fillMaxWidth().height(300.dp).padding(horizontal = RdSpacing.lg),
+            dense = true,
+            durationMillis = 3_200,
+            flowFromTop = true,
         )
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = RdSpacing.xl)
-                .padding(top = 72.dp, bottom = RdSpacing.xl),
+                .padding(top = 48.dp, bottom = RdSpacing.lg),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
@@ -92,7 +94,7 @@ fun ProfessionalProgressCelebrationSheet(badge: ProfessionalProgressBadge, onClo
             ) {
                 Icon(sfIconToImageVector(badge.iconName), contentDescription = null, tint = colors.greenDark, modifier = Modifier.size(34.dp))
             }
-            Spacer(Modifier.height(RdSpacing.lg))
+            Spacer(Modifier.height(RdSpacing.md))
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(50))
@@ -102,10 +104,10 @@ fun ProfessionalProgressCelebrationSheet(badge: ProfessionalProgressBadge, onClo
                 Text(stringResource(RdR.string.rd_tebrikler), style = RdFontStyle.Footnote.toTextStyle(), color = colors.greenDark)
             }
             Spacer(Modifier.height(9.dp))
-            Text(badge.title, style = RdFontStyle.Title2.toTextStyle(), color = colors.black, textAlign = TextAlign.Center)
+            Text(badge.localizedTitle, style = RdFontStyle.Title2.toTextStyle(), color = colors.black, textAlign = TextAlign.Center)
             Spacer(Modifier.height(9.dp))
-            Text(badge.subtitle, style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(RdSpacing.sm))
+            Text(badge.localizedSubtitle, style = RdFontStyle.Footnote.toTextStyle(), color = colors.slate, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(RdSpacing.md))
             RdPrimaryButton(text = stringResource(RdR.string.rd_tamam), onClick = onClose, style = RdButtonStyle.Green, showArrow = false)
         }
 
@@ -113,7 +115,7 @@ fun ProfessionalProgressCelebrationSheet(badge: ProfessionalProgressBadge, onClo
             onClick = onClose,
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(top = RdSpacing.lg, end = RdSpacing.xl)
+                .padding(top = RdSpacing.md, end = RdSpacing.lg)
                 .size(38.dp)
                 .clip(CircleShape)
                 .background(colors.white)

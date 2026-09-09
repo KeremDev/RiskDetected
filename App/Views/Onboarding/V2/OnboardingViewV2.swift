@@ -56,7 +56,7 @@ struct OnboardingViewV2: View {
     ) {
         _state = StateObject(
             wrappedValue: OnboardingV2State(
-                step: initialStep,
+                step: Self.resolvedInitialStep(initialStep),
                 appLanguage: appLanguage,
                 safetyProfileID: initialSafetyProfileID
             )
@@ -78,47 +78,49 @@ struct OnboardingViewV2: View {
     }
 
     var body: some View {
-        ZStack {
-            currentScreen
-                .transition(.asymmetric(
-                    insertion: .opacity.combined(with: .move(edge: .trailing)),
-                    removal: .opacity.combined(with: .move(edge: .leading))
-                ))
-                .id(state.step)
+        RDAdaptiveContainer { _ in
+            ZStack {
+                currentScreen
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .trailing)),
+                        removal: .opacity.combined(with: .move(edge: .leading))
+                    ))
+                    .id(state.step)
 
-            if showSkipConfirmation {
-                OBSkipConfirmationView(
-                    onCancel: {
-                        withAnimation(.obSpring) {
-                            showSkipConfirmation = false
+                if showSkipConfirmation {
+                    OBSkipConfirmationView(
+                        onCancel: {
+                            withAnimation(.obSpring) {
+                                showSkipConfirmation = false
+                            }
+                        },
+                        onConfirm: {
+                            OBHaptic.light()
+                            OnboardingAnswersService.shared.clearPendingDraft()
+                            withAnimation(.obSpring) {
+                                showSkipConfirmation = false
+                            }
+                            onFinish()
                         }
-                    },
-                    onConfirm: {
-                        OBHaptic.light()
-                        OnboardingAnswersService.shared.clearPendingDraft()
-                        withAnimation(.obSpring) {
-                            showSkipConfirmation = false
-                        }
-                        onFinish()
-                    }
-                )
-                .transition(.opacity.combined(with: .scale(scale: 0.98)))
-                .zIndex(10)
-            }
+                    )
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                    .zIndex(10)
+                }
 
-            if Self.isUITestLaunch {
-                Color.clear
-                    .frame(width: 1, height: 1)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityIdentifier("onboarding.v2")
+                if Self.isUITestLaunch {
+                    Color.clear
+                        .frame(width: 1, height: 1)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityIdentifier("onboarding.v2")
+                }
             }
+            .animation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.42), value: state.step)
+            .animation(.obSpring, value: showSkipConfirmation)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(state.step == 11 ? Color(hex: "#0B0D0E") : Color.rdPaper)
         }
-        .animation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.42), value: state.step)
-        .animation(.obSpring, value: showSkipConfirmation)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(state.step == 11 ? Color(hex: "#0B0D0E") : Color.rdPaper)
-        .environment(\.colorScheme, .light)
-        .preferredColorScheme(.light)
+        .environment(\.colorScheme, state.step == 11 ? .dark : .light)
+        .preferredColorScheme(state.step == 11 ? .dark : .light)
         .sheet(item: $selectedLegalDocument) { kind in
             LegalInfoSheet(initialDocument: kind) {
                 selectedLegalDocument = nil
@@ -242,23 +244,11 @@ struct OnboardingViewV2: View {
                 state.goTo(11)
             }
         case 11:
-            OBTimelinePaywallView(
-                packages: subscriptionPackages,
-                offeringsLoadState: subscriptionOfferingsLoadState,
-                isWorking: isPaywallWorking,
-                noticeMessage: paywallNoticeMessage,
-                onStart: { plan in
-                    startPurchase(plan)
-                },
-                onReloadPackages: {
-                    await onReloadSubscriptionOfferings()
-                },
-                onRestore: {
-                    restorePurchases()
-                },
-                onTerms: { selectedLegalDocument = .terms },
-                onPrivacy: { selectedLegalDocument = .privacy },
-                onDismiss: { finishOnboarding() }
+            PaywallDesignFlowView(
+                source: .onboardingV2,
+                onClose: { finishOnboarding() },
+                onSubscribe: { finishOnboarding() },
+                notice: paywallNoticeMessage
             )
         default:
             Color.rdPaper.onAppear { onFinish() }
@@ -328,40 +318,21 @@ struct OnboardingViewV2: View {
         }
     }
 
-    private func startPurchase(_ plan: OBPlan) {
-        guard !isPaywallWorking else { return }
-        isPaywallWorking = true
-        paywallNoticeMessage = nil
-        state.selectedPlan = plan
-
-        Task {
-            do {
-                try await onPurchase(plan)
-                await MainActor.run {
-                    isPaywallWorking = false
-                    finishOnboarding()
-                }
-            } catch is CancellationError {
-                await MainActor.run {
-                    isPaywallWorking = false
-                    paywallNoticeMessage = nil
-                }
-            } catch {
-                await MainActor.run {
-                    isPaywallWorking = false
-                    paywallNoticeMessage = AppErrorMessage.makePurchase(
-                        error,
-                        context: RDLocalization.string("onboarding.onboarding.view.v2.satin.alma.dogrulanamadi.7bdaab97", table: .onboarding, fallback: "Satın alma doğrulanamadı"),
-                        fallbackTitle: RDLocalization.string("onboarding.onboarding.view.v2.satin.alma.dogrulanamadi.7ccf47ab", table: .onboarding, fallback: "Satın alma doğrulanamadı")
-                    ).message
-                }
-            }
+    #if DEBUG
+    private static func resolvedInitialStep(_ initialStep: Int) -> Int {
+        if CommandLine.arguments.contains("RD_PREVIEW_ONBOARDING_LOADING")
+            || ProcessInfo.processInfo.environment["RD_PREVIEW_ONBOARDING_LOADING"] == "1" {
+            return 6
         }
+        return initialStep
     }
 
-    #if DEBUG
     private static var isUITestAuthBypassLaunch: Bool {
         CommandLine.arguments.contains("RD_UI_TEST_BYPASS_AUTH")
+    }
+    #else
+    private static func resolvedInitialStep(_ initialStep: Int) -> Int {
+        initialStep
     }
     #endif
 
@@ -391,13 +362,13 @@ private struct OBSkipConfirmationView: View {
 
                 VStack(spacing: 8) {
                     Text(RDLocalization.string("onboarding.onboarding.view.v2.sana.ozel.sonuclar.veremeyecegiz.38eef1fd", table: .onboarding, fallback: "Sana özel sonuçlar veremeyeceğiz"))
-                        .font(.system(size: RDFontScale.size(23), weight: .semibold))
+                        .font(RDTypography.font(size: RDFontScale.size(23), weight: .semibold))
                         .foregroundStyle(Color.rdOnyx)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(RDLocalization.string("onboarding.onboarding.view.v2.birkac.kisa.cevap.analizlerini.sektorune.ve.cali.b9867bb8", table: .onboarding, fallback: "Birkaç kısa cevap, analizlerini sektörüne ve çalışma alanına göre daha isabetli hazırlamamıza yardım eder."))
-                        .font(.system(size: RDFontScale.size(14)))
+                        .font(RDTypography.font(size: RDFontScale.size(14)))
                         .lineSpacing(2)
                         .foregroundStyle(Color.rdSlate)
                         .multilineTextAlignment(.center)
@@ -413,7 +384,7 @@ private struct OBSkipConfirmationView: View {
                         onConfirm()
                     } label: {
                         Text(RDLocalization.string("onboarding.onboarding.view.v2.yine.de.atla.de185fdb", table: .onboarding, fallback: "Yine de atla"))
-                            .font(.system(size: RDFontScale.size(14), weight: .semibold))
+                            .font(RDTypography.font(size: RDFontScale.size(14), weight: .semibold))
                             .foregroundStyle(Color.rdSlate.opacity(0.72))
                             .frame(maxWidth: .infinity)
                             .frame(height: 48)
@@ -495,4 +466,5 @@ private struct SadFaceShape: Shape {
 
 #Preview("11 Paywall") {
     OnboardingViewV2(initialStep: 11)
+        .environmentObject(AppState())
 }

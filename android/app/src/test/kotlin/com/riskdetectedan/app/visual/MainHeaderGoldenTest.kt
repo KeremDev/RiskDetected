@@ -23,7 +23,7 @@ import org.robolectric.annotation.GraphicsMode
 
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(application = Application::class, sdk = [35], qualifiers = "w393dp-h116dp-xxhdpi")
+@Config(application = Application::class, sdk = [35], qualifiers = "tr-rTR-w393dp-h116dp-xxhdpi")
 class MainHeaderGoldenTest {
     @get:Rule val composeRule = createComposeRule()
 
@@ -37,9 +37,12 @@ class MainHeaderGoldenTest {
     @Test
     fun reports_header_plus_targets_pro() = captureHeader(SubscriptionTier.Plus)
 
-    private fun captureHeader(tier: SubscriptionTier) {
+    @Test
+    fun analyses_header_free_dark_keeps_logo_and_initials_legible() = captureHeader(SubscriptionTier.Free, darkTheme = true)
+
+    private fun captureHeader(tier: SubscriptionTier, darkTheme: Boolean = false) {
         composeRule.setContent {
-            RiskDetectedTheme(darkTheme = false) {
+            RiskDetectedTheme(darkTheme = darkTheme) {
                 Column(Modifier.fillMaxSize().background(RdTheme.colors.paper)) {
                     AppMainHeader(
                         profile = UserProfile(

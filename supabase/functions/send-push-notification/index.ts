@@ -536,12 +536,24 @@ async function resolveManagedContent(params: {
     .select("app_language,preferred_content_locale")
     .eq("id", userID)
     .maybeSingle();
+  // Older authenticated accounts may have an app language but no exact locale because they
+  // predate the localized onboarding/profile contract. Derive only the language's canonical
+  // locale (tr -> tr-TR, en -> en-001); this is still an exact catalog entry and is not a
+  // cross-locale fallback. New Android onboarding now persists both values up front, while this
+  // repair keeps report_ready from being discarded for existing accounts.
+  const profileLanguage = profile?.app_language === "tr" || profile?.app_language === "en"
+    ? profile.app_language
+    : null;
   const locale = typeof profile?.preferred_content_locale === "string"
     ? profile.preferred_content_locale
+    : profileLanguage === "tr"
+    ? "tr-TR"
+    : profileLanguage === "en"
+    ? "en-001"
     : null;
   if (
     profileError || !profile || locale === null ||
-    (profile.app_language !== "tr" && profile.app_language !== "en")
+    profileLanguage === null
   ) {
     return {
       ok: false,
@@ -567,7 +579,7 @@ async function resolveManagedContent(params: {
   if (!resolution.ok) {
     return { ok: false, code: resolution.code, locale };
   }
-  if (resolution.language !== profile.app_language) {
+  if (resolution.language !== profileLanguage) {
     return {
       ok: false,
       code: "NOTIFICATION_PROFILE_LANGUAGE_LOCALE_MISMATCH",

@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   buildWelcomeEmailContent,
-  WELCOME_EMAIL_LOCALES,
+  resolveWelcomeEmailLocale,
   type WelcomeEmailLocale,
 } from "./template.ts";
 
@@ -46,6 +46,32 @@ function safeLogText(value: unknown, maxLength = 220): string {
     .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[email]");
 }
 
+async function readRequestLocale(req: Request): Promise<{
+  appLanguage: string | null;
+  contentLocale: string | null;
+}> {
+  const contentType = req.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().includes("application/json")) {
+    return { appLanguage: null, contentLocale: null };
+  }
+
+  try {
+    const body = await req.json();
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return { appLanguage: null, contentLocale: null };
+    }
+    const values = body as Record<string, unknown>;
+    return {
+      appLanguage: cleanText(values.app_language, 8) || null,
+      contentLocale: cleanText(values.preferred_content_locale, 32) || null,
+    };
+  } catch {
+    // iOS sends an empty body. A malformed optional metadata body should not turn a valid
+    // authenticated request into a generic 500; profile values remain authoritative.
+    return { appLanguage: null, contentLocale: null };
+  }
+}
+
 function displayName(profile: ProfileRow, fallbackEmail?: string | null) {
   const fullName = cleanText(profile.full_name, 120);
   if (fullName) return fullName;
@@ -61,6 +87,8 @@ serve(async (req) => {
   if (req.method !== "POST") {
     return json(405, { error: "method_not_allowed" });
   }
+
+  const requestLocale = await readRequestLocale(req);
 
   const supabaseURL = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -144,18 +172,13 @@ serve(async (req) => {
   }
 
   const lockedProfileRow = lockedProfile as ProfileRow;
-  const locale = lockedProfileRow.preferred_content_locale;
-  const localeIsSupported = typeof locale === "string" &&
-    (WELCOME_EMAIL_LOCALES as readonly string[]).includes(locale);
-  const localeLanguage = locale === "tr-TR"
-    ? "tr"
-    : locale?.startsWith("en-")
-    ? "en"
-    : null;
-  if (
-    !localeIsSupported || localeLanguage === null ||
-    localeLanguage !== lockedProfileRow.app_language
-  ) {
+  const localeResolution = resolveWelcomeEmailLocale({
+    profileAppLanguage: lockedProfileRow.app_language,
+    profileContentLocale: lockedProfileRow.preferred_content_locale,
+    requestAppLanguage: requestLocale.appLanguage,
+    requestContentLocale: requestLocale.contentLocale,
+  });
+  if (!localeResolution) {
     await supabase
       .from("profiles")
       .update({
@@ -167,6 +190,31 @@ serve(async (req) => {
       error: "WELCOME_EMAIL_EXACT_LOCALE_TEMPLATE_MISSING",
       delivery_status: "localization_failed",
     });
+  }
+  const { appLanguage, locale } = localeResolution;
+
+  // Repair only missing legacy fields. Existing profile choices stay authoritative, while a new
+  // Android account gets a durable exact-locale pair even if this call wins the race with the
+  // onboarding/foreground localization sync.
+  const localizationRepair: Record<string, string> = {};
+  if (!lockedProfileRow.app_language) localizationRepair.app_language = appLanguage;
+  if (!lockedProfileRow.preferred_content_locale) {
+    localizationRepair.preferred_content_locale = locale;
+  }
+  if (Object.keys(localizationRepair).length > 0) {
+    const { error: repairError } = await supabase
+      .from("profiles")
+      .update(localizationRepair)
+      .eq("id", user.id);
+    if (repairError) {
+      console.error(
+        "welcome email profile localization repair failed",
+        JSON.stringify({
+          user_id: user.id,
+          error: safeLogText(repairError.message),
+        }),
+      );
+    }
   }
   const toEmail = cleanText(lockedProfileRow.email, 240) ||
     cleanText(user.email, 240);

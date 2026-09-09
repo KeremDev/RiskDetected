@@ -38,6 +38,7 @@ import com.riskdetectedan.core.designsystem.RdPrimaryButton
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.toTextStyle
+import com.riskdetectedan.core.common.RdClientMetadata
 
 /**
  * Port of OnboardingViewV2.swift's `currentScreen` switch — same 0-11 step sequence (Turkish
@@ -62,36 +63,63 @@ fun OnboardingFlow(
     viewModel: OnboardingFlowViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
+    val isEnglish = RdClientMetadata.APP_LANGUAGE == "en"
     var showSkipConfirmation by rememberSaveable { mutableStateOf(false) }
     val primarySectorLabel = state.sectors.firstOrNull()?.let { onboardingSectorLabel(it) }
         ?: stringResource(RdR.string.rd_sector_construction)
     val hazardLabels = buildList {
         state.hazards.forEach { add(hazardLabel(it)) }
     }
-    val hazardsLabel = if (hazardLabels.isEmpty()) {
+    val hazardsLabel = if (isEnglish) {
+        state.safetyProfile?.let { safetyProfileLabel(it) }
+            ?: stringResource(RdR.string.rd_safety_profile_international)
+    } else if (hazardLabels.isEmpty()) {
         stringResource(RdR.string.rd_hazard_critical)
     } else {
         hazardLabels.joinToString(" · ")
     }
-    val selectedCertificateLabel = state.certificate?.let { certificateLabel(it) }
-        ?: stringResource(RdR.string.rd_cert_a)
+    val selectedCertificateLabel = if (isEnglish) {
+        state.professionalRole?.let { professionalRoleLabel(it) }
+            ?: stringResource(RdR.string.rd_role_safety_professional)
+    } else {
+        state.certificate?.let { certificateLabel(it) }
+            ?: stringResource(RdR.string.rd_cert_a)
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         when (state.step) {
             0 -> OBSplashScreen(onNext = viewModel::next, onSkip = { showSkipConfirmation = true })
             1 -> OBPainPointScreen(onNext = viewModel::next)
-            2 -> OBCertificateScreen(
-                selected = state.certificate,
-                onSelect = viewModel::setCertificate,
-                onNext = viewModel::next,
-                onBack = viewModel::back,
-            )
-            3 -> OBHazardClassScreen(
-                selected = state.hazards,
-                onToggle = viewModel::toggleHazard,
-                onNext = viewModel::next,
-                onBack = viewModel::back,
-            )
+            2 -> if (isEnglish) {
+                OBProfessionalRoleScreen(
+                    selected = state.professionalRole,
+                    onSelect = viewModel::setProfessionalRole,
+                    onNext = viewModel::next,
+                    onBack = viewModel::back,
+                )
+            } else {
+                OBCertificateScreen(
+                    selected = state.certificate,
+                    onSelect = viewModel::setCertificate,
+                    onNext = viewModel::next,
+                    onBack = viewModel::back,
+                )
+            }
+            3 -> if (isEnglish) {
+                OBSafetyProfileScreen(
+                    selected = state.safetyProfile,
+                    onSelect = viewModel::setSafetyProfile,
+                    onNext = viewModel::next,
+                    onBack = viewModel::back,
+                )
+            } else {
+                OBHazardClassScreen(
+                    selected = state.hazards,
+                    onToggle = viewModel::toggleHazard,
+                    onNext = viewModel::next,
+                    onBack = viewModel::back,
+                )
+            }
             4 -> OBSectorScreen(
                 selected = state.sectors,
                 onToggle = viewModel::toggleSector,

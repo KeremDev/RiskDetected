@@ -7,6 +7,7 @@ import {
   OUTPUT_LANGUAGE_CONTRACT_FAILED,
   OutputLanguageContractError,
   validateAIOutputContract,
+  validateAIOutputRepairIntegrity,
   validateAIOutputWithSingleRepair,
 } from "./ai-localization-validation.ts";
 import { resolveLocalizationContext } from "./localization-context-resolver.ts";
@@ -162,16 +163,30 @@ Deno.test("six-profile output validator matrix is green in fixed order", () => {
   }
 });
 
-Deno.test("English output rejects Turkish user-visible leakage", () => {
+Deno.test("Latin-script prose is not classified by language word lists", () => {
   const validation = validateAIOutputContract(
     validOutput("tr-tr-current-v1"),
     snapshotFor("en-intl-generic-v1"),
   );
-  assertEquals(validation.failedLayer, "output_language");
-  assertEquals(validation.code, "OUTPUT_LANGUAGE_TURKISH_LEAK");
+  assertEquals(validation.ok, true);
 });
 
-Deno.test("English output rejects third-language user-visible prose", () => {
+Deno.test("technical English titles do not require a whitelist word", () => {
+  for (
+    const profile of safetyProfiles.filter((item) => item.language === "en")
+  ) {
+    const output = validOutput(profile.id);
+    (output.hazards as Array<Record<string, unknown>>)[0].title =
+      "Inadequate respiratory protection during dust-generating work";
+    const validation = validateAIOutputContract(
+      output,
+      snapshotFor(profile.id),
+    );
+    assertEquals(validation.ok, true, profile.id);
+  }
+});
+
+Deno.test("Latin third-language prose is non-blocking while incompatible scripts are explicit", () => {
   const thirdLanguageCases = [
     {
       language: "French",
@@ -241,20 +256,35 @@ Deno.test("English output rejects third-language user-visible prose", () => {
       output,
       snapshotFor("en-intl-generic-v1"),
     );
-    assertEquals(
-      validation.failedLayer,
-      "output_language",
-      testCase.language,
-    );
-    assertEquals(
-      validation.code,
-      "OUTPUT_LANGUAGE_ENGLISH_REQUIRED",
-      testCase.language,
-    );
+    if (testCase.language === "Japanese") {
+      assertEquals(validation.failedLayer, "output_language");
+      assertEquals(validation.code, "OUTPUT_LANGUAGE_ENGLISH_REQUIRED");
+      assertEquals(validation.failedPath, "hazards[0].title");
+    } else {
+      assertEquals(validation.ok, true, testCase.language);
+    }
   }
 });
 
-Deno.test("a single English profile term cannot mask third-language prose", () => {
+Deno.test("internal process audit prose cannot invalidate an otherwise valid user result", () => {
+  const output = validOutput("en-intl-generic-v1");
+  output.process_safety_checks = [{
+    check_key: "containment_integrity",
+    status: "actionable",
+    visual_evidence: "Определенно видимая внутренняя заметка",
+    linked_layer_keys: ["chemicals"],
+    equipment_instance_key: "tank_1",
+  }];
+
+  const validation = validateAIOutputContract(
+    output,
+    snapshotFor("en-intl-generic-v1"),
+    { certaintyPolicy: "v2" },
+  );
+  assertEquals(validation.ok, true);
+});
+
+Deno.test("Latin prose does not depend on an English-word ratio", () => {
   const output = validOutput("en-intl-generic-v1");
   const finding = (output.hazards as Array<Record<string, unknown>>)[0];
   finding.category = "Workplace safety";
@@ -275,8 +305,7 @@ Deno.test("a single English profile term cannot mask third-language prose", () =
     output,
     snapshotFor("en-intl-generic-v1"),
   );
-  assertEquals(validation.failedLayer, "output_language");
-  assertEquals(validation.code, "OUTPUT_LANGUAGE_ENGLISH_REQUIRED");
+  assertEquals(validation.ok, true);
 });
 
 Deno.test("English output permits quoted Turkish text only as visible evidence", () => {
@@ -291,7 +320,7 @@ Deno.test("English output permits quoted Turkish text only as visible evidence",
   assertEquals(validation.ok, true);
 });
 
-Deno.test("exact user-owned Turkish proper nouns are excluded from language scoring", () => {
+Deno.test("user-owned Latin proper nouns never need language-score exemptions", () => {
   const companyName = "Çalışan Güvenliği Tehlike Önlem Merkezi";
   const output = validOutput("en-intl-generic-v1");
   (output.hazards as Array<Record<string, unknown>>)[0].title =
@@ -301,7 +330,7 @@ Deno.test("exact user-owned Turkish proper nouns are excluded from language scor
     output,
     snapshotFor("en-intl-generic-v1"),
   );
-  assertEquals(withoutExemption.failedLayer, "output_language");
+  assertEquals(withoutExemption.ok, true);
 
   const withExemption = validateAIOutputContract(
     output,
@@ -311,7 +340,7 @@ Deno.test("exact user-owned Turkish proper nouns are excluded from language scor
   assertEquals(withExemption.ok, true);
 });
 
-Deno.test("quoted system prose outside evidence cannot bypass language validation", () => {
+Deno.test("quoted Latin prose is not rejected by heuristic language scoring", () => {
   const output = validOutput("tr-tr-current-v1");
   const finding = (output.hazards as Array<Record<string, unknown>>)[0];
   for (
@@ -330,8 +359,7 @@ Deno.test("quoted system prose outside evidence cannot bypass language validatio
     output,
     snapshotFor("en-intl-generic-v1"),
   );
-  assertEquals(validation.failedLayer, "output_language");
-  assertEquals(validation.code, "OUTPUT_LANGUAGE_TURKISH_LEAK");
+  assertEquals(validation.ok, true);
 });
 
 Deno.test("country profiles reject cross-terminology before regulatory claims", () => {
@@ -361,7 +389,7 @@ Deno.test("country profiles reject cross-terminology before regulatory claims", 
   }
 });
 
-Deno.test("English profiles require their generated primary domain terminology", () => {
+Deno.test("missing preferred profile wording is not a terminal validator error", () => {
   for (
     const profileID of [
       "en-intl-generic-v1",
@@ -379,16 +407,7 @@ Deno.test("English profiles require their generated primary domain terminology",
       output,
       snapshotFor(profileID),
     );
-    assertEquals(
-      validation.failedLayer,
-      "safety_profile_terminology",
-      profileID,
-    );
-    assertEquals(
-      validation.code,
-      "SAFETY_PROFILE_REQUIRED_TERMINOLOGY_MISSING",
-      profileID,
-    );
+    assertEquals(validation.ok, true, profileID);
   }
 });
 
@@ -450,9 +469,11 @@ Deno.test("broken provider JSON is repaired once through the schema layer", asyn
 });
 
 Deno.test("wrong first language is repaired exactly once", async () => {
+  const incompatible = validOutput("en-ca-generic-v1");
+  incompatible.ai_summary = "画像で確認できる状態には予防措置が必要です。";
   let repairCalls = 0;
   const result = await validateAIOutputWithSingleRepair({
-    initialResult: validOutput("tr-tr-current-v1"),
+    initialResult: incompatible,
     snapshot: snapshotFor("en-ca-generic-v1"),
     repair: (validation) => {
       repairCalls += 1;
@@ -465,7 +486,7 @@ Deno.test("wrong first language is repaired exactly once", async () => {
   assertEquals(result.attempts, 2);
 });
 
-Deno.test("third-language first output is repaired exactly once", async () => {
+Deno.test("Latin third-language prose does not trigger a repair call", async () => {
   const frenchOutput = validOutput("en-intl-generic-v1");
   const finding = (frenchOutput.hazards as Array<Record<string, unknown>>)[0];
   finding.observed_evidence =
@@ -481,31 +502,27 @@ Deno.test("third-language first output is repaired exactly once", async () => {
   frenchOutput.ai_summary =
     "La sécurité au travail exige une mesure corrective avant utilisation.";
 
-  let repairCalls = 0;
   const result = await validateAIOutputWithSingleRepair({
     initialResult: frenchOutput,
     snapshot: snapshotFor("en-intl-generic-v1"),
-    repair: (validation) => {
-      repairCalls += 1;
-      assertEquals(validation.code, "OUTPUT_LANGUAGE_ENGLISH_REQUIRED");
-      return Promise.resolve(validOutput("en-intl-generic-v1"));
-    },
+    repair: () => Promise.reject(new Error("repair must not run")),
   });
-  assertEquals(repairCalls, 1);
-  assertEquals(result.status, "repaired");
-  assertEquals(result.attempts, 2);
+  assertEquals(result.status, "passed");
+  assertEquals(result.attempts, 1);
 });
 
-Deno.test("wrong language after repair returns the stable fail-closed error", async () => {
+Deno.test("unresolved incompatible script without safe copy keeps the stable error", async () => {
+  const incompatible = validOutput("en-us-generic-v1");
+  incompatible.ai_summary = "画像で確認できる状態には予防措置が必要です。";
   let repairCalls = 0;
   const error = await assertRejects(
     () =>
       validateAIOutputWithSingleRepair({
-        initialResult: validOutput("tr-tr-current-v1"),
+        initialResult: incompatible,
         snapshot: snapshotFor("en-us-generic-v1"),
         repair: () => {
           repairCalls += 1;
-          return Promise.resolve(validOutput("tr-tr-current-v1"));
+          return Promise.resolve(structuredClone(incompatible));
         },
       }),
     OutputLanguageContractError,
@@ -578,4 +595,1027 @@ Deno.test("definitive root-cause claims fail closed", () => {
     validation.code,
     "PHOTO_EVIDENCE_DEFINITIVE_ROOT_CAUSE",
   );
+});
+
+// Regression: analysis c42b5bc5 (2026-08-21) failed with
+// PHOTO_EVIDENCE_UNSUPPORTED_CERTAINTY after both attempts. The certainty
+// pattern was scanning every user-visible field, so the hedging and imperative
+// phrasing the photo-evidence prompt asks for was read as a certainty claim.
+Deno.test("hedged Turkish uncertainty in limitations is not a certainty claim", () => {
+  const output = validOutput("tr-tr-current-v1");
+  output.limitations =
+    "Koruyucunun yerinde olup olmadığı fotoğraftan kesin olarak belirlenememiştir.";
+  const validation = validateAIOutputContract(
+    output,
+    snapshotFor("tr-tr-current-v1"),
+  );
+  assertEquals(validation.ok, true, validation.code ?? "");
+});
+
+Deno.test("imperative Turkish safety copy is not a certainty claim", () => {
+  const output = validOutput("tr-tr-current-v1");
+  const finding = (output.hazards as Array<Record<string, unknown>>)[0];
+  finding.corrective_action = "Bu alanda baret kesinlikle kullanılmalıdır.";
+  finding.preventive_control = "Yetkisiz personel kesinlikle girmemelidir.";
+  const validation = validateAIOutputContract(
+    output,
+    snapshotFor("tr-tr-current-v1"),
+  );
+  assertEquals(validation.ok, true, validation.code ?? "");
+});
+
+Deno.test("certainty asserted about the scene still fails, with the field named", () => {
+  const output = validOutput("tr-tr-current-v1");
+  (output.hazards as Array<Record<string, unknown>>)[0].description =
+    "Bu ekipman kesinlikle arızalıdır ve şüphesiz kazaya yol açacaktır.";
+  const validation = validateAIOutputContract(
+    output,
+    snapshotFor("tr-tr-current-v1"),
+  );
+  assertEquals(validation.failedLayer, "photo_evidence");
+  assertEquals(validation.code, "PHOTO_EVIDENCE_UNSUPPORTED_CERTAINTY");
+  assertEquals(validation.failedField, "description");
+  assertEquals(
+    validation.failedExcerpt?.includes("kesinlikle arızalıdır"),
+    true,
+    validation.failedExcerpt ?? "",
+  );
+});
+
+// `\b` is ASCII-only, so the old pattern could not match a Turkish word that
+// starts with a non-ASCII letter after a space.
+Deno.test("standalone şüphesiz is matched despite the leading non-ASCII letter", () => {
+  const output = validOutput("tr-tr-current-v1");
+  (output.hazards as Array<Record<string, unknown>>)[0].observed_evidence =
+    "şüphesiz burada bir düşme tehlikesi vardır.";
+  const validation = validateAIOutputContract(
+    output,
+    snapshotFor("tr-tr-current-v1"),
+  );
+  assertEquals(validation.code, "PHOTO_EVIDENCE_UNSUPPORTED_CERTAINTY");
+});
+
+Deno.test("English hedging survives while an English certainty claim fails", () => {
+  const hedged = validOutput("en-gb-generic-v1");
+  hedged.limitations =
+    "Guard position could not be determined with certainty from the photograph.";
+  assertEquals(
+    validateAIOutputContract(hedged, snapshotFor("en-gb-generic-v1")).ok,
+    true,
+  );
+
+  const asserted = validOutput("en-gb-generic-v1");
+  (asserted.hazards as Array<Record<string, unknown>>)[0].description =
+    "This will definitely cause an incident.";
+  assertEquals(
+    validateAIOutputContract(asserted, snapshotFor("en-gb-generic-v1")).code,
+    "PHOTO_EVIDENCE_UNSUPPORTED_CERTAINTY",
+  );
+});
+
+Deno.test("certainty policy v2 closed hedge and claim matrix covers over forty TR/EN cases", () => {
+  const allowedCases = [
+    [
+      "tr-tr-current-v1",
+      "limitations",
+      "Koruyucu kesin olarak belirlenememiştir.",
+    ],
+    [
+      "tr-tr-current-v1",
+      "limitations",
+      "Durum kesin olarak tespit edilememiştir.",
+    ],
+    [
+      "tr-tr-current-v1",
+      "limitations",
+      "Koşul kesin olarak doğrulanamamıştır.",
+    ],
+    [
+      "tr-tr-current-v1",
+      "limitations",
+      "Risk kesin olarak değerlendirilememiştir.",
+    ],
+    ["tr-tr-current-v1", "limitations", "Neden kesin olarak anlaşılamamıştır."],
+    ["tr-tr-current-v1", "limitations", "Kaynak kesin olarak saptanamamıştır."],
+    [
+      "tr-tr-current-v1",
+      "limitations",
+      "Ayrıntı kesin olarak gözlemlenememiştir.",
+    ],
+    ["tr-tr-current-v1", "limitations", "Seviye kesin olarak ölçülememiştir."],
+    [
+      "tr-tr-current-v1",
+      "limitations",
+      "Bilgi kesin olarak teyit edilememiştir.",
+    ],
+    [
+      "tr-tr-current-v1",
+      "limitations",
+      "Sayısal değerler yerinde ölçüm yapılmadan kesin olarak belirtilememiştir.",
+    ],
+    [
+      "tr-tr-current-v1",
+      "limitations",
+      "Sonuç kesin olarak ifade edilememiştir.",
+    ],
+    [
+      "tr-tr-current-v1",
+      "limitations",
+      "Durum kesin olarak söylenemez.",
+    ],
+    [
+      "tr-tr-current-v1",
+      "corrective_action",
+      "Baret kesinlikle kullanılmalıdır.",
+    ],
+    [
+      "tr-tr-current-v1",
+      "corrective_action",
+      "Alan kesinlikle kapatılmalıdır.",
+    ],
+    [
+      "tr-tr-current-v1",
+      "preventive_control",
+      "Kontrol kesinlikle yapılmalıdır.",
+    ],
+    [
+      "tr-tr-current-v1",
+      "preventive_control",
+      "Yetkisiz giriş kesinlikle önlenmelidir.",
+    ],
+    [
+      "tr-tr-current-v1",
+      "preventive_control",
+      "Bu kontrol kesinlikle zorunludur.",
+    ],
+    [
+      "en-gb-generic-v1",
+      "limitations",
+      "The guard position could not be determined with certainty.",
+    ],
+    [
+      "en-gb-generic-v1",
+      "limitations",
+      "The condition cannot be verified with certainty from the photo.",
+    ],
+    [
+      "en-gb-generic-v1",
+      "limitations",
+      "The cause was not reliably established with certainty.",
+    ],
+    [
+      "en-gb-generic-v1",
+      "limitations",
+      "The level could not be measured with certainty.",
+    ],
+    [
+      "en-gb-generic-v1",
+      "limitations",
+      "The detail cannot be confirmed with certainty.",
+    ],
+    [
+      "en-gb-generic-v1",
+      "corrective_action",
+      "The guard must definitely be installed.",
+    ],
+    [
+      "en-gb-generic-v1",
+      "preventive_control",
+      "This control should certainly be checked before use.",
+    ],
+  ] as const;
+  const rejectedCases = [
+    ["tr-tr-current-v1", "title", "Kesinlikle arızalı makine"],
+    ["tr-tr-current-v1", "category", "Şüphesiz elektrik tehlikesi"],
+    ["tr-tr-current-v1", "ai_summary", "Bu makine kesinlikle arızalıdır."],
+    [
+      "tr-tr-current-v1",
+      "limitations",
+      "Alanda şüphesiz koruyucu bulunmamaktadır.",
+    ],
+    [
+      "tr-tr-current-v1",
+      "limitations",
+      "Kesinlikle önlenemez bir risk söz konusudur.",
+    ],
+    ["tr-tr-current-v1", "scene_summary", "Ekipman kesin olarak kusurludur."],
+    [
+      "tr-tr-current-v1",
+      "coverage_gap_reason",
+      "Şüphesiz hiçbir kontrol yoktur.",
+    ],
+    ["tr-tr-current-v1", "coverage_conclusion", "Risk kesinlikle yüksektir."],
+    [
+      "tr-tr-current-v1",
+      "corrective_action",
+      "Makine kesinlikle arızalıdır ve kullanılmamalıdır.",
+    ],
+    [
+      "tr-tr-current-v1",
+      "preventive_control",
+      "Koruyucu şüphesiz eksiktir ve takılmalıdır.",
+    ],
+    [
+      "tr-tr-current-v1",
+      "description",
+      "Bu durum kesinlikle kazaya yol açacaktır.",
+    ],
+    ["tr-tr-current-v1", "root_cause", "Neden şüphesiz bakım eksikliğidir."],
+    [
+      "tr-tr-current-v1",
+      "limitations",
+      "Alanda kesinlikle koruyucu yoktur çünkü nedeni belirlenememiştir.",
+    ],
+    [
+      "tr-tr-current-v1",
+      "corrective_action",
+      "Makine kesinlikle arızalıdır kullanılmamalıdır.",
+    ],
+    ["en-gb-generic-v1", "title", "Definitely defective guard"],
+    ["en-gb-generic-v1", "category", "Certainly unsafe equipment"],
+    ["en-gb-generic-v1", "ai_summary", "This machine is definitely defective."],
+    [
+      "en-gb-generic-v1",
+      "limitations",
+      "There is certainly no guard in the area.",
+    ],
+    [
+      "en-gb-generic-v1",
+      "scene_summary",
+      "The equipment is defective with certainty.",
+    ],
+    [
+      "en-gb-generic-v1",
+      "coverage_gap_reason",
+      "Without doubt no control exists.",
+    ],
+    [
+      "en-gb-generic-v1",
+      "corrective_action",
+      "The machine is definitely defective and must not be used.",
+    ],
+    [
+      "en-gb-generic-v1",
+      "preventive_control",
+      "The guard is certainly missing and should be installed.",
+    ],
+    [
+      "en-gb-generic-v1",
+      "description",
+      "This will definitely cause an incident.",
+    ],
+    [
+      "en-gb-generic-v1",
+      "root_cause",
+      "The cause is certainly poor maintenance.",
+    ],
+    [
+      "en-gb-generic-v1",
+      "limitations",
+      "The guard is definitely absent because its position could not be determined.",
+    ],
+    [
+      "en-gb-generic-v1",
+      "corrective_action",
+      "The machine is definitely defective must not be used.",
+    ],
+  ] as const;
+
+  for (const [profileID, field, text] of allowedCases) {
+    const output = validOutput(profileID);
+    if (field in output) output[field] = text;
+    else (output.hazards as Array<Record<string, unknown>>)[0][field] = text;
+    const validation = validateAIOutputContract(
+      output,
+      snapshotFor(profileID),
+      {
+        certaintyPolicy: "v2",
+      },
+    );
+    assertEquals(validation.ok, true, `${profileID}/${field}/${text}`);
+  }
+  for (const [profileID, field, text] of rejectedCases) {
+    const output = validOutput(profileID);
+    if (field in output) output[field] = text;
+    else (output.hazards as Array<Record<string, unknown>>)[0][field] = text;
+    const validation = validateAIOutputContract(
+      output,
+      snapshotFor(profileID),
+      {
+        certaintyPolicy: "v2",
+      },
+    );
+    assertEquals(
+      validation.code,
+      "PHOTO_EVIDENCE_UNSUPPORTED_CERTAINTY",
+      `${profileID}/${field}/${text}`,
+    );
+  }
+  assertEquals(allowedCases.length + rejectedCases.length >= 40, true);
+});
+
+Deno.test("certainty policy v2 excludes references and returns every exact JSON path", () => {
+  const first = validOutput("tr-tr-current-v1");
+  const finding = (first.hazards as Array<Record<string, unknown>>)[0];
+  finding.references = "Kesinlikle yalnız örnek referans metnidir.";
+  assertEquals(
+    validateAIOutputContract(first, snapshotFor("tr-tr-current-v1"), {
+      certaintyPolicy: "v2",
+    }).ok,
+    true,
+  );
+
+  const findingOne = structuredClone(finding);
+  const findingTwo = structuredClone(finding);
+  findingOne.description = "Bu durum kesinlikle kazaya yol açar.";
+  findingTwo.observed_evidence = "Gürültü seviyesi 92 dBA olarak yazılmıştır.";
+  findingTwo.needs_field_verification = false;
+  const output = {
+    photo_findings: [
+      { photo_index: 1, findings: [findingOne] },
+      { photo_index: 2, findings: [findingTwo] },
+    ],
+    ai_summary: first.ai_summary,
+    limitations: first.limitations,
+  };
+  const validation = validateAIOutputContract(
+    output,
+    snapshotFor("tr-tr-current-v1"),
+    { certaintyPolicy: "v2" },
+  );
+  assertEquals(
+    validation.failedPath,
+    "photo_findings[1].findings[0].observed_evidence",
+  );
+  assertEquals(
+    validation.violations.some((item) =>
+      item.path === "photo_findings[0].findings[0].description"
+    ),
+    true,
+  );
+  assertEquals(validation.violations.length >= 2, true);
+});
+
+Deno.test("repair integrity permits only rejected finding paths or their removal", () => {
+  const initial = validOutput("tr-tr-current-v1");
+  const first = (initial.hazards as Array<Record<string, unknown>>)[0];
+  first.description = "Bu ekipman kesinlikle arızalıdır.";
+  (initial.hazards as Array<Record<string, unknown>>).push({
+    ...structuredClone(first),
+    title: "İkinci görünür bulgu",
+    description: "Temas halinde yaralanma tehlikesi bulunuyor.",
+  });
+  const validation = validateAIOutputContract(
+    initial,
+    snapshotFor("tr-tr-current-v1"),
+    { certaintyPolicy: "v2" },
+  );
+
+  const repaired = structuredClone(initial);
+  (repaired.hazards as Array<Record<string, unknown>>)[0].description =
+    "Ekipmanda görsel olarak olağan dışı bir durum görülüyor.";
+  assertEquals(
+    validateAIOutputRepairIntegrity(initial, repaired, validation).ok,
+    true,
+  );
+
+  const scoreChanged = structuredClone(repaired);
+  (scoreChanged.hazards as Array<Record<string, unknown>>)[0].fk_severity = 40;
+  const scoreIntegrity = validateAIOutputRepairIntegrity(
+    initial,
+    scoreChanged,
+    validation,
+  );
+  assertEquals(scoreIntegrity.ok, false);
+  assertEquals(scoreIntegrity.path?.includes("hazards[1]"), true);
+
+  const dropped = structuredClone(initial);
+  (dropped.hazards as Array<Record<string, unknown>>).splice(0, 1);
+  dropped.ai_summary = "Görselde doğrulanabilen bir bulgu kaldı.";
+  const dropIntegrity = validateAIOutputRepairIntegrity(
+    initial,
+    dropped,
+    validation,
+  );
+  assertEquals(dropIntegrity.ok, true);
+  assertEquals(dropIntegrity.removedFindingsCount, 1);
+
+  const unrelatedSummary = structuredClone(repaired);
+  unrelatedSummary.ai_summary = "İlgisiz yeni özet.";
+  assertEquals(
+    validateAIOutputRepairIntegrity(initial, unrelatedSummary, validation).code,
+    "REPAIR_INTEGRITY_UNRELATED_PATH_CHANGED",
+  );
+});
+
+Deno.test("repair integrity permits translation but protects structure and scores", () => {
+  const initial = validOutput("tr-tr-current-v1");
+  const validation = validateAIOutputContract(
+    initial,
+    snapshotFor("en-intl-generic-v1"),
+  );
+  const translated = validOutput("en-intl-generic-v1");
+  assertEquals(
+    validateAIOutputRepairIntegrity(initial, translated, validation).ok,
+    true,
+  );
+  const scoreChanged = structuredClone(translated);
+  (scoreChanged.hazards as Array<Record<string, unknown>>)[0].m5_severity = 5;
+  assertEquals(
+    validateAIOutputRepairIntegrity(initial, scoreChanged, validation).ok,
+    false,
+  );
+  const findingAdded = structuredClone(translated);
+  (findingAdded.hazards as Array<Record<string, unknown>>).push(
+    structuredClone(
+      (findingAdded.hazards as Array<Record<string, unknown>>)[0],
+    ),
+  );
+  assertEquals(
+    validateAIOutputRepairIntegrity(initial, findingAdded, validation).code,
+    "REPAIR_INTEGRITY_FINDING_ADDED",
+  );
+});
+
+Deno.test("validated semantic repair survives finding-count drift without a user error", async () => {
+  const initial = validOutput("en-us-generic-v1");
+  initial.ai_summary = "画像で確認できる状態には予防措置が必要です。";
+  const initialFinding = (initial.hazards as Array<Record<string, unknown>>)[0];
+  initial.hazards = Array.from({ length: 5 }, (_, index) => ({
+    ...structuredClone(initialFinding),
+    title: `${initialFinding.title} ${index + 1}`,
+  }));
+  const repaired = validOutput("en-us-generic-v1");
+  const repairedFinding =
+    (repaired.hazards as Array<Record<string, unknown>>)[0];
+  repaired.hazards = Array.from({ length: 3 }, (_, index) => ({
+    ...structuredClone(repairedFinding),
+    title: `${repairedFinding.title} ${index + 1}`,
+  }));
+
+  const result = await validateAIOutputWithSingleRepair({
+    initialResult: initial,
+    snapshot: snapshotFor("en-us-generic-v1"),
+    enforceRepairIntegrity: true,
+    repair: () => Promise.resolve(repaired),
+  });
+
+  assertEquals(result.status, "repaired");
+  assertEquals((result.result.hazards as unknown[]).length, 3);
+  assertEquals(result.finalValidation.ok, true);
+  assertEquals(
+    result.repairIntegrity?.code,
+    "REPAIR_INTEGRITY_FINDING_REMOVED",
+  );
+  assertEquals(result.validatedRepairSalvageUsed, true);
+  assertEquals(
+    result.validatedRepairSalvageCode,
+    "REPAIR_INTEGRITY_FINDING_REMOVED",
+  );
+});
+
+Deno.test("validated semantic repair salvage cannot erase every finding", async () => {
+  const initial = validOutput("en-us-generic-v1");
+  initial.ai_summary = "画像で確認できる状態には予防措置が必要です。";
+  const repaired = validOutput("en-us-generic-v1");
+  repaired.hazards = [];
+  const error = await assertRejects(
+    () =>
+      validateAIOutputWithSingleRepair({
+        initialResult: initial,
+        snapshot: snapshotFor("en-us-generic-v1"),
+        enforceRepairIntegrity: true,
+        repair: () => Promise.resolve(repaired),
+      }),
+    OutputLanguageContractError,
+  );
+  assertEquals(error.validationCode, "REPAIR_INTEGRITY_FINDING_REMOVED");
+  assertEquals(error.validation?.ok, true);
+});
+
+Deno.test("validated semantic repair salvage cannot add findings", async () => {
+  const initial = validOutput("en-us-generic-v1");
+  initial.ai_summary = "画像で確認できる状態には予防措置が必要です。";
+  const repaired = validOutput("en-us-generic-v1");
+  const repairedFinding =
+    (repaired.hazards as Array<Record<string, unknown>>)[0];
+  (repaired.hazards as Array<Record<string, unknown>>).push(
+    structuredClone(repairedFinding),
+  );
+  const error = await assertRejects(
+    () =>
+      validateAIOutputWithSingleRepair({
+        initialResult: initial,
+        snapshot: snapshotFor("en-us-generic-v1"),
+        enforceRepairIntegrity: true,
+        repair: () => Promise.resolve(repaired),
+      }),
+    OutputLanguageContractError,
+  );
+  assertEquals(error.validationCode, "REPAIR_INTEGRITY_FINDING_ADDED");
+  assertEquals(error.validation?.ok, true);
+});
+
+Deno.test("validated semantic repair salvage remains closed to added findings", async () => {
+  const initial = validOutput("en-intl-generic-v1");
+  (initial.hazards as Array<Record<string, unknown>>)[0].description =
+    "This machine will definitely cause an incident.";
+  const repaired = structuredClone(initial);
+  const repairedFinding =
+    (repaired.hazards as Array<Record<string, unknown>>)[0];
+  repairedFinding.description =
+    "Contact with the exposed part could cause an incident.";
+  (repaired.hazards as Array<Record<string, unknown>>).push(
+    structuredClone(repairedFinding),
+  );
+
+  const error = await assertRejects(
+    () =>
+      validateAIOutputWithSingleRepair({
+        initialResult: initial,
+        snapshot: snapshotFor("en-intl-generic-v1"),
+        certaintyPolicy: "v2",
+        enforceRepairIntegrity: true,
+        repair: () => Promise.resolve(repaired),
+      }),
+    OutputLanguageContractError,
+  );
+  assertEquals(error.validationCode, "REPAIR_INTEGRITY_FINDING_ADDED");
+  assertEquals(error.validation?.ok, true);
+});
+
+Deno.test("validated evidence repair may change prose without failing the analysis", async () => {
+  const initial = validOutput("tr-tr-current-v1");
+  initial.limitations =
+    "Sayısal değerler yerinde ölçüm yapılmadan kesin olarak belirtilememiştir.";
+  const finding = (initial.hazards as Array<Record<string, unknown>>)[0];
+  finding.description = "Bu durum kesinlikle kazaya yol açacaktır.";
+  const repaired = structuredClone(initial);
+  repaired.limitations =
+    "Sayısal değerler için yerinde doğrulama yapılması gerekebilir.";
+  const repairedFinding =
+    (repaired.hazards as Array<Record<string, unknown>>)[0];
+  repairedFinding.description =
+    "Görünür hareketli parçayla temas yaralanmaya yol açabilir.";
+  repairedFinding.title = "Görünür hareketli parçaya temas";
+
+  const result = await validateAIOutputWithSingleRepair({
+    initialResult: initial,
+    snapshot: snapshotFor("tr-tr-current-v1"),
+    certaintyPolicy: "v2",
+    enforceRepairIntegrity: true,
+    repair: () => Promise.resolve(repaired),
+  });
+
+  assertEquals(result.status, "repaired");
+  assertEquals(result.finalValidation.ok, true);
+  assertEquals(result.repairIntegrity?.ok, false);
+  assertEquals(result.validatedRepairSalvageUsed, true);
+  assertEquals((result.result.hazards as unknown[]).length, 1);
+});
+
+const fallbackCopy = {
+  summary: "{{count}} visible workplace safety finding(s) remained.",
+  zeroFindingsSummary:
+    "No workplace safety finding could be reliably verified from the photo.",
+  zeroFindingsLimitation:
+    "The photo did not provide enough evidence; field verification may be needed.",
+  cautiousRootCause:
+    "The visible condition suggests a possible contributing factor that requires field verification.",
+  coverageGapReason:
+    "No actionable risk evidence could be reliably verified from the photo.",
+};
+
+function safeFallbackCopyFor(profileID: SafetyProfileID) {
+  const profile = safetyProfiles.find((item) => item.id === profileID)!;
+  if (profile.language === "tr") {
+    return {
+      summary:
+        "Görsel kanıt doğrulamasından sonra {{count}} iş güvenliği bulgusu kaldı.",
+      zeroFindingsSummary:
+        "Fotoğraftan güvenilir biçimde doğrulanabilen bir iş güvenliği bulgusu oluşturulamadı.",
+      zeroFindingsLimitation:
+        "Görsel kanıt yeterli olmadığından saha doğrulaması gerekebilir.",
+      cautiousRootCause:
+        "Görünür durum, sahada doğrulanması gereken olası bir etkene işaret etmektedir.",
+      coverageGapReason:
+        "Fotoğraftan eyleme dönük risk kanıtı güvenilir biçimde doğrulanamadı.",
+    };
+  }
+  return {
+    summary:
+      `{{count}} visible ${profile.primary_domain_term} finding(s) remained.`,
+    zeroFindingsSummary:
+      `No ${profile.primary_domain_term} finding could be reliably verified from the photo.`,
+    zeroFindingsLimitation:
+      "The photo did not provide enough evidence; field verification may be needed.",
+    cautiousRootCause:
+      "The visible condition suggests a possible contributing factor that requires field verification.",
+    coverageGapReason:
+      "No actionable risk evidence could be reliably verified from the photo.",
+  };
+}
+
+Deno.test("safe semantic fallback completes every TR and English profile", async () => {
+  for (const profile of safetyProfiles) {
+    const initial = validOutput(profile.id);
+    const finding = (initial.hazards as Array<Record<string, unknown>>)[0];
+    finding.description = profile.language === "tr"
+      ? "Bu durum kesinlikle kazaya yol açacaktır."
+      : "This condition will definitely cause an incident.";
+    const result = await validateAIOutputWithSingleRepair({
+      initialResult: initial,
+      snapshot: snapshotFor(profile.id),
+      certaintyPolicy: "v2",
+      enforceRepairIntegrity: true,
+      safeFallbackCopy: safeFallbackCopyFor(profile.id),
+      repair: () => Promise.reject(new TypeError("network unavailable")),
+    });
+    assertEquals(result.status, "fallback", profile.id);
+    assertEquals(result.deterministicFallback?.strategy, "safe_zero");
+    assertEquals(result.finalValidation.ok, true, profile.id);
+    assertEquals((result.result.hazards as unknown[]).length, 0, profile.id);
+  }
+});
+
+Deno.test("every semantic validator layer has a non-terminal safe fallback", async () => {
+  const cases = [
+    {
+      layer: "output_language",
+      mutate(output: Record<string, unknown>) {
+        output.ai_summary = "画像で確認できる状態には予防措置が必要です。";
+      },
+    },
+    {
+      layer: "safety_profile_terminology",
+      mutate(output: Record<string, unknown>) {
+        (output.hazards as Array<Record<string, unknown>>)[0].category =
+          "HSE inspection";
+      },
+    },
+    {
+      layer: "forbidden_claim",
+      mutate(output: Record<string, unknown>) {
+        (output.hazards as Array<Record<string, unknown>>)[0].description =
+          "The workplace is fully compliant.";
+      },
+    },
+    {
+      layer: "regulatory_reference",
+      mutate(output: Record<string, unknown>) {
+        (output.hazards as Array<Record<string, unknown>>)[0].references =
+          "29 CFR citation";
+      },
+    },
+    {
+      layer: "photo_evidence",
+      mutate(output: Record<string, unknown>) {
+        (output.hazards as Array<Record<string, unknown>>)[0].description =
+          "This condition will definitely cause an incident.";
+      },
+    },
+  ] as const;
+
+  for (const testCase of cases) {
+    const initial = validOutput("en-us-generic-v1");
+    testCase.mutate(initial);
+    const result = await validateAIOutputWithSingleRepair({
+      initialResult: initial,
+      snapshot: snapshotFor("en-us-generic-v1"),
+      certaintyPolicy: "v2",
+      enforceRepairIntegrity: true,
+      safeFallbackCopy: safeFallbackCopyFor("en-us-generic-v1"),
+      repair: () => Promise.resolve(structuredClone(initial)),
+    });
+    assertEquals(
+      result.initialValidation.failedLayer,
+      testCase.layer,
+      testCase.layer,
+    );
+    assertEquals(result.status, "fallback", testCase.layer);
+    assertEquals(result.deterministicFallback?.strategy, "safe_zero");
+    assertEquals(result.finalValidation.ok, true, testCase.layer);
+  }
+});
+
+Deno.test("safe zero fallback preserves photo records and clears rejected generated prose", async () => {
+  const base = validOutput("en-us-generic-v1");
+  const finding = structuredClone(
+    (base.hazards as Array<Record<string, unknown>>)[0],
+  );
+  finding.description = "This condition will definitely cause an incident.";
+  const initial = {
+    photo_findings: [{
+      photo_index: 1,
+      coverage_status: "actionable",
+      candidate_findings_count: 1,
+      scene_summary: "画像で確認できる状態には予防措置が必要です。",
+      coverage_gap_reason: "",
+      findings: [finding],
+    }],
+    ai_summary: base.ai_summary,
+    limitations: base.limitations,
+  };
+  const result = await validateAIOutputWithSingleRepair({
+    initialResult: initial,
+    snapshot: snapshotFor("en-us-generic-v1"),
+    certaintyPolicy: "v2",
+    enforceRepairIntegrity: true,
+    safeFallbackCopy: safeFallbackCopyFor("en-us-generic-v1"),
+    repair: () => Promise.resolve(structuredClone(initial)),
+  });
+  const records = result.result.photo_findings as Array<
+    Record<string, unknown>
+  >;
+  assertEquals(records.length, 1);
+  assertEquals(records[0].photo_index, 1);
+  assertEquals(records[0].coverage_status, "no_actionable_hazard");
+  assertEquals(records[0].candidate_findings_count, 0);
+  assertEquals((records[0].findings as unknown[]).length, 0);
+  assertEquals(result.finalValidation.ok, true);
+});
+
+Deno.test("schema-valid analysis uses safe zero fallback when repair transport fails", async () => {
+  const initial = validOutput("en-intl-generic-v1");
+  (initial.hazards as Array<Record<string, unknown>>)[0].description =
+    "This condition will definitely cause an incident.";
+  const result = await validateAIOutputWithSingleRepair({
+    initialResult: initial,
+    snapshot: snapshotFor("en-intl-generic-v1"),
+    certaintyPolicy: "v2",
+    enforceRepairIntegrity: true,
+    safeFallbackCopy: fallbackCopy,
+    repair: () => Promise.reject(new TypeError("network unavailable")),
+  });
+
+  assertEquals(result.status, "fallback");
+  assertEquals(result.deterministicFallback?.strategy, "safe_zero");
+  assertEquals(result.deterministicFallback?.zeroFindings, true);
+  assertEquals((result.result.hazards as unknown[]).length, 0);
+  assertEquals(result.repairTransportFailed, true);
+  assertEquals(result.repairTransportErrorClass, "TypeError");
+  assertEquals(result.finalValidation.ok, true);
+});
+
+Deno.test("unsafe repaired topology becomes safe zero instead of a contract error", async () => {
+  const initial = validOutput("en-intl-generic-v1");
+  (initial.hazards as Array<Record<string, unknown>>)[0].description =
+    "This condition will definitely cause an incident.";
+  const repaired = validOutput("en-intl-generic-v1");
+  const repairedFinding =
+    (repaired.hazards as Array<Record<string, unknown>>)[0];
+  (repaired.hazards as Array<Record<string, unknown>>).push(
+    structuredClone(repairedFinding),
+  );
+
+  const result = await validateAIOutputWithSingleRepair({
+    initialResult: initial,
+    snapshot: snapshotFor("en-intl-generic-v1"),
+    certaintyPolicy: "v2",
+    enforceRepairIntegrity: true,
+    safeFallbackCopy: fallbackCopy,
+    repair: () => Promise.resolve(repaired),
+  });
+
+  assertEquals(result.status, "fallback");
+  assertEquals(result.repairIntegrity?.code, "REPAIR_INTEGRITY_FINDING_ADDED");
+  assertEquals(result.deterministicFallback?.strategy, "safe_zero");
+  assertEquals((result.result.hazards as unknown[]).length, 0);
+  assertEquals(result.finalValidation.ok, true);
+});
+
+Deno.test("deterministic fallback removes an unsupported finding without a third AI call", async () => {
+  const initial = validOutput("en-intl-generic-v1");
+  (initial.hazards as Array<Record<string, unknown>>)[0].description =
+    "This machine is definitely defective.";
+  let repairCalls = 0;
+  const result = await validateAIOutputWithSingleRepair({
+    initialResult: initial,
+    snapshot: snapshotFor("en-intl-generic-v1"),
+    certaintyPolicy: "v2",
+    enforceRepairIntegrity: true,
+    deterministicFallbackCopy: fallbackCopy,
+    repair: () => {
+      repairCalls += 1;
+      return Promise.resolve(structuredClone(initial));
+    },
+  });
+  assertEquals(repairCalls, 1);
+  assertEquals(result.attempts, 2);
+  assertEquals(result.status, "fallback");
+  assertEquals(result.deterministicFallback?.zeroFindings, true);
+  assertEquals(result.deterministicFallback?.strategy, "targeted");
+  assertEquals((result.result.hazards as unknown[]).length, 0);
+  assertEquals(result.finalValidation.ok, true);
+});
+
+Deno.test("fully validated repair is preferred over integrity-only rejection", async () => {
+  const initial = validOutput("en-intl-generic-v1");
+  initial.limitations = "The risk is definitely high.";
+  const result = await validateAIOutputWithSingleRepair({
+    initialResult: initial,
+    snapshot: snapshotFor("en-intl-generic-v1"),
+    certaintyPolicy: "v2",
+    enforceRepairIntegrity: true,
+    deterministicFallbackCopy: fallbackCopy,
+    repair: () => {
+      const repaired = structuredClone(initial);
+      (repaired.hazards as Array<Record<string, unknown>>)[0].title =
+        "Unrelated changed title";
+      repaired.limitations = "The risk level requires field verification.";
+      return Promise.resolve(repaired);
+    },
+  });
+  assertEquals(result.status, "repaired");
+  assertEquals(result.repairIntegrity?.ok, false);
+  assertEquals(
+    result.repairIntegrity?.code,
+    "REPAIR_INTEGRITY_UNAFFECTED_FINDING_CHANGED",
+  );
+  assertEquals(result.validatedRepairSalvageUsed, true);
+  assertEquals(
+    (result.result.hazards as Array<Record<string, unknown>>)[0].title,
+    "Unrelated changed title",
+  );
+  assertEquals(
+    result.result.limitations,
+    "The risk level requires field verification.",
+  );
+  assertEquals(result.deterministicFallback, null);
+  assertEquals(result.finalValidation.ok, true);
+});
+
+Deno.test("deterministic fallback retains measurement findings and marks verification", async () => {
+  const initial = validOutput("en-intl-generic-v1");
+  (initial.hazards as Array<Record<string, unknown>>)[0].observed_evidence =
+    "A display visibly reads 92 dBA.";
+  const result = await validateAIOutputWithSingleRepair({
+    initialResult: initial,
+    snapshot: snapshotFor("en-intl-generic-v1"),
+    certaintyPolicy: "v2",
+    enforceRepairIntegrity: true,
+    deterministicFallbackCopy: fallbackCopy,
+    repair: () => Promise.resolve(structuredClone(initial)),
+  });
+  const retained = (result.result.hazards as Array<Record<string, unknown>>)[0];
+  assertEquals(result.status, "fallback");
+  assertEquals(retained.needs_field_verification, true);
+  assertEquals(result.deterministicFallback?.removedFindingsCount, 0);
+});
+
+Deno.test("deterministic fallback rewrites a definitive root cause without changing scores", async () => {
+  const initial = validOutput("en-intl-generic-v1");
+  const original = (initial.hazards as Array<Record<string, unknown>>)[0];
+  original.root_cause = "The root cause is inadequate guarding.";
+  const result = await validateAIOutputWithSingleRepair({
+    initialResult: initial,
+    snapshot: snapshotFor("en-intl-generic-v1"),
+    certaintyPolicy: "v2",
+    enforceRepairIntegrity: true,
+    deterministicFallbackCopy: fallbackCopy,
+    repair: () => Promise.resolve(structuredClone(initial)),
+  });
+  const retained = (result.result.hazards as Array<Record<string, unknown>>)[0];
+  assertEquals(result.status, "fallback");
+  assertEquals(retained.root_cause, fallbackCopy.cautiousRootCause);
+  assertEquals(retained.needs_field_verification, true);
+  assertEquals(retained.fk_severity, original.fk_severity);
+  assertEquals(retained.source_photo_indices, original.source_photo_indices);
+});
+
+Deno.test("root-cause fallback also absorbs certainty on the same rejected path", async () => {
+  const initial = validOutput("en-intl-generic-v1");
+  (initial.hazards as Array<Record<string, unknown>>)[0].root_cause =
+    "The root cause is definitely inadequate guarding.";
+  const result = await validateAIOutputWithSingleRepair({
+    initialResult: initial,
+    snapshot: snapshotFor("en-intl-generic-v1"),
+    certaintyPolicy: "v2",
+    enforceRepairIntegrity: true,
+    deterministicFallbackCopy: fallbackCopy,
+    repair: () => Promise.resolve(structuredClone(initial)),
+  });
+  assertEquals(result.status, "fallback");
+  assertEquals((result.result.hazards as unknown[]).length, 1);
+  assertEquals(
+    (result.result.hazards as Array<Record<string, unknown>>)[0].root_cause,
+    fallbackCopy.cautiousRootCause,
+  );
+});
+
+Deno.test("deterministic fallback replaces an offending summary and keeps findings", async () => {
+  const initial = validOutput("en-intl-generic-v1");
+  initial.ai_summary =
+    "This workplace safety assessment is definitely complete.";
+  const result = await validateAIOutputWithSingleRepair({
+    initialResult: initial,
+    snapshot: snapshotFor("en-intl-generic-v1"),
+    certaintyPolicy: "v2",
+    enforceRepairIntegrity: true,
+    deterministicFallbackCopy: fallbackCopy,
+    repair: () => Promise.resolve(structuredClone(initial)),
+  });
+  assertEquals(result.status, "fallback");
+  assertEquals((result.result.hazards as unknown[]).length, 1);
+  assertEquals(
+    result.result.ai_summary,
+    "1 visible workplace safety finding(s) remained.",
+  );
+  assertEquals(result.deterministicFallback?.zeroFindings, false);
+});
+
+Deno.test("deterministic fallback preserves photo records when every finding is removed", async () => {
+  const base = validOutput("en-intl-generic-v1");
+  const invalidFinding = structuredClone(
+    (base.hazards as Array<Record<string, unknown>>)[0],
+  );
+  invalidFinding.observed_evidence =
+    "The operator is definitely untrained for this task.";
+  const initial = {
+    photo_findings: [
+      {
+        photo_index: 1,
+        coverage_status: "actionable",
+        coverage_gap_reason: "",
+        findings: [invalidFinding],
+      },
+      {
+        photo_index: 2,
+        coverage_status: "no_actionable_hazard",
+        coverage_gap_reason: "No visible issue was found.",
+        findings: [],
+      },
+    ],
+    ai_summary: base.ai_summary,
+    limitations: base.limitations,
+  };
+  const result = await validateAIOutputWithSingleRepair({
+    initialResult: initial,
+    snapshot: snapshotFor("en-intl-generic-v1"),
+    certaintyPolicy: "v2",
+    enforceRepairIntegrity: true,
+    deterministicFallbackCopy: fallbackCopy,
+    repair: () => Promise.resolve(structuredClone(initial)),
+  });
+  const records = result.result.photo_findings as Array<
+    Record<string, unknown>
+  >;
+  assertEquals(records.length, 2);
+  assertEquals(records.map((record) => record.photo_index), [1, 2]);
+  assertEquals((records[0].findings as unknown[]).length, 0);
+  assertEquals(records[0].coverage_status, "no_actionable_hazard");
+  assertEquals(records[0].coverage_gap_reason, fallbackCopy.coverageGapReason);
+  assertEquals(result.deterministicFallback?.zeroFindings, true);
+});
+
+Deno.test("repair integrity rejects adding findings and removing photo records", () => {
+  const base = validOutput("en-intl-generic-v1");
+  const invalidFinding = structuredClone(
+    (base.hazards as Array<Record<string, unknown>>)[0],
+  );
+  invalidFinding.description = "This will definitely cause an incident.";
+  const initial = {
+    photo_findings: [
+      { photo_index: 1, findings: [invalidFinding] },
+      { photo_index: 2, findings: [] },
+    ],
+    ai_summary: base.ai_summary,
+    limitations: base.limitations,
+  };
+  const validation = validateAIOutputContract(
+    initial,
+    snapshotFor("en-intl-generic-v1"),
+    { certaintyPolicy: "v2" },
+  );
+  const added = structuredClone(initial);
+  (added.photo_findings[0].findings as unknown[]).push(
+    structuredClone(invalidFinding),
+  );
+  assertEquals(
+    validateAIOutputRepairIntegrity(initial, added, validation).code,
+    "REPAIR_INTEGRITY_FINDING_ADDED",
+  );
+  const removedPhoto = structuredClone(initial);
+  removedPhoto.photo_findings.splice(1, 1);
+  assertEquals(
+    validateAIOutputRepairIntegrity(initial, removedPhoto, validation).ok,
+    false,
+  );
+});
+
+Deno.test("repair transport failure records not_run instead of a fake final validation", async () => {
+  const error = await assertRejects(
+    () =>
+      validateAIOutputWithSingleRepair({
+        initialResult: "broken",
+        snapshot: snapshotFor("en-intl-generic-v1"),
+        repair: () => Promise.reject(new TypeError("network unavailable")),
+      }),
+    OutputLanguageContractError,
+  );
+  assertEquals(error.repairTransportFailed, true);
+  assertEquals(error.repairTransportErrorClass, "TypeError");
+  assertEquals(error.finalValidationStatus, "not_run");
+  assertEquals(error.validation, null);
+  assertEquals(error.initialValidation?.failedLayer, "json_schema");
 });

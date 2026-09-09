@@ -392,6 +392,9 @@ final class AuthService: ObservableObject {
         }
 
         await recordFirstSeenDeviceRegionIfNeeded(userID: user.id)
+        if profile?.id == user.id {
+            MetaAppEventsService.shared.registration(userID: user.id, createdAt: user.createdAt, lastSignInAt: user.lastSignInAt)
+        }
         schedulePlatformTelemetryIfNeeded(userID: user.id)
     }
 
@@ -639,7 +642,16 @@ final class AuthService: ObservableObject {
                 }
 
                 await MainActor.run {
+                    let previousUserID = self.session?.user.id
+                    PaywallEventService.shared.authenticationChanged(
+                        userID: newSession?.user.id,
+                        endedSession: change.event == .signedOut ||
+                            (previousUserID != nil && previousUserID != newSession?.user.id)
+                    )
                     self.session = newSession
+                    if newSession != nil {
+                        PaywallEventService.shared.flushPendingIfPossible()
+                    }
                 }
 
                 if newSession?.user.id != nil {

@@ -51,7 +51,7 @@ class AccountDeletionViewModel @Inject constructor(
         }
         _state.value = AccountDeletionUiState.Requesting
         viewModelScope.launch {
-            _state.value = when (val result = authRepository.sendEmailOtp(email, RdAppLanguage.Turkish)) {
+            _state.value = when (val result = authRepository.sendEmailOtp(email, RdAppLanguage.current())) {
                 is RdResult.Success -> AccountDeletionUiState.VerificationSent(email)
                 is RdResult.Failure -> AccountDeletionUiState.Failed(
                     AppErrorMessages.make(

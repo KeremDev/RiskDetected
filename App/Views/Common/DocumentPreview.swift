@@ -47,7 +47,7 @@ struct DocumentPreview: View {
                 dismiss()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .frame(width: 42, height: 42)
                     .background(Color.rdWhite.opacity(0.96))
@@ -64,7 +64,7 @@ struct DocumentPreview: View {
                 shareItem = ShareItem(url: url)
             } label: {
                 Image(systemName: "square.and.arrow.down")
-                    .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .frame(width: 42, height: 42)
                     .background(Color.rdWhite.opacity(0.96))

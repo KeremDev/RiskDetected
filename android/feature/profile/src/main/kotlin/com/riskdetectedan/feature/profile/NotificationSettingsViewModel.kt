@@ -1,6 +1,11 @@
 package com.riskdetectedan.feature.profile
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.riskdetectedan.core.common.RdResult
@@ -50,8 +55,28 @@ class NotificationSettingsViewModel @Inject constructor(
         }
         _state.value = NotificationSettingsUiState.Loading
         viewModelScope.launch {
-            _state.value = when (val result = preferencesRepository.fetch(userId)) {
-                is RdResult.Success -> NotificationSettingsUiState.Loaded(result.value)
+            _state.value = when (val result = preferencesRepository.fetchWithPresence(userId)) {
+                is RdResult.Success -> {
+                    val snapshot = result.value
+                    val preferences = snapshot.preferences
+                    // Repair accounts created by older Android builds: the OS permission may be
+                    // granted while the preference row was never written. iOS already creates
+                    // this row during onboarding; doing the same when the user opens Android's
+                    // settings keeps the admin panel and profile state consistent after upgrade.
+                    val hydratedPreferences = if (!snapshot.isPersisted && systemNotificationsGranted()) {
+                        when (preferencesRepository.setMasterPreference(enabled = true)) {
+                            is RdResult.Success -> {
+                                engagementRepository.sync(userId, force = true)
+                                (preferencesRepository.fetch(userId) as? RdResult.Success)?.value
+                                    ?: preferences.copy(enabled = true)
+                            }
+                            is RdResult.Failure -> preferences
+                        }
+                    } else {
+                        preferences
+                    }
+                    NotificationSettingsUiState.Loaded(hydratedPreferences)
+                }
                 is RdResult.Failure -> NotificationSettingsUiState.Failed(
                     AppErrorMessages.make(
                         result.message,
@@ -66,8 +91,17 @@ class NotificationSettingsViewModel @Inject constructor(
      * was never set" behavior — a progress/reminder toggle implies notifications are wanted. */
     fun setMaster(enabled: Boolean) {
         viewModelScope.launch {
-            preferencesRepository.setMasterPreference(enabled)
-            authRepository.currentUserId?.let { engagementRepository.sync(it, force = true) }
+            // Never mark the server preference enabled while Android has notifications blocked.
+            // The screen normally requests POST_NOTIFICATIONS first; this guard keeps the same
+            // invariant for any other caller and for resumed/stale UI state.
+            if (enabled && !systemNotificationsGranted()) {
+                load()
+                return@launch
+            }
+            when (preferencesRepository.setMasterPreference(enabled)) {
+                is RdResult.Success -> authRepository.currentUserId?.let { engagementRepository.sync(it, force = true) }
+                is RdResult.Failure -> Unit
+            }
             load()
         }
     }
@@ -77,7 +111,10 @@ class NotificationSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val current = state.value as? NotificationSettingsUiState.Loaded
             if (current == null || !current.preferences.enabled) {
-                preferencesRepository.setMasterPreference(true)
+                if (!ensurePreferenceRow(current)) {
+                    load()
+                    return@launch
+                }
             }
             preferencesRepository.setProgressPreference(userId, preference, enabled)
             load()
@@ -89,10 +126,31 @@ class NotificationSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val current = state.value as? NotificationSettingsUiState.Loaded
             if (current == null || !current.preferences.enabled) {
-                preferencesRepository.setMasterPreference(true)
+                if (!ensurePreferenceRow(current)) {
+                    load()
+                    return@launch
+                }
             }
             preferencesRepository.setAppRemindersPreference(userId, enabled)
             load()
         }
+    }
+
+    /**
+     * A category toggle is also an implicit opt-in. Create the master row first, using the real
+     * device authorization state instead of blindly enabling server notifications when Android
+     * has them blocked. This mirrors iOS's `systemAuthorizationGranted` fallback and prevents a
+     * direct category update from silently affecting zero rows when the preference record is new.
+     */
+    private suspend fun ensurePreferenceRow(current: NotificationSettingsUiState.Loaded?): Boolean {
+        if (current?.preferences?.enabled == true) return true
+        return preferencesRepository.setMasterPreference(systemNotificationsGranted()) is RdResult.Success
+    }
+
+    private fun systemNotificationsGranted(): Boolean {
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return false
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
     }
 }

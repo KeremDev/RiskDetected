@@ -16,6 +16,21 @@ Deno.test("semantic user copy resolves Turkish and English without leaking place
   );
 });
 
+Deno.test("coverage quality no-additional reasons stay paired in Turkish and English", () => {
+  const keys = [
+    "analysisQualityNoDistinctAdditionalHazard",
+    "analysisQualityInsufficientVisualEvidence",
+    "analysisQualityExistingFindingsCoverScene",
+  ] as const;
+  for (const key of keys) {
+    const turkish = userFacingCopy(key, "tr");
+    const english = userFacingCopy(key, "en");
+    assertEquals(turkish.length > 20, true);
+    assertEquals(english.length > 20, true);
+    assertEquals(turkish === english, false, `languages leaked for ${key}`);
+  }
+});
+
 Deno.test("every semantic user copy key has complete Turkish and English copy", () => {
   const variables = {
     max: 3,
@@ -23,6 +38,9 @@ Deno.test("every semantic user copy key has complete Turkish and English copy", 
     supportID: "RD-TEST",
     estimatedCompletionAt: "2026-08-16T00:00:00Z",
     store: "App Store",
+    profileTerm: "workplace safety",
+    count: 2,
+    equipment: "pressure vessel",
   };
   for (const key of USER_FACING_COPY_KEYS) {
     for (const language of ["tr", "en"] as const) {

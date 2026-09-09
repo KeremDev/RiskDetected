@@ -4,168 +4,310 @@ struct OBLoadingView: View {
     @ObservedObject var state: OnboardingV2State
     let onComplete: () -> Void
 
-    @State private var title: String = RDLocalization.string("onboarding.obloading.view.sana.ozel.kurulum.hazirlaniyor.a7043077", table: .onboarding, fallback: "Sana özel kurulum hazırlanıyor…")
-    @State private var revealed: [Bool] = [false, false, false]
-    @State private var done: [Bool] = [false, false, false]
-    @State private var rotation: Double = 0
-    @State private var corePulse: CGFloat = 1
-    @State private var ringPulse1: CGFloat = 0.7
-    @State private var ringOpacity1: Double = 0.4
-    @State private var ringPulse2: CGFloat = 0.7
-    @State private var ringOpacity2: Double = 0.4
-    @State private var leaving: Bool = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    @State private var startedAt: Date?
+    @State private var title = RDLocalization.string(
+        "onboarding.obloading.view.sana.ozel.kurulum.hazirlaniyor.a7043077",
+        table: .onboarding,
+        fallback: "Sana özel kurulum hazırlanıyor…"
+    )
+    @State private var leaving = false
+    @State private var hasStarted = false
+    @State private var flowTask: Task<Void, Never>?
+
+    private let loadingDuration: TimeInterval = 15
 
     var body: some View {
-        VStack(spacing: 32) {
-            Spacer()
-            loader
+        GeometryReader { proxy in
+            let compact = proxy.size.height < 740
 
-            Text(title)
-                .font(.system(size: RDFontScale.size(20), weight: .semibold))
-                .tracking(-0.4)
-                .foregroundStyle(Color.rdOnyx)
-                .multilineTextAlignment(.center)
-                .animation(.easeInOut(duration: 0.3), value: title)
+            TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: leaving)) { context in
+                let progress = loadingProgress(at: context.date)
 
-            VStack(spacing: 14) {
-                stepRow(0, text: stepText(0))
-                stepRow(1, text: stepText(1))
-                stepRow(2, text: stepText(2))
+                VStack(spacing: compact ? 12 : 16) {
+                    Spacer(minLength: compact ? 8 : 18)
+
+                    progressView(progress: progress, compact: compact)
+
+                    Text(title)
+                        .font(RDTypography.font(size: RDFontScale.size(compact ? 19 : 22), weight: .bold))
+                        .tracking(-0.45)
+                        .foregroundStyle(Color.rdOnyx)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, compact ? 6 : 10)
+                        .animation(.easeInOut(duration: 0.25), value: title)
+
+                    VStack(spacing: compact ? 8 : 10) {
+                        stepRow(0, text: stepText(0), progress: progress, compact: compact)
+                        stepRow(1, text: stepText(1), progress: progress, compact: compact)
+                        stepRow(2, text: stepText(2), progress: progress, compact: compact)
+                    }
+                    .frame(maxWidth: 352)
+
+                    OBLoadingTestimonialCarousel(compact: compact)
+                        .frame(maxWidth: 352)
+
+                    Spacer(minLength: compact ? 8 : 18)
+                }
+                .padding(.horizontal, 22)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(maxWidth: 320)
-
-            Spacer()
         }
-        .padding(.horizontal, 24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.rdPaper)
         .opacity(leaving ? 0 : 1)
-        .animation(.easeInOut(duration: 0.32), value: leaving)
-        .onAppear { runSequence() }
+        .animation(.easeInOut(duration: 0.3), value: leaving)
+        .onAppear(perform: startFlowIfNeeded)
+        .onDisappear(perform: cancelTask)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("onboarding.loading")
     }
 
-    private var loader: some View {
-        ZStack {
-            Circle().stroke(Color.rdOnyx.opacity(0.07), lineWidth: 1.5).frame(width: 112, height: 112)
-            Circle().stroke(Color.rdOnyx.opacity(0.04), lineWidth: 1.5).frame(width: 84, height: 84)
+    private func startFlowIfNeeded() {
+        guard !hasStarted else { return }
+        hasStarted = true
 
-            Circle().stroke(Color.rdOnyx, lineWidth: 1.5)
-                .frame(width: 112, height: 112)
-                .scaleEffect(ringPulse1)
-                .opacity(ringOpacity1)
-            Circle().stroke(Color.rdOnyx, lineWidth: 1.5)
-                .frame(width: 112, height: 112)
-                .scaleEffect(ringPulse2)
-                .opacity(ringOpacity2)
+        flowTask = Task { @MainActor in
+            while !Task.isCancelled {
+                startedAt = Date()
+                leaving = false
+                title = RDLocalization.string(
+                    "onboarding.obloading.view.sana.ozel.kurulum.hazirlaniyor.a7043077",
+                    table: .onboarding,
+                    fallback: "Sana özel kurulum hazırlanıyor…"
+                )
+
+                guard await wait(5) else { return }
+                OBHaptic.soft()
+                guard await wait(5) else { return }
+                OBHaptic.soft()
+                guard await wait(5) else { return }
+                OBHaptic.success()
+                title = RDLocalization.string(
+                    "onboarding.obloading.view.plan.hazir.d352f51f",
+                    table: .onboarding,
+                    fallback: "Plan hazır."
+                )
+
+                if Self.isPreviewLaunch {
+                    guard await wait(0.70) else { return }
+                    continue
+                }
+
+                guard await wait(0.35) else { return }
+                leaving = true
+                guard await wait(0.30) else { return }
+                onComplete()
+                return
+            }
+        }
+    }
+
+    private func cancelTask() {
+        flowTask?.cancel()
+        flowTask = nil
+    }
+
+    @MainActor
+    private func wait(_ seconds: Double) async -> Bool {
+        do {
+            try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+            return !Task.isCancelled
+        } catch {
+            return false
+        }
+    }
+
+    private static var isPreviewLaunch: Bool {
+        #if DEBUG
+        CommandLine.arguments.contains("RD_PREVIEW_ONBOARDING_LOADING")
+            || ProcessInfo.processInfo.environment["RD_PREVIEW_ONBOARDING_LOADING"] == "1"
+        #else
+        false
+        #endif
+    }
+}
+
+private extension OBLoadingView {
+    func progressView(progress: Double, compact: Bool) -> some View {
+        let diameter: CGFloat = compact ? 112 : 132
+        let lineWidth: CGFloat = compact ? 9 : 10
+        let percentage = min(100, Int((progress * 100).rounded(.down)))
+
+        return ZStack {
+            Circle()
+                .stroke(Color.rdOnyx.opacity(0.06), lineWidth: 1)
+                .frame(width: diameter + 22, height: diameter + 22)
 
             Circle()
-                .trim(from: 0, to: 0.18)
-                .stroke(Color.rdOnyx, style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                .frame(width: 84, height: 84)
-                .rotationEffect(.degrees(rotation))
+                .stroke(Color.rdOnyx.opacity(0.10), lineWidth: lineWidth)
 
-            ZStack {
-                Circle().fill(Color.rdOnyx)
-                Image(systemName: "doc.text.fill")
-                    .font(.system(size: RDFontScale.size(20), weight: .regular))
-                    .foregroundStyle(.white)
-            }
-            .frame(width: 48, height: 48)
-            .scaleEffect(corePulse)
-            .shadow(color: Color.rdOnyx.opacity(0.18), radius: 12, y: 8)
+            Circle()
+                .trim(from: 0, to: max(progress, 0.006))
+                .stroke(
+                    Color.rdOnyx,
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
+                )
+                .rotationEffect(.degrees(-90))
+                .animation(reduceMotion ? nil : .linear(duration: 0.08), value: progress)
+
+            Circle()
+                .fill(Color.rdWhite)
+                .padding(lineWidth + 7)
+                .shadow(color: Color.rdOnyx.opacity(0.06), radius: 10, y: 5)
+
+            Text("\(percentage)%")
+                .font(RDTypography.font(size: RDFontScale.size(compact ? 36 : 42), weight: .bold))
+                .monospacedDigit()
+                .tracking(-1.4)
+                .foregroundStyle(Color.rdOnyx)
         }
-        .frame(width: 112, height: 112)
-        .onAppear {
-            withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) {
-                rotation = 360
-            }
-            withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
-                corePulse = 0.94
-            }
-            withAnimation(.easeOut(duration: 2.6).repeatForever(autoreverses: false)) {
-                ringPulse1 = 1.35; ringOpacity1 = 0
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
-                withAnimation(.easeOut(duration: 2.6).repeatForever(autoreverses: false)) {
-                    ringPulse2 = 1.35; ringOpacity2 = 0
-                }
-            }
-        }
+        .frame(width: diameter, height: diameter)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(RDLocalization.string(
+            "onboarding.obloading.view.yukleme.ilerlemesi.97991bbf",
+            table: .onboarding,
+            fallback: "Yükleme ilerlemesi"
+        ))
+        .accessibilityValue("\(percentage)%")
     }
 
-    private func stepRow(_ i: Int, text: AttributedString) -> some View {
-        HStack(spacing: 12) {
-            ZStack {
-                Circle().fill(done[i] ? Color.rdGreen : Color.rdOnyx.opacity(0.06))
-                if done[i] {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: RDFontScale.size(11), weight: .bold))
-                        .foregroundStyle(.white)
-                        .transition(.scale.combined(with: .opacity))
-                } else {
-                    Circle().fill(Color.rdSlate.opacity(0.8))
-                        .frame(width: 6, height: 6)
-                        .scaleEffect(revealed[i] ? 1.0 : 0.7)
-                        .animation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true), value: revealed[i])
-                }
-            }
-            .frame(width: 28, height: 28)
+    func loadingProgress(at date: Date) -> Double {
+        guard let startedAt else { return 0 }
+        return min(max(date.timeIntervalSince(startedAt) / loadingDuration, 0), 1)
+    }
+}
+
+private extension OBLoadingView {
+    func stepRow(
+        _ index: Int,
+        text: AttributedString,
+        progress: Double,
+        compact: Bool
+    ) -> some View {
+        let status = stepStatus(index, progress: progress)
+
+        return HStack(spacing: 12) {
+            stepStatusIcon(status)
 
             Text(text)
-                .font(.system(size: RDFontScale.size(14), weight: .medium))
-                .foregroundStyle(done[i] ? Color.rdOnyx : Color.rdSlate)
-            Spacer()
+                .font(RDTypography.font(size: RDFontScale.size(compact ? 12.5 : 13.5), weight: .medium))
+                .foregroundStyle(status == .pending ? Color.rdSlate.opacity(0.78) : Color.rdSlate)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 16).padding(.vertical, 14)
+        .padding(.horizontal, 14)
+        .frame(minHeight: compact ? 46 : 50)
         .background(Color.rdWhite)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.rdOnyx.opacity(0.06), lineWidth: 1))
-        .shadow(color: .black.opacity(0.04), radius: 8, y: 3)
-        .opacity(revealed[i] ? 1 : 0)
-        .offset(y: revealed[i] ? 0 : 8)
-        .animation(.obSpring, value: revealed[i])
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(status == .active ? Color.rdOnyx.opacity(0.20) : Color.rdOnyx.opacity(0.06), lineWidth: 1)
+        }
+        .shadow(color: Color.rdOnyx.opacity(status == .active ? 0.07 : 0.035), radius: 8, y: 3)
+        .animation(.easeInOut(duration: 0.25), value: status)
     }
 
-    private func stepText(_ i: Int) -> AttributedString {
-        switch i {
+    @ViewBuilder
+    func stepStatusIcon(_ status: OBLoadingStepStatus) -> some View {
+        ZStack {
+            Circle()
+                .fill(status == .completed ? Color.rdOnyx : Color.rdOnyx.opacity(0.055))
+
+            switch status {
+            case .completed:
+                Image(systemName: "checkmark")
+                    .font(RDTypography.font(size: RDFontScale.size(10), weight: .bold))
+                    .foregroundStyle(Color.rdWhite)
+                    .transition(.scale.combined(with: .opacity))
+            case .active:
+                if reduceMotion {
+                    Circle()
+                        .stroke(Color.rdOnyx, lineWidth: 2)
+                        .padding(7)
+                } else {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .tint(Color.rdOnyx)
+                        .controlSize(.mini)
+                }
+            case .pending:
+                Circle()
+                    .fill(Color.rdSlate.opacity(0.48))
+                    .frame(width: 5, height: 5)
+            }
+        }
+        .frame(width: 28, height: 28)
+    }
+
+    func stepStatus(_ index: Int, progress: Double) -> OBLoadingStepStatus {
+        let lowerBound = Double(index) / 3
+        let upperBound = Double(index + 1) / 3
+
+        if progress >= upperBound || progress >= 1 {
+            return .completed
+        }
+        if progress >= lowerBound {
+            return .active
+        }
+        return .pending
+    }
+}
+
+private enum OBLoadingStepStatus: Equatable {
+    case pending
+    case active
+    case completed
+}
+
+private extension OBLoadingView {
+    func stepText(_ index: Int) -> AttributedString {
+        switch index {
         case 0:
-            var s = AttributedString("")
-            var highlight = AttributedString(state.primarySectorLabel)
-            highlight.foregroundColor = .rdOnyx; highlight.font = .system(size: 14, weight: .semibold)
-            s.append(highlight)
-            s.append(AttributedString(RDLocalization.string("onboarding.obloading.view.icin.risk.analiz.sablonlari.yukleniyor.4b30b304", table: .onboarding, fallback: "için risk analiz şablonları yükleniyor...")))
-            return s
+            let label = state.primarySectorLabel
+            return highlighting(
+                label,
+                in: RDLocalization.format(
+                    "onboarding.obloading.view.icin.risk.analiz.sablonlari.yukleniyor.4b30b304",
+                    table: .onboarding,
+                    fallback: "%1$@ için risk analiz şablonları yükleniyor...",
+                    arguments: [label]
+                )
+            )
         case 1:
-            var s = AttributedString("")
-            var highlight = AttributedString(state.hazardsLabel)
-            highlight.foregroundColor = .rdOnyx; highlight.font = .system(size: 14, weight: .semibold)
-            s.append(highlight)
-            s.append(AttributedString(RDLocalization.string("onboarding.obloading.view.sinifi.icin.kontrol.listesi.hazirlaniyor.85dc6c38", table: .onboarding, fallback: "sınıfı için kontrol listesi hazırlanıyor...")))
-            return s
+            let label = state.hazardsLabel
+            return highlighting(
+                label,
+                in: RDLocalization.format(
+                    "onboarding.obloading.view.sinifi.icin.kontrol.listesi.hazirlaniyor.85dc6c38",
+                    table: .onboarding,
+                    fallback: "%1$@ sınıfı için kontrol listesi hazırlanıyor...",
+                    arguments: [label]
+                )
+            )
         default:
-            var s = AttributedString("")
-            var highlight = AttributedString(state.certificateLabel)
-            highlight.foregroundColor = .rdOnyx; highlight.font = .system(size: 14, weight: .semibold)
-            s.append(highlight)
-            s.append(AttributedString(RDLocalization.string("onboarding.obloading.view.icin.rapor.formati.kisisellestiriliyor.34aea260", table: .onboarding, fallback: "için rapor formatı kişiselleştiriliyor...")))
-            return s
+            let label = state.certificateLabel
+            return highlighting(
+                label,
+                in: RDLocalization.format(
+                    "onboarding.obloading.view.icin.rapor.formati.kisisellestiriliyor.34aea260",
+                    table: .onboarding,
+                    fallback: "%1$@ için rapor formatı kişiselleştiriliyor...",
+                    arguments: [label]
+                )
+            )
         }
     }
 
-    private func runSequence() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4)  { revealed[0] = true }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1)  { revealed[1] = true }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8)  { revealed[2] = true }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.9)  { OBHaptic.soft(); withAnimation(.obSpring) { done[0] = true } }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.8)  { OBHaptic.soft(); withAnimation(.obSpring) { done[1] = true } }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.7)  { OBHaptic.soft(); withAnimation(.obSpring) { done[2] = true } }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0)  { title = RDLocalization.string("onboarding.obloading.view.plan.hazir.d352f51f", table: .onboarding, fallback: "Plan hazır.") }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 4.5)  { leaving = true }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 4.85) { onComplete() }
+    func highlighting(_ label: String, in sentence: String) -> AttributedString {
+        var text = AttributedString(sentence)
+        if let range = text.range(of: label) {
+            text[range].foregroundColor = .rdOnyx
+            text[range].font = RDTypography.font(size: RDFontScale.size(13.5), weight: .bold)
+        }
+        return text
     }
 }
 

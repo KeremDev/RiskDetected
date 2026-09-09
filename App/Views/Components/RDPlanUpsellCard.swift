@@ -26,12 +26,12 @@ struct RDPlanUpsellCard: View {
                         RDTierBadge(tier: .pro)
                         Spacer()
                         Image(systemName: "arrow.up.right.circle.fill")
-                            .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
+                            .font(RDTypography.font(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                             .foregroundStyle(arrowColor)
                     }
 
                     Text(RDLocalization.string("localizable.rdplan.upsell.card.plus.veya.pro.ya.yukselt.e876bb04", table: .localizable, fallback: "Plus veya Pro'ya yükselt"))
-                        .font(.system(size: RDFontScale.size(18), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(18), weight: .bold, design: .rounded))
                         .foregroundStyle(titleColor)
 
                     VStack(alignment: .leading, spacing: 7) {
@@ -87,14 +87,14 @@ struct RDPlanUpsellCard: View {
     private func benefit(_ text: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark")
-                .font(.system(size: RDFontScale.size(9), weight: .black, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(9), weight: .black, design: .rounded))
                 .foregroundStyle(Color.rdOnyx)
                 .frame(width: 18, height: 18)
                 .background(Color.rdPlanPlus)
                 .clipShape(Circle())
 
             Text(text)
-                .font(.system(size: RDFontScale.size(12.5), weight: .semibold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(12.5), weight: .semibold, design: .rounded))
                 .foregroundStyle(textColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.78)

@@ -35,6 +35,7 @@ export type InspectionLayerEvidenceGuardResult = {
   rejected_unlinked_count: number;
   rejected_non_actionable_count: number;
   marked_uncertain_count: number;
+  reexamined_checked_layer_count: number;
 };
 
 const INSPECTION_LAYER_KEY_ALIASES: Record<string, InspectionLayerKey> = {
@@ -174,10 +175,29 @@ export function hasCompleteInspectionLayerContract(
     normalized.invalidStatusCount === 0;
 }
 
+/**
+ * `allowCheckedNoHazardReexamination` reopens layers the previous pass closed
+ * with an affirmative "looked, nothing here".
+ *
+ * Measured on 2026-08-22 over six runs of one identical three-photo set: a
+ * photo that produced two findings on two runs produced none on a third, and
+ * the layers that carried those findings -- excavation_confined_special_work
+ * and machinery_equipment -- came back `checked_no_hazard`. The repair pass was
+ * then forbidden to look at them, so the miss was permanent.
+ *
+ * `not_visible` is deliberately not reopened. "I judged it" can be wrong and is
+ * worth a second look; "I cannot see it" carries no evidence to revisit, and
+ * inventing findings from it is the failure this guard exists to prevent.
+ *
+ * A finding recovered this way is treated exactly like an uncertain one:
+ * confidence capped at 0.69 and needs_field_verification set, so it reaches the
+ * user as something to confirm on site rather than as a settled hazard.
+ */
 export function applyInspectionLayerEvidenceGuard(
   findings: Array<Record<string, unknown>>,
   normalized: ReturnType<typeof normalizeInspectionLayers>,
   enabled: boolean,
+  allowCheckedNoHazardReexamination = false,
 ): InspectionLayerEvidenceGuardResult {
   if (!enabled || !hasCompleteInspectionLayerContract(normalized)) {
     return {
@@ -186,6 +206,7 @@ export function applyInspectionLayerEvidenceGuard(
       rejected_unlinked_count: 0,
       rejected_non_actionable_count: 0,
       marked_uncertain_count: 0,
+      reexamined_checked_layer_count: 0,
     };
   }
 
@@ -196,6 +217,7 @@ export function applyInspectionLayerEvidenceGuard(
   let rejectedUnlinkedCount = 0;
   let rejectedNonActionableCount = 0;
   let markedUncertainCount = 0;
+  let reexaminedCheckedLayerCount = 0;
 
   for (const finding of findings) {
     const layerKeys = normalizeInspectionLayerKeys(
@@ -214,7 +236,9 @@ export function applyInspectionLayerEvidenceGuard(
       continue;
     }
 
-    if (statuses.includes("uncertain")) {
+    const reexaminedChecked = allowCheckedNoHazardReexamination &&
+      statuses.includes("checked_no_hazard");
+    if (statuses.includes("uncertain") || reexaminedChecked) {
       const rawConfidence = Number(finding.confidence);
       const confidence = Number.isFinite(rawConfidence)
         ? Math.max(0, Math.min(0.69, rawConfidence))
@@ -226,6 +250,9 @@ export function applyInspectionLayerEvidenceGuard(
         needs_field_verification: true,
       });
       markedUncertainCount += 1;
+      if (reexaminedChecked && !statuses.includes("uncertain")) {
+        reexaminedCheckedLayerCount += 1;
+      }
       continue;
     }
 
@@ -238,5 +265,6 @@ export function applyInspectionLayerEvidenceGuard(
     rejected_unlinked_count: rejectedUnlinkedCount,
     rejected_non_actionable_count: rejectedNonActionableCount,
     marked_uncertain_count: markedUncertainCount,
+    reexamined_checked_layer_count: reexaminedCheckedLayerCount,
   };
 }

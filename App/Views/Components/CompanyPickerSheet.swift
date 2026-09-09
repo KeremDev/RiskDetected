@@ -6,8 +6,9 @@ struct CompanyPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     static func presentationDetents(for accessTier: SubscriptionTier, allowNoCompany: Bool = true) -> Set<PresentationDetent> {
-        guard accessTier.isPaid else { return [.height(330)] }
-        return allowNoCompany ? [.height(330), .medium] : [.height(315), .medium]
+        _ = accessTier
+        _ = allowNoCompany
+        return [.medium, .large]
     }
 
     let title: String
@@ -15,6 +16,7 @@ struct CompanyPickerSheet: View {
     var selectedCompanyID: UUID?
     var allowNoCompany: Bool = true
     var allowsSelection: Bool = true
+    var startsInCreateMode: Bool = false
     var onSelect: (Company?) -> Void
     var onPaywall: () -> Void
 
@@ -26,6 +28,7 @@ struct CompanyPickerSheet: View {
     @State private var editorLogoImage: UIImage?
     @State private var isEditorPresented = false
     @State private var pendingArchive: Company?
+    @State private var didAutoPresentCreateMode = false
     #if DEBUG
     @State private var fixtureCompanies: [Company] = []
     #endif
@@ -57,7 +60,12 @@ struct CompanyPickerSheet: View {
                 }
             }
         }
-        .task { await loadCompanies() }
+        .task {
+            await loadCompanies()
+            guard startsInCreateMode, accessTier.isPaid, !didAutoPresentCreateMode else { return }
+            didAutoPresentCreateMode = true
+            presentEditor(CompanyDraft())
+        }
         .sheet(isPresented: $isEditorPresented) {
             CompanyEditorSheet(
                 draft: editorDraft,
@@ -133,7 +141,7 @@ struct CompanyPickerSheet: View {
     private var lockedContent: some View {
         VStack(alignment: .leading, spacing: 14) {
             Image(systemName: "building.2.crop.circle")
-                .font(.system(size: RDFontScale.size(32), weight: .semibold))
+                .font(RDTypography.font(size: RDFontScale.size(32), weight: .semibold))
                 .foregroundStyle(Color.rdPlanPlus)
                 .frame(width: 64, height: 64)
                 .background(Color.rdPlanPlusSoft)
@@ -141,14 +149,14 @@ struct CompanyPickerSheet: View {
 
             VStack(alignment: .leading, spacing: 7) {
                 Text(RDLocalization.string("localizable.company.picker.sheet.firma.arsivi.plus.ve.pro.da.db83145a", table: .localizable, fallback: "Firma arşivi Plus ve Pro’da"))
-                    .font(.system(size: RDFontScale.size(20), weight: .semibold))
+                    .font(RDTypography.font(size: RDFontScale.size(20), weight: .semibold))
                     .foregroundStyle(Color.rdBlack)
                 Text(
                     RDLanguage.current == .turkish
                         ? RDLocalization.string("localizable.company.picker.sheet.analizlerini.firmalara.bagla.raporlarini.firma.l.0124f450", table: .localizable, fallback: "Analizlerini firmalara bağla, raporlarını firma logosu ve tehlike sınıfıyla paylaş.")
                         : RDLocalization.string("localizable.company.picker.sheet.link.analyses.to.companies.and.share.reports.wit.5472f22c", table: .localizable, fallback: "Analizleri şirketlere bağlayın ve raporları şirket bağlamı ve markalamayla paylaşın.")
                 )
-                    .font(.system(size: RDFontScale.size(13), weight: .regular))
+                    .font(RDTypography.font(size: RDFontScale.size(13), weight: .regular))
                     .foregroundStyle(Color.rdSlate)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -170,7 +178,7 @@ struct CompanyPickerSheet: View {
             Task { await loadCompanies() }
         } label: {
             Label(RDLocalization.string("localizable.company.picker.sheet.firmalari.yenile.a94d30d6", table: .localizable, fallback: "Firmaları yenile"), systemImage: "arrow.clockwise")
-                .font(.system(size: RDFontScale.size(12.5), weight: .semibold))
+                .font(RDTypography.font(size: RDFontScale.size(12.5), weight: .semibold))
                 .foregroundStyle(Color.rdSlate)
                 .frame(maxWidth: .infinity)
                 .frame(height: 38)
@@ -184,7 +192,7 @@ struct CompanyPickerSheet: View {
         HStack(spacing: 10) {
             ProgressView()
             Text(RDLocalization.string("localizable.company.picker.sheet.firmalar.yukleniyor.f6abf38c", table: .localizable, fallback: "Firmalar yükleniyor"))
-                .font(.system(size: RDFontScale.size(13), weight: .medium))
+                .font(RDTypography.font(size: RDFontScale.size(13), weight: .medium))
                 .foregroundStyle(Color.rdSlate)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -196,10 +204,10 @@ struct CompanyPickerSheet: View {
     private var emptyCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(RDLocalization.string("localizable.company.picker.sheet.henuz.firma.yok.6eb914f0", table: .localizable, fallback: "Henüz firma yok"))
-                .font(.system(size: RDFontScale.size(15), weight: .semibold))
+                .font(RDTypography.font(size: RDFontScale.size(15), weight: .semibold))
                 .foregroundStyle(Color.rdBlack)
             Text(allowNoCompany ? RDLocalization.string("localizable.company.picker.sheet.istersen.firma.eklemeden.devam.edebilir.veya.ilk.8e98ae0a", table: .localizable, fallback: "İstersen firma eklemeden devam edebilir veya ilk firmayı buradan ekleyebilirsin.") : RDLocalization.string("localizable.company.picker.sheet.ilk.firmayi.buradan.ekleyip.analiz.veya.raporla..04afdaa5", table: .localizable, fallback: "İlk firmayı buradan ekleyip analiz veya raporla eşleştirebilirsin."))
-                .font(.system(size: RDFontScale.size(12), weight: .regular))
+                .font(RDTypography.font(size: RDFontScale.size(12), weight: .regular))
                 .foregroundStyle(Color.rdSlate)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -212,7 +220,7 @@ struct CompanyPickerSheet: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: RDFontScale.size(15), weight: .semibold))
+                    .font(RDTypography.font(size: RDFontScale.size(15), weight: .semibold))
                     .foregroundStyle(Color.rdCriticalText)
                     .frame(width: 34, height: 34)
                     .background(Color.rdCriticalBg)
@@ -220,10 +228,10 @@ struct CompanyPickerSheet: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(RDLocalization.string("localizable.company.picker.sheet.firmalar.yuklenemedi.9ecbeff1", table: .localizable, fallback: "Firmalar yüklenemedi"))
-                        .font(.system(size: RDFontScale.size(14), weight: .semibold))
+                        .font(RDTypography.font(size: RDFontScale.size(14), weight: .semibold))
                         .foregroundStyle(Color.rdBlack)
                     Text(message)
-                        .font(.system(size: RDFontScale.size(11.5)))
+                        .font(RDTypography.font(size: RDFontScale.size(11.5)))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(2)
                 }
@@ -234,7 +242,7 @@ struct CompanyPickerSheet: View {
                     Task { await loadCompanies() }
                 } label: {
                     Label(RDLocalization.string("localizable.company.picker.sheet.tekrar.dene.5c9f2cfe", table: .localizable, fallback: "Tekrar dene"), systemImage: "arrow.clockwise")
-                        .font(.system(size: RDFontScale.size(12.5), weight: .semibold))
+                        .font(RDTypography.font(size: RDFontScale.size(12.5), weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .frame(height: 38)
                         .foregroundStyle(Color.rdBlack)
@@ -250,7 +258,7 @@ struct CompanyPickerSheet: View {
                         dismiss()
                     } label: {
                         Text(RDLocalization.string("localizable.company.picker.sheet.firma.olmadan.devam.et.e0933905", table: .localizable, fallback: "Firma olmadan devam et"))
-                            .font(.system(size: RDFontScale.size(12.5), weight: .semibold))
+                            .font(RDTypography.font(size: RDFontScale.size(12.5), weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .frame(height: 38)
                             .foregroundStyle(Color.white)
@@ -330,7 +338,7 @@ struct CompanyPickerSheet: View {
                 }
             } label: {
                 Image(systemName: "ellipsis")
-                    .font(.system(size: RDFontScale.size(14), weight: .semibold))
+                    .font(RDTypography.font(size: RDFontScale.size(14), weight: .semibold))
                     .foregroundStyle(Color.rdSlate)
                     .frame(width: 40, height: 48)
                     .background(Color.rdWhite)
@@ -352,9 +360,9 @@ struct CompanyPickerSheet: View {
         } label: {
             HStack(spacing: 9) {
                 Image(systemName: "plus.circle.fill")
-                    .font(.system(size: RDFontScale.size(15), weight: .semibold))
+                    .font(RDTypography.font(size: RDFontScale.size(15), weight: .semibold))
                 Text(companies.count >= companyLimit ? RDLocalization.string("localizable.company.picker.sheet.firma.limiti.doldu.ff0873d2", table: .localizable, fallback: "Firma limiti doldu") : RDLocalization.string("localizable.company.picker.sheet.yeni.firma.ekle.96174dc6", table: .localizable, fallback: "Yeni firma ekle"))
-                    .font(.system(size: RDFontScale.size(14), weight: .semibold))
+                    .font(RDTypography.font(size: RDFontScale.size(14), weight: .semibold))
             }
             .frame(maxWidth: .infinity)
             .frame(height: 44)
@@ -396,7 +404,7 @@ struct CompanyPickerSheet: View {
     private func rowContent(icon: String, title: String, subtitle: String, isSelected: Bool) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: RDFontScale.size(15), weight: .semibold))
+                .font(RDTypography.font(size: RDFontScale.size(15), weight: .semibold))
                 .foregroundStyle(isSelected ? Color.rdGreenDark : Color.rdSlate)
                 .frame(width: 34, height: 34)
                 .background(isSelected ? Color.rdGreenSoft : Color.rdFog)
@@ -404,17 +412,17 @@ struct CompanyPickerSheet: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: RDFontScale.size(13), weight: .medium))
+                    .font(RDTypography.font(size: RDFontScale.size(13), weight: .medium))
                     .foregroundStyle(Color.rdBlack)
                     .lineLimit(1)
                 Text(subtitle)
-                    .font(.system(size: RDFontScale.size(11)))
+                    .font(RDTypography.font(size: RDFontScale.size(11)))
                     .foregroundStyle(Color.rdSlate)
                     .lineLimit(1)
             }
             Spacer()
             Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                .font(.system(size: RDFontScale.size(17), weight: .semibold))
+                .font(RDTypography.font(size: RDFontScale.size(17), weight: .semibold))
                 .foregroundStyle(isSelected ? Color.rdGreen : Color.rdSlate.opacity(0.35))
         }
         .padding(.horizontal, 10)
@@ -667,7 +675,7 @@ private struct CompanyEditorSheet: View {
                         .padding(9)
                 } else {
                     Image(systemName: "building.2.crop.circle")
-                        .font(.system(size: RDFontScale.size(27), weight: .semibold))
+                        .font(RDTypography.font(size: RDFontScale.size(27), weight: .semibold))
                         .foregroundStyle(Color.rdSlate)
                 }
             }
@@ -675,16 +683,16 @@ private struct CompanyEditorSheet: View {
 
             VStack(alignment: .leading, spacing: 5) {
                 Text(RDLocalization.string("localizable.company.picker.sheet.firma.logosu.92fa5dc7", table: .localizable, fallback: "Firma logosu"))
-                    .font(.system(size: RDFontScale.size(14), weight: .semibold))
+                    .font(RDTypography.font(size: RDFontScale.size(14), weight: .semibold))
                     .foregroundStyle(Color.rdBlack)
                 Text(RDLocalization.string("localizable.company.picker.sheet.opsiyonel.rapor.basliginda.gorunur.92cd94bb", table: .localizable, fallback: "Opsiyonel. Rapor başlığında görünür."))
-                    .font(.system(size: RDFontScale.size(12), weight: .regular))
+                    .font(RDTypography.font(size: RDFontScale.size(12), weight: .regular))
                     .foregroundStyle(Color.rdSlate)
             }
             Spacer()
             PhotosPicker(selection: $selectedLogoItem, matching: .images) {
                 Image(systemName: selectedLogoImage == nil ? "plus" : "arrow.triangle.2.circlepath")
-                    .font(.system(size: RDFontScale.size(15), weight: .semibold))
+                    .font(RDTypography.font(size: RDFontScale.size(15), weight: .semibold))
                     .frame(width: 36, height: 36)
                     .foregroundStyle(Color.rdGreenDark)
                     .background(Color.rdGreenSoft)
@@ -699,7 +707,7 @@ private struct CompanyEditorSheet: View {
     private var hazardSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(RDLocalization.string("localizable.company.picker.sheet.tehlike.sinifi.6d2efbcb", table: .localizable, fallback: "Tehlike sınıfı"))
-                .font(.system(size: RDFontScale.size(12), weight: .semibold))
+                .font(RDTypography.font(size: RDFontScale.size(12), weight: .semibold))
                 .foregroundStyle(Color.rdSlate)
             ForEach(CompanyHazardClass.allCases) { hazard in
                 Button {
@@ -707,7 +715,7 @@ private struct CompanyEditorSheet: View {
                 } label: {
                     HStack {
                         Text(hazard.title)
-                            .font(.system(size: RDFontScale.size(14), weight: .medium))
+                            .font(RDTypography.font(size: RDFontScale.size(14), weight: .medium))
                             .foregroundStyle(Color.rdBlack)
                         Spacer()
                         Image(systemName: draft.hazardClass == hazard ? "checkmark.circle.fill" : "circle")
@@ -726,7 +734,7 @@ private struct CompanyEditorSheet: View {
     private var v2DetailsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(RDLocalization.string("localizable.company.picker.sheet.firma.detaylari.c3be8b4e", table: .localizable, fallback: "Firma detayları"))
-                .font(.system(size: RDFontScale.size(12), weight: .semibold))
+                .font(RDTypography.font(size: RDFontScale.size(12), weight: .semibold))
                 .foregroundStyle(Color.rdSlate)
             field(RDLocalization.string("localizable.company.picker.sheet.adres.e4e185fe", table: .localizable, fallback: "Adres"), text: $draft.address, placeholder: RDLocalization.string("localizable.company.picker.sheet.santiye.fabrika.veya.merkez.adresi.de545f4b", table: .localizable, fallback: "Şantiye, fabrika veya merkez adresi"), identifier: "company.editor.address")
             field(RDLocalization.string("localizable.company.picker.sheet.ilgili.kisi.c54dd4c6", table: .localizable, fallback: "İlgili kişi"), text: $draft.contactPerson, placeholder: RDLocalization.string("localizable.company.picker.sheet.isg.sorumlusu.veya.firma.yetkilisi.45dfd5be", table: .localizable, fallback: "İSG sorumlusu veya firma yetkilisi"), identifier: "company.editor.contact")
@@ -737,14 +745,14 @@ private struct CompanyEditorSheet: View {
     private var defaultsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(RDLocalization.string("localizable.company.picker.sheet.rapor.varsayilanlari.5b1f6b5a", table: .localizable, fallback: "Rapor varsayılanları"))
-                .font(.system(size: RDFontScale.size(12), weight: .semibold))
+                .font(RDTypography.font(size: RDFontScale.size(12), weight: .semibold))
                 .foregroundStyle(Color.rdSlate)
             field(RDLocalization.string("localizable.company.picker.sheet.varsayilan.sorumlu.db86c4e1", table: .localizable, fallback: "Varsayılan sorumlu"), text: $draft.defaultResponsible, placeholder: RDLocalization.string("localizable.company.picker.sheet.bakim.ekibi.saha.sefi.eda8136e", table: .localizable, fallback: "Bakım ekibi, saha şefi..."), identifier: "company.editor.responsible")
             field(RDLocalization.string("localizable.company.picker.sheet.varsayilan.termin.gunu.c7e3038e", table: .localizable, fallback: "Varsayılan termin günü"), text: $draft.defaultDueDaysText, placeholder: RDLocalization.string("localizable.company.picker.sheet.orn.30.710ccf45", table: .localizable, fallback: "Örn. 30"), keyboardType: .numberPad, identifier: "company.editor.due_days")
             if !draft.defaultDueDaysText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                draft.defaultDueDays == nil || !(1...365).contains(draft.defaultDueDays ?? 0) {
                 Text(RDLocalization.string("localizable.company.picker.sheet.termin.gunu.1.365.arasinda.olmali.a8db8f60", table: .localizable, fallback: "Termin günü 1-365 arasında olmalı."))
-                    .font(.system(size: RDFontScale.size(11), weight: .medium))
+                    .font(RDTypography.font(size: RDFontScale.size(11), weight: .medium))
                     .foregroundStyle(Color.rdCritical)
             }
         }
@@ -759,10 +767,10 @@ private struct CompanyEditorSheet: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.system(size: RDFontScale.size(12), weight: .semibold))
+                .font(RDTypography.font(size: RDFontScale.size(12), weight: .semibold))
                 .foregroundStyle(Color.rdSlate)
             TextField(placeholder, text: text)
-                .font(.system(size: RDFontScale.size(15), weight: .regular))
+                .font(RDTypography.font(size: RDFontScale.size(15), weight: .regular))
                 .keyboardType(keyboardType)
                 .textInputAutocapitalization(.words)
                 .padding(.horizontal, 12)

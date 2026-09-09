@@ -297,7 +297,7 @@ fun LoginScreenContent(
                             Icon(
                                 Icons.Filled.Email,
                                 contentDescription = null,
-                                tint = colors.onyx,
+                                tint = colors.greenDark,
                                 modifier = Modifier.size(22.dp),
                             )
                         },
@@ -323,6 +323,7 @@ fun LoginScreenContent(
                         ),
                         onClick = onGoogle,
                         enabled = !isLoading,
+                        googleWordmark = !isLoading,
                         icon = {
                             Image(
                                 painter = painterResource(OnboardingR.drawable.google_mark),
@@ -368,16 +369,25 @@ private fun LoginOptionButton(
     text: String,
     onClick: () -> Unit,
     enabled: Boolean,
+    googleWordmark: Boolean = false,
     icon: @Composable () -> Unit,
 ) {
     val colors = RdTheme.colors
+    val shape = RoundedCornerShape(14.dp)
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .shadow(
+                elevation = 8.dp,
+                shape = shape,
+                clip = false,
+                ambientColor = colors.onyx.copy(alpha = 0.08f),
+                spotColor = colors.onyx.copy(alpha = 0.08f),
+            )
+            .clip(shape)
             .background(colors.white)
-            .border(1.dp, colors.line, RoundedCornerShape(14.dp))
+            .border(1.5.dp, colors.line, shape)
             .clickable(enabled = enabled, onClick = onClick)
             .alpha(if (enabled) 1f else 0.75f)
             .padding(horizontal = 18.dp),
@@ -386,18 +396,54 @@ private fun LoginOptionButton(
     ) {
         icon()
         Spacer(Modifier.width(9.dp))
-        Text(
-            text,
-            style = RdFontStyle.Body.toTextStyle().copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
-            color = colors.onyx,
-            textAlign = TextAlign.Center,
-        )
+        if (googleWordmark) {
+            GoogleProviderWordmark(text)
+        } else {
+            Text(
+                text,
+                style = RdFontStyle.Body.toTextStyle().copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+                color = colors.onyx,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
+}
+
+@Composable
+private fun GoogleProviderWordmark(localizedTitle: String) {
+    val colors = listOf(
+        Color(0xFF4285F4),
+        Color(0xFFEA4335),
+        Color(0xFFFBBC05),
+        Color(0xFF4285F4),
+        Color(0xFF34A853),
+        Color(0xFFEA4335),
+    )
+    val word = "Google"
+    val start = localizedTitle.indexOf(word)
+    val title = if (start < 0) {
+        buildAnnotatedString { append(localizedTitle) }
+    } else {
+        buildAnnotatedString {
+            append(localizedTitle.substring(0, start))
+            word.forEachIndexed { index, letter ->
+                withStyle(SpanStyle(color = colors[index])) { append(letter) }
+            }
+            append(localizedTitle.substring(start + word.length))
+        }
+    }
+    Text(
+        text = title,
+        style = RdFontStyle.Body.toTextStyle().copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+        color = RdTheme.colors.onyx,
+        textAlign = TextAlign.Center,
+    )
 }
 
 @Composable
 private fun StandaloneLegalNotice(onOpenDocument: (String) -> Unit) {
     val colors = RdTheme.colors
+    val isEnglish = RdAppLanguage.current() == RdAppLanguage.English
     val annotated = buildAnnotatedString {
         append(stringResource(RdR.string.rd_auth_legal_standalone_prefix))
         append(" ")
@@ -411,10 +457,15 @@ private fun StandaloneLegalNotice(onOpenDocument: (String) -> Unit) {
         legalLink(stringResource(RdR.string.rd_hizmet_sartlarimiz), "terms")
         append(", ")
         legalLink(stringResource(RdR.string.rd_gizlilik_politikamiz), "privacy")
-        append(", ")
-        legalLink(stringResource(RdR.string.rd_kvkk_aydinlatma_metnini), "kvkk")
-        append(" ve ")
-        legalLink(stringResource(RdR.string.rd_acik_riza_beyanini), "consent")
+        if (isEnglish) {
+            append(", and ")
+            legalLink(stringResource(RdR.string.rd_ai_data_processing_notice), "consent")
+        } else {
+            append(", ")
+            legalLink(stringResource(RdR.string.rd_kvkk_aydinlatma_metnini), "kvkk")
+            append(" ve ")
+            legalLink(stringResource(RdR.string.rd_acik_riza_beyanini), "consent")
+        }
         append(" ")
         append(stringResource(RdR.string.rd_auth_legal_standalone_suffix))
     }
@@ -992,9 +1043,4 @@ private fun OtpDigitInput(value: String, onValueChange: (String) -> Unit) {
     }
 }
 
-/**
- * TODO(Faz 3 localization): resolve from the real per-app-language setting once Android's
- * localization pipeline exists (master §23.1) — mirrors RDLanguage.current on iOS. Hardcoded
- * to Turkish for now, matching this screen's hardcoded copy strings.
- */
-private fun resolveAppLanguage(): RdAppLanguage = RdAppLanguage.Turkish
+private fun resolveAppLanguage(): RdAppLanguage = RdAppLanguage.current()

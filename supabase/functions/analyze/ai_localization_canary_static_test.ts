@@ -125,6 +125,8 @@ Deno.test("live canary runner records metadata only and requires explicit approv
   );
   assertStringIncludes(runner, "maxInitialTransientRetries = 3");
   assertStringIncludes(runner, "transientRetryLimit: 0");
+  assertStringIncludes(runner, "rejectedOutput: initial.result");
+  assertStringIncludes(runner, "requestAssets: []");
   assertStringIncludes(runner, "productionConfidenceFinding(");
   assertStringIncludes(runner, "productionFindingNeedsFieldVerification(");
   assertStringIncludes(runner, "CANARY_PROVIDER_REQUEST_BUDGET_EXHAUSTED");

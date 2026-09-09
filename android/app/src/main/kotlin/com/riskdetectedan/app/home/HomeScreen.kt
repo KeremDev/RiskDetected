@@ -4,8 +4,8 @@ import com.riskdetectedan.core.designsystem.R as RdR
 
 import androidx.compose.ui.res.stringResource
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import android.content.Context
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -47,6 +47,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,6 +57,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.app.R
@@ -73,9 +75,11 @@ import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.toTextStyle
 import com.riskdetectedan.feature.reports.HistoryUiState
 import com.riskdetectedan.feature.reports.HistoryViewModel
-import java.io.ByteArrayOutputStream
+import com.riskdetectedan.feature.capture.prepareAnalysisPhoto
 import java.io.File
-import java.util.UUID
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Real visual+flow rebuild (2026-08-08) matching the actual iOS Home screenshot the owner
@@ -114,9 +118,10 @@ fun HomeScreen(
     onStartAnalysis: (canvasIds: List<String>, analysisMode: String, photoPaths: List<String>, sectorId: String?) -> Unit = { _, _, _, _ -> },
     onResumeAnalysis: () -> Unit = {},
     onHistory: () -> Unit = {},
+    onOpenAnalysis: (String) -> Unit = {},
     onReports: () -> Unit = {},
     onProfile: () -> Unit = {},
-    onUpgrade: () -> Unit = {},
+    onUpgrade: (entryPoint: String) -> Unit = {},
     quickScanRequestKey: Int = 0,
     onQuickScanRequestConsumed: (Int) -> Unit = {},
     viewModel: HistoryViewModel = hiltViewModel(),
@@ -150,13 +155,19 @@ fun HomeScreen(
         ?: localPhotoCapabilities.visiblePhotoSlotsInUI
     // iOS intentionally shows the value of multi-photo analysis to free members: one usable
     // slot and two locked previews. Capability enforcement remains one photo for Free.
-    val maxPhotoCount = if (userTier.isPaid) resolvedMaxPhotoCount else 1
-    val visiblePhotoSlots = if (userTier.isPaid) resolvedVisiblePhotoSlots else 3
-    val isFreeQuotaExhausted = !userTier.isPaid && quota?.isExhausted == true
+    val isMembershipResolved = fetchedProfile != null
+    val maxPhotoCount = if (isMembershipResolved && userTier.isPaid) resolvedMaxPhotoCount else 1
+    val visiblePhotoSlots = when {
+        !isMembershipResolved -> 1
+        userTier.isPaid -> resolvedVisiblePhotoSlots
+        else -> 3
+    }
+    val isFreeQuotaExhausted = isMembershipResolved && !userTier.isPaid && quota?.isExhausted == true
 
     var showTitlesSheet by rememberSaveable { mutableStateOf(false) }
     val titlesSheetState = rememberModalBottomSheetState()
     LaunchedEffect(Unit) {
+        photoTrayViewModel.record("home", "completed")
         // These ViewModels are scoped to the MainShell back-stack entry and survive a pushed
         // analysis/result route. Refresh on every real Home re-entry so a just-completed
         // analysis/report is visible immediately instead of leaving the pre-analysis empty
@@ -184,7 +195,11 @@ fun HomeScreen(
     var selectedSector by remember { mutableStateOf<AnalysisSector?>(null) }
     val canvasSheetState = rememberModalBottomSheetState()
     val traySheetState = rememberModalBottomSheetState()
-    val sectorSheetState = rememberModalBottomSheetState()
+    // Material's default partially-expanded anchor opened this flow at roughly half height,
+    // leaving the iOS-parity Continue button below the fold until the user dragged the sheet.
+    // iOS presents this picker at a fixed 600pt detent, so enter directly at the expanded anchor.
+    val sectorSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val galleryImportScope = rememberCoroutineScope()
 
     // Real port of `appendPickedPhotos(images, shouldAnnotate: true, ...)` — every gallery-picked
     // photo queues through Annotate before it lands in the tray, same as a freshly captured one
@@ -192,36 +207,41 @@ fun HomeScreen(
     val galleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(),
     ) { uris ->
+        photoTrayViewModel.record("photo_import", if (uris.isEmpty()) "cancelled" else "started")
         val remaining = maxPhotoCount - trayPhotoPaths.size
-        val savedPaths = uris.take(maxOf(0, remaining)).mapNotNull { uri ->
-            context.contentResolver.openInputStream(uri)?.use { stream ->
-                val bitmap = BitmapFactory.decodeStream(stream)
-                if (bitmap != null) {
-                    val output = ByteArrayOutputStream()
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, output)
-                    val file = File(context.cacheDir, "tray_${UUID.randomUUID()}.jpg")
-                    file.writeBytes(output.toByteArray())
-                    file.absolutePath
-                } else {
-                    null
+        val acceptedUris = uris.take(maxOf(0, remaining))
+        if (acceptedUris.isNotEmpty()) {
+            galleryImportScope.launch {
+                val savedPaths = withContext(Dispatchers.IO) {
+                    acceptedUris.mapNotNull { uri -> importGalleryPhoto(context, uri) }
                 }
+                val failed = savedPaths.size != acceptedUris.size || savedPaths.isEmpty()
+                photoTrayViewModel.record("photo_import", if (failed) "failed" else "completed", if (failed) "io" else "none")
+                if (failed) {
+                    android.widget.Toast.makeText(context, RdR.string.rd_fotograf_okunamadi, android.widget.Toast.LENGTH_LONG).show()
+                }
+                if (savedPaths.isNotEmpty()) onAnnotatePhotos(savedPaths)
             }
         }
-        if (savedPaths.isNotEmpty()) onAnnotatePhotos(savedPaths)
     }
 
     /** Real port of `beginPreAnalysisSelection()` — the real order is sector sheet *first*, then
      * [CanvasSheet] (see [SectorPickerSheet]'s doc comment for why this used to be reversed). */
     fun beginPreAnalysisSelection() {
-        if (isFreeQuotaExhausted) onUpgrade() else showSectorSheet = true
+        photoTrayViewModel.record("analysis_cta", "started")
+        if (isFreeQuotaExhausted) photoTrayViewModel.record("analysis_validation", "blocked", "quota")
+        if (isFreeQuotaExhausted) onUpgrade("home_analysis_start_quota") else showSectorSheet = true
     }
 
     // Live iOS MainTabView always routes the center action back through Home. Empty drafts open
     // the source/tray chooser; an existing draft continues with sector then canvas. Keeping the
     // request as a monotonically increasing key also makes repeated taps observable while Home
     // remains the active tab.
-    LaunchedEffect(quickScanRequestKey) {
+    LaunchedEffect(quickScanRequestKey, fetchedProfile?.tier) {
         if (quickScanRequestKey <= 0) return@LaunchedEffect
+        // Keep the request pending until membership is authoritative. Treating null as Free here
+        // could incorrectly send a paid user to the quota paywall during a slow profile fetch.
+        if (!isMembershipResolved) return@LaunchedEffect
         val latestQuota = if (!userTier.isPaid) quotaViewModel.refreshAndGet() else quota
         when (
             QuickScanReducer.decide(
@@ -230,7 +250,7 @@ fun HomeScreen(
                 hasPhotos = trayPhotoPaths.isNotEmpty(),
             )
         ) {
-            QuickScanDecision.Upgrade -> onUpgrade()
+            QuickScanDecision.Upgrade -> onUpgrade("home_quick_scan_quota")
             QuickScanDecision.OpenPhotoTray -> showPhotoTray = true
             QuickScanDecision.SelectSector -> showSectorSheet = true
         }
@@ -249,7 +269,7 @@ fun HomeScreen(
             profile = fetchedProfile,
             onLogo = {},
             onProfile = onProfile,
-            onUpgradeTier = { onUpgrade() },
+            onUpgradeTier = { onUpgrade("home_header_upgrade") },
             horizontalPadding = 0.dp,
             topPadding = 0.dp,
             bottomPadding = 0.dp,
@@ -263,7 +283,7 @@ fun HomeScreen(
         if (progress != null) Spacer(Modifier.height(12.dp))
 
         if (isFreeQuotaExhausted && trayPhotoPaths.isEmpty()) {
-            LockedPhotoUploadCard(onClick = onUpgrade)
+            LockedPhotoUploadCard(onClick = { onUpgrade("home_photo_upload_quota") })
         } else {
             PhotoUploadCard(
                 photoPaths = trayPhotoPaths,
@@ -273,52 +293,33 @@ fun HomeScreen(
             )
         }
 
-        if (quota != null && !userTier.isPaid) {
+        if (quota != null && isMembershipResolved && !userTier.isPaid) {
             Spacer(Modifier.height(10.dp))
-            FreeQuotaHint(quota = quota!!, onClick = { if (quota!!.isExhausted) onUpgrade() })
+            FreeQuotaHint(quota = quota!!, onClick = { if (quota!!.isExhausted) onUpgrade("home_quota_hint") })
         }
 
         Spacer(Modifier.height(14.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .shadow(elevation = 10.dp, shape = RoundedCornerShape(RdRadius.xl), ambientColor = colors.cta.copy(alpha = 0.18f), spotColor = colors.cta.copy(alpha = 0.18f))
-                .clip(RoundedCornerShape(RdRadius.xl))
-                .background(colors.cta)
-                .clickable {
-                    if (isFreeQuotaExhausted) {
-                        onUpgrade()
-                    } else if (trayPhotoPaths.isEmpty()) {
-                        showPhotoTray = true
-                    } else {
-                        beginPreAnalysisSelection()
-                    }
+        HomeStartScanButton(
+            onClick = {
+                if (!isMembershipResolved) {
+                    tierViewModel.refresh()
+                    android.widget.Toast.makeText(
+                        context,
+                        RdR.string.rd_profil_islemi_tamamlanamadi,
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
+                } else if (isFreeQuotaExhausted) {
+                    if (trayPhotoPaths.isEmpty()) photoTrayViewModel.record("analysis_cta", "started")
+                    photoTrayViewModel.record("analysis_validation", "blocked", "quota")
+                    onUpgrade("home_analysis_start_quota")
+                } else if (trayPhotoPaths.isEmpty()) {
+                    photoTrayViewModel.record("analysis_cta", "started")
+                    showPhotoTray = true
+                } else {
+                    beginPreAnalysisSelection()
                 }
-                .padding(horizontal = RdSpacing.md),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                stringResource(RdR.string.rd_taramayi_baslat),
-                style = RdFontStyle.Callout.toTextStyle(),
-                color = androidx.compose.ui.graphics.Color.White,
-            )
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .size(38.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(androidx.compose.ui.graphics.Color.White),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Filled.Send,
-                    contentDescription = null,
-                    tint = colors.cta,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-        }
+            },
+        )
 
         progress?.let { summary ->
             Spacer(Modifier.height(18.dp))
@@ -355,7 +356,11 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     recentItems.forEach { item ->
-                        RecentAnalysisRingCard(item = item, photoPath = recentPhotoPaths[item.id], onClick = onHistory)
+                        RecentAnalysisRingCard(
+                            item = item,
+                            photoPath = recentPhotoPaths[item.id],
+                            onClick = { onOpenAnalysis(item.id) },
+                        )
                     }
                 }
             }
@@ -424,7 +429,7 @@ fun HomeScreen(
                 onDismiss = { showCanvasSheet = false },
                 onUpgradeRequested = {
                     showCanvasSheet = false
-                    onUpgrade()
+                    onUpgrade("home_canvas_locked_focus")
                 },
             )
         }
@@ -443,12 +448,24 @@ fun HomeScreen(
                     // the sheet reopens automatically on the way back, now showing the new photo.
                     onNavigateToCamera()
                 },
-                onGallery = { galleryLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                onGallery = {
+                    photoTrayViewModel.record("photo_picker", "started")
+                    galleryLauncher.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                },
                 onRemove = photoTrayViewModel::removePhoto,
                 onMove = photoTrayViewModel::movePhoto,
                 onLockedSlot = {
-                    showPhotoTray = false
-                    onUpgrade()
+                    if (isMembershipResolved) {
+                        showPhotoTray = false
+                        onUpgrade("home_photo_tray_locked_slot")
+                    } else {
+                        tierViewModel.refresh()
+                        android.widget.Toast.makeText(
+                            context,
+                            RdR.string.rd_profil_islemi_tamamlanamadi,
+                            android.widget.Toast.LENGTH_SHORT,
+                        ).show()
+                    }
                 },
                 onStartAnalysis = {
                     // Mirrors continueFromPhotoTrayToAnalysis() -> beginPreAnalysisSelection():
@@ -470,6 +487,86 @@ fun HomeScreen(
     }
 }
 
+private fun importGalleryPhoto(context: Context, uri: Uri): String? {
+    val source = File.createTempFile("rd_gallery_source_", ".bin", context.cacheDir)
+    return try {
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            source.outputStream().use { output -> input.copyTo(output) }
+        } ?: error("gallery_photo_stream_unavailable")
+        val prepared = prepareAnalysisPhoto(
+            source = source,
+            forceJpegEncoding = true,
+        ).getOrThrow()
+        if (prepared != source) source.delete()
+        prepared.absolutePath
+    } catch (_: Exception) {
+        source.delete()
+        null
+    }
+}
+
+/**
+ * iOS `RDButton(style: .detect, icon: "sparkles")` parity: the center label includes the
+ * leading sparkle while the white action capsule keeps its paper-plane icon at the trailing
+ * edge. Keeping this as a small surface also lets visual tests catch either icon disappearing.
+ */
+@Composable
+internal fun HomeStartScanButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = RdTheme.colors
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .shadow(
+                elevation = 10.dp,
+                shape = RoundedCornerShape(RdRadius.xl),
+                ambientColor = colors.cta.copy(alpha = 0.18f),
+                spotColor = colors.cta.copy(alpha = 0.18f),
+            )
+            .clip(RoundedCornerShape(RdRadius.xl))
+            .background(colors.cta)
+            .clickable(onClick = onClick)
+            .padding(horizontal = RdSpacing.md)
+            .testTag("home_start_scan_button"),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Filled.AutoAwesome,
+                contentDescription = null,
+                tint = androidx.compose.ui.graphics.Color.White,
+                modifier = Modifier.size(17.dp).testTag("home_start_scan_sparkles"),
+            )
+            Text(
+                stringResource(RdR.string.rd_taramayi_baslat),
+                style = RdFontStyle.Callout.toTextStyle(),
+                color = androidx.compose.ui.graphics.Color.White,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .size(38.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(androidx.compose.ui.graphics.Color.White),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.Send,
+                contentDescription = null,
+                tint = colors.cta,
+                modifier = Modifier.size(20.dp).testTag("home_start_scan_action_icon"),
+            )
+        }
+    }
+}
+
 /** Port of HomeView.swift's `freeQuotaHint` — compact "remaining/limit" badge (onyx normally,
  * critical when exhausted), title + dynamic subtitle, trailing gift icon. Only tappable (and only
  * navigates anywhere) when exhausted, same as iOS — a non-exhausted tap does nothing there either. */
@@ -485,14 +582,14 @@ private fun FreeQuotaHint(quota: DailyQuotaUsage, onClick: () -> Unit) {
         },
         icon = Icons.Filled.CardGiftcard,
         iconTint = androidx.compose.ui.graphics.Color.White,
-        iconBackground = if (quota.isExhausted) colors.critical else colors.onyx,
+        iconBackground = if (quota.isExhausted) colors.critical else colors.cta,
         onClick = onClick,
         trailing = {
             Box(
                 modifier = Modifier
                     .size(width = 42.dp, height = 32.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(if (quota.isExhausted) colors.critical else colors.onyx),
+                    .background(if (quota.isExhausted) colors.critical else colors.cta),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(

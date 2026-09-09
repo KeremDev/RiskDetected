@@ -12,10 +12,11 @@ import com.riskdetectedan.core.data.release.AppReleasePolicy
 import com.riskdetectedan.core.data.release.ReleasePolicySnapshot
 import com.riskdetectedan.core.data.release.ReleasePolicyRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -54,14 +55,16 @@ class ReleaseGateViewModel @Inject constructor(
     private val _state = MutableStateFlow<ReleaseGateState>(ReleaseGateState.Checking)
     val state: StateFlow<ReleaseGateState> = _state.asStateFlow()
     private var currentUserId: String? = null
+    private var refreshJob: Job? = null
+    private var refreshGeneration = 0L
 
     init {
         applyCachedHardPolicyIfNeeded()
         viewModelScope.launch {
             authRepository.awaitInitialization()
-            authRepository.currentUserIdFlow.collectLatest { userId ->
+            authRepository.currentUserIdFlow.collect { userId ->
                 currentUserId = userId
-                refresh(userId)
+                scheduleRefresh(userId)
             }
         }
     }
@@ -76,10 +79,20 @@ class ReleaseGateViewModel @Inject constructor(
     }
 
     fun refresh(userId: String? = currentUserId) {
-        viewModelScope.launch {
+        scheduleRefresh(userId)
+    }
+
+    private fun scheduleRefresh(userId: String?) {
+        val generation = ++refreshGeneration
+        refreshJob?.cancel()
+        refreshJob = viewModelScope.launch {
             when (val result = repository.fetchReleasePolicy(userId)) {
-                is RdResult.Success -> applySnapshot(result.value, userId)
+                is RdResult.Success -> {
+                    if (generation != refreshGeneration || userId != currentUserId) return@launch
+                    applySnapshot(result.value, userId)
+                }
                 is RdResult.Failure -> {
+                    if (generation != refreshGeneration || userId != currentUserId) return@launch
                     val current = _state.value
                     if (current is ReleaseGateState.Legal && current.isSubmitting) {
                         _state.value = current.copy(

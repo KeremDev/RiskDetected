@@ -6,7 +6,9 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 const APP_ID = "6769498181";
-const VERSION = process.env.RD_RELEASE_VERSION ?? "1.3.1";
+const LOCAL_APP_STORE_CONFIG = readCurrentJson("appstore/app.json") ?? {};
+const LOCAL_RELEASE = LOCAL_APP_STORE_CONFIG.release ?? {};
+const VERSION = process.env.RD_RELEASE_VERSION ?? LOCAL_RELEASE.version ?? "1.3.1";
 const VERIFY_EVIDENCE_PATH = `.asc/evidence/verify-${VERSION}-result.json`;
 const APP_STORE_CANDIDATE = readAppStoreCandidate();
 const VERSION_ID =
@@ -16,6 +18,7 @@ const VERSION_ID =
 const BUILD_NUMBER =
   process.env.RD_RELEASE_BUILD ??
   APP_STORE_CANDIDATE.build_number ??
+  LOCAL_RELEASE.build_number ??
   "81";
 const BUILD_ID =
   process.env.RD_ASC_BUILD_ID ??
@@ -47,6 +50,7 @@ const RELEASE_STAGING_GUARD_FILE = "scripts/release_staging_guard.mjs";
 const GITIGNORE_FILE = ".gitignore";
 const PHYSICAL_SMOKE_EVIDENCE_DIR = "output/app-review-physical-smoke/iphone-17-pro-max";
 const PHYSICAL_AGGREGATE_EVIDENCE = [
+  `output/app-review-physical-smoke/PHYSICAL_BUILD_${BUILD_NUMBER}_SMOKE_READINESS_${REPORT_DATE}.json`,
   `docs/localization/phase-8/PHYSICAL_BUILD_${BUILD_NUMBER}_SMOKE_READINESS_${REPORT_DATE}.json`,
   `docs/localization/phase-8/PHYSICAL_BUILD_${BUILD_NUMBER}_SMOKE_READINESS_2026-08-02.json`,
   `docs/localization/phase-8/PHYSICAL_BUILD_${BUILD_NUMBER}_SMOKE_READINESS_2026-08-01.json`,
@@ -145,17 +149,37 @@ const AI_DISCLOSURE_SOURCE_CHECKS = [
 ];
 const SUBSCRIPTION_PAYWALL_SOURCE_CHECKS = [
   {
-    path: "App/Views/Paywall/InAppPaywallView.swift",
+    // Claude Design paywall alt barı: geri yükleme, hukuki bağlantılar ve
+    // otomatik yenileme bildirimi.
+    path: "App/Views/Paywall/Design/PaywallDesignKit.swift",
     patterns: [
-      'fallback: "Geri yükle"',
-      'fallback: "Şartlar"), document: .terms)',
-      "legalLink(\"Gizlilik\", document: .privacy)",
-      'fallback: "İptal hakkı"), URL(string: "https://apps.apple.com/account/subscriptions")!)',
+      'fallback: "Geri Yükle"',
+      'fallback: "Koşullar"',
+      'fallback: "Gizlilik"',
+      'fallback: "İptal Hakkı"',
+      'fallback: "Otomatik yenilenir. İstediğiniz zaman iptal edin."',
+    ],
+  },
+  {
+    // Paywall akışı: abonelik yönetim bağlantısı, hukuki metin sunumu ve
+    // plan kartlarındaki dönem/fiyat gösterimi.
+    path: "App/Views/Paywall/Design/PaywallDesignFlowView.swift",
+    patterns: [
+      'URL(string: "https://apps.apple.com/account/subscriptions")!',
+      "onTerms: { selectedLegalDocument = .terms }",
+      "onPrivacy: { selectedLegalDocument = .privacy }",
+      'fallback: "App Store abonelik fiyatları şu an alınamadı.',
+      '"paywall.design.plan.per_month_format"',
+      '"paywall.design.plan.monthly_caption"',
+      '"paywall.design.plan.trial_note_format"',
+    ],
+  },
+  {
+    path: "App/Services/SubscriptionManager.swift",
+    patterns: [
       'fallback: "Yıllık abonelik"',
       'fallback: "Aylık abonelik"',
-      'fallback: "İstediğiniz zaman iptal edebilirsiniz · Otomatik yenilenir"',
-      'fallback: "App Store abonelik fiyatları şu an alınamadı.',
-      'fallback: "Yıllık fiyat %1$@; App Store şartları geçerlidir."',
+      "introductoryFreeTrialDays(for: package)",
     ],
   },
   {
@@ -329,6 +353,15 @@ function verifyCheck(name) {
 
 function currentAscReadinessPassed() {
   const verify = currentVerifyEvidence();
+  if (
+    verify?.valid === true &&
+    verify?.version_id === VERSION_ID &&
+    verify?.build_id === BUILD_ID &&
+    Array.isArray(verify?.checks) &&
+    verify.checks.every((check) => check.valid === true)
+  ) {
+    return true;
+  }
   const validation = readCurrentJson(`.asc/evidence/validate-${VERSION}-build${BUILD_NUMBER}.json`);
   const review = readCurrentJson(`.asc/evidence/review-status-build${BUILD_NUMBER}.json`);
   return Boolean(
@@ -1004,7 +1037,7 @@ function checkAppStoreScreenshotApprovalEvidence() {
         "appstore/review/localization-evidence.md",
         VERIFY_EVIDENCE_PATH,
         `Verified locales: ${ascScreenshotEvidence.locales.join(", ")}`,
-        "20 English light-theme screenshots; protected Turkish screenshots are not mutation targets.",
+        `${ascScreenshotEvidence.locales.length * Number(LOCAL_APP_STORE_CONFIG.screenshots?.slides_per_locale ?? 0)} English ${LOCAL_APP_STORE_CONFIG.screenshots?.theme ?? "approved"} screenshots; protected Turkish screenshots are not automation mutation targets.`,
       ].join("\n"),
     );
     return;
@@ -1487,7 +1520,7 @@ function runAppStoreScreenshotChecks() {
       `ASC screenshot read-after-write checks passed for ${ascScreenshotEvidence.locales.join(", ")}.`,
       `Expected mutable locale screenshot checks: ${ascScreenshotEvidence.count}/8.`,
       "Local source root: appstore/screenshots/final",
-      "Theme: light",
+      `Theme: ${LOCAL_APP_STORE_CONFIG.screenshots?.theme ?? "approved"}`,
     ].join("\n");
     addCheck(
       "App Store screenshot local set",
@@ -1498,7 +1531,7 @@ function runAppStoreScreenshotChecks() {
     addCheck(
       "App Store screenshot count",
       "PASS",
-      "ASC read-after-write verification confirms five screenshots for each mutable English locale.",
+      `ASC read-after-write verification confirms ${LOCAL_APP_STORE_CONFIG.screenshots?.slides_per_locale ?? "the configured number of"} screenshots for each mutable English locale.`,
       evidence,
     );
     addCheck(
@@ -1673,10 +1706,31 @@ function runAscChecks() {
 
   if (VERSION_ID) {
     const review = run("asc-review-status", "asc", ["review", "status", "--app", APP_ID, "--version-id", VERSION_ID, "--output", "markdown"]);
+    const reviewSubmissionExpected =
+      LOCAL_APP_STORE_CONFIG.production_policy?.review_submission_performed_by_automation === true;
+    const reviewSubmitted = review.status === 0 &&
+      /WAITING_FOR_REVIEW|IN_REVIEW|PENDING_(?:DEVELOPER|APPLE)_RELEASE|PROCESSING_FOR_DISTRIBUTION|READY_FOR_(?:SALE|DISTRIBUTION)/u.test(review.stdout);
+    const verifiedSubmissionState = verifyCheck("review_submission_matches_plan");
+    const verifiedReviewDetails = currentVerifyEvidence()?.checks?.filter((check) =>
+      check.name.startsWith("review_details.")
+    ) ?? [];
+    const verifiedReviewReady =
+      verifiedSubmissionState?.valid === true &&
+      verifiedReviewDetails.length > 0 &&
+      verifiedReviewDetails.every((check) => check.valid === true);
+    const reviewStateMatchesPlan = reviewSubmissionExpected
+      ? reviewSubmitted
+      : verifiedReviewReady ||
+        (review.status === 0 && review.stdout.includes("NOT_SUBMITTED"));
     addCheck(
-      "ASC review intentionally not submitted",
-      review.status === 0 && review.stdout.includes("NOT_SUBMITTED") && review.stdout.includes("reviewDetail") ? "PASS" : "FAIL",
-      "Review submission is intentionally absent; this confirms automation did not submit the version.",
+      "ASC review submission state",
+      reviewStateMatchesPlan &&
+        (verifiedReviewReady || review.stdout.includes("reviewDetail"))
+        ? "PASS"
+        : "FAIL",
+      reviewSubmissionExpected
+        ? "Review submission should be present and waiting for or progressing through Apple review."
+        : "Review submission should remain absent until the configured submission step.",
       truncate(review.stdout || review.stderr),
     );
 
@@ -1695,15 +1749,23 @@ function runAscChecks() {
       validate.stdout.includes(`| ${APP_ID} | ${VERSION_ID} | ${VERSION}`) &&
       validate.stdout.includes("| 0      |") &&
       validate.stdout.includes("| 0        |");
+    const errorRows = validate.stdout.match(/^\| \d+\s+\| error\s+\|/gmu) ?? [];
+    const hasOnlyExpectedPostSubmissionState = reviewSubmissionExpected &&
+      reviewSubmitted &&
+      validate.stdout.includes("version.state.editable") &&
+      validate.stdout.includes(`non-editable state \"WAITING_FOR_REVIEW\"`) &&
+      errorRows.length === 1;
     addCheck(
       "ASC validation blockers",
-      hasNoBlockingErrors ? "PASS" : "FAIL",
-      "The selected App Store version should have zero blocking validation errors.",
+      hasNoBlockingErrors || hasOnlyExpectedPostSubmissionState ? "PASS" : "FAIL",
+      hasOnlyExpectedPostSubmissionState
+        ? "The only post-submission validation error is the expected non-editable WAITING_FOR_REVIEW state; no content blocker remains."
+        : "The selected editable App Store version should have zero blocking validation errors.",
       truncate(validate.stdout || validate.stderr),
     );
   } else {
     addCheck(
-      "ASC review intentionally not submitted",
+      "ASC review submission state",
       "HOLD",
       `App Store version ${VERSION} is intentionally not created during Phase 6; review cannot be submitted.`,
     );

@@ -15,7 +15,7 @@ export type AnalysisSectorId =
   | "education"
   | "hospitality";
 
-export const ACTIVE_ANALYSIS_SECTOR_PROMPT_VERSION = "active-sector-v1";
+export const ACTIVE_ANALYSIS_SECTOR_PROMPT_VERSION = "sector-profile-v2";
 
 export const ANALYSIS_SECTOR_ALLOWLIST: readonly AnalysisSectorId[] = [
   "general",

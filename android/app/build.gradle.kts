@@ -251,6 +251,14 @@ abstract class VerifyAndroidLegalBundleTask : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val approvalRecord: RegularFileProperty
 
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val englishLegalDirectory: DirectoryProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val englishApprovalRecord: RegularFileProperty
+
     @get:InputFile
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val legalMigration: RegularFileProperty
@@ -310,30 +318,85 @@ abstract class VerifyAndroidLegalBundleTask : DefaultTask() {
         check(backendFiles.all { it.readText().contains(acceptanceChecksum) }) {
             "Android legal acceptance checksum is not synchronized with backend policy."
         }
+
+        val englishLegalDir = englishLegalDirectory.get().asFile
+        val englishManifest = englishLegalDir.resolve("en/manifest.json").readText()
+        check(Regex("\"release_status\"\\s*:\\s*\"approved\"").containsMatchIn(englishManifest))
+        check(Regex("\"counsel_review_status\"\\s*:\\s*\"approved\"").containsMatchIn(englishManifest))
+        check(englishManifest.contains("https://riskdetected.com/legal-documents/en/Terms-of-Use.md"))
+        check(englishManifest.contains("https://riskdetected.com/legal-documents/en/Privacy-Policy.md"))
+        check(englishManifest.contains("https://riskdetected.com/legal-documents/en/AI-and-Data-Processing-Notice.md"))
+
+        val englishApprovalPath = Regex("\"counsel_approval_record_path\"\\s*:\\s*\"([^\"]+)\"")
+            .find(englishManifest)?.groupValues?.get(1)
+            ?: error("English legal approval record path is missing.")
+        val englishApprovalHash = Regex("\"counsel_approval_record_sha256\"\\s*:\\s*\"([a-f0-9]{64})\"")
+            .find(englishManifest)?.groupValues?.get(1)
+            ?: error("English legal approval record checksum is missing.")
+        val englishApprovalFile = englishApprovalRecord.get().asFile
+        check(englishApprovalPath.endsWith(englishApprovalFile.name) && englishApprovalFile.sha256Hex() == englishApprovalHash) {
+            "English legal approval record checksum mismatch."
+        }
+
+        val englishEntries = Regex(
+            "\"kind\"\\s*:\\s*\"([^\"]+)\"[\\s\\S]*?" +
+                "\"version\"\\s*:\\s*\"([^\"]+)\"[\\s\\S]*?" +
+                "\"path\"\\s*:\\s*\"([^\"]+)\"[\\s\\S]*?" +
+                "\"hash\"\\s*:\\s*\"([a-f0-9]{64})\"",
+        ).findAll(englishManifest).map { match ->
+            val kind = match.groupValues[1]
+            val version = match.groupValues[2]
+            val document = englishLegalDir.resolve(match.groupValues[3])
+            val expectedHash = match.groupValues[4]
+            check(document.isFile && document.sha256Hex() == expectedHash) {
+                "English legal document checksum mismatch: ${document.name}"
+            }
+            "$kind|$version|$expectedHash"
+        }.toList()
+        check(englishEntries.size == 3) { "English legal manifest must contain exactly three documents." }
+        val englishAcceptanceChecksum = MessageDigest.getInstance("SHA-256")
+            .digest(englishEntries.sorted().joinToString("\n").toByteArray())
+            .joinToString("") { "%02x".format(it) }
+        check(releasePolicyFunction.get().asFile.readText().contains(englishAcceptanceChecksum)) {
+            "English legal acceptance checksum is not synchronized with the release policy function."
+        }
     }
 }
 
 val legalAssetsDir = file("src/main/assets/legal")
 val legalManifestFile = legalAssetsDir.resolve("manifest.json")
 val legalManifestText = legalManifestFile.readText()
+val englishLegalAssetsDir = rootProject.file("../App/LegalDocuments")
+val englishLegalManifestText = englishLegalAssetsDir.resolve("en/manifest.json").readText()
 val androidLegalBundleApproved =
     Regex("\"release_status\"\\s*:\\s*\"approved\"").containsMatchIn(legalManifestText) &&
-        Regex("\"counsel_review_status\"\\s*:\\s*\"approved\"").containsMatchIn(legalManifestText)
+        Regex("\"counsel_review_status\"\\s*:\\s*\"approved\"").containsMatchIn(legalManifestText) &&
+        Regex("\"release_status\"\\s*:\\s*\"approved\"").containsMatchIn(englishLegalManifestText) &&
+        Regex("\"counsel_review_status\"\\s*:\\s*\"approved\"").containsMatchIn(englishLegalManifestText)
 val androidLegalPublicUrlsVerified =
-    !Regex("\"public_urls_verified_at\"\\s*:\\s*null").containsMatchIn(legalManifestText)
+    !Regex("\"public_urls_verified_at\"\\s*:\\s*null").containsMatchIn(legalManifestText) &&
+        !Regex("\"public_urls_verified_at\"\\s*:\\s*null").containsMatchIn(englishLegalManifestText)
+val metaEventsTransportSmokeMode =
+    providers.gradleProperty("rdMetaEventsTransportSmoke").orNull == "true"
 
 android {
     namespace = "com.riskdetectedan.app"
     compileSdk = 37
+    testBuildType = if (metaEventsTransportSmokeMode) "metaSmoke" else "debug"
+
+    // Reuse the counsel-approved English legal set that iOS ships. Android keeps its own
+    // Turkish bundle under app/src/main/assets/legal and reads this shared set under /en.
+    sourceSets.getByName("main").assets.srcDir(rootProject.file("../App/LegalDocuments"))
 
     defaultConfig {
         applicationId = "com.riskdetectedan.app"
         minSdk = 26
         targetSdk = 37
-        versionCode = 5
-        versionName = "1.5.3"
+        versionCode = 14
+        versionName = "2.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["facebookSdkAutoInitEnabled"] = "false"
 
         ndk {
             debugSymbolLevel = "SYMBOL_TABLE"
@@ -362,6 +425,7 @@ android {
             versionNameSuffix = "-debug"
             manifestPlaceholders["firebaseMessagingAutoInitEnabled"] = "false"
             manifestPlaceholders["firebaseCrashlyticsCollectionEnabled"] = "false"
+            manifestPlaceholders["facebookSdkAutoInitEnabled"] = "false"
             buildConfigField("String", "ENVIRONMENT_NAME", "staging".asBuildConfigString())
             buildConfigField("String", "SUPABASE_URL", stagingSupabaseUrl.asBuildConfigString())
             buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", stagingSupabasePublishableKey.asBuildConfigString())
@@ -373,6 +437,16 @@ android {
             buildConfigField("String", "BUILD_SHA", buildSha.asBuildConfigString())
             configure<CrashlyticsExtension> {
                 mappingFileUploadEnabled = false
+            }
+        }
+        if (metaEventsTransportSmokeMode) {
+            create("metaSmoke") {
+                initWith(getByName("debug"))
+                // Meta Test Events matches the package registered in the Meta app. This
+                // opt-in, local-only variant keeps debug behavior but uses that exact package.
+                applicationIdSuffix = ""
+                versionNameSuffix = "-meta-smoke"
+                matchingFallbacks += listOf("debug")
             }
         }
         create("qa") {
@@ -398,6 +472,7 @@ android {
             isShrinkResources = true
             manifestPlaceholders["firebaseMessagingAutoInitEnabled"] = "true"
             manifestPlaceholders["firebaseCrashlyticsCollectionEnabled"] = "true"
+            manifestPlaceholders["facebookSdkAutoInitEnabled"] = "true"
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             if (releaseSigningConfigured) {
                 signingConfig = signingConfigs.getByName("upload")
@@ -518,8 +593,17 @@ val verifyAndroidLegalBundle = tasks.register<VerifyAndroidLegalBundleTask>("ver
     description = "Verifies Android-only legal document, approval and backend policy checksums."
     legalAssetsDirectory.set(layout.projectDirectory.dir("src/main/assets/legal"))
     approvalRecord.set(rootProject.layout.projectDirectory.file("../docs/android/ANDROID_LEGAL_APPROVAL_RECORD_2026-08-09.json"))
+    englishLegalDirectory.set(rootProject.layout.projectDirectory.dir("../App/LegalDocuments"))
+    englishApprovalRecord.set(rootProject.layout.projectDirectory.file("../docs/localization/phase-5/LEGAL_COUNSEL_APPROVAL_2026-09-08_META.json"))
     legalMigration.set(rootProject.layout.projectDirectory.file("../supabase/migrations/20260809184500_android_legal_update_policy.sql"))
     releasePolicyFunction.set(rootProject.layout.projectDirectory.file("../supabase/functions/app-release-policy/index.ts"))
+}
+
+val verifyAndroidLocalization = tasks.register<Exec>("verifyAndroidLocalization") {
+    group = "verification"
+    description = "Verifies complete, current English Android resources and printf placeholders."
+    workingDir(rootProject.projectDir)
+    commandLine("python3", "scripts/generate_android_english_resources.py", "--check")
 }
 
 val verifyReleaseEnvironment = tasks.register<VerifyReleaseEnvironmentTask>("verifyReleaseEnvironment") {
@@ -547,6 +631,7 @@ val verifyReleaseEnvironment = tasks.register<VerifyReleaseEnvironmentTask>("ver
 tasks.named("preBuild").configure {
     dependsOn(verifyEnvironmentIsolation)
     dependsOn(verifyAndroidLegalBundle)
+    dependsOn(verifyAndroidLocalization)
 }
 tasks.matching { it.name == "preReleaseBuild" }.configureEach {
     dependsOn(verifyReleaseEnvironment)
@@ -610,4 +695,6 @@ dependencies {
     androidTestImplementation(libs.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.facebook.core)
+    androidTestImplementation("androidx.localbroadcastmanager:localbroadcastmanager:1.0.0")
 }

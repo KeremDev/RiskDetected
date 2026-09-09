@@ -41,6 +41,29 @@ type RegisterReportBody = {
   client_capabilities?: Record<string, unknown>;
   request_id?: string;
   support_id?: string;
+  export_intent_id?: string;
+  content_scope?: ReportContentScope;
+  selected_item_keys?: string[];
+};
+
+type ReportContentScope =
+  | "legacy_combined"
+  | "risk_analysis"
+  | "expert_recommendations"
+  | "approved_notebook"
+  | "training_recommendations";
+
+type ReportIntent = {
+  id: string;
+  user_id: string;
+  analysis_id: string;
+  content_scope: ReportContentScope;
+  format: "pdf" | "xlsx";
+  selected_item_keys: string[];
+  content_snapshot: Record<string, unknown>;
+  source_edit_version: number;
+  projection_version: string | null;
+  tier_snapshot: "free" | "plus" | "pro";
 };
 
 type ReportQuotaEligibility = {
@@ -94,7 +117,7 @@ const REPORT_ANALYSIS_SELECT =
   "id,user_id,status,title,company_id,client_platform,analysis_edit_version,has_user_edits,localization_snapshot";
 
 const REPORT_FINDINGS_SELECT =
-  "id,analysis_id,ordinal,title,category,description,recommended_action,recommended_measures,references_text,root_cause_text,confidence,needs_field_verification,fk_probability,fk_frequency,fk_severity,fk_score,fk_band,m5_probability,m5_severity,m5_score,m5_band,origin,source_photo_indices,ai_confidence,last_user_edit_at,user_edit_count,finding_version,display_order";
+  "id,analysis_id,ordinal,title,category,description,recommended_action,recommended_measures,references_text,root_cause_text,confidence,needs_field_verification,fk_probability,fk_frequency,fk_severity,fk_score,fk_band,m5_probability,m5_severity,m5_score,m5_band,origin,source_photo_indices,ai_confidence,last_user_edit_at,user_edit_count,finding_version,display_order,item_class,is_scored";
 
 const REPORT_PHOTOS_SELECT =
   "analysis_id,storage_path,width,height,mime_type,sequence_index,client_photo_id,is_primary,thumbnail_storage_path,annotation_storage_path,user_caption,ai_scene_summary";
@@ -221,6 +244,17 @@ function normalizeKind(value: unknown): "standard" | "riskAnalysis" {
 
 function normalizeMethod(value: unknown): "fine_kinney" | "matrix_5x5" {
   return value === "matrix_5x5" ? "matrix_5x5" : "fine_kinney";
+}
+
+function normalizeContentScope(value: unknown): ReportContentScope {
+  return value === "risk_analysis" || value === "expert_recommendations" ||
+      value === "approved_notebook" || value === "training_recommendations"
+    ? value
+    : "legacy_combined";
+}
+
+function intentItems(snapshot: Record<string, unknown>): unknown[] {
+  return Array.isArray(snapshot.items) ? snapshot.items : [];
 }
 
 function companySnapshot(
@@ -497,6 +531,72 @@ serve(async (req) => {
     });
   }
 
+  // A client may safely retry the same metadata request after a relay, 5xx or
+  // timeout response. If the first invocation committed before its response
+  // was lost, return that row instead of consuming quota and inserting a
+  // duplicate report.
+  const { data: existingRequestReports, error: existingRequestError } =
+    await supabase
+      .from("reports")
+      .select(
+        "id,user_id,analysis_id,company_id,company_snapshot,format,kind,method,title,storage_path,file_name,mime_type,file_size,client_platform,request_id,support_id,report_language,report_locale,safety_profile_id,safety_profile_version,regulatory_sections_enabled,content_scope,selection_count,export_intent_id,created_at",
+      )
+      .eq("user_id", user.id)
+      .eq("analysis_id", analysisID)
+      .eq("request_id", requestID)
+      .limit(1);
+  if (existingRequestError) {
+    return json(500, {
+      error: "report_idempotency_check_failed",
+      message: userFacingCopy("reportRetryCheckFailed", body.report_language),
+      request_id: requestID,
+      support_id: supportID,
+    });
+  }
+  const existingRequestReport = Array.isArray(existingRequestReports)
+    ? existingRequestReports[0]
+    : null;
+  if (existingRequestReport) {
+    return json(200, existingRequestReport);
+  }
+
+  let reportIntent: ReportIntent | null = null;
+  if (body.export_intent_id != null) {
+    if (!isUUID(body.export_intent_id)) {
+      await supabase.storage.from("reports").remove([storagePath]);
+      return json(400, { error: "invalid_report_intent" });
+    }
+    const { data: intentData, error: intentError } = await supabase.rpc(
+      "result_hub_get_report_intent",
+      { p_user_id: user.id, p_intent_id: body.export_intent_id },
+    );
+    if (intentError || !intentData) {
+      await supabase.storage.from("reports").remove([storagePath]);
+      return json(404, { error: "report_intent_not_found" });
+    }
+    reportIntent = intentData as ReportIntent;
+    if (
+      reportIntent.analysis_id.toLowerCase() !== analysisID.toLowerCase() ||
+      reportIntent.format !== "pdf"
+    ) {
+      await supabase.storage.from("reports").remove([storagePath]);
+      return json(409, { error: "report_intent_mismatch" });
+    }
+    const { data: existingReport } = await supabase.from("reports")
+      .select(
+        "id,user_id,analysis_id,format,kind,method,title,storage_path,file_name,mime_type,file_size,content_scope,selection_count,export_intent_id,created_at",
+      )
+      .eq("user_id", user.id)
+      .eq("export_intent_id", reportIntent.id)
+      .maybeSingle();
+    if (existingReport) {
+      if (existingReport.storage_path !== storagePath) {
+        await supabase.storage.from("reports").remove([storagePath]);
+      }
+      return json(200, existingReport);
+    }
+  }
+
   const reportLocalization = resolveReportLocalization({
     localizationSnapshot: analysisRow.localization_snapshot,
     requestedLanguage: body.report_language,
@@ -541,14 +641,21 @@ serve(async (req) => {
     company = companyRow as CompanyRow;
   }
 
-  const kind = normalizeKind(body.kind);
+  const contentScope = reportIntent?.content_scope ??
+    normalizeContentScope(body.content_scope);
+  const kind = reportIntent
+    ? normalizeKind(reportIntent.content_snapshot.report_kind)
+    : contentScope === "risk_analysis"
+    ? "riskAnalysis"
+    : normalizeKind(body.kind);
   const method = normalizeMethod(body.method);
   const { data: quotaEligibility, error: quotaEligibilityError } =
     await supabase
-      .rpc("check_report_quota_eligibility", {
+      .rpc("check_report_quota_eligibility_v2", {
         p_user_id: user.id,
         p_kind: kind,
         p_format: "pdf",
+        p_content_scope: contentScope,
       });
   if (quotaEligibilityError || !quotaEligibility) {
     return json(500, {
@@ -562,13 +669,16 @@ serve(async (req) => {
   const quotaDecision = quotaEligibility as ReportQuotaEligibility;
   if (quotaDecision.allowed !== true) {
     await supabase.storage.from("reports").remove([storagePath]);
-    const quotaCode = quotaDecision.error_code ===
-        "free_risk_analysis_trial_exhausted"
+    const quotaCode = quotaDecision.error_code === "premium_required"
+      ? "premium_required"
+      : quotaDecision.error_code === "free_risk_analysis_trial_exhausted"
       ? "free_risk_analysis_trial_exhausted"
       : "report_quota_exceeded";
-    return json(429, {
+    return json(quotaCode === "premium_required" ? 403 : 429, {
       error: quotaCode,
-      message: quotaCode === "free_risk_analysis_trial_exhausted"
+      message: quotaCode === "premium_required"
+        ? userFacingCopy("reportPremiumRequired", body.report_language)
+        : quotaCode === "free_risk_analysis_trial_exhausted"
         ? userFacingCopy("reportRiskTrialUsed", body.report_language)
         : userFacingCopy("reportQuotaExceeded", body.report_language),
       request_id: requestID,
@@ -599,8 +709,23 @@ serve(async (req) => {
   }
 
   const shouldStoreSnapshot = await reportSnapshotV2Enabled(supabase, body);
-  let snapshotColumns: Record<string, unknown> = {};
-  if (shouldStoreSnapshot) {
+  let snapshotColumns: Record<string, unknown> = reportIntent
+    ? {
+      content_scope: reportIntent.content_scope,
+      projection_version: reportIntent.projection_version,
+      selected_item_keys: reportIntent.selected_item_keys,
+      content_snapshot_json: reportIntent.content_snapshot,
+      entitlement_tier_snapshot: reportIntent.tier_snapshot,
+      selection_count: reportIntent.selected_item_keys.length,
+      export_intent_id: reportIntent.id,
+      findings_snapshot_json: intentItems(reportIntent.content_snapshot),
+      analysis_edit_version: reportIntent.source_edit_version,
+      generated_from_user_edited_findings: reportIntent.source_edit_version > 0,
+      visible_findings_count: reportIntent.selected_item_keys.length,
+      report_page_count: pageCount,
+    }
+    : { content_scope: contentScope };
+  if (!reportIntent && shouldStoreSnapshot) {
     const snapshot = await loadServerReportSnapshot({
       supabase,
       analysis: analysisRow,
@@ -626,6 +751,7 @@ serve(async (req) => {
       });
     }
     snapshotColumns = {
+      ...snapshotColumns,
       findings_snapshot_json: snapshot.findings,
       photos_snapshot_json: snapshot.photos,
       analysis_edit_version: snapshot.analysisEditVersion,
@@ -636,9 +762,15 @@ serve(async (req) => {
     };
   }
 
+  const documentNumberRPC = contentScope === "legacy_combined"
+    ? "next_document_no"
+    : "next_report_document_no_v2";
+  const documentNumberArgs = contentScope === "legacy_combined"
+    ? { p_user_id: user.id }
+    : { p_user_id: user.id, p_content_scope: contentScope };
   const { data: documentNo, error: documentNoError } = await supabase.rpc(
-    "next_document_no",
-    { p_user_id: user.id },
+    documentNumberRPC,
+    documentNumberArgs,
   );
   if (documentNoError || typeof documentNo !== "string") {
     return json(500, {
@@ -689,7 +821,7 @@ serve(async (req) => {
       support_id: supportID,
     })
     .select(
-      "id,user_id,analysis_id,company_id,company_snapshot,format,kind,method,title,storage_path,file_name,mime_type,file_size,client_platform,request_id,support_id,report_language,report_locale,safety_profile_id,safety_profile_version,regulatory_sections_enabled,created_at",
+      "id,user_id,analysis_id,company_id,company_snapshot,format,kind,method,title,storage_path,file_name,mime_type,file_size,client_platform,request_id,support_id,report_language,report_locale,safety_profile_id,safety_profile_version,regulatory_sections_enabled,content_scope,selection_count,export_intent_id,created_at",
     )
     .single();
 
@@ -727,6 +859,23 @@ serve(async (req) => {
       request_id: requestID,
       support_id: supportID,
     });
+  }
+
+  if (reportIntent) {
+    const { error: consumeError } = await supabase.rpc(
+      "result_hub_consume_report_intent",
+      {
+        p_user_id: user.id,
+        p_intent_id: reportIntent.id,
+        p_status: "consumed",
+      },
+    );
+    if (consumeError) {
+      console.warn(
+        "PDF report intent consume failed",
+        JSON.stringify({ report_id: report.id, intent_id: reportIntent.id }),
+      );
+    }
   }
 
   try {

@@ -7,44 +7,39 @@ struct OBNotificationPermissionView: View {
     let onContinue: () -> Void
 
     var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                VStack(spacing: 0) {
+        ZStack {
+            OBScreenScaffold(background: .white) { _ in
+                EmptyView()
+            } content: { profile in
+                VStack(spacing: profile.isCompact ? 28 : 46) {
                     headline
-                        .padding(.top, proxy.safeAreaInsets.top + 52)
-                        .padding(.horizontal, 34)
+                        .padding(.top, profile.isCompact ? 28 : 52)
+                        .padding(.horizontal, profile.horizontalPadding + 10)
                         .obStage(delay: 0.08)
 
-                    Spacer(minLength: 46)
-
-                    VStack(spacing: 36) {
+                    VStack(spacing: profile.isCompact ? 22 : 36) {
                         OBAnimatedReminderBell()
                         subcopy
+                            .padding(.horizontal, profile.horizontalPadding)
                     }
                     .frame(maxWidth: .infinity)
                     .obStage(delay: 0.18)
-
-                    Spacer(minLength: 28)
-
-                    footer
-                        .padding(.horizontal, 28)
-                        .padding(.bottom, max(2, proxy.safeAreaInsets.bottom - 10))
-                        .obStage(delay: 0.3)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white)
-
-                Color.clear
-                    .frame(width: 1, height: 1)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityIdentifier("onboarding.notification_permission")
+            } footer: { _ in
+                footer
+                    .obStage(delay: 0.3)
             }
+
+            Color.clear
+                .frame(width: 1, height: 1)
+                .accessibilityElement(children: .ignore)
+                .accessibilityIdentifier("onboarding.notification_permission")
         }
     }
 
     private var headline: some View {
         Text(RDLocalization.string("onboarding.obnotification.permission.view.ucretsiz.denemeniz.bitmeden.once.size.hatirlatac.21ab39bb", table: .onboarding, fallback: "Deneme süren bitmeden sana haber verelim"))
-            .font(.system(size: RDFontScale.size(28), weight: .bold))
+            .font(RDTypography.font(size: RDFontScale.size(28), weight: .bold))
             .lineSpacing(2)
             .foregroundStyle(Color.rdOnyx)
             .multilineTextAlignment(.center)
@@ -53,7 +48,7 @@ struct OBNotificationPermissionView: View {
 
     private var subcopy: some View {
         Text(RDLocalization.string("onboarding.obnotification.permission.view.deneme.suresi.ve.uygulama.hatirlatmalari.icin.bi.8fffda58", table: .onboarding, fallback: "Plan, teklif ve uygulama hatırlatmaları için bildirimleri aç."))
-            .font(.system(size: RDFontScale.size(16)))
+            .font(RDTypography.font(size: RDFontScale.size(16)))
             .lineSpacing(3)
             .foregroundStyle(Color.rdSlate)
             .multilineTextAlignment(.center)
@@ -68,13 +63,13 @@ struct OBNotificationPermissionView: View {
                     Circle()
                         .fill(Color.rdGreenSoft)
                     Image(systemName: "checkmark")
-                        .font(.system(size: RDFontScale.size(11), weight: .bold))
+                        .font(RDTypography.font(size: RDFontScale.size(11), weight: .bold))
                         .foregroundStyle(Color.rdGreenDark)
                 }
                 .frame(width: 20, height: 20)
 
                 Text(RDLocalization.string("onboarding.obnotification.permission.view.simdi.odeme.alinmayacak.39364ad1", table: .onboarding, fallback: "Bu adımda satın alma yapılmaz"))
-                    .font(.system(size: RDFontScale.size(15), weight: .semibold))
+                    .font(RDTypography.font(size: RDFontScale.size(15), weight: .semibold))
                     .foregroundStyle(Color.rdGraphite)
             }
 
@@ -82,10 +77,11 @@ struct OBNotificationPermissionView: View {
                 Task { await continueAfterPermissionRequest() }
             } label: {
                 Text(RDLocalization.string("onboarding.obnotification.permission.view.ucretsiz.devam.et.c00788c5", table: .onboarding, fallback: "Bildirimleri Aç"))
-                    .font(.system(size: RDFontScale.size(18), weight: .bold))
+                    .font(RDTypography.font(size: RDFontScale.size(18), weight: .bold))
                     .foregroundStyle(Color.white)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 60)
+                    .padding(.vertical, 16)
+                    .frame(minHeight: 60)
                     .background(Color.rdOnyx)
                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .shadow(color: Color.rdOnyx.opacity(0.20), radius: 22, y: 8)

@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -52,6 +53,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
  * Android port of App/Views/Onboarding/V2/Components/OBComponents.swift — the shared component
@@ -362,10 +364,10 @@ private fun SelectionIndicator(selected: Boolean, multi: Boolean) {
 
 // ---- RdChipTile (Sector's bespoke grid tile) ------------------------------------------------
 
-/** Mirrors OBSectorView's `sectorCard` — a 2-column grid tile (78dp tall), distinct from
- * [RdCard]'s full-width row: icon swatch above title/subtitle, checkmark badge floating at the
- * top-trailing corner when selected. Meant for `LazyVerticalGrid(columns = GridCells.Fixed(2))`
- * callers. */
+/** Mirrors OBSectorView's `sectorCard` — its 78pt content frame plus 9pt outer padding on each
+ * edge produces a 96pt card. The old Android port treated 78dp as the *entire* tile, so subtitle
+ * baselines were clipped on real devices (and especially with larger font scale). `heightIn`
+ * keeps the iOS normal-state height while still allowing accessibility text to grow. */
 @Composable
 fun RdChipTile(
     title: String,
@@ -381,7 +383,7 @@ fun RdChipTile(
 
     Pressable(
         modifier = modifier
-            .height(78.dp)
+            .heightIn(min = 96.dp)
             .clip(RoundedCornerShape(13.dp))
             .background(colors.white)
             .border(BorderStroke(borderWidth, borderColor), RoundedCornerShape(13.dp)),
@@ -407,11 +409,26 @@ fun RdChipTile(
                         modifier = Modifier.size(14.dp),
                     )
                 }
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(7.dp))
             }
-            Text(title, style = RdFontStyle.Footnote.toTextStyle(), color = colors.onyx, maxLines = 1)
-            if (subtitle != null) {
-                Text(subtitle, style = RdFontStyle.Caption.toTextStyle(), color = colors.slate, maxLines = 1)
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    title,
+                    style = RdFontStyle.Footnote.toTextStyle().copy(fontSize = 12.5.sp, lineHeight = 15.sp),
+                    color = colors.onyx,
+                    maxLines = 1,
+                )
+                if (subtitle != null) {
+                    Text(
+                        subtitle,
+                        style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 10.5.sp, lineHeight = 13.sp),
+                        color = colors.slate,
+                        // iOS scales this single line down. Compose has no equivalent minimum
+                        // scale factor here, so allow a second line at larger Android font sizes
+                        // instead of silently clipping localized sector descriptions.
+                        maxLines = 2,
+                    )
+                }
             }
         }
         if (selected) {

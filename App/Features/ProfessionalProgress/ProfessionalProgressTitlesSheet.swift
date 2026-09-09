@@ -41,7 +41,7 @@ struct ProfessionalProgressTitlesSheet: View {
         .background(Color.rdWhite)
         .sheet(isPresented: $showRankGuide) {
             ProfessionalProgressRankGuideSheet(summary: summary)
-                .presentationDetents([.height(560), .large])
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
     }
@@ -57,7 +57,7 @@ struct ProfessionalProgressTitlesSheet: View {
             Spacer()
 
             Text(RDLocalization.string("professionalprogress.professional.progress.titles.sheet.mesleki.unvanlar.20cd00f4", table: .professionalProgress, fallback: "Mesleki Ünvanlar"))
-                .font(.system(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
@@ -93,17 +93,17 @@ struct ProfessionalProgressTitlesSheet: View {
         } label: {
             HStack(spacing: 9) {
                 Image(systemName: "questionmark.circle.fill")
-                    .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdPlanPlusDark)
 
                 Text(RDLocalization.string("professionalprogress.professional.progress.titles.sheet.nasil.rutbe.alirim.ba68ce6d", table: .professionalProgress, fallback: "Nasıl rütbe alırım?"))
-                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
 
                 Spacer()
 
                 Image(systemName: "chevron.up.circle.fill")
-                    .font(.system(size: RDFontScale.size(16), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(16), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate.opacity(0.65))
             }
             .padding(.horizontal, 14)
@@ -122,7 +122,7 @@ struct ProfessionalProgressTitlesSheet: View {
     private func titleSection(_ title: String, titles: [ProfessionalProgressTitle]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(.system(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .padding(.horizontal, 24)
 
@@ -153,13 +153,13 @@ struct ProfessionalProgressTitlesSheet: View {
 
                 if current {
                     Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(14), weight: .semibold, design: .rounded))
                         .foregroundStyle(Color.rdPlanPlus)
                         .background(Circle().fill(Color.rdWhite).frame(width: 18, height: 18))
                         .offset(x: 2, y: -2)
                 } else if !earned {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: RDFontScale.size(8), weight: .black, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(8), weight: .black, design: .rounded))
                         .foregroundStyle(Color.rdWhite)
                         .frame(width: 18, height: 18)
                         .background(Color.rdSlate.opacity(0.80))
@@ -171,14 +171,14 @@ struct ProfessionalProgressTitlesSheet: View {
 
             VStack(spacing: 1) {
                 Text(title.label)
-                    .font(.system(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
                     .foregroundStyle(earned ? Color.rdBlack : Color.rdSlate)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.70)
 
                 Text(RDLocalization.format("professionalprogress.professional.progress.titles.sheet.1.mdp.0657733e", table: .professionalProgress, fallback: "%1$@ MDP", arguments: [String(describing: formattedNumber(title.threshold))]))
-                    .font(.system(size: RDFontScale.size(9), weight: .semibold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(9), weight: .semibold, design: .rounded))
                     .foregroundStyle(earned ? Color.rdSlate : Color.rdSlate.opacity(0.70))
             }
         }
@@ -222,13 +222,13 @@ struct ProfessionalProgressTitlesSheet: View {
                 .frame(width: rankIconOuterRingSize, height: rankIconOuterRingSize)
 
             Image(systemName: style.symbol)
-                .font(.system(size: RDFontScale.size(19), weight: .black, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(19), weight: .black, design: .rounded))
                 .foregroundStyle(earned ? style.foreground : Color.rdSlate.opacity(0.45))
                 .symbolRenderingMode(.hierarchical)
 
             if earned {
                 Image(systemName: "sparkle")
-                    .font(.system(size: RDFontScale.size(7), weight: .black, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(7), weight: .black, design: .rounded))
                     .foregroundStyle(Color.white.opacity(0.85))
                     .offset(x: 14, y: -14)
             }
@@ -343,7 +343,7 @@ private struct ProfessionalProgressRankGuideSheet: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
                 Image(systemName: "flame.fill")
-                    .font(.system(size: RDFontScale.size(22), weight: .black, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(22), weight: .black, design: .rounded))
                     .foregroundStyle(Color.rdPlanPlusDark)
                     .frame(width: 44, height: 44)
                     .background(Color.rdPlanPlus.opacity(0.16))
@@ -351,10 +351,10 @@ private struct ProfessionalProgressRankGuideSheet: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(summary.currentTitle.label)
-                        .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                         .foregroundStyle(Color.rdBlack)
                     Text(nextTitleStatusText)
-                        .font(.system(size: RDFontScale.size(12.5), weight: .medium, design: .rounded))
+                        .font(RDTypography.font(size: RDFontScale.size(12.5), weight: .medium, design: .rounded))
                         .foregroundStyle(Color.rdSlate)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
@@ -378,7 +378,7 @@ private struct ProfessionalProgressRankGuideSheet: View {
     private var actionHintCard: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: "arrow.up.forward.circle.fill")
-                .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(20), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdGreenDark)
                 .frame(width: 38, height: 38)
                 .background(Color.rdGreenSoft)
@@ -386,10 +386,10 @@ private struct ProfessionalProgressRankGuideSheet: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(RDLocalization.string("professionalprogress.professional.progress.titles.sheet.sana.en.yakin.adim.996c4c7d", table: .professionalProgress, fallback: "Sana en yakın adım"))
-                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                 Text(actionHintText)
-                    .font(.system(size: RDFontScale.size(15), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(15), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -412,7 +412,7 @@ private struct ProfessionalProgressRankGuideSheet: View {
     private var rulesCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(RDLocalization.string("professionalprogress.professional.progress.titles.sheet.mdp.nasil.kazanilir.6d3aeefc", table: .professionalProgress, fallback: "MDP nasıl kazanılır?"))
-                .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
 
             VStack(spacing: 9) {
@@ -437,15 +437,15 @@ private struct ProfessionalProgressRankGuideSheet: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                 Text(RDLocalization.string("professionalprogress.professional.progress.titles.sheet.puanlar.gercek.is.ciktisindan.gelir.f2b509b4", table: .professionalProgress, fallback: "Puanlar gerçek iş çıktısından gelir."))
-                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
             }
 
             Text(RDLocalization.string("professionalprogress.professional.progress.titles.sheet.uygulamaya.giris.yapmak.puan.vermez.ayni.analiz..3eefe37a", table: .professionalProgress, fallback: "Uygulamaya giriş yapmak puan vermez. Aynı analiz veya rapor tekrar işlense bile yeniden MDP yazılmaz. Aynı saha çalışmasından gelen analiz ve raporlar adil ilerleme için sınırlı hesaplanır."))
-                .font(.system(size: RDFontScale.size(12.5), weight: .medium, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(12.5), weight: .medium, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
                 .lineSpacing(3)
                 .fixedSize(horizontal: false, vertical: true)
@@ -458,7 +458,7 @@ private struct ProfessionalProgressRankGuideSheet: View {
     private func scoreRow(icon: String, title: String, points: String, detail: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .frame(width: 30, height: 30)
                 .background(Color.rdFog)
@@ -466,10 +466,10 @@ private struct ProfessionalProgressRankGuideSheet: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: RDFontScale.size(13.5), weight: .semibold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(13.5), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                 Text(detail)
-                    .font(.system(size: RDFontScale.size(11.5), weight: .medium, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(11.5), weight: .medium, design: .rounded))
                     .foregroundStyle(Color.rdSlate)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -477,7 +477,7 @@ private struct ProfessionalProgressRankGuideSheet: View {
             Spacer(minLength: 8)
 
             Text(points)
-                .font(.system(size: RDFontScale.size(12.5), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(12.5), weight: .bold, design: .rounded))
                 .foregroundStyle(Color.rdPlanPlusDark)
                 .padding(.horizontal, 9)
                 .frame(height: 28)
@@ -492,7 +492,7 @@ private struct ProfessionalProgressRankGuideSheet: View {
                 .rdMono(size: 17, weight: .bold)
                 .foregroundStyle(Color.rdBlack)
             Text(label)
-                .font(.system(size: RDFontScale.size(10.5), weight: .semibold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(10.5), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdSlate)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -3,7 +3,10 @@ import {
   assertEquals,
   assertThrows,
 } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import { buildWelcomeEmailContent } from "./template.ts";
+import {
+  buildWelcomeEmailContent,
+  resolveWelcomeEmailLocale,
+} from "./template.ts";
 
 Deno.test("welcome email template renders supported placeholders", () => {
   const email = buildWelcomeEmailContent({
@@ -73,4 +76,35 @@ Deno.test("welcome email never falls back from an unsupported locale", () => {
     Error,
     "WELCOME_EMAIL_EXACT_LOCALE_TEMPLATE_MISSING",
   );
+});
+
+Deno.test("welcome email resolves Android request locale when profile fields are not ready", () => {
+  const resolution = resolveWelcomeEmailLocale({
+    profileAppLanguage: null,
+    profileContentLocale: null,
+    requestAppLanguage: "tr",
+    requestContentLocale: "tr-TR",
+  });
+
+  assertEquals(resolution, { appLanguage: "tr", locale: "tr-TR" });
+});
+
+Deno.test("welcome email derives a same-language base locale from a missing profile locale", () => {
+  const resolution = resolveWelcomeEmailLocale({
+    profileAppLanguage: "en",
+    profileContentLocale: null,
+  });
+
+  assertEquals(resolution, { appLanguage: "en", locale: "en-001" });
+});
+
+Deno.test("welcome email rejects a malformed persisted locale instead of crossing languages", () => {
+  const resolution = resolveWelcomeEmailLocale({
+    profileAppLanguage: "en",
+    profileContentLocale: "en-NZ",
+    requestAppLanguage: "en",
+    requestContentLocale: "en-001",
+  });
+
+  assertEquals(resolution, null);
 });

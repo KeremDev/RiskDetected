@@ -66,7 +66,7 @@ struct LegalInfoSheet: View {
                         UISelectionFeedbackGenerator().selectionChanged()
                     } label: {
                         Text(kind.shortTitle)
-                            .font(.system(size: RDFontScale.size(12), weight: .bold, design: .rounded))
+                            .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded))
                             .lineLimit(1)
                             .minimumScaleFactor(0.82)
                             .foregroundStyle(active ? Color.white : Color.rdCharcoal)
@@ -98,7 +98,7 @@ private struct EnglishLegalUnavailableView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Image(systemName: "checkmark.shield")
-                .font(.system(size: RDFontScale.size(28), weight: .semibold))
+                .font(RDTypography.font(size: RDFontScale.size(28), weight: .semibold))
                 .foregroundStyle(Color.rdGreen)
 
             Text(
@@ -108,7 +108,7 @@ private struct EnglishLegalUnavailableView: View {
                     fallback: "İngilizce yasal metinler henüz kullanıma hazır değil"
                 )
             )
-            .font(.system(size: RDFontScale.size(20), weight: .bold, design: .rounded))
+            .font(RDTypography.font(size: RDFontScale.size(20), weight: .bold, design: .rounded))
             .foregroundStyle(Color.rdBlack)
 
             Text(
@@ -118,7 +118,7 @@ private struct EnglishLegalUnavailableView: View {
                     fallback: "İngilizce Kullanım Koşulları ve Gizlilik Politikası hukuk ve dil incelemesi tamamlanana kadar bu sürümde yayımlanmaz."
                 )
             )
-            .font(.system(size: RDFontScale.size(14), design: .rounded))
+            .font(RDTypography.font(size: RDFontScale.size(14), design: .rounded))
             .foregroundStyle(Color.rdCharcoal)
 
             Text(
@@ -128,7 +128,7 @@ private struct EnglishLegalUnavailableView: View {
                     fallback: "Türkçe metinleri görüntülemek için uygulama dilini iOS Ayarları’ndan Türkçe seçebilirsin."
                 )
             )
-            .font(.system(size: RDFontScale.size(13), design: .rounded))
+            .font(RDTypography.font(size: RDFontScale.size(13), design: .rounded))
             .foregroundStyle(Color.rdSlate)
         }
         .padding(20)
@@ -150,7 +150,7 @@ private struct LegalDocumentReader: View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(document.title)
-                    .font(.system(size: RDFontScale.size(17), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(17), weight: .bold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -168,7 +168,7 @@ private struct LegalDocumentReader: View {
 
             ScrollView(showsIndicators: true) {
                 Text(document.text)
-                    .font(.system(size: RDFontScale.size(13), weight: .regular, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(13), weight: .regular, design: .rounded))
                     .foregroundStyle(Color.rdCharcoal)
                     .lineSpacing(5)
                     .textSelection(.enabled)

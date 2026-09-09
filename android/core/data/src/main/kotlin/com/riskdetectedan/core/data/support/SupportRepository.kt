@@ -1,6 +1,7 @@
 package com.riskdetectedan.core.data.support
 
 import com.riskdetectedan.core.common.RdResult
+import com.riskdetectedan.core.common.RdClientMetadata
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.functions.functions
 import io.ktor.client.call.body
@@ -11,20 +12,18 @@ import javax.inject.Singleton
 
 /**
  * Mirrors SupportService.swift's send() — same edge function ("support-contact"), same body
- * shape. `userMessageLanguage` is hardcoded "tr" instead of iOS's on-device NLLanguageRecognizer
- * detection — Android is Turkish-only right now (see every other Turkish-only note this
- * session), so the detector would only ever report "tr" anyway; not worth adding an ML Kit
- * dependency for a value that's currently always the same.
+ * shape. In the absence of an on-device language recognizer, message and response language use
+ * the active app language so English support requests are never routed as Turkish.
  */
 @Serializable
 private data class SupportRequestBody(
     val subject: String,
     val message: String,
     val attachments: List<SupportAttachmentPayload> = emptyList(),
-    @SerialName("app_language") val appLanguage: String = "tr",
-    @SerialName("content_locale") val contentLocale: String = "tr-TR",
-    @SerialName("user_message_language") val userMessageLanguage: String = "tr",
-    @SerialName("preferred_response_language") val preferredResponseLanguage: String = "tr",
+    @SerialName("app_language") val appLanguage: String = RdClientMetadata.APP_LANGUAGE,
+    @SerialName("content_locale") val contentLocale: String = RdClientMetadata.CONTENT_LOCALE,
+    @SerialName("user_message_language") val userMessageLanguage: String = RdClientMetadata.APP_LANGUAGE,
+    @SerialName("preferred_response_language") val preferredResponseLanguage: String = RdClientMetadata.APP_LANGUAGE,
 )
 
 /**

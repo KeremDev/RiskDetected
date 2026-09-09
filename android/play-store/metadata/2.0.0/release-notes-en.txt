@@ -1,0 +1,5 @@
+Based on feedback from our closed-test users:
+• Unreadable text, cards and buttons in dark mode are fixed.
+• The standard report is now independent of the risk-assessment table and always available.
+• The analysis result photo now opens full screen.
+• The analysis scope picker and quota cards were reworked.

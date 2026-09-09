@@ -29,6 +29,7 @@ import com.riskdetectedan.feature.profile.DataManagementScreen
 import com.riskdetectedan.feature.profile.SupportScreen
 import com.riskdetectedan.feature.reports.ReportsScreen
 import com.riskdetectedan.core.designsystem.RiskDetectedLightOnlyTheme
+import kotlinx.serialization.ExperimentalSerializationApi
 
 /**
  * Root routing mirrors AppState.bootstrap/finishOnboarding: Splash resolves persisted onboarding
@@ -45,7 +46,9 @@ import com.riskdetectedan.core.designsystem.RiskDetectedLightOnlyTheme
  * including the tab bar).
  */
 @Composable
+@OptIn(ExperimentalSerializationApi::class)
 fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
+    val diagnostics: com.riskdetectedan.app.telemetry.FlowDiagnosticsViewModel = hiltViewModel()
     val navController = rememberNavController()
     val bootstrapState by viewModel.state.collectAsState()
 
@@ -60,9 +63,27 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                 popUpTo(0) { inclusive = true }
                 launchSingleTop = true
             }
-            BootstrapState.Main -> navController.navigate(MainShell) {
-                popUpTo(0) { inclusive = true }
-                launchSingleTop = true
+            BootstrapState.Main -> {
+                val destination = navController.currentDestination
+                val currentRoute = destination?.route
+                // Navigation Compose builds type-safe route names from the serializer descriptor.
+                // Kotlin qualifiedName can be obfuscated in a minified release while the
+                // descriptor remains stable, which made Splash look like a restored app route
+                // and stranded release builds on the logo screen.
+                val bootstrapRoutes = setOf(
+                    Splash.serializer().descriptor.serialName,
+                    Onboarding.serializer().descriptor.serialName,
+                    Auth.serializer().descriptor.serialName,
+                )
+                val restoredAuthenticatedRoute = destination != null &&
+                    currentRoute !in bootstrapRoutes
+                // rememberNavController restores its complete back stack after activity/process
+                // recreation. Do not replace that restored Analysis/Result/Profile/etc. route
+                // with MainShell merely because bootstrap resolved the persisted session again.
+                if (!restoredAuthenticatedRoute) navController.navigate(MainShell) {
+                    popUpTo(0) { inclusive = true }
+                    launchSingleTop = true
+                }
             }
             // ReleaseGate and the legal service render these blocking layers above this graph.
             BootstrapState.UpdateBlocked, BootstrapState.LegalBlocked -> Unit
@@ -93,6 +114,7 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
             // Retained as a typed direct-camera entry point. The center quick-scan action no
             // longer uses it: live iOS first returns to Home and opens the source chooser there.
             CaptureScreen(
+                onDiagnostic = diagnostics::record,
                 onPhotoCaptured = { file ->
                     navController.navigate(Analysis(photoPaths = listOf(file.absolutePath)))
                 },
@@ -107,6 +129,7 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
             // stacking on top of it, so Annotate's own popBackStack() (cancel/analyze) lands
             // straight back on MainShell's tray sheet, not back on the camera.
             CaptureScreen(
+                onDiagnostic = diagnostics::record,
                 onPhotoCaptured = { file ->
                     navController.navigate(Annotate(photoPath = file.absolutePath)) {
                         popUpTo<CaptureForTray> { inclusive = true }
@@ -158,8 +181,24 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                 preSelectedSectorId = args.sectorId,
                 onBack = { navController.popBackStack() },
                 onOpenCompanies = { navController.navigate(Companies) },
-                onUpgrade = { navController.navigate(Paywall) },
-                onUpgradeTier = { tier -> navController.navigate(PaywallForTier(tier.name.lowercase())) },
+                onPaywall = { request ->
+                    navController.navigate(
+                        PaywallForTier(
+                            tier = request.targetTier.name.lowercase(),
+                            resultAnalysisId = request.analysisId,
+                            resultSection = request.resultSection?.wireValue,
+                            resultFunnelSessionId = request.funnelSessionId,
+                            entryPoint = request.entryPoint,
+                            entryItemId = request.itemId,
+                            entryKind = request.attributes["entry_kind"],
+                            entryPlacement = request.attributes["placement"],
+                            entryPromotionVariant = request.attributes["promotion_variant"],
+                            entrySourceSection = request.attributes["source_section"],
+                            entryCurrentTier = request.attributes["current_tier"],
+                            entryPreviewNumber = request.attributes["preview_number"],
+                        ),
+                    )
+                },
             )
         }
         composable<AnalysisReports> { backStackEntry ->
@@ -176,8 +215,24 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                 completedAnalysisId = args.analysisId,
                 onBack = { navController.popBackStack() },
                 onOpenCompanies = { navController.navigate(Companies) },
-                onUpgrade = { navController.navigate(Paywall) },
-                onUpgradeTier = { tier -> navController.navigate(PaywallForTier(tier.name.lowercase())) },
+                onPaywall = { request ->
+                    navController.navigate(
+                        PaywallForTier(
+                            tier = request.targetTier.name.lowercase(),
+                            resultAnalysisId = request.analysisId,
+                            resultSection = request.resultSection?.wireValue,
+                            resultFunnelSessionId = request.funnelSessionId,
+                            entryPoint = request.entryPoint,
+                            entryItemId = request.itemId,
+                            entryKind = request.attributes["entry_kind"],
+                            entryPlacement = request.attributes["placement"],
+                            entryPromotionVariant = request.attributes["promotion_variant"],
+                            entrySourceSection = request.attributes["source_section"],
+                            entryCurrentTier = request.attributes["current_tier"],
+                            entryPreviewNumber = request.attributes["preview_number"],
+                        ),
+                    )
+                },
             )
         }
         composable<Companies> { CompanyListScreen(onBack = { navController.popBackStack() }) }
@@ -193,20 +248,34 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                 onBack = { navController.popBackStack() },
             )
         }
-        composable<Paywall> {
-            // InAppPaywallView.swift pins both its surface and legal sheet to light mode.
-            RiskDetectedLightOnlyTheme {
-                PaywallScreen(onBack = { navController.popBackStack() })
-            }
-        }
         composable<PaywallForTier> { backStackEntry ->
             val args: PaywallForTier = backStackEntry.toRoute()
             RiskDetectedLightOnlyTheme {
                 PaywallScreen(
                     onBack = { navController.popBackStack() },
                     initialPlan = if (args.tier == "pro") PaywallPlan.Pro else PaywallPlan.Plus,
+                    resultAnalysisId = args.resultAnalysisId,
+                    resultSection = args.resultSection,
+                    resultFunnelSessionId = args.resultFunnelSessionId,
+                    entryPoint = args.entryPoint,
+                    entryTargetTier = args.tier,
+                    entryItemId = args.entryItemId,
+                    entryKind = args.entryKind,
+                    entryPlacement = args.entryPlacement,
+                    entryPromotionVariant = args.entryPromotionVariant,
+                    entrySourceSection = args.entrySourceSection,
+                    entryCurrentTier = args.entryCurrentTier,
+                    entryPreviewNumber = args.entryPreviewNumber,
                 )
             }
         }
     }
 }
+
+private val com.riskdetectedan.core.data.analysis.AnalysisResultSectionId.wireValue: String
+    get() = when (this) {
+        com.riskdetectedan.core.data.analysis.AnalysisResultSectionId.RiskAnalysis -> "risk_analysis"
+        com.riskdetectedan.core.data.analysis.AnalysisResultSectionId.ExpertRecommendations -> "expert_recommendations"
+        com.riskdetectedan.core.data.analysis.AnalysisResultSectionId.TrainingRecommendations -> "training_recommendations"
+        com.riskdetectedan.core.data.analysis.AnalysisResultSectionId.ApprovedNotebook -> "approved_notebook"
+    }

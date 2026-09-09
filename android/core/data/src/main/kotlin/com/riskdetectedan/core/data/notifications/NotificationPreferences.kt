@@ -28,6 +28,11 @@ data class NotificationPreferences(
     @SerialName("progress_milestones") val progressMilestones: Boolean = false,
 )
 
+data class NotificationPreferencesSnapshot(
+    val preferences: NotificationPreferences,
+    val isPersisted: Boolean,
+)
+
 enum class ProgressPreference(val columnName: String) {
     WeeklySummary("progress_weekly_summary"),
     MonthlySummary("progress_monthly_summary"),
@@ -41,14 +46,25 @@ private data class MasterPreferenceRpcPayload(@SerialName("p_enabled") val enabl
 class NotificationPreferencesRepository @Inject constructor(
     private val client: SupabaseClient,
 ) {
-    suspend fun fetch(userId: String): RdResult<NotificationPreferences> = try {
+    suspend fun fetch(userId: String): RdResult<NotificationPreferences> = when (val result = fetchWithPresence(userId)) {
+        is RdResult.Success -> RdResult.Success(result.value.preferences)
+        is RdResult.Failure -> result
+    }
+
+    suspend fun fetchWithPresence(userId: String): RdResult<NotificationPreferencesSnapshot> = try {
         val rows = client.postgrest.from("notification_preferences")
             .select {
                 filter { eq("user_id", userId) }
                 limit(1)
             }
             .decodeList<NotificationPreferences>()
-        RdResult.Success(rows.firstOrNull() ?: NotificationPreferences())
+        val row = rows.firstOrNull()
+        RdResult.Success(
+            NotificationPreferencesSnapshot(
+                preferences = row ?: NotificationPreferences(),
+                isPersisted = row != null,
+            ),
+        )
     } catch (t: Throwable) {
         RdResult.Failure("notification_preferences_fetch_failed", t.message ?: "fetch_failed", t)
     }

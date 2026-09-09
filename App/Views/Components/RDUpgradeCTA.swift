@@ -39,10 +39,10 @@ struct RDUpgradeCTA: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: icon ?? tier.badgeIcon)
-                    .font(.system(size: RDFontScale.size(10), weight: .heavy, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(10), weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
                 Text(title ?? tier.badgeLabel)
-                    .font(.system(size: RDFontScale.size(10), weight: .heavy, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(10), weight: .heavy, design: .rounded))
                     .tracking(title == nil ? 0.7 : 0.1)
                     .foregroundStyle(.white)
             }
@@ -72,6 +72,9 @@ struct RDHeaderAccountCTA: View {
     @EnvironmentObject private var app: AppState
     @State private var showMenu = false
     @State private var avatarImage: UIImage?
+    let directEntryPoint: PaywallEntryPoint
+    let menuEntryPoint: PaywallEntryPoint
+    var analysisID: UUID? = nil
     var onUpgrade: () -> Void
 
     var body: some View {
@@ -81,7 +84,10 @@ struct RDHeaderAccountCTA: View {
                     tier: app.currentTier == .plus ? .pro : .plus,
                     title: RDLocalization.string("localizable.rdupgrade.cta.yukselt.72b0d588", table: .localizable, fallback: "Yükselt"),
                     icon: "arrow.up.circle.fill",
-                    action: onUpgrade
+                    action: {
+                        beginUpgradeEntry(at: directEntryPoint)
+                        onUpgrade()
+                    }
                 )
             }
             Button {
@@ -121,6 +127,7 @@ struct RDHeaderAccountCTA: View {
                         onReports: { select(.reports) },
                         onUpgrade: {
                             closeMenu()
+                            beginUpgradeEntry(at: menuEntryPoint)
                             onUpgrade()
                         },
                         onSettings: openProfilePreferences,
@@ -147,6 +154,15 @@ struct RDHeaderAccountCTA: View {
     private func select(_ tab: RDTab) {
         closeMenu()
         app.activeTab = tab
+    }
+
+    private func beginUpgradeEntry(at entryPoint: PaywallEntryPoint) {
+        PaywallEventService.shared.beginEntry(
+            at: entryPoint,
+            currentTier: app.currentTier,
+            targetTier: app.currentTier == .plus ? .pro : .plus,
+            analysisID: analysisID
+        )
     }
 
     private func openProfilePreferences() {
@@ -246,14 +262,14 @@ private struct RDHeaderProfileMenu: View {
         Button(action: action) {
             HStack(spacing: 10) {
                 Image(systemName: icon)
-                    .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                     .frame(width: 27, height: 27)
                     .foregroundStyle(tint)
                     .background(tint.opacity(0.10))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 Text(title)
-                    .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                     .foregroundStyle(Color.rdBlack)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -267,14 +283,14 @@ private struct RDHeaderProfileMenu: View {
     private func menuInfo(icon: String, title: String, tint: Color) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: RDFontScale.size(13), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(13), weight: .bold, design: .rounded))
                 .frame(width: 27, height: 27)
                 .foregroundStyle(tint)
                 .background(tint.opacity(0.10))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
             Text(title)
-                .font(.system(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(13), weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.rdBlack)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -292,7 +308,7 @@ private struct RDHeaderProfileMenu: View {
     ) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: RDFontScale.size(14), weight: .bold, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(14), weight: .bold, design: .rounded))
                 .foregroundStyle(tint)
                 .frame(maxWidth: .infinity)
                 .frame(height: 36)

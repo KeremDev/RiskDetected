@@ -7,6 +7,11 @@ import com.riskdetectedan.core.common.RdClientMetadata
 import com.riskdetectedan.core.common.RdResult
 import com.riskdetectedan.core.data.analysis.AnalysisRepository
 import com.riskdetectedan.core.data.analysis.AnalysisResultSummary
+import com.riskdetectedan.core.data.analysis.AnalysisResultHubRepository
+import com.riskdetectedan.core.data.analysis.AnalysisResultHubResponse
+import com.riskdetectedan.core.data.analysis.AnalysisResultSectionId
+import com.riskdetectedan.core.data.analysis.AnalysisResultHubItem
+import com.riskdetectedan.core.data.analysis.AnalysisItemReaction
 import com.riskdetectedan.core.data.analysis.AnalysisSector
 import com.riskdetectedan.core.data.analysis.AnalysisStatus
 import com.riskdetectedan.core.data.analysis.CreateAnalysisRequest
@@ -26,7 +31,9 @@ import com.riskdetectedan.core.data.profile.ProfileRepository
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.data.release.AndroidRuntimeGateName
 import com.riskdetectedan.core.data.release.ReleasePolicyRepository
+import com.riskdetectedan.core.data.telemetry.MetaAppEventsService
 import com.riskdetectedan.core.designsystem.R as RdR
+import com.riskdetectedan.core.designsystem.rdAnalysisSectorTitleResource
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -46,6 +53,7 @@ sealed interface CreateAnalysisUiState {
     data object Submitting : CreateAnalysisUiState
     data class Polling(val analysisId: String) : CreateAnalysisUiState
     data class Finalizing(val analysisId: String) : CreateAnalysisUiState
+    data class LoadingCompletedResult(val analysisId: String) : CreateAnalysisUiState
     data class Completed(val analysisId: String, val findings: List<Finding>) : CreateAnalysisUiState
     data class CreatedWithoutPhoto(val analysisId: String) : CreateAnalysisUiState
     data class Failed(val error: AppErrorMessage) : CreateAnalysisUiState
@@ -69,6 +77,9 @@ class AnalysisViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val planCapabilitiesRepository: PlanCapabilitiesRepository,
     private val releasePolicyRepository: ReleasePolicyRepository,
+    private val resultHubRepository: AnalysisResultHubRepository,
+    private val flowEvents: com.riskdetectedan.core.data.telemetry.ClientFlowEvents,
+    private val metaAppEvents: MetaAppEventsService,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<CreateAnalysisUiState>(CreateAnalysisUiState.Idle)
@@ -91,6 +102,9 @@ class AnalysisViewModel @Inject constructor(
     private val _updateError = MutableStateFlow<AppErrorMessage?>(null)
     val updateError: StateFlow<AppErrorMessage?> = _updateError.asStateFlow()
 
+    private val _resultFeedbackError = MutableStateFlow<AppErrorMessage?>(null)
+    val resultFeedbackError: StateFlow<AppErrorMessage?> = _resultFeedbackError.asStateFlow()
+
     private val _capabilities = MutableStateFlow(PlanCapabilities.forTier(SubscriptionTier.Free))
     val capabilities: StateFlow<PlanCapabilities> = _capabilities.asStateFlow()
 
@@ -99,6 +113,10 @@ class AnalysisViewModel @Inject constructor(
 
     private val _resultPhotoBytes = MutableStateFlow<List<ByteArray>>(emptyList())
     val resultPhotoBytes: StateFlow<List<ByteArray>> = _resultPhotoBytes.asStateFlow()
+
+    private val _resultHub = MutableStateFlow<AnalysisResultHubResponse?>(null)
+    val resultHub: StateFlow<AnalysisResultHubResponse?> = _resultHub.asStateFlow()
+    private val resultHubFunnelSessionId = UUID.randomUUID().toString()
 
     /**
      * Full submit flow, mirroring AnalysisService.swift's sequence: create -> upload photo(s)
@@ -124,8 +142,10 @@ class AnalysisViewModel @Inject constructor(
         analysisMode: String = "standard",
     ) {
         if (!AnalysisSubmissionGuard.canStart(_state.value)) return
+        flowEvents.record("analysis_validation", "started", photoCount = photoPaths.size)
         val userId = authRepository.currentUserId
         if (userId == null) {
+            flowEvents.record("analysis_validation", "blocked", "auth")
             _state.value = CreateAnalysisUiState.Failed(
                 AppErrorMessages.make(
                     context.getString(RdR.string.rd_once_giris_yapmalisin),
@@ -139,6 +159,7 @@ class AnalysisViewModel @Inject constructor(
         // regardless of tier (the tier-based 1/3 cap is a *lower* bound gate, this is the
         // absolute ceiling AnalysisService.swift itself enforces before ever calling the server).
         if (photoPaths.size > 3) {
+            flowEvents.record("analysis_validation", "blocked", "photo_limit")
             _state.value = CreateAnalysisUiState.Failed(
                 AppErrorMessages.make(
                     context.getString(RdR.string.rd_en_fazla_uc_fotograf),
@@ -153,6 +174,7 @@ class AnalysisViewModel @Inject constructor(
         viewModelScope.launch {
             val runtimeGate = releasePolicyRepository.resolveGate(AndroidRuntimeGateName.AnalysisSubmit)
             if (!runtimeGate.enabled) {
+                flowEvents.record("analysis_validation", "blocked", "runtime_gate")
                 _state.value = CreateAnalysisUiState.Failed(
                     AppErrorMessages.make(
                         context.getString(RdR.string.rd_android_analiz_kapali_format, runtimeGate.reason),
@@ -161,14 +183,45 @@ class AnalysisViewModel @Inject constructor(
                 )
                 return@launch
             }
-            val profile = (profileRepository.fetchProfile(userId) as? RdResult.Success)?.value
-            val tier = profile?.tier ?: SubscriptionTier.Free
+            val profile = when (val result = profileRepository.fetchProfile(userId)) {
+                is RdResult.Success -> result.value
+                is RdResult.Failure -> {
+                    flowEvents.record("analysis_validation", "failed", "network", photoPaths.size)
+                    _state.value = CreateAnalysisUiState.Failed(
+                        AppErrorMessages.make(
+                            result.message,
+                            context = context.getString(RdR.string.rd_analiz_tamamlanamadi),
+                        ),
+                    )
+                    return@launch
+                }
+            }
+            val tier = profile.tier
             val capabilities = resolveCapabilities(tier)
             _capabilities.value = capabilities
-            val riskMethod = profile?.preferredMethod
+            val riskMethod = profile.preferredMethod
                 ?.takeIf { it == "fine_kinney" || it == "matrix_5x5" }
                 ?: RdClientMetadata.DEFAULT_RISK_METHOD
+            val selectedLocalization = profile.safetyProfileId
+                ?.let(RdClientMetadata::localizationForSafetyProfile)
+            val submissionAppLanguage = profile.appLanguage
+                ?.takeIf { it == "tr" || it == "en" }
+                ?: selectedLocalization?.appLanguage
+                ?: RdClientMetadata.APP_LANGUAGE
+            val submissionOutputLocale = profile.preferredContentLocale
+                ?: selectedLocalization?.contentLocale
+                ?: RdClientMetadata.CONTENT_LOCALE
+            val submissionCountry = profile.workJurisdictionCountry
+                ?: selectedLocalization?.workJurisdictionCountry
+                ?: RdClientMetadata.WORK_JURISDICTION_COUNTRY
+            val submissionSafetyProfileId = profile.safetyProfileId
+                ?: selectedLocalization?.safetyProfileId
+                ?: RdClientMetadata.SAFETY_PROFILE_ID
+            val submissionSafetyProfileVersion = profile.safetyProfileVersion
+                ?: selectedLocalization?.safetyProfileVersion
+                ?: RdClientMetadata.SAFETY_PROFILE_VERSION
             if (analysisMode == "detailed" && !capabilities.canUseDetailedAnalysis) {
+                flowEvents.record("analysis_validation", "blocked", "membership")
                 _state.value = CreateAnalysisUiState.Failed(
                     AppErrorMessages.make(
                         context.getString(RdR.string.rd_detayli_analiz_uyelik_gerekir),
@@ -178,6 +231,7 @@ class AnalysisViewModel @Inject constructor(
                 return@launch
             }
             if (photoPaths.size > capabilities.maxPhotosPerAnalysis) {
+                flowEvents.record("analysis_validation", "blocked", "photo_limit")
                 _state.value = CreateAnalysisUiState.Failed(
                     AppErrorMessages.make(
                         context.getString(
@@ -205,14 +259,20 @@ class AnalysisViewModel @Inject constructor(
                 ).also(inFlightStore::savePending)
             val request = CreateAnalysisRequest(
                 userId = userId,
-                title = sector?.titleTr ?: context.getString(RdR.string.rd_adsiz_analiz),
+                title = sector?.let { selectedSector ->
+                    rdAnalysisSectorTitleResource(selectedSector.id)
+                        ?.let(context::getString)
+                        ?: selectedSector.titleTr
+                } ?: context.getString(RdR.string.rd_adsiz_analiz),
                 canvas = canvas,
                 sector = sector,
                 clientSubmissionId = pendingSubmission.submissionId,
                 primaryMethod = riskMethod,
             )
+            flowEvents.record("analysis_create", "started", photoCount = photoPaths.size)
             val analysisId = when (val created = analysisRepository.createAnalysis(request)) {
                 is RdResult.Failure -> {
+                    flowEvents.record("analysis_create", "failed", "backend")
                     _state.value = CreateAnalysisUiState.Failed(
                         AppErrorMessages.make(
                             created.message,
@@ -227,6 +287,7 @@ class AnalysisViewModel @Inject constructor(
 
             val files = photoPaths.map { File(it) }.filter { it.exists() }
             if (files.isEmpty()) {
+                flowEvents.record("analysis_prepare", "failed", "no_photo")
                 _state.value = CreateAnalysisUiState.CreatedWithoutPhoto(analysisId)
                 return@launch
             }
@@ -246,15 +307,23 @@ class AnalysisViewModel @Inject constructor(
             )
 
             _state.value = CreateAnalysisUiState.UploadingPhoto
+            flowEvents.record("analysis_upload", "started", photoCount = files.size)
             val uploadedPaths = mutableListOf<String>()
             for ((index, file) in files.withIndex()) {
-                val jpegBytes = file.readBytes()
+                val jpegBytes = try { file.readBytes() } catch (_: java.io.IOException) {
+                    flowEvents.record("analysis_prepare", "failed", "io")
+                    val message = context.getString(RdR.string.rd_analiz_basarisiz)
+                    failAnalysisAndCleanup(userId, analysisId, uploadedPaths, message)
+                    _state.value = CreateAnalysisUiState.Failed(AppErrorMessages.make(message, context = message))
+                    return@launch
+                }
                 when (
                     val uploadResult =
                         photoRepository.uploadPhoto(userId, analysisId, sequenceIndex = index + 1, jpegBytes)
                 ) {
                     is RdResult.Success -> uploadedPaths.add(uploadResult.value)
                     is RdResult.Failure -> {
+                        flowEvents.record("analysis_upload", "failed", "network")
                         val error = AppErrorMessages.make(
                             uploadResult.message,
                             context = context.getString(RdR.string.rd_analiz_tamamlanamadi),
@@ -267,6 +336,7 @@ class AnalysisViewModel @Inject constructor(
             }
 
             _state.value = CreateAnalysisUiState.Submitting
+            flowEvents.record("analysis_submit", "started", photoCount = files.size)
             when (
                 val submitResult = analysisRepository.submitAnalyze(
                     analysisId = analysisId,
@@ -275,6 +345,12 @@ class AnalysisViewModel @Inject constructor(
                     analysisMode = analysisMode,
                     sector = sector,
                     photoPaths = uploadedPaths,
+                    appLanguage = submissionAppLanguage,
+                    outputLanguage = submissionAppLanguage,
+                    outputLocale = submissionOutputLocale,
+                    workJurisdictionCountry = submissionCountry,
+                    safetyProfileId = submissionSafetyProfileId,
+                    safetyProfileVersion = submissionSafetyProfileVersion,
                     riskMethod = riskMethod,
                 )
             ) {
@@ -284,6 +360,7 @@ class AnalysisViewModel @Inject constructor(
                     // probe status a few times before trusting the client-side failure. If it
                     // recovers, fall straight through to polling below as if submit succeeded.
                     if (!probeSubmissionRecovery(analysisId)) {
+                        flowEvents.record("analysis_submit", "failed", "backend")
                         val error = AppErrorMessages.make(
                             submitResult.message,
                             context = context.getString(RdR.string.rd_analiz_tamamlanamadi),
@@ -330,6 +407,7 @@ class AnalysisViewModel @Inject constructor(
      * `resumeAnalysis`'s caller-side clear).
      */
     private suspend fun pollAndHandleResult(analysisId: String, photoCount: Int) {
+        flowEvents.record("analysis_result", "started", photoCount = photoCount)
         _state.value = CreateAnalysisUiState.Polling(analysisId)
         val status = analysisRepository.pollAnalysisStatus(analysisId, photoCount = photoCount)
         // Real port of iOS's clear-call placement: `completed`/`failed` (genuinely terminal
@@ -382,6 +460,21 @@ class AnalysisViewModel @Inject constructor(
                 )
         }
         _state.value = nextState
+        flowEvents.record("analysis_result", if (nextState is CreateAnalysisUiState.Completed) "completed" else "failed",
+            if (status is AnalysisStatus.TimedOut) "timeout" else if (nextState is CreateAnalysisUiState.Completed) "none" else "backend", photoCount)
+        if (nextState is CreateAnalysisUiState.Completed) {
+            metaAppEvents.analysisCompleted(analysisId)
+            authRepository.currentUserId?.let { userId ->
+                // Counting is best effort and must not delay result presentation or turn a
+                // successful analysis into an error when the network is temporarily unavailable.
+                viewModelScope.launch {
+                    val first = analysisRepository.hasExactlyOneCompletedAnalysis(userId)
+                    if ((first as? RdResult.Success)?.value == true) {
+                        metaAppEvents.firstAnalysis(userId)
+                    }
+                }
+            }
+        }
     }
 
     /** Loads the same result metadata and source photographs iOS keeps in AnalysisResultBundle. */
@@ -391,22 +484,133 @@ class AnalysisViewModel @Inject constructor(
         _resultPhotoBytes.value = photos.mapNotNull { photo ->
             (photoRepository.downloadPhoto(photo.storagePath) as? RdResult.Success)?.value
         }
+        _resultHub.value = (resultHubRepository.load(analysisId) as? RdResult.Success)
+            ?.value
+            ?.takeIf { it.enabled }
+        if (_resultHub.value != null) {
+            resultHubRepository.recordEvent(
+                analysisId = analysisId,
+                name = "result_screen_viewed",
+                section = AnalysisResultSectionId.RiskAnalysis,
+                funnelSessionId = resultHubFunnelSessionId,
+            )
+        }
+    }
+
+    fun setResultFeedback(
+        analysisId: String,
+        section: AnalysisResultSectionId,
+        item: AnalysisResultHubItem,
+        reaction: AnalysisItemReaction,
+        reasonCode: String? = null,
+        note: String? = null,
+    ) {
+        val previousReaction = item.userReaction
+        _resultFeedbackError.value = null
+        _resultHub.value = _resultHub.value?.copy(
+            sections = _resultHub.value?.sections.orEmpty().map { current ->
+                if (current.id != section) current else current.copy(
+                    items = current.items.map { if (it.id == item.id) it.copy(userReaction = reaction) else it },
+                )
+            },
+        )
+        viewModelScope.launch {
+            when (val result = resultHubRepository.setFeedback(analysisId, section, item, reaction, reasonCode, note)) {
+                is RdResult.Success -> resultHubRepository.recordEvent(
+                    analysisId = analysisId,
+                    name = if (reaction == AnalysisItemReaction.None) "result_feedback_cleared" else "result_feedback_set",
+                    section = section,
+                    funnelSessionId = resultHubFunnelSessionId,
+                    itemId = item.id,
+                )
+                is RdResult.Failure -> {
+                    _resultHub.value = _resultHub.value?.copy(
+                        sections = _resultHub.value?.sections.orEmpty().map { current ->
+                            if (current.id != section) current else current.copy(
+                                items = current.items.map { currentItem ->
+                                    if (currentItem.id == item.id && currentItem.userReaction == reaction) {
+                                        currentItem.copy(userReaction = previousReaction)
+                                    } else {
+                                        currentItem
+                                    }
+                                },
+                            )
+                        },
+                    )
+                    _resultFeedbackError.value = AppErrorMessages.make(
+                        context.getString(RdR.string.rd_geri_bildirim_tekrar_dene),
+                        context = context.getString(RdR.string.rd_geri_bildirim_gonderilemedi),
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearResultFeedbackError() {
+        _resultFeedbackError.value = null
+    }
+
+    fun recordResultEvent(
+        analysisId: String,
+        name: String,
+        section: AnalysisResultSectionId?,
+        itemId: String? = null,
+    ) {
+        viewModelScope.launch {
+            resultHubRepository.recordEvent(
+                analysisId = analysisId,
+                name = name,
+                section = section,
+                funnelSessionId = resultHubFunnelSessionId,
+                itemId = itemId,
+            )
+        }
+    }
+
+    fun mutateNotebookEntry(
+        analysisId: String,
+        item: AnalysisResultHubItem,
+        mutation: String,
+        findingText: String? = null,
+        recommendationText: String? = null,
+    ) {
+        viewModelScope.launch {
+            when (resultHubRepository.mutateNotebook(
+                analysisId = analysisId,
+                entryId = item.id,
+                mutation = mutation,
+                findingText = findingText,
+                recommendationText = recommendationText,
+            )) {
+                is RdResult.Success -> {
+                    _resultHub.value = (resultHubRepository.load(analysisId) as? RdResult.Success)
+                        ?.value
+                        ?.takeIf { it.enabled }
+                }
+                is RdResult.Failure -> Unit
+            }
+        }
     }
 
     /** Opens a completed history row in the exact same result surface used by a fresh analysis. */
     fun openCompletedAnalysis(analysisId: String) {
         val current = _state.value
         if ((current as? CreateAnalysisUiState.Completed)?.analysisId == analysisId ||
-            (current as? CreateAnalysisUiState.Finalizing)?.analysisId == analysisId
+            (current as? CreateAnalysisUiState.LoadingCompletedResult)?.analysisId == analysisId
         ) return
         val userId = authRepository.currentUserId ?: return
-        _state.value = CreateAnalysisUiState.Finalizing(analysisId)
+        _state.value = CreateAnalysisUiState.LoadingCompletedResult(analysisId)
         viewModelScope.launch {
-            _capabilities.value = resolveCapabilities(userId)
+            when (val result = resolveCapabilities(userId)) {
+                is RdResult.Success -> _capabilities.value = result.value
+                is RdResult.Failure -> {
+                    _state.value = membershipResolutionFailure(result)
+                    return@launch
+                }
+            }
             val findings = (findingsRepository.fetchFindings(analysisId) as? RdResult.Success)?.value.orEmpty()
             _findings.value = findings
             loadResultContext(analysisId)
-            delay(520)
             _state.value = CreateAnalysisUiState.Completed(analysisId, findings)
         }
     }
@@ -424,7 +628,13 @@ class AnalysisViewModel @Inject constructor(
         val inFlight = inFlightStore.load(userId) ?: return false
         _state.value = CreateAnalysisUiState.Polling(inFlight.analysisId)
         viewModelScope.launch {
-            _capabilities.value = resolveCapabilities(userId)
+            when (val result = resolveCapabilities(userId)) {
+                is RdResult.Success -> _capabilities.value = result.value
+                is RdResult.Failure -> {
+                    _state.value = membershipResolutionFailure(result)
+                    return@launch
+                }
+            }
             pollAndHandleResult(inFlight.analysisId, photoCount = inFlight.photoCount)
         }
         return true
@@ -477,13 +687,6 @@ class AnalysisViewModel @Inject constructor(
      * [deleteError] on failure (e.g. `finding_version_conflict` if it was already edited
      * elsewhere) — no auto-retry, matches the edge function's "reload and try again" message. */
     fun deleteFinding(analysisId: String, finding: Finding) {
-        if (!_capabilities.value.canEditAIFindings) {
-            _deleteError.value = AppErrorMessages.make(
-                context.getString(RdR.string.rd_bulgu_duzenleme_kapali),
-                context = context.getString(RdR.string.rd_bulgu_silinemedi),
-            )
-            return
-        }
         viewModelScope.launch {
             when (
                 val result = findingsRepository.deleteFinding(
@@ -513,13 +716,6 @@ class AnalysisViewModel @Inject constructor(
      * `finding_version`/recomputes the analysis rollup, and trusting a locally-guessed new
      * version would risk a spurious `finding_version_conflict` on the *next* edit. */
     fun updateFinding(analysisId: String, finding: Finding, patch: FindingPatch) {
-        if (!_capabilities.value.canEditAIFindings) {
-            _updateError.value = AppErrorMessages.make(
-                context.getString(RdR.string.rd_bulgu_duzenleme_kapali),
-                context = context.getString(RdR.string.rd_bulgu_kaydedilemedi),
-            )
-            return
-        }
         viewModelScope.launch {
             when (
                 val result = findingsRepository.updateFinding(
@@ -551,16 +747,25 @@ class AnalysisViewModel @Inject constructor(
         _updateError.value = null
     }
 
-    private suspend fun resolveCapabilities(userId: String): PlanCapabilities {
-        val tier = (profileRepository.fetchProfile(userId) as? RdResult.Success)?.value?.tier
-            ?: SubscriptionTier.Free
-        return resolveCapabilities(tier)
+    private suspend fun resolveCapabilities(userId: String): RdResult<PlanCapabilities> {
+        return when (val profile = profileRepository.fetchProfile(userId)) {
+            is RdResult.Success -> RdResult.Success(resolveCapabilities(profile.value.tier))
+            is RdResult.Failure -> profile
+        }
     }
 
     private suspend fun resolveCapabilities(tier: SubscriptionTier): PlanCapabilities {
         return (planCapabilitiesRepository.fetchCapabilities(tier) as? RdResult.Success)?.value
             ?: PlanCapabilities.forTier(tier)
     }
+
+    private fun membershipResolutionFailure(failure: RdResult.Failure): CreateAnalysisUiState.Failed =
+        CreateAnalysisUiState.Failed(
+            AppErrorMessages.make(
+                failure.message,
+                context = context.getString(RdR.string.rd_analiz_tamamlanamadi),
+            ),
+        )
 }
 
 internal object AnalysisRecoveryPolicy {

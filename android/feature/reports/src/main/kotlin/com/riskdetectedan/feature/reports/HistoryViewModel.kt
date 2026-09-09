@@ -18,6 +18,7 @@ import com.riskdetectedan.core.data.error.AppErrorMessages
 import com.riskdetectedan.core.data.profile.ProfileRepository
 import com.riskdetectedan.core.data.profile.SubscriptionTier
 import com.riskdetectedan.core.data.profile.UserProfile
+import com.riskdetectedan.core.data.profile.resolvedLocalizationContext
 import com.riskdetectedan.core.data.reports.PdfReportFileName
 import com.riskdetectedan.core.data.reports.PdfReportGenerator
 import com.riskdetectedan.core.data.reports.PdfReportInput
@@ -26,7 +27,9 @@ import com.riskdetectedan.core.data.reports.ReportsRepository
 import com.riskdetectedan.core.data.release.AndroidRuntimeGateName
 import com.riskdetectedan.core.data.release.ReleasePolicyRepository
 import com.riskdetectedan.core.data.store.ReviewEligibilityRepository
+import com.riskdetectedan.core.data.telemetry.MetaAppEventsService
 import com.riskdetectedan.core.designsystem.R as RdR
+import com.riskdetectedan.core.designsystem.rdAnalysisCanvasTitleResource
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -70,6 +73,7 @@ class HistoryViewModel @Inject constructor(
     private val releasePolicyRepository: ReleasePolicyRepository,
     private val pdfReportGenerator: PdfReportGenerator,
     private val reviewEligibilityRepository: ReviewEligibilityRepository,
+    private val metaAppEvents: MetaAppEventsService,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<HistoryUiState>(HistoryUiState.Loading)
@@ -104,8 +108,8 @@ class HistoryViewModel @Inject constructor(
     private val _companies = MutableStateFlow<List<Company>>(emptyList())
     val companies: StateFlow<List<Company>> = _companies.asStateFlow()
 
-    private val _userTier = MutableStateFlow(SubscriptionTier.Free)
-    val userTier: StateFlow<SubscriptionTier> = _userTier.asStateFlow()
+    private val _userTier = MutableStateFlow<SubscriptionTier?>(null)
+    val userTier: StateFlow<SubscriptionTier?> = _userTier.asStateFlow()
 
     private val _profile = MutableStateFlow<UserProfile?>(null)
     val profile: StateFlow<UserProfile?> = _profile.asStateFlow()
@@ -160,11 +164,19 @@ class HistoryViewModel @Inject constructor(
                 )
             }
             _companies.value = (companyRepository.listCompanies() as? RdResult.Success)?.value.orEmpty()
-            val profile = (profileRepository.fetchProfile(userId) as? RdResult.Success)?.value
-            _profile.value = profile
-            val tier = profile?.tier ?: SubscriptionTier.Free
-            _userTier.value = tier
-            _reportQuotaUsage.value = (reportsRepository.fetchQuotaUsage(userId, tier) as? RdResult.Success)?.value
+            when (val profileResult = profileRepository.fetchProfile(userId)) {
+                is RdResult.Success -> {
+                    val profile = profileResult.value
+                    _profile.value = profile
+                    _userTier.value = profile.tier
+                    _reportQuotaUsage.value = (
+                        reportsRepository.fetchQuotaUsage(userId, profile.tier) as? RdResult.Success
+                    )?.value
+                }
+                // Preserve the last authoritative membership instead of replacing a paid user
+                // with Free on a transient profile/network failure.
+                is RdResult.Failure -> Unit
+            }
         }
     }
 
@@ -188,13 +200,23 @@ class HistoryViewModel @Inject constructor(
      * iOS's report flow both creates the archive row and hands the user a document — the two
      * separate repository calls (generate, then download) are sequential here since the client
      * needs the `storage_path` the first call returns before it can do the second. */
-    fun generateReport(item: HistoryItem, method: String = "fine_kinney", companyId: String? = item.companyId) {
+    fun generateReport(item: HistoryItem, method: String? = null, companyId: String? = item.companyId) {
         if (_generatingReportForId.value != null) return
         _generatingReportForId.value = item.id
         _reportError.value = null
         viewModelScope.launch {
-            val report = when (val result = reportsRepository.generateExcelReport(item.id, method, companyId)) {
-                is RdResult.Success -> result.value
+            val localization = _profile.value.resolvedLocalizationContext()
+            val report = when (val result = reportsRepository.generateExcelReport(
+                analysisId = item.id,
+                method = method ?: localization.defaultRiskMethod,
+                companyId = companyId,
+                localization = localization,
+            )) {
+                is RdResult.Success -> result.value.also {
+                    // The backend has created the report row at this boundary. A later local
+                    // download failure must not erase that real conversion.
+                    metaAppEvents.reportCreated(it.id, "xlsx")
+                }
                 is RdResult.Failure -> {
                     _reportError.value = AppErrorMessages.make(
                         result.message,
@@ -240,7 +262,7 @@ class HistoryViewModel @Inject constructor(
      */
     fun generatePdfReport(
         item: HistoryItem,
-        method: String = "fine_kinney",
+        method: String? = null,
         kind: String = "standard",
         companyId: String? = item.companyId,
         preparedByName: String? = null,
@@ -282,11 +304,14 @@ class HistoryViewModel @Inject constructor(
             }
 
             val photos = (photoRepository.listPhotos(item.id) as? RdResult.Success)?.value.orEmpty()
-            val coverPhotoBytes = photos.firstOrNull()?.let { photo ->
+            val coverPhotoBytesList = photos.take(5).mapNotNull { photo ->
                 (photoRepository.downloadPhoto(photo.storagePath) as? RdResult.Success)?.value
             }
+            val coverPhotoBytes = coverPhotoBytesList.firstOrNull()
 
             val profile = (profileRepository.fetchProfile(userId) as? RdResult.Success)?.value
+            val localization = profile.resolvedLocalizationContext()
+            val resolvedMethod = method ?: localization.defaultRiskMethod
             val company = companyId?.let { selectedCompanyId ->
                 (companyRepository.listCompanies() as? RdResult.Success)?.value?.firstOrNull { it.id == selectedCompanyId }
             }
@@ -294,14 +319,17 @@ class HistoryViewModel @Inject constructor(
                 (companyRepository.downloadLogo(path) as? RdResult.Success)?.value
             }
 
-            val canvasLabel = AnalysisCanvas.all.firstOrNull { it.id == item.canvas }?.title ?: item.canvas
+            val canvasLabel = rdAnalysisCanvasTitleResource(item.canvas)?.let(context::getString)
+                ?: AnalysisCanvas.all.firstOrNull { it.id == item.canvas }?.title
+                ?: item.canvas
 
             val generatedPdf = try {
                 withContext(Dispatchers.Default) {
                     pdfReportGenerator.generate(
                         PdfReportInput(
+                            analysisId = item.id,
                             kind = kind,
-                            method = method,
+                            method = resolvedMethod,
                             title = item.title,
                             canvasLabel = canvasLabel,
                             createdAt = item.createdAt,
@@ -317,6 +345,10 @@ class HistoryViewModel @Inject constructor(
                             certificateNumber = certificateNumber?.trim()?.takeIf { it.isNotEmpty() }
                                 ?: profile?.certificateNumber,
                             coverPhotoBytes = coverPhotoBytes,
+                            coverPhotoBytesList = coverPhotoBytesList,
+                            analysisSummary = item.aiSummary,
+                            analysisSectorLabel = item.analysisSector,
+                            languageCode = localization.appLanguage,
                         ),
                     )
                 }
@@ -329,7 +361,7 @@ class HistoryViewModel @Inject constructor(
                 return@launch
             }
 
-            val fileNameSlug = PdfReportFileName.build(item.title, item.id, kind, method)
+            val fileNameSlug = PdfReportFileName.build(item.title, item.id, kind, resolvedMethod)
             when (
                 val registered = reportsRepository.uploadAndRegisterPdfReport(
                     userId = userId,
@@ -337,13 +369,15 @@ class HistoryViewModel @Inject constructor(
                     pdfBytes = generatedPdf.bytes,
                     fileNameSlug = fileNameSlug,
                     kind = kind,
-                    method = method,
+                    method = resolvedMethod,
                     title = item.title,
                     pageCount = generatedPdf.pageCount,
                     companyId = companyId,
+                    localization = localization,
                 )
             ) {
                 is RdResult.Success -> {
+                    metaAppEvents.reportCreated(registered.value.id, "pdf")
                     _reportFile.value = ReportFile(
                         bytes = generatedPdf.bytes,
                         fileName = registered.value.fileName ?: fileNameSlug,

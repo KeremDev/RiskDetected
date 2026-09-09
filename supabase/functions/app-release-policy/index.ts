@@ -15,6 +15,7 @@ type ReleasePolicyBody = {
   client_app_version?: unknown;
   client_app_build?: unknown;
   api_contract_version?: unknown;
+  app_language?: unknown;
   android_legal_context?: unknown;
 };
 
@@ -49,6 +50,7 @@ type AndroidLegalPolicy = {
   manifest_checksum: string;
   policy_version: string;
   message_tr: string;
+  message_en: string;
   documents: AndroidLegalDocument[];
 };
 
@@ -66,8 +68,14 @@ const CORS_HEADERS = {
 };
 
 const DEFAULT_IOS_POLICY: ReleasePolicy = {
+  // minimum_supported_build and hard_update_enabled stay put even though the
+  // live flag is now 88/true: this fallback fires when Supabase is
+  // unreachable, and a hardcoded hard-block that can't be dialled back
+  // without a new App Store release would turn any outage into an app-wide
+  // lockout. Only latest_build (an informational nudge, gated by
+  // soft_update_enabled staying false here) tracks the real release.
   minimum_supported_build: 62,
-  latest_build: 76,
+  latest_build: 88,
   hard_update_enabled: false,
   soft_update_enabled: false,
   app_store_url:
@@ -116,6 +124,7 @@ const DEFAULT_ANDROID_LEGAL_POLICY: AndroidLegalPolicy = {
     "aaa169338de3d9425e76cc4d8b9e98047847934c39cf646cb4f87f708c63cfec",
   policy_version: "android-legal-2026-08-09",
   message_tr: userFacingCopy("legalDocumentsUpdated", "tr"),
+  message_en: userFacingCopy("legalDocumentsUpdated", "en"),
   documents: [
     {
       kind: "terms",
@@ -144,6 +153,40 @@ const DEFAULT_ANDROID_LEGAL_POLICY: AndroidLegalPolicy = {
       checksum:
         "53b380da568e67d6d7406f2a8bad0787b45ddcd2fdf0485f1aaec8f3e517a5c2",
       change_type: "info",
+    },
+  ],
+};
+
+const DEFAULT_ANDROID_LEGAL_POLICY_EN: AndroidLegalPolicy = {
+  schema_version: 1,
+  enabled: false,
+  document_set_id: "en-global-v1",
+  manifest_checksum:
+    "7b3b45cc5009ec440d997de06d099141d1dfc66789a3d065b577fd0886d48201",
+  policy_version: "android-legal-en-2026-09-08.1",
+  message_tr: userFacingCopy("legalDocumentsUpdated", "tr"),
+  message_en: userFacingCopy("legalDocumentsUpdated", "en"),
+  documents: [
+    {
+      kind: "terms",
+      version: "terms-en-2026-07-31.1",
+      checksum:
+        "49a9b3f164b9dc8048453be930509aa334a854834c2abfa0cd8b11fd67ef6efa",
+      change_type: "material_terms",
+    },
+    {
+      kind: "privacy",
+      version: "privacy-en-2026-09-08.1",
+      checksum:
+        "0a89801e437ea931eedaa00d564b9d4742d1e53fe1aff07c3b16771ad73c51d1",
+      change_type: "material_privacy",
+    },
+    {
+      kind: "consent",
+      version: "ai-data-en-2026-07-31.1",
+      checksum:
+        "a8c9873f57228a36a4ede597e33648ff9251f9c814f1d1afc3e912c82ae08e1b",
+      change_type: "explicit_consent",
     },
   ],
 };
@@ -221,13 +264,16 @@ function sanitizePolicy(raw: unknown, fallback: ReleasePolicy): ReleasePolicy {
   };
 }
 
-function sanitizeAndroidLegalPolicy(raw: unknown): AndroidLegalPolicy {
+function sanitizeAndroidLegalPolicy(
+  raw: unknown,
+  fallbackPolicy: AndroidLegalPolicy,
+): AndroidLegalPolicy {
   const value = raw && typeof raw === "object"
     ? raw as Record<string, unknown>
     : {};
   const rawDocuments = Array.isArray(value.documents) ? value.documents : [];
   const fallbackByKind = new Map(
-    DEFAULT_ANDROID_LEGAL_POLICY.documents.map((
+    fallbackPolicy.documents.map((
       document,
     ) => [document.kind, document]),
   );
@@ -261,26 +307,31 @@ function sanitizeAndroidLegalPolicy(raw: unknown): AndroidLegalPolicy {
     enabled: bool(value.enabled, false),
     document_set_id: text(
       value.document_set_id,
-      DEFAULT_ANDROID_LEGAL_POLICY.document_set_id,
+      fallbackPolicy.document_set_id,
       80,
     ),
     manifest_checksum: sha256(
       value.manifest_checksum,
-      DEFAULT_ANDROID_LEGAL_POLICY.manifest_checksum,
+      fallbackPolicy.manifest_checksum,
     ),
     policy_version: text(
       value.policy_version,
-      DEFAULT_ANDROID_LEGAL_POLICY.policy_version,
+      fallbackPolicy.policy_version,
       100,
     ),
     message_tr: text(
       value.message_tr,
-      DEFAULT_ANDROID_LEGAL_POLICY.message_tr,
+      fallbackPolicy.message_tr,
       240,
     ),
-    documents: documents.length === 4
+    message_en: text(
+      value.message_en,
+      fallbackPolicy.message_en,
+      240,
+    ),
+    documents: documents.length === fallbackPolicy.documents.length
       ? documents
-      : DEFAULT_ANDROID_LEGAL_POLICY.documents,
+      : fallbackPolicy.documents,
   };
 }
 
@@ -370,7 +421,6 @@ function serviceClient(): any | null {
   });
 }
 
-// deno-lint-ignore no-explicit-any
 async function readPolicy(
   platform: string,
   supabase: any | null,
@@ -388,20 +438,24 @@ async function readPolicy(
   return sanitizePolicy(data.value, fallback);
 }
 
-// deno-lint-ignore no-explicit-any
 async function readAndroidLegalPolicy(
   platform: string,
+  appLanguage: string,
   supabase: any | null,
 ): Promise<AndroidLegalPolicy | null> {
   if (platform !== "android") return null;
-  if (!supabase) return DEFAULT_ANDROID_LEGAL_POLICY;
+  const isEnglish = appLanguage === "en";
+  const fallback = isEnglish
+    ? DEFAULT_ANDROID_LEGAL_POLICY_EN
+    : DEFAULT_ANDROID_LEGAL_POLICY;
+  if (!supabase) return fallback;
   const { data, error } = await supabase
     .from("app_feature_flags")
     .select("value")
-    .eq("key", "android_legal_policy")
+    .eq("key", isEnglish ? "android_legal_policy_en" : "android_legal_policy")
     .maybeSingle();
-  if (error || !data?.value) return DEFAULT_ANDROID_LEGAL_POLICY;
-  return sanitizeAndroidLegalPolicy(data.value);
+  if (error || !data?.value) return fallback;
+  return sanitizeAndroidLegalPolicy(data.value, fallback);
 }
 
 serve(async (req) => {
@@ -422,17 +476,21 @@ serve(async (req) => {
       client_app_version: url.searchParams.get("client_app_version"),
       client_app_build: url.searchParams.get("client_app_build"),
       api_contract_version: url.searchParams.get("api_contract_version"),
+      app_language: url.searchParams.get("app_language"),
       android_legal_context: null,
     };
   }
 
   const platform = text(body.client_platform, "unknown", 40).toLowerCase();
+  const appLanguage = text(body.app_language, "tr", 8).toLowerCase() === "en"
+    ? "en"
+    : "tr";
   const build = parseBuild(body.client_app_build);
   const supabase = serviceClient();
   const [policy, androidRuntimeGates, androidLegalPolicy] = await Promise.all([
     readPolicy(platform, supabase),
     readAndroidRuntimeGates(supabase, platform, build),
-    readAndroidLegalPolicy(platform, supabase),
+    readAndroidLegalPolicy(platform, appLanguage, supabase),
   ]);
 
   return json(200, {

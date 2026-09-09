@@ -4,6 +4,7 @@ struct OBFrequencyView: View {
     @ObservedObject var state: OnboardingV2State
     let onBack: () -> Void
     let onNext: () -> Void
+    @Environment(\.rdLayoutProfile) private var layoutProfile
 
     var body: some View {
         VStack(spacing: 0) {
@@ -15,13 +16,13 @@ struct OBFrequencyView: View {
                         OBHeroTile(tint: .green) { OBHeroFrequency() }
                             .obStage(delay: 0.08)
                         Text(RDLocalization.string("onboarding.obfrequency.view.haftada.kac.isyerinde.denetim.yapiyorsun.800c3756", table: .onboarding, fallback: "Haftada kaç işyerinde denetim yapıyorsun?"))
-                            .font(.system(size: RDFontScale.size(22), weight: .semibold))
+                            .font(RDTypography.font(size: RDFontScale.size(22), weight: .semibold))
                             .tracking(-0.6)
                             .foregroundStyle(Color.rdOnyx)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.14)
                         Text(RDLocalization.string("onboarding.obfrequency.view.planimizi.senin.tempona.gore.olceklendirelim.a834ab15", table: .onboarding, fallback: "Planımızı senin tempona göre ölçeklendirelim."))
-                            .font(.system(size: RDFontScale.size(14)))
+                            .font(RDTypography.font(size: RDFontScale.size(14)))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.22)
@@ -42,7 +43,7 @@ struct OBFrequencyView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, layoutProfile.horizontalPadding)
                 .padding(.bottom, 16)
             }
 
@@ -64,25 +65,24 @@ struct OBFrequencyView: View {
         } label: {
             HStack(spacing: 16) {
                 Text(f.rawValue)
-                    .font(.system(size: RDFontScale.size(30), weight: .semibold, design: .monospaced))
+                    .font(RDTypography.font(size: RDFontScale.size(30), weight: .semibold, design: .monospaced))
                     .foregroundStyle(Color.rdOnyx)
                     .frame(minWidth: 72, alignment: .leading)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(f.title)
-                        .font(.system(size: RDFontScale.size(16), weight: .semibold))
+                        .font(RDTypography.font(size: RDFontScale.size(16), weight: .semibold))
                         .foregroundStyle(Color.rdOnyx)
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
                     Text(f.sub)
-                        .font(.system(size: RDFontScale.size(13)))
+                        .font(RDTypography.font(size: RDFontScale.size(13)))
                         .foregroundStyle(Color.rdSlate)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: RDFontScale.size(15), weight: .semibold))
+                    .font(RDTypography.font(size: RDFontScale.size(15), weight: .semibold))
                     .foregroundStyle(selected ? Color.rdOnyx : Color.rdSlate.opacity(0.4))
                     .offset(x: selected ? 2 : 0)
             }

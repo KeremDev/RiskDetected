@@ -521,6 +521,120 @@ async function writeSubscriptionState(params: {
     .eq("id", params.userID);
 }
 
+async function recordPaywallConversionAttribution(params: {
+  supabase: SupabaseAdminClient;
+  userID: string;
+  eventID: string;
+  eventType: string;
+  state: ResolvedSubscriberState;
+}) {
+  if (
+    params.eventType !== "INITIAL_PURCHASE" &&
+    params.eventType !== "PRODUCT_CHANGE"
+  ) return;
+  if (params.state.tier === "free") return;
+
+  const purchasedAtDate = new Date(
+    params.state.purchaseDate ?? new Date().toISOString(),
+  );
+  const purchasedAt = Number.isFinite(purchasedAtDate.getTime())
+    ? purchasedAtDate.toISOString()
+    : new Date().toISOString();
+  const attributionWindowStart = new Date(
+    Date.parse(purchasedAt) - 24 * 60 * 60 * 1000,
+  ).toISOString();
+
+  // Prefer the exact checkout funnel. A user can inspect several promotion cards within the
+  // 24-hour attribution window; "latest entry tap" alone can therefore credit the wrong card.
+  // purchase_started is emitted before the store sheet and carries both product and funnel.
+  const { data: checkout, error: checkoutError } = params.state.productID
+    ? await params.supabase
+      .from("paywall_events")
+      .select("funnel_session_id")
+      .eq("user_id", params.userID)
+      .eq("event_name", "purchase_started")
+      .eq("product_identifier", params.state.productID)
+      .gte("client_occurred_at", attributionWindowStart)
+      .lte("client_occurred_at", purchasedAt)
+      .order("client_occurred_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    : { data: null, error: null };
+
+  if (checkoutError) {
+    console.warn(
+      "Paywall attribution checkout lookup failed",
+      JSON.stringify({ event_id: params.eventID, code: checkoutError.code }),
+    );
+  }
+
+  let entryQuery = params.supabase
+    .from("paywall_events")
+    .select(
+      "id,funnel_session_id,client_occurred_at,entry_point,entry_surface,entry_component,analysis_id,result_section,item_id,entry_context",
+    )
+    .eq("user_id", params.userID)
+    .eq("event_name", "entry_tap")
+    .gte("client_occurred_at", attributionWindowStart)
+    .lte("client_occurred_at", purchasedAt);
+  if (checkout?.funnel_session_id) {
+    entryQuery = entryQuery.eq("funnel_session_id", checkout.funnel_session_id);
+  }
+  const { data: entry, error: entryError } = await entryQuery
+    .order("client_occurred_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (entryError) {
+    console.warn(
+      "Paywall attribution entry lookup failed",
+      JSON.stringify({ event_id: params.eventID, code: entryError.code }),
+    );
+  }
+
+  const entryClickedAt = typeof entry?.client_occurred_at === "string"
+    ? entry.client_occurred_at
+    : null;
+  const secondsToPurchase = entryClickedAt
+    ? Math.max(
+      0,
+      Math.round((Date.parse(purchasedAt) - Date.parse(entryClickedAt)) / 1000),
+    )
+    : null;
+
+  const { error: attributionError } = await params.supabase
+    .from("subscription_conversion_attributions")
+    .upsert({
+      revenuecat_event_id: params.eventID,
+      user_id: params.userID,
+      event_type: params.eventType,
+      product_identifier: params.state.productID,
+      purchased_tier: params.state.tier,
+      purchased_at: purchasedAt,
+      entry_event_id: entry?.id ?? null,
+      funnel_session_id: entry?.funnel_session_id ?? null,
+      entry_clicked_at: entryClickedAt,
+      seconds_to_purchase: secondsToPurchase,
+      entry_point: entry?.entry_point ?? null,
+      entry_surface: entry?.entry_surface ?? null,
+      entry_component: entry?.entry_component ?? null,
+      analysis_id: entry?.analysis_id ?? null,
+      result_section: entry?.result_section ?? null,
+      item_id: entry?.item_id ?? null,
+      entry_context: entry?.entry_context ?? {},
+    }, { onConflict: "revenuecat_event_id" });
+
+  if (attributionError) {
+    console.warn(
+      "Paywall conversion attribution write failed",
+      JSON.stringify({
+        event_id: params.eventID,
+        code: attributionError.code,
+      }),
+    );
+  }
+}
+
 async function deactivateTransferredFromUser(params: {
   supabase: SupabaseAdminClient;
   userID: string;
@@ -1008,6 +1122,14 @@ serve(async (req) => {
       eventTrialPatch,
       verifiedTrialPatch,
     ),
+  });
+
+  await recordPaywallConversionAttribution({
+    supabase,
+    userID: eventUserID,
+    eventID,
+    eventType,
+    state: verifiedState,
   });
 
   await sendAccountUpdatePush({

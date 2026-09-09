@@ -62,6 +62,7 @@ import com.riskdetectedan.core.designsystem.RdPrimaryButton
 import com.riskdetectedan.core.designsystem.RdSpacing
 import com.riskdetectedan.core.designsystem.RdTheme
 import com.riskdetectedan.core.designsystem.toTextStyle
+import com.riskdetectedan.core.designsystem.rdAnalysisCanvasTitle
 
 /**
  * Port of App/Views/Home/CanvasSheet.swift (Faz N of the core-flow-full-parity roadmap) — the
@@ -172,9 +173,9 @@ private fun CanvasCard(canvas: AnalysisCanvas, isActive: Boolean, isLocked: Bool
     val accent = if (canvas.minTier == SubscriptionTier.Pro) colors.green else colors.planPlus
     val accentDark = if (canvas.minTier == SubscriptionTier.Pro) colors.greenDark else colors.planPlusDark
     val accentSoft = if (canvas.minTier == SubscriptionTier.Pro) colors.greenSoft else colors.planPlusSoft
-    val background = if (isActive) colors.onyx else colors.white
+    val background = if (isActive) colors.selected else colors.white
     val textColor = if (isActive) Color.White else colors.black
-    val borderColor = if (isActive) colors.onyx else if (canvas.isPaid) accent.copy(alpha = 0.55f) else colors.line
+    val borderColor = if (isActive) colors.selected else if (canvas.isPaid) accent.copy(alpha = 0.55f) else colors.line
     val iconBg = if (isActive) colors.green else if (canvas.isPaid) accentSoft else colors.fog
     val iconTint = if (isActive) Color.White else if (canvas.isPaid) accentDark else colors.black
 
@@ -202,7 +203,7 @@ private fun CanvasCard(canvas: AnalysisCanvas, isActive: Boolean, isLocked: Bool
                 Icon(canvasIcon(canvas.icon), contentDescription = null, tint = iconTint, modifier = Modifier.size(14.dp))
             }
             Spacer(Modifier.height(7.dp))
-            Text(canvas.title, style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 11.sp), color = textColor, maxLines = 2)
+            Text(rdAnalysisCanvasTitle(canvas.id, canvas.title), style = RdFontStyle.Caption.toTextStyle().copy(fontSize = 11.sp), color = textColor, maxLines = 2)
         }
 
         if (canvas.isPaid) {

@@ -1,0 +1,5 @@
+Kapalı test kullanıcılarımızın geri bildirimleri doğrultusunda:
+• Koyu temada okunmayan yazılar, kartlar ve butonlar düzeltildi.
+• Standart rapor artık risk analizi tablosundan bağımsız, her zaman açık.
+• Analiz sonucundaki fotoğraf tam ekran açılabiliyor.
+• Analiz kapsamı seçimi ve kota kartları yeniden düzenlendi.

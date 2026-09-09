@@ -38,7 +38,7 @@ struct RDAvatar: View {
                 .clipShape(Circle())
 
                 Text(initials)
-                    .font(.system(size: size * 0.36, weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: size * 0.36, weight: .bold, design: .rounded))
                     .foregroundStyle(colorScheme == .dark ? Color.rdCharcoal : .white)
                     .tracking(0)
             }
@@ -55,7 +55,7 @@ struct RDAvatar: View {
                     .frame(width: size * 0.5, height: size * 0.5)
                     .overlay {
                         Image(systemName: effectiveTier.badgeIcon)
-                            .font(.system(size: size * 0.22, weight: .bold, design: .rounded))
+                            .font(RDTypography.font(size: size * 0.22, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
                     }
                     .overlay(

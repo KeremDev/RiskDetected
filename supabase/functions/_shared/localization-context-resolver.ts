@@ -439,12 +439,28 @@ function reviewerCohortAllows(
     value.enabled_user_hashes.includes(context.userHash);
 }
 
+/// Yayin modlari: sahibin bilerek "herkese ac" dedigi rollout modlari.
+/// `allowlist` ve `build_allowlist` bilerek disaridadir — ikisi de yayin oncesi
+/// modlardir ve gozden gecirme kohortuyla sinirli kalmalidir (bkz.
+/// localization-context-resolver_test.ts, kohort disi kullanici testi).
+function localizationRolloutIsPublic(value: FlagValue | null): boolean {
+  const mode = typeof value?.rollout_mode === "string"
+    ? value.rollout_mode
+    : "off";
+  return mode === "on" || mode === "min_build";
+}
+
 function preReleaseLocalizationFlagEnabled(
   value: FlagValue | null,
   context: LocalizationRolloutContext,
 ): boolean {
-  return reviewerCohortAllows(value, context) &&
-    localizationFlagEnabled(value, context);
+  // Rollout modunun kendi kosulu her zaman gecerlidir.
+  if (!localizationFlagEnabled(value, context)) return false;
+  // Yayin oncesi modlarda (allowlist / build_allowlist) ek olarak gozden gecirme
+  // kohortu aranir. `on` ve `min_build` ise bilincli birer yayin kararidir; aksi
+  // halde bu iki mod hicbir zaman kohort disina cikamaz ve anlamsizlasirdi.
+  return localizationRolloutIsPublic(value) ||
+    reviewerCohortAllows(value, context);
 }
 
 export async function loadLocalizationRolloutPolicy(

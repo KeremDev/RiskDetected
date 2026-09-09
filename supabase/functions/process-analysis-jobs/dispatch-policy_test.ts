@@ -1,9 +1,66 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import {
   classifyDispatchObservation,
+  forceCoverageQualityFallback,
+  isExplicitVNextFailure,
+  isProviderBackgroundPendingResponse,
+  providerBackgroundRetrySeconds,
   reconcileQueueAfterDispatch,
   reconcileWithAuthoritativeState,
 } from "./dispatch-policy.ts";
+
+Deno.test("V5 durable retry releases and defers without terminal failure", () => {
+  assertEquals(
+    isProviderBackgroundPendingResponse({
+      httpStatus: 202,
+      responseBodyParsed: true,
+      responseCode: "v5_retry_pending",
+    }),
+    true,
+  );
+  assertEquals(
+    isProviderBackgroundPendingResponse({
+      httpStatus: 500,
+      responseBodyParsed: true,
+      responseCode: "v5_retry_pending",
+    }),
+    false,
+  );
+  assertEquals(
+    isExplicitVNextFailure({
+      httpStatus: 202,
+      responseBodyParsed: true,
+      responseCode: "v5_retry_pending",
+    }),
+    false,
+  );
+});
+
+Deno.test("coverage quality retries use the repair queue message read count", () => {
+  assertEquals(
+    forceCoverageQualityFallback({
+      repairKind: "coverage_quality_v2",
+      queueReadCount: 1,
+    }),
+    false,
+  );
+  for (const queueReadCount of [2, 3, 9]) {
+    assertEquals(
+      forceCoverageQualityFallback({
+        repairKind: "coverage_quality_v2",
+        queueReadCount,
+      }),
+      true,
+    );
+  }
+  assertEquals(
+    forceCoverageQualityFallback({
+      repairKind: "legacy_coverage",
+      queueReadCount: 2,
+    }),
+    false,
+  );
+});
 
 Deno.test("guard v2 keeps ambiguous dispatch while claim is active", () => {
   for (const httpStatus of [null, 502, 504, 546]) {
@@ -99,6 +156,56 @@ Deno.test("application errors remain distinguishable from transport ambiguity", 
     }),
     "success_response",
   );
+});
+
+Deno.test("parsed vNext provider failures release the claim for checkpoint retry", () => {
+  assertEquals(
+    isExplicitVNextFailure({
+      httpStatus: 500,
+      responseBodyParsed: true,
+      responseCode: "provider_timeout",
+    }),
+    true,
+  );
+  assertEquals(
+    isExplicitVNextFailure({
+      httpStatus: 500,
+      responseBodyParsed: true,
+      responseCode: "provider_schema_invalid__schema_all_facts_invalid_region",
+    }),
+    true,
+  );
+  assertEquals(
+    isExplicitVNextFailure({
+      httpStatus: 502,
+      responseBodyParsed: false,
+      responseCode: null,
+    }),
+    false,
+  );
+});
+
+Deno.test("Luna background pending is a non-terminal queue observation", () => {
+  assertEquals(
+    isProviderBackgroundPendingResponse({
+      httpStatus: 202,
+      responseBodyParsed: true,
+      responseCode: "provider_background_pending",
+    }),
+    true,
+  );
+  assertEquals(
+    isProviderBackgroundPendingResponse({
+      httpStatus: 500,
+      responseBodyParsed: true,
+      responseCode: "provider_background_pending",
+    }),
+    false,
+  );
+  assertEquals(providerBackgroundRetrySeconds(15), 15);
+  assertEquals(providerBackgroundRetrySeconds(2), 5);
+  assertEquals(providerBackgroundRetrySeconds(500), 120);
+  assertEquals(providerBackgroundRetrySeconds("invalid"), 15);
 });
 
 Deno.test("response loss keeps the live claim then deletes completed message without a second provider call", async () => {

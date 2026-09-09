@@ -376,7 +376,8 @@ final class PDFReportService: @unchecked Sendable {
     }
 
     private func riskAssessmentPages(input: ReportInput, pageRect: CGRect) -> [[AssessmentTableRow]] {
-        guard !input.findings.isEmpty else { return [] }
+        let scoredFindings = input.findings.filter(\.isScored)
+        guard !scoredFindings.isEmpty else { return [] }
 
         let headerH: CGFloat = 44
         let topY: CGFloat = 82 + headerH
@@ -386,7 +387,7 @@ final class PDFReportService: @unchecked Sendable {
         var currentRows: [AssessmentTableRow] = []
         var usedHeight: CGFloat = 0
 
-        for (index, finding) in input.findings.enumerated() {
+        for (index, finding) in scoredFindings.enumerated() {
             let rowHeight = min(assessmentRowHeight(input: input, finding: finding, ordinal: index + 1), maxRowHeight)
             if !currentRows.isEmpty, usedHeight + rowHeight > maxRowHeight {
                 pages.append(currentRows)
@@ -420,7 +421,8 @@ final class PDFReportService: @unchecked Sendable {
             drawMatrix5Reference(origin: CGPoint(x: margin, y: 82), language: language)
         }
 
-        drawRiskAnalysisInfoStrip(input: input, rect: CGRect(x: margin, y: 520, width: pageRect.width - margin * 2, height: 42))
+        let infoTop: CGFloat = input.options.method == .matrix5x5 ? 536 : 512
+        drawRiskAnalysisInfoStrip(input: input, rect: CGRect(x: margin, y: infoTop, width: pageRect.width - margin * 2, height: 50))
     }
 
     private func drawRiskAnalysisTablePages(input: ReportInput, context: UIGraphicsPDFRendererContext, pageRect: CGRect, pages: [[AssessmentTableRow]], totalPages: Int) {
@@ -492,10 +494,16 @@ final class PDFReportService: @unchecked Sendable {
     private func drawReportLogo(input: ReportInput, in rect: CGRect, fallbackTextRect: CGRect, companyCornerRadius: CGFloat) {
         if let companyLogo = input.companyLogo {
             drawImage(companyLogo, in: rect, cornerRadius: companyCornerRadius, mode: .scaleAspectFit)
-        } else if let logo = UIImage(named: "RDLogo") {
+        } else if let logo = UIImage(named: "RDLogo", in: Bundle.main, compatibleWith: nil) ?? UIImage(named: "RDLogo") {
             drawImage(logo, in: rect, cornerRadius: 0, mode: .scaleAspectFit)
         } else {
-            drawText("RiskDetected", in: fallbackTextRect, font: .systemFont(ofSize: 20, weight: .bold), color: .rdPDFBlack)
+            drawFittingText(
+                "RiskDetected",
+                in: fallbackTextRect,
+                baseFont: .systemFont(ofSize: 20, weight: .bold),
+                minimumFontSize: 12,
+                color: .rdPDFBlack
+            )
         }
     }
 
@@ -505,7 +513,7 @@ final class PDFReportService: @unchecked Sendable {
         let gap: CGFloat = 10
 
         for (index, level) in levels.enumerated() {
-            let count = input.findings.filter { $0.band(for: input.options.method).level == level }.count
+            let count = input.findings.filter { $0.isScored && $0.band(for: input.options.method).level == level }.count
             let rect = CGRect(x: origin.x + CGFloat(index) * (width + gap), y: origin.y, width: width, height: 72)
             roundedFill(rect, radius: 12, color: level.pdfBackground)
             drawText("\(count)", in: CGRect(x: rect.minX + 12, y: rect.minY + 10, width: 60, height: 26), font: .monospacedSystemFont(ofSize: 24, weight: .bold), color: level.pdfColor)
@@ -715,8 +723,9 @@ final class PDFReportService: @unchecked Sendable {
 
     private func drawMethodLegend(input: ReportInput, rect: CGRect) {
         roundedStroke(rect, radius: 10, stroke: .rdPDFLine, fill: .white)
-        let total = input.findings.reduce(0) { $0 + $1.score(for: input.options.method) }
-        let top = input.findings.map { $0.score(for: input.options.method) }.max() ?? 0
+        let scoredFindings = input.findings.filter(\.isScored)
+        let total = scoredFindings.reduce(0) { $0 + $1.score(for: input.options.method) }
+        let top = scoredFindings.map { $0.score(for: input.options.method) }.max() ?? 0
         let language = input.options.language
         drawText(copy(language: language, tr: "Metodoloji", en: "Methodology"), in: CGRect(x: rect.minX + 14, y: rect.minY + 7, width: 120, height: 16), font: .systemFont(ofSize: 11, weight: .bold), color: .rdPDFSlate)
         drawText("\(methodName(input.options.method, language: language)) · R = \(methodFormula(input.options.method, language: language))", in: CGRect(x: rect.minX + 14, y: rect.minY + 25, width: 250, height: 16), font: .systemFont(ofSize: 11, weight: .medium), color: .rdPDFBlack)
@@ -743,21 +752,21 @@ final class PDFReportService: @unchecked Sendable {
         } ?? ""
         drawFittingText(
             "\(sectorLine)\(copy(language: language, tr: "Analiz", en: "Analysis")): \(analysis.title)\n\(copy(language: language, tr: "Firma", en: "Company")): \(company)\n\(copy(language: language, tr: "Firma bilgisi", en: "Company details")): \(companyInfo ?? unspecified)",
-            in: CGRect(x: rect.minX + 10, y: rect.minY + 5, width: 260, height: 37),
+            in: CGRect(x: rect.minX + 10, y: rect.minY + 5, width: 280, height: rect.height - 10),
             baseFont: .systemFont(ofSize: 7.4, weight: .semibold),
             minimumFontSize: 5.8,
             color: .rdPDFSlate
         )
         drawFittingText(
             "\(copy(language: language, tr: "Hazırlayan", en: "Prepared by")): \(prepared)\n\(copy(language: language, tr: "Ünvan", en: "Title")): \(title)\n\(copy(language: language, tr: "Belge No", en: "Certificate no.")): \(certificate)",
-            in: CGRect(x: rect.minX + 294, y: rect.minY + 5, width: 220, height: 37),
+            in: CGRect(x: rect.minX + 304, y: rect.minY + 5, width: 220, height: rect.height - 10),
             baseFont: .systemFont(ofSize: 7.4, weight: .semibold),
             minimumFontSize: 5.8,
             color: .rdPDFSlate
         )
         drawFittingText(
             "\(copy(language: language, tr: "Tarih", en: "Date")): \(formattedDate(analysis.createdAt, language: language))\n\(copy(language: language, tr: "Doküman No", en: "Document no.")): #\(String(analysis.id.uuidString.prefix(8)).uppercased())",
-            in: CGRect(x: rect.minX + 548, y: rect.minY + 9, width: 200, height: 24),
+            in: CGRect(x: rect.minX + 548, y: rect.minY + 9, width: 200, height: rect.height - 18),
             baseFont: .monospacedSystemFont(ofSize: 7.4, weight: .semibold),
             minimumFontSize: 5.8,
             color: .rdPDFBlack,
@@ -1096,11 +1105,26 @@ final class PDFReportService: @unchecked Sendable {
             color: .rdPDFSlate
         )
 
-        let band = finding.band(for: method)
-        roundedFill(CGRect(x: x + 370, y: y + 14, width: 70, height: 34), radius: 8, color: band.level.pdfColor)
-        let score = finding.score(for: method)
-        drawText(scoreText(score, language: language), in: CGRect(x: x + 370, y: y + 19, width: 70, height: 20), font: .monospacedSystemFont(ofSize: 16, weight: .bold), color: .white, alignment: .center)
-        drawText(riskBandLabel(band.level, method: method, score: score, language: language), in: CGRect(x: x + 360, y: y + 52, width: 90, height: 14), font: .systemFont(ofSize: 8, weight: .bold), color: band.level.pdfColor, alignment: .center)
+        if finding.isScored {
+            let band = finding.band(for: method)
+            roundedFill(CGRect(x: x + 370, y: y + 14, width: 70, height: 34), radius: 8, color: band.level.pdfColor)
+            let score = finding.score(for: method)
+            drawText(scoreText(score, language: language), in: CGRect(x: x + 370, y: y + 19, width: 70, height: 20), font: .monospacedSystemFont(ofSize: 16, weight: .bold), color: .white, alignment: .center)
+            drawText(riskBandLabel(band.level, method: method, score: score, language: language), in: CGRect(x: x + 360, y: y + 52, width: 90, height: 14), font: .systemFont(ofSize: 8, weight: .bold), color: band.level.pdfColor, alignment: .center)
+        } else {
+            drawText(
+                RDLocalization.string(
+                    "reports.pdf.risk_table.field_verification",
+                    table: .reports,
+                    fallback: language == .english ? "Field verification" : "Saha teyidi",
+                    language: language
+                ),
+                in: CGRect(x: x + 360, y: y + 24, width: 90, height: 20),
+                font: .systemFont(ofSize: 9, weight: .bold),
+                color: .rdPDFSlate,
+                alignment: .center
+            )
+        }
 
         drawFittingText(
             actionTextWithRootCause(for: finding, language: language),
@@ -1415,7 +1439,7 @@ extension PDFReportService {
           "created_at": "2026-07-30T12:00:00Z",
           "analysis_sector": "logistics_warehouse",
           "analysis_sector_source": "user_selected",
-          "analysis_sector_prompt_version": "active-sector-v1",
+          "analysis_sector_prompt_version": "sector-profile-v2",
           "output_language": "en",
           "output_locale": "en-GB",
           "work_jurisdiction_country": "ZZ",

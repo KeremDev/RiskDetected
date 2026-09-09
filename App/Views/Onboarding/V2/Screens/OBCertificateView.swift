@@ -4,6 +4,7 @@ struct OBCertificateView: View {
     @ObservedObject var state: OnboardingV2State
     let onBack: () -> Void
     let onNext: () -> Void
+    @Environment(\.rdLayoutProfile) private var layoutProfile
 
     private let helmetItems: [(cert: OBCertificate, title: String, sub: String, hatColor: Color, brimColor: Color)] = [
         (.A, RDLocalization.string("onboarding.obcertificate.view.a.sinifi.isg.uzmani.4ac7f66b", table: .onboarding, fallback: "A Sınıfı İSG Uzmanı"), RDLocalization.string("onboarding.obcertificate.view.cok.tehlikeli.sinifta.yetkili.aaaf50c7", table: .onboarding, fallback: "Çok tehlikeli sınıfta yetkili."),
@@ -24,13 +25,13 @@ struct OBCertificateView: View {
                         OBHeroTile(tint: .warm) { OBHeroCertificate() }
                             .obStage(delay: 0.08)
                         Text(RDLocalization.string("onboarding.obcertificate.view.hangi.sertifika.sinifindasin.dd146c19", table: .onboarding, fallback: "Hangi sertifika sınıfındasın?"))
-                            .font(.system(size: RDFontScale.size(28), weight: .semibold))
+                            .font(RDTypography.font(size: RDFontScale.size(28), weight: .semibold))
                             .tracking(-0.8)
                             .foregroundStyle(Color.rdOnyx)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.14)
                         Text(RDLocalization.string("onboarding.obcertificate.view.sana.ozel.risk.sablonlari.hazirlayacagiz.671e73ee", table: .onboarding, fallback: "Sana özel risk şablonları hazırlayacağız."))
-                            .font(.system(size: RDFontScale.size(15)))
+                            .font(RDTypography.font(size: RDFontScale.size(15)))
                             .foregroundStyle(Color.rdSlate)
                             .multilineTextAlignment(.center)
                             .obStage(delay: 0.22)
@@ -65,7 +66,7 @@ struct OBCertificateView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, layoutProfile.horizontalPadding)
                 .padding(.bottom, 24)
             }
 
@@ -112,7 +113,7 @@ private struct HelmetBadge: View {
                 .frame(width: 30, height: 18)
 
                 Text(letter)
-                    .font(.system(size: RDFontScale.size(15), weight: .semibold, design: .monospaced))
+                    .font(RDTypography.font(size: RDFontScale.size(15), weight: .semibold, design: .monospaced))
                     .foregroundStyle(selected ? .white : Color.rdOnyx)
             }
         }

@@ -14,7 +14,7 @@ import org.robolectric.annotation.GraphicsMode
 
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(application = Application::class, sdk = [35], qualifiers = "w393dp-h852dp-xxhdpi")
+@Config(application = Application::class, sdk = [35], qualifiers = "tr-rTR-w393dp-h852dp-xxhdpi")
 class PhotoUploadCardTest {
 
     @get:Rule

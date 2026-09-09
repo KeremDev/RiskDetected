@@ -53,8 +53,17 @@ function readJSON(relativePath) {
   return JSON.parse(read(relativePath));
 }
 
+const SWIFT_SOURCE_EXCLUDED_DIRECTORIES = new Set([
+  "Assets.xcassets",
+  "Preview Content",
+  "Resources",
+]);
+
 function walk(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    if (entry.isDirectory() && SWIFT_SOURCE_EXCLUDED_DIRECTORIES.has(entry.name)) {
+      return [];
+    }
     const path = join(directory, entry.name);
     if (entry.isDirectory()) return walk(path);
     return statSync(path).isFile() ? [path] : [];
@@ -292,16 +301,19 @@ test("L10N-005", "backend user-facing literal scan matches approved baseline", (
 test("L10N-006", "PDF/XLSX literal scan matches approved baseline", () => {
   assertLiteralSurfaceSnapshot(
     ["pdf", "xlsx"],
-    441,
-    "0f36b851ef457c3c342c70bea85ee5163ea6ba54116035998db6a9e1577f8722",
+    // Multiline console diagnostics are not PDF/XLSX document copy (12 removed).
+    // Training Recommendations export adds 11 reviewed TR/EN XLSX literals.
+    437,
+    "e9acc2e255581c1bf75311baccb57d755fd03c374dc7c7139733dbfd07c63fd7",
   );
 });
 
 test("L10N-007", "notification/email literal scan matches approved baseline", () => {
   assertLiteralSurfaceSnapshot(
     ["notification", "push", "email"],
-    62,
-    "18dddd05d75d08ce31c7c786e19ecc7c68de7783468f713a16fa3c7ecccb3a55",
+    // Five baseline diagnostics were logs, not notification/email messages.
+    57,
+    "eb36ad1476cfc38f7097e290a5ee00950be8e821629c6a73068faae877dd562e",
   );
 });
 
@@ -495,7 +507,9 @@ test("L10N-013", "every fallback is the Turkish value for the same key", () => {
       );
     }
   }
-  assert.ok(callCount >= 1_900, `unexpected localized call count ${callCount}`);
+  // Eşik, eski paywall ekranları (InAppPaywallView/OBTimelinePaywallView) Claude
+  // Design paywall akışıyla değiştirilip silindikten sonra güncellendi.
+  assert.ok(callCount >= 1_850, `unexpected localized call count ${callCount}`);
 });
 
 test("L10N-014", "user-owned content remains outside system translation", () => {
@@ -713,6 +727,42 @@ test("L10N-017A", "subscription plan names remain untranslated in Turkish", () =
   }
 });
 
+test("L10N-017B", "risk-method proper nouns survive translation", () => {
+  // "Fine-Kinney" iki arastirmacinin soyadidir (W.T. Fine, G.F. Kinney) ve
+  // uluslararasi bir yontem adidir; hicbir dilde cevrilmez. 2026-08-19'da makine
+  // cevirisi "Fine" sifatini "Ince" diye cevirip dort anahtari bozmustu, besincisinde
+  // de "Kinnet" yazim hatasi vardi — ikisi de canli iOS ekranlarina cikti.
+  const forbidden = [/\bİnce[\s-]?Kinney\b/i, /\bKinnet\b/i];
+
+  for (const catalogName of EXPECTED_CATALOGS) {
+    const parsed = catalog(catalogName);
+    for (const key of Object.keys(parsed.strings)) {
+      for (const language of ["tr", "en"]) {
+        for (const [path, unit] of collectStringUnits(
+          parsed.strings[key].localizations?.[language],
+        )) {
+          const value = unit.value ?? "";
+          for (const pattern of forbidden) {
+            assert.ok(
+              !pattern.test(value),
+              `${catalogName}:${key}:${path} (${language}) must spell the method "Fine-Kinney": ${value}`,
+            );
+          }
+          // "Kinney" gecen her yerde ozel ad ya tam yazilir ya da dar rozetlerde
+          // "F-KINNEY" kisaltmasiyla gecer; ikisi de her dilde aynidir.
+          if (/\bKinney\b/i.test(value)) {
+            assert.match(
+              value,
+              /(Fine[\s-]?Kinney|\bF-KINNEY\b)/i,
+              `${catalogName}:${key}:${path} (${language}) must keep the full "Fine-Kinney" name`,
+            );
+          }
+        }
+      }
+    }
+  }
+});
+
 test("L10N-018", "approved Turkish catalog source remains locked", () => {
   const rows = [];
   for (const name of EXPECTED_CATALOGS) {
@@ -725,10 +775,31 @@ test("L10N-018", "approved Turkish catalog source remains locked", () => {
       }
     }
   }
-  assert.equal(rows.length, 2_087, "Turkish localized-unit count");
+  assert.equal(rows.length, 2_387, "Turkish localized-unit count");
   assert.equal(
     createHash("sha256").update(rows.join("\n")).digest("hex"),
-    "8a8e7d7a4a8eb293c5b5262110bdadf38a62690e2a4a95aab1cadaf8a7cafd40",
+    // 2026-08-19: "Fine-Kinney" dort anahtarda makine cevirisiyle "Ince Kinney"
+    // olmustu ve bir anahtarda "Kinnet" yazim hatasi vardi. Fine-Kinney bir ozel
+    // ad (W.T. Fine + G.F. Kinney) ve uluslararasi terim; hicbir dilde cevrilmez.
+    // Yazim hatasi anahtar adinda da vardi; anahtar uretecin kendi kuraliyla
+    // yeniden hesaplandi (...fine.kinney.5.5.rapor.hazir.fdc34345).
+    // 2026-08-19: plan ozeti kilit metni sahip istegiyle yeniden yazildi.
+    // 2026-08-19: paywall zaman cizelgesinde "Bugun" aciklamasi basligin altina
+    // alindi; satir ici tire on eki ("— ") artik gereksiz oldugu icin kaldirildi.
+    // 2026-08-19: kayan ozellik seridine alti yeni etiket, plan kartina yillik toplam
+    // satiri ve alt bara yenileme fiyati eklendi; 7. gun aciklamasi sadelestirildi.
+    // 2026-08-19: onboarding yukleme adimlarinda secim etiketi metne uc uca ekleniyordu
+    // ("Insaaticin ..."); uc metin yer tutuculu bicime cevrildi. Plan ozeti sablon
+    // sayisi 47'den 896'ya guncellendi.
+    // 2026-08-20: paywall 7. gun aciklamasi ekranda yer kazanmak icin tek satira indi.
+    // 2026-08-30: yeni sonuc merkezi ve bulgu detay ekranlarindaki kullanici
+    // metinleri Analysis kataloguna tasindi; rapor saha-dogrulamasi etiketi eklendi.
+    // 2026-08-30: egitim onerileri filtresine varsayilan "Tumu" secenegi eklendi.
+    // 2026-09-06: reviewed against 12d85089: exactly 26 new Paywall units
+    // (24 dark-paywall labels/features, trial and cancellation disclosures).
+    // All other Turkish catalog units are unchanged; owner-requested copy.
+    // 2026-09-08: ATT prompt removed; original catalog snapshot restored.
+    "4c07bb59d61233843a9125b02f5b7f46f27102e7172cfb5f18d7e5506ec19e7d",
     "Turkish catalog snapshot changed",
   );
   assert.equal(

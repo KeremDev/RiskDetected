@@ -14,16 +14,9 @@ class PdfReportContractTest {
     }
 
     @Test
-    fun `risk analysis includes company cover before reference and assessment table`() {
+    fun `risk analysis matches iOS reference then assessment table contract`() {
         val sections = pdfReportSectionOrder("risk_analysis")
 
-        assertEquals(
-            listOf(
-                PdfReportSection.Cover,
-                PdfReportSection.MethodReference,
-                PdfReportSection.RiskAssessmentTable,
-            ),
-            sections,
-        )
+        assertEquals(listOf(PdfReportSection.MethodReference, PdfReportSection.RiskAssessmentTable), sections)
     }
 }

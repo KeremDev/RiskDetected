@@ -63,6 +63,18 @@ Deno.test("generate-excel-report derives language from analysis snapshot", async
   assertStringIncludes(source, "localization_snapshot:");
 });
 
+Deno.test("generate-excel-report compares report intent UUIDs canonically", async () => {
+  const source = await readTextIfAllowed(
+    new URL("./index.ts", import.meta.url),
+  );
+  if (source == null) return;
+
+  assertStringIncludes(
+    source,
+    "reportIntent.analysis_id.toLowerCase() !== analysisID.toLowerCase()",
+  );
+});
+
 Deno.test("generate-excel-report applies authenticated report customization", async () => {
   const source = await readTextIfAllowed(
     new URL("./index.ts", import.meta.url),

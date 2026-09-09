@@ -138,6 +138,15 @@ function isGenericSwiftCopyFile(sourceFile) {
 
 function shouldScanGenericSwiftLine(sourceFile, line, inPreview) {
   if (!isGenericSwiftCopyFile(sourceFile) || inPreview) return false;
+  const trimmed = line.trimStart();
+  if (trimmed.startsWith("//") || trimmed.startsWith("///")) return false;
+  // PostScript font names and the individually colored Google wordmark glyphs
+  // are technical/brand identifiers, not localizable user copy.
+  if (sourceFile === "App/DesignSystem/RDFont.swift") return false;
+  if (
+    sourceFile === "App/Views/Auth/AuthView.swift" &&
+    /Text\("[Google]"\)\.foregroundColor/u.test(line)
+  ) return false;
   if (
     /(?:logger\.|Self\.logger\.|privacy:\s*\.|assertionFailure|fatalError|preconditionFailure)/u
       .test(line)
@@ -161,9 +170,18 @@ function shouldScanGenericSwiftLine(sourceFile, line, inPreview) {
   return true;
 }
 
-function maskRDLocalizationCalls(source) {
+function maskRDLocalizationCalls(source, sourceFile) {
   const characters = [...source];
-  const callPattern = /RDLocalization\.(?:string|format|plural)\s*\(/g;
+  // `copy(key, trFallback, enFallback)` is a result-surface-only wrapper over
+  // RDLocalization.string. Its key/fallback pairs are generated into
+  // Analysis.xcstrings by migrate_result_copy_to_catalog.mjs.
+  const resultCopyFiles = new Set([
+    "App/Views/Result/AnalysisResultHubView.swift",
+    "App/Views/Result/RiskDetailView.swift",
+  ]);
+  const callPattern = resultCopyFiles.has(sourceFile)
+    ? /(?:RDLocalization\.(?:string|format|plural)|\bcopy)\s*\(/g
+    : /RDLocalization\.(?:string|format|plural)\s*\(/g;
 
   for (const match of source.matchAll(callPattern)) {
     const openParenthesis = source.indexOf("(", match.index);
@@ -210,7 +228,7 @@ function maskRDLocalizationCalls(source) {
   return characters.join("");
 }
 
-function isGenericTechnicalLiteral(value, line) {
+function isGenericTechnicalLiteral(value, line, sourceFile) {
   const decoded = decodeLiteral(value);
   const staticText = decoded.replace(/\\\([^)]*\)/g, "").trim();
   if (!/[A-Za-zÇĞİÖŞÜçğıöşü]/u.test(staticText)) return true;
@@ -224,6 +242,21 @@ function isGenericTechnicalLiteral(value, line) {
   ) {
     return true;
   }
+  if (
+    [
+      "App/Views/Result/AnalysisResultHubView.swift",
+      "App/Views/Result/RiskDetailView.swift",
+    ].includes(sourceFile) &&
+    /^(?:Fine-Kinney|PLUS|PRO|PLUS \/ PRO|PDF|Excel|5×5 (?:Matris|Matrix)|1-|Ş|×|=)$/u.test(decoded)
+  ) return true;
+  if (
+    sourceFile === "App/Views/Result/AnalysisResultHubView.swift" &&
+    (
+      decoded.includes("shortened.isEmpty") ||
+      decoded.startsWith("R = \\(") ||
+      decoded.includes("\\(selectedCount)/\\(totalCount)")
+    )
+  ) return true;
   if (
     !/\s/u.test(staticText) &&
     !/[ÇĞİÖŞÜçğıöşü]/u.test(staticText) &&
@@ -268,6 +301,11 @@ const EXCLUDED_DIRECTORY_NAMES = new Set([
   "output",
   "backups",
   "Preview Content",
+  // Asset catalog payloads never contain Swift/Markdown/TypeScript copy and
+  // may carry macOS provenance attributes that are intentionally unreadable
+  // from Xcode's sandboxed localization build phase.
+  "Assets.xcassets",
+  "Resources",
 ]);
 
 function walk(directory) {
@@ -441,8 +479,9 @@ function addEntry(
 
 function scanSwift(path, entries) {
   const sourceFile = relative(ROOT, path);
+  if (sourceFile === "App/DesignSystem/RDFont.swift") return;
   const source = readFileSync(path, "utf8");
-  const lines = maskRDLocalizationCalls(source).split(/\r?\n/);
+  const lines = maskRDLocalizationCalls(source, sourceFile).split(/\r?\n/);
   let inPreview = false;
   let debugConditionalDepth = 0;
   lines.forEach((line, index) => {
@@ -456,6 +495,10 @@ function scanSwift(path, entries) {
       return;
     }
     if (debugConditionalDepth > 0) return;
+    if (
+      sourceFile === "App/Views/Auth/AuthView.swift" &&
+      /Text\("[Google]"\)\.foregroundColor/u.test(line)
+    ) return;
     if (
       sourceFile === "App/Services/NetworkMonitor.swift" &&
       line.includes("DispatchQueue(label:")
@@ -478,10 +521,7 @@ function scanSwift(path, entries) {
       }
       pattern.regex.lastIndex = 0;
       for (const match of line.matchAll(pattern.regex)) {
-        if (
-          pattern.context === "swift_user_copy" &&
-          isGenericTechnicalLiteral(match[1], line)
-        ) {
+        if (isGenericTechnicalLiteral(match[1], line, sourceFile)) {
           continue;
         }
         const quoteStart = match.index + match[0].lastIndexOf('"');
@@ -575,8 +615,75 @@ function scanMarkdown(path, entries) {
   });
 }
 
-function scanTypeScript(path, entries) {
+// Console arguments are operational diagnostics, including multiline calls.
+// Preserve offsets/newlines so candidates after a log retain their source line.
+function maskConsoleCalls(source) {
+  const masked = source.split("");
+  const nonCode = new Set();
+  let sourceQuote = null;
+  let sourceEscaped = false;
+  let comment = null;
+  for (let index = 0; index < source.length; index++) {
+    const char = source[index];
+    const next = source[index + 1];
+    if (comment) {
+      nonCode.add(index);
+      if (comment === "line" && char === "\n") comment = null;
+      else if (comment === "block" && char === "*" && next === "/") {
+        nonCode.add(++index);
+        comment = null;
+      }
+    } else if (sourceQuote) {
+      nonCode.add(index);
+      if (sourceEscaped) sourceEscaped = false;
+      else if (char === "\\") sourceEscaped = true;
+      else if (char === sourceQuote) sourceQuote = null;
+    } else if (char === '"' || char === "'" || char === "`") {
+      nonCode.add(index);
+      sourceQuote = char;
+    } else if (char === "/" && (next === "/" || next === "*")) {
+      nonCode.add(index);
+      nonCode.add(++index);
+      comment = next === "/" ? "line" : "block";
+    }
+  }
+  for (const match of source.matchAll(/\bconsole\.(?:log|warn|error|info|debug)\s*\(/g)) {
+    if (nonCode.has(match.index) || masked[match.index] === " ") continue;
+    let depth = 1;
+    let end = match.index + match[0].length;
+    for (; end < source.length && depth > 0; end++) {
+      const char = source[end];
+      if (nonCode.has(end)) continue;
+      if (char === "(") depth++;
+      else if (char === ")") depth--;
+    }
+    // Malformed source must not hide the remainder of a file.
+    if (depth !== 0) continue;
+    for (let index = match.index; index < end; index++) {
+      if (source[index] !== "\n" && source[index] !== "\r") masked[index] = " ";
+    }
+  }
+  return masked.join("");
+}
+
+export function scanTypeScript(path, entries) {
   const sourceFile = relative(ROOT, path);
+  // These modules are versioned AI prompts or deterministic safety-domain
+  // catalogues. They are validated by their schema/linter tests and are not
+  // application chrome, API error copy, report labels, email, or push copy.
+  const internalSafetyContent =
+    sourceFile.startsWith("supabase/functions/analyze-vnext/") ||
+    sourceFile.startsWith("supabase/functions/analyze-v4/") ||
+    sourceFile.startsWith("supabase/functions/_shared/training-recommendations/") ||
+    sourceFile.startsWith("supabase/functions/_shared/approved-book/") ||
+    sourceFile === "supabase/functions/_shared/approved-notebook-projector.ts" ||
+    // Explicit files only: new API handlers in these directories must still
+    // be scanned. These Turkish safety catalogues/renderers have dedicated
+    // v5_expert_training and approved-notebook-advisory-language tests.
+    sourceFile === "supabase/functions/_shared/expert-recommendations/registry.tr.ts" ||
+    sourceFile === "supabase/functions/_shared/expert-recommendations/engine.ts" ||
+    sourceFile === "supabase/functions/_shared/approved-notebook-advisory-language.ts";
+  if (internalSafetyContent) return;
   if (
     sourceFile ===
       "supabase/functions/_shared/ai-localization-prompt.ts" ||
@@ -587,9 +694,14 @@ function scanTypeScript(path, entries) {
   const knownOutputSurface =
     /(?:generate-excel-report|register-report|send-push-notification|send-report-ready-notification|send-trial-reminder|send-welcome-email)/u
       .test(sourceFile);
-  const lines = readFileSync(path, "utf8").split(/\r?\n/);
+  const lines = maskConsoleCalls(readFileSync(path, "utf8")).split(/\r?\n/);
   let machinePromptBlock = false;
   lines.forEach((line, index) => {
+    const trimmed = line.trimStart();
+    // Process the opt-out markers before the generic comment filter. The
+    // markers intentionally live on comment lines, so checking comments first
+    // would leave the scanner inside normal source code and report AI prompt
+    // literals as user-facing application copy.
     if (line.includes("localization-inventory: machine-prompt-begin")) {
       machinePromptBlock = true;
       return;
@@ -599,9 +711,15 @@ function scanTypeScript(path, entries) {
       return;
     }
     if (machinePromptBlock) return;
+    if (
+      trimmed.startsWith("//") || trimmed.startsWith("/*") ||
+      trimmed.startsWith("*")
+    ) return;
     const regex = /(["'`])((?:\\.|(?!\1).)*)\1/g;
     for (const match of line.matchAll(regex)) {
       const value = decodeLiteral(match[2]);
+      if (/^[A-Z]+\d+:\$\{[A-Za-z]/u.test(value)) continue;
+      if (/^(?:PDF|XLSX) report intent consume failed$/u.test(value)) continue;
       if (
         value.length >= 4 &&
         HUMAN_TEXT_PATTERN.test(value) &&
@@ -896,6 +1014,6 @@ function main() {
   );
 }
 
-if (pathToFileURL(process.argv[1]).href === import.meta.url) {
+if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
   main();
 }

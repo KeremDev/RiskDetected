@@ -1,11 +1,12 @@
 package com.riskdetectedan.app.push
 
 import android.Manifest
-import android.app.NotificationChannel
-import android.app.NotificationManager
+import android.app.Notification
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -86,16 +87,9 @@ class RdFirebaseMessagingService : FirebaseMessagingService() {
         ) return
 
         val payload = NotificationDeepLinkParser.parse(message.data) ?: return
-        val manager = getSystemService(NotificationManager::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            manager.createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_ID,
-                    getString(RdR.string.rd_bildirim_kanali),
-                    NotificationManager.IMPORTANCE_DEFAULT,
-                ),
-            )
-        }
+        // Same channel the manifest declares for FCM's own background rendering, so foreground
+        // and background notifications share one entry in system settings.
+        RdNotificationChannel.ensure(this)
 
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -107,18 +101,41 @@ class RdFirebaseMessagingService : FirebaseMessagingService() {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle(message.notification?.title ?: getString(RdR.string.rd_app_name))
-            .setContentText(message.notification?.body ?: getString(RdR.string.rd_yeni_guncelleme_var))
-            .setStyle(NotificationCompat.BigTextStyle().bigText(message.notification?.body))
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .build()
+        val title = message.notification?.title ?: getString(RdR.string.rd_app_name)
+        val body = message.notification?.body ?: getString(RdR.string.rd_yeni_guncelleme_var)
+        val notification = createRiskDetectedNotification(
+            context = this,
+            channelId = RdNotificationChannel.ID,
+            pendingIntent = pendingIntent,
+            title = title,
+            body = body,
+        )
         NotificationManagerCompat.from(this).notify(payload.hashCode(), notification)
     }
-
-    private companion object {
-        const val CHANNEL_ID = "riskdetected_updates"
-    }
 }
+
+/**
+ * Android notification trays require a transparent, single-colour status icon. The adaptive
+ * launcher foreground previously used here was scaled into a tiny circle and made the brand mark
+ * look incomplete. Keep the native system layout (as iOS does), but give Android the correct
+ * monochrome status mark and the full-colour app artwork for the expanded notification.
+ */
+internal fun createRiskDetectedNotification(
+    context: Context,
+    channelId: String,
+    pendingIntent: PendingIntent,
+    title: String,
+    body: String,
+): Notification = NotificationCompat.Builder(context, channelId)
+    .setSmallIcon(R.drawable.ic_launcher_monochrome)
+    .setLargeIcon(BitmapFactory.decodeResource(context.resources, R.drawable.rd_app_icon))
+    .setColor(ContextCompat.getColor(context, R.color.rd_notification_accent))
+    .setContentTitle(title)
+    .setContentText(body)
+    .setStyle(NotificationCompat.BigTextStyle().bigText(body).setBigContentTitle(title))
+    .setContentIntent(pendingIntent)
+    .setCategory(NotificationCompat.CATEGORY_STATUS)
+    .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+    .setOnlyAlertOnce(true)
+    .setAutoCancel(true)
+    .build()

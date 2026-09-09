@@ -2,11 +2,13 @@ export type ProviderAttemptReason =
   | "initial"
   | "coverage_schema_fallback"
   | "layer_schema_fallback"
+  | "layer_schema_json_fallback"
   | "max_tokens_retry"
   | "invalid_json_fallback"
   | "key_fallback"
   | "model_fallback"
   | "provider_fallback"
+  | "coverage_quality_repair"
   | "language_contract_repair";
 
 export type ProviderAttemptRecord = {

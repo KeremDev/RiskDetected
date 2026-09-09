@@ -2,11 +2,28 @@ package com.riskdetectedan.core.designsystem
 
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-/** Ported from App/DesignSystem/RDFont.swift + RDFontScale.swift (same size/weight table). */
+/**
+ * Exact Android family for the iOS `RDTypography` contract.
+ *
+ * iOS switched every product surface to Mulish in build 87. Keeping this family in the shared
+ * design-system module makes onboarding, paywall, analysis, reports and profile resolve the same
+ * glyph metrics instead of silently falling back to Roboto.
+ */
+val RdFontFamily = FontFamily(
+    Font(R.font.mulish_regular, weight = FontWeight.Normal),
+    Font(R.font.mulish_medium, weight = FontWeight.Medium),
+    Font(R.font.mulish_semibold, weight = FontWeight.SemiBold),
+    Font(R.font.mulish_bold, weight = FontWeight.Bold),
+    Font(R.font.mulish_extrabold, weight = FontWeight.ExtraBold),
+    Font(R.font.mulish_black, weight = FontWeight.Black),
+)
+
+/** Ported from App/DesignSystem/RDFont.swift + RDFontScale.swift (same family/size/weight table). */
 enum class RdFontStyle(val baseSize: Float, val weight: FontWeight, val mono: Boolean = false) {
     LargeTitle(34f, FontWeight.Bold),
     Title1(28f, FontWeight.Bold),
@@ -45,10 +62,7 @@ fun RdFontStyle.toTextStyle(): TextStyle = TextStyle(
         else -> 0.sp
     },
     fontWeight = weight,
-    // SF Pro / SF Pro Rounded cannot be redistributed in the Android bundle. Android's
-    // platform sans family is the safe system counterpart; explicit metrics below remove
-    // Roboto's extra vertical padding and match the live iOS optical sizes more closely.
-    fontFamily = FontFamily.SansSerif,
+    fontFamily = RdFontFamily,
     fontFeatureSettings = if (mono) "tnum" else null,
     platformStyle = PlatformTextStyle(includeFontPadding = false),
 )

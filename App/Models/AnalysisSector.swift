@@ -22,7 +22,7 @@ enum AnalysisSectorID: String, Codable, CaseIterable, Identifiable, Hashable, Se
 
     static let canonicalIDs: [String] = allCases.map(\.rawValue).sorted()
 
-    static let activeAnalysisPromptVersion = "active-sector-v1"
+    static let activeAnalysisPromptVersion = "sector-profile-v2"
 
     /// Sectors shown during onboarding (profile signal). `general` is analysis-only.
     static var onboardingSelectableCases: [AnalysisSectorID] {

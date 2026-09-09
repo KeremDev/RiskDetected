@@ -1,11 +1,13 @@
 package com.riskdetectedan.core.data.legal
 
 import android.content.Context
+import com.riskdetectedan.core.common.RdClientMetadata
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.security.MessageDigest
 
 /** Real gap sweep finding (2026-08-09): Android had a bundled, counsel-reviewed legal document
  * set (`android/app/src/main/assets/legal`'s `.md` files + `manifest.json`, DEC-10) used only to compute
@@ -37,33 +39,45 @@ private data class LegalManifestEntry(
 )
 
 object LegalDocumentAssets {
-    private const val MANIFEST_PATH = "legal/manifest.json"
-    private const val DOCUMENTS_DIR = "legal"
+    private fun manifestPath(): String = if (RdClientMetadata.APP_LANGUAGE == "en") {
+        "en/manifest.json"
+    } else {
+        "legal/manifest.json"
+    }
 
-    /** Reads [MANIFEST_PATH] and every document it lists, in manifest order. Returns an empty
+    private fun documentPath(path: String): String = if (RdClientMetadata.APP_LANGUAGE == "en") {
+        path
+    } else {
+        "legal/$path"
+    }
+
+    /** Reads the active locale manifest and every document it lists, in manifest order. Returns an empty
      * list on any read/parse failure — same "honest empty state, no crash" reasoning as
      * [com.riskdetectedan.feature.paywall.PaywallScreen]'s no-packages case; the caller shows
      * that as a real (if unlikely, since these are bundled app assets) error state, not a stale
      * placeholder. */
     suspend fun load(context: Context): List<LegalDocument> = withContext(Dispatchers.IO) {
         try {
-            val manifestJson = context.assets.open(MANIFEST_PATH).use { it.readBytes() }
+            val manifestJson = context.assets.open(manifestPath()).use { it.readBytes() }
                 .decodeToString()
             val manifest = Json { ignoreUnknownKeys = true }
                 .decodeFromString(LegalManifest.serializer(), manifestJson)
             manifest.documents.mapNotNull { entry ->
-                val text = try {
-                    context.assets.open("$DOCUMENTS_DIR/${entry.path}").use { it.readBytes() }
-                        .decodeToString()
+                val documentBytes = try {
+                    context.assets.open(documentPath(entry.path)).use { it.readBytes() }
                 } catch (t: Throwable) {
                     return@mapNotNull null
                 }
+                val actualChecksum = MessageDigest.getInstance("SHA-256")
+                    .digest(documentBytes)
+                    .joinToString("") { "%02x".format(it) }
+                if (actualChecksum != entry.checksum) return@mapNotNull null
                 LegalDocument(
                     kind = entry.kind,
                     title = entry.title,
                     version = entry.version,
                     checksum = entry.checksum,
-                    text = text,
+                    text = documentBytes.decodeToString(),
                 )
             }
         } catch (t: Throwable) {

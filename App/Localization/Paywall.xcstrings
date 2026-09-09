@@ -1,6 +1,1076 @@
 {
   "sourceLanguage": "tr",
   "strings": {
+    "paywall.dark.feature": {
+      "comment": "Dark paywall feature; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Özellik"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Feature"
+          }
+        }
+      }
+    },
+    "paywall.dark.expert": {
+      "comment": "Dark paywall expert; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzman Görüşü"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expert Opinion"
+          }
+        }
+      }
+    },
+    "paywall.dark.training": {
+      "comment": "Dark paywall training; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitim Önerileri"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training Recommendations"
+          }
+        }
+      }
+    },
+    "paywall.dark.notebook": {
+      "comment": "Dark paywall notebook; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onaylı Defter Önerisi"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Official Logbook Suggestions"
+          }
+        }
+      }
+    },
+    "paywall.dark.join": {
+      "comment": "Dark paywall join; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzmanlar Arasına Katıl"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join the Experts"
+          }
+        }
+      }
+    },
+    "paywall.dark.users": {
+      "comment": "Dark paywall users; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10K+ Kullanıcı"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10K+ Users"
+          }
+        }
+      }
+    },
+    "paywall.dark.close": {
+      "comment": "Dark paywall close; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapat"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        }
+      }
+    },
+    "paywall.dark.compare": {
+      "comment": "Dark paywall compare; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planları Karşılaştır"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compare Plans"
+          }
+        }
+      }
+    },
+    "paywall.dark.no_charge": {
+      "comment": "Dark paywall no_charge; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şu An Ödeme Alınmaz"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Payment Now"
+          }
+        }
+      }
+    },
+    "paywall.dark.included": {
+      "comment": "Dark paywall included; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dahil"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Included"
+          }
+        }
+      }
+    },
+    "paywall.dark.unavailable": {
+      "comment": "Dark paywall unavailable; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dahil değil"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not included"
+          }
+        }
+      }
+    },
+    "paywall.dark.plus.headline": {
+      "comment": "Dark paywall plus.headline; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İş Güvenliğinde Güven"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confidence in Workplace Safety"
+          }
+        }
+      }
+    },
+    "paywall.dark.pro.headline": {
+      "comment": "Dark paywall pro.headline; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İş Güvenliğinde Hâkimiyet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Master Workplace Safety"
+          }
+        }
+      }
+    },
+    "paywall.dark.plus.cta": {
+      "comment": "Dark paywall plus.cta; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PLUS'a Geç"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get PLUS"
+          }
+        }
+      }
+    },
+    "paywall.dark.pro.cta": {
+      "comment": "Dark paywall pro.cta; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRO'ya Geç"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get PRO"
+          }
+        }
+      }
+    },
+    "paywall.dark.reports": {
+      "comment": "Premium PDF/Excel report export row in the plan comparison; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": { "stringUnit": { "state": "translated", "value": "PDF/Excel Rapor" } },
+        "en": { "stringUnit": { "state": "translated", "value": "PDF/Excel Reports" } }
+      }
+    },
+    "paywall.dark.plus.feature.1": {
+      "comment": "Dark paywall plus.feature.1; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gerçek risk analizi"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Real risk analysis"
+          }
+        }
+      }
+    },
+    "paywall.dark.plus.feature.2": {
+      "comment": "Dark paywall plus.feature.2; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güçlü uzman desteği"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strong expert support"
+          }
+        }
+      }
+    },
+    "paywall.dark.plus.feature.3": {
+      "comment": "Dark paywall plus.feature.3; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Derin araştırma tespitleri"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In-depth research findings"
+          }
+        }
+      }
+    },
+    "paywall.dark.plus.feature.4": {
+      "comment": "Dark paywall plus.feature.4; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF/Excel Rapor&Paylaşma"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF/Excel reports & sharing"
+          }
+        }
+      }
+    },
+    "paywall.dark.pro.feature.1": {
+      "comment": "Dark paywall pro.feature.1; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detaylı risk tespitleri"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detailed risk findings"
+          }
+        }
+      }
+    },
+    "paywall.dark.pro.feature.2": {
+      "comment": "Dark paywall pro.feature.2; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bütüncül/Kapsayıcı tehlikeler"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprehensive hazard coverage"
+          }
+        }
+      }
+    },
+    "paywall.dark.pro.feature.3": {
+      "comment": "Dark paywall pro.feature.3; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sınırsız özellikler"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlimited features"
+          }
+        }
+      }
+    },
+    "paywall.dark.pro.feature.4": {
+      "comment": "Dark paywall pro.feature.4; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güçlü model desteği"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powerful AI model support"
+          }
+        }
+      }
+    },
+    "paywall.design.cross_sell.plus.prefix": {
+      "comment": "paywall design PLUS cross-sell sentence prefix; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For the essential features, explore our "
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temel özellikler için "
+          }
+        }
+      }
+    },
+    "paywall.design.cross_sell.plus.suffix": {
+      "comment": "paywall design PLUS cross-sell sentence suffix; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " membership"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " üyeliğimizi inceleyin"
+          }
+        }
+      }
+    },
+    "paywall.design.cross_sell.pro.prefix": {
+      "comment": "paywall design PRO cross-sell sentence prefix; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For more advanced and unlimited features, explore our "
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha gelişmiş ve sınırsız özellikler için "
+          }
+        }
+      }
+    },
+    "paywall.design.cross_sell.pro.suffix": {
+      "comment": "paywall design PRO cross-sell sentence suffix; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " membership"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " üyeliğimizi inceleyin"
+          }
+        }
+      }
+    },
+    "paywall.design.cta.start_trial": {
+      "comment": "paywall design primary button title when a free trial offer exists; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start free trial"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ücretsiz Denemeyi Başlat"
+          }
+        }
+      }
+    },
+    "paywall.design.feature.archive_management": {
+      "comment": "paywall design feature marquee label; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive Management"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşiv Yönetimi"
+          }
+        }
+      }
+    },
+    "paywall.design.feature.assignee": {
+      "comment": "paywall design feature marquee label; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Owner Assignment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorumlu Atama"
+          }
+        }
+      }
+    },
+    "paywall.design.feature.fine_kinney": {
+      "comment": "paywall design feature marquee label; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-Kinney"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-Kinney"
+          }
+        }
+      }
+    },
+    "paywall.design.feature.focused_analysis": {
+      "comment": "paywall design feature marquee label; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Focused Analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odaklı Analiz"
+          }
+        }
+      }
+    },
+    "paywall.design.feature.matrix_5x5": {
+      "comment": "paywall design feature marquee label; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5×5 Matrix"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5x5 Matris"
+          }
+        }
+      }
+    },
+    "paywall.design.feature.report_customization": {
+      "comment": "paywall design feature marquee label; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report Customization"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor Özelleştirme"
+          }
+        }
+      }
+    },
+    "paywall.design.footer.auto_renew": {
+      "comment": "paywall design footer legal line; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renews automatically. Cancel any time."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otomatik yenilenir. İstediğiniz zaman iptal edin."
+          }
+        }
+      }
+    },
+    "paywall.design.footer.manage": {
+      "comment": "paywall design footer App Store subscription management link; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İptal Hakkı"
+          }
+        }
+      }
+    },
+    "paywall.design.footer.privacy": {
+      "comment": "paywall design footer privacy link; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gizlilik"
+          }
+        }
+      }
+    },
+    "paywall.design.footer.renewal_monthly_format": {
+      "comment": "paywall design footer renewal price for the monthly plan; placeholders: %1$@ = store price",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ / month"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ / ay"
+          }
+        }
+      }
+    },
+    "paywall.design.footer.renewal_yearly_format": {
+      "comment": "paywall design footer renewal price for the yearly plan; placeholders: %1$@ = store price",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ / year"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ / yıl"
+          }
+        }
+      }
+    },
+    "paywall.design.footer.restore": {
+      "comment": "paywall design footer restore purchases link; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri Yükle"
+          }
+        }
+      }
+    },
+    "paywall.design.footer.terms": {
+      "comment": "paywall design footer terms link; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terms"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koşullar"
+          }
+        }
+      }
+    },
+    "paywall.design.footer.cancellable_disclosure_format": {
+      "comment": "CTA disclosure for PLUS monthly and PRO monthly/yearly; placeholder: %1$@ is the localized store price with billing period. Do not translate or reformat the supplied price.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · You can cancel anytime."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · İstediğin zaman iptal edebilirsin."
+          }
+        }
+      }
+    },
+    "paywall.design.footer.trial_disclosure_yearly_format": {
+      "comment": "compact CTA disclosure for a yearly free trial; placeholders: %1$@ = trial days, %2$@ = localized store price",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ days free, then %2$@ / year."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ gün ücretsiz, ardından %2$@ / yıl."
+          }
+        }
+      }
+    },
+    "paywall.design.hero.benefits_format": {
+      "comment": "paywall design hero pill copy for benefits view; placeholders: %1$@ = plan name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ subscription benefits"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ Abonelik Avantajları"
+          }
+        }
+      }
+    },
+    "paywall.design.hero.trial_headline": {
+      "comment": "paywall design hero pill copy for the trial timeline; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How does the free trial work?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ücretsiz Deneme Nasıl Çalışır?"
+          }
+        }
+      }
+    },
+    "paywall.design.plan.badge.popular": {
+      "comment": "paywall design annual plan card badge; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Popular"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Popüler"
+          }
+        }
+      }
+    },
+    "paywall.design.plan.discount_format": {
+      "comment": "paywall design annual plan discount badge; placeholders: %1$@ = discount percentage",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@%% off"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%%%1$@ İndirim"
+          }
+        }
+      }
+    },
+    "paywall.design.plan.monthly_caption": {
+      "comment": "paywall design monthly plan card caption; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "/ month"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "/ Ay"
+          }
+        }
+      }
+    },
+    "paywall.design.plan.per_month_format": {
+      "comment": "paywall design annual plan card monthly equivalent caption; placeholders: %1$@ = monthly equivalent price",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ / month"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ / Ay"
+          }
+        }
+      }
+    },
+    "paywall.design.plan.per_year_format": {
+      "comment": "paywall design yearly plan card total price line; placeholders: %1$@ = store price",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ / year"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ / Yıl"
+          }
+        }
+      }
+    },
+    "paywall.design.plan.trial_note_format": {
+      "comment": "paywall design annual plan card free trial note; placeholders: %1$@ = trial day count",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ days free"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ gün ücretsiz"
+          }
+        }
+      }
+    },
+    "paywall.design.plan.yearly_caption": {
+      "comment": "paywall design annual plan card caption when monthly equivalent is unavailable; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "/ year"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "/ Yıl"
+          }
+        }
+      }
+    },
+    "paywall.design.social_proof.accessibility": {
+      "comment": "paywall design hero social proof image accessibility label; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10,000+ users, the choice of OHS professionals"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10.000+ kullanıcı, İSG uzmanlarının tercihi"
+          }
+        }
+      }
+    },
+    "paywall.design.timeline.billing.detail": {
+      "comment": "paywall design trial timeline billing step detail; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your subscription is active. Cancel any time."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aboneliğiniz aktif. İstediğiniz zaman iptal."
+          }
+        }
+      }
+    },
+    "paywall.design.timeline.day_format": {
+      "comment": "paywall design trial timeline step title; placeholders: %1$@ = day number",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Day %1$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@. Gün"
+          }
+        }
+      }
+    },
+    "paywall.design.timeline.reminder.detail": {
+      "comment": "paywall design trial timeline reminder step detail; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We will remind you before your trial ends"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deneme süreniz bitmeden size hatırlatacağız"
+          }
+        }
+      }
+    },
+    "paywall.design.timeline.today.detail_format": {
+      "comment": "paywall design trial timeline first step detail; placeholders: %1$@ = plan name",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get instant access to all %1$@ features"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm %1$@ özelliklerine anında erişim kazanın"
+          }
+        }
+      }
+    },
+    "paywall.design.timeline.today.title": {
+      "comment": "paywall design trial timeline first step title; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün"
+          }
+        }
+      }
+    },
+    "paywall.design.value.unlimited": {
+      "comment": "paywall design comparison table value for unlimited quota; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlimited"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limitsiz"
+          }
+        }
+      }
+    },
     "paywall.in.app.paywall.view.1.gun.48502c81": {
       "comment": "swift_user_copy; App/Views/Paywall/InAppPaywallView.swift:1167; placeholders: none; review: machine_draft",
       "extractionState": "manual",

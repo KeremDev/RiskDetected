@@ -30,6 +30,10 @@ struct SubscriptionPlanPackage: Identifiable, Equatable {
     let monthlyEquivalentPrice: String?
     let subtitle: String
     let productIdentifier: String
+    /// App Store fiyatının sayısal karşılığı; yıllık indirim oranını hesaplamak için.
+    var priceAmount: Decimal? = nil
+    /// Ücretsiz deneme gün sayısı (introductory offer). Teklif yoksa nil.
+    var introductoryFreeTrialDays: Int? = nil
 
     var displayPrice: String? {
         Self.displayableStorePrice(price)
@@ -230,6 +234,11 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
                 ? offerings.current
                 : offerings.offering(identifier: configuredOfferingID)
             let allPackages = selectedOffering?.availablePackages ?? []
+            // A configured trial is not necessarily available to this App Store
+            // account. Unknown/ineligible customers see the regular store price.
+            let eligibility = await Purchases.shared.checkTrialOrIntroDiscountEligibility(
+                productIdentifiers: allPackages.map { $0.storeProduct.productIdentifier }
+            )
             #if DEBUG
             let selectedOfferingLabel = selectedOffering?.identifier ?? "nil"
             Self.writeDiagnostics("RD_REVENUECAT_SELECTED_OFFERING \(selectedOfferingLabel)")
@@ -247,9 +256,12 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
                         tier: tier,
                         title: tier.title,
                         price: package.localizedPriceString,
-                        monthlyEquivalentPrice: package.storeProduct.localizedPricePerMonth,
+                        monthlyEquivalentPrice: Self.monthlyEquivalentPrice(for: package),
                         subtitle: Self.subtitle(for: package),
-                        productIdentifier: package.storeProduct.productIdentifier
+                        productIdentifier: package.storeProduct.productIdentifier,
+                        priceAmount: package.storeProduct.price,
+                        introductoryFreeTrialDays: eligibility[package.storeProduct.productIdentifier]?.status == .eligible
+                            ? Self.introductoryFreeTrialDays(for: package) : nil
                     )
                 )
 
@@ -409,6 +421,21 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
                 errorMessage: mappedError.localizedDescription
             )
             throw mappedError
+        }
+        if let transaction = result.transaction {
+            let entitlement = result.customerInfo.entitlements.active.values.first {
+                $0.productIdentifier == package.storeProduct.productIdentifier
+            }
+            let subscription = result.customerInfo.subscriptionsByProductIdentifier[package.storeProduct.productIdentifier]
+            // Never substitute list price for a discounted/introductory transaction.
+            let paidPrice = subscription?.storeTransactionId == transaction.transactionIdentifier ? subscription?.price : nil
+            MetaAppEventsService.shared.purchase(
+                transactionID: transaction.transactionIdentifier,
+                productID: package.storeProduct.productIdentifier,
+                isTrial: entitlement?.periodType == .trial,
+                price: paidPrice?.amount,
+                currency: paidPrice?.currency
+            )
         }
         return apply(result.customerInfo, preferredProductIdentifier: package.storeProduct.productIdentifier)
     }
@@ -613,9 +640,57 @@ final class RevenueCatSubscriptionManager: NSObject, ObservableObject, Subscript
         )
     }
 
+    /// Yıllık paketin aylık karşılığı. RevenueCat bunu yalnızca abonelik dönemini
+    /// çözebildiğinde döndürür; dönemi bilinmeyen yıllık pakette tutar 12'ye bölünüp
+    /// ürünün kendi para biriminde yazılır. Fiyatın kaynağı yine mağazadır, yalnızca
+    /// gösterim türetilir; tutar okunamazsa nil döner ve ekran o satırı hiç göstermez.
+    private static func monthlyEquivalentPrice(for package: Package) -> String? {
+        if let provided = package.storeProduct.localizedPricePerMonth,
+           !provided.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return provided
+        }
+        guard isYearly(package), package.storeProduct.price > 0 else { return nil }
+        guard let currencyCode = package.storeProduct.currencyCode else { return nil }
+
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = .autoupdatingCurrent
+        formatter.currencyCode = currencyCode
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 2
+        return formatter.string(from: NSDecimalNumber(decimal: package.storeProduct.price / 12))
+    }
+
+    /// Paket türü çözülemediğinde kimlik belirteçlerine bakılır — paywall'daki
+    /// `matchesDesignPaywall(_:)` ile aynı liste.
+    private static func isYearly(_ package: Package) -> Bool {
+        if package.packageType == .annual { return true }
+        let token = [package.identifier, package.storeProduct.productIdentifier]
+            .joined(separator: " ")
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .autoupdatingCurrent)
+            .lowercased(with: .autoupdatingCurrent)
+        return ["annual", "yearly", "year", "yillik", "yil"].contains { token.contains($0) }
+    }
+
     private static func tier(for package: Package) -> SubscriptionTier? {
         tier(fromProductIdentifier: package.storeProduct.productIdentifier)
             ?? tier(fromProductIdentifier: package.identifier)
+    }
+
+    /// RevenueCat introductory offer'ı ücretsiz denemeye çevirir. Teklif tanımlı
+    /// değilse nil döner; paywall deneme anlatımını yalnızca teklif varken gösterir.
+    private static func introductoryFreeTrialDays(for package: Package) -> Int? {
+        guard let discount = package.storeProduct.introductoryDiscount,
+              discount.paymentMode == .freeTrial else { return nil }
+        let period = discount.subscriptionPeriod
+        let periods = max(1, discount.numberOfPeriods)
+        switch period.unit {
+        case .day: return period.value * periods
+        case .week: return period.value * 7 * periods
+        case .month: return period.value * 30 * periods
+        case .year: return period.value * 365 * periods
+        @unknown default: return nil
+        }
     }
 
     private static func subtitle(for package: Package) -> String {

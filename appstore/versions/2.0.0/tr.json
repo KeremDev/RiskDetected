@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "locale": "tr",
+  "version": "2.0.0",
+  "market": "Türkiye",
+  "app_info": {
+    "name": "RiskDetected: İş Güvenliği İSG",
+    "subtitle": "Risk Analizi, Denetim Raporu",
+    "privacy_policy_url": "https://riskdetected.com/gizlilik"
+  },
+  "version_info": {
+    "promotional_text": "Sahadaki fotoğrafı dakikalar içinde risk raporuna çevir. Fine-Kinney ve 5x5 skorlama, kanıta bağlı bulgular, PDF ve Excel çıktısı.",
+    "description": "RiskDetected, iş güvenliği ve İSG risk analizi süreçlerinde saha fotoğrafı ile tehlike, uygunsuzluk ve riskleri değerlendirip PDF/Excel risk raporu hazırlamanıza yardımcı olur.\n\nİş güvenliği uzmanları, OSGB ekipleri, işveren vekilleri ve saha sorumluları için geliştirilen RiskDetected; Fine-Kinney ve 5x5 Matris yöntemleriyle riskleri önceliklendirmeyi, kontrol tedbirlerini netleştirmeyi ve raporları arşivlemeyi kolaylaştırır.\n\nÖne çıkan özellikler:\n• Fotoğraf ile İSG risk analizi\n• Fine-Kinney ve 5x5 Matris risk değerlendirme çıktıları\n• PDF ve Excel risk raporu oluşturma\n• Tehlike, uygunsuzluk ve kontrol tedbiri önerileri\n• Rapor arşivi, indirme ve paylaşım\n• Firma bilgisi, hazırlayan bilgisi ve logo ile rapor özelleştirme\n• OSGB ve iş güvenliği uzmanları için saha denetim akışı\n• KVKK ve gizlilik hassasiyetiyle veri yönetimi\n\nRiskDetected; iş sağlığı ve güvenliği, risk değerlendirme, saha denetimi ve risk raporlama süreçlerinde zaman kazanmak isteyen profesyoneller için tasarlanmıştır.\n\nUygulama yapay zeka destekli analizler sunar. AI çıktıları profesyonel değerlendirme, mevzuat yorumu veya saha kontrolünün yerine geçmez. Nihai karar, kontrol ve uygunluk değerlendirmesi yetkili iş güvenliği uzmanı veya sorumlu kişi tarafından yapılmalıdır.\n\nBazı gelişmiş özellikler uygulama içi abonelik gerektirebilir. Abonelikler App Store üzerinden yönetilir.\n\nKullanım Koşulları: https://riskdetected.com/kullanim-kosullari\nGizlilik Politikası: https://riskdetected.com/gizlilik\nApple Standart Lisans Sözleşmesi (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
+    "keywords": "osgb,is guvenligi,değerlendirme,uzmanı,sağlığı,tehlike,tespit,uygunsuzluk,ramak,kala,saha,matris,5x5",
+    "marketing_url": "https://riskdetected.com",
+    "support_url": "https://riskdetected.com",
+    "whats_new": "RiskDetected 2.0 ile analiz deneyimi baştan sona yenilendi:\n\n• Risk Analizi, Uzman Görüşü, Onaylı Defter ve Eğitim Önerileri yeni sonuç merkezinde bir araya getirildi.\n• Bulgu detayları, düzeltici önlemler, önleyici faaliyetler ve mevzuat alanları geliştirildi.\n• PDF ve Excel raporları daha kapsamlı hale getirildi.\n• Free, Plus ve Pro üyelik deneyimleri yenilendi.\n• Geri bildirim, paylaşım ve rapor arşivi akışları iyileştirildi.\n• Karanlık mod, yerelleştirme, performans ve kararlılık güncellemeleri yapıldı."
+  },
+  "screenshots": {
+    "source_theme": "legacy-1.3.4",
+    "captions": [
+      "01: 1.3.4 ekran görüntüsü 01",
+      "02: 1.3.4 ekran görüntüsü 02",
+      "03: 1.3.4 ekran görüntüsü 05",
+      "04: 1.3.4 ekran görüntüsü 03",
+      "05: 1.3.4 ekran görüntüsü 04",
+      "06: 1.3.4 ekran görüntüsü 06",
+      "07: 1.3.4 ekran görüntüsü 07"
+    ]
+  }
+}

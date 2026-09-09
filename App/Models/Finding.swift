@@ -9,7 +9,7 @@ enum RiskMethod: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .fineKinney: return RDLocalization.string("analysis.finding.fine.kinney.224a34d8", table: .analysis, fallback: "İnce Kinney")
+        case .fineKinney: return RDLocalization.string("analysis.finding.fine.kinney.224a34d8", table: .analysis, fallback: "Fine-Kinney")
         case .matrix5x5:  return RDLocalization.string("analysis.finding.5.5.l.tipi.f434fdf5", table: .analysis, fallback: "5×5 L-Tipi")
         }
     }
@@ -140,6 +140,7 @@ struct Finding: Identifiable, Hashable {
     let references: String
     let rootCause: String
     let needsFieldVerification: Bool
+    let isScored: Bool
     let fk: FineKinneyParams
     let m5: FiveByFiveParams
 
@@ -154,6 +155,7 @@ struct Finding: Identifiable, Hashable {
         references: String,
         rootCause: String,
         needsFieldVerification: Bool = false,
+        isScored: Bool = true,
         fk: FineKinneyParams,
         m5: FiveByFiveParams
     ) {
@@ -167,6 +169,7 @@ struct Finding: Identifiable, Hashable {
         self.references = references
         self.rootCause = rootCause
         self.needsFieldVerification = needsFieldVerification
+        self.isScored = isScored
         self.fk = fk
         self.m5 = m5
     }

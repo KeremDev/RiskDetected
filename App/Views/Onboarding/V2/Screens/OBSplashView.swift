@@ -260,7 +260,7 @@ private struct OBSplashFloatingChip: View {
                 switch kind {
                 case .warning:
                     Image(systemName: "exclamationmark.triangle")
-                        .font(.system(size: RDFontScale.size(11), weight: .bold))
+                        .font(RDTypography.font(size: RDFontScale.size(11), weight: .bold))
                         .foregroundStyle(accent)
                 case .spinner:
                     OBSplashSpinnerIcon(color: accent)
@@ -271,13 +271,13 @@ private struct OBSplashFloatingChip: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 Text(title)
-                    .font(.system(size: RDFontScale.size(10.5), weight: .heavy, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(10.5), weight: .heavy, design: .rounded))
                     .foregroundStyle(OBSplashColor.title)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
 
                 Text(subtitle)
-                    .font(.system(size: RDFontScale.size(9.2), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(9.2), weight: .bold, design: .rounded))
                     .foregroundStyle(accent)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -332,7 +332,7 @@ private struct OBSplashBottomSheet: View {
                 .padding(.top, 16)
 
             Text(RDLocalization.string("onboarding.obsplash.view.fotograf.cek.yapay.zeka.tehlikeleri.otomatik.tes.2173ee63", table: .onboarding, fallback: "Fotoğraf çek; yapay zekâ tehlikeleri otomatik tespit etsin, raporun anında oluşsun ve tek tıklama ile paylaş."))
-                .font(.system(size: RDFontScale.size(14.5), weight: .regular, design: .rounded))
+                .font(RDTypography.font(size: RDFontScale.size(14.5), weight: .regular, design: .rounded))
                 .foregroundStyle(OBSplashColor.slate)
                 .multilineTextAlignment(.center)
                 .lineSpacing(2)
@@ -347,7 +347,7 @@ private struct OBSplashBottomSheet: View {
                 onSkip?()
             } label: {
                 Text(RDLocalization.string("onboarding.obsplash.view.atla.d0c256d2", table: .onboarding, fallback: "Atla"))
-                    .font(.system(size: RDFontScale.size(14.5), weight: .semibold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(14.5), weight: .semibold, design: .rounded))
                     .foregroundStyle(OBSplashColor.slate)
                     .frame(height: 28)
                     .frame(maxWidth: .infinity)
@@ -400,10 +400,10 @@ private struct OBSplashCTAButton: View {
         } label: {
             HStack(spacing: 8) {
                 Text(RDLocalization.string("onboarding.obsplash.view.devam.et.a9d4eef4", table: .onboarding, fallback: "Devam Et"))
-                    .font(.system(size: RDFontScale.size(16.5), weight: .bold, design: .rounded))
+                    .font(RDTypography.font(size: RDFontScale.size(16.5), weight: .bold, design: .rounded))
 
                 Image(systemName: "arrow.right")
-                    .font(.system(size: RDFontScale.size(15.5), weight: .bold))
+                    .font(RDTypography.font(size: RDFontScale.size(15.5), weight: .bold))
             }
             .foregroundStyle(Color.white)
             .frame(maxWidth: .infinity)

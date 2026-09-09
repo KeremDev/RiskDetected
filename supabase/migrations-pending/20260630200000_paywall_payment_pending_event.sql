@@ -5,6 +5,7 @@ alter table public.paywall_events
   add constraint paywall_events_event_name_check
     check (
       event_name in (
+        'entry_tap',
         'view',
         'close',
         'cta_tap',
@@ -13,6 +14,7 @@ alter table public.paywall_events
         'purchase_started',
         'purchase_succeeded',
         'purchase_failed',
+        'purchase_cancelled',
         'payment_pending',
         'restore_tap',
         'personal_plan_view',

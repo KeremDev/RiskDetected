@@ -5,10 +5,10 @@
   "platform": "IOS",
   "primary_locale": "tr",
   "release": {
-    "version": "1.3.2",
-    "build_number": "82",
-    "build_id": "976c3660-c1e3-4535-b22a-7f6f9d27a4ff",
-    "release_type": "MANUAL",
+    "version": "2.0.1",
+    "build_number": "89",
+    "build_id": "29c24224-bbba-4756-bb07-34300084a624",
+    "release_type": "AFTER_APPROVAL",
     "copyright": "2026 RiskDetected"
   },
   "locales": [
@@ -40,11 +40,11 @@
     }
   },
   "screenshots": {
-    "theme": "light",
+    "theme": "legacy-1.3.4",
     "orientation": "portrait",
     "display_size": "6.9-inch",
-    "accepted_pixel_size": "1290x2796",
-    "slides_per_locale": 5,
+    "accepted_pixel_size": "1320x2868",
+    "slides_per_locale": 9,
     "source_data": "synthetic_debug_fixtures",
     "final_root": "appstore/screenshots/final"
   },
@@ -64,8 +64,8 @@
     "ASC_ALLOW_RELEASE": 0
   },
   "production_policy": {
-    "current_live_version": "1.3.1",
-    "current_live_build": "81",
+    "current_live_version": "1.3.4",
+    "current_live_build": "86",
     "localization_rollout_must_remain_off": false,
     "review_submission_performed_by_automation": true,
     "release_performed_by_automation": false

@@ -47,6 +47,8 @@ data class Finding(
     @SerialName("recommended_action") val recommendedAction: String? = null,
     @SerialName("recommended_measures") val recommendedMeasures: List<FindingMeasure>? = null,
     val confidence: Double = 0.0,
+    @SerialName("item_class") val itemClass: String = "observed_finding",
+    @SerialName("is_scored") val isScored: Boolean = true,
     @SerialName("needs_field_verification") val needsFieldVerification: Boolean = false,
     @SerialName("source_photo_indices") val sourcePhotoIndices: List<Int> = emptyList(),
     @SerialName("fk_probability") val fkProbability: Double? = null,
@@ -61,6 +63,7 @@ data class Finding(
     @SerialName("references_text") val referencesText: String? = null,
     @SerialName("root_cause_text") val rootCauseText: String? = null,
     @SerialName("finding_version") val findingVersion: Int = 1,
+    @SerialName("display_order") val displayOrder: Int? = null,
 )
 
 /**
@@ -141,7 +144,7 @@ internal object FindingMutationErrorMapper {
         val code = payload?.error?.takeIf(String::isNotBlank) ?: fallbackCode
         val baseMessage = payload?.message?.takeIf(String::isNotBlank) ?: fallbackMessage
         val message = payload?.supportId?.takeIf(String::isNotBlank)?.let { supportId ->
-            "$baseMessage Destek kodu: $supportId"
+            "$baseMessage ${analysisCopy("Destek kodu", "Support code")}: $supportId"
         } ?: baseMessage
         return FindingMutationFailure(code, message)
     }
@@ -158,21 +161,21 @@ object FineKinneyValues {
 internal object FindingPatchValidator {
     fun validate(patch: FindingPatch): RdResult.Failure? = when {
         patch.title != null && patch.title.isBlank() ->
-            RdResult.Failure("validation_failed", "Başlık boş olamaz.")
+            RdResult.Failure("validation_failed", analysisCopy("Başlık boş olamaz.", "Title cannot be empty."))
         patch.description != null && patch.description.isBlank() ->
-            RdResult.Failure("validation_failed", "Açıklama boş olamaz.")
+            RdResult.Failure("validation_failed", analysisCopy("Açıklama boş olamaz.", "Description cannot be empty."))
         patch.fkProbability != null && patch.fkProbability !in FineKinneyValues.PROBABILITY ->
-            RdResult.Failure("validation_failed", "Geçersiz olasılık değeri.")
+            RdResult.Failure("validation_failed", analysisCopy("Geçersiz olasılık değeri.", "Invalid probability value."))
         patch.fkFrequency != null && patch.fkFrequency !in FineKinneyValues.FREQUENCY ->
-            RdResult.Failure("validation_failed", "Geçersiz frekans değeri.")
+            RdResult.Failure("validation_failed", analysisCopy("Geçersiz frekans değeri.", "Invalid frequency value."))
         patch.fkSeverity != null && patch.fkSeverity !in FineKinneyValues.SEVERITY ->
-            RdResult.Failure("validation_failed", "Geçersiz şiddet değeri.")
+            RdResult.Failure("validation_failed", analysisCopy("Geçersiz şiddet değeri.", "Invalid severity value."))
         patch.m5Probability != null && patch.m5Probability !in 1..5 ->
-            RdResult.Failure("validation_failed", "Olasılık 1-5 arasında olmalı.")
+            RdResult.Failure("validation_failed", analysisCopy("Olasılık 1-5 arasında olmalı.", "Probability must be between 1 and 5."))
         patch.m5Severity != null && patch.m5Severity !in 1..5 ->
-            RdResult.Failure("validation_failed", "Şiddet 1-5 arasında olmalı.")
+            RdResult.Failure("validation_failed", analysisCopy("Şiddet 1-5 arasında olmalı.", "Severity must be between 1 and 5."))
         patch.recommendedMeasures != null && patch.recommendedMeasures.none { it.text.isNotBlank() } ->
-            RdResult.Failure("validation_failed", "En az bir önlem metni girilmeli.")
+            RdResult.Failure("validation_failed", analysisCopy("En az bir önlem metni girilmeli.", "Enter at least one measure."))
         else -> null
     }
 }
@@ -281,11 +284,11 @@ class FindingsRepository @Inject constructor(
             } else {
                 RdResult.Failure(
                     code = result.error ?: "finding_update_failed",
-                    message = result.message ?: "Bulgu güncellenemedi.",
+                    message = result.message ?: analysisCopy("Bulgu güncellenemedi.", "Finding could not be updated."),
                 )
             }
         } catch (t: Throwable) {
-            mutationFailure(t, "finding_update_failed", "Bulgu güncellenemedi.")
+            mutationFailure(t, "finding_update_failed", analysisCopy("Bulgu güncellenemedi.", "Finding could not be updated."))
         }
     }
 
@@ -308,3 +311,6 @@ class FindingsRepository @Inject constructor(
         return RdResult.Failure(mapped.code, mapped.message, throwable)
     }
 }
+
+private fun analysisCopy(tr: String, en: String): String =
+    if (RdClientMetadata.APP_LANGUAGE == "en") en else tr
