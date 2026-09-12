@@ -12,35 +12,41 @@ import UIKit
 
 struct ShellHarnessRoot: View {
     private let args = Set(ProcessInfo.processInfo.arguments)
-    @State private var navigation: NovaNavigationState
+    @State private var sessionHost: NovaSessionHost
     @State private var staleAction: (() -> Void)?
-    @State private var notices = [
+    @State private var delayedResponse: (() -> Void)?
+    @State private var noticeSnapshot: NovaScopedValue<[NovaNotice]>?
+    private static let fixtureNotices = [
         NovaNotice(id: "overdue", title: "Termini geçen aksiyonlar", detail: "Geciken düzeltmeleri önceliklendirerek inceleyin.", count: 1, symbol: "risk", tone: .statusDangerInk),
         NovaNotice(id: "active", title: "Aktif uygunsuzluklar", detail: "Sorumluluğunuzdaki firmalarda halen açık bulunan kayıtlar.", count: 1, symbol: "bell.fill", tone: .statusInfoInk)
     ]
 
     init() {
         let args = Set(ProcessInfo.processInfo.arguments)
-        var initial = NovaNavigationState(epoch: "synthetic-a", available: args.contains("--locked") ? [] : Set(NovaDestination.allCases))
+        var initial = Self.readyHost(identity: Self.actorA, enabled: args.contains("--locked") ? [] : Set(NovaDestination.allCases))
         if args.contains("--stack") {
-            initial.apply(.navigate(.memory), from: "synthetic-a")
-            initial.apply(.navigate(.documents), from: "synthetic-a")
+            initial.apply(.navigate(.memory), from: initial.navigation.epoch)
+            initial.apply(.navigate(.documents), from: initial.navigation.epoch)
         }
-        if args.contains("--companies") { initial.apply(.select(.companies), from: "synthetic-a") }
-        if args.contains("--drawer") { initial.apply(.open(.drawer), from: "synthetic-a") }
-        if args.contains("--add") { initial.apply(.open(.quickAdd), from: "synthetic-a") }
-        if args.contains("--notices") { initial.apply(.open(.notifications), from: "synthetic-a") }
-        _navigation = State(initialValue: initial)
+        if args.contains("--companies") { initial.apply(.select(.companies), from: initial.navigation.epoch) }
+        if args.contains("--drawer") { initial.apply(.open(.drawer), from: initial.navigation.epoch) }
+        if args.contains("--add") { initial.apply(.open(.quickAdd), from: initial.navigation.epoch) }
+        if args.contains("--notices") { initial.apply(.open(.notifications), from: initial.navigation.epoch) }
+        _sessionHost = State(initialValue: initial)
+        _noticeSnapshot = State(initialValue: initial.scope(Self.fixtureNotices, from: initial.navigation.epoch))
     }
 
     var body: some View {
         let fontsOK = Set(NovaTypeToken.allCases.map { $0.spec.fontName }).allSatisfy { UIFont(name: $0, size: 15) != nil }
+        let renderedEpoch = navigation.epoch
+        let navigate: (NovaDestination) -> Void = { sessionHost.apply(.navigate($0), from: renderedEpoch) }
         VStack(spacing: 0) {
-            NovaExpertShell(navigation: $navigation, userName: "Kerem Kaya", hasUnread: notices.contains(where: \.unread),
+            if sessionHost.phase == .ready {
+            NovaExpertShell(navigation: navigationBinding, userName: sessionHost.identity == Self.actorA ? "Kerem Kaya" : "Örnek B", hasUnread: notices.contains(where: \.unread),
                 notificationItems: notices, connectionLabel: "Çevrimiçi",
-                onReadAll: { notices = notices.map { var n = $0; n.unread = false; return n } },
-                onClearNotifications: { notices = [] },
-                onLogout: { navigation.resetAccount(to: "signed-out-preview", available: []) }) { destination in
+                onReadAll: { noticeSnapshot = sessionHost.scope(notices.map { var n = $0; n.unread = false; return n }, from: navigation.epoch) },
+                onClearNotifications: { noticeSnapshot = sessionHost.scope([], from: navigation.epoch) },
+                onLogout: { sessionHost.adopt(nil) }) { destination in
                 if args.contains("--design"), destination == .home {
                     NovaDashboardScreen(data: Self.dashboard, onNavigate: navigate,
                         onPhoto: { navigate(.newFinding) }, onAssistant: { navigate(.newFinding) }, onFinding: { _ in navigate(.findings) })
@@ -52,27 +58,55 @@ struct ShellHarnessRoot: View {
             .frame(maxWidth: args.contains("--compact") ? 320 : .infinity)
             .environment(\.dynamicTypeSize, args.contains("--ax3") ? .accessibility3 : .large)
             .preferredColorScheme(args.contains("--dark") ? .dark : .light)
+            } else {
+                Text("QA · \(sessionHost.phase.rawValue)").accessibilityIdentifier("qa.host.unavailable")
+            }
             if args.contains("--qa-toolbar") {
                 VStack(spacing: 4) {
-                    Text("QA · \(navigation.epoch) · \(navigation.selected.rawValue) · \(navigation.current.rawValue) · fonts=\(fontsOK ? "ok" : "FAIL")")
+                    Text("QA · \(sessionHost.identity == Self.actorA ? "synthetic-a" : "synthetic-b") · \(navigation.selected.rawValue) · \(navigation.current.rawValue) · fonts=\(fontsOK ? "ok" : "FAIL")")
                         .font(.system(size: 10)).accessibilityIdentifier("qa.state")
                     HStack {
                         Button("Yakalama") {
                             let captured = navigation.epoch
-                            staleAction = { navigation.apply(.navigate(.notifications), from: captured) }
+                            staleAction = { sessionHost.apply(.navigate(.notifications), from: captured) }
                         }.accessibilityIdentifier("qa.capture")
-                        Button("Hesap reset") { navigation.resetAccount(to: "synthetic-b", available: []) }
+                        Button("Hesap reset") { sessionHost.adopt(Self.actorB); resolveImmediately([]) }
                             .accessibilityIdentifier("qa.reset")
                         Button("Eski işlem") { staleAction?() }.accessibilityIdentifier("qa.replay")
-                        Button("İzin kaldır") { navigation.updateAvailability([], from: navigation.epoch) }
+                        Button("İzin kaldır") { resolveImmediately([]) }
                             .accessibilityIdentifier("qa.revoke")
+                    }.font(.system(size: 11)).buttonStyle(.bordered)
+                    HStack {
+                        Button("Yetki yenile") {
+                            guard let ticket = sessionHost.beginAvailabilityRefresh() else { return }
+                            delayedResponse = { sessionHost.resolve(ticket, ownerID: Self.actorA.userID, enabled: Set(NovaDestination.allCases)) }
+                        }.accessibilityIdentifier("qa.host.refresh")
+                        Button("Yanıtı getir") { delayedResponse?() }.accessibilityIdentifier("qa.host.deliver")
                     }.font(.system(size: 11)).buttonStyle(.bordered)
                 }.padding(4).background(.yellow.opacity(0.15))
             }
         }
     }
 
-    private func navigate(_ destination: NovaDestination) { navigation.apply(.navigate(destination), from: navigation.epoch) }
+    private var navigation: NovaNavigationState { sessionHost.navigation }
+    private var notices: [NovaNotice] { sessionHost.value(from: noticeSnapshot) ?? [] }
+    private var navigationBinding: Binding<NovaNavigationState> {
+        let epoch = navigation.epoch
+        return Binding(get: { sessionHost.navigation }, set: { sessionHost.acceptNavigation($0, from: epoch) })
+    }
+    private func resolveImmediately(_ enabled: Set<NovaDestination>) {
+        guard let actor = sessionHost.identity, let ticket = sessionHost.beginAvailabilityRefresh() else { return }
+        sessionHost.resolve(ticket, ownerID: actor.userID, enabled: enabled)
+    }
+    private static let actorA = NovaSessionIdentity(userID: UUID(uuidString: "11111111-1111-4111-8111-111111111111")!, sessionID: UUID(uuidString: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")!)
+    private static let actorB = NovaSessionIdentity(userID: UUID(uuidString: "22222222-2222-4222-8222-222222222222")!, sessionID: UUID(uuidString: "cccccccc-cccc-4ccc-8ccc-cccccccccccc")!)
+    private static func readyHost(identity: NovaSessionIdentity, enabled: Set<NovaDestination>) -> NovaSessionHost {
+        var host = NovaSessionHost(implemented: Set(NovaDestination.allCases))
+        host.adopt(identity)
+        let ticket = host.beginAvailabilityRefresh()!
+        host.resolve(ticket, ownerID: identity.userID, enabled: enabled)
+        return host
+    }
     private static let dashboard = NovaDashboardData(firstName: "Kerem", openCount: 1, metrics: [
         NovaMetricItem(id: "total", value: "1", label: "Toplam Uygunsuzluk", footer: "+1 bu ay", symbol: "bookmark", tone: .statusInfoDot, destination: .findings),
         NovaMetricItem(id: "open", value: "1", label: "Açık Uygunsuzluk", footer: "1 gecikmiş", symbol: "exclamationmark.triangle", tone: .statusDangerDot, destination: .findings),

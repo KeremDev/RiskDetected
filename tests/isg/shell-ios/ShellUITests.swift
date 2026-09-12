@@ -163,6 +163,22 @@ import XCTest
         XCTAssertFalse(app.buttons["nova.back"].exists)
     }
 
+    func testHostHidesContentDuringRefreshAndRejectsPreviousAccountResponse() {
+        launch()
+        visible("home")
+        tap("qa.host.refresh")
+        XCTAssertTrue(app.staticTexts["qa.host.unavailable"].waitForExistence(timeout: 3))
+        XCTAssertFalse(app.buttons["nova.menu"].exists)
+        tap("qa.reset")
+        visible("home")
+        XCTAssertFalse(app.buttons["nova.tab.companies"].isEnabled)
+        tap("qa.host.deliver")
+        visible("home")
+        XCTAssertTrue(app.staticTexts["qa.state"].label.contains("synthetic-b"))
+        XCTAssertFalse(app.buttons["nova.tab.companies"].isEnabled)
+        XCTAssertFalse(app.buttons["nova.notifications"].isEnabled)
+    }
+
     func testLargeTypeCompactDrawerAndHorizontalTabReachability() {
         launch(["--compact", "--ax3", "--dark"])
         visible("home")

@@ -122,6 +122,14 @@ jobs:
         run: |
           swiftc App/DesignSystem/ISG/NovaNavigation.swift scripts/isg/NovaNavigationCheck.swift -o "$RUNNER_TEMP/isg-nova-navigation-check"
           "$RUNNER_TEMP/isg-nova-navigation-check" contracts/isg/v1
+      - name: Verify account-scoped NOVA host corpus
+        # Presentation session fixtures run without any Auth SDK or network.
+        # Runtime UI ownership is separately exercised by ios-shell-integration.
+        if: success()
+        shell: bash
+        run: |
+          swiftc App/DesignSystem/ISG/NovaNavigation.swift App/DesignSystem/ISG/NovaSessionHost.swift scripts/isg/NovaSessionHostCorpus.swift scripts/isg/NovaSessionHostCheck.swift -o "$RUNNER_TEMP/isg-nova-host-check"
+          "$RUNNER_TEMP/isg-nova-host-check" contracts/isg/v1/fixtures/nova-session-host.json
       - name: Run hostless iOS XCTest on an available CI iPhone
         shell: bash
         run: |

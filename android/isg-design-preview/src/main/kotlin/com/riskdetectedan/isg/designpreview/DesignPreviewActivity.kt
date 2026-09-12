@@ -11,6 +11,7 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.riskdetectedan.core.designsystem.isg.*
+import java.util.UUID
 
 /** Offline synthetic host. No Auth, network permission, persistence or real account. */
 class DesignPreviewActivity : ComponentActivity() {
@@ -20,17 +21,23 @@ class DesignPreviewActivity : ComponentActivity() {
         if (!Build.FINGERPRINT.contains("generic") && !Build.MODEL.contains("sdk_gphone")) { finish(); return }
         enableEdgeToEdge()
         setContent {
-            var state by remember { mutableStateOf(NovaNavigationState("offline-preview", NovaDestination.entries.toSet())) }
-            var notices by remember { mutableStateOf(listOf(
+            var host by remember { mutableStateOf(readyHost()) }
+            var noticeSnapshot by remember { mutableStateOf(host.scope(listOf(
                 NovaNotice("overdue", "Termini geçen aksiyonlar", "Geciken düzeltmeleri önceliklendirerek inceleyin.", 1, Icons.Outlined.Warning, NovaColorToken.statusDangerInk),
-                NovaNotice("active", "Aktif uygunsuzluklar", "Sorumluluğunuzdaki firmalarda halen açık bulunan kayıtlar.", 1, Icons.Outlined.Notifications, NovaColorToken.statusInfoInk))) }
-            val navigate: (NovaDestination) -> Unit = { state = state.apply(NovaNavigationEvent.Navigate(it), state.epoch) }
+                NovaNotice("active", "Aktif uygunsuzluklar", "Sorumluluğunuzdaki firmalarda halen açık bulunan kayıtlar.", 1, Icons.Outlined.Notifications, NovaColorToken.statusInfoInk)), host.navigation.epoch)) }
+            val state = host.navigation
+            val notices = host.value(noticeSnapshot).orEmpty()
+            val navigate: (NovaDestination) -> Unit = { host = host.apply(NovaNavigationEvent.Navigate(it), state.epoch) }
             NovaTheme(false) {
+                if (host.phase != NovaHostPhase.ready) {
+                    NovaText("QA · ${host.phase.name}")
+                    return@NovaTheme
+                }
                 NovaExpertShell(state, "Kerem Kaya", Modifier.safeDrawingPadding(), hasUnread = notices.any { it.unread },
                     connectionLabel = "Çevrimdışı test", notices = notices,
-                    onNoticeAction = { action, epoch -> if (epoch == state.epoch) notices = if (action == NovaNoticeAction.Clear) emptyList() else notices.map { it.copy(unread = false) } },
-                    onLogout = { state = NovaNavigationState("signed-out-preview", emptySet()) },
-                    onEvent = { event, epoch -> state = state.apply(event, epoch) }) { destination ->
+                    onNoticeAction = { action, epoch -> if (host.isCurrent(epoch)) noticeSnapshot = host.scope(if (action == NovaNoticeAction.Clear) emptyList() else host.value(noticeSnapshot).orEmpty().map { it.copy(unread = false) }, epoch) },
+                    onLogout = { epoch -> if (host.isCurrent(epoch)) host = host.adopt(null) },
+                    onEvent = { event, epoch -> host = host.apply(event, epoch) }) { destination ->
                     when (destination) {
                         NovaDestination.home -> NovaDashboardScreen(dashboard, onNavigate = navigate,
                             onPhoto = { navigate(NovaDestination.newFinding) }, onAssistant = { navigate(NovaDestination.newFinding) })
@@ -42,6 +49,11 @@ class DesignPreviewActivity : ComponentActivity() {
             }
         }
     }
+}
+private fun readyHost(): NovaSessionHost {
+    val actor = NovaSessionIdentity(UUID.fromString("11111111-1111-4111-8111-111111111111"), UUID.fromString("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"))
+    val loading = NovaSessionHost(NovaDestination.entries.toSet()).adopt(actor).beginAvailabilityRefresh()
+    return loading.resolve(requireNotNull(loading.pending), actor.userID, NovaDestination.entries.toSet())
 }
 private val dashboard = NovaDashboardData("Kerem", 1, listOf(
     NovaMetricItem("total", "1", "Toplam Uygunsuzluk", "+1 bu ay", Icons.Outlined.BookmarkBorder, NovaColorToken.statusInfoDot, NovaDestination.findings),

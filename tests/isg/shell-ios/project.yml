@@ -21,6 +21,7 @@ targets:
       - path: ../../../App/DesignSystem/ISG/NovaTokens.swift
       - path: ../../../App/DesignSystem/ISG/NovaComponents.swift
       - path: ../../../App/DesignSystem/ISG/NovaNavigation.swift
+      - path: ../../../App/DesignSystem/ISG/NovaSessionHost.swift
       - path: ../../../App/DesignSystem/ISG/NovaExpertShell.swift
       - path: ../../../App/Resources/NovaIcons.xcassets
         buildPhase: resources

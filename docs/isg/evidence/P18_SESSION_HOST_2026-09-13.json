@@ -1,0 +1,101 @@
+{
+  "date": "2026-09-13",
+  "timezone": "Europe/Istanbul",
+  "scope": "P02/P18 local presentation host; not Auth SDK or live root integration",
+  "sourceSha256": {
+    "App/DesignSystem/ISG/NovaSessionHost.swift": "3afe85c66d3473d170709fbc34f5ccc9649fca9f0dbc2dc4e831c449b3ec8bca",
+    "android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaSessionHost.kt": "2e2acc5a6fca3214b38950c12866f2e790dee942d4d7b0dfe235a845bf04820e",
+    "contracts/isg/v1/fixtures/nova-session-host.json": "788430bf2cb2a8f2919c9191a20c050b1993a3855f9a1d10a72ad3a8b15a92c1",
+    "scripts/isg/NovaSessionHostCorpus.swift": "2032cac751ac9ee7e178a6bd43521797c0a496cff780cfeca12cdb73df48ab2c",
+    "scripts/isg/NovaSessionHostCheck.swift": "9f9ea16971b83d0774bd3fdfd2b17d30ed6505fee310b8d5c17d85f70be74ffd",
+    "android/core/designsystem/src/test/kotlin/com/riskdetectedan/core/designsystem/isg/NovaSessionHostTest.kt": "cdee57d0462e8939b652985e869e1d48e0d81960458350c4aab5af26e654e33b",
+    "tests/isg/shell-ios/ShellHarnessApp.swift": "70e8060fa7346ffa456d1e08d1280a23fe40976268d68f6fc72829f58e392d61",
+    "tests/isg/shell-ios/ShellUITests.swift": "d19724533ce35f17e293ec0316d17476871929c72f7d4140425632f3fb581830",
+    "android/isg-design-preview/src/main/kotlin/com/riskdetectedan/isg/designpreview/DesignPreviewActivity.kt": "14269c9550d5d51596fe156e26660daa300078ca284ef722a14da3b04f37303c"
+  },
+  "tests": {
+    "sharedHost": {
+      "swiftCases": 88,
+      "kotlinCases": 88,
+      "transitionsPerPlatform": 399,
+      "result": "passed"
+    },
+    "swiftBindingBridge": {
+      "checks": 6,
+      "result": "passed"
+    },
+    "androidDesignSystem": {
+      "tests": 307,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "xml": "android/core/designsystem/build/test-results/testDebugUnitTest"
+    },
+    "androidBuildAndLint": {
+      "result": "passed",
+      "tasks": [
+        ":core:designsystem:lintDebug",
+        ":isg-design-preview:assembleDebug",
+        ":app:assembleDebug"
+      ]
+    },
+    "iosFullUI": {
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 161624,
+      "resultBundle": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-12T22-42-18-432Z_pid70458_469a81d3.xcresult",
+      "note": "Before final render-epoch child callback hardening"
+    },
+    "iosFinalTargetedUI": {
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "durationMs": 36919,
+      "resultBundle": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-12T22-46-45-787Z_pid70458_c7ae3a62.xcresult",
+      "cases": [
+        "company-search-and-home-actions",
+        "five-reference-screens-and-notifications",
+        "refresh-hide-and-stale-account-response"
+      ]
+    },
+    "iosMainBuild": {
+      "result": "passed",
+      "log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-09-12T22-48-20-135Z_pid70458_5b461551.log"
+    },
+    "novaDesign": {
+      "passed": 20,
+      "failed": 0
+    },
+    "foundation": {
+      "passed": 111,
+      "failed": 0
+    },
+    "identity": {
+      "result": "passed",
+      "limitation": "Source assertion only"
+    }
+  },
+  "boundaries": {
+    "realAuthAdapter": false,
+    "serverCapabilityAdapter": false,
+    "liveRootIntegration": false,
+    "domainCompanyQueryRaceGuard": false,
+    "productionMutation": false,
+    "push": false,
+    "remoteCI": false,
+    "androidDeviceSmokeThisTurn": false,
+    "physicalDeviceTest": false,
+    "fullScreenReaderAudit": false
+  },
+  "checkpoint": {
+    "tag": "riskdetected-change-point-20260912",
+    "commit": "dbcc979d3e7ad335e525a7d90bed1a0542d8b20d",
+    "changed": false
+  },
+  "cleanup": {
+    "xcodeProfileRestored": "global default",
+    "productionAppLaunched": false,
+    "productionDataDeleted": false
+  }
+}

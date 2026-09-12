@@ -47,6 +47,9 @@ dependencies {
 }
 
 tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    inputs.file(rootProject.layout.projectDirectory.file("../contracts/isg/v1/fixtures/nova-session-host.json"))
+        .withPropertyName("isgNovaSessionHostCorpus")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.dir(rootProject.layout.projectDirectory.dir("../contracts/isg/v1/design"))
         .withPropertyName("isgNovaDesignCorpus")
         .withPathSensitivity(PathSensitivity.RELATIVE)

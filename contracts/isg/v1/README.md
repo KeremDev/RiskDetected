@@ -6,6 +6,7 @@ P18 tasarım kaydı: `design/osgb-nova-reference.json`; expert-only üretilmiş 
 
 - mutation-context.md / mutation-context.schema.json: actor yetkisi vermeyen, strict ortak taşıma bağlamı. Yeni Deno/Swift/Kotlin parser'ları aynı sentetik corpus'u kullanır; hiçbir canlı endpoint'e bağlı değildir.
 - [mutation-outcome.md](mutation-outcome.md): committed/pending/indeterminate/rejected yanıtları ve altı durumlu saf istemci reducer'ı; üç platformda221 yanıt +84 geçiş, henüz API/UI coordinator'a bağlı değil.
+- [nova-session-host.md](nova-session-host.md): yeni native kabuğun yerel hesap/session/istek sahibi; 88 ortak senaryo/399 geçiş, yalnız offline QA host'larına bağlı. Gerçek Auth/capability/domain veya canlı root entegrasyonu değildir.
 
 - safety-policy.json: mevcut teknik kimlikler, kaynak hash'i ve bağımsız local test hedefleri. Staging allowlist şu an boş; herhangi bir staging/prod/store isteği kapalıdır.
 - local-test-environment.example.json: yalnız synthetic/mock/sink ortam bildirimi. Dosyanın doğrulanması çalışan veya güvenli bir backend bulunduğu anlamına gelmez.

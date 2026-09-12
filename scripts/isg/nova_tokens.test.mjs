@@ -102,7 +102,7 @@ test('native shell has no live service dependency and remains outside legacy roo
 test('hosted iOS shell target compiles only the real NOVA sources and synthetic harness', () => {
   const project = read('tests/isg/shell-ios/ISGShellHarness.xcodeproj/project.pbxproj').toString();
   const swiftFiles = [...project.matchAll(/path = ([A-Za-z]+\.swift);/g)].map(m => m[1]).sort();
-  assert.deepEqual(swiftFiles, ['NovaComponents.swift', 'NovaExpertShell.swift', 'NovaNavigation.swift', 'NovaTokens.swift', 'ShellHarnessApp.swift', 'ShellUITests.swift']);
+  assert.deepEqual(swiftFiles, ['NovaComponents.swift', 'NovaExpertShell.swift', 'NovaNavigation.swift', 'NovaSessionHost.swift', 'NovaTokens.swift', 'ShellHarnessApp.swift', 'ShellUITests.swift']);
   assert.match(project, /path = \.\.\/\.\.\/\.\.\/App\/DesignSystem\/ISG;/);
   assert.match(project, /SUPPORTED_PLATFORMS = iphonesimulator;/);
   assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = com\.riskdetected\.isgshellharness;/);
