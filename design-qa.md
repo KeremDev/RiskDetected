@@ -1,61 +1,58 @@
-# NOVA — beş referans ekran QA kaydı
+# NOVA — tüm sayfalarda gri tuval / beyaz kart QA
 
-Tarih: 13 Eylül 2026, Europe/Istanbul. Kapsam: yeni native sunum katmanının kullanıcı ekranlarına uyarlanması. Canlı uygulama entegrasyonu veya bütün geçiş planının kabulü değildir.
+Tarih: 13 Eylül 2026. Kapsam: kullanıcının gri başlık / beyaz gövde itirazı; yeni native NOVA shell'inin bütün mevcut hedeflerinde ortak yüzey kuralı. Canlı uygulamanın veya bütün geçiş planının kabulü değildir.
 
-Bu dosyanın önceki feedback ve diğer tasarım QA kayıtları içerik değiştirilmeden [tarihsel arşivde](docs/isg/evidence/DESIGN_QA_BEFORE_P18_2026-09-13.md) korunmuştur; bu tur onların sonuçlarını yeniden doğrulamış sayılmaz.
+Önceki beş ekran raporu içerik değiştirilmeden [arşivlendi](docs/isg/evidence/DESIGN_QA_BEFORE_PAGE_SURFACES_2026-09-13.md).
 
-## Kaynak ve karşılaştırma
+## Kaynak, viewport ve son görünüm
 
-Görsel gerçeklik: `docs/isg/design-reference-20260913/{home,drawer,quick-add,notifications,companies}.png`. Kullanıcının IMG_1432/1433/1434/1435/1436 dosyalarının değiştirilmemiş kopyaları. Her biri 1320×2868 px, 440×956 pt @3×. SwiftUI uygulama kanıtları aynı adlarla `ios-implementation/` altında, aynı piksel boyutunda; iPhone 17 Pro Max / iOS 26.5, açık tema, standart yazı boyutu, sentetik uzman hesabı.
+Kaynaklar: [önceki hatalı görünüm](docs/isg/page-surfaces-20260913/before.png), [kullanıcının Firmalar referansı](docs/isg/page-surfaces-20260913/reference-companies.png). Bunlar kullanıcı dosyalarının değiştirilmemiş kopyalarıdır. Firmalar referansı 1320×2868 px, 440×956 pt @3; iOS final görüntüler aynı boyutta iPhone 17 Pro Max / iOS 26.5, açık tema, standart yazı boyutunda alındı.
 
-Compose uygulama kanıtları aynı adlarla `android-device/` altında: API33, 440×956 px/mdpi, 440×956 dp; CSS viewport yok, native uygulama. Orijinaller `sips -z 956 440` ile yalnız karşılaştırma kopyalarına normalize edildi (`output/isg/reference-redesign-20260913/normalized-source/`); kaynak PNG'ler değiştirilmedi. Beş normalize kaynak ve karşılık gelen beş gerçek Android görüntüsü aynı karşılaştırma girdisinde açıldı. Beş iOS ekranı da kaynaklarıyla aynı karşılaştırma girdilerinde incelendi; son ana sayfa/Ekle/bildirim görüntüleri son turda yeniden karşılaştırıldı.
+Son [Firmalar](docs/isg/page-surfaces-20260913/ios/companies.png) ve [Ziyaret Ekle](docs/isg/page-surfaces-20260913/ios/newVisit.png) karşılaştırıldı. Ziyaret Ekle finali test araç çubuğu olmadan, gerçek Ekle popup'ındaki eyleme dokunularak açıldı. Kaynak, önceki hata ve son iOS/Android görüntüleri aynı görsel inceleme girdilerinde açıldı. Başlık, kart, zemin ve alt barın tam görünümü değerlendirildi.
 
-Durumlar: ana sayfa başlangıcı, sol menü açık, iki okunmamış bildirim, dört eylemli Ekle, bir firmalı liste. Ekle kaynak görüntüsü arkadaki sayfada farklı scroll konumundadır; popup geometrisi/karartma/blur karşılaştırıldı, arkadaki metin konumunda piksel eşitliği iddia edilmez. Android OS güvenli alanı ve alt sistem alanı iOS'tan farklıdır; içerik yukarıdan yaklaşık 30–38 dp daha erken başlar ve alt sekmeler daha aşağıdadır. OS saat/batarya/hücre simgeleri uygulama tasarımı değildir.
+Hatalı kaynak 838×576 px, cihaz çerçeveli ve alttan kesilmiş masaüstü görüntüsüdür; onunla piksel geometrisi eşitliği iddia edilmez. Firmalar kaynak ve uygulama aynı viewport'tadır; Ziyaret Ekle başka içeriğe sahip olduğundan karşılaştırma sayfa yüzey standardına ilişkindir. [Uygunsuzluklar kanıtı](docs/isg/page-surfaces-20260913/ios/findings-qa.png) ile newVisit-qa.png otomatik testin sarı araç çubuğunu içerir; bu çubuk ürün tasarımı değildir.
 
-Tam görünüm karşılaştırmaları kart hiyerarşisi, başlıklar, alan oranları, satır ritmi ve popup durumlarını kapsar. 1320 px iOS görüntülerinde ve normalize Android çiftlerinde etiketler/ikonlar okunabildiği için ek kırpma gerekmedi. Vektörlerin kesinliği ayrıca path eşitliği testleriyle denetlendi; yalnız test sonucundan görsel kabul çıkarılmadı.
+Android [açık](docs/isg/page-surfaces-20260913/android-jvm/newVisit-light.png) / [koyu](docs/isg/page-surfaces-20260913/android-jvm/newVisit-dark.png) görüntüler gerçek Compose görünüm ağacının native Skia/JVM çıktısıdır, cihaz ekranı değildir. 440×956 dp/mdpi; iOS güvenli alanı ve OS barlarıyla eşitlik iddiası yoktur. Bu turda yeni Android cihaz görüntüsü alınmadı.
 
-## Bulgular ve düzeltme geçmişi
+## Bulgular ve kapanış
 
-| Öncelik / konum | Önceki bulgu ve etkisi | Uygulanan düzeltme | Son kanıt |
-|---|---|---|---|
-| P1 / shell ve Ekle | Yaklaşık sheet geometrisi, ikon kutuları ve farklı yerleşim kaynak görünümünü bozuyordu | Ortak içeriğe göre boyutlanan NovaPopupSurface; merkez Ekle, üst bildirim, tam boy sol drawer; kullanıcının talebiyle ikon zeminleri kaldırıldı | Her iki platformun beş final PNG'si |
-| P2 / ikon ve fotoğraf alanı | Sistem simgesi ikameleri kaynak çizgileriyle aynı değildi | OSGB'nin 48 orijinal vektörü + Feather fontundan mekanik çıkarılmış 2 motif; lisans ve path testleri | home/quick-add PNG'leri; nova-design 16/16 |
-| P1 / iOS modal sonrası dokunma | İlk turlarda dekoratif görüntü düğümü modal kapanınca hedef tıklamasını bozuyordu | Dekoratif ikon accessibilityHidden, ebeveyn Button etiketi ve 44 pt alan; alt katmanın modal etkileşim kapısı | Tam 10/10 UI turu, sonraki 2/2 ve 1/1 tekrar |
-| P2 / iOS Ekle arka planı | Denenen material örtüsü gereğinden opak görünüyordu | İçerikte 7 pt blur + ayrı 0.34 karartma; Reduce Transparency desteği | ios-implementation/quick-add.png |
-| P2 / ana sayfa dikey ritmi | Eğitim kartı boşlukları ve yeni kayıt bölümü referans yerleşiminden sapıyordu | Eğitim kartı padding/gap, fotoğraf alanı, CTA ve iOS yeşil gölge düzeltildi | Son ios-implementation/home.png; Android home.png |
-| P2 / Android Dialog | JVM görüntüsü gerçek pencere dim'ini kanıtlamadı; ilk emülatör görüntüsünde varsayılan 0.6 fazla koyuydu | Dialog window dimAmount açıkça Ekle 0.34 / diğer scrim token olarak ayarlandı | android-device/quick-add.png ve notifications.png |
-| P1 / Android bildirim kapat | Bileşen testi geçse de gerçek UI ağacında komşu metin düğmesi kapat alanını 36–40 dp'ye kırpıyordu | 48 dp başlık hedefi ve alttaki eylemlerden 8 dp ayırma; gerçek ağaçta 48×48 zorunlu kontrol | android-device/result.json; notification-popup-and-close-target PASS |
+| Öncelik | Bulgu | Düzeltme ve son kanıt |
+|---|---|---|
+| P1 | Pushed iOS hedefinin varsayılan beyaz gövdesi gri tuvali bölüyordu | Her root ve alt hedefte NovaPageSurface; 17 hedefte üst/orta/alt kenar RGB240 ölçümü, final newVisit.png |
+| P2 | iOS sistem navigation bar'ı ikinci geri düğmesi gösteriyordu | Her hedefte sistem barları gizli; tek NOVA geri kontrolü, UI ağaç testi ve final görüntü |
+| P2 | Örnek alt sayfa içeriği ortalanmış ve beyaz karta ayrılmamıştı | Sola hizalı ikonlu başlık, 20 dış/iç boşluk, 16 bölüm aralığı, beyaz NovaCard; iOS/Android final çıktıları |
 
-Önceki deneme ekranları ve XCTest sonuçları `output/isg/reference-redesign-20260913/` ile XcodeBuildMCP sonuç dizininde tutuldu; başarısız denemeler son başarı olarak sunulmadı. Son görsel karşılaştırmada kapsam içi açık P0/P1/P2 bulgusu kalmadı. Aşağıdaki kasıtlı/platform farkları nedeniyle piksel piksel aynılık iddiası yoktur.
+Son incelemede bu yüzey düzeltmesi kapsamında açık P0/P1/P2 görsel bulgu kalmadı. Genel uygulamanın tamamı bu raporla onaylanmış değildir.
 
-## Zorunlu beş yüzey
+## Zorunlu karşılaştırma alanları
 
-- **Font / tipografi:** kaynak Plus Jakarta Sans ailesi ve beş lisanslı ağırlık iki native istemcide; Türkçe glif testi var. NOVA/ana başlık, 15 pt popup satırları ve yaklaşık 11–12 pt yardımcı metin hiyerarşisi kontrol edildi. Uzun bildirim detayı, Türkçe firma alt satırı ve metin taşması incelendi. Native antialias/line-height küçük farkları beklenir; Canlı Akış ilk ifadesinin kısmi kalınlığı P3 düzeyinde farklıdır.
-- **Boşluk / yerleşim:** beyaz kartlar, yatay 86 genişlikli özet, yeni kayıt fotoğraf alanı, CTA, eğitim, son kayıtlar ve alt bar sırası korundu. Ekle yaklaşık 400 pt/dp yüksekliğinde, 14 yan boşluk, 30 radius. Drawer 290 genişlik. Bildirim iOS yaklaşık 240, Android 270 yüksekliğinde; Android'in 48 dp hedefleri kaynak 234 pt panelden daha yüksek alan gerektirir. Bu fark native dokunma hedefi uyarlamasıdır; ekran dışına taşma yoktur.
-- **Renk / token:** açık gri #F0F0F0 tuval, beyaz kartlar, gri yardımcı yazılar ve yeşil ana eylem; mor/kırmızı/amber ikon çizgileri. İkon arka planlarının kaldırılması kullanıcının açık isteğidir. Android notification yüzeyi iOS material'ından daha opaktır; platform yüzey uygulamasıdır. Ekle blur/karartma gerçek pencere görüntülerinde doğrulandı.
-- **Görüntü / varlık:** orijinal çizgiler native template SVG/vector kaynaklarına mekanik taşındı, yeniden tasarlanmadı; fotoğraf motifleri orijinal font outlines. Kaynak ekran raster olarak arayüze yapıştırılmadı. Referanstaki özel saha fotoğrafı fixture'a taşınmadı; iOS kayıt küçük resminde ikonlu yedek görünüm, Android offline örneğinde boş son kayıt listesi vardır. Bu veriye bağlı farktır; gerçek host fotoğraf/veri sağlamalıdır.
-- **Metin / içerik:** beş ekranın ana etiketleri, dört Ekle eylemi, 13 menü hedefi, firma açıklaması ve bildirim eylemleri korundu. Android preview bağlantısı özellikle “Çevrimdışı test” yazar; sahte çevrimiçi durum üretilmez. Örnek ad/firma yalnız test host'larında; ürün katmanında sabit müşteri veya sahte başarılı ağ işlemi yoktur.
+- Font/tipografi: mevcut Plus Jakarta Sans ailesi ve beş ağırlık değiştirilmedi; title/body/meta hiyerarşisi korundu. Başlık artık sola hizalı. Türkçe yardımcı metin kart içinde okunaklı; iOS 320 pt AX3 gezinme testi de geçti.
+- Boşluk/yerleşim: tek gri sayfa, bağımsız yuvarlak beyaz içerik, başlık ve kart arasında boşluk, alt bar çevresinde gri alan doğrulandı. Firma arama/kart düzeni korundu. Referansın tam kart geometrisini ziyaret formuna zorlamadık: kaynak Firma listesidir, ziyaret içeriği hâlâ test fixture'ıdır.
+- Renk/token: canvas #F0F0F0 ve surface #FFFFFF; iOS 4 dikey kenar noktası ve beyaz kart pikseli her benzersiz hedefte denetlendi. Android 17 hedef ×2 tema. Koyu tema mevcut token'ları koruyor.
+- Görüntü/ikon: yeni raster veya çizim üretilmedi. Mevcut orijinal NOVA ikonları ve fontlar tekrar kullanıldı; alt sayfa başlığında renkli glyph var, ikon kutusu yok. Kullanıcının ikon zeminlerini kaldırma talebi, referanstaki zeminli menü/bildirim düğmelerinden kasıtlı farktır. Avatarlar veri/fixture içeriğidir.
+- Metin/içerik: sentetik test açıklaması ve Sayaç korunarak QA ekranı gerçek işlem gibi sunulmadı. Şirket/ziyaret alanlarının domain verisi bu görsel düzeltmenin parçası değildir. Butonlar ve Türkçe başlıklar okunaklı, sahte kayıt başarısı gösterilmiyor.
 
-## Etkileşim ve teknik kanıt
+## Etkileşim ve testler
 
-- iOS tam hostlu UI 10/10; 34 menü yönlendirmesi, hesap değişimi/availability/native stack, küçük ekran ve AX3 kaydırma, 44 pt hedef, bildirim okuma/silme, arama ve CTA. Tam turdan sonraki varlık/CTA değişimleri 2/2; son ritim/gölge değişimi beş ekranı yakalayan 1/1 hedefli tekrar ile doğrulandı. Hostless 18/18 ve ana iOS simülatör build PASS.
-- Android design system JUnit XML: 219 test, 0 failure/error/skip. İlgili lint görevleri, ana debug APK ve ayrı offline preview APK PASS. Gerçek API33 penceresinde 8 smoke kontrolü; arayüz ağacından dokunma, 48 dp kapat alanı, read/clear, dört hızlı eylemin görünürlüğü, arama/temizleme ve firma yönlendirmesi. Son QA PID crash buffer'ında FATAL EXCEPTION yok. Bu sekiz kontrol sekiz tam domain E2E senaryosu değildir.
-- Ortak gezinme 78 fixture / 198 geçiş; kaynak/tasarım 16/16 ve foundation 111/111. Kimlik kontrolü PASS; imzalı binary/mağaza sürekliliği bu kaynak testiyle kanıtlanmaz.
-- Android API26/37 üzerinde bu yeni pencere akışı, fiziksel cihazlar, TalkBack/VoiceOver bütünlüğü ve gerçek Auth/billing/notification/kamera servisleri bu turda doğrulanmadı. Uzak CI çalıştırılmadı.
+- iOS tam tur 11/11 PASS: tüm menü/Ekle yolları açık/koyu, sekme geçmişi, izin iptali, hesap değişimi, stale callback, arama, bildirim eylemleri, dış alana dokunarak kapatma, küçük ekran/AX3 ve dokunma hedefleri.
+- Yeni iOS regresyonu 17 benzersiz hedefin piksel zemini/kartı ve sistem navigation bar yokluğunu kontrol ediyor. Araç çubuğu olmadan Ekle → Ziyaret Ekle ayrıca açılıp kaydedildi.
+- Android 309/309 JVM PASS; iki yeni yüzey testi her 17 hedefi açık/koyu durumda dolaşıyor. Lint, preview APK ve ana APK başarılı.
+- iOS QA/ana uygulama simulator build PASS. nova-design 20/20, mağaza kimliği kaynak kontrolü PASS.
+- İlk hedefli iOS turunda tekil XCUI hittability anomalisi görüldü; beklentiler değiştirilmeden birebir test tekrarı 1/1 ve tam tur 11/11 geçti. Tekil anomalinin kalıcı kök nedeni çözülmüş sayılmıyor; [ayrıntılı kayıt](docs/isg/P18_PAGE_SURFACES_2026-09-13.md) başarısız sonucu da koruyor.
 
-## Açık sorular ve takip
+## Sınırlar / takip
 
-Yeni görünümler legacy uygulama köküne henüz bağlanmadı. Domain verisi/hesap kapsamı, yükleme-hata davranışı ve gerçek kamera/çıkış/bildirim işlemleri güvenilir host entegrasyonunda tamamlanmalı; bu görsel QA onların yerine geçmez. Kullanıcının beş ekranı dışında kalan bütün eski popup'ların otomatik olarak değiştiği iddia edilmez: yeni popup'lar için ortak bileşen ve standardı kaydedildi.
+NOVA shell henüz legacy üretim root'una bağlı değil. Kullanıcının gördüğü ekran ayrı offline QA uygulamasıdır. Bu düzeltme yeni shell'in tüm mevcut hedeflerini kapsar; gerçek ziyaret/uygunsuzluk ekranları ve domain servisi entegrasyonu ayrıca tamamlanacak. Yeni domain ekranları gri tuvali opak tam ekran beyazla kapatmamalı ve içerik kartlarını ortak bileşenden üretmelidir.
 
-P3 takip: Canlı Akış başındaki kısmi kalın yazı, platformlar arası gölge/materyal ve antialias farklarının ince ayarı. Bunlar etkileşim veya yerleşimi engellemiyor.
+Android cihaz koşusu, fiziksel iOS, VoiceOver/TalkBack tam akışı ve gerçek Auth/billing/kamera bu turda test edilmedi. Native gölge/antialias ve OS güvenli alan farkları piksel aynılığı değildir. Eski beş ekran raporundaki kapsam dışı P3 farklar bu turda yeniden tasarlanmadı. Uzak CI/deploy/push yapılmadı.
 
-## Uygulama kontrol listesi
+## Kontrol listesi
 
-- [x] Beş kaynak ekranı ve iki native uygulama görüntülerini sakla.
-- [x] İkon zeminlerini kaldır; orijinal çizimleri/lisansı koru.
-- [x] Ortak popup/drawer/bildirim konumlarını ve modal dokunma alanlarını doğrula.
-- [x] iOS UI, Android JVM/gerçek pencere smoke ve ana build kontrollerini çalıştır.
-- [x] Android QA paketini kaldır, çözünürlüğü geri yükle, yalnız QA emülatörünü kapat.
-- [ ] Ayrı geçiş işi: yeni sunumu canlı uygulama/domain servislerine bağla ve canlı olmayan uçtan uca entegrasyon ortamında doğrula.
+- [x] Root ve bütün alt hedeflere ortak gri sayfa katmanını uygula.
+- [x] Örnek hedef içeriklerini beyaz yuvarlak karta al; ikinci sistem geri düğmesini kaldır.
+- [x] Kaynak ve gerçek render'ları birlikte karşılaştır; önceki hata görüntüsünü koru.
+- [x] 17 hedef için piksel ve gezinme regresyonlarını çalıştır.
+- [x] iOS/Android derleme ve tasarım kaynak kontrollerini doğrula.
+- [ ] Ayrı geçiş işi: gerçek domain ekranları, veri adaptörleri ve üretim root entegrasyonu.
 
 final result: passed

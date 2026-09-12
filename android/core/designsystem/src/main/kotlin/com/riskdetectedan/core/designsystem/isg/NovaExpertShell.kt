@@ -60,7 +60,7 @@ fun NovaExpertShell(state: NovaNavigationState, userName: String, modifier: Modi
             .blur(if (state.overlay == NovaOverlay.quickAdd) 7.dp else 0.dp).safeDrawingPadding()) {
             NovaShellTopBar(state.current, userName, hasUnread, !state.paths[state.selected].isNullOrEmpty(), state.canOpen(NovaDestination.notifications), send)
             Box(Modifier.weight(1f).fillMaxWidth()) {
-                saved.SaveableStateProvider(state.current.name) { content(state.current) }
+                saved.SaveableStateProvider(state.current.name) { NovaPageSurface { content(state.current) } }
             }
             NovaShellTabBar(state.selected, state::canOpen, send,
                 Modifier.padding(horizontal = 14.dp).padding(top = 8.dp, bottom = 16.dp))
@@ -328,6 +328,15 @@ private fun NovaDestination.quickTone() = when (this) {
     NovaDestination.newDocument -> NovaColorToken.statusInfoDot
     NovaDestination.newVisit -> NovaColorToken.statusWarningDot
     else -> NovaColorToken.statusSuccessDot
+}
+
+/** Page title reuses the destination glyph; never adds an icon background tile. */
+@Composable
+fun NovaPageTitle(destination: NovaDestination, modifier: Modifier = Modifier) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        NovaGlyph(destination.icon(), null, Modifier.size(22.dp), tint = NovaColorToken.accent.color())
+        NovaText(destination.title, style = NovaTypeToken.screenTitle)
+    }
 }
 
 private fun NovaDestination.icon(): ImageVector = when (this) {

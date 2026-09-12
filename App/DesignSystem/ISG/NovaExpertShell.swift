@@ -29,12 +29,13 @@ struct NovaExpertShell<Content: View>: View {
                             NavigationStack(path: Binding(
                                 get: { navigation.paths[tab] ?? [] },
                                 set: { navigation.acceptBackPath($0, tab: tab, from: epoch) })) {
-                                Group {
+                                NovaPageSurface {
                                     if navigation.canOpen(tab.root) { content(tab.root) }
                                     else { NovaText(text: "Bu bölüm henüz kullanıma açık değil.") }
                                 }
-                                    .navigationDestination(for: NovaDestination.self, destination: content)
-                                    .toolbar(.hidden, for: .navigationBar, .tabBar)
+                                    .navigationDestination(for: NovaDestination.self) { destination in
+                                        NovaPageSurface { content(destination) }
+                                    }
                             }.tag(tab)
                         }
                     }

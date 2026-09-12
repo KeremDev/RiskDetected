@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 
 @MainActor final class ShellUITests: XCTestCase {
     private var app: XCUIApplication!
@@ -44,6 +45,34 @@ import XCTest
     private func screenshot(_ name: String) {
         let item = XCTAttachment(screenshot: app.screenshot())
         item.name = name; item.lifetime = .keepAlways; add(item)
+    }
+
+    /// Check rendered pixels, including pushed UIKit navigation destinations (not just token values).
+    private func assertLightPageSurface(_ route: String) {
+        XCTAssertFalse(app.navigationBars.firstMatch.exists, "NOVA owns the back button: \(route)")
+        guard let image = app.screenshot().image.cgImage else { return XCTFail("Missing screenshot") }
+        let scale = CGFloat(image.width) / app.frame.width
+        func assertPixel(_ point: CGPoint, value: Int, label: String) {
+            guard let pixel = image.cropping(to: CGRect(x: point.x * scale, y: point.y * scale, width: 1, height: 1)) else {
+                return XCTFail("Pixel outside viewport: \(label)")
+            }
+            var bytes = [UInt8](repeating: 0, count: 4)
+            bytes.withUnsafeMutableBytes { buffer in
+                let context = CGContext(data: buffer.baseAddress, width: 1, height: 1, bitsPerComponent: 8,
+                    bytesPerRow: 4, space: CGColorSpaceCreateDeviceRGB(),
+                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)!
+                context.draw(pixel, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+            }
+            for channel in bytes.prefix(3) {
+                XCTAssertLessThanOrEqual(abs(Int(channel) - value), 2, "\(route) \(label): \(bytes)")
+            }
+        }
+        for y in [200, 350, 500, 650] {
+            assertPixel(CGPoint(x: 3, y: y), value: 240, label: "continuous gray gutter y=\(y)")
+        }
+        let card = app.otherElements["qa.card"]
+        XCTAssertTrue(card.exists, "A separate rounded content card is required: \(route)")
+        assertPixel(CGPoint(x: card.frame.midX, y: card.frame.minY + 5), value: 255, label: "white card")
     }
 
     private func launchDesign(_ args: [String] = []) {
@@ -119,11 +148,21 @@ import XCTest
             home(); tap("nova.menu")
             if route == "home" { screenshot(dark ? "hosted-drawer-dark" : "hosted-drawer-light") }
             choose(route)
+            if !dark { assertLightPageSurface(route) }
         }
         for route in ["newFinding", "newDocument", "newVisit", "newTraining"] {
             home(); tap("nova.add")
             if route == "newFinding" { screenshot(dark ? "hosted-add-dark" : "hosted-add-light") }
             choose(route)
+            if !dark {
+                assertLightPageSurface(route)
+                if route == "newVisit" { screenshot("canvas-newVisit") }
+            }
+        }
+        if !dark {
+            tap("nova.tab.findings"); tap("nova.tab.findings")
+            assertLightPageSurface("findings"); screenshot("canvas-findings")
+            tap("nova.tab.profile"); assertLightPageSurface("profile")
         }
         screenshot(dark ? "hosted-dark" : "hosted-light")
     }

@@ -119,14 +119,23 @@ struct ShellHarnessRoot: View {
 private struct HarnessDestination: View {
     let destination: NovaDestination
     @State private var count = 0
+    @Environment(\.colorScheme) private var scheme
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
-                NovaText(text: destination.title, style: .screenTitle)
-                    .accessibilityIdentifier("qa.content.\(destination.rawValue)")
-                NovaText(text: "Sentetik test ekranı. Canlı veri veya işlem yok.", style: .meta)
-                NovaButton(label: "Sayaç \(count)", action: { count += 1 })
-                    .accessibilityIdentifier("qa.counter")
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 12) {
+                    NovaIcon(symbol: destination.symbol, size: 22)
+                        .foregroundStyle(NovaColorToken.accent.color(in: scheme))
+                    NovaText(text: destination.title, style: .screenTitle)
+                        .accessibilityIdentifier("qa.content.\(destination.rawValue)")
+                }
+                NovaCard(padding: 20) {
+                    VStack(alignment: .leading, spacing: 16) {
+                        NovaText(text: "Sentetik test ekranı. Canlı veri veya işlem yok.", style: .meta)
+                        NovaButton(label: "Sayaç \(count)", symbol: "plus", action: { count += 1 })
+                            .accessibilityIdentifier("qa.counter")
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                }.accessibilityElement(children: .contain).accessibilityIdentifier("qa.card")
             }.padding(20)
         }
     }

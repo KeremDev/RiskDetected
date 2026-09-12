@@ -6,6 +6,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.runtime.*
@@ -43,7 +46,13 @@ class DesignPreviewActivity : ComponentActivity() {
                             onPhoto = { navigate(NovaDestination.newFinding) }, onAssistant = { navigate(NovaDestination.newFinding) })
                         NovaDestination.companies -> NovaCompaniesScreen(listOf(NovaCompanyItem("fixture", "Koza Altın A.Ş", "Kaymaz Mah. · Maden · Çok tehlikeli")),
                             onSelect = { navigate(NovaDestination.memory) }, onBack = { navigate(NovaDestination.home) }, onRetry = {})
-                        else -> NovaText("Sentetik hedef: ${destination.title}")
+                        else -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            NovaPageTitle(destination)
+                            NovaCard(Modifier.fillMaxWidth(), padding = 20) {
+                                NovaText("Sentetik hedef: ${destination.title}")
+                                NovaText("Canlı veri veya işlem yok.", style = NovaTypeToken.meta)
+                            }
+                        }
                     }
                 }
             }

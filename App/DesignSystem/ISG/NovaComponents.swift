@@ -50,6 +50,21 @@ struct NovaCard<Content: View>: View {
     }
 }
 
+/// Every NOVA root and pushed destination owns an opaque canvas, not a system-white page.
+/// White belongs to NovaCard/content surfaces; List/Form defaults must not cover the canvas.
+struct NovaPageSurface<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        content()
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .scrollContentBackground(.hidden)
+            .background(NovaColorToken.canvas.color(in: scheme).ignoresSafeArea())
+            .toolbar(.hidden, for: .navigationBar, .tabBar)
+    }
+}
+
 enum NovaStatus: CaseIterable {
     case success, warning, danger, info, neutral
 
