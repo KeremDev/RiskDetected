@@ -1,0 +1,311 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-12",
+  "scope": "P01 isolated Android mutation-context native instrumentation; not app E2E",
+  "tests_passed": 132,
+  "tests_failed": 0,
+  "tests_skipped": 0,
+  "source_sha256": {
+    "android/isg-contract-tests/build.gradle.kts": "ae95b9df375ae5b884f974a1ebf71e43599839049cdb42608d9ac6165c3ab671",
+    "android/isg-contract-tests/src/main/AndroidManifest.xml": "343d5be1ac17cdd45d1a2f2ddc616c509290e655869125a9422a96d88aa66066",
+    "android/isg-contract-tests/src/androidTest/AndroidManifest.xml": "708d838eda6f26e16602dad558c11da8a8e716e771668fd6c03247cb1da1c03d",
+    "android/isg-contract-tests/src/androidTest/kotlin/com/riskdetectedan/isg/contracttests/MutationContextInstrumentedTest.kt": "28c29f464181cd6c89424b38e9da5ee889b36d06e2f76895be64ab15cf08a87e",
+    "android/isg-contract-tests/src/androidTest/kotlin/com/riskdetectedan/isg/contracttests/HarnessIsolationTest.kt": "f1de8a48cbab13ef7ca7adf20fc0c87da4df2734f8ef83ab0c5008a1986569c4",
+    "android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/IsgMutationContext.kt": "901087c9f7a96fff6afe24ee5a2cb4e156a0754f58ab92a73711828a9851e9c4",
+    "contracts/isg/v1/fixtures/mutation-context.json": "2011ebed4763fa015b3096d4fd147efdba4366d4c7d7bfbcd3d3edd38b6be00f",
+    "scripts/isg/run_android_contract.mjs": "a674b3a89c6309ab96bef4bdf32498df61000d63df47881d3c39528b866f9ec1",
+    "scripts/isg/android_contract_guard.mjs": "5dd6ce37805ab1126bfe37b3d91b9296a43041627278afdb2f4c15d22b3d22b4"
+  },
+  "apk_sha256": "757845a8f3b8ae4027af2d1ffb48969892f6bc58a157abb391793daa7b45317c",
+  "manifest_permissions": [
+    "android.permission.REORDER_TASKS"
+  ],
+  "test_cases": [
+    {
+      "class": "com.riskdetectedan.isg.contracttests.HarnessIsolationTest",
+      "test": "harnessCannotUseNetworkOrLaunchProductionApplication",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[ios_company_create]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[android_company_update]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[company_with_workplace]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[personal_scope]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[upper_bound_build_and_version]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[invalid_schema_version_5]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[invalid_schema_version_6]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[invalid_platform_7]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[invalid_platform_8]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[invalid_client_build_9]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[invalid_client_build_10]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[invalid_client_build_11]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[invalid_client_build_12]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[invalid_client_build_13]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[invalid_expected_version_14]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[invalid_expected_version_15]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[invalid_expected_version_16]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[invalid_expected_version_17]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[invalid_operation_id_18]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[invalid_operation_id_19]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[invalid_operation_id_20]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[invalid_client_mutation_id_21]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[missing_schema_version]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[missing_operation_id]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[missing_client_mutation_id]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[missing_platform]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[missing_client_build]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[missing_expected_version]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[missing_scope]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[unknown_owner_field]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[unknown_role]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[unknown_secret_field]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[personal_company_link]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[personal_entity_link]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[null_workplace]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[invalid_company]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[missing_company]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[scope_unknown_kind]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[scope_null]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[scope_array]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[input_null]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[input_array]",
+      "result": "PASS"
+    },
+    {
+      "class": "com.riskdetectedan.isg.contracttests.MutationContextInstrumentedTest",
+      "test": "sharedMutationContextCorpus[input_string]",
+      "result": "PASS"
+    }
+  ],
+  "matrix": [
+    {
+      "report_path": "output/isg/runs/android-contract-w1aO87/REPORT.json",
+      "device": {
+        "serial": "emulator-5554",
+        "avd": "ISG_Contract_API33_20260912",
+        "sdk": "33"
+      },
+      "started_at": "2026-09-12T18:50:25.688Z",
+      "finished_at": "2026-09-12T18:50:28.005Z",
+      "passed": 44,
+      "failed": 0,
+      "skipped": 0,
+      "cleanup": "PASS",
+      "emulator_stopped_after_run": true
+    },
+    {
+      "report_path": "output/isg/runs/android-contract-i5r7kH/REPORT.json",
+      "device": {
+        "serial": "emulator-5554",
+        "avd": "ISG_Contract_API26_20260912",
+        "sdk": "26"
+      },
+      "started_at": "2026-09-12T18:51:39.758Z",
+      "finished_at": "2026-09-12T18:51:42.226Z",
+      "passed": 44,
+      "failed": 0,
+      "skipped": 0,
+      "cleanup": "PASS",
+      "emulator_stopped_after_run": true
+    },
+    {
+      "report_path": "output/isg/runs/android-contract-qteRvA/REPORT.json",
+      "device": {
+        "serial": "emulator-5556",
+        "avd": "ISG_Contract_API37_20260912",
+        "sdk": "37"
+      },
+      "started_at": "2026-09-12T18:53:06.380Z",
+      "finished_at": "2026-09-12T18:53:09.349Z",
+      "passed": 44,
+      "failed": 0,
+      "skipped": 0,
+      "cleanup": "PASS",
+      "emulator_stopped_after_run": true
+    }
+  ],
+  "regression": {
+    "foundation": 106,
+    "identity": "PASS",
+    "function_map": "PASS (3 transport sources)",
+    "android_gradle": "PASS: lintDebug + app:assembleDebug + core:data:testDebugUnitTest; app/test tasks UP-TO-DATE",
+    "lint": {
+      "errors": 0,
+      "warnings": 1,
+      "id": "UseTomlInstead",
+      "scope": "test runner dependency version declaration"
+    },
+    "remote_ci": "NOT_RUN"
+  },
+  "limitations": [
+    "No production app installed or launched; no UI, login, purchase or network E2E.",
+    "Test package is not a new store application. Existing iOS and Android identifiers unchanged.",
+    "Three newly created test AVD definitions retained, stopped; existing user AVDs untouched.",
+    "These 132 runtime checks do not close the 263 V5/X domain acceptance records."
+  ]
+}

@@ -18,9 +18,12 @@ on:
       - 'RiskDetected.xcodeproj/project.pbxproj'
       - 'RiskDetected.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved'
       - 'android/app/build.gradle.kts'
+      - 'android/settings.gradle.kts'
+      - 'android/isg-contract-tests/**'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/telemetry/ClientFlowEvents.kt'
       - 'scripts/client_flow_contract_test.mjs'
       - '.github/workflows/isg-foundation.yml'
+      - '.github/workflows/android-ci.yml'
   push:
     branches: [main]
     paths:
@@ -38,10 +41,13 @@ on:
       - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'RiskDetected.xcodeproj/project.pbxproj'
       - 'android/app/build.gradle.kts'
+      - 'android/settings.gradle.kts'
+      - 'android/isg-contract-tests/**'
       - 'RiskDetected.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/telemetry/ClientFlowEvents.kt'
       - 'scripts/client_flow_contract_test.mjs'
       - '.github/workflows/isg-foundation.yml'
+      - '.github/workflows/android-ci.yml'
 
 permissions:
   contents: read

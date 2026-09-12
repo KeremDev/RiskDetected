@@ -92,6 +92,9 @@ jobs:
       - name: Assemble debug
         run: ./gradlew :app:assembleDebug --stacktrace
 
+      - name: Assemble isolated on-device ISG contract harness
+        run: ./gradlew :isg-contract-tests:assembleDebugAndroidTest --stacktrace
+
       - name: Assemble QA
         run: ./gradlew :app:assembleQa --stacktrace
 

@@ -52,6 +52,7 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 | Son birleşik servis provası | Auth + Storage + session75/75 PASS; 18:30:41–18:31:24 UTC; 588 dosya yeniden doğrulandı, source unchanged, dört container cleanup PASS |
 | Sentetik Auth CI dilimi | Müşteri verisiz sıfırdan GoTrue/Auth77, tek hesap, session SQL ve gerçek logout48/48; foundation101/101; ayrı restore regresyonu75/75 yeniden PASS; iki ortam cleanup PASS |
 | Ortak context corpus | Deno 44/44 (43 fixture + 1 ilave test), Swift 43/43, Android 43/43 ayrı JUnit senaryosu |
+| Android cihaz üstü corpus | API26/33/37 ayrı AVD'lerde 44'er, toplam132/132 PASS; test APK kaldırıldı, yalnız ayrılmış emülatörler kapatıldı; foundation106/106; UI/live E2E değil |
 | Sentetik DB transaction | 30/30; 20 paralel retry, 20 version yarışı, 20 worker claim, audit/outbox fault, lease expiry ve gerçek DB bağlantısı öldürme; cleanup PASS |
 | P03 legacy DB matrisi | Ek 329/329 varyasyon; suite toplam 31 üst seviye kontrol PASS; orijinal helper gövdeleri restore ile eşleşti |
 | P03 kapasite shadow | 17/17 Node grup, 864 sonlu kombinasyon; Plus5 floor, Pro aday30, unlimited, unknown sync ve downgrade ayrımı |
@@ -84,6 +85,8 @@ Ek kanıtlar: [Masaüstü şifreli kopya](evidence/P00_DESKTOP_BACKUP_2026-09-12
 
 ## Kullanılabilir yeni komutlar
 
+[Android native contract matrisi](P01_ANDROID_NATIVE_CONTRACT.md), [132 kontrol ve kaynak hash'leri](evidence/P01_ANDROID_NATIVE_CONTRACT_2026-09-12.json). Ana Android derleme kontrolü ve harness lint PASS (tek sürüm-kataloğu öneri uyarısı); mevcut core:data test görevi bu son turda önbellekten doğrulandı. Sentetik Auth CI hazırlığı `cd15bc74` commit'inde.
+
 ~~~bash
 node scripts/isg/run_suite.mjs foundation
 node scripts/isg/verify_identity.mjs
@@ -99,6 +102,7 @@ node scripts/isg/run_auth_restore.mjs --isolated-copy
 node scripts/isg/run_auth_restore.mjs --isolated-copy --with-storage
 node scripts/isg/run_auth_restore.mjs --isolated-copy --with-storage --with-session-guard
 node scripts/isg/run_auth_restore.mjs --synthetic-session
+env JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home node scripts/isg/run_android_contract.mjs --serial emulator-5554
 ~~~
 
 Restore ve capture modları offline foundation runner'a dahil değildir. Bunlar restricted backup çıktısı üretir ve yalnız açık P00 işlemi için çalıştırılır. Ayrı `--synthetic-session` yalnız yeni test verisi üretir; bu dar mod ayrı CI job'una bağlandı. Tamamlanmış restore'un üstüne yeniden yazma engeli var. Mevcut diğer Docker/Supabase stack'leri durdurulmadı veya resetlenmedi.

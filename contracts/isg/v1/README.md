@@ -12,6 +12,7 @@ Bu ilk dilim production feature açmaz ve mevcut API sözleşmesini değiştirme
 - scripts/isg/verify_backup.mjs: mevcut checkpoint'i read-only hash/arşiv/COPY metadata bakımından kontrol eder; restore çalıştırmaz, satır içeriği yazdırmaz.
 - function-test-map.json / scripts/isg/verify_function_map.mjs: üç yeni transport kaynağının fingerprint + corpus + harness bağı; tüm uygulama AST/coverage iddiası değildir.
 - scripts/isg/run_database_contract.mjs: yalnız yeni, no-network, synthetic PostgreSQL container'ında 30 transaction/concurrency/crash testi. Migration/API deploy etmez. Ayrıntılar docs/isg/P01_TRANSACTION_PROTOTYPE.md.
+- scripts/isg/run_android_contract.mjs: açıkça seçilmiş, yalnız ayrılmış test AVD'sinde 43 ortak fixture + 1 izolasyon kontrolü; SDK'sız/no-network test APK, hash kontrollü kurulum/cleanup. API26/33/37 kanıtı docs/isg/P01_ANDROID_NATIVE_CONTRACT.md içinde; uygulama E2E değildir.
 
 Mevcut komutlar:
 
