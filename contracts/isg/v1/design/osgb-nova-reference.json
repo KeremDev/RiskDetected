@@ -1,0 +1,873 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-09-12T19:15:33.713Z",
+  "source_root": "/Users/keremkayalar/Documents/Kerem-APPler/OSGBTakip",
+  "head": "ccb8aa733d6ba744f669e54b5338dcd343635ed8",
+  "working_tree_not_clean": true,
+  "source_files": [
+    {
+      "path": "apps/mobile/app/_layout.tsx",
+      "bytes": 2901,
+      "sha256": "1d57886287847cf21150d97e38ad6a722b17c470f7e41f221db48fe278dfb06b"
+    },
+    {
+      "path": "apps/mobile/app/(assignee)/_layout.tsx",
+      "bytes": 267,
+      "sha256": "3f3ba83b77d829f5d797b1a613c3d44790defc874dacd0816c2bb291bb85e994"
+    },
+    {
+      "path": "apps/mobile/app/(assignee)/documents.tsx",
+      "bytes": 190,
+      "sha256": "385ef036787734163b72059a3462173ce56804f9c1be020cd53ecf6a89e89fba"
+    },
+    {
+      "path": "apps/mobile/app/(assignee)/index.tsx",
+      "bytes": 507,
+      "sha256": "7829692037b3d0e5e0e84e0d56ec92b60106398368197f91cc433ebc2f80d3e6"
+    },
+    {
+      "path": "apps/mobile/app/(assignee)/notifications.tsx",
+      "bytes": 1015,
+      "sha256": "ff2e1f75b61032316467c040cc250938ba952db87cf8ac66227d5dec936661c3"
+    },
+    {
+      "path": "apps/mobile/app/(assignee)/training-manage.tsx",
+      "bytes": 78,
+      "sha256": "edf6e02080208799b4fca62dc8215e826cc56d1f5464b7159fefa0918046deb2"
+    },
+    {
+      "path": "apps/mobile/app/(assignee)/training-records.tsx",
+      "bytes": 94,
+      "sha256": "3526abe1dcc26230f7c1bb2dcfd85e05e2b51fc7fa4561fe117af4c5128f762f"
+    },
+    {
+      "path": "apps/mobile/app/(assignee)/training.tsx",
+      "bytes": 84,
+      "sha256": "c7159790a2b1f37f4b2be1f84f09ab9b7a5faa842912f0e77f7c159a294d8b70"
+    },
+    {
+      "path": "apps/mobile/app/(auth)/_layout.tsx",
+      "bytes": 283,
+      "sha256": "0f824905bea9db6b560b8a0a5b3808edceaf1f23c13c282905a66cadd9542bd5"
+    },
+    {
+      "path": "apps/mobile/app/(auth)/consent.tsx",
+      "bytes": 414,
+      "sha256": "7df464562979c660834e07a3244d663446e5edc3b6031ec7506320e4c1a3ff58"
+    },
+    {
+      "path": "apps/mobile/app/(auth)/login.tsx",
+      "bytes": 427,
+      "sha256": "cfc8f63c92df1d4643a4217bc38d2012a2cd4c22afbf90d4696f6cb864e8dbd9"
+    },
+    {
+      "path": "apps/mobile/app/(company)/_layout.tsx",
+      "bytes": 265,
+      "sha256": "e0e228e3e082ec30d7044a81f0e73acad1de36143d85649868f2d1888f5e2405"
+    },
+    {
+      "path": "apps/mobile/app/(company)/documents.tsx",
+      "bytes": 188,
+      "sha256": "53304e37c7e427218145175bce3d1c75015045afe3a547d8226fe45ed4c344b8"
+    },
+    {
+      "path": "apps/mobile/app/(company)/index.tsx",
+      "bytes": 505,
+      "sha256": "ba7677a2c24556140a7339553df09c24b78c9b7eb0b18b72efbe8b5b19a927a0"
+    },
+    {
+      "path": "apps/mobile/app/(company)/notifications.tsx",
+      "bytes": 1011,
+      "sha256": "d487d161177b3f56efaa8ce357badc6d32e9839e38a773ea57ace00814443f56"
+    },
+    {
+      "path": "apps/mobile/app/(company)/training-manage.tsx",
+      "bytes": 78,
+      "sha256": "edf6e02080208799b4fca62dc8215e826cc56d1f5464b7159fefa0918046deb2"
+    },
+    {
+      "path": "apps/mobile/app/(company)/training-records.tsx",
+      "bytes": 94,
+      "sha256": "3526abe1dcc26230f7c1bb2dcfd85e05e2b51fc7fa4561fe117af4c5128f762f"
+    },
+    {
+      "path": "apps/mobile/app/(company)/training.tsx",
+      "bytes": 84,
+      "sha256": "c7159790a2b1f37f4b2be1f84f09ab9b7a5faa842912f0e77f7c159a294d8b70"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/_layout.tsx",
+      "bytes": 263,
+      "sha256": "13dd389fc1dcc12ebbe7f3ebb5df04b84dbade5cb068c3805989bd348c6a2983"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/business-memory.tsx",
+      "bytes": 189,
+      "sha256": "bc22f99436393ad13cc8a57d8eed717a8645dbb3bbc5e232e010ec23175710b8"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/companies/[companyId].tsx",
+      "bytes": 770,
+      "sha256": "3b1ae99bced745a120af2a9c9a5fb75bf204619524fded06fd56530c1787f165"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/companies/index.tsx",
+      "bytes": 473,
+      "sha256": "47a343abb08c8491ff4f60aa1cc15a39b8bb1a3b22e6325481924822f8641804"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/document-checklist.tsx",
+      "bytes": 341,
+      "sha256": "e7707f5a2beddcc05b3b55e3cf753c1323c20aa3e9584ad5e1a54a1b67e51eda"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/documents.tsx",
+      "bytes": 339,
+      "sha256": "1cdbd8c53e1eaea999836b9820bac68dd3893db20ed364a9b4423acff20800a6"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/findings/[actionId].tsx",
+      "bytes": 919,
+      "sha256": "8e0843f6dcc8973f4eefebb822022416b0ec39cc03177afbd6c12211707149d8"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/findings/index.tsx",
+      "bytes": 981,
+      "sha256": "a3768fb3f512df2d864fbf0887ab1397ed5b6bf9fc863447fd22ba4243214c82"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/index.tsx",
+      "bytes": 1600,
+      "sha256": "138ea56f49509f3481a6d128bf9ebf2835f95644b260e269451cfe69019dfcf3"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/new-finding.tsx",
+      "bytes": 6061,
+      "sha256": "a293932dbb58f085056747c8625f185d6d16a1522128aa9c72b23003d34d76d8"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/notifications.tsx",
+      "bytes": 718,
+      "sha256": "bf1b635138530ce0356326e5ac7e20a8e8ca4b09f6748e19325b3f2943b38c16"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/report-archive.tsx",
+      "bytes": 185,
+      "sha256": "bbd3b1b6ffd7654d49d3ae29920599a300e4d09ac1fdbb3a206cd592cbe2ffc7"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/reports.tsx",
+      "bytes": 571,
+      "sha256": "fed00bbda0baf8e7154be0d3e503d162a295bd163548bfd287dd86655ef1646b"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/statistics.tsx",
+      "bytes": 173,
+      "sha256": "a1cd0146e8674e3c8f12ab5af3f027466490d39e7f0737e80c49e91ea57d6764"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/training-manage.tsx",
+      "bytes": 78,
+      "sha256": "edf6e02080208799b4fca62dc8215e826cc56d1f5464b7159fefa0918046deb2"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/training-personnel.tsx",
+      "bytes": 96,
+      "sha256": "d9e81fa7fe3979966f2b89fb2d270c4717c4f9eebd99ae5b39a441289728d603"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/training-records.tsx",
+      "bytes": 94,
+      "sha256": "3526abe1dcc26230f7c1bb2dcfd85e05e2b51fc7fa4561fe117af4c5128f762f"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/training-session.tsx",
+      "bytes": 104,
+      "sha256": "349ec8158950dbf60e18308dc47c478737432a014e3249cd71e468ac54a164ab"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/training-settings.tsx",
+      "bytes": 94,
+      "sha256": "5fd6a708b57a35859d3f0d542d797a30cf333e4c0c606b2e8acf3e3d2bab3949"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/training.tsx",
+      "bytes": 84,
+      "sha256": "c7159790a2b1f37f4b2be1f84f09ab9b7a5faa842912f0e77f7c159a294d8b70"
+    },
+    {
+      "path": "apps/mobile/app/(expert)/visits.tsx",
+      "bytes": 416,
+      "sha256": "5b8c99c5acdd2d69f7ff73fe569747154b74bbad59e1a2bd4b3f55577ffc2b51"
+    },
+    {
+      "path": "apps/mobile/app/(osgb)/_layout.tsx",
+      "bytes": 259,
+      "sha256": "a2b7064437a8290182e1335f9467916a94ef04596c2f1491a1a7c84bf2f4b5b9"
+    },
+    {
+      "path": "apps/mobile/app/(osgb)/document-checklist.tsx",
+      "bytes": 337,
+      "sha256": "e7cc22047470599ac9dfe9e3f8a2ac6d1eaf438ec441895920beaecc405e739e"
+    },
+    {
+      "path": "apps/mobile/app/(osgb)/documents.tsx",
+      "bytes": 345,
+      "sha256": "15331c90b1d20a2890cba1ac2700c56d0546f0d4d07d4fbffcedcf55a8f6b903"
+    },
+    {
+      "path": "apps/mobile/app/(osgb)/finding.tsx",
+      "bytes": 539,
+      "sha256": "389a247d2b71c52f53b34381e129fc89d6d92e99fb28c09b95a2206aaa52a7ca"
+    },
+    {
+      "path": "apps/mobile/app/(osgb)/findings.tsx",
+      "bytes": 12942,
+      "sha256": "3f2d869668bfd3b6c1c4312e32f7f3fff43775e51c1b6c2e581e3f9648002858"
+    },
+    {
+      "path": "apps/mobile/app/(osgb)/index.tsx",
+      "bytes": 137,
+      "sha256": "b1c53cb2a1f8d536a33acbe27ef7574bc60bcd53db9df92d922cd93db88a4f67"
+    },
+    {
+      "path": "apps/mobile/app/(osgb)/new-finding.tsx",
+      "bytes": 758,
+      "sha256": "3eae92413afecd46c602ac399c6ef377a65f7f7a0fbf21a67ccb2f88975d0eb5"
+    },
+    {
+      "path": "apps/mobile/app/(osgb)/notifications.tsx",
+      "bytes": 594,
+      "sha256": "22308b769e1f4d44db6b569d62b5490a80d1baa85de6635f5f68df9f3b28f0f3"
+    },
+    {
+      "path": "apps/mobile/app/(osgb)/training-manage.tsx",
+      "bytes": 78,
+      "sha256": "edf6e02080208799b4fca62dc8215e826cc56d1f5464b7159fefa0918046deb2"
+    },
+    {
+      "path": "apps/mobile/app/(osgb)/training-personnel.tsx",
+      "bytes": 96,
+      "sha256": "d9e81fa7fe3979966f2b89fb2d270c4717c4f9eebd99ae5b39a441289728d603"
+    },
+    {
+      "path": "apps/mobile/app/(osgb)/training-records.tsx",
+      "bytes": 94,
+      "sha256": "3526abe1dcc26230f7c1bb2dcfd85e05e2b51fc7fa4561fe117af4c5128f762f"
+    },
+    {
+      "path": "apps/mobile/app/(osgb)/training-session.tsx",
+      "bytes": 104,
+      "sha256": "349ec8158950dbf60e18308dc47c478737432a014e3249cd71e468ac54a164ab"
+    },
+    {
+      "path": "apps/mobile/app/(osgb)/training-settings.tsx",
+      "bytes": 94,
+      "sha256": "5fd6a708b57a35859d3f0d542d797a30cf333e4c0c606b2e8acf3e3d2bab3949"
+    },
+    {
+      "path": "apps/mobile/app/(osgb)/training.tsx",
+      "bytes": 84,
+      "sha256": "c7159790a2b1f37f4b2be1f84f09ab9b7a5faa842912f0e77f7c159a294d8b70"
+    },
+    {
+      "path": "apps/mobile/app/(osgb)/visits.tsx",
+      "bytes": 261,
+      "sha256": "d695e7c1c4fec7513116746996435fee02e9f3b3b49ad6550cc486cb81f9a422"
+    },
+    {
+      "path": "apps/mobile/app/(osgb)/workspace.tsx",
+      "bytes": 478,
+      "sha256": "7bd6af07b0c122be84c26ae4f7ae9dcca6e75efab60ac21c7b8599a9d5b09923"
+    },
+    {
+      "path": "apps/mobile/app/(shared)/_layout.tsx",
+      "bytes": 657,
+      "sha256": "8dd0c91b4e0ca188be3677a74484c2d4a967458a879e3fa1343806ac00def0c4"
+    },
+    {
+      "path": "apps/mobile/app/(shared)/profile.tsx",
+      "bytes": 10131,
+      "sha256": "db9882f7bdb7c20b4d58e84e7e79846735bb84f9a1e32d78a34d57de6ddd1699"
+    },
+    {
+      "path": "apps/mobile/app/index.tsx",
+      "bytes": 734,
+      "sha256": "1a98171b436f7f657aa1bc8904e44ed0dde7bd98bef06786876762e54ec06099"
+    },
+    {
+      "path": "apps/mobile/src/components/ExpertActivityCard.tsx",
+      "bytes": 7520,
+      "sha256": "aa434c728613add340eb237e0b0a641c5f05dc8e258c4713dce2082a3b78fe36"
+    },
+    {
+      "path": "apps/mobile/src/components/MobileShell.tsx",
+      "bytes": 47500,
+      "sha256": "81d31406b7082b7e67d8df54f11675631191d4517866caf89a07551c16db0da2"
+    },
+    {
+      "path": "apps/mobile/src/components/nova/fields.tsx",
+      "bytes": 6299,
+      "sha256": "635df10ca72bd1608737c295597e9a1f3b03796422db7c37ec2f9ecfe586baf9"
+    },
+    {
+      "path": "apps/mobile/src/components/nova/Icon.tsx",
+      "bytes": 9905,
+      "sha256": "aedf87f47875f7a6275d0d99e92eb9ad1fa9bbe6175687725d61fded14bc057e"
+    },
+    {
+      "path": "apps/mobile/src/components/nova/index.ts",
+      "bytes": 815,
+      "sha256": "9eddba90c145cd7ab603ee1669a80e3dfa148b596f860d97e57adc90d4984d7d"
+    },
+    {
+      "path": "apps/mobile/src/components/nova/loading.tsx",
+      "bytes": 2950,
+      "sha256": "9f621b4445835bed2bbbbdeafb29b4e77f31e0e661ee1a6f978dbe56102d8769"
+    },
+    {
+      "path": "apps/mobile/src/components/nova/overlays.tsx",
+      "bytes": 25114,
+      "sha256": "4fa90caf0288c8db7d84f9630da0389ee5ce61ec6293bba84f9f1b9d9cea3c68"
+    },
+    {
+      "path": "apps/mobile/src/components/nova/PhotoBackdrop.tsx",
+      "bytes": 1618,
+      "sha256": "407027484c47979cb75088cd5cec1af3660624d77139d727d00ce99f7f2ea83e"
+    },
+    {
+      "path": "apps/mobile/src/components/nova/primitives.tsx",
+      "bytes": 24646,
+      "sha256": "c7c2f6a325cf4740579a2765162f2b35e9650f3be3eb2b5ce06dc118bb2f8194"
+    },
+    {
+      "path": "apps/mobile/src/components/nova/shell.tsx",
+      "bytes": 17530,
+      "sha256": "91a449974eeebf0f71bcc201181e5bc4c7476031f4ff20741bea3d71d2abd92e"
+    },
+    {
+      "path": "apps/mobile/src/components/osgb/OsgbDashboard.tsx",
+      "bytes": 12518,
+      "sha256": "bf2a6a20e46e524ce4b3fd9794651f76f6dc32dbdc52019a6f2991ae290248bc"
+    },
+    {
+      "path": "apps/mobile/src/components/OsgbForm.tsx",
+      "bytes": 5148,
+      "sha256": "978598ff552f69c5d513eb3dbcb8d9a96e4a0008a561044c91561af3fcd2bb66"
+    },
+    {
+      "path": "apps/mobile/src/components/RoleLayout.tsx",
+      "bytes": 1577,
+      "sha256": "a60e331f3571a1f347ea41dbe147b3ff86a38d11d350b39d4a1cadf464b2b148"
+    },
+    {
+      "path": "apps/mobile/src/components/TrainingEntry.tsx",
+      "bytes": 3906,
+      "sha256": "eb0fae346fd4ade52bafdb9a700d5748adeb3f3791b1a9f5090f4158765f8bbe"
+    },
+    {
+      "path": "apps/mobile/src/components/ui/AccordionSection.tsx",
+      "bytes": 3033,
+      "sha256": "a91064c1c2f5e61140c87e1cc105953033f27a495970778aadbf860effc1589d"
+    },
+    {
+      "path": "apps/mobile/src/components/ui/AppScreen.tsx",
+      "bytes": 4287,
+      "sha256": "d8f44aa3624ae0b4dae87ed303ccd10607141a618c812ce4cc519e732f74359a"
+    },
+    {
+      "path": "apps/mobile/src/components/ui/GroupedList.tsx",
+      "bytes": 2733,
+      "sha256": "53d89891a5b39bdeb83ee68da3fdc4990a89a6ef2302c84f4d2539626d5f00d5"
+    },
+    {
+      "path": "apps/mobile/src/components/ui/InlineSelect.tsx",
+      "bytes": 784,
+      "sha256": "9cb611fa582bf181a1401dd3f16412aeaaddbfedce4491146791f21bf9991382"
+    },
+    {
+      "path": "apps/mobile/src/components/ui/ScreenState.tsx",
+      "bytes": 5908,
+      "sha256": "2b9702c64b85583b8c65d9430e128073963473fc7daac2f2b239f89abfc0f93f"
+    },
+    {
+      "path": "apps/mobile/src/components/ui/SelectSheet.tsx",
+      "bytes": 781,
+      "sha256": "149995b6f85eadf568e0192e404e6a14d6dcf576a5deeac784dac961e856a5fe"
+    },
+    {
+      "path": "apps/mobile/src/components/ui/StickyActionBar.tsx",
+      "bytes": 2826,
+      "sha256": "075dcbcd3252d6c1bceebca90c4a832befb09a689cf945ad34db5a2b42893e5d"
+    },
+    {
+      "path": "apps/mobile/src/components/ui/SummaryStrip.tsx",
+      "bytes": 2485,
+      "sha256": "4cb5892d29a3282eb22f0b4ac9c7efa42ef85374cee20409667e16f3c2300b35"
+    },
+    {
+      "path": "apps/mobile/src/components/ui/TenantLogo.tsx",
+      "bytes": 1548,
+      "sha256": "82bf2180f4156e58606f61e1c1499b20ab690d40ff16bbbc6c79258c69461619"
+    },
+    {
+      "path": "apps/mobile/src/screens/ActionDetailScreen.tsx",
+      "bytes": 69518,
+      "sha256": "ba2f382d6dd3433b12d90e6cfd43d4a25e81f34b6ff846c400b5d6ac255dfdbf"
+    },
+    {
+      "path": "apps/mobile/src/screens/ActionListScreen.tsx",
+      "bytes": 28390,
+      "sha256": "faa18659f5f22200007bfe707c44e55b036c131cdeefd6a6b28142a804c481a2"
+    },
+    {
+      "path": "apps/mobile/src/screens/AnnotationScreen.tsx",
+      "bytes": 8043,
+      "sha256": "c01d6ebb18b4f70c688b57b3df8838de882e5e54af63bd730095c0f0544791c7"
+    },
+    {
+      "path": "apps/mobile/src/screens/CompanyDocumentsScreen.tsx",
+      "bytes": 20114,
+      "sha256": "176551e86713d9272f284f4033803978234d31568ab763b21a2c9f91dc401b19"
+    },
+    {
+      "path": "apps/mobile/src/screens/CompanyPanelScreen.tsx",
+      "bytes": 54501,
+      "sha256": "89c1d19e1ff233ea077653ca8332b9965407cc5542bb9236f7c145a3d260499b"
+    },
+    {
+      "path": "apps/mobile/src/screens/DocumentCenterScreen.tsx",
+      "bytes": 1144,
+      "sha256": "dd0acafaffdde463b403ba53804b2388b2b304ab4170c46d6d7b24783d52daae"
+    },
+    {
+      "path": "apps/mobile/src/screens/DocumentChecklistScreen.tsx",
+      "bytes": 53762,
+      "sha256": "9f1784aaecf8dee4c564ef2df3d5814d10f199efc82e3c78d6137ca66a036256"
+    },
+    {
+      "path": "apps/mobile/src/screens/ExpertBusinessMemoryScreen.tsx",
+      "bytes": 15176,
+      "sha256": "0ce79388154eaa99af64ffa08325141afdcd938a1da2a5a274f6bfa19727c28b"
+    },
+    {
+      "path": "apps/mobile/src/screens/ExpertCompaniesScreen.tsx",
+      "bytes": 5316,
+      "sha256": "8d51d0e3a945305c076ce50935f61bc92509ee3215499374a430405e831b8640"
+    },
+    {
+      "path": "apps/mobile/src/screens/ExpertCompanyDetailScreen.tsx",
+      "bytes": 15124,
+      "sha256": "dffd5e768e0765821276bcea0c700a5b4d320054e7529fc3cfe1e056f8514e60"
+    },
+    {
+      "path": "apps/mobile/src/screens/ExpertReportArchiveScreen.tsx",
+      "bytes": 8866,
+      "sha256": "48dfa1ed3068ad905dd79fb5db4d79c99009b4f8670be756620e421a6bb2f57b"
+    },
+    {
+      "path": "apps/mobile/src/screens/ExpertReportsScreen.tsx",
+      "bytes": 18041,
+      "sha256": "77c28d222069e2b7dd9c9f0726637f0b44af8acc41c0e2481a817f3152114b4c"
+    },
+    {
+      "path": "apps/mobile/src/screens/ExpertStatisticsScreen.tsx",
+      "bytes": 19452,
+      "sha256": "3aefa089c3d58b9773399bef295ee5c711794ad17bc0f3d294eb7b594403fc98"
+    },
+    {
+      "path": "apps/mobile/src/screens/HomeScreen.tsx",
+      "bytes": 39732,
+      "sha256": "64bbc8a78316a614a726e50098758438678bb31d29cb9fe71cb69892ecf7160f"
+    },
+    {
+      "path": "apps/mobile/src/screens/KvkkConsentScreen.tsx",
+      "bytes": 5065,
+      "sha256": "8f238c1b7655899dc0285b20ffd9f5ab81973ea82b4edd08459a52c5ff85ab09"
+    },
+    {
+      "path": "apps/mobile/src/screens/LoginScreen.tsx",
+      "bytes": 5903,
+      "sha256": "4a18636e4f3b3a387c682e7bfb8aeb4dbd0d035592acf25786261eb27a6aa135"
+    },
+    {
+      "path": "apps/mobile/src/screens/NewFindingScreen.tsx",
+      "bytes": 70267,
+      "sha256": "4ca5676366c13493f202656a51ecbf55c14a2faaedf6094702531ec6f2a2e38e"
+    },
+    {
+      "path": "apps/mobile/src/screens/OperationalNotificationsScreen.tsx",
+      "bytes": 8895,
+      "sha256": "65bcfef9e2b095560baf048271c2912e49aa079d53af86b678d696a1de59dc1f"
+    },
+    {
+      "path": "apps/mobile/src/screens/OsgbHomeScreen.tsx",
+      "bytes": 14401,
+      "sha256": "8b54b042c239a939c7544b746ecc3830903bab04f602c78592e7a90207db471e"
+    },
+    {
+      "path": "apps/mobile/src/screens/OsgbPanelScreen.tsx",
+      "bytes": 43129,
+      "sha256": "2e7933207a2576da1a7b16aa19063dd784a97c9a018908784bb0fe762aaf525f"
+    },
+    {
+      "path": "apps/mobile/src/screens/OsgbVisitsScreen.tsx",
+      "bytes": 4951,
+      "sha256": "cc730ca566fd209ece1331fd341550b9cd942f24076eff136957f1f4151fc242"
+    },
+    {
+      "path": "apps/mobile/src/screens/OsgbWorkspaceScreen.tsx",
+      "bytes": 133093,
+      "sha256": "68fc94f5a8ff64f02cf89eab84eb0574b6fb62bac5413397caf7557612ba7453"
+    },
+    {
+      "path": "apps/mobile/src/screens/StartupLoadingScreen.tsx",
+      "bytes": 2457,
+      "sha256": "efe50942d24792425ab16043a0ba54776db882162b4452eafded9b1f2f3da1c6"
+    },
+    {
+      "path": "apps/mobile/src/screens/TrainingHubScreen.tsx",
+      "bytes": 7442,
+      "sha256": "92a60bc4a8bc0679d0972b53c93b6c8867081425d55168e7795b391863d9fafe"
+    },
+    {
+      "path": "apps/mobile/src/screens/TrainingOverviewScreen.tsx",
+      "bytes": 15200,
+      "sha256": "56528031936a8e0a046ffc47f23f06a652566834dad4bbbb2401ee3cdbe2ca96"
+    },
+    {
+      "path": "apps/mobile/src/screens/TrainingPersonnelScreen.tsx",
+      "bytes": 12511,
+      "sha256": "bf8cd9d95614a69670d22d216396bdd25cb9dd938547cf7a2abc465f5c890af7"
+    },
+    {
+      "path": "apps/mobile/src/screens/TrainingScreen.tsx",
+      "bytes": 36353,
+      "sha256": "ee5e53120bf804158e61bc745d31b9890196865edfc797544dcd34750d3b13d5"
+    },
+    {
+      "path": "apps/mobile/src/screens/TrainingSessionEditorScreen.tsx",
+      "bytes": 21926,
+      "sha256": "8743939b870b333ef6ecee39f9a9a5485be43f3e92fdd3babf183dcdc5a1b0ab"
+    },
+    {
+      "path": "apps/mobile/src/screens/TrainingSettingsScreen.tsx",
+      "bytes": 6754,
+      "sha256": "bef51b4e13aa675dbc5bb060db159c55b1735145b28b201bb698a8dfdf16847b"
+    },
+    {
+      "path": "apps/mobile/src/screens/VisitListScreen.tsx",
+      "bytes": 10456,
+      "sha256": "1b4ff94d5270900d7bb1ed11e518d5d8c5425223f931dcdae1be9b2ab69bd491"
+    },
+    {
+      "path": "apps/mobile/src/theme/mobile-theme.tsx",
+      "bytes": 2802,
+      "sha256": "9f4fd36a99074498cb3dd4aa483a2d048e543848df1766ffce68e2b33ae4d428"
+    },
+    {
+      "path": "apps/mobile/src/theme/nova.ts",
+      "bytes": 15428,
+      "sha256": "f2861ad7e835642a88ec95af2e6b36be251edcd2d8a791233f19cf4a6165d497"
+    }
+  ],
+  "tokens": {
+    "novaFont": {
+      "regular": "PlusJakartaSans_400Regular",
+      "medium": "PlusJakartaSans_500Medium",
+      "semibold": "PlusJakartaSans_600SemiBold",
+      "bold": "PlusJakartaSans_700Bold",
+      "extrabold": "PlusJakartaSans_800ExtraBold"
+    },
+    "novaType": {
+      "screenTitle": {
+        "fontFamily": "PlusJakartaSans_800ExtraBold",
+        "fontSize": 22,
+        "letterSpacing": -0.5,
+        "lineHeight": 28
+      },
+      "sheetTitle": {
+        "fontFamily": "PlusJakartaSans_800ExtraBold",
+        "fontSize": 19,
+        "letterSpacing": -0.4,
+        "lineHeight": 25
+      },
+      "dialogTitle": {
+        "fontFamily": "PlusJakartaSans_800ExtraBold",
+        "fontSize": 16.5,
+        "letterSpacing": -0.3,
+        "lineHeight": 22
+      },
+      "brand": {
+        "fontFamily": "PlusJakartaSans_800ExtraBold",
+        "fontSize": 18,
+        "letterSpacing": -0.3,
+        "lineHeight": 23
+      },
+      "sectionTitle": {
+        "fontFamily": "PlusJakartaSans_800ExtraBold",
+        "fontSize": 14,
+        "letterSpacing": -0.1,
+        "lineHeight": 19
+      },
+      "cardTitle": {
+        "fontFamily": "PlusJakartaSans_700Bold",
+        "fontSize": 14,
+        "letterSpacing": -0.2,
+        "lineHeight": 17.5
+      },
+      "button": {
+        "fontFamily": "PlusJakartaSans_700Bold",
+        "fontSize": 15,
+        "lineHeight": 20
+      },
+      "buttonSm": {
+        "fontFamily": "PlusJakartaSans_700Bold",
+        "fontSize": 13.5,
+        "lineHeight": 18
+      },
+      "body": {
+        "fontFamily": "PlusJakartaSans_500Medium",
+        "fontSize": 13,
+        "lineHeight": 18
+      },
+      "bodyStrong": {
+        "fontFamily": "PlusJakartaSans_600SemiBold",
+        "fontSize": 12.5,
+        "lineHeight": 17
+      },
+      "label": {
+        "fontFamily": "PlusJakartaSans_700Bold",
+        "fontSize": 12,
+        "lineHeight": 16
+      },
+      "meta": {
+        "fontFamily": "PlusJakartaSans_600SemiBold",
+        "fontSize": 11.5,
+        "lineHeight": 15.5
+      },
+      "metaQuiet": {
+        "fontFamily": "PlusJakartaSans_400Regular",
+        "fontSize": 12,
+        "lineHeight": 16
+      },
+      "badge": {
+        "fontFamily": "PlusJakartaSans_700Bold",
+        "fontSize": 10.5,
+        "lineHeight": 14
+      },
+      "tab": {
+        "fontFamily": "PlusJakartaSans_700Bold",
+        "fontSize": 9.5,
+        "letterSpacing": 0.1,
+        "lineHeight": 13
+      },
+      "overline": {
+        "fontFamily": "PlusJakartaSans_800ExtraBold",
+        "fontSize": 10.5,
+        "letterSpacing": 0.5,
+        "lineHeight": 14
+      },
+      "micro": {
+        "fontFamily": "PlusJakartaSans_800ExtraBold",
+        "fontSize": 9.5,
+        "letterSpacing": 0.6,
+        "lineHeight": 13
+      }
+    },
+    "novaRadius": {
+      "xs": 5,
+      "sm": 7,
+      "md": 12,
+      "control": 14,
+      "field": 16,
+      "chip": 22,
+      "card": 22,
+      "popover": 26,
+      "dialog": 28,
+      "sheet": 32,
+      "tabBar": 34,
+      "pill": 999
+    },
+    "novaSpace": {
+      "screenX": 20,
+      "xs": 4,
+      "sm": 7,
+      "md": 10,
+      "lg": 14,
+      "xl": 18,
+      "2xl": 24
+    },
+    "novaLayout": {
+      "tabBarHeight": 66,
+      "tabBarInset": 14,
+      "tabBarBottom": 26,
+      "scrollBottomInset": 122,
+      "scrollTopInset": 58,
+      "deviceWidth": 402,
+      "deviceHeight": 874
+    },
+    "roleAccent": {
+      "expert": {
+        "light": "#2ed256",
+        "dark": "#2ed256",
+        "ink": "#0f7a34",
+        "soft": "#eafbef",
+        "softDark": "#153a24",
+        "onAccent": "#ffffff"
+      },
+      "osgb": {
+        "light": "#2563eb",
+        "dark": "#5b8cf7",
+        "ink": "#1b4bbf",
+        "soft": "#eaf1ff",
+        "softDark": "#1c2b4a",
+        "onAccent": "#ffffff"
+      },
+      "company": {
+        "light": "#0f806a",
+        "dark": "#3fb79b",
+        "ink": "#0b6353",
+        "soft": "#e5f7f1",
+        "softDark": "#14392f",
+        "onAccent": "#ffffff"
+      },
+      "assignee": {
+        "light": "#6d5bd0",
+        "dark": "#a882f5",
+        "ink": "#4f3fa8",
+        "soft": "#eeeafe",
+        "softDark": "#2b2450",
+        "onAccent": "#ffffff"
+      }
+    },
+    "lightStatus": {
+      "success": {
+        "bg": "#eafbef",
+        "ink": "#0f7a34",
+        "dot": "#1fa845"
+      },
+      "warning": {
+        "bg": "#fff6e8",
+        "ink": "#a4700f",
+        "dot": "#d68b19"
+      },
+      "danger": {
+        "bg": "#ffeeec",
+        "ink": "#c9382c",
+        "dot": "#e0453b"
+      },
+      "info": {
+        "bg": "#eef0ff",
+        "ink": "#3f4bc4",
+        "dot": "#4b57d6"
+      },
+      "neutral": {
+        "bg": "#f4f4f5",
+        "ink": "#5c5c63",
+        "dot": "#b4b4ba"
+      }
+    },
+    "darkStatus": {
+      "success": {
+        "bg": "#153a24",
+        "ink": "#5fe08a",
+        "dot": "#2ed256"
+      },
+      "warning": {
+        "bg": "#3d2f14",
+        "ink": "#f0be6a",
+        "dot": "#e8a13a"
+      },
+      "danger": {
+        "bg": "#3d1e1c",
+        "ink": "#ff8b81",
+        "dot": "#e0453b"
+      },
+      "info": {
+        "bg": "#20244a",
+        "ink": "#9aa4ff",
+        "dot": "#5b8cf7"
+      },
+      "neutral": {
+        "bg": "#26262b",
+        "ink": "#a8a8ae",
+        "dot": "#6b6b72"
+      }
+    },
+    "lightBase": {
+      "canvas": "#f0f0f0",
+      "canvasSheet": "#f7f7f8",
+      "surface": "#ffffff",
+      "surfacePressed": "#fafafa",
+      "surfaceMuted": "#f4f4f5",
+      "glass": "rgba(255,255,255,.62)",
+      "glassBorder": "rgba(255,255,255,.7)",
+      "text": "#111111",
+      "textSecondary": "#4b4b52",
+      "textTertiary": "#6b6b72",
+      "textMuted": "#8b8b8f",
+      "textSubtle": "#a8a8ae",
+      "textPlaceholder": "#9a9a9f",
+      "onDark": "#ffffff",
+      "hairline": "rgba(17,17,17,.07)",
+      "border": "rgba(17,17,17,.1)",
+      "borderStrong": "#d5d5da",
+      "borderMuted": "#ececef",
+      "inverse": "#111111",
+      "onInverse": "#ffffff",
+      "scrim": "rgba(15,15,17,.38)"
+    },
+    "darkBase": {
+      "canvas": "#111114",
+      "canvasSheet": "#17171b",
+      "surface": "#1c1c21",
+      "surfacePressed": "#232329",
+      "surfaceMuted": "#26262b",
+      "glass": "rgba(28,28,33,.62)",
+      "glassBorder": "rgba(255,255,255,.09)",
+      "text": "#f5f5f7",
+      "textSecondary": "#c9c9d0",
+      "textTertiary": "#a8a8ae",
+      "textMuted": "#8b8b8f",
+      "textSubtle": "#6f6f77",
+      "textPlaceholder": "#7c7c84",
+      "onDark": "#ffffff",
+      "hairline": "rgba(255,255,255,.08)",
+      "border": "rgba(255,255,255,.12)",
+      "borderStrong": "#3a3a42",
+      "borderMuted": "#2b2b31",
+      "inverse": "#f5f5f7",
+      "onInverse": "#111114",
+      "scrim": "rgba(0,0,0,.55)"
+    },
+    "novaAvatarGradients": [
+      [
+        "#f97362",
+        "#d9382b"
+      ],
+      [
+        "#5b8cf7",
+        "#2b46c9"
+      ],
+      [
+        "#ffb457",
+        "#e07c14"
+      ],
+      [
+        "#4ad48a",
+        "#159c58"
+      ],
+      [
+        "#a882f5",
+        "#6c3fd1"
+      ]
+    ],
+    "novaUserGradient": [
+      "#3f3f46",
+      "#18181b"
+    ]
+  },
+  "selection": "expert iOS visual language only; no OSGB auth/backend or other-role UI migration",
+  "runtime_visual_parity_verified": false
+}

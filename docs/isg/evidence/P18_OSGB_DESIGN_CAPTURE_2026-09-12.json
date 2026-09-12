@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "archive": "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/backups/isg-osgb-design-20260912-PNKQxM/osgb-mobile-design-source.tar.gz",
+  "bytes": 221443,
+  "sha256": "fbcf423181a95344b2484ce4e0339881b81a8d4557bfd5e0efa529d2553533ce",
+  "files": 113,
+  "source_unchanged": true,
+  "verified_at": "2026-09-12T19:22:08.648Z",
+  "scope": "UI/theme/routes only; no env/auth secrets/database; source unchanged",
+  "manifest": "contracts/isg/v1/design/osgb-nova-reference.json",
+  "html_and_fonts_in_archive": false,
+  "encrypted": false,
+  "permissions": "directory700/archive600",
+  "notes": [
+    "UI source only; not OSGBTakip project or database backup.",
+    "Initial tar per-file verification treated [] route names as patterns; escaped literal patterns verified all113 contents.",
+    "Same local disk; not off-device backup.",
+    "User chose expert iOS visual language; no other role/backend migration."
+  ]
+}
