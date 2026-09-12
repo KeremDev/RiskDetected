@@ -99,3 +99,32 @@ test('native shell has no live service dependency and remains outside legacy roo
   assert.match(project, /NovaNavigation.swift/);
   assert.match(project, /NovaShellTests.swift/);
 });
+test('hosted iOS shell target compiles only the real NOVA sources and synthetic harness', () => {
+  const project = read('tests/isg/shell-ios/ISGShellHarness.xcodeproj/project.pbxproj').toString();
+  const swiftFiles = [...project.matchAll(/path = ([A-Za-z]+\.swift);/g)].map(m => m[1]).sort();
+  assert.deepEqual(swiftFiles, ['NovaComponents.swift', 'NovaExpertShell.swift', 'NovaNavigation.swift', 'NovaTokens.swift', 'ShellHarnessApp.swift', 'ShellUITests.swift']);
+  assert.match(project, /path = \.\.\/\.\.\/\.\.\/App\/DesignSystem\/ISG;/);
+  assert.match(project, /SUPPORTED_PLATFORMS = iphonesimulator;/);
+  assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = com\.riskdetected\.isgshellharness;/);
+  assert.doesNotMatch(project, /XCRemoteSwiftPackageReference|PBXShellScriptBuildPhase|App\/Services|RiskDetected\.xcodeproj|CODE_SIGN_ENTITLEMENTS/);
+  for (const file of ['NovaComponents.swift', 'NovaExpertShell.swift', 'NovaNavigation.swift', 'NovaTokens.swift']) {
+    const imports = [...read(`App/DesignSystem/ISG/${file}`).toString().matchAll(/^import (\w+)/gm)].map(m => m[1]);
+    assert.ok(imports.every(name => ['Foundation', 'SwiftUI'].includes(name)));
+  }
+  const host = read('tests/isg/shell-ios/ShellHarnessApp.swift').toString();
+  assert.match(host, /#if !targetEnvironment\(simulator\)/);
+  assert.match(host, /#error\(/);
+  assert.doesNotMatch(host, /URLSession|Keychain|Supabase|Purchases|UserDefaults|openURL|FileManager/);
+  assert.doesNotMatch(read('RiskDetected.xcodeproj/project.pbxproj').toString(), /ShellHarnessApp|ISGShellHarness|ShellUITests/);
+});
+test('hosted UI tests assert actual content, fonts and hittability instead of only router state', () => {
+  const test = read('tests/isg/shell-ios/ShellUITests.swift').toString();
+  assert.match(test, /XCUIApplication\(bundleIdentifier: "com\.riskdetected\.isgshellharness"\)/);
+  assert.match(test, /qa\.content/);
+  assert.match(test, /node\.isHittable/);
+  assert.match(test, /fonts=ok/);
+  const info = read('tests/isg/shell-ios/HarnessInfo.plist').toString();
+  assert.match(info, /<key>UIAppFonts<\/key>/);
+  assert.equal((info.match(/\.ttf<\/string>/g) ?? []).length, 5);
+  assert.doesNotMatch(info, /CFBundleURLTypes|NSCameraUsageDescription|NSPhotoLibraryUsageDescription|NSAppTransportSecurity/);
+});

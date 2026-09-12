@@ -5,6 +5,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -119,4 +120,14 @@ class NovaShellTest {
     }
     @Test fun everyDrawerAndQuickAddEntryRoutesInLightTheme() = checkEveryMenuEntry(false)
     @Test fun everyDrawerAndQuickAddEntryRoutesInDarkTheme() = checkEveryMenuEntry(true)
+    @Test fun shellControlsMeet48DpTargetsAtCompactWidth() {
+        mount()
+        for (tag in listOf("nova.menu", "nova.notifications", "nova.profile", "nova.tab.home", "nova.tab.findings", "nova.add", "nova.tab.companies", "nova.tab.profile")) {
+            compose.onNodeWithTag(tag).assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp)
+        }
+        compose.onNodeWithTag("nova.menu").performClick()
+        compose.onNodeWithTag("nova.panel.close").assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp).performClick()
+        compose.onNodeWithTag("nova.add").performClick()
+        compose.onNodeWithTag("nova.panel.close").assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp)
+    }
 }

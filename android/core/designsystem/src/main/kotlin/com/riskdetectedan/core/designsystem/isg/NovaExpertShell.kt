@@ -82,7 +82,7 @@ internal fun NovaShellTopBar(current: NovaDestination, userName: String, hasUnre
             if (hasUnread) Box(Modifier.align(Alignment.TopEnd).padding(7.dp).size(8.dp)
                 .background(NovaColorToken.statusDangerDot.color(), CircleShape))
         }
-        Box(Modifier.size(44.dp).background(Color(0xFF27272A), RoundedCornerShape(14.dp))
+        Box(Modifier.size(48.dp).background(Color(0xFF27272A), RoundedCornerShape(14.dp))
             .clickable(role = Role.Button) { send(NovaNavigationEvent.Select(NovaTab.profile)) }
             .semantics(mergeDescendants = true) { contentDescription = "Hesabım" }.testTag("nova.profile"), contentAlignment = Alignment.Center) {
             if (expanded) Icon(Icons.Outlined.Person, null, tint = Color.White)
@@ -99,7 +99,7 @@ internal fun NovaShellTopBar(current: NovaDestination, userName: String, hasUnre
 
 @Composable
 private fun NovaShellIcon(icon: ImageVector, label: String, tag: String, enabled: Boolean = true, onClick: () -> Unit) {
-    Box(Modifier.size(44.dp).background(NovaColorToken.surface.color(), RoundedCornerShape(14.dp))
+    Box(Modifier.size(48.dp).background(NovaColorToken.surface.color(), RoundedCornerShape(14.dp))
         .clickable(enabled = enabled, role = Role.Button, onClick = onClick).semantics { contentDescription = label }.testTag(tag),
         contentAlignment = Alignment.Center) {
         Icon(icon, null, Modifier.size(17.dp), tint = NovaColorToken.text.color())

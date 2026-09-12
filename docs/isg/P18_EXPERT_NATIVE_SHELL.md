@@ -2,6 +2,8 @@
 
 12 Eylül 2026. OSGBTakip uzman panelinin üst menü, alt sekmeler, çekmece ve hızlı işlem yapısı iOS/Android için taşındı. **Bu bir sunum ve gezinme katmanıdır; yeni domain ekranları veya tüm geçiş tamamlanmış değildir.** Mevcut uygulama kökü bu kabuğa bağlanmadı. Preview içeriği açıkça sentetiktir; canlı kayıt gibi gösterilmez.
 
+Sonraki13 Eylül dilimi: [hostlu iOS pencere/etkileşim testleri](P18_HOSTED_SHELL_QA.md)8/8 geçti; iOS hit target düzeltmesi ve Android48dp uyarlaması yapıldı. Aşağıdaki test tablosu bu önceki commit'in tarihsel kapsamıdır; yeni sonuçların yerine geçmez.
+
 ## Yapı ve bağımlılıklar
 
 | Katman | iOS | Android | Bağımlılık |

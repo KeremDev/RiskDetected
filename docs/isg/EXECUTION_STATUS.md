@@ -4,6 +4,8 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 
 ## Güncel durum
 
+- 13 Eylül P18 hostlu UI dilimi:ayrı sentetik iOS uygulama penceresinde8/8 XCTest UI testi,34 menü yönlendirmesi, hesap reset/native stack/AX3 drawer+yatay bar ve44pt hedef kontrolü PASS. Android48dp uyarlamasıyla210/210 tasarım testi; hostless iOS18/18 regresyonu PASS. Ana uygulama/servis entegrasyonu hâlâ kapalı. [Hostlu QA ve sınırlar](P18_HOSTED_SHELL_QA.md).
+
 - P18 uzman shell dilimi:4 sekme+ortada Ekle,13 drawer/4 hızlı hedef,17 hedef kimliği; sekme bazlı geçmiş, tek panel, epoch reset ve availability gate iOS+Android'de hazır. Swift/Kotlin ortak75 senaryo/185 geçiş; Android design system209/209, iOS hostless18/18. Gerçek domain/root entegrasyonu ve iOS pencere/scroll E2E açık. [Kapsam ve akış](P18_EXPERT_NATIVE_SHELL.md).
 
 - P18 native tasarım ilk dilimi:40×2 renk,17 tipografi,26 ölçü,5 font ağırlığı ve metin/kart/rozet/buton iOS+Android'e eklendi. Kaynak üretim/font testi8, Swift128, Android123token+3Compose testi;12 iOS ortak içerik render senaryosu. Ana ekranlara bağlı değil; boş görüntüyü geçiren ilk render turu kanıt dışı. [Kapsam ve açık farklar](P18_NATIVE_DESIGN_FOUNDATION.md).

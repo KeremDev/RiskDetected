@@ -146,6 +146,49 @@ jobs:
             ${{ runner.temp }}/isg-design.xcresult
           if-no-files-found: warn
 
+  ios-shell-integration:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      # Separate simulator-only synthetic executable. No main app, services or secrets.
+      - name: Verify native shell isolation and source inventory
+        run: node scripts/isg/run_suite.mjs nova-design
+      - name: Run hosted shell interaction tests
+        shell: bash
+        run: |
+          ISG_SHELL_SIMULATOR_ID="$(xcrun simctl list devices available -j | node -e '
+            const fs = require("node:fs");
+            const inventory = JSON.parse(fs.readFileSync(0, "utf8"));
+            const runtimes = Object.keys(inventory.devices).filter(k => /\.iOS-/.test(k)).sort((a,b) => b.localeCompare(a,"en",{numeric:true}));
+            const phone = runtimes.flatMap(k => inventory.devices[k]).find(d => d.isAvailable && /^iPhone /.test(d.name) && /^[A-F0-9-]{36}$/i.test(d.udid));
+            if (!phone) process.exit(1);
+            console.log(phone.udid);
+          ')"
+          xcodebuild test -project tests/isg/shell-ios/ISGShellHarness.xcodeproj -scheme ISGShellHarness \
+            -destination "platform=iOS Simulator,id=$ISG_SHELL_SIMULATOR_ID" -parallel-testing-enabled NO \
+            -derivedDataPath "$RUNNER_TEMP/isg-shell-derived" -resultBundlePath "$RUNNER_TEMP/isg-shell.xcresult" \
+            -disableAutomaticPackageResolution CODE_SIGNING_ALLOWED=NO
+          xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/isg-shell.xcresult" --compact | node -e '
+            const fs = require("node:fs"), assert = require("node:assert/strict");
+            const summary = JSON.parse(fs.readFileSync(0, "utf8"));
+            const source = fs.readFileSync("tests/isg/shell-ios/ShellUITests.swift", "utf8");
+            const expected = (source.match(/^    func test\w+\(/gm) ?? []).length;
+            assert.ok(expected >= 8);
+            assert.equal(summary.passedTests, expected);
+            assert.equal(summary.failedTests, 0);
+            assert.equal(summary.skippedTests, 0);
+          '
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: isg-ios-hosted-shell-results
+          path: ${{ runner.temp }}/isg-shell.xcresult
+          if-no-files-found: warn
+
   postgres-transaction-prototype:
     runs-on: ubuntu-24.04
     timeout-minutes: 5

@@ -35,6 +35,9 @@ struct NovaExpertShell<Content: View>: View {
                 }
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     NovaShellTabBar(selected: navigation.selected, canOpen: navigation.canOpen, send: send)
+                        // safeAreaInset is a separate accessibility subtree on hosted iOS.
+                        .accessibilityHidden(navigation.overlay != nil)
+                        .allowsHitTesting(navigation.overlay == nil)
                         .padding(.horizontal, NovaDimensionToken.layoutTabBarInset.value)
                         .padding(.top, 8)
                         .padding(.bottom, max(10 - geometry.safeAreaInsets.bottom, 0) + 16)
@@ -122,6 +125,7 @@ struct NovaShellTabBar: View {
                     ScrollView(.horizontal, showsIndicators: true) {
                         NovaShellTabStrip(selected: selected, canOpen: canOpen, send: send, expanded: true)
                     }
+                    .accessibilityIdentifier("nova.tabs.scroll")
                     .onAppear { proxy.scrollTo(selected.rawValue, anchor: .center) }
                     .onChange(of: selected) { value in proxy.scrollTo(value.rawValue, anchor: .center) }
                 }.fixedSize(horizontal: false, vertical: true)
@@ -163,7 +167,8 @@ struct NovaShellTabStrip: View {
                         .frame(width: 42, height: 42)
                         .background(NovaColorToken.accent.color(in: scheme), in: Circle())
                     NovaText(text: "Ekle", style: .tab, color: NovaColorToken.text.color(in: scheme)).lineLimit(1)
-                }.frame(maxWidth: expanded ? nil : .infinity, minHeight: 52).padding(.horizontal, expanded ? 12 : 0)
+                }.frame(minWidth: 44, maxWidth: expanded ? nil : .infinity, minHeight: 52)
+                    .padding(.horizontal, expanded ? 12 : 0).contentShape(Rectangle())
             }.buttonStyle(.plain).accessibilityLabel("Ekle").accessibilityIdentifier("nova.add").id("add")
             tab(.companies)
             tab(.profile)
@@ -178,7 +183,8 @@ struct NovaShellTabStrip: View {
                 NovaText(text: tab.title, style: .tab, color: NovaColorToken.text.color(in: scheme))
                     .lineLimit(1).minimumScaleFactor(expanded ? 1 : 0.75)
             }.foregroundStyle(NovaColorToken.text.color(in: scheme))
-                .frame(maxWidth: expanded ? nil : .infinity, minHeight: 52).padding(.horizontal, expanded ? 12 : 0)
+                .frame(minWidth: 44, maxWidth: expanded ? nil : .infinity, minHeight: 52)
+                .padding(.horizontal, expanded ? 12 : 0).contentShape(Rectangle())
                 .opacity(canOpen(tab.root) ? (selected == tab ? 1 : 0.7) : 0.4)
         }.buttonStyle(.plain).disabled(!canOpen(tab.root))
             .accessibilityLabel(Text(verbatim: tab.title))
@@ -205,7 +211,7 @@ struct NovaShellPanel: View {
                         NovaText(text: panel == .drawer ? "İSG Adası" : "Hızlı İşlem", style: .sheetTitle)
                         Spacer()
                         Button { send(.dismiss) } label: {
-                            Image(systemName: "xmark").frame(width: 44, height: 44)
+                            Image(systemName: "xmark").frame(width: 44, height: 44).contentShape(Rectangle())
                         }.buttonStyle(.plain).foregroundStyle(NovaColorToken.text.color(in: scheme))
                             .accessibilityLabel("Kapat").accessibilityIdentifier("nova.panel.close")
                     }
@@ -230,7 +236,7 @@ struct NovaShellPanel: View {
                                     .accessibilityIdentifier("nova.destination.\(destination.rawValue)")
                             }
                         }
-                    }
+                    }.accessibilityIdentifier("nova.panel.scroll")
                 }
                 .padding(20)
                 .frame(width: min(geometry.size.width * (panel == .drawer ? 0.9 : 0.92), panel == .drawer ? 384 : 520))

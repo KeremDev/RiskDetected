@@ -1,0 +1,297 @@
+{
+  "captured_at": "2026-09-12T21:03:40.631Z",
+  "sources": [
+    {
+      "path": "App/DesignSystem/ISG/NovaExpertShell.swift",
+      "sha256": "0ebf5c0d234f84c66cba88ca16e4962f4bf08768ea6a0490febc74db82e26047"
+    },
+    {
+      "path": "android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaExpertShell.kt",
+      "sha256": "72811e9af36b534e1d270389319f09b202ce082280bbdcef806cb1b54bcb2fd2"
+    },
+    {
+      "path": "android/core/designsystem/src/test/kotlin/com/riskdetectedan/core/designsystem/isg/NovaShellTest.kt",
+      "sha256": "058642f85f46137110eb86f59eb1d8c980fd03351101cfdf53083f5f23b207a9"
+    },
+    {
+      "path": "scripts/isg/nova_tokens.test.mjs",
+      "sha256": "a32714d53fcf9071d756000d2dc133da729dc88d7bec0bebd03cdb0186db6f5c"
+    },
+    {
+      "path": ".github/workflows/isg-foundation.yml",
+      "sha256": "3202ad18e3fc21dcbab6b26ae982ce656ffe9bcfd16e1c8c619d76fa569f38ef"
+    },
+    {
+      "path": "tests/isg/shell-ios/project.yml",
+      "sha256": "dd81fb62cc2e8ddd00f9379a398a7b8f56167e5663418b92b2422b0023b9cf72"
+    },
+    {
+      "path": "tests/isg/shell-ios/HarnessInfo.plist",
+      "sha256": "c8d9d285a97581388013c82ca4818107d2bab2638340223987613e17a216f7b2"
+    },
+    {
+      "path": "tests/isg/shell-ios/ShellHarnessApp.swift",
+      "sha256": "dd6d4dd599def8aed13b1344306f32e195f6663c575c5709f48241817f963b7e"
+    },
+    {
+      "path": "tests/isg/shell-ios/ShellUITests.swift",
+      "sha256": "906449b8ef9775f362b6de0482033725ad3a165069c43c7e86c4e0febc9cfc25"
+    },
+    {
+      "path": "tests/isg/shell-ios/ISGShellHarness.xcodeproj/project.pbxproj",
+      "sha256": "47652ada0c9f20d5e28796afbd22a5228dfe0da6c1c77de302762733c2c73b8b"
+    },
+    {
+      "path": "tests/isg/shell-ios/ISGShellHarness.xcodeproj/xcshareddata/xcschemes/ISGShellHarness.xcscheme",
+      "sha256": "c6edbdae55bef0c622787421803e7dd3eea9f12d38b2cf9d5180a68eeacb945c"
+    }
+  ],
+  "binaries": [
+    {
+      "product": {
+        "path": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/test-products/test_sim_2026-09-12T20-54-56-627Z_pid70458_f6571520.xctestproducts/Binaries/0/Debug-iphonesimulator/ISGShellHarness.app/ISGShellHarness",
+        "sha256": "9d3a34eb8052ce282c2280238b795368f72c117ce230732a652059d26e518a21"
+      },
+      "runtime": {
+        "path": "/Users/keremkayalar/Library/Developer/CoreSimulator/Devices/4A71277B-053D-49CF-8414-57840D9B010A/data/Containers/Bundle/Application/2C5DC29C-2226-4C91-BB7F-C0A34FF1177C/ISGShellHarness.app/ISGShellHarness",
+        "sha256": "9d3a34eb8052ce282c2280238b795368f72c117ce230732a652059d26e518a21"
+      }
+    },
+    {
+      "product": {
+        "path": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/test-products/test_sim_2026-09-12T20-54-56-627Z_pid70458_f6571520.xctestproducts/Binaries/0/Debug-iphonesimulator/ISGShellHarness.app/ISGShellHarness.debug.dylib",
+        "sha256": "85a9a400b82809ce90025c87cd03830c9bd8e7d7637035be1e3c8dda4060906c"
+      },
+      "runtime": {
+        "path": "/Users/keremkayalar/Library/Developer/CoreSimulator/Devices/4A71277B-053D-49CF-8414-57840D9B010A/data/Containers/Bundle/Application/2C5DC29C-2226-4C91-BB7F-C0A34FF1177C/ISGShellHarness.app/ISGShellHarness.debug.dylib",
+        "sha256": "85a9a400b82809ce90025c87cd03830c9bd8e7d7637035be1e3c8dda4060906c"
+      }
+    },
+    {
+      "product": {
+        "path": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/test-products/test_sim_2026-09-12T20-54-56-627Z_pid70458_f6571520.xctestproducts/Binaries/0/Debug-iphonesimulator/ISGShellUITests-Runner.app/PlugIns/ISGShellUITests.xctest/ISGShellUITests",
+        "sha256": "541eff09d1892bd66c66bc4b37b4c73fdd2fe6e61c9057c4a25aa455374e0948"
+      },
+      "runtime": {
+        "path": "/Users/keremkayalar/Library/Developer/CoreSimulator/Devices/4A71277B-053D-49CF-8414-57840D9B010A/data/Containers/Bundle/Application/7B3961FA-1333-43C4-A8E9-7198B61DAFA3/ISGShellUITests-Runner.app/PlugIns/ISGShellUITests.xctest/ISGShellUITests",
+        "sha256": "541eff09d1892bd66c66bc4b37b4c73fdd2fe6e61c9057c4a25aa455374e0948"
+      }
+    }
+  ],
+  "fonts": [
+    {
+      "path": "/Users/keremkayalar/Library/Developer/CoreSimulator/Devices/4A71277B-053D-49CF-8414-57840D9B010A/data/Containers/Bundle/Application/2C5DC29C-2226-4C91-BB7F-C0A34FF1177C/ISGShellHarness.app/PlusJakartaSans-Regular.ttf",
+      "sha256": "ca6ef907028d1d1808870967d7b7ddcf68c0f33552d15d7f0c6c7d6ae97e7571"
+    },
+    {
+      "path": "/Users/keremkayalar/Library/Developer/CoreSimulator/Devices/4A71277B-053D-49CF-8414-57840D9B010A/data/Containers/Bundle/Application/2C5DC29C-2226-4C91-BB7F-C0A34FF1177C/ISGShellHarness.app/PlusJakartaSans-Medium.ttf",
+      "sha256": "00ec347136c7f6d904fa8c54decba898cc2c74c17388e62fa4388433de8be226"
+    },
+    {
+      "path": "/Users/keremkayalar/Library/Developer/CoreSimulator/Devices/4A71277B-053D-49CF-8414-57840D9B010A/data/Containers/Bundle/Application/2C5DC29C-2226-4C91-BB7F-C0A34FF1177C/ISGShellHarness.app/PlusJakartaSans-SemiBold.ttf",
+      "sha256": "bbaa1d21ce4839070547b1cc06d5db2a56f520abe90278d971665b3f6dca6851"
+    },
+    {
+      "path": "/Users/keremkayalar/Library/Developer/CoreSimulator/Devices/4A71277B-053D-49CF-8414-57840D9B010A/data/Containers/Bundle/Application/2C5DC29C-2226-4C91-BB7F-C0A34FF1177C/ISGShellHarness.app/PlusJakartaSans-Bold.ttf",
+      "sha256": "71af7a0aac7db1b7e30cd389d7aabdabb44b5b5553d470ddd5aa25c0537c8108"
+    },
+    {
+      "path": "/Users/keremkayalar/Library/Developer/CoreSimulator/Devices/4A71277B-053D-49CF-8414-57840D9B010A/data/Containers/Bundle/Application/2C5DC29C-2226-4C91-BB7F-C0A34FF1177C/ISGShellHarness.app/PlusJakartaSans-ExtraBold.ttf",
+      "sha256": "f95af252acb2a09e79452366d05346975e7fda7e0a5831ff671effcb2568504c"
+    }
+  ],
+  "android": [
+    {
+      "path": "android/core/designsystem/build/test-results/testDebugUnitTest/TEST-com.riskdetectedan.core.designsystem.isg.NovaComponentTest.xml",
+      "sha256": "d206106f2994a0d0e58e679ca59b3e90b2037bd4b2f624fd4ed87fc9ac7a2f92",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "android/core/designsystem/build/test-results/testDebugUnitTest/TEST-com.riskdetectedan.core.designsystem.isg.NovaNavigationTest.xml",
+      "sha256": "a25a8351cc7d8f65c2023bb29b820cabc9edfedd0781b0fd24d3e6b84f870f55",
+      "tests": 75,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "android/core/designsystem/build/test-results/testDebugUnitTest/TEST-com.riskdetectedan.core.designsystem.isg.NovaShellTest.xml",
+      "sha256": "0f43bb84e3c6c0b1fcf2643bff4b8bbb42766a92096f2428a5ce0033586a517a",
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "path": "android/core/designsystem/build/test-results/testDebugUnitTest/TEST-com.riskdetectedan.core.designsystem.isg.NovaTokenTest.xml",
+      "sha256": "424b02789ce6824b63e1d9d90c0aac77e16e6dc6afca9549f9c99bd7d39612ad",
+      "tests": 123,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "output/isg/hosted-shell-final-20260913/73EFA94E-CD82-45BF-9528-53AEE82929DC.png",
+      "sha256": "836d0bbc5ed2f796226e6b8c6432ffa9a9f965296bf32b3d5c87852c42d8bd35",
+      "label": "hosted-dark_0_B660C79B-6113-466C-9D72-D56C97973BFA.png"
+    },
+    {
+      "path": "output/isg/hosted-shell-final-20260913/F341B59A-8ED3-4303-BDEE-9A2FD09A21B7.png",
+      "sha256": "661701a00452265a15efe449339a9cd51377b0b22bd7a972d8e7307538fe6b86",
+      "label": "hosted-add-dark_0_0BD5C831-EF81-4C4A-9A86-714D67B8F9E4.png"
+    },
+    {
+      "path": "output/isg/hosted-shell-final-20260913/71341608-607F-4F75-AF7E-B697A40AA654.png",
+      "sha256": "85694ff5283763b37dbe8fd639aa007e89714d04fee639817a1d894988b1323d",
+      "label": "hosted-drawer-dark_0_B63DEB33-BA84-4BC3-920F-95E559C6FE0B.png"
+    },
+    {
+      "path": "output/isg/hosted-shell-final-20260913/7A910032-7CEA-456B-9507-B249DC3A136B.png",
+      "sha256": "ad5c16c5e9ff360ba6a606d9a9a09dbc058435d6c65c4f612ccb274c7dce9c36",
+      "label": "hosted-light_0_0EB8C0C2-5042-4EFD-9C9A-5491920D2CF3.png"
+    },
+    {
+      "path": "output/isg/hosted-shell-final-20260913/C9E3E9B4-BA7C-4BBB-A16D-D054B0361F06.png",
+      "sha256": "ef796d9ea40a57cbac3bf5f6c099ff9b651de522f07f32f0c8844f84d9237541",
+      "label": "hosted-add-light_0_3F0F5E45-0044-4E1E-9421-9CDA0A4FD54C.png"
+    },
+    {
+      "path": "output/isg/hosted-shell-final-20260913/84BDFEB2-E87D-42FA-8A50-8B250A3DF652.png",
+      "sha256": "74ed511fbccaacfd5395dadbddd607a627f333b510d94edbbe92575f31a24f09",
+      "label": "hosted-drawer-light_0_23D8A3FF-B8A0-4DF9-883E-091C90F3BA97.png"
+    },
+    {
+      "path": "output/isg/hosted-shell-final-20260913/BA7F2AAF-C068-4583-A2E9-CFCE91696C22.png",
+      "sha256": "3b86ee7ea843b7aa6d1ab69f2e194fcff8bc352c9c557c0e2f2374a12762b716",
+      "label": "hosted-compact-ax3-profile_0_E6E9384C-5BDD-4BA7-868B-F3EFA8186047.png"
+    },
+    {
+      "path": "output/isg/hosted-shell-final-20260913/768B6FE4-D2CF-4780-80B7-7F3BD1E520C4.png",
+      "sha256": "075d583164e4b4d7d31cdfb1cf23a09512cee7341e07aae3ea51aaef8b6114c6",
+      "label": "hosted-compact-ax3-home_0_8C0893D8-FD0B-47C6-A464-6988DB2F7933.png"
+    },
+    {
+      "path": "output/isg/hosted-shell-final-20260913/D114F80F-6B4F-4957-9342-5DBD97328133.png",
+      "sha256": "673dc6aed43a03a08538c285a04c29cea6bda4bae33ccac3c50d25cde7894664",
+      "label": "hosted-tab-history_0_F1E82361-9264-48F4-BB90-F6950AFC6256.png"
+    }
+  ],
+  "schema_version": 1,
+  "stage": "P18 hosted native shell QA",
+  "local_date": "2026-09-13",
+  "timezone": "Europe/Istanbul",
+  "base_commit": "c6e33fbe",
+  "hosted_ios": {
+    "status": "PASS",
+    "summary": {
+      "devicesAndConfigurations": [
+        {
+          "device": {
+            "architecture": "arm64",
+            "deviceId": "4A71277B-053D-49CF-8414-57840D9B010A",
+            "deviceName": "iPhone 17 Pro",
+            "modelName": "iPhone 17 Pro",
+            "osBuildNumber": "23F77",
+            "osVersion": "26.5",
+            "platform": "iOS Simulator"
+          },
+          "expectedFailures": 0,
+          "failedTests": 0,
+          "passedTests": 8,
+          "skippedTests": 0,
+          "testPlanConfiguration": {
+            "configurationId": "1",
+            "configurationName": "Test Scheme Action"
+          }
+        }
+      ],
+      "environmentDescription": "ISGShellHarness · Built with macOS 26.6.2",
+      "expectedFailures": 0,
+      "failedTests": 0,
+      "finishTime": 1789246868.971,
+      "passedTests": 8,
+      "result": "Passed",
+      "skippedTests": 0,
+      "startTime": 1789246500.133,
+      "statistics": [],
+      "testFailures": [],
+      "title": "Test - ISGShellHarness",
+      "topInsights": [],
+      "totalTestCount": 8
+    },
+    "routing_variations": 34,
+    "result_bundle": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-12T20-54-56-627Z_pid70458_aafaeebe.xcresult",
+    "build_and_test_log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/test_sim_2026-09-12T20-54-56-627Z_pid70458_0acba808.log",
+    "tool_timeout": {
+      "seconds": 300,
+      "xcode_continued": true,
+      "recovered_from": "completed xcode log and xcresult summary; 8 passed, zero failures/skips"
+    }
+  },
+  "hostless_ios": {
+    "passed": 18,
+    "failed": 0,
+    "skipped": 0,
+    "result_bundle": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-12T21-01-59-609Z_pid70458_ea785946.xcresult"
+  },
+  "main_ios_build": {
+    "status": "PASS",
+    "scope": "Debug simulator compile only, no main app launch",
+    "log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-09-12T21-02-50-916Z_pid70458_9cc8199c.log"
+  },
+  "android_build": "Debug APK PASS",
+  "android_lint": {
+    "status": "PASS",
+    "note": "Not a zero-warning claim; existing non-NOVA findings remain"
+  },
+  "node_design": {
+    "passed": 12,
+    "failed": 0
+  },
+  "foundation": {
+    "passed": 111,
+    "failed": 0
+  },
+  "identity_check": "PASS; main iOS com.riskdetected.app, Android com.riskdetectedan.app, callback and entitlements unchanged",
+  "cleanup": {
+    "harness_bundle": "com.riskdetected.isgshellharness",
+    "runner_bundle": "com.riskdetected.isgshelluitests.xctrunner",
+    "removed_and_verified": true,
+    "main_app_uninstalled": false,
+    "simulator_erased": false,
+    "simulator_remained_booted": true,
+    "defaults_restored_to_main_project": true,
+    "note": "Only regenerated synthetic apps removed. Runtime hashes above were checked before uninstall; immutable product hashes and source files remain."
+  },
+  "superseded_attempts": [
+    {
+      "issue": "Generated UIAppFonts build setting did not populate built plist",
+      "resolution": "Explicit HarnessInfo.plist and five-font runtime assertion; initial fallback-font screenshot not acceptance"
+    },
+    {
+      "issue": "XCUI exists assertion was not a valid VoiceOver focus audit",
+      "resolution": "Require blocked background hittability and modal route behavior; VoiceOver audit remains open"
+    },
+    {
+      "issue": "Execution log reported prior assertion while produced and installed binaries contained updated assertion",
+      "resolution": "Root cause unproven. Removed only synthetic harness and runner, then fresh install. Clean targeted test passed, followed by full 8-test run",
+      "clean_targeted_result": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-12T20-53-27-388Z_pid70458_34395ecd.xcresult"
+    }
+  ],
+  "open": [
+    "Production Auth/session/actor/company/capability and domain integration",
+    "iOS16 runtime and other native device sizes",
+    "Native edge-swipe back gesture",
+    "VoiceOver/TalkBack focus and complete accessibility audit",
+    "Android API26/33/37 emulator shell UI",
+    "QuickAdd compact height, original icons/blur/motion and visual acceptance",
+    "Remote CI NOT_RUN",
+    "P18 completion and 263 domain acceptances"
+  ],
+  "production_mutations": false
+}
