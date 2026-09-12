@@ -1,0 +1,123 @@
+{
+  "date": "2026-09-13",
+  "timezone": "Europe/Istanbul",
+  "scope": "P18 five-reference native presentation redesign; not live root integration",
+  "result": "passed",
+  "qaReport": "design-qa.md",
+  "sourceAndImplementationSha256": {
+    "docs/isg/design-reference-20260913/home.png": "13a7e45cf4ef35733c61e34e6305eb644611554c4f30498931bc4f6a1cea55eb",
+    "docs/isg/design-reference-20260913/drawer.png": "ece7646c02b94759ad4a3bdccc0522eda221f752b59217feaaa692b81879c4bd",
+    "docs/isg/design-reference-20260913/quick-add.png": "709b67e71c297aa3eee60d28d6d1bcddf587f5824a61f335e708965c244408db",
+    "docs/isg/design-reference-20260913/notifications.png": "538961efa9b34fbaebc8ba76b311c8e7e9c277f9fad0762e0e2f03df5106d599",
+    "docs/isg/design-reference-20260913/companies.png": "a2bf569b9d0b8270b90bef8d701a9032dcae81247b758e640f4ae154ca59c198",
+    "docs/isg/design-reference-20260913/ios-implementation/home.png": "23f3a5fe5ee6652b337e7c5ee9ee7ca703ebc1f072ccaf65ec45eb73c20b16ee",
+    "docs/isg/design-reference-20260913/ios-implementation/drawer.png": "7d7d90c3f8eceac710370aeae27f5f4122a7a2dbef3097f9d8b902fc8e76b4d9",
+    "docs/isg/design-reference-20260913/ios-implementation/quick-add.png": "1a269a1c12f34f104023ede58f7fcf3e4907fe5ee67bbc83256850b7977e64b6",
+    "docs/isg/design-reference-20260913/ios-implementation/notifications.png": "c906cfe43d04cfb0d87701c8dc8c8b3f7f8fa5b8b72b9b671553091a8cceb307",
+    "docs/isg/design-reference-20260913/ios-implementation/companies.png": "0dbf3460a0331b0da244c8bf874d3f715bb9b0bbb586aa58b25e9a4c173ec036",
+    "docs/isg/design-reference-20260913/android-device/home.png": "45c77da391071bb5d4d5222efbaa111a8a2ba32c2c96a9d22f9e8a47c545ac2a",
+    "docs/isg/design-reference-20260913/android-device/drawer.png": "ee753fcf66737c5694f2e070e7da0dec2ec88623dde08aed3a5f20ef2c3e2d58",
+    "docs/isg/design-reference-20260913/android-device/quick-add.png": "721820dff81464ad84149d2b4a9f2771a8825ab67495bfad5a7ef04dfb751ad1",
+    "docs/isg/design-reference-20260913/android-device/notifications.png": "2ace1db66f00aecd5ab336b2a6c0da0205cfc7340578a126ed9e31522662c850",
+    "docs/isg/design-reference-20260913/android-device/companies.png": "159c81d6de2bcee924583f2127db7e016702a35194b29f0372e4139a179bafd0",
+    "App/DesignSystem/ISG/NovaExpertShell.swift": "74493acac5bc749da7014f0871e3a779acb4eb1da11d54193d5e6b78247f3306",
+    "App/DesignSystem/ISG/NovaNavigation.swift": "ee43ceca6f2697d54d17d410c8b5b5824918730c9ffcdf00302b9fd9e57669b6",
+    "android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaExpertShell.kt": "36ce54bf799d2fde83deffd808c976cdb71561844cd4faf0a14f6c5294ee2338",
+    "android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaExpertScreens.kt": "eff73d4aee2d4454f7bd043a148e10b7e525ab2e05bc965eecd3957ae5a2d091",
+    "contracts/isg/v1/design/nova-icon-paths.json": "ac0b296c6a032a1b6d7d3c9daa1e9d0835de89aa032c3ef3f350f821766739b0",
+    "contracts/isg/v1/design/nova-photo-paths.json": "d284fd3101d4f416d2b2ad8743368c9486613c16c2d11b6dda8fa944b96cd81a",
+    "contracts/isg/v1/fixtures/nova-navigation.json": "81e8633c7c7644a9f50708f76915de4165c500721ac51debfacbf612cdea707d"
+  },
+  "tests": {
+    "iosFullUI": {
+      "passed": 10,
+      "failed": 0,
+      "resultBundle": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-12T21-57-24-613Z_pid70458_f204f0f6.xcresult"
+    },
+    "iosPostAssetAndCallback": {
+      "passed": 2,
+      "failed": 0,
+      "resultBundle": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-12T22-01-59-639Z_pid70458_7a19e896.xcresult"
+    },
+    "iosFinalVisual": {
+      "passed": 1,
+      "failed": 0,
+      "resultBundle": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-12T22-04-14-756Z_pid70458_10ab4ae0.xcresult"
+    },
+    "iosHostless": {
+      "passed": 18,
+      "failed": 0,
+      "resultBundle": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-12T22-04-53-517Z_pid70458_8be6cc87.xcresult"
+    },
+    "iosMainBuild": {
+      "result": "passed",
+      "log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-09-12T22-05-10-150Z_pid70458_000c5040.log"
+    },
+    "androidJUnit": {
+      "tests": 219,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "xmlDirectory": "android/core/designsystem/build/test-results/testDebugUnitTest"
+    },
+    "androidBuildAndLint": {
+      "result": "passed",
+      "tasks": [
+        ":core:designsystem:lintDebug",
+        ":app:assembleDebug",
+        ":isg-design-preview:assembleDebug",
+        ":isg-design-preview:lintDebug"
+      ]
+    },
+    "androidWindowSmoke": {
+      "result": "passed",
+      "checks": 8,
+      "evidence": "docs/isg/design-reference-20260913/android-device/result.json",
+      "raw": "output/isg/reference-redesign-20260913/android-device-smoke",
+      "api": 33,
+      "viewport": "440x956 mdpi",
+      "crashBuffer": "QA PID only; no FATAL EXCEPTION"
+    },
+    "navigation": {
+      "fixtures": 78,
+      "transitions": 198,
+      "result": "passed"
+    },
+    "novaDesign": {
+      "passed": 16,
+      "failed": 0
+    },
+    "foundation": {
+      "passed": 111,
+      "failed": 0
+    },
+    "identity": {
+      "result": "passed",
+      "limitation": "source only; not signed binary/store/keychain continuity"
+    }
+  },
+  "boundaries": {
+    "liveRootIntegration": false,
+    "productionMutation": false,
+    "storeUpload": false,
+    "push": false,
+    "remoteCI": false,
+    "api26And37WindowQA": false,
+    "physicalDeviceQA": false,
+    "fullScreenReaderQA": false
+  },
+  "identity": {
+    "ios": "com.riskdetected.app",
+    "android": "com.riskdetectedan.app",
+    "callback": "io.supabase.riskdetected://login-callback",
+    "checkpointTag": "riskdetected-change-point-20260912",
+    "checkpointCommit": "dbcc979d3e7ad335e525a7d90bed1a0542d8b20d"
+  },
+  "cleanup": {
+    "qaPackage": "com.riskdetectedan.isg.designpreview",
+    "uninstalled": true,
+    "originalResolutionRestored": "320x640",
+    "emulatorClosed": "ISG_Contract_API33_20260912",
+    "productionAppsAndAvdPreserved": true
+  }
+}

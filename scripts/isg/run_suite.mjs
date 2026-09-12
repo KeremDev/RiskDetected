@@ -6,7 +6,7 @@ import { ROOT } from './lib.mjs';
 const suites = {
   foundation: ['--test', 'scripts/isg/foundation.test.mjs', 'scripts/isg/function_map.test.mjs', 'scripts/isg/ios_contract_inventory.test.mjs', 'scripts/isg/backup_crypto.test.mjs', 'scripts/isg/auth_restore_guard.test.mjs', 'scripts/isg/storage_restore_probe.test.mjs', 'scripts/isg/auth_session_probe.test.mjs', 'scripts/isg/auth_mutation_probe.test.mjs', 'scripts/isg/android_contract_guard.test.mjs', 'scripts/client_flow_contract_test.mjs'],
   'capacity-shadow': ['--test', 'scripts/isg/company_capacity_shadow.test.mjs'],
-  'nova-design': ['--test', 'scripts/isg/nova_tokens.test.mjs'],
+  'nova-design': ['--test', 'scripts/isg/nova_tokens.test.mjs', 'scripts/isg/nova_icons.test.mjs'],
 };
 const [suite, ...extra] = process.argv.slice(2);
 if (!Object.hasOwn(suites, suite) || extra.length) {

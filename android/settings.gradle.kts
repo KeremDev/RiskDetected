@@ -23,6 +23,8 @@ include(":core:designsystem")
 include(":core:testing")
 // Standalone on-device contract harness; never a dependency of :app.
 include(":isg-contract-tests")
+// Offline visual QA host; never a dependency of :app or a store variant.
+include(":isg-design-preview")
 include(":feature:onboarding")
 include(":feature:capture")
 include(":feature:analysis")

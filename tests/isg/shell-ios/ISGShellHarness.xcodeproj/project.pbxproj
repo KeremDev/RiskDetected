@@ -12,6 +12,7 @@
 		629E25E29178C6C39D12B85F /* NovaComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D274B7037ECC80B6E4DC4C2 /* NovaComponents.swift */; };
 		640B9191EAB4C9B7C325B051 /* PlusJakartaSans-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4811953EFC404AE2CC37F765 /* PlusJakartaSans-Bold.ttf */; };
 		7353DCFB7F55C832F3A23465 /* NovaExpertShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37480469BDE690E05D13567 /* NovaExpertShell.swift */; };
+		7D29551AE559F99CF9BD7065 /* NovaIcons.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FAFB347A0F9AD0F29F6E3DE2 /* NovaIcons.xcassets */; };
 		8DB343EF6A6FAF19A63797C0 /* PlusJakartaSans-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3E92C3A78403B6514328D693 /* PlusJakartaSans-ExtraBold.ttf */; };
 		8F2058FD473ABAFA8830DA14 /* ShellUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 229A20930EF12E6D36134178 /* ShellUITests.swift */; };
 		E14FCEB658E2433B57B4456C /* PlusJakartaSans-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9436586D0E1CF4B902485274 /* PlusJakartaSans-Medium.ttf */; };
@@ -46,6 +47,7 @@
 		A928E65A914B9551341C6AC4 /* PlusJakartaSans-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlusJakartaSans-Regular.ttf"; sourceTree = "<group>"; };
 		CEFB3D3403D066C1F758CE34 /* PlusJakartaSans-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlusJakartaSans-SemiBold.ttf"; sourceTree = "<group>"; };
 		D37480469BDE690E05D13567 /* NovaExpertShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaExpertShell.swift; sourceTree = "<group>"; };
+		FAFB347A0F9AD0F29F6E3DE2 /* NovaIcons.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = NovaIcons.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -70,6 +72,15 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		6D455D62D4A69AAC2DCF53C5 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				FAFB347A0F9AD0F29F6E3DE2 /* NovaIcons.xcassets */,
+			);
+			name = Resources;
+			path = ../../../App/Resources;
+			sourceTree = "<group>";
+		};
 		76C81660B2C116F473864226 = {
 			isa = PBXGroup;
 			children = (
@@ -77,6 +88,7 @@
 				229A20930EF12E6D36134178 /* ShellUITests.swift */,
 				C4CF32A6A8A5DF916212D47C /* Fonts */,
 				0A6A6309671DA550A893D291 /* ISG */,
+				6D455D62D4A69AAC2DCF53C5 /* Resources */,
 				4CDC94529A97368DC5BDF9BE /* Products */,
 			);
 			sourceTree = "<group>";
@@ -173,6 +185,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7D29551AE559F99CF9BD7065 /* NovaIcons.xcassets in Resources */,
 				F93F1911699DC477EB3BF762 /* OFL-PlusJakartaSans.txt in Resources */,
 				640B9191EAB4C9B7C325B051 /* PlusJakartaSans-Bold.ttf in Resources */,
 				8DB343EF6A6FAF19A63797C0 /* PlusJakartaSans-ExtraBold.ttf in Resources */,
@@ -382,7 +395,7 @@
 		4208239ADF6153D30254715F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				INFOPLIST_FILE = HarnessInfo.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "ISG Shell QA";
@@ -402,7 +415,7 @@
 		4EFA0EDD317406D952638172 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				INFOPLIST_FILE = HarnessInfo.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "ISG Shell QA";

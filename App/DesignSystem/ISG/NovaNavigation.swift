@@ -83,7 +83,7 @@ enum NovaDestination: String, CaseIterable, Hashable {
     static let quickAdd: [Self] = [.newFinding, .newDocument, .newVisit, .newTraining]
 }
 
-enum NovaOverlay: String, CaseIterable { case drawer, quickAdd }
+enum NovaOverlay: String, CaseIterable { case drawer, quickAdd, notifications }
 
 enum NovaNavigationEvent {
     case select(NovaTab), open(NovaOverlay), navigate(NovaDestination), back, dismiss

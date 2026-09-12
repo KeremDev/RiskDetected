@@ -31,7 +31,7 @@ enum class NovaDestination(val title: String, val tab: NovaTab) {
         val quickAdd = listOf(newFinding, newDocument, newVisit, newTraining)
     }
 }
-enum class NovaOverlay { drawer, quickAdd }
+enum class NovaOverlay { drawer, quickAdd, notifications }
 
 sealed interface NovaNavigationEvent {
     data class Select(val tab: NovaTab) : NovaNavigationEvent

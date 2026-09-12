@@ -1,0 +1,18 @@
+{
+  "date": "2026-09-12T22:24:07.060Z",
+  "serial": "emulator-5554",
+  "avd": "ISG_Contract_API33_20260912",
+  "package": "com.riskdetectedan.isg.designpreview",
+  "checks": [
+    "home-visible",
+    "drawer-visible",
+    "notification-popup-and-close-target",
+    "read-and-clear-notifications",
+    "four-quick-actions-and-window-backdrop",
+    "company-list",
+    "company-search-empty-and-clear",
+    "company-row-navigation"
+  ],
+  "result": "passed",
+  "scope": "offline synthetic window/UI smoke; not domain E2E, billing, live Auth, API26/37 or TalkBack proof"
+}

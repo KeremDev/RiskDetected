@@ -4,6 +4,8 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 
 ## Güncel durum
 
+- 13 Eylül P18 beş referans ekran düzeltmesi: ana sayfa, firma listesi, sol menü, bildirim paneli ve Ekle popup'ı yeni iOS/Android sunum katmanında yenilendi. İkon zeminleri kaldırıldı; 48 orijinal NOVA + 2 Feather çizimi aktarıldı. iOS tam UI turu 10/10, ardından son görsel/CTA değişiklikleri için 2/2 ve 1/1 hedefli tekrar; hostless 18/18. Android 219/219 JVM testi, API33 gerçek emülatör penceresinde 8 smoke kontrolü PASS. Ortak gezinme 78 senaryo/198 geçiş, tasarım kaynak testi 16/16. Ana uygulama kökü ve canlı servis bağlantıları hâlâ açık iş; mağaza yayını yapılmadı. [Tasarım standardı](P18_REFERENCE_DESIGN_2026-09-13.md), [görsel QA](../../design-qa.md), [kanıt](evidence/P18_REFERENCE_REDESIGN_2026-09-13.json). Aşağıdaki önceki P18 sayıları tarihsel turlardır.
+
 - 13 Eylül P18 hostlu UI dilimi:ayrı sentetik iOS uygulama penceresinde8/8 XCTest UI testi,34 menü yönlendirmesi, hesap reset/native stack/AX3 drawer+yatay bar ve44pt hedef kontrolü PASS. Android48dp uyarlamasıyla210/210 tasarım testi; hostless iOS18/18 regresyonu PASS. Ana uygulama/servis entegrasyonu hâlâ kapalı. [Hostlu QA ve sınırlar](P18_HOSTED_SHELL_QA.md).
 
 - P18 uzman shell dilimi:4 sekme+ortada Ekle,13 drawer/4 hızlı hedef,17 hedef kimliği; sekme bazlı geçmiş, tek panel, epoch reset ve availability gate iOS+Android'de hazır. Swift/Kotlin ortak75 senaryo/185 geçiş; Android design system209/209, iOS hostless18/18. Gerçek domain/root entegrasyonu ve iOS pencere/scroll E2E açık. [Kapsam ve akış](P18_EXPERT_NATIVE_SHELL.md).

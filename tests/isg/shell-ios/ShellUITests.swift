@@ -14,13 +14,16 @@ import XCTest
     }
     private func visible(_ destination: String) {
         let node = app.staticTexts["qa.content.\(destination)"]
-        XCTAssertTrue(node.waitForExistence(timeout: 4), app.debugDescription)
+        XCTAssertTrue(node.exists || node.waitForExistence(timeout: 4), app.debugDescription)
         XCTAssertTrue(node.isHittable, "Content must actually be visible, not only present in the router")
     }
     private func tap(_ id: String) {
         let button = app.buttons[id]
-        XCTAssertTrue(button.waitForExistence(timeout: 4), id)
-        XCTAssertTrue(button.isHittable, id)
+        XCTAssertTrue(button.exists || button.waitForExistence(timeout: 4), id)
+        if !button.isHittable {
+            let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: button)
+            XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 3), .completed, "\(id): \(app.debugDescription)")
+        }
         button.tap()
     }
     private func home() {
@@ -43,10 +46,58 @@ import XCTest
         item.name = name; item.lifetime = .keepAlways; add(item)
     }
 
+    private func launchDesign(_ args: [String] = []) {
+        app = XCUIApplication(bundleIdentifier: "com.riskdetected.isgshellharness")
+        app.launchArguments = ["--design"] + args
+        app.launch()
+        XCTAssertTrue(app.buttons["nova.menu"].waitForExistence(timeout: 8))
+    }
+
+    func testFiveReferenceScreensAndNotificationActions() {
+        launchDesign()
+        XCTAssertTrue(app.buttons["nova.home.photo"].isHittable)
+        screenshot("reference-home")
+        tap("nova.notifications")
+        XCTAssertTrue(app.buttons["nova.notice.overdue"].isHittable)
+        screenshot("reference-notifications")
+        tap("nova.notices.read")
+        XCTAssertTrue(app.buttons["nova.notice.active"].isHittable)
+        tap("nova.notices.clear")
+        XCTAssertTrue(app.staticTexts["Yeni bildirim yok"].exists)
+        XCTAssertFalse(app.buttons["nova.notice.active"].exists)
+        tap("nova.panel.close")
+        screenshot("reference-notifications-dismissed")
+        XCTAssertFalse(app.buttons["nova.panel.close"].exists, app.debugDescription)
+        tap("nova.menu"); screenshot("reference-drawer"); tap("nova.panel.close")
+        tap("nova.add"); screenshot("reference-add")
+        let first = app.buttons["nova.destination.newFinding"].frame
+        let last = app.buttons["nova.panel.close"].frame
+        XCTAssertGreaterThan(first.minY, 140, "Popup must be vertically centered, not a tall sheet")
+        XCTAssertLessThan(last.maxY - first.minY, 430, "Popup must wrap the four actions")
+        tap("nova.panel.close")
+        tap("nova.tab.companies")
+        XCTAssertTrue(app.buttons["nova.company.fixture-company"].isHittable)
+        screenshot("reference-companies")
+    }
+
+    func testCompanySearchAndHomeActions() {
+        launchDesign()
+        tap("nova.metric.companies")
+        let search = app.textFields["nova.companies.search"]
+        XCTAssertTrue(search.isHittable)
+        search.tap(); search.typeText("bulunmayan")
+        XCTAssertTrue(app.staticTexts["Firma bulunamadı"].waitForExistence(timeout: 3))
+        XCTAssertFalse(app.buttons["nova.company.fixture-company"].exists)
+        tap("nova.companies.clear")
+        XCTAssertTrue(app.buttons["nova.company.fixture-company"].isHittable)
+        tap("nova.company.fixture-company"); visible("memory")
+        tap("nova.tab.home"); tap("nova.home.addFinding"); visible("newFinding")
+    }
+
     func testTabHistoryReselectionAndQuickAdd() {
         launch()
         visible("home")
-        tap("nova.notifications"); visible("notifications")
+        tap("nova.notifications"); tap("nova.notices.center"); visible("notifications")
         tap("nova.tab.companies"); visible("companies")
         tap("nova.add")
         XCTAssertTrue(app.buttons["nova.panel.close"].waitForExistence(timeout: 4))
@@ -95,7 +146,7 @@ import XCTest
     func testAccountResetClearsModalAndChildStateAndRejectsStaleCallback() {
         launch()
         tap("qa.counter"); XCTAssertTrue(app.buttons["qa.counter"].label.contains("1"))
-        tap("qa.capture"); tap("nova.notifications"); tap("nova.add")
+        tap("qa.capture"); tap("nova.notifications"); tap("nova.notices.center"); tap("nova.add")
         tap("qa.reset")
         visible("home")
         XCTAssertFalse(app.buttons["nova.panel.close"].exists)

@@ -4678,6 +4678,314 @@
           }
         }
       ]
+    },
+    {
+      "id": "notification-popover-preserves-tab-and-replaces-overlay",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining"
+      ],
+      "steps": [
+        {
+          "op": "select",
+          "arg": "companies",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "companies",
+            "overlay": null,
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "companies",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "open",
+          "arg": "notifications",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "companies",
+            "overlay": "notifications",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "companies",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "companies",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "companies",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "back",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "companies",
+            "overlay": null,
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "companies",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "open",
+          "arg": "notifications",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "companies",
+            "overlay": "notifications",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "companies",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "notifications",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": null,
+            "paths": {
+              "home": [
+                "notifications"
+              ],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "notifications",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "notification-popover-rejects-stale-open-and-dismiss",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "open",
+          "arg": "notifications",
+          "from": "stale",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "dismiss",
+          "from": "stale",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "back",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": null,
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "notification-popover-reset-rejects-old-account",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "notifications",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "notifications",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "reset",
+          "arg": {
+            "epoch": "account-b",
+            "available": []
+          },
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-b",
+            "selected": "home",
+            "overlay": null,
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": false
+          }
+        },
+        {
+          "op": "open",
+          "arg": "notifications",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-b",
+            "selected": "home",
+            "overlay": null,
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": false
+          }
+        }
+      ]
     }
   ]
 }

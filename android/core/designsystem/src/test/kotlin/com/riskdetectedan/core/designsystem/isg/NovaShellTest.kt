@@ -51,6 +51,7 @@ class NovaShellTest {
             compose.onNodeWithText("content:${tab.name}").assertIsDisplayed()
         }
         compose.onNodeWithTag("nova.notifications").performClick()
+        compose.onNodeWithTag("nova.notices.center").performClick()
         compose.onNodeWithText("content:notifications").assertIsDisplayed()
         compose.onNodeWithTag("nova.tab.profile").performClick()
         compose.onNodeWithTag("nova.tab.home").performClick()
@@ -83,6 +84,7 @@ class NovaShellTest {
     @Test fun accountResetClearsPanelContentAndOldCallbackCannotReopenIt() {
         mount()
         compose.onNodeWithTag("nova.notifications").performClick()
+        compose.onNodeWithTag("nova.notices.center").performClick()
         compose.onNodeWithTag("nova.add").performClick()
         // Mirrors captured UI event delivery into the latest host state, not an old snapshot.
         val oldCallback = { state = state.apply(NovaNavigationEvent.Navigate(NovaDestination.notifications), "a") }
@@ -128,6 +130,8 @@ class NovaShellTest {
         compose.onNodeWithTag("nova.menu").performClick()
         compose.onNodeWithTag("nova.panel.close").assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp).performClick()
         compose.onNodeWithTag("nova.add").performClick()
+        compose.onNodeWithTag("nova.panel.close").assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp).performClick()
+        compose.onNodeWithTag("nova.notifications").performClick()
         compose.onNodeWithTag("nova.panel.close").assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp)
     }
 }
