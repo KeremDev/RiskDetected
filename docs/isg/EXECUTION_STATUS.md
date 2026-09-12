@@ -6,6 +6,7 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 
 - P00 devam ediyor: kaynak/kimlik/yedek kontrolleri, veritabanı restore'u ve kullanıcının seçtiği Masaüstü'ne şifreli ikinci kopya tamamlandı; tam servis/mobil restore ve mağaza envanterinin kalan kısmı açık. Masaüstü aynı disk; off-device koruma değil.
 - P01'in production'a dokunmayan güvenlik/test dilimi başladı. Domain migration veya gerçek kullanıcıya özellik açılışı yok.
+- P01 session freshness adayı gerçek yerel GoTrue JWT/session ile denendi: logout sonrası hâlâ imzalı token reddi, private ACL ve transaction lock ordering. Production RPC/gateway/domain entegrasyonu yok.
 - P03'ün ilk shadow dilimi hazır: eski şirket SQL truth table ve hak koruma hesabı. Yeni fiyat/limit/floor yayınlanmadı; uygulamaya bağlanmadı.
 - P14 ilk regresyon düzeltmesi uygulandı: Android explicit offering bulunamadığında current'a fallback yapmıyor; iOS davranışıyla eşleşiyor. Yerel kod değişikliği, mağaza yayını değil.
 - Production'da yalnız read-only envanter ve Auth/Storage şema yedeği alındı. DB/store/paid policy/notification değişikliği yapılmadı.
@@ -46,6 +47,9 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 | Foundation güncel tur | 45/45 Node; şifreleme negatifleri, transport fonksiyon-test eşleme kapısı ve hostless iOS test envanteri dahil |
 | Foundation Auth restore sonrası | 63/63 Node; ek18 izolasyon/eksik inspection/yanlış komut negatifleri. Gerçek restore verileri CI'a aktarılmadı |
 | Foundation Storage restore sonrası | 80/80 Node; ek17 path/symlink öncesi biçim/boyut/header ve signed URL doğrulama testi; gerçek restore verileri CI'a aktarılmadı |
+| Foundation session guard sonrası | 98/98 Node; ek18 local-only JWT signature/issuer/audience/expiry ve explicit opt-in/argüman negatifleri |
+| Gerçek Auth session freshness | 33 guard kontrolü; Auth temel17 ile50/50; still-signed logout token DENY, expired/ban/deleted/anonymous/foreign claim reddi, row-lock ordering PASS; domain/gateway bağlı değil |
+| Son birleşik servis provası | Auth + Storage + session75/75 PASS; 18:30:41–18:31:24 UTC; 588 dosya yeniden doğrulandı, source unchanged, dört container cleanup PASS |
 | Ortak context corpus | Deno 44/44 (43 fixture + 1 ilave test), Swift 43/43, Android 43/43 ayrı JUnit senaryosu |
 | Sentetik DB transaction | 30/30; 20 paralel retry, 20 version yarışı, 20 worker claim, audit/outbox fault, lease expiry ve gerçek DB bağlantısı öldürme; cleanup PASS |
 | P03 legacy DB matrisi | Ek 329/329 varyasyon; suite toplam 31 üst seviye kontrol PASS; orijinal helper gövdeleri restore ile eşleşti |
@@ -73,6 +77,8 @@ Ek kanıtlar: [Masaüstü şifreli kopya](evidence/P00_DESKTOP_BACKUP_2026-09-12
 
 [Storage servis restore kapsamı](P00_STORAGE_SERVICE_RESTORE.md), [42 kontrol ve kaynak hash'leri](evidence/P00_STORAGE_SERVICE_RESTORE_2026-09-12.json). Önceki Auth/şifreli migration eki `a11c2cdc` commit'inde. Tam dosya byte kontrolü ile birer owner RLS örneğinin kapsamı ayrı tutuldu; orijinal ETag/mtime ve canlı signed URL korunumu iddia edilmiyor.
 
+[P01 gerçek Auth session freshness prototipi](P01_SESSION_FRESHNESS_PROTOTYPE.md), [75 birleşik kontrol / kaynak hash'leri](evidence/P01_AUTH_SESSION_GUARD_2026-09-12.json). Storage dilimi `e519846d` commit'inde. Yeni helper yalnız disposable test şemasında; eski uygulama oturum davranışı ve prod Auth ayarları değişmedi.
+
 ## Kullanılabilir yeni komutlar
 
 ~~~bash
@@ -88,6 +94,7 @@ node scripts/isg/run_suite.mjs capacity-shadow
 node scripts/isg/read_legacy_capacity_snapshot.mjs
 node scripts/isg/run_auth_restore.mjs --isolated-copy
 node scripts/isg/run_auth_restore.mjs --isolated-copy --with-storage
+node scripts/isg/run_auth_restore.mjs --isolated-copy --with-storage --with-session-guard
 ~~~
 
 Restore ve capture araçları offline foundation runner'a dahil değildir. Bunlar restricted backup çıktısı üretir ve yalnız açık P00 işlemi için çalıştırılır. Tamamlanmış restore'un üstüne yeniden yazma engeli var. Mevcut diğer Docker/Supabase stack'leri durdurulmadı veya resetlenmedi.

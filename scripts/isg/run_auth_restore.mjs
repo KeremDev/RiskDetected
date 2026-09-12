@@ -1,18 +1,20 @@
 #!/usr/bin/env node
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createHmac, randomBytes, randomUUID, createHash } from 'node:crypto';
 import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { ROOT } from './lib.mjs';
 import { assertNoExposedRestoreContainer } from './auth_restore_guard.mjs';
 import { probeStorageRestore } from './storage_restore_probe.mjs';
+import { parseRestoreMode } from './restore_mode.mjs';
+import { beginSessionProbe } from './auth_session_probe.mjs';
 
 // Restore drill only. The proven source container is read-only; all API writes
 // target a new disposable copy with a shared NONE network namespace. No ports,
 // mounts, SMTP/OAuth credentials, production JWT secrets or external endpoints.
 const source = 'isg_restore_20260912_db';
 const names = { db: 'isg_auth_restore_20260912_db', auth: 'isg_auth_restore_20260912_auth', client: 'isg_auth_restore_20260912_client' };
-const withStorage = process.argv.length === 4 && process.argv[2] === '--isolated-copy' && process.argv[3] === '--with-storage';
+const withStorage = process.argv.includes('--with-storage');
 if (withStorage) names.storage = 'isg_auth_restore_20260912_storage';
 const images = {
   db: 'public.ecr.aws/supabase/postgres@sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b',
@@ -60,6 +62,20 @@ function sql(query, original = false) {
   original ? sourceGuard() : guard('db');
   return checked(docker(['exec', '-i', original ? source : names.db, 'psql', '-X', '-U', 'supabase_admin', '-d', 'postgres',
     '-v', 'ON_ERROR_STOP=1', '-v', 'VERBOSITY=sqlstate', '-Atq'], { input: query, timeout: 90_000 }), 'AUTH_RESTORE_SQL_FAILED').trim();
+}
+async function concurrentSql(query) {
+  guard('db');
+  return await new Promise(resolve => {
+    const child = spawn('docker', ['exec','-i',owned.get('db'),'psql','-X','-U','supabase_admin','-d','postgres',
+      '-v','ON_ERROR_STOP=1','-v','VERBOSITY=sqlstate','-Atq'], { stdio:['pipe','pipe','pipe'], timeout:10_000 });
+    let output = '';
+    child.stdout.on('data', c => { if (output.length < 4096) output += c; });
+    child.stderr.on('data', () => {}); // Auth/SQL diagnostics never enter stdout.
+    child.on('error', () => resolve({ ok:false }));
+    child.on('close', code => resolve({ ok:code === 0, output:output.trim() }));
+    child.stdin.on('error', () => {});
+    child.stdin.end(`SET statement_timeout='7s'; SET lock_timeout='3s'; ${query}`);
+  });
 }
 function start(kind, env, command = []) {
   const args = ['run', '-d', '--name', names[kind], '--label', `${label}=${run}`, '--network',
@@ -117,7 +133,7 @@ for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => {
   cleanup().then(() => { saveReport(); process.exit(130); });
 });
 try {
-  if (!withStorage && (process.argv.length !== 3 || process.argv[2] !== '--isolated-copy')) throw new Error('AUTH_RESTORE_EXPLICIT_MODE_REQUIRED');
+  const mode = parseRestoreMode(process.argv.slice(2));
   sourceGuard();
   for (const name of Object.values(names)) if (docker(['inspect', name]).status === 0) throw new Error('AUTH_RESTORE_TARGET_ALREADY_EXISTS');
   for (const image of Object.values(images)) if (docker(['image', 'inspect', image]).status !== 0) throw new Error('AUTH_RESTORE_PINNED_IMAGE_MISSING');
@@ -190,6 +206,7 @@ try {
     API_EXTERNAL_URL: 'http://127.0.0.1:9999/auth/v1', GOTRUE_SITE_URL: 'http://127.0.0.1:9999',
     GOTRUE_DB_DRIVER: 'postgres', GOTRUE_DB_DATABASE_URL: `postgres://supabase_auth_admin:${dbPassword}@127.0.0.1:5432/postgres?sslmode=disable`,
     GOTRUE_DB_MAX_POOL_SIZE: '4', GOTRUE_JWT_SECRET: secret, GOTRUE_JWT_EXP: '3600', GOTRUE_JWT_AUD: 'authenticated',
+    GOTRUE_JWT_ISSUER: 'http://127.0.0.1:9999/auth/v1',
     GOTRUE_JWT_DEFAULT_GROUP_NAME: 'authenticated', GOTRUE_JWT_ADMIN_ROLES: 'service_role',
     GOTRUE_EXTERNAL_EMAIL_ENABLED: 'true', GOTRUE_EXTERNAL_PHONE_ENABLED: 'false', GOTRUE_MAILER_AUTOCONFIRM: 'true',
     GOTRUE_DISABLE_SIGNUP: 'true', GOTRUE_SECURITY_REFRESH_TOKEN_ROTATION_ENABLED: 'true',
@@ -214,8 +231,14 @@ try {
   pass('user_token_cannot_admin_list', [401,403].includes(request('/admin/users', { token: session.access_token }).status));
   const refresh = request('/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: session.refresh_token } });
   pass('refresh_keeps_same_uuid', refresh.status === 200 && refresh.body.user?.id === id && !!refresh.body.access_token);
+  let sessionProbe;
+  if (mode.sessionGuard) {
+    stage = 'session-guard';
+    sessionProbe = await beginSessionProbe({ sql, concurrentSql, token: refresh.body.access_token, secret, pass });
+  }
   pass('logout_succeeds', request('/logout', { method: 'POST', token: refresh.body.access_token }).status === 204);
   pass('logged_out_refresh_rejected', request('/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: refresh.body.refresh_token } }).status === 400);
+  if (sessionProbe) report.session_guard = sessionProbe.afterLogout();
   if (withStorage) {
     stage = 'storage-service';
     report.storage = await probeStorageRestore({ sql, start, guard, docker, checked, names, secret, sign, waitReady, pass, foreignSubject: id });

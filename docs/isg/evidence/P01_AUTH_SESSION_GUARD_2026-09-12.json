@@ -1,0 +1,392 @@
+{
+  "schema_version": 1,
+  "run_id": "d356e5f6-2aff-48ba-a850-180372e9ab97",
+  "started_at": "2026-09-12T18:30:41.588Z",
+  "mode": "isolated_restored_copy",
+  "images": {
+    "db": "public.ecr.aws/supabase/postgres@sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:362659ca70eaa75ba05bbaf963caa84c1c5afe5e8fbf0777e17b830dd5f0f60a",
+    "client": "public.ecr.aws/supabase/storage-api@sha256:28424184c9f699790cc190f78ddf7d6abfb5c87af78af260529a394d12c135e9",
+    "storage": "public.ecr.aws/supabase/storage-api@sha256:28424184c9f699790cc190f78ddf7d6abfb5c87af78af260529a394d12c135e9"
+  },
+  "checks": [
+    {
+      "id": "source_queue_payloads_empty",
+      "result": "PASS"
+    },
+    {
+      "id": "original_user_counts_restored",
+      "result": "PASS"
+    },
+    {
+      "id": "service_ledgers_empty_before_supplement",
+      "result": "PASS"
+    },
+    {
+      "id": "service_ledgers_restored",
+      "result": "PASS"
+    },
+    {
+      "id": "auth_health",
+      "result": "PASS"
+    },
+    {
+      "id": "admin_endpoint_rejects_no_token",
+      "result": "PASS"
+    },
+    {
+      "id": "admin_endpoint_rejects_expired_service_token",
+      "result": "PASS"
+    },
+    {
+      "id": "synthetic_user_created_by_local_admin",
+      "result": "PASS"
+    },
+    {
+      "id": "existing_profile_bootstrap_trigger",
+      "result": "PASS"
+    },
+    {
+      "id": "wrong_password_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "password_login_same_uuid",
+      "result": "PASS"
+    },
+    {
+      "id": "authenticated_user_read",
+      "result": "PASS"
+    },
+    {
+      "id": "user_token_cannot_admin_list",
+      "result": "PASS"
+    },
+    {
+      "id": "refresh_keeps_same_uuid",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_allows_real_signed_login",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_private_acl",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_missing_claims",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_empty_claims",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_array_claims",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_missing_session",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_bad_session",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_unknown_session",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_other_actor",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_bad_actor",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_anonymous_role",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_service_role",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_expired_token",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_missing_expiry",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_string_expiry",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_fractional_expiry",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_metadata_cannot_supply_session",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_metadata_cannot_supply_actor",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_ignores_user_metadata_authority",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_expired_database_session",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_accepts_future_not_after",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_banned_user",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_deleted_user",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_anonymous_user",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_restores_synthetic_user_eligibility",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_transaction_lock_ready",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_active_transaction_blocks_logout_delete",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_active_transaction_blocks_ban_update",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_authorized_transaction_completes",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_lock_probe_preserves_session",
+      "result": "PASS"
+    },
+    {
+      "id": "logout_succeeds",
+      "result": "PASS"
+    },
+    {
+      "id": "logged_out_refresh_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_logout_token_still_cryptographically_valid",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_logout_removes_actual_auth_session",
+      "result": "PASS"
+    },
+    {
+      "id": "session_guard_rejects_still_signed_logged_out_token",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_health",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_588_blobs_hydrated_from_verified_backup",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_588_api_download_hash_size_mime_cache_match",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_photos_owner_read_foreign_anon_denied",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_photos_only_owner_can_sign",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_photos_signed_download_hash_and_tamper_rejection",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_photos_signature_bound_to_object_and_required",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_photos_expired_signature_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_reports_owner_read_foreign_anon_denied",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_reports_only_owner_can_sign",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_reports_signed_download_hash_and_tamper_rejection",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_reports_signature_bound_to_object_and_required",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_reports_expired_signature_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_logos_owner_read_foreign_anon_denied",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_logos_only_owner_can_sign",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_logos_signed_download_hash_and_tamper_rejection",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_logos_signature_bound_to_object_and_required",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_logos_expired_signature_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_avatars_owner_read_foreign_anon_denied",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_avatars_only_owner_can_sign",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_avatars_signed_download_hash_and_tamper_rejection",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_avatars_signature_bound_to_object_and_required",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_avatars_expired_signature_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_5_public_legal_documents_without_token",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_object_rows_unchanged_after_hydration_and_download",
+      "result": "PASS"
+    },
+    {
+      "id": "source_counts_unchanged",
+      "result": "PASS"
+    }
+  ],
+  "external_egress": false,
+  "ports_published": false,
+  "source_database_changed": false,
+  "storage_api_tested": true,
+  "mobile_e2e_tested": false,
+  "full_application_restore_proven": false,
+  "source_before": "{\"users\": 208, \"objects\": 588, \"profiles\": 208, \"identities\": 210, \"auth_migrations\": 0, \"storage_migrations\": 0}",
+  "clone_dump_sha256": "914af76638f59a3d2b33ad785551cf400db41789f34e2f394017339d0067fc8d",
+  "source_only_roles_created_without_passwords": [
+    "supabase_functions_admin"
+  ],
+  "acl_entries_replayed": 474,
+  "empty_analysis_queue_regenerated": true,
+  "auth_health": {
+    "version": "v2.195.0",
+    "name": "GoTrue",
+    "description": "GoTrue is a user registration and authentication API"
+  },
+  "session_guard": {
+    "source_sha256": "bc5deff6efae02be4c0afe88c07101820c338861676f39879e96a136c3ed751d",
+    "production_deployed": false,
+    "gateway_tested": false,
+    "company_capability_tested": false,
+    "global_inactivity_policy_tested": false,
+    "concurrency_ordering_tested": true
+  },
+  "storage": {
+    "all_bytes_tested": true,
+    "private_bucket_rls": [
+      {
+        "bucket": "photos",
+        "checks": "PASS",
+        "fixture_count": 1
+      },
+      {
+        "bucket": "reports",
+        "checks": "PASS",
+        "fixture_count": 1
+      },
+      {
+        "bucket": "logos",
+        "checks": "PASS",
+        "fixture_count": 1
+      },
+      {
+        "bucket": "avatars",
+        "checks": "PASS",
+        "fixture_count": 1
+      }
+    ],
+    "public_bucket_tested": true,
+    "original_etag_and_mtime_preserved": false,
+    "live_credentials_used": false,
+    "original_user_login_tested": false,
+    "objects": 588,
+    "bytes": 512280146
+  },
+  "service_ledger_counts_after_boot": "77\n68",
+  "source_after": "{\"users\": 208, \"objects\": 588, \"profiles\": 208, \"identities\": 210, \"auth_migrations\": 0, \"storage_migrations\": 0}",
+  "ok": true,
+  "disposable_container_cleanup": "PASS",
+  "finished_at": "2026-09-12T18:31:24.393Z",
+  "evidence_directory": "backups/isg-auth-service-restore-20260912-5ZVfLu",
+  "source_sha256": {
+    "scripts/isg/run_auth_restore.mjs": "80bc501ef9812415ede7a936517242ecb6f09a34f99522e22bfcf7b6bfe14bf9",
+    "scripts/isg/auth_session_probe.mjs": "1c858ffda4550d4b019c08192dfc67c4a4dafbf691ab973caf1968aca37faebe",
+    "scripts/isg/auth_session_probe.test.mjs": "e06dd0750f2b796785dbc8d818263e0ac010b3783bfb2cd4ec38643df93bc879",
+    "scripts/isg/restore_mode.mjs": "12247fa3fcf609760c8bb387d7b0c1270155db4f9a880879fb184e79064501d7",
+    "scripts/isg/sql/auth_session_fixture.sql": "bc5deff6efae02be4c0afe88c07101820c338861676f39879e96a136c3ed751d",
+    "scripts/isg/auth_restore_guard.mjs": "1a0e0629ed1d83484b5a313d34e6a7622b3d1d9f7993b8803232d970403b05ec",
+    "scripts/isg/storage_restore_probe.mjs": "de24634512894206c85b78db79164f7a963ef55beb7df6db195567dd4652ca8b"
+  },
+  "offline_foundation": {
+    "total": 98,
+    "pass": 98,
+    "fail": 0,
+    "skip": 0
+  }
+}

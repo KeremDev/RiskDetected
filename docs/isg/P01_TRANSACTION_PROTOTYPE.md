@@ -43,7 +43,7 @@ Private fonksiyonlar için varsayılan `PUBLIC EXECUTE` global düzeyde kaldır�
 
 ## Production'a taşınmadan açık kalanlar
 
-1. `actors.active` gerçek `auth.sessions`, JWT doğrulama, account deletion veya paid capability yerine geçmez. Test claim'i SQL connection'dan verilir; gerçek istemciye SQL/GUC erişimi verilmez.
+1. `actors.active` gerçek `auth.sessions`, JWT doğrulama, account deletion veya paid capability yerine geçmez. Sonraki [session freshness prototipi](P01_SESSION_FRESHNESS_PROTOTYPE.md) gerçek yerel Auth JWT/login/logout ve DB row lock ile ayrı doğrulandı; henüz bu transaction mutation'ına bağlı değildir. Gerçek istemciye SQL/GUC erişimi verilmez.
 2. Counter domain örneğidir. Şirket/işyeri composite bütünlük kuralı gösterilir ama gerçek D05 şeması/backfill/API henüz yoktur.
 3. Canonical payload jsonb olarak tam eşitlikle karşılaştırılır. Production allowlist/hash/retention ve payload boyutu politikası ayrı tasarlanacak; hassas domain içeriği receipt/audit'e gelişigüzel konmayacak.
 4. Test clock ve retry/lease sayıları ticari/SLO kararı değildir; production worker server clock, backoff, jitter, timeout ve dead-letter recovery ayrıca gerekir.
