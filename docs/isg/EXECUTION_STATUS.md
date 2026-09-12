@@ -7,6 +7,7 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 - P00 devam ediyor: kaynak/kimlik/yedek kontrolleri, veritabanı restore'u ve kullanıcının seçtiği Masaüstü'ne şifreli ikinci kopya tamamlandı; tam servis/mobil restore ve mağaza envanterinin kalan kısmı açık. Masaüstü aynı disk; off-device koruma değil.
 - P01'in production'a dokunmayan güvenlik/test dilimi başladı. Domain migration veya gerçek kullanıcıya özellik açılışı yok.
 - P03'ün ilk shadow dilimi hazır: eski şirket SQL truth table ve hak koruma hesabı. Yeni fiyat/limit/floor yayınlanmadı; uygulamaya bağlanmadı.
+- P14 ilk regresyon düzeltmesi uygulandı: Android explicit offering bulunamadığında current'a fallback yapmıyor; iOS davranışıyla eşleşiyor. Yerel kod değişikliği, mağaza yayını değil.
 - Production'da yalnız read-only envanter ve Auth/Storage şema yedeği alındı. DB/store/paid policy/notification değişikliği yapılmadı.
 - Mevcut app bundle/paket, callback ve entitlement'ları değişmedi. UI ve kullanıcı tasarımı değiştirilmedi.
 - Geliştirme dalı `codex/isg-transition-foundation`. Eski `riskdetected-change-point-20260912` etiketi `dbcc979d` üzerinde korunuyor. V5 plan/registry `0fd78e17`, P00 backup/restore araçları ve kanıtları `0d8b9bce`, P01 ilk test/contract dilimi `2fd6b9ef`, P03 shadow `8252f408` commit'lerinde. Henüz push veya deploy yapılmadı.
@@ -34,6 +35,7 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 | Play mevcut teklif | Yalnız Plus yıllık trial-7d-v1: 7 gün, uygulamada daha önce hiçbir abonelik edinmemiş kullanıcı, etkin/Türkiye/backward-compatible |
 | RC katalog | default offering dört paket × iki gerçek mağaza; plus/pro sekizer ürün (mağaza + QA); legacy Riskdetected Pro yalnız iki Test Store ürünü; Targeting ve Experiments boş |
 | RC API erişimi | Mevcut anahtar v2 katalog okumasına 403 verdi; anahtar/yetki değişmeden açık dashboard'dan read-only doğrulama yapıldı |
+| Android offering guard | 10 yeni seçim testi; tüm core:data 151/151, 27 sınıf, 0 fail/error/skip; tam debug APK build PASS. Kurulum, app launch veya satın alma yapılmadı |
 | Ortak kaynak kontrolü | iOS bundle, Android package/namespace, auth callback, plus/pro entitlement geçerli |
 | Test envanteri | 203 kaynak + 60 geçiş = 263 benzersiz kabul; henüz domain testlerine UNMAPPED, başarı iddiası yok |
 | Foundation ilk test turu | 38/38 Node test; yanlış ortam ve kimlik mutasyon testleri dahil |
@@ -58,6 +60,8 @@ Ek kanıtlar: [Masaüstü şifreli kopya](evidence/P00_DESKTOP_BACKUP_2026-09-12
 [P03 shadow kapsamı](P03_CAPACITY_SHADOW.md), [legacy DB matrisi](evidence/P03_LEGACY_CAPACITY_MATRIX_2026-09-12.json), [read-only snapshot karşılaştırması](evidence/P03_CAPACITY_SHADOW_SNAPSHOT_2026-09-12.json).
 
 [Mağaza / RC mevcut katalog](P00_STORE_CATALOG_2026-09-12.md): yönetim sayfalarından read-only gözlemler, trial uygunluğu, grace/hold ayrımı ve offering platform farkı. CI tetik yollarına legacy oracle'ın kullandığı iki tarihsel migration da eklendi; migration değişirse ilgili test job'ları atlanmaz.
+
+[P14 offering guard](P14_OFFERING_GUARD.md) ve [151 Android test / APK kanıtı](evidence/P14_ANDROID_OFFERING_GUARD_2026-09-12.json). Katalog ve CI yol düzeltmesi `f7c93f7a` commit'inde.
 
 ## Kullanılabilir yeni komutlar
 

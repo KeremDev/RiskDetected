@@ -54,6 +54,8 @@ Her dört plan etkin, otomatik yenilemeli, Türkiye ile sınırlı ve eski sür�
 
 `App/Services/RDConfig.swift` default offering `default`, entitlement `plus`/`pro` olarak sabit. `SubscriptionManager.swift:231` dolu configured offering bulunamazsa boş paket listesi üretir. Android `BillingRepository.kt:173` ise dolu configured offering bulunamazsa `offerings.current`'a düşer. Bu mevcut platform farkı, yeni hedefleme/QA offering'leri açılmadan önce P14 regresyonuna alınmalı; bu envanter turunda runtime davranışı değiştirilmedi.
 
+Sonraki uygulama adımı: bu fark ayrı [P14 offering guard](P14_OFFERING_GUARD.md) değişikliğiyle yerel Android kodunda giderildi; yukarıdaki paragraf katalog incelemesi anındaki bulgudur. Canlı mağaza ayarı değişmedi.
+
 `supabase/functions/_shared/subscription-tier.ts` ürün kimliğiyle tier çıkarımını entitlement listesinden önce kullanır. Google `:monthly`/`:yearly` biçimleri token fallback yoluna girer. Ürün eşlemesi billing'in gerçekten aktif olduğuna ilişkin kanıt değildir; mevcut server lifecycle/receipt doğrulaması ve sahiplik kontrolleri ayrıca gereklidir.
 
 Mevcut Keychain anahtarı ile RevenueCat v2 `GET /projects` 403 `authorization_error` döndü. Tekrar denenmedi, anahtar değiştirilmedi. Açık dashboard hesabıyla normal read-only envanter elde edildi. V2 proje kataloğu okuması ayrı API izinleri gerektirir; 403 tek başına hangi iznin eksik olduğunu kanıtlamaz. [RevenueCat v2](https://www.revenuecat.com/docs/api-v2), [project read API](https://www.revenuecat.com/docs/api-v2/project).

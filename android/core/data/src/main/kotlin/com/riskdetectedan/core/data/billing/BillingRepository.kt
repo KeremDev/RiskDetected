@@ -169,8 +169,11 @@ class BillingRepository @Inject constructor(
     /** Mirrors `loadOfferings()` — reads the pinned offering id (not "current"), same as iOS. */
     suspend fun fetchPackages(): RdResult<List<BillingPackage>> = try {
         val offerings = Purchases.sharedInstance.awaitOfferings()
-        val offeringId = environmentConfig.revenueCatOfferingIdentifier.trim()
-        val offering = offeringId.ifEmpty { null }?.let { offerings.get(it) } ?: offerings.current
+        val offering = selectBillingOffering(
+            configuredIdentifier = environmentConfig.revenueCatOfferingIdentifier,
+            current = offerings.current,
+            findByIdentifier = { offerings.get(it) },
+        )
         val packages = offering?.availablePackages.orEmpty().mapNotNull { pkg ->
             val tier = tierForProductId(pkg.product.id) ?: return@mapNotNull null
             BillingPackage(

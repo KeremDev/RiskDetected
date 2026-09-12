@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-09-12T17:48:18.557Z",
+  "scope": "Android explicit offering selection regression; not full P14 acceptance",
+  "command": "env JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home ./gradlew :core:data:testDebugUnitTest :app:assembleDebug --offline",
+  "working_directory": "android",
+  "result": "PASS",
+  "junit": { "suite_count": 27, "tests": 151, "failures": 0, "errors": 0, "skipped": 0 },
+  "new_selector_tests": 10,
+  "debug_apk_built": true,
+  "app_installed_or_launched": false,
+  "purchase_executed": false,
+  "store_configuration_changed": false,
+  "source_bindings": [
+    {
+      "symbol": "selectBillingOffering",
+      "path": "android/core/data/src/main/kotlin/com/riskdetectedan/core/data/billing/BillingOfferingSelector.kt",
+      "sha256": "f560bc24e2a7e9d0e271b3147d1fe1553cc1c9b0d22d8af70ba7baa8a34d313c",
+      "test_class": "com.riskdetectedan.core.data.billing.BillingOfferingSelectorTest"
+    },
+    {
+      "symbol": "BillingRepository.fetchPackages",
+      "path": "android/core/data/src/main/kotlin/com/riskdetectedan/core/data/billing/BillingRepository.kt",
+      "sha256": "f65ef928d63883fbc6f44fd334c576e35407f814dc4112a93fe1b068fa390934",
+      "coverage": "compiled integration; selector behavior unit-tested, no real RevenueCat SDK network fetch"
+    },
+    {
+      "path": "android/core/data/src/test/kotlin/com/riskdetectedan/core/data/billing/BillingOfferingSelectorTest.kt",
+      "sha256": "90c88599cdcd6d128e7fd539644b28f101bb81ee1b63a85ee38c257f1d5d0e23"
+    }
+  ],
+  "artifact": {
+    "path": "android/app/build/outputs/apk/debug/app-debug.apk",
+    "sha256": "c6ea65e8e0b5c66beb5de2187dea0ecf8493ec5a7d87fb7269826763a6a81398",
+    "note": "Local debug output, not store-signed release or durable archive; later builds may replace this file."
+  },
+  "release_ready": false
+}
