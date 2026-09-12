@@ -128,3 +128,27 @@ jobs:
           name: isg-synthetic-db-evidence
           path: output/isg/runs/*/database-contract.json
           if-no-files-found: warn
+
+  auth-session-prototype:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      # Immutable multi-arch images. No real backups/Keychain or project secrets.
+      # Image preparation is networked; all three test containers share NONE.
+      - name: Fetch pinned synthetic Auth runtime images
+        run: |
+          docker pull public.ecr.aws/supabase/postgres@sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b
+          docker pull public.ecr.aws/supabase/gotrue@sha256:362659ca70eaa75ba05bbaf963caa84c1c5afe5e8fbf0777e17b830dd5f0f60a
+          docker pull public.ecr.aws/supabase/storage-api@sha256:28424184c9f699790cc190f78ddf7d6abfb5c87af78af260529a394d12c135e9
+      - name: Real local login, SQL session guard, lock ordering and logout
+        run: node scripts/isg/run_auth_restore.mjs --synthetic-session
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: isg-synthetic-auth-session-evidence
+          path: output/isg/runs/synthetic-auth-*/REPORT.json
+          if-no-files-found: warn

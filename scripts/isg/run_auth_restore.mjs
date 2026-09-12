@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import { spawn, spawnSync } from 'node:child_process';
 import { createHmac, randomBytes, randomUUID, createHash } from 'node:crypto';
-import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { ROOT } from './lib.mjs';
-import { assertNoExposedRestoreContainer } from './auth_restore_guard.mjs';
+import { assertNoExposedRestoreContainer, resolvePinnedRestoreImage } from './auth_restore_guard.mjs';
 import { probeStorageRestore } from './storage_restore_probe.mjs';
 import { parseRestoreMode } from './restore_mode.mjs';
 import { beginSessionProbe } from './auth_session_probe.mjs';
@@ -15,6 +15,8 @@ import { beginSessionProbe } from './auth_session_probe.mjs';
 const source = 'isg_restore_20260912_db';
 const names = { db: 'isg_auth_restore_20260912_db', auth: 'isg_auth_restore_20260912_auth', client: 'isg_auth_restore_20260912_client' };
 const withStorage = process.argv.includes('--with-storage');
+const synthetic = process.argv.length === 3 && process.argv[2] === '--synthetic-session';
+if (synthetic) for (const kind of Object.keys(names)) names[kind] = `isg_test_auth_session_${kind}`;
 if (withStorage) names.storage = 'isg_auth_restore_20260912_storage';
 const images = {
   db: 'public.ecr.aws/supabase/postgres@sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b',
@@ -23,7 +25,8 @@ const images = {
 };
 if (withStorage) images.storage = images.client;
 const owned = new Map(), run = randomUUID(), label = 'com.riskdetected.isg-auth-restore';
-const report = { schema_version: 1, run_id: run, started_at: new Date().toISOString(), mode: 'isolated_restored_copy',
+const resolvedImages = new Map();
+const report = { schema_version: 1, run_id: run, started_at: new Date().toISOString(), mode: synthetic ? 'synthetic_auth_session' : 'isolated_restored_copy',
   images, checks: [], external_egress: false, ports_published: false, source_database_changed: false,
   storage_api_tested: false, mobile_e2e_tested: false, full_application_restore_proven: false };
 let target, stage = 'preflight';
@@ -39,15 +42,25 @@ function inspect(name) {
 function commonGuard(i) {
   assertNoExposedRestoreContainer(i);
 }
+function imageId(kind) {
+  if (!resolvedImages.has(kind)) {
+    const r = docker(['image','inspect',images[kind]]);
+    if (r.status !== 0) throw new Error('AUTH_RESTORE_PINNED_IMAGE_MISSING');
+    resolvedImages.set(kind,resolvePinnedRestoreImage(JSON.parse(r.stdout)[0],images[kind]));
+    report.image_resolution = Object.fromEntries(resolvedImages);
+  }
+  return resolvedImages.get(kind).id;
+}
 function sourceGuard() {
+  if (synthetic) throw new Error('AUTH_RESTORE_SOURCE_FORBIDDEN_IN_SYNTHETIC_MODE');
   const i = inspect(source); commonGuard(i);
   if (i.Name !== `/${source}` || i.Config.Labels?.['com.riskdetected.isg-restore'] !== '20260912' ||
-      i.HostConfig.NetworkMode !== 'none' || !i.State.Running || i.Image !== images.db.split('@')[1]) throw new Error('AUTH_RESTORE_SOURCE_INVALID');
+      i.HostConfig.NetworkMode !== 'none' || !i.State.Running || i.Image !== imageId('db')) throw new Error('AUTH_RESTORE_SOURCE_INVALID');
 }
 function guard(kind, running = true) {
   const i = inspect(names[kind]); commonGuard(i);
   if (i.Id !== owned.get(kind) || i.Name !== `/${names[kind]}` || i.Config.Labels?.[label] !== run ||
-      i.Image !== images[kind].split('@')[1] || (running && !i.State.Running) ||
+      i.Image !== imageId(kind) || (running && !i.State.Running) ||
       i.HostConfig.NetworkMode !== (kind === 'db' ? 'none' : `container:${owned.get('db')}`)) throw new Error('AUTH_RESTORE_OWNERSHIP_FAILED');
   if (kind !== 'db') guard('db');
 }
@@ -113,6 +126,14 @@ async function waitReady(check) {
   }
   throw new Error('AUTH_RESTORE_STARTUP_TIMEOUT');
 }
+async function startDatabase() {
+  start('db', { POSTGRES_PASSWORD: randomBytes(32).toString('hex') }, ['postgres', '-D', '/etc/postgresql', '-c', 'listen_addresses=localhost',
+    '-c', 'cron.launch_active_jobs=off', '-c', 'logging_collector=off', '-c', 'log_statement=none', '-c', 'log_min_error_statement=panic']);
+  await waitReady(() => {
+    guard('db');
+    return docker(['exec', names.db, 'sh', '-c', 'test "$(cat /proc/1/comm)" = ".postgres-wrapp" && pg_isready -h 127.0.0.1 -U supabase_admin -d postgres']).status === 0;
+  });
+}
 async function cleanup() {
   let ok = true;
   for (const kind of [...owned.keys()].reverse()) {
@@ -134,9 +155,12 @@ for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => {
 });
 try {
   const mode = parseRestoreMode(process.argv.slice(2));
-  sourceGuard();
+  report.data_class = mode.synthetic ? 'synthetic' : 'restored_private_backup';
+  report.original_source_accessed = !mode.synthetic;
+  if (!mode.synthetic) sourceGuard();
   for (const name of Object.values(names)) if (docker(['inspect', name]).status === 0) throw new Error('AUTH_RESTORE_TARGET_ALREADY_EXISTS');
-  for (const image of Object.values(images)) if (docker(['image', 'inspect', image]).status !== 0) throw new Error('AUTH_RESTORE_PINNED_IMAGE_MISSING');
+  for (const kind of Object.keys(images)) imageId(kind);
+  if (!mode.synthetic) {
   const ledgerPath = resolve(ROOT, 'backups/isg-managed-migrations-20260912-osigPE/managed-migration-data.sql');
   const ledger = readFileSync(ledgerPath);
   if (digest(ledger) !== 'e027928e0d920f3cd616991af4a48378adb63daf33e53790c04bb90d4f384fe5') throw new Error('AUTH_RESTORE_LEDGER_DRIFT');
@@ -149,12 +173,7 @@ try {
   // pg_dump excludes global roles. Inspect the whole non-system role inventory
   // up front, without password hashes, instead of patching individual ACL errors.
   const roles = JSON.parse(sql("BEGIN READ ONLY; SELECT jsonb_agg(jsonb_build_object('name',rolname,'inherit',rolinherit,'superuser',rolsuper,'bypassrls',rolbypassrls,'login',rolcanlogin,'createdb',rolcreatedb,'createrole',rolcreaterole,'replication',rolreplication)) FROM pg_roles WHERE rolname !~ '^pg_'; COMMIT;", true));
-  start('db', { POSTGRES_PASSWORD: randomBytes(32).toString('hex') }, ['postgres', '-D', '/etc/postgresql', '-c', 'listen_addresses=localhost',
-    '-c', 'cron.launch_active_jobs=off', '-c', 'logging_collector=off', '-c', 'log_statement=none', '-c', 'log_min_error_statement=panic']);
-  await waitReady(() => {
-    guard('db');
-    return docker(['exec', names.db, 'sh', '-c', 'test "$(cat /proc/1/comm)" = ".postgres-wrapp" && pg_isready -h 127.0.0.1 -U supabase_admin -d postgres']).status === 0;
-  });
+  await startDatabase();
   stage = 'clone-import';
   const existingRoles = new Set(JSON.parse(sql('select jsonb_agg(rolname) from pg_roles;')));
   const missingRoles = roles.filter(r => !existingRoles.has(r.name));
@@ -198,6 +217,17 @@ try {
   pass('service_ledgers_empty_before_supplement', sql('select count(*) from auth.schema_migrations; select count(*) from storage.migrations;') === '0\n0');
   sql(ledger.toString('utf8'));
   pass('service_ledgers_restored', sql('select count(*) from auth.schema_migrations; select count(*) from storage.migrations;') === '77\n68');
+  } else {
+    stage = 'synthetic-bootstrap';
+    const outputRoot = resolve(ROOT,'output/isg/runs');
+    mkdirSync(outputRoot,{recursive:true,mode:0o700});
+    target = mkdtempSync(resolve(outputRoot,'synthetic-auth-')); chmodSync(target,0o700);
+    await startDatabase();
+    // The pinned image includes an EMPTY Auth bootstrap schema. GoTrue applies
+    // its remaining managed migrations; never import customer snapshots.
+    pass('synthetic_database_has_no_auth_users',sql('select count(*) from auth.users;') === '0');
+    pass('synthetic_database_has_no_application_profile_table',sql("select to_regclass('public.profiles') is null;") === 't');
+  }
   const secret = randomBytes(48).toString('hex'), dbPassword = randomBytes(32).toString('hex');
   sql(`ALTER ROLE supabase_auth_admin PASSWORD '${dbPassword}';`);
   stage = 'auth-boot';
@@ -222,7 +252,8 @@ try {
   const created = request('/admin/users', { method: 'POST', token: admin, body: { email, password, email_confirm: true } });
   pass('synthetic_user_created_by_local_admin', [200,201].includes(created.status) && /^[a-f0-9-]{36}$/.test(created.body.id ?? ''));
   const id = created.body.id;
-  pass('existing_profile_bootstrap_trigger', sql(`select count(*) from public.profiles where id='${id}';`) === '1');
+  if (!mode.synthetic) pass('existing_profile_bootstrap_trigger', sql(`select count(*) from public.profiles where id='${id}';`) === '1');
+  else pass('synthetic_auth_contains_only_one_fixture_user',sql('select count(*) from auth.users;') === '1');
   pass('wrong_password_rejected', request('/token?grant_type=password', { method: 'POST', body: { email, password: 'incorrect-test-only' } }).status === 400);
   const login = request('/token?grant_type=password', { method: 'POST', body: { email, password } });
   pass('password_login_same_uuid', login.status === 200 && login.body.user?.id === id && typeof login.body.access_token === 'string');
@@ -244,9 +275,13 @@ try {
     report.storage = await probeStorageRestore({ sql, start, guard, docker, checked, names, secret, sign, waitReady, pass, foreignSubject: id });
     report.storage_api_tested = true;
   }
-  report.service_ledger_counts_after_boot = sql('select count(*) from auth.schema_migrations; select count(*) from storage.migrations;');
+  report.service_ledger_counts_after_boot = sql(mode.synthetic ? 'select count(*) from auth.schema_migrations;' : 'select count(*) from auth.schema_migrations; select count(*) from storage.migrations;');
+  if (!mode.synthetic) {
   report.source_after = sql("BEGIN READ ONLY; SELECT jsonb_build_object('users',(select count(*) from auth.users),'identities',(select count(*) from auth.identities),'profiles',(select count(*) from public.profiles),'objects',(select count(*) from storage.objects),'auth_migrations',(select count(*) from auth.schema_migrations),'storage_migrations',(select count(*) from storage.migrations)); COMMIT;", true);
   pass('source_counts_unchanged', report.source_before === report.source_after);
+  } else pass('synthetic_no_backup_or_storage_lane_used',!withStorage && report.original_source_accessed === false);
+  report.source_sha256 = Object.fromEntries(['scripts/isg/run_auth_restore.mjs','scripts/isg/auth_session_probe.mjs','scripts/isg/restore_mode.mjs','scripts/isg/sql/auth_session_fixture.sql','scripts/isg/auth_restore_guard.mjs']
+    .map(path=>[path,digest(readFileSync(resolve(ROOT,path)))]));
   report.ok = true;
 } catch (error) {
   report.ok = false; report.failed_stage = stage;

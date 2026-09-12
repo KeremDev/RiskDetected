@@ -62,8 +62,20 @@ node scripts/isg/run_auth_restore.mjs --isolated-copy --with-storage --with-sess
 2. Gerçek domain mutation ile **aynı transaction** entegrasyonu, owner/capability/paid erişim, pending account deletion, admin scope/MFA ve audit/outbox birlikte atomiklik. Guard'ı ayrı RPC'de çağırıp sonraki istekte write yapmak yeterli değildir.
 3. Auth global inactivity/single-session/timebox ayarlarının okuma ve yürütme politikası. `not_after` ve session varlığı bütün global politikaların anında uygulandığı anlamına gelmez.
 4. Kilit yükü, lock ordering/deadlock/timeout ve servis hata eşlemesi; yalnız iki revocation türünün dar ordering deneyi vardır.
-5. Yeni SQL henüz normal sentetik DB CI matrisine bağlanmadı; CI şimdilik18 saf yerel JWT/argüman testini çalıştırır. Gerçek müşteri yedeği CI'a taşınmayacak.
+5. Yeni SQL sonradan aşağıdaki bağımsız sentetik Auth CI job'una bağlandı; uzak CI yürütümü hâlâ NOT_RUN. Gerçek müşteri yedeği CI'a taşınmayacak.
 
 263 ana kabul hâlâ UNMAPPED; bu prototip P01/P02 güvenlik kanıtını artırır, domain kapsamını tamamlanmış saymaz.
 
 Kaynaklar: [Supabase session_id/logout semantiği](https://supabase.com/docs/guides/auth/sessions), [GoTrue v2.195.0 JWT configuration](https://github.com/supabase/auth/blob/v2.195.0/internal/conf/configuration.go), [PostgreSQL row locking](https://www.postgresql.org/docs/17/explicit-locking.html).
+
+## Sonraki dilim — müşteri verisiz CI
+
+`node scripts/isg/run_auth_restore.mjs --synthetic-session` artık ayrı bir test yoludur. Backup klasörü, ana restore DB, Storage dosyaları veya Keychain okunmaz; source erişim fonksiyonu bu modda ayrıca reddeder. Hedefler `isg_test_auth_session_db/auth/client`, yalnız yeni run'a ait; restore hedefleriyle çakışmaz. `--with-storage` veya `--isolated-copy` ile birleştirilmesi daha çalışmaya başlamadan reddedilir.
+
+Sıfırdan açılan sabit PostgreSQL imajında Auth bootstrap şeması vardır, kullanıcı sayısı0'dır; public profil tablosu yoktur. GoTrue kalan migration'larını uygulayıp Auth77 ledger'a ulaşır. Yalnız bir sentetik hesap oluşturulur. Production profil trigger/backup/Storage kontrolleri bu modda çalıştırılmış sayılmaz. Auth + SQL session dilimi **48/48 PASS**, 18:39:02–18:39:10 UTC. Aynı kaynakla ayrı gerçek restore regresyonu **75/75 PASS**, 18:38:50–18:39:33 UTC. İki farklı isimli ortamın paralel çalışması da birbirine dokunmadan tamamlandı; her ikisi kendi konteynerlerini kaldırdı.
+
+Foundation **101/101**. Ek kontroller: Docker classic/containerd gerçek image ID çözümlemesi; sentetik modun backup yolu açamaması; CI'ın yalnız sentetik komutu ve yalnız REPORT.json artifact'ını kullanması. Registry index ile container Image ID'nin aynı olması varsayımı kaldırıldı: onaylı RepoDigest doğrulanır, gerçek kurulu image ID'si çözülür ve container bununla karşılaştırılır. Üç sabit image'ın registry manifest'lerinde Linux amd64/arm64 bulunması salt okunur doğrulandı; yerel çalışma arm64 kanıtıdır, x64 runtime henüz koşmadı.
+
+`.github/workflows/isg-foundation.yml` içindeki `auth-session-prototype` job'u Node24/Ubuntu24, üç digest-pinned image ve 8 dakika sınırı kullanır. Image pull hazırlığı dışında servisler network-none namespace'inde; host port/mount yok. Workflow YAML parse ve job-boundary testi geçti. Push/deploy veya uzak job çalıştırma yapılmadı; henüz uzak yeşil CI iddiası yok.
+
+[Sentetik CI hazırlığı, restore regresyonu ve kaynak hash'leri](evidence/P01_SYNTHETIC_AUTH_CI_2026-09-12.json).

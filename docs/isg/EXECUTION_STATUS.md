@@ -50,6 +50,7 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 | Foundation session guard sonrası | 98/98 Node; ek18 local-only JWT signature/issuer/audience/expiry ve explicit opt-in/argüman negatifleri |
 | Gerçek Auth session freshness | 33 guard kontrolü; Auth temel17 ile50/50; still-signed logout token DENY, expired/ban/deleted/anonymous/foreign claim reddi, row-lock ordering PASS; domain/gateway bağlı değil |
 | Son birleşik servis provası | Auth + Storage + session75/75 PASS; 18:30:41–18:31:24 UTC; 588 dosya yeniden doğrulandı, source unchanged, dört container cleanup PASS |
+| Sentetik Auth CI dilimi | Müşteri verisiz sıfırdan GoTrue/Auth77, tek hesap, session SQL ve gerçek logout48/48; foundation101/101; ayrı restore regresyonu75/75 yeniden PASS; iki ortam cleanup PASS |
 | Ortak context corpus | Deno 44/44 (43 fixture + 1 ilave test), Swift 43/43, Android 43/43 ayrı JUnit senaryosu |
 | Sentetik DB transaction | 30/30; 20 paralel retry, 20 version yarışı, 20 worker claim, audit/outbox fault, lease expiry ve gerçek DB bağlantısı öldürme; cleanup PASS |
 | P03 legacy DB matrisi | Ek 329/329 varyasyon; suite toplam 31 üst seviye kontrol PASS; orijinal helper gövdeleri restore ile eşleşti |
@@ -79,6 +80,8 @@ Ek kanıtlar: [Masaüstü şifreli kopya](evidence/P00_DESKTOP_BACKUP_2026-09-12
 
 [P01 gerçek Auth session freshness prototipi](P01_SESSION_FRESHNESS_PROTOTYPE.md), [75 birleşik kontrol / kaynak hash'leri](evidence/P01_AUTH_SESSION_GUARD_2026-09-12.json). Storage dilimi `e519846d` commit'inde. Yeni helper yalnız disposable test şemasında; eski uygulama oturum davranışı ve prod Auth ayarları değişmedi.
 
+[Sentetik Auth CI hazırlığı](evidence/P01_SYNTHETIC_AUTH_CI_2026-09-12.json): yeni `--synthetic-session` müşteri yedeğini okumaz; ayrı48 test ve foundation101 geçti. CI job'u eklendi/YAML parse PASS; uzak çalıştırma NOT_RUN. Önceki gerçek-session dilimi `7c971428` commit'inde.
+
 ## Kullanılabilir yeni komutlar
 
 ~~~bash
@@ -95,9 +98,10 @@ node scripts/isg/read_legacy_capacity_snapshot.mjs
 node scripts/isg/run_auth_restore.mjs --isolated-copy
 node scripts/isg/run_auth_restore.mjs --isolated-copy --with-storage
 node scripts/isg/run_auth_restore.mjs --isolated-copy --with-storage --with-session-guard
+node scripts/isg/run_auth_restore.mjs --synthetic-session
 ~~~
 
-Restore ve capture araçları offline foundation runner'a dahil değildir. Bunlar restricted backup çıktısı üretir ve yalnız açık P00 işlemi için çalıştırılır. Tamamlanmış restore'un üstüne yeniden yazma engeli var. Mevcut diğer Docker/Supabase stack'leri durdurulmadı veya resetlenmedi.
+Restore ve capture modları offline foundation runner'a dahil değildir. Bunlar restricted backup çıktısı üretir ve yalnız açık P00 işlemi için çalıştırılır. Ayrı `--synthetic-session` yalnız yeni test verisi üretir; bu dar mod ayrı CI job'una bağlandı. Tamamlanmış restore'un üstüne yeniden yazma engeli var. Mevcut diğer Docker/Supabase stack'leri durdurulmadı veya resetlenmedi.
 
 ## Açık kapılar
 
