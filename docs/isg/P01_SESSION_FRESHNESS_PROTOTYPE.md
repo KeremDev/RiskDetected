@@ -58,6 +58,8 @@ node scripts/isg/run_auth_restore.mjs --isolated-copy --with-storage --with-sess
 
 ## Production'a geçmeden açık kalanlar
 
+Sonraki [Auth + transaction bileşimi](P01_AUTH_MUTATION_COMPOSITION.md) aynı-transaction session/owner/sentetik-permission ve audit/outbox atomikliğini private fixture üzerinde doğruladı; aşağıdaki gerçek domain/paid/gateway kapılarını kapatmaz.
+
 1. Gerçek gateway/JWKS/issuer rotation, expired-token HTTP reddi, native client hata/yeniden giriş deneyimi ve eski binary paritesi.
 2. Gerçek domain mutation ile **aynı transaction** entegrasyonu, owner/capability/paid erişim, pending account deletion, admin scope/MFA ve audit/outbox birlikte atomiklik. Guard'ı ayrı RPC'de çağırıp sonraki istekte write yapmak yeterli değildir.
 3. Auth global inactivity/single-session/timebox ayarlarının okuma ve yürütme politikası. `not_after` ve session varlığı bütün global politikaların anında uygulandığı anlamına gelmez.

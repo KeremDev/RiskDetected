@@ -1,0 +1,635 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-12",
+  "scope": "P01 synthetic real-Auth mutation composition; not a production domain or gateway",
+  "synthetic": {
+    "path": "output/isg/runs/synthetic-auth-1bqDN6/REPORT.json",
+    "schema_version": 1,
+    "run_id": "0e16528d-6eb2-4a4d-bf35-9d15fa62f16b",
+    "started_at": "2026-09-12T19:05:02.099Z",
+    "mode": "synthetic_auth_session",
+    "images": {
+      "db": "public.ecr.aws/supabase/postgres@sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b",
+      "auth": "public.ecr.aws/supabase/gotrue@sha256:362659ca70eaa75ba05bbaf963caa84c1c5afe5e8fbf0777e17b830dd5f0f60a",
+      "client": "public.ecr.aws/supabase/storage-api@sha256:28424184c9f699790cc190f78ddf7d6abfb5c87af78af260529a394d12c135e9"
+    },
+    "checks": [
+      {
+        "id": "synthetic_database_has_no_auth_users",
+        "result": "PASS"
+      },
+      {
+        "id": "synthetic_database_has_no_application_profile_table",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_health",
+        "result": "PASS"
+      },
+      {
+        "id": "admin_endpoint_rejects_no_token",
+        "result": "PASS"
+      },
+      {
+        "id": "admin_endpoint_rejects_expired_service_token",
+        "result": "PASS"
+      },
+      {
+        "id": "synthetic_user_created_by_local_admin",
+        "result": "PASS"
+      },
+      {
+        "id": "synthetic_auth_contains_only_one_fixture_user",
+        "result": "PASS"
+      },
+      {
+        "id": "wrong_password_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "password_login_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "authenticated_user_read",
+        "result": "PASS"
+      },
+      {
+        "id": "user_token_cannot_admin_list",
+        "result": "PASS"
+      },
+      {
+        "id": "refresh_keeps_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_allows_real_signed_login",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_private_acl",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_missing_claims",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_empty_claims",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_array_claims",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_missing_session",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_bad_session",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_unknown_session",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_other_actor",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_bad_actor",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_anonymous_role",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_service_role",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_expired_token",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_missing_expiry",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_string_expiry",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_fractional_expiry",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_metadata_cannot_supply_session",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_metadata_cannot_supply_actor",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_ignores_user_metadata_authority",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_expired_database_session",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_accepts_future_not_after",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_banned_user",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_deleted_user",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_anonymous_user",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_restores_synthetic_user_eligibility",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_transaction_lock_ready",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_active_transaction_blocks_logout_delete",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_active_transaction_blocks_ban_update",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_authorized_transaction_completes",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_lock_probe_preserves_session",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_private_acl",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_real_session_commits",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_actor_is_verified_sub_not_legacy_guc",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_atomic_four_records",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_same_retry_returns_saved_result",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_changed_payload_conflict",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_stale_version_no_side_effect",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_foreign_company_no_side_effect",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_missing_company_indistinguishable",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_cross_company_entity_no_side_effect",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_missing_entity_indistinguishable",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_missing_session_no_side_effect",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_expired_claim_no_side_effect",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_revoked_permission_rejects_new",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_revoked_permission_rejects_saved_receipt",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_user_metadata_cannot_grant_permission",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_missing_permission_fail_closed",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_audit_failure_rolls_back_all",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_outbox_failure_rolls_back_all",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_capability_lock_ready",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_permission_revoke_waits_for_transaction",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_authorized_lock_probe_completes",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_lock_probe_rollback_preserves_state",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_recovers_after_denials",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_twenty_retries_same_result",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_twenty_retries_one_commit",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_twenty_versions_one_winner",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_version_race_one_atomic_commit",
+        "result": "PASS"
+      },
+      {
+        "id": "logout_succeeds",
+        "result": "PASS"
+      },
+      {
+        "id": "logged_out_refresh_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_logout_token_still_cryptographically_valid",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_logout_removes_actual_auth_session",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_still_signed_logged_out_token",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_logged_out_signed_token_cannot_write",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_logged_out_signed_token_cannot_replay",
+        "result": "PASS"
+      },
+      {
+        "id": "synthetic_no_backup_or_storage_lane_used",
+        "result": "PASS"
+      }
+    ],
+    "external_egress": false,
+    "ports_published": false,
+    "source_database_changed": false,
+    "storage_api_tested": false,
+    "mobile_e2e_tested": false,
+    "full_application_restore_proven": false,
+    "data_class": "synthetic",
+    "original_source_accessed": false,
+    "image_resolution": {
+      "db": {
+        "id": "sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b",
+        "architecture": "arm64",
+        "os": "linux",
+        "reference": "public.ecr.aws/supabase/postgres@sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b"
+      },
+      "auth": {
+        "id": "sha256:362659ca70eaa75ba05bbaf963caa84c1c5afe5e8fbf0777e17b830dd5f0f60a",
+        "architecture": "arm64",
+        "os": "linux",
+        "reference": "public.ecr.aws/supabase/gotrue@sha256:362659ca70eaa75ba05bbaf963caa84c1c5afe5e8fbf0777e17b830dd5f0f60a"
+      },
+      "client": {
+        "id": "sha256:28424184c9f699790cc190f78ddf7d6abfb5c87af78af260529a394d12c135e9",
+        "architecture": "arm64",
+        "os": "linux",
+        "reference": "public.ecr.aws/supabase/storage-api@sha256:28424184c9f699790cc190f78ddf7d6abfb5c87af78af260529a394d12c135e9"
+      }
+    },
+    "auth_health": {
+      "version": "v2.195.0",
+      "name": "GoTrue",
+      "description": "GoTrue is a user registration and authentication API"
+    },
+    "session_guard": {
+      "source_sha256": "bc5deff6efae02be4c0afe88c07101820c338861676f39879e96a136c3ed751d",
+      "production_deployed": false,
+      "gateway_tested": false,
+      "company_capability_tested": false,
+      "global_inactivity_policy_tested": false,
+      "concurrency_ordering_tested": true
+    },
+    "auth_mutation": {
+      "source_sha256": {
+        "scripts/isg/sql/transaction_fixture.sql": "87eafb27e40d6db096a6e10837655a3f7e823e75e0aaaaed4b978e2ae8f52b18",
+        "scripts/isg/sql/auth_mutation_fixture.sql": "0ed052d6edb148743bfaa6014ac030748a11acf1b41db65ebfad5be399f6d03c"
+      },
+      "production_deployed": false,
+      "gateway_tested": false,
+      "billing_capability_tested": false,
+      "synthetic_permission_gate_tested": true,
+      "real_session_mutation_composition_tested": true
+    },
+    "service_ledger_counts_after_boot": "77",
+    "source_sha256": {
+      "scripts/isg/run_auth_restore.mjs": "f714e277abed2c3d2b739b6b99413aae74bf9cce6b8a1aedc997307208369ff8",
+      "scripts/isg/auth_session_probe.mjs": "1c858ffda4550d4b019c08192dfc67c4a4dafbf691ab973caf1968aca37faebe",
+      "scripts/isg/auth_mutation_probe.mjs": "ac64fae84161e4af3f6a761b187ff09df2916cef106bf32dcddb8ee17b9aece9",
+      "scripts/isg/sql/auth_mutation_fixture.sql": "0ed052d6edb148743bfaa6014ac030748a11acf1b41db65ebfad5be399f6d03c",
+      "scripts/isg/sql/transaction_fixture.sql": "87eafb27e40d6db096a6e10837655a3f7e823e75e0aaaaed4b978e2ae8f52b18",
+      "scripts/isg/restore_mode.mjs": "0cd2c5cdd3d2ee07e57ce4d1998e7cba63428e4522306b8f210ec381b79ce700",
+      "scripts/isg/sql/auth_session_fixture.sql": "bc5deff6efae02be4c0afe88c07101820c338861676f39879e96a136c3ed751d",
+      "scripts/isg/auth_restore_guard.mjs": "0cb4a563a1633d79550555599d481128442ee85d5715958c1dac27268cfca8d2"
+    },
+    "ok": true,
+    "disposable_container_cleanup": "PASS",
+    "finished_at": "2026-09-12T19:05:15.640Z"
+  },
+  "regression": {
+    "restored_services": {
+      "path": "backups/isg-auth-service-restore-20260912-k2jsrD/REPORT.json",
+      "run_id": "3299c06e-5e0e-4bdc-8233-31a125112831",
+      "started_at": "2026-09-12T19:05:12.842Z",
+      "finished_at": "2026-09-12T19:05:57.876Z",
+      "passed": 75,
+      "source_counts_unchanged": true,
+      "storage": {
+        "all_bytes_tested": true,
+        "private_bucket_rls": [
+          {
+            "bucket": "photos",
+            "checks": "PASS",
+            "fixture_count": 1
+          },
+          {
+            "bucket": "reports",
+            "checks": "PASS",
+            "fixture_count": 1
+          },
+          {
+            "bucket": "logos",
+            "checks": "PASS",
+            "fixture_count": 1
+          },
+          {
+            "bucket": "avatars",
+            "checks": "PASS",
+            "fixture_count": 1
+          }
+        ],
+        "public_bucket_tested": true,
+        "original_etag_and_mtime_preserved": false,
+        "live_credentials_used": false,
+        "original_user_login_tested": false,
+        "objects": 588,
+        "bytes": 512280146
+      },
+      "composition_not_loaded": true,
+      "source_sha256": {
+        "scripts/isg/run_auth_restore.mjs": "f714e277abed2c3d2b739b6b99413aae74bf9cce6b8a1aedc997307208369ff8",
+        "scripts/isg/auth_session_probe.mjs": "1c858ffda4550d4b019c08192dfc67c4a4dafbf691ab973caf1968aca37faebe",
+        "scripts/isg/auth_mutation_probe.mjs": "ac64fae84161e4af3f6a761b187ff09df2916cef106bf32dcddb8ee17b9aece9",
+        "scripts/isg/sql/auth_mutation_fixture.sql": "0ed052d6edb148743bfaa6014ac030748a11acf1b41db65ebfad5be399f6d03c",
+        "scripts/isg/sql/transaction_fixture.sql": "87eafb27e40d6db096a6e10837655a3f7e823e75e0aaaaed4b978e2ae8f52b18",
+        "scripts/isg/restore_mode.mjs": "0cd2c5cdd3d2ee07e57ce4d1998e7cba63428e4522306b8f210ec381b79ce700",
+        "scripts/isg/sql/auth_session_fixture.sql": "bc5deff6efae02be4c0afe88c07101820c338861676f39879e96a136c3ed751d",
+        "scripts/isg/auth_restore_guard.mjs": "0cb4a563a1633d79550555599d481128442ee85d5715958c1dac27268cfca8d2"
+      },
+      "cleanup": "PASS"
+    },
+    "transaction": {
+      "path": "output/isg/runs/804c130d-a881-479c-9d21-76f077e584de/database-contract.json",
+      "schema_version": 1,
+      "run_id": "804c130d-a881-479c-9d21-76f077e584de",
+      "started_at": "2026-09-12T19:05:11.686Z",
+      "image": "public.ecr.aws/supabase/postgres@sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b",
+      "suite": "synthetic_postgres_transaction_prototype",
+      "production_contract_implemented": false,
+      "acceptance_complete": false,
+      "seed": "fixed_uuid_counter_v1",
+      "node_version": "v26.7.0",
+      "source_sha256": {
+        "scripts/isg/run_database_contract.mjs": "7db8d0c84d1cbfb8ddfe3cf7d2f554c01120e98735636f86993438126ed1147e",
+        "scripts/isg/sql/transaction_fixture.sql": "87eafb27e40d6db096a6e10837655a3f7e823e75e0aaaaed4b978e2ae8f52b18",
+        "scripts/isg/legacy_capacity_oracle.mjs": "cd67398fca914972c3deec14575c9087c3db67c77127103256a1c6c63f3b5f53",
+        "scripts/isg/verify_environment.mjs": "c6a223fef8c8ea6d34046893674cdedcb01114562b63a7acac564e3ff546e446",
+        "contracts/isg/v1/safety-policy.json": "66cb1eb088bafb97f0ea7a9b78041695c2462e54a39eddc269960e8324d5f8ba"
+      },
+      "cases": [
+        {
+          "id": "TX-01_private_tables_and_workers_not_callable_by_client",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-02_missing_actor_rejected",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-03_foreign_and_missing_company_indistinguishable",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-04_cross_company_entity_rejected",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-05_invalid_delta_rejected_without_side_effect",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-06_domain_audit_outbox_receipt_commit_together",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-07_identical_retry_returns_original_no_extra_writes",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-08_same_key_different_payload_conflict",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-09_stale_version_no_receipt_or_side_effect",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-10_audit_failure_rolls_back_every_write",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-11_outbox_failure_rolls_back_every_write",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-12_failed_request_can_retry_successfully",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-13_revoked_actor_cannot_replay_cached_success",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-14_twenty_identical_parallel_retries_apply_once",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-15_twenty_competing_versions_have_one_winner",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-16_lease_prevents_parallel_and_out_of_order_claim",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-17_expiry_reclaims_same_event_with_new_fence",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-18_old_worker_cannot_ack_after_lease_loss",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-19_consumer_failure_rolls_back_receipt_and_projection",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-20_commit_then_lost_ack_does_not_repeat_projection",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-21_ordered_events_apply_exactly_once_per_receipt",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-22_expired_lease_cannot_complete_at_boundary",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-23_retry_budget_dead_letters_and_blocks_later_version",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-24_composite_foreign_key_rejects_wrong_scope_even_for_owner",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-25_mutation_key_is_scoped_to_actor",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-26_former_company_owner_cannot_replay_cached_result",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-27_parallel_workers_one_lease_other_company_not_blocked",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-28_null_test_clock_fails_closed",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-29_connection_killed_before_commit_rolls_back_domain_and_all_side_effects",
+          "status": "PASS"
+        },
+        {
+          "id": "TX-30_worker_connection_killed_before_commit_can_retry_without_partial_projection",
+          "status": "PASS"
+        },
+        {
+          "id": "LEGACY-01_original_company_tier_and_limit_truth_table",
+          "status": "PASS"
+        }
+      ],
+      "cleanup": "PASS",
+      "postgres_version": "17.6",
+      "legacy_capacity": {
+        "passed": 329,
+        "failures": [],
+        "case_count": 329,
+        "source_definitions": [
+          {
+            "name": "private.user_plan_tier",
+            "path": "supabase/migrations/20260513223911_fix_subscription_quota_review_findings.sql",
+            "sha256": "fe214cb67f451eda43e70701e63b41004fac7d84942e6debde96adcb9d21d4d2"
+          },
+          {
+            "name": "private.company_limit_for_user",
+            "path": "supabase/migrations/20260520154818_add_companies.sql",
+            "sha256": "a3af9a461a103b8386a0e5ec589270bc1f0f546aceaf826ad75571934925ed8a"
+          }
+        ]
+      },
+      "ok": true,
+      "finished_at": "2026-09-12T19:05:20.316Z",
+      "passed": 31
+    },
+    "foundation": {
+      "passed": 110,
+      "failed": 0,
+      "skipped": 0
+    },
+    "capacity_shadow": {
+      "passed": 17,
+      "finite_combinations": 864
+    },
+    "identity": "PASS",
+    "transport_function_map": "PASS (3 sources only)",
+    "remote_ci": "NOT_RUN"
+  },
+  "limitations": [
+    "Trusted local SQL adapter verifies GoTrue HS256 token. No real HTTP gateway/JWKS/rotation or native E2E.",
+    "Permission switch is synthetic, not canonical billing, quota, gift or discount.",
+    "263 domain acceptances remain UNMAPPED; no production migration/deploy.",
+    "Revocation that arrives after a short authorized transaction waits for its locks; not retroactive cancellation."
+  ]
+}

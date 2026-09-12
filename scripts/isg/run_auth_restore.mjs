@@ -8,6 +8,7 @@ import { assertNoExposedRestoreContainer, resolvePinnedRestoreImage } from './au
 import { probeStorageRestore } from './storage_restore_probe.mjs';
 import { parseRestoreMode } from './restore_mode.mjs';
 import { beginSessionProbe } from './auth_session_probe.mjs';
+import { beginAuthMutationProbe } from './auth_mutation_probe.mjs';
 
 // Restore drill only. The proven source container is read-only; all API writes
 // target a new disposable copy with a shared NONE network namespace. No ports,
@@ -263,13 +264,19 @@ try {
   const refresh = request('/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: session.refresh_token } });
   pass('refresh_keeps_same_uuid', refresh.status === 200 && refresh.body.user?.id === id && !!refresh.body.access_token);
   let sessionProbe;
+  let mutationProbe;
   if (mode.sessionGuard) {
     stage = 'session-guard';
     sessionProbe = await beginSessionProbe({ sql, concurrentSql, token: refresh.body.access_token, secret, pass });
   }
+  if (mode.synthetic) {
+    stage = 'auth-mutation-composition';
+    mutationProbe = await beginAuthMutationProbe({ synthetic:true, sql, concurrentSql, token:refresh.body.access_token, secret, pass });
+  }
   pass('logout_succeeds', request('/logout', { method: 'POST', token: refresh.body.access_token }).status === 204);
   pass('logged_out_refresh_rejected', request('/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: refresh.body.refresh_token } }).status === 400);
   if (sessionProbe) report.session_guard = sessionProbe.afterLogout();
+  if (mutationProbe) report.auth_mutation = mutationProbe.afterLogout();
   if (withStorage) {
     stage = 'storage-service';
     report.storage = await probeStorageRestore({ sql, start, guard, docker, checked, names, secret, sign, waitReady, pass, foreignSubject: id });
@@ -280,7 +287,7 @@ try {
   report.source_after = sql("BEGIN READ ONLY; SELECT jsonb_build_object('users',(select count(*) from auth.users),'identities',(select count(*) from auth.identities),'profiles',(select count(*) from public.profiles),'objects',(select count(*) from storage.objects),'auth_migrations',(select count(*) from auth.schema_migrations),'storage_migrations',(select count(*) from storage.migrations)); COMMIT;", true);
   pass('source_counts_unchanged', report.source_before === report.source_after);
   } else pass('synthetic_no_backup_or_storage_lane_used',!withStorage && report.original_source_accessed === false);
-  report.source_sha256 = Object.fromEntries(['scripts/isg/run_auth_restore.mjs','scripts/isg/auth_session_probe.mjs','scripts/isg/restore_mode.mjs','scripts/isg/sql/auth_session_fixture.sql','scripts/isg/auth_restore_guard.mjs']
+  report.source_sha256 = Object.fromEntries(['scripts/isg/run_auth_restore.mjs','scripts/isg/auth_session_probe.mjs','scripts/isg/auth_mutation_probe.mjs','scripts/isg/sql/auth_mutation_fixture.sql','scripts/isg/sql/transaction_fixture.sql','scripts/isg/restore_mode.mjs','scripts/isg/sql/auth_session_fixture.sql','scripts/isg/auth_restore_guard.mjs']
     .map(path=>[path,digest(readFileSync(resolve(ROOT,path)))]));
   report.ok = true;
 } catch (error) {

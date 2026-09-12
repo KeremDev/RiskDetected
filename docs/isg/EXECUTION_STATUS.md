@@ -51,6 +51,7 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 | Gerçek Auth session freshness | 33 guard kontrolü; Auth temel17 ile50/50; still-signed logout token DENY, expired/ban/deleted/anonymous/foreign claim reddi, row-lock ordering PASS; domain/gateway bağlı değil |
 | Son birleşik servis provası | Auth + Storage + session75/75 PASS; 18:30:41–18:31:24 UTC; 588 dosya yeniden doğrulandı, source unchanged, dört container cleanup PASS |
 | Sentetik Auth CI dilimi | Müşteri verisiz sıfırdan GoTrue/Auth77, tek hesap, session SQL ve gerçek logout48/48; foundation101/101; ayrı restore regresyonu75/75 yeniden PASS; iki ortam cleanup PASS |
+| Auth + atomik işlem bileşimi | Sentetik Auth yolu78/78; ek30 test gerçek session + sentetik izin + owner + transaction,20 retry/20 version race ve logout sonrası write/replay reddi; foundation110/110; production/billing/HTTP E2E değil |
 | Ortak context corpus | Deno 44/44 (43 fixture + 1 ilave test), Swift 43/43, Android 43/43 ayrı JUnit senaryosu |
 | Android cihaz üstü corpus | API26/33/37 ayrı AVD'lerde 44'er, toplam132/132 PASS; test APK kaldırıldı, yalnız ayrılmış emülatörler kapatıldı; foundation106/106; UI/live E2E değil |
 | Sentetik DB transaction | 30/30; 20 paralel retry, 20 version yarışı, 20 worker claim, audit/outbox fault, lease expiry ve gerçek DB bağlantısı öldürme; cleanup PASS |
@@ -84,6 +85,8 @@ Ek kanıtlar: [Masaüstü şifreli kopya](evidence/P00_DESKTOP_BACKUP_2026-09-12
 [Sentetik Auth CI hazırlığı](evidence/P01_SYNTHETIC_AUTH_CI_2026-09-12.json): yeni `--synthetic-session` müşteri yedeğini okumaz; ayrı48 test ve foundation101 geçti. CI job'u eklendi/YAML parse PASS; uzak çalıştırma NOT_RUN. Önceki gerçek-session dilimi `7c971428` commit'inde.
 
 ## Kullanılabilir yeni komutlar
+
+[Auth + atomik işlem bileşimi](P01_AUTH_MUTATION_COMPOSITION.md): `--synthetic-session` artık ayrı30 mutation kontrolünü de çalıştırır. Private wrapper'ın kullandığı eski transaction SQL değişmedi; restore modunda bu composition çalışmaz. [Kaynak hash'leri ve runtime kanıtı](evidence/P01_AUTH_MUTATION_COMPOSITION_2026-09-12.json).
 
 [Android native contract matrisi](P01_ANDROID_NATIVE_CONTRACT.md), [132 kontrol ve kaynak hash'leri](evidence/P01_ANDROID_NATIVE_CONTRACT_2026-09-12.json). Ana Android derleme kontrolü ve harness lint PASS (tek sürüm-kataloğu öneri uyarısı); mevcut core:data test görevi bu son turda önbellekten doğrulandı. Sentetik Auth CI hazırlığı `cd15bc74` commit'inde.
 
