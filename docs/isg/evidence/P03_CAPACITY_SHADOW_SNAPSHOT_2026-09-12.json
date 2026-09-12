@@ -1,0 +1,194 @@
+{
+  "ok": true,
+  "evaluated_at": "2026-09-12T17:33:16.293898+00:00",
+  "source": "restricted_20260912_restored_checkpoint",
+  "source_is_current_live_state": false,
+  "source_function_bodies_match_migrations": true,
+  "source_definitions": [
+    {
+      "name": "private.user_plan_tier",
+      "path": "supabase/migrations/20260513223911_fix_subscription_quota_review_findings.sql",
+      "sha256": "fe214cb67f451eda43e70701e63b41004fac7d84942e6debde96adcb9d21d4d2"
+    },
+    {
+      "name": "private.company_limit_for_user",
+      "path": "supabase/migrations/20260520154818_add_companies.sql",
+      "sha256": "a3af9a461a103b8386a0e5ec589270bc1f0f546aceaf826ad75571934925ed8a"
+    }
+  ],
+  "shadow_model_sha256": "4961cc366d18f8de667be6a6d65e8848f7f5a7253b9ea6209073898fdf1e62f2",
+  "accounts": 208,
+  "stored_paid_but_canonical_free": 1,
+  "cohorts": [
+    {
+      "accounts": 196,
+      "stored_tier": "free",
+      "company_limit": 0,
+      "canonical_tier": "free",
+      "active_companies": 0
+    },
+    {
+      "accounts": 1,
+      "stored_tier": "free",
+      "company_limit": 0,
+      "canonical_tier": "free",
+      "active_companies": 1
+    },
+    {
+      "accounts": 1,
+      "stored_tier": "free",
+      "company_limit": 0,
+      "canonical_tier": "free",
+      "active_companies": 4
+    },
+    {
+      "accounts": 1,
+      "stored_tier": "plus",
+      "company_limit": 0,
+      "canonical_tier": "free",
+      "active_companies": 0
+    },
+    {
+      "accounts": 5,
+      "stored_tier": "plus",
+      "company_limit": 5,
+      "canonical_tier": "plus",
+      "active_companies": 0
+    },
+    {
+      "accounts": 1,
+      "stored_tier": "plus",
+      "company_limit": 5,
+      "canonical_tier": "plus",
+      "active_companies": 2
+    },
+    {
+      "accounts": 2,
+      "stored_tier": "pro",
+      "company_limit": 25,
+      "canonical_tier": "pro",
+      "active_companies": 0
+    },
+    {
+      "accounts": 1,
+      "stored_tier": "pro",
+      "company_limit": 25,
+      "canonical_tier": "pro",
+      "active_companies": 1
+    }
+  ],
+  "hypothetical_paid_cohorts": [
+    {
+      "accounts": 5,
+      "stored_tier": "plus",
+      "company_limit": 5,
+      "canonical_tier": "plus",
+      "active_companies": 0,
+      "hypothetical_proposal": {
+        "writes_performed": false,
+        "would_delete_companies": false,
+        "would_grant_paid_access": false,
+        "publishable": false,
+        "status": "proposal",
+        "proposed_preserved_floor": {
+          "kind": "finite",
+          "value": 5
+        },
+        "effective_capacity": {
+          "kind": "finite",
+          "value": 5
+        },
+        "can_create_company": true,
+        "read_only_excess_count": 0
+      }
+    },
+    {
+      "accounts": 1,
+      "stored_tier": "plus",
+      "company_limit": 5,
+      "canonical_tier": "plus",
+      "active_companies": 2,
+      "hypothetical_proposal": {
+        "writes_performed": false,
+        "would_delete_companies": false,
+        "would_grant_paid_access": false,
+        "publishable": false,
+        "status": "proposal",
+        "proposed_preserved_floor": {
+          "kind": "finite",
+          "value": 5
+        },
+        "effective_capacity": {
+          "kind": "finite",
+          "value": 5
+        },
+        "can_create_company": true,
+        "read_only_excess_count": 0
+      }
+    },
+    {
+      "accounts": 2,
+      "stored_tier": "pro",
+      "company_limit": 25,
+      "canonical_tier": "pro",
+      "active_companies": 0,
+      "hypothetical_proposal": {
+        "writes_performed": false,
+        "would_delete_companies": false,
+        "would_grant_paid_access": false,
+        "publishable": false,
+        "status": "proposal",
+        "proposed_preserved_floor": {
+          "kind": "finite",
+          "value": 30
+        },
+        "effective_capacity": {
+          "kind": "finite",
+          "value": 30
+        },
+        "can_create_company": true,
+        "read_only_excess_count": 0
+      }
+    },
+    {
+      "accounts": 1,
+      "stored_tier": "pro",
+      "company_limit": 25,
+      "canonical_tier": "pro",
+      "active_companies": 1,
+      "hypothetical_proposal": {
+        "writes_performed": false,
+        "would_delete_companies": false,
+        "would_grant_paid_access": false,
+        "publishable": false,
+        "status": "proposal",
+        "proposed_preserved_floor": {
+          "kind": "finite",
+          "value": 30
+        },
+        "effective_capacity": {
+          "kind": "finite",
+          "value": 30
+        },
+        "can_create_company": true,
+        "read_only_excess_count": 0
+      }
+    }
+  ],
+  "assumptions": [
+    "Candidate Plus3/Pro30 not approved or published",
+    "Hypothesis only: current snapshot paid cohorts eligible at future rollout",
+    "No existing new floor ledger yet; hypothetical existing floor=0",
+    "Current within-limit active usage is treated as protected only for this simulation"
+  ],
+  "unresolved": [
+    "Real rollout cutoff and historical eligibility",
+    "Offboarded/late-update cohort catch-up",
+    "Approved commercial catalog",
+    "Override and protected usage provenance",
+    "Live store/RC reconciliation"
+  ],
+  "writes_performed": false,
+  "floor_backfill_performed": false,
+  "publishable": false
+}

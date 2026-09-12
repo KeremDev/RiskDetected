@@ -6,6 +6,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ROOT } from './lib.mjs';
 import { validateEnvironment, validateContainerInspection } from './verify_environment.mjs';
+import { legacyCapacityOracle } from './legacy_capacity_oracle.mjs';
 
 // This lane creates and removes ONLY its own new synthetic container. No TCP, API,
 // Supabase credentials, host mounts, migrations, existing container reuse or image pulls.
@@ -14,7 +15,7 @@ const runId = randomUUID(); let config, containerId, interrupted = false;
 const report = { schema_version: 1, run_id: runId, started_at: new Date().toISOString(), image,
   suite: 'synthetic_postgres_transaction_prototype', production_contract_implemented: false,
   acceptance_complete: false, seed: 'fixed_uuid_counter_v1', node_version: process.version,
-  source_sha256: Object.fromEntries(['scripts/isg/run_database_contract.mjs', 'scripts/isg/sql/transaction_fixture.sql', 'scripts/isg/verify_environment.mjs', 'contracts/isg/v1/safety-policy.json']
+  source_sha256: Object.fromEntries(['scripts/isg/run_database_contract.mjs', 'scripts/isg/sql/transaction_fixture.sql', 'scripts/isg/legacy_capacity_oracle.mjs', 'scripts/isg/verify_environment.mjs', 'contracts/isg/v1/safety-policy.json']
     .map(path => [path, createHash('sha256').update(readFileSync(resolve(ROOT, path))).digest('hex')])),
   cases: [], cleanup: 'NOT_NEEDED' };
 const childEnv = { PATH: process.env.PATH ?? '', HOME: process.env.HOME ?? '', DOCKER_CONFIG: process.env.DOCKER_CONFIG ?? '', LANG: 'C.UTF-8' };
@@ -231,6 +232,15 @@ try {
     assert.equal(query(complete(event, '2026-09-12T00:04:02Z')), 't');
     assert.equal(query(complete(event, '2026-09-12T00:04:03Z')), 'f');
     assert.equal(query(`SELECT applied_count FROM isg_fixture.projections WHERE company_id='${otherCompany}';`), '1');
+  });
+  await check('LEGACY-01_original_company_tier_and_limit_truth_table', () => {
+    const oracle = legacyCapacityOracle();
+    report.legacy_capacity = { ...JSON.parse(query(oracle.sql)), source_definitions: oracle.definitions };
+    assert.equal(oracle.expected_cases, 329);
+    assert.equal(report.legacy_capacity.case_count, oracle.expected_cases);
+    assert.equal(report.legacy_capacity.passed, oracle.expected_cases);
+    assert.deepEqual(report.legacy_capacity.failures, []);
+    assert.equal(query("SELECT to_regclass('public.profiles') IS NULL AND to_regclass('public.user_subscriptions') IS NULL;"), 't');
   });
   report.ok = true;
 } catch (error) {

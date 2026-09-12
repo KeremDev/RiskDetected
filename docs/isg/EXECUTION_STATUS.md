@@ -6,9 +6,10 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 
 - P00 devam ediyor: kaynak/kimlik/yedek kontrolleri, veritabanı restore'u ve kullanıcının seçtiği Masaüstü'ne şifreli ikinci kopya tamamlandı; tam servis/mobil restore ve mağaza envanterinin kalan kısmı açık. Masaüstü aynı disk; off-device koruma değil.
 - P01'in production'a dokunmayan güvenlik/test dilimi başladı. Domain migration veya gerçek kullanıcıya özellik açılışı yok.
+- P03'ün ilk shadow dilimi hazır: eski şirket SQL truth table ve hak koruma hesabı. Yeni fiyat/limit/floor yayınlanmadı; uygulamaya bağlanmadı.
 - Production'da yalnız read-only envanter ve Auth/Storage şema yedeği alındı. DB/store/paid policy/notification değişikliği yapılmadı.
 - Mevcut app bundle/paket, callback ve entitlement'ları değişmedi. UI ve kullanıcı tasarımı değiştirilmedi.
-- Geliştirme dalı `codex/isg-transition-foundation`. Eski `riskdetected-change-point-20260912` etiketi `dbcc979d` üzerinde korunuyor. V5 plan/registry `0fd78e17`, P00 backup/restore araçları ve kanıtları `0d8b9bce` commit'lerinde. Henüz push veya deploy yapılmadı.
+- Geliştirme dalı `codex/isg-transition-foundation`. Eski `riskdetected-change-point-20260912` etiketi `dbcc979d` üzerinde korunuyor. V5 plan/registry `0fd78e17`, P00 backup/restore araçları ve kanıtları `0d8b9bce`, P01 ilk test/contract dilimi `2fd6b9ef` commit'lerinde. Henüz push veya deploy yapılmadı.
 
 ## Tamamlanan kanıtlar
 
@@ -35,6 +36,8 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 | Foundation güncel tur | 45/45 Node; şifreleme negatifleri, transport fonksiyon-test eşleme kapısı ve hostless iOS test envanteri dahil |
 | Ortak context corpus | Deno 44/44 (43 fixture + 1 ilave test), Swift 43/43, Android 43/43 ayrı JUnit senaryosu |
 | Sentetik DB transaction | 30/30; 20 paralel retry, 20 version yarışı, 20 worker claim, audit/outbox fault, lease expiry ve gerçek DB bağlantısı öldürme; cleanup PASS |
+| P03 legacy DB matrisi | Ek 329/329 varyasyon; suite toplam 31 üst seviye kontrol PASS; orijinal helper gövdeleri restore ile eşleşti |
+| P03 kapasite shadow | 17/17 Node grup, 864 sonlu kombinasyon; Plus5 floor, Pro aday30, unlimited, unknown sync ve downgrade ayrımı |
 | Masaüstü ikinci kopya | ISG_Adasi_Yedek_2026-09-12_rX4mVI; 3.613.777.956 byte AES-256-GCM, authenticated decrypt/hash PASS; anahtar macOS Keychain; aynı disk |
 | iOS ana proje derleme | XcodeBuildMCP build_sim PASS, Debug/no signing; iPhone 17 Pro iOS 26.5 kullanıcı izniyle açıldı. App launch/login yapılmadı |
 | Gerçek iOS Simulator test | Yeni hostless ISGContractTests hedefi, 43 PASS / 0 FAIL / 0 SKIP; ana uygulama/SDK/ağ servisi yüklemeden aynı Swift kaynak kodu ve ortak JSON corpus |
@@ -48,6 +51,8 @@ Ek kanıtlar: [Masaüstü şifreli kopya](evidence/P00_DESKTOP_BACKUP_2026-09-12
 
 [iOS Simulator sonucu](evidence/P01_IOS_NATIVE_CONTRACT_2026-09-12.json) aynı kaynak/fixture hash'lerine bağlı 43 XCTest sonucunu kaydeder. Bu test hedefi ayrı uygulama veya mağaza kaydı değildir; iki mevcut uygulamanın bundle/package ID'leri değişmemiştir.
 
+[P03 shadow kapsamı](P03_CAPACITY_SHADOW.md), [legacy DB matrisi](evidence/P03_LEGACY_CAPACITY_MATRIX_2026-09-12.json), [read-only snapshot karşılaştırması](evidence/P03_CAPACITY_SHADOW_SNAPSHOT_2026-09-12.json).
+
 ## Kullanılabilir yeni komutlar
 
 ~~~bash
@@ -59,6 +64,8 @@ node scripts/isg/verify_backup.mjs
 node scripts/isg/verify_restored_data.mjs
 node scripts/isg/verify_function_map.mjs
 node scripts/isg/run_database_contract.mjs contracts/isg/v1/local-test-environment.example.json
+node scripts/isg/run_suite.mjs capacity-shadow
+node scripts/isg/read_legacy_capacity_snapshot.mjs
 ~~~
 
 Restore ve capture araçları offline foundation runner'a dahil değildir. Bunlar restricted backup çıktısı üretir ve yalnız açık P00 işlemi için çalıştırılır. Tamamlanmış restore'un üstüne yeniden yazma engeli var. Mevcut diğer Docker/Supabase stack'leri durdurulmadı veya resetlenmedi.

@@ -64,6 +64,8 @@ jobs:
         run: node scripts/isg/verify_function_map.mjs
       - name: Run offline foundation and legacy regression
         run: node scripts/isg/run_suite.mjs foundation
+      - name: Run non-authoritative legacy capacity shadow model
+        run: node scripts/isg/run_suite.mjs capacity-shadow
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.7.14
