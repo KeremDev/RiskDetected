@@ -20,6 +20,8 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 | Auth dump kapsamı | 208 kullanıcı, 210 identity; auth verisi var. Önceki CHECKPOINT.md kapsam notu hatalı; eski hash manifest'ini bozmamak için orijinal dosya değiştirilmedi |
 | Admin çalışma ağacı yedeği | backups/isg-panel-checkpoint-20260912-IZgsfU; 526 kaynak dosyası, binary diff, Git bundle; kaynak ağacı değişmedi |
 | Auth/Storage DDL eki | backups/isg-managed-schema-20260912-HHgZf9; canlıdan read-only pre/post-data şeması; gizli/kişisel veri ihtimaline karşı 600/700 izin |
+| Servis migration eki | İlk restore'da Auth/Storage ledger0/0 bulundu; read-only ek dump77/68, 8.690 byte; Masaüstü ana yedek içinde ayrı şifreli ek doğrulandı |
+| Auth servis restore | Ayrı disposable gerçek veri kopyasında GoTrue v2.195.0, 474 ACL replay, 17/17 kontrol; sentetik password/login/refresh/logout/admin reddi ve profil trigger PASS; source unchanged, cleanup PASS |
 | Restore deneme 1 | application-schema aşamasında 42830: Auth PK/unique henüz yüklenmedi. Hata kanıtı korundu; boş test container'ı kaldırılıp yeniden kuruldu |
 | Restore deneme 2 | backups/isg-managed-schema-20260912-v3faRK; Auth/Storage anahtarları önce, public bootstrap trigger sonra; 131 tablo satır sayısı eşit |
 | İlişkiler | 214 foreign key gerçek veride denetlendi; 0 public tablo RLS'siz |
@@ -41,6 +43,7 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 | Test envanteri | 203 kaynak + 60 geçiş = 263 benzersiz kabul; henüz domain testlerine UNMAPPED, başarı iddiası yok |
 | Foundation ilk test turu | 38/38 Node test; yanlış ortam ve kimlik mutasyon testleri dahil |
 | Foundation güncel tur | 45/45 Node; şifreleme negatifleri, transport fonksiyon-test eşleme kapısı ve hostless iOS test envanteri dahil |
+| Foundation Auth restore sonrası | 63/63 Node; ek18 izolasyon/eksik inspection/yanlış komut negatifleri. Gerçek restore verileri CI'a aktarılmadı |
 | Ortak context corpus | Deno 44/44 (43 fixture + 1 ilave test), Swift 43/43, Android 43/43 ayrı JUnit senaryosu |
 | Sentetik DB transaction | 30/30; 20 paralel retry, 20 version yarışı, 20 worker claim, audit/outbox fault, lease expiry ve gerçek DB bağlantısı öldürme; cleanup PASS |
 | P03 legacy DB matrisi | Ek 329/329 varyasyon; suite toplam 31 üst seviye kontrol PASS; orijinal helper gövdeleri restore ile eşleşti |
@@ -64,6 +67,8 @@ Ek kanıtlar: [Masaüstü şifreli kopya](evidence/P00_DESKTOP_BACKUP_2026-09-12
 
 [P14 offering guard](P14_OFFERING_GUARD.md) ve [151 Android test / APK kanıtı](evidence/P14_ANDROID_OFFERING_GUARD_2026-09-12.json). Katalog ve CI yol düzeltmesi `f7c93f7a` commit'inde.
 
+[Auth servis restore ve migration eki](P00_AUTH_SERVICE_RESTORE.md), [17 kontrol ve kaynak hash'leri](evidence/P00_AUTH_SERVICE_RESTORE_2026-09-12.json). Offering düzeltmesi `7e64ce84`, App Store deneme takvimi `0567e9c9` commit'lerinde.
+
 ## Kullanılabilir yeni komutlar
 
 ~~~bash
@@ -77,13 +82,14 @@ node scripts/isg/verify_function_map.mjs
 node scripts/isg/run_database_contract.mjs contracts/isg/v1/local-test-environment.example.json
 node scripts/isg/run_suite.mjs capacity-shadow
 node scripts/isg/read_legacy_capacity_snapshot.mjs
+node scripts/isg/run_auth_restore.mjs --isolated-copy
 ~~~
 
 Restore ve capture araçları offline foundation runner'a dahil değildir. Bunlar restricted backup çıktısı üretir ve yalnız açık P00 işlemi için çalıştırılır. Tamamlanmış restore'un üstüne yeniden yazma engeli var. Mevcut diğer Docker/Supabase stack'leri durdurulmadı veya resetlenmedi.
 
 ## Açık kapılar
 
-1. Auth API login, Storage signed download ve iki mobil platformla restore E2E henüz yapılmadı.
+1. Auth API restore sentetik hesapla doğrulandı. Eski gerçek kullanıcının OTP/OAuth/parola ve token taşınabilirliği, Storage signed download ve iki mobil platformla restore E2E henüz yapılmadı.
 2. Kullanıcı ikinci kopya konumunu Masaüstü seçti ve kopya doğrulandı. Disk arızası için ayrı fiziksel konum ve anahtarın ayrı güvenli kurtarma kopyası hâlâ yok; bilinmeyen buluta veri gönderilmiyor.
 3. Play etkin base plan/tek mevcut teklif/Türkiye fiyatları, App Store dört teklif türü ve RC üretim offering/entitlement eşlemesi doğrulandı. App Store territory ilişkileri, iki mağazada eski fiyat kohortları ve RC tüm dış servis ayarları hâlâ açık. iOS Plus yıllık deneme bitişi 30 Eylül 2026; değiştirilmedi.
 4. iOS/Android aynı-plan gerçek indirim ve izleyen normal renewal deneyi henüz yapılmadı; mağaza yazımı ayrıca onaylı.

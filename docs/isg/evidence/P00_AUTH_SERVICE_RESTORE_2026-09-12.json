@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "run_id": "eeb13b0d-6120-4f48-a917-37fb915336f5",
+  "started_at": "2026-09-12T18:08:51.387Z",
+  "mode": "isolated_restored_copy",
+  "images": {
+    "db": "public.ecr.aws/supabase/postgres@sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:362659ca70eaa75ba05bbaf963caa84c1c5afe5e8fbf0777e17b830dd5f0f60a",
+    "client": "public.ecr.aws/supabase/storage-api@sha256:28424184c9f699790cc190f78ddf7d6abfb5c87af78af260529a394d12c135e9"
+  },
+  "checks": [
+    {
+      "id": "source_queue_payloads_empty",
+      "result": "PASS"
+    },
+    {
+      "id": "original_user_counts_restored",
+      "result": "PASS"
+    },
+    {
+      "id": "service_ledgers_empty_before_supplement",
+      "result": "PASS"
+    },
+    {
+      "id": "service_ledgers_restored",
+      "result": "PASS"
+    },
+    {
+      "id": "auth_health",
+      "result": "PASS"
+    },
+    {
+      "id": "admin_endpoint_rejects_no_token",
+      "result": "PASS"
+    },
+    {
+      "id": "admin_endpoint_rejects_expired_service_token",
+      "result": "PASS"
+    },
+    {
+      "id": "synthetic_user_created_by_local_admin",
+      "result": "PASS"
+    },
+    {
+      "id": "existing_profile_bootstrap_trigger",
+      "result": "PASS"
+    },
+    {
+      "id": "wrong_password_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "password_login_same_uuid",
+      "result": "PASS"
+    },
+    {
+      "id": "authenticated_user_read",
+      "result": "PASS"
+    },
+    {
+      "id": "user_token_cannot_admin_list",
+      "result": "PASS"
+    },
+    {
+      "id": "refresh_keeps_same_uuid",
+      "result": "PASS"
+    },
+    {
+      "id": "logout_succeeds",
+      "result": "PASS"
+    },
+    {
+      "id": "logged_out_refresh_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "source_counts_unchanged",
+      "result": "PASS"
+    }
+  ],
+  "external_egress": false,
+  "ports_published": false,
+  "source_database_changed": false,
+  "storage_api_tested": false,
+  "mobile_e2e_tested": false,
+  "full_application_restore_proven": false,
+  "source_before": "{\"users\": 208, \"objects\": 588, \"profiles\": 208, \"identities\": 210, \"auth_migrations\": 0, \"storage_migrations\": 0}",
+  "clone_dump_sha256": "f7fc8627b8ca8bb3ff0c347cdb119b88112c52ec644df15b182cf219ca99fc06",
+  "source_only_roles_created_without_passwords": [
+    "supabase_functions_admin"
+  ],
+  "acl_entries_replayed": 474,
+  "empty_analysis_queue_regenerated": true,
+  "auth_health": {
+    "version": "v2.195.0",
+    "name": "GoTrue",
+    "description": "GoTrue is a user registration and authentication API"
+  },
+  "service_ledger_counts_after_boot": "77\n68",
+  "source_after": "{\"users\": 208, \"objects\": 588, \"profiles\": 208, \"identities\": 210, \"auth_migrations\": 0, \"storage_migrations\": 0}",
+  "ok": true,
+  "disposable_container_cleanup": "PASS",
+  "finished_at": "2026-09-12T18:08:58.135Z",
+  "source_bindings": [
+    {
+      "path": "scripts/isg/run_auth_restore.mjs",
+      "sha256": "140f39292c5737f8816e5ec6663a544483179c126e13ca10c13c78441f601659"
+    },
+    {
+      "path": "scripts/isg/auth_restore_guard.mjs",
+      "sha256": "1a0e0629ed1d83484b5a313d34e6a7622b3d1d9f7993b8803232d970403b05ec"
+    },
+    {
+      "path": "scripts/isg/auth_restore_guard.test.mjs",
+      "sha256": "b6ab278b9184f81644f86ffe0b9871eeb14e9ccaf2bb1d000ee84e12bc2c2642"
+    }
+  ]
+}

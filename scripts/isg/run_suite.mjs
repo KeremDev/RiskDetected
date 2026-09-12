@@ -4,7 +4,7 @@ import { ROOT } from './lib.mjs';
 
 // Deliberately no arbitrary command, shell, live target, env fallback or cleanup.
 const suites = {
-  foundation: ['--test', 'scripts/isg/foundation.test.mjs', 'scripts/isg/function_map.test.mjs', 'scripts/isg/ios_contract_inventory.test.mjs', 'scripts/isg/backup_crypto.test.mjs', 'scripts/client_flow_contract_test.mjs'],
+  foundation: ['--test', 'scripts/isg/foundation.test.mjs', 'scripts/isg/function_map.test.mjs', 'scripts/isg/ios_contract_inventory.test.mjs', 'scripts/isg/backup_crypto.test.mjs', 'scripts/isg/auth_restore_guard.test.mjs', 'scripts/client_flow_contract_test.mjs'],
   'capacity-shadow': ['--test', 'scripts/isg/company_capacity_shadow.test.mjs'],
 };
 const [suite, ...extra] = process.argv.slice(2);
