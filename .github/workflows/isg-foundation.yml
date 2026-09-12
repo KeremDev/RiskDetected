@@ -19,6 +19,7 @@ on:
       - 'RiskDetected.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved'
       - 'android/app/build.gradle.kts'
       - 'android/settings.gradle.kts'
+      - 'android/core/data/build.gradle.kts'
       - 'android/isg-contract-tests/**'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/telemetry/ClientFlowEvents.kt'
       - 'scripts/client_flow_contract_test.mjs'
@@ -42,6 +43,7 @@ on:
       - 'RiskDetected.xcodeproj/project.pbxproj'
       - 'android/app/build.gradle.kts'
       - 'android/settings.gradle.kts'
+      - 'android/core/data/build.gradle.kts'
       - 'android/isg-contract-tests/**'
       - 'RiskDetected.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/telemetry/ClientFlowEvents.kt'
@@ -80,7 +82,7 @@ jobs:
         with:
           deno-version: v2.7.14
       - name: Deno shared mutation fixtures (no network or env permissions)
-        run: deno test --allow-read=contracts/isg/v1/fixtures supabase/functions/_shared/isg/mutation-context_test.ts
+        run: deno test --allow-read=contracts/isg/v1/fixtures supabase/functions/_shared/isg/mutation-context_test.ts supabase/functions/_shared/isg/mutation-outcome_test.ts
 
   swift-transport-fixtures:
     runs-on: macos-15
@@ -92,6 +94,10 @@ jobs:
         run: swiftc App/Services/ISG/IsgMutationContext.swift scripts/isg/MutationContextCheck.swift -o "$RUNNER_TEMP/isg-context-check"
       - name: Verify the same corpus as Kotlin and Deno
         run: '"$RUNNER_TEMP/isg-context-check" contracts/isg/v1/fixtures/mutation-context.json'
+      - name: Compile and verify mutation outcomes and state transitions
+        run: |
+          swiftc App/Services/ISG/IsgMutationOutcome.swift scripts/isg/MutationOutcomeCheck.swift -o "$RUNNER_TEMP/isg-outcome-check"
+          "$RUNNER_TEMP/isg-outcome-check" contracts/isg/v1/fixtures/mutation-outcome.json
       - name: Run hostless iOS XCTest on an available CI iPhone
         shell: bash
         run: |

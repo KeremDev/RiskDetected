@@ -13,6 +13,9 @@ const runners = {
   'deno-context': 'supabase/functions/_shared/isg/mutation-context_test.ts',
   'swift-context': 'scripts/isg/MutationContextCheck.swift',
   'android-context': 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/isg/IsgMutationContextTest.kt',
+  'deno-outcome': 'supabase/functions/_shared/isg/mutation-outcome_test.ts',
+  'swift-outcome': 'scripts/isg/MutationOutcomeCheck.swift',
+  'android-outcome': 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/isg/IsgMutationOutcomeTest.kt',
 };
 const digest = value => createHash('sha256').update(value).digest('hex');
 export function runtimeFiles(root = ROOT) {
@@ -43,6 +46,15 @@ export function validateFunctionMap(map, files, read) {
           !Array.isArray(binding.symbols) || !binding.symbols.length || binding.symbols.some(s => typeof s !== 'string' || !s)) throw new Error('FUNCTION_MAP_BINDING_INVALID');
       if (mapped.has(binding.source) || ids.has(binding.id)) errors.push('DUPLICATE_BINDING');
       mapped.add(binding.source); ids.add(binding.id);
+      if (binding.runner.endsWith('-outcome')) {
+        if (binding.fixture !== 'contracts/isg/v1/fixtures/mutation-outcome.json') throw new Error('FUNCTION_MAP_BINDING_INVALID');
+        const body = read(binding.fixture), corpus = JSON.parse(body);
+        if (digest(body) !== binding.fixture_sha256) errors.push('FIXTURE_HASH_DRIFT');
+        if (!Array.isArray(corpus.cases) || corpus.cases.length !== binding.fixture_count ||
+            new Set(corpus.cases.map(c=>c.id)).size !== corpus.cases.length ||
+            !Array.isArray(corpus.transitions) || corpus.transitions.length !== binding.transition_count ||
+            new Set(corpus.transitions.map(c=>c.id)).size !== corpus.transitions.length) errors.push('FIXTURE_INVENTORY_DRIFT');
+      }
       if (digest(read(binding.source)) !== binding.source_sha256) errors.push('SOURCE_FINGERPRINT_DRIFT');
       if (digest(read(binding.harness)) !== binding.harness_sha256) errors.push('HARNESS_FINGERPRINT_DRIFT');
     }

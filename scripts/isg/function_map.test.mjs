@@ -7,8 +7,8 @@ import { runtimeFiles, validateFunctionMap, verifyFunctionMap } from './verify_f
 
 const original = JSON.parse(readFileSync(resolve(ROOT, 'contracts/isg/v1/function-test-map.json'), 'utf8'));
 const read = path => readFileSync(resolve(ROOT, path), 'utf8');
-test('all three new transport surfaces map to their shared-corpus harness without claiming release readiness', () => {
-  const result = verifyFunctionMap(); assert.equal(result.ok, true); assert.equal(result.runtime_files, 3);
+test('all six context/outcome transport sources map to their shared-corpus harness without claiming release readiness', () => {
+  const result = verifyFunctionMap(); assert.equal(result.ok, true); assert.equal(result.runtime_files, 6);
   assert.equal(result.tests_executed, false); assert.equal(result.release_ready, false);
 });
 test('an added private function, changed parser, or changed test harness invalidates prior mapping', () => {
@@ -28,4 +28,11 @@ test('fixture changes and duplicate case IDs cannot silently keep old coverage',
   const changed = JSON.parse(read(original.fixture)); changed.cases.push(changed.cases[0]);
   const result = validateFunctionMap(original, runtimeFiles(), file => file === original.fixture ? JSON.stringify(changed) : read(file));
   assert.equal(result.ok, false); assert.ok(result.errors.includes('FIXTURE_HASH_DRIFT')); assert.ok(result.errors.includes('FIXTURE_INVENTORY_DRIFT'));
+});
+test('Gradle treats shared fixture files as test inputs, and outcome fixtures are hash bound',()=>{
+  const build=read('android/core/data/build.gradle.kts');
+  assert.match(build,/tasks\.withType<org\.gradle\.api\.tasks\.testing\.Test>\(\)\.configureEach/);
+  assert.match(build,/inputs\.dir\(rootProject\.layout\.projectDirectory\.dir\("\.\.\/contracts\/isg\/v1\/fixtures"\)\)/);
+  const result=validateFunctionMap(original,runtimeFiles(),file=>read(file)+(file==='contracts/isg/v1/fixtures/mutation-outcome.json'?'\n':''));
+  assert.equal(result.ok,false);assert.ok(result.errors.includes('FIXTURE_HASH_DRIFT'));
 });

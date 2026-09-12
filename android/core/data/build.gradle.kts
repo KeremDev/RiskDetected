@@ -43,3 +43,11 @@ dependencies {
     testImplementation(project(":core:testing"))
     testImplementation(libs.robolectric)
 }
+
+// Parameterized tests read the shared corpus outside this Gradle project.
+// Declare it so fixture-only edits cannot reuse an old green test result.
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    inputs.dir(rootProject.layout.projectDirectory.dir("../contracts/isg/v1/fixtures"))
+        .withPropertyName("isgSharedFixtureCorpus")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+}

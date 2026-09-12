@@ -11,6 +11,8 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 - P14 ilk regresyon düzeltmesi uygulandı: Android explicit offering bulunamadığında current'a fallback yapmıyor; iOS davranışıyla eşleşiyor. Yerel kod değişikliği, mağaza yayını değil.
 - Production'da yalnız read-only envanter ve Auth/Storage şema yedeği alındı. DB/store/paid policy/notification değişikliği yapılmadı.
 - Mevcut app bundle/paket, callback ve entitlement'ları değişmedi. UI ve kullanıcı tasarımı değiştirilmedi.
+- P18 tasarım yönü kullanıcı tarafından belirlendi: OSGBTakip iOS uzman NOVA paneli.113 kaynak hash'i,12 token grubu ve UI kaynak arşivi alındı; eski kaynak değiştirilmedi. Native taşıma/görsel kabul henüz yapılmadı. [Tasarım aktarım kaydı](P18_OSGB_EXPERT_DESIGN_REFERENCE.md).
+- P01 yeni outcome/error/state sözleşmesi üç platformda hazır:221 yanıt+84 geçiş; Deno306,Swift305,Kotlin305 yeni kontrol PASS. Android bütün core:data456/456 ve Debug APK PASS; foundation111/111. Fixture değişiminde testin atlanmasını önlemek için Gradle input takibi eklendi. Eski API/UI bağlı değil; native instrumentation kapsamı ayrı açık.
 - Geliştirme dalı `codex/isg-transition-foundation`. Eski `riskdetected-change-point-20260912` etiketi `dbcc979d` üzerinde korunuyor. V5 plan/registry `0fd78e17`, P00 backup/restore araçları ve kanıtları `0d8b9bce`, P01 ilk test/contract dilimi `2fd6b9ef`, P03 shadow `8252f408` commit'lerinde. Henüz push veya deploy yapılmadı.
 
 ## Tamamlanan kanıtlar

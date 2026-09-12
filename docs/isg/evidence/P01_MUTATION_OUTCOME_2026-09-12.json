@@ -1,53 +1,7 @@
 {
   "schema_version": 1,
-  "scope": "isg_transport_only",
-  "fixture": "contracts/isg/v1/fixtures/mutation-context.json",
-  "fixture_sha256": "2011ebed4763fa015b3096d4fd147efdba4366d4c7d7bfbcd3d3edd38b6be00f",
-  "fixture_count": 43,
+  "captured_at": "2026-09-12T19:25:54.593Z",
   "bindings": [
-    {
-      "id": "ISG.TRANSPORT.DENO",
-      "source": "supabase/functions/_shared/isg/mutation-context.ts",
-      "source_sha256": "7e74a453c320be3fe3f61ae7abc084ccea36e17f3c8b3d480823ca67cdfa7e90",
-      "symbols": [
-        "parseIsgMutationContext",
-        "record",
-        "keys",
-        "id"
-      ],
-      "harness": "supabase/functions/_shared/isg/mutation-context_test.ts",
-      "harness_sha256": "886b8f048b3ae2b788f6c4537bb7794495b2b78a10d55331b5c9b95d9f0bb944",
-      "runner": "deno-context",
-      "coverage": "shared_corpus_all_cases"
-    },
-    {
-      "id": "ISG.TRANSPORT.SWIFT",
-      "source": "App/Services/ISG/IsgMutationContext.swift",
-      "source_sha256": "ac0662fd95a825bc99d9cc8f6ea9cfce9b2389306e75f8a077fbb71128096fb6",
-      "symbols": [
-        "IsgMutationContext.init(from:)",
-        "Scope.init(from:)",
-        "validID"
-      ],
-      "harness": "scripts/isg/MutationContextCheck.swift",
-      "harness_sha256": "595f01eddee2170d78f3baa5733c0c197f8bd2caa8125c2033e5b87c375999a2",
-      "runner": "swift-context",
-      "coverage": "shared_corpus_all_cases"
-    },
-    {
-      "id": "ISG.TRANSPORT.KOTLIN",
-      "source": "android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/IsgMutationContext.kt",
-      "source_sha256": "901087c9f7a96fff6afe24ee5a2cb4e156a0754f58ab92a73711828a9851e9c4",
-      "symbols": [
-        "IsgMutationContext.parse",
-        "JsonObject.text",
-        "JsonObject.number"
-      ],
-      "harness": "android/core/data/src/test/kotlin/com/riskdetectedan/core/data/isg/IsgMutationContextTest.kt",
-      "harness_sha256": "b03ea52155ca8c4a451da8e69093b738950313508ecbf2ecb40076c19cc635ee",
-      "runner": "android-context",
-      "coverage": "shared_corpus_all_cases"
-    },
     {
       "id": "ISG.OUTCOME.DENO",
       "source": "supabase/functions/_shared/isg/mutation-outcome.ts",
@@ -104,5 +58,34 @@
       "fixture_count": 221,
       "transition_count": 84
     }
+  ],
+  "android": {
+    "tests": 456,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "classes": 28
+  },
+  "map_sha256": "b1015ab699008245b020a3a5059889c58b58632f207eeb828f66805e05654dbc",
+  "results": {
+    "deno_outcome": 306,
+    "deno_context_and_outcome": 350,
+    "swift_response_and_transition": 305,
+    "kotlin_new_response_and_transition": 305,
+    "foundation": 111,
+    "android_fixture_cache_guard": "Shared fixture directory declared as Test task input; testDebugUnitTest executed at 2026-09-12T19:26:42Z, 305 outcome tests in XML, no stale UP-TO-DATE result",
+    "identity": "PASS",
+    "function_map": "PASS, 6 files",
+    "ios_main_debug_build": "PASS, 73.1s, no signing or launch",
+    "ios_warnings": "11 existing PaywallDesignKit.swift:631–641 warnings, unchanged",
+    "ios_build_log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-09-12T19-22-33-391Z_pid70458_7cd29b44.log",
+    "android_debug_apk_build": "PASS",
+    "remote_ci": "NOT_RUN"
+  },
+  "limitations": [
+    "Additive parsers/reducers not wired to legacy APIs or UI/coordinator.",
+    "New outcome corpus ran in Deno, standalone Swift and Android JVM; not new native XCTest/instrumentation.",
+    "Operation/session correlation, bounded polling and handler error construction remain to integrate.",
+    "No production migration/deploy; 263 domain acceptances still unmapped."
   ]
 }

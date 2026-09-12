@@ -1,0 +1,3561 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "operation_id_object_coercion",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": {
+          "toString": "not callable"
+        },
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "request_id_object_coercion",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": {
+          "toString": "not callable"
+        },
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "operation_id_array",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": [
+          "10000000-0000-4000-8000-000000000001"
+        ],
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "request_id_array",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": [
+          "10000000-0000-4000-8000-000000000002"
+        ],
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "support_id_array",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": [
+          "ISG-ABCDEF123456"
+        ],
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "projection_array",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": [
+          "ready"
+        ]
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_ready",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": true,
+      "summary": "committed||1||ready|"
+    },
+    {
+      "id": "committed_pending",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "pending"
+      },
+      "valid": true,
+      "summary": "committed||1||pending|"
+    },
+    {
+      "id": "committed_failed",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "failed"
+      },
+      "valid": true,
+      "summary": "committed||1||failed|"
+    },
+    {
+      "id": "pending_1",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 1
+      },
+      "valid": true,
+      "summary": "pending|JOB_PENDING||||1"
+    },
+    {
+      "id": "pending_300",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 300
+      },
+      "valid": true,
+      "summary": "pending|JOB_PENDING||||300"
+    },
+    {
+      "id": "indeterminate_1",
+      "status": 503,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "indeterminate",
+        "code": "RETRYABLE_FAILURE",
+        "retry_after_seconds": 1
+      },
+      "valid": true,
+      "summary": "indeterminate|RETRYABLE_FAILURE||||1"
+    },
+    {
+      "id": "indeterminate_300",
+      "status": 503,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "indeterminate",
+        "code": "RETRYABLE_FAILURE",
+        "retry_after_seconds": 300
+      },
+      "valid": true,
+      "summary": "indeterminate|RETRYABLE_FAILURE||||300"
+    },
+    {
+      "id": "AUTH_REQUIRED",
+      "status": 401,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "AUTH_REQUIRED"
+      },
+      "valid": true,
+      "summary": "rejected|AUTH_REQUIRED||||"
+    },
+    {
+      "id": "COMPANY_ACCESS_DENIED",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "COMPANY_ACCESS_DENIED"
+      },
+      "valid": true,
+      "summary": "rejected|COMPANY_ACCESS_DENIED||||"
+    },
+    {
+      "id": "CAPABILITY_DISABLED",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "CAPABILITY_DISABLED"
+      },
+      "valid": true,
+      "summary": "rejected|CAPABILITY_DISABLED||||"
+    },
+    {
+      "id": "CROSS_COMPANY_REFERENCE",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "CROSS_COMPANY_REFERENCE"
+      },
+      "valid": true,
+      "summary": "rejected|CROSS_COMPANY_REFERENCE||||"
+    },
+    {
+      "id": "VERSION_CONFLICT",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "VERSION_CONFLICT",
+        "current_version": 9007199254740991
+      },
+      "valid": true,
+      "summary": "rejected|VERSION_CONFLICT||9007199254740991||"
+    },
+    {
+      "id": "VALIDATION_FAILED",
+      "status": 422,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "VALIDATION_FAILED"
+      },
+      "valid": true,
+      "summary": "rejected|VALIDATION_FAILED||||"
+    },
+    {
+      "id": "RULE_REVIEW_REQUIRED",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "RULE_REVIEW_REQUIRED"
+      },
+      "valid": true,
+      "summary": "rejected|RULE_REVIEW_REQUIRED||||"
+    },
+    {
+      "id": "DOCUMENT_NOT_READY",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "DOCUMENT_NOT_READY"
+      },
+      "valid": true,
+      "summary": "rejected|DOCUMENT_NOT_READY||||"
+    },
+    {
+      "id": "QUOTA_EXCEEDED",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "QUOTA_EXCEEDED"
+      },
+      "valid": true,
+      "summary": "rejected|QUOTA_EXCEEDED||||"
+    },
+    {
+      "id": "IDEMPOTENCY_CONFLICT",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "IDEMPOTENCY_CONFLICT"
+      },
+      "valid": true,
+      "summary": "rejected|IDEMPOTENCY_CONFLICT||||"
+    },
+    {
+      "id": "SCAN_PENDING",
+      "status": 423,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "SCAN_PENDING"
+      },
+      "valid": true,
+      "summary": "rejected|SCAN_PENDING||||"
+    },
+    {
+      "id": "UNSUPPORTED_FORMAT",
+      "status": 415,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "UNSUPPORTED_FORMAT"
+      },
+      "valid": true,
+      "summary": "rejected|UNSUPPORTED_FORMAT||||"
+    },
+    {
+      "id": "committed_ready_wrong_status",
+      "status": 201,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_ready_missing_schema_version",
+      "status": 200,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_ready_missing_operation_id",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_ready_missing_request_id",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_ready_missing_support_id",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_ready_missing_outcome",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_ready_missing_version",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_ready_missing_projection",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_ready_raw_detail",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready",
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_pending_wrong_status",
+      "status": 201,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "pending"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_pending_missing_schema_version",
+      "status": 200,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "pending"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_pending_missing_operation_id",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "pending"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_pending_missing_request_id",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "pending"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_pending_missing_support_id",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "pending"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_pending_missing_outcome",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "version": 1,
+        "projection": "pending"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_pending_missing_version",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "projection": "pending"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_pending_missing_projection",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_pending_raw_detail",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "pending",
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_failed_wrong_status",
+      "status": 201,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "failed"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_failed_missing_schema_version",
+      "status": 200,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "failed"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_failed_missing_operation_id",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "failed"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_failed_missing_request_id",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "failed"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_failed_missing_support_id",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "failed"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_failed_missing_outcome",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "version": 1,
+        "projection": "failed"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_failed_missing_version",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "projection": "failed"
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_failed_missing_projection",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1
+      },
+      "valid": false
+    },
+    {
+      "id": "committed_failed_raw_detail",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "failed",
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "pending_1_wrong_status",
+      "status": 203,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 1
+      },
+      "valid": false
+    },
+    {
+      "id": "pending_1_missing_schema_version",
+      "status": 202,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 1
+      },
+      "valid": false
+    },
+    {
+      "id": "pending_1_missing_operation_id",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 1
+      },
+      "valid": false
+    },
+    {
+      "id": "pending_1_missing_request_id",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 1
+      },
+      "valid": false
+    },
+    {
+      "id": "pending_1_missing_support_id",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 1
+      },
+      "valid": false
+    },
+    {
+      "id": "pending_1_missing_outcome",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 1
+      },
+      "valid": false
+    },
+    {
+      "id": "pending_1_missing_code",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "retry_after_seconds": 1
+      },
+      "valid": false
+    },
+    {
+      "id": "pending_1_missing_retry_after_seconds",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING"
+      },
+      "valid": false
+    },
+    {
+      "id": "pending_1_raw_detail",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 1,
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "pending_300_wrong_status",
+      "status": 203,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 300
+      },
+      "valid": false
+    },
+    {
+      "id": "pending_300_missing_schema_version",
+      "status": 202,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 300
+      },
+      "valid": false
+    },
+    {
+      "id": "pending_300_missing_operation_id",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 300
+      },
+      "valid": false
+    },
+    {
+      "id": "pending_300_missing_request_id",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 300
+      },
+      "valid": false
+    },
+    {
+      "id": "pending_300_missing_support_id",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 300
+      },
+      "valid": false
+    },
+    {
+      "id": "pending_300_missing_outcome",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 300
+      },
+      "valid": false
+    },
+    {
+      "id": "pending_300_missing_code",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "retry_after_seconds": 300
+      },
+      "valid": false
+    },
+    {
+      "id": "pending_300_missing_retry_after_seconds",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING"
+      },
+      "valid": false
+    },
+    {
+      "id": "pending_300_raw_detail",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 300,
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "indeterminate_1_wrong_status",
+      "status": 504,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "indeterminate",
+        "code": "RETRYABLE_FAILURE",
+        "retry_after_seconds": 1
+      },
+      "valid": false
+    },
+    {
+      "id": "indeterminate_1_missing_schema_version",
+      "status": 503,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "indeterminate",
+        "code": "RETRYABLE_FAILURE",
+        "retry_after_seconds": 1
+      },
+      "valid": false
+    },
+    {
+      "id": "indeterminate_1_missing_operation_id",
+      "status": 503,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "indeterminate",
+        "code": "RETRYABLE_FAILURE",
+        "retry_after_seconds": 1
+      },
+      "valid": false
+    },
+    {
+      "id": "indeterminate_1_missing_request_id",
+      "status": 503,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "indeterminate",
+        "code": "RETRYABLE_FAILURE",
+        "retry_after_seconds": 1
+      },
+      "valid": false
+    },
+    {
+      "id": "indeterminate_1_missing_support_id",
+      "status": 503,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "indeterminate",
+        "code": "RETRYABLE_FAILURE",
+        "retry_after_seconds": 1
+      },
+      "valid": false
+    },
+    {
+      "id": "indeterminate_1_missing_outcome",
+      "status": 503,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "code": "RETRYABLE_FAILURE",
+        "retry_after_seconds": 1
+      },
+      "valid": false
+    },
+    {
+      "id": "indeterminate_1_missing_code",
+      "status": 503,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "indeterminate",
+        "retry_after_seconds": 1
+      },
+      "valid": false
+    },
+    {
+      "id": "indeterminate_1_missing_retry_after_seconds",
+      "status": 503,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "indeterminate",
+        "code": "RETRYABLE_FAILURE"
+      },
+      "valid": false
+    },
+    {
+      "id": "indeterminate_1_raw_detail",
+      "status": 503,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "indeterminate",
+        "code": "RETRYABLE_FAILURE",
+        "retry_after_seconds": 1,
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "indeterminate_300_wrong_status",
+      "status": 504,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "indeterminate",
+        "code": "RETRYABLE_FAILURE",
+        "retry_after_seconds": 300
+      },
+      "valid": false
+    },
+    {
+      "id": "indeterminate_300_missing_schema_version",
+      "status": 503,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "indeterminate",
+        "code": "RETRYABLE_FAILURE",
+        "retry_after_seconds": 300
+      },
+      "valid": false
+    },
+    {
+      "id": "indeterminate_300_missing_operation_id",
+      "status": 503,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "indeterminate",
+        "code": "RETRYABLE_FAILURE",
+        "retry_after_seconds": 300
+      },
+      "valid": false
+    },
+    {
+      "id": "indeterminate_300_missing_request_id",
+      "status": 503,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "indeterminate",
+        "code": "RETRYABLE_FAILURE",
+        "retry_after_seconds": 300
+      },
+      "valid": false
+    },
+    {
+      "id": "indeterminate_300_missing_support_id",
+      "status": 503,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "indeterminate",
+        "code": "RETRYABLE_FAILURE",
+        "retry_after_seconds": 300
+      },
+      "valid": false
+    },
+    {
+      "id": "indeterminate_300_missing_outcome",
+      "status": 503,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "code": "RETRYABLE_FAILURE",
+        "retry_after_seconds": 300
+      },
+      "valid": false
+    },
+    {
+      "id": "indeterminate_300_missing_code",
+      "status": 503,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "indeterminate",
+        "retry_after_seconds": 300
+      },
+      "valid": false
+    },
+    {
+      "id": "indeterminate_300_missing_retry_after_seconds",
+      "status": 503,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "indeterminate",
+        "code": "RETRYABLE_FAILURE"
+      },
+      "valid": false
+    },
+    {
+      "id": "indeterminate_300_raw_detail",
+      "status": 503,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "indeterminate",
+        "code": "RETRYABLE_FAILURE",
+        "retry_after_seconds": 300,
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "AUTH_REQUIRED_wrong_status",
+      "status": 402,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "AUTH_REQUIRED"
+      },
+      "valid": false
+    },
+    {
+      "id": "AUTH_REQUIRED_missing_schema_version",
+      "status": 401,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "AUTH_REQUIRED"
+      },
+      "valid": false
+    },
+    {
+      "id": "AUTH_REQUIRED_missing_operation_id",
+      "status": 401,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "AUTH_REQUIRED"
+      },
+      "valid": false
+    },
+    {
+      "id": "AUTH_REQUIRED_missing_request_id",
+      "status": 401,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "AUTH_REQUIRED"
+      },
+      "valid": false
+    },
+    {
+      "id": "AUTH_REQUIRED_missing_support_id",
+      "status": 401,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "rejected",
+        "code": "AUTH_REQUIRED"
+      },
+      "valid": false
+    },
+    {
+      "id": "AUTH_REQUIRED_missing_outcome",
+      "status": 401,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "code": "AUTH_REQUIRED"
+      },
+      "valid": false
+    },
+    {
+      "id": "AUTH_REQUIRED_missing_code",
+      "status": 401,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected"
+      },
+      "valid": false
+    },
+    {
+      "id": "AUTH_REQUIRED_raw_detail",
+      "status": 401,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "AUTH_REQUIRED",
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "COMPANY_ACCESS_DENIED_wrong_status",
+      "status": 404,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "COMPANY_ACCESS_DENIED"
+      },
+      "valid": false
+    },
+    {
+      "id": "COMPANY_ACCESS_DENIED_missing_schema_version",
+      "status": 403,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "COMPANY_ACCESS_DENIED"
+      },
+      "valid": false
+    },
+    {
+      "id": "COMPANY_ACCESS_DENIED_missing_operation_id",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "COMPANY_ACCESS_DENIED"
+      },
+      "valid": false
+    },
+    {
+      "id": "COMPANY_ACCESS_DENIED_missing_request_id",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "COMPANY_ACCESS_DENIED"
+      },
+      "valid": false
+    },
+    {
+      "id": "COMPANY_ACCESS_DENIED_missing_support_id",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "rejected",
+        "code": "COMPANY_ACCESS_DENIED"
+      },
+      "valid": false
+    },
+    {
+      "id": "COMPANY_ACCESS_DENIED_missing_outcome",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "code": "COMPANY_ACCESS_DENIED"
+      },
+      "valid": false
+    },
+    {
+      "id": "COMPANY_ACCESS_DENIED_missing_code",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected"
+      },
+      "valid": false
+    },
+    {
+      "id": "COMPANY_ACCESS_DENIED_raw_detail",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "COMPANY_ACCESS_DENIED",
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "CAPABILITY_DISABLED_wrong_status",
+      "status": 404,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "CAPABILITY_DISABLED"
+      },
+      "valid": false
+    },
+    {
+      "id": "CAPABILITY_DISABLED_missing_schema_version",
+      "status": 403,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "CAPABILITY_DISABLED"
+      },
+      "valid": false
+    },
+    {
+      "id": "CAPABILITY_DISABLED_missing_operation_id",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "CAPABILITY_DISABLED"
+      },
+      "valid": false
+    },
+    {
+      "id": "CAPABILITY_DISABLED_missing_request_id",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "CAPABILITY_DISABLED"
+      },
+      "valid": false
+    },
+    {
+      "id": "CAPABILITY_DISABLED_missing_support_id",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "rejected",
+        "code": "CAPABILITY_DISABLED"
+      },
+      "valid": false
+    },
+    {
+      "id": "CAPABILITY_DISABLED_missing_outcome",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "code": "CAPABILITY_DISABLED"
+      },
+      "valid": false
+    },
+    {
+      "id": "CAPABILITY_DISABLED_missing_code",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected"
+      },
+      "valid": false
+    },
+    {
+      "id": "CAPABILITY_DISABLED_raw_detail",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "CAPABILITY_DISABLED",
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "CROSS_COMPANY_REFERENCE_wrong_status",
+      "status": 404,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "CROSS_COMPANY_REFERENCE"
+      },
+      "valid": false
+    },
+    {
+      "id": "CROSS_COMPANY_REFERENCE_missing_schema_version",
+      "status": 403,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "CROSS_COMPANY_REFERENCE"
+      },
+      "valid": false
+    },
+    {
+      "id": "CROSS_COMPANY_REFERENCE_missing_operation_id",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "CROSS_COMPANY_REFERENCE"
+      },
+      "valid": false
+    },
+    {
+      "id": "CROSS_COMPANY_REFERENCE_missing_request_id",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "CROSS_COMPANY_REFERENCE"
+      },
+      "valid": false
+    },
+    {
+      "id": "CROSS_COMPANY_REFERENCE_missing_support_id",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "rejected",
+        "code": "CROSS_COMPANY_REFERENCE"
+      },
+      "valid": false
+    },
+    {
+      "id": "CROSS_COMPANY_REFERENCE_missing_outcome",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "code": "CROSS_COMPANY_REFERENCE"
+      },
+      "valid": false
+    },
+    {
+      "id": "CROSS_COMPANY_REFERENCE_missing_code",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected"
+      },
+      "valid": false
+    },
+    {
+      "id": "CROSS_COMPANY_REFERENCE_raw_detail",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "CROSS_COMPANY_REFERENCE",
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "VERSION_CONFLICT_wrong_status",
+      "status": 410,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "VERSION_CONFLICT",
+        "current_version": 9007199254740991
+      },
+      "valid": false
+    },
+    {
+      "id": "VERSION_CONFLICT_missing_schema_version",
+      "status": 409,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "VERSION_CONFLICT",
+        "current_version": 9007199254740991
+      },
+      "valid": false
+    },
+    {
+      "id": "VERSION_CONFLICT_missing_operation_id",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "VERSION_CONFLICT",
+        "current_version": 9007199254740991
+      },
+      "valid": false
+    },
+    {
+      "id": "VERSION_CONFLICT_missing_request_id",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "VERSION_CONFLICT",
+        "current_version": 9007199254740991
+      },
+      "valid": false
+    },
+    {
+      "id": "VERSION_CONFLICT_missing_support_id",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "rejected",
+        "code": "VERSION_CONFLICT",
+        "current_version": 9007199254740991
+      },
+      "valid": false
+    },
+    {
+      "id": "VERSION_CONFLICT_missing_outcome",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "code": "VERSION_CONFLICT",
+        "current_version": 9007199254740991
+      },
+      "valid": false
+    },
+    {
+      "id": "VERSION_CONFLICT_missing_code",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "current_version": 9007199254740991
+      },
+      "valid": false
+    },
+    {
+      "id": "VERSION_CONFLICT_missing_current_version",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "VERSION_CONFLICT"
+      },
+      "valid": false
+    },
+    {
+      "id": "VERSION_CONFLICT_raw_detail",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "VERSION_CONFLICT",
+        "current_version": 9007199254740991,
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "VALIDATION_FAILED_wrong_status",
+      "status": 423,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "VALIDATION_FAILED"
+      },
+      "valid": false
+    },
+    {
+      "id": "VALIDATION_FAILED_missing_schema_version",
+      "status": 422,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "VALIDATION_FAILED"
+      },
+      "valid": false
+    },
+    {
+      "id": "VALIDATION_FAILED_missing_operation_id",
+      "status": 422,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "VALIDATION_FAILED"
+      },
+      "valid": false
+    },
+    {
+      "id": "VALIDATION_FAILED_missing_request_id",
+      "status": 422,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "VALIDATION_FAILED"
+      },
+      "valid": false
+    },
+    {
+      "id": "VALIDATION_FAILED_missing_support_id",
+      "status": 422,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "rejected",
+        "code": "VALIDATION_FAILED"
+      },
+      "valid": false
+    },
+    {
+      "id": "VALIDATION_FAILED_missing_outcome",
+      "status": 422,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "code": "VALIDATION_FAILED"
+      },
+      "valid": false
+    },
+    {
+      "id": "VALIDATION_FAILED_missing_code",
+      "status": 422,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected"
+      },
+      "valid": false
+    },
+    {
+      "id": "VALIDATION_FAILED_raw_detail",
+      "status": 422,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "VALIDATION_FAILED",
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "RULE_REVIEW_REQUIRED_wrong_status",
+      "status": 410,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "RULE_REVIEW_REQUIRED"
+      },
+      "valid": false
+    },
+    {
+      "id": "RULE_REVIEW_REQUIRED_missing_schema_version",
+      "status": 409,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "RULE_REVIEW_REQUIRED"
+      },
+      "valid": false
+    },
+    {
+      "id": "RULE_REVIEW_REQUIRED_missing_operation_id",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "RULE_REVIEW_REQUIRED"
+      },
+      "valid": false
+    },
+    {
+      "id": "RULE_REVIEW_REQUIRED_missing_request_id",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "RULE_REVIEW_REQUIRED"
+      },
+      "valid": false
+    },
+    {
+      "id": "RULE_REVIEW_REQUIRED_missing_support_id",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "rejected",
+        "code": "RULE_REVIEW_REQUIRED"
+      },
+      "valid": false
+    },
+    {
+      "id": "RULE_REVIEW_REQUIRED_missing_outcome",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "code": "RULE_REVIEW_REQUIRED"
+      },
+      "valid": false
+    },
+    {
+      "id": "RULE_REVIEW_REQUIRED_missing_code",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected"
+      },
+      "valid": false
+    },
+    {
+      "id": "RULE_REVIEW_REQUIRED_raw_detail",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "RULE_REVIEW_REQUIRED",
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "DOCUMENT_NOT_READY_wrong_status",
+      "status": 410,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "DOCUMENT_NOT_READY"
+      },
+      "valid": false
+    },
+    {
+      "id": "DOCUMENT_NOT_READY_missing_schema_version",
+      "status": 409,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "DOCUMENT_NOT_READY"
+      },
+      "valid": false
+    },
+    {
+      "id": "DOCUMENT_NOT_READY_missing_operation_id",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "DOCUMENT_NOT_READY"
+      },
+      "valid": false
+    },
+    {
+      "id": "DOCUMENT_NOT_READY_missing_request_id",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "DOCUMENT_NOT_READY"
+      },
+      "valid": false
+    },
+    {
+      "id": "DOCUMENT_NOT_READY_missing_support_id",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "rejected",
+        "code": "DOCUMENT_NOT_READY"
+      },
+      "valid": false
+    },
+    {
+      "id": "DOCUMENT_NOT_READY_missing_outcome",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "code": "DOCUMENT_NOT_READY"
+      },
+      "valid": false
+    },
+    {
+      "id": "DOCUMENT_NOT_READY_missing_code",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected"
+      },
+      "valid": false
+    },
+    {
+      "id": "DOCUMENT_NOT_READY_raw_detail",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "DOCUMENT_NOT_READY",
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "QUOTA_EXCEEDED_wrong_status",
+      "status": 410,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "QUOTA_EXCEEDED"
+      },
+      "valid": false
+    },
+    {
+      "id": "QUOTA_EXCEEDED_missing_schema_version",
+      "status": 409,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "QUOTA_EXCEEDED"
+      },
+      "valid": false
+    },
+    {
+      "id": "QUOTA_EXCEEDED_missing_operation_id",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "QUOTA_EXCEEDED"
+      },
+      "valid": false
+    },
+    {
+      "id": "QUOTA_EXCEEDED_missing_request_id",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "QUOTA_EXCEEDED"
+      },
+      "valid": false
+    },
+    {
+      "id": "QUOTA_EXCEEDED_missing_support_id",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "rejected",
+        "code": "QUOTA_EXCEEDED"
+      },
+      "valid": false
+    },
+    {
+      "id": "QUOTA_EXCEEDED_missing_outcome",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "code": "QUOTA_EXCEEDED"
+      },
+      "valid": false
+    },
+    {
+      "id": "QUOTA_EXCEEDED_missing_code",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected"
+      },
+      "valid": false
+    },
+    {
+      "id": "QUOTA_EXCEEDED_raw_detail",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "QUOTA_EXCEEDED",
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "IDEMPOTENCY_CONFLICT_wrong_status",
+      "status": 410,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "IDEMPOTENCY_CONFLICT"
+      },
+      "valid": false
+    },
+    {
+      "id": "IDEMPOTENCY_CONFLICT_missing_schema_version",
+      "status": 409,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "IDEMPOTENCY_CONFLICT"
+      },
+      "valid": false
+    },
+    {
+      "id": "IDEMPOTENCY_CONFLICT_missing_operation_id",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "IDEMPOTENCY_CONFLICT"
+      },
+      "valid": false
+    },
+    {
+      "id": "IDEMPOTENCY_CONFLICT_missing_request_id",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "IDEMPOTENCY_CONFLICT"
+      },
+      "valid": false
+    },
+    {
+      "id": "IDEMPOTENCY_CONFLICT_missing_support_id",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "rejected",
+        "code": "IDEMPOTENCY_CONFLICT"
+      },
+      "valid": false
+    },
+    {
+      "id": "IDEMPOTENCY_CONFLICT_missing_outcome",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "code": "IDEMPOTENCY_CONFLICT"
+      },
+      "valid": false
+    },
+    {
+      "id": "IDEMPOTENCY_CONFLICT_missing_code",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected"
+      },
+      "valid": false
+    },
+    {
+      "id": "IDEMPOTENCY_CONFLICT_raw_detail",
+      "status": 409,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "IDEMPOTENCY_CONFLICT",
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "SCAN_PENDING_wrong_status",
+      "status": 424,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "SCAN_PENDING"
+      },
+      "valid": false
+    },
+    {
+      "id": "SCAN_PENDING_missing_schema_version",
+      "status": 423,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "SCAN_PENDING"
+      },
+      "valid": false
+    },
+    {
+      "id": "SCAN_PENDING_missing_operation_id",
+      "status": 423,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "SCAN_PENDING"
+      },
+      "valid": false
+    },
+    {
+      "id": "SCAN_PENDING_missing_request_id",
+      "status": 423,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "SCAN_PENDING"
+      },
+      "valid": false
+    },
+    {
+      "id": "SCAN_PENDING_missing_support_id",
+      "status": 423,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "rejected",
+        "code": "SCAN_PENDING"
+      },
+      "valid": false
+    },
+    {
+      "id": "SCAN_PENDING_missing_outcome",
+      "status": 423,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "code": "SCAN_PENDING"
+      },
+      "valid": false
+    },
+    {
+      "id": "SCAN_PENDING_missing_code",
+      "status": 423,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected"
+      },
+      "valid": false
+    },
+    {
+      "id": "SCAN_PENDING_raw_detail",
+      "status": 423,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "SCAN_PENDING",
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "UNSUPPORTED_FORMAT_wrong_status",
+      "status": 416,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "UNSUPPORTED_FORMAT"
+      },
+      "valid": false
+    },
+    {
+      "id": "UNSUPPORTED_FORMAT_missing_schema_version",
+      "status": 415,
+      "input": {
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "UNSUPPORTED_FORMAT"
+      },
+      "valid": false
+    },
+    {
+      "id": "UNSUPPORTED_FORMAT_missing_operation_id",
+      "status": 415,
+      "input": {
+        "schema_version": 1,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "UNSUPPORTED_FORMAT"
+      },
+      "valid": false
+    },
+    {
+      "id": "UNSUPPORTED_FORMAT_missing_request_id",
+      "status": 415,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "UNSUPPORTED_FORMAT"
+      },
+      "valid": false
+    },
+    {
+      "id": "UNSUPPORTED_FORMAT_missing_support_id",
+      "status": 415,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "outcome": "rejected",
+        "code": "UNSUPPORTED_FORMAT"
+      },
+      "valid": false
+    },
+    {
+      "id": "UNSUPPORTED_FORMAT_missing_outcome",
+      "status": 415,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "code": "UNSUPPORTED_FORMAT"
+      },
+      "valid": false
+    },
+    {
+      "id": "UNSUPPORTED_FORMAT_missing_code",
+      "status": 415,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected"
+      },
+      "valid": false
+    },
+    {
+      "id": "UNSUPPORTED_FORMAT_raw_detail",
+      "status": 415,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "UNSUPPORTED_FORMAT",
+        "details": "private content must not be accepted"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_schema_version_0",
+      "status": 200,
+      "input": {
+        "schema_version": 0,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_schema_version_1",
+      "status": 200,
+      "input": {
+        "schema_version": 2,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_schema_version_2",
+      "status": 200,
+      "input": {
+        "schema_version": "1",
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_schema_version_3",
+      "status": 200,
+      "input": {
+        "schema_version": true,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_operation_id_0",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": null,
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_operation_id_1",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "not-uuid",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_operation_id_2",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001x",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_request_id_0",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_request_id_1",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": 12,
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_support_id_0",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-abcdefghijkl",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_support_id_1",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "secret@email.test",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_support_id_2",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456\n",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_outcome_0",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "unknown",
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_outcome_1",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": null,
+        "version": 1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_version_0",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": -1,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_version_1",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 0.5,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_version_2",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": "1",
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_version_3",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": true,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_version_4",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 9007199254740992,
+        "projection": "ready"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_projection_0",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": null
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_projection_1",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": 12
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_projection_2",
+      "status": 200,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "committed",
+        "version": 1,
+        "projection": "unknown"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_delay_0",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 0
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_delay_-1",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": -1
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_delay_301",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 301
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_delay_1.5",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": 1.5
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_delay_1",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": "1"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_delay_null",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": null
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid_delay_true",
+      "status": 202,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "pending",
+        "code": "JOB_PENDING",
+        "retry_after_seconds": true
+      },
+      "valid": false
+    },
+    {
+      "id": "non_object_null",
+      "status": 200,
+      "input": null,
+      "valid": false
+    },
+    {
+      "id": "non_object_[]",
+      "status": 200,
+      "input": [],
+      "valid": false
+    },
+    {
+      "id": "non_object_true",
+      "status": 200,
+      "input": true,
+      "valid": false
+    },
+    {
+      "id": "non_object_\"text\"",
+      "status": 200,
+      "input": "text",
+      "valid": false
+    },
+    {
+      "id": "non_object_42",
+      "status": 200,
+      "input": 42,
+      "valid": false
+    },
+    {
+      "id": "access_cannot_include_version",
+      "status": 403,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "COMPANY_ACCESS_DENIED",
+        "current_version": 8
+      },
+      "valid": false
+    },
+    {
+      "id": "retryable_cannot_claim_rejected",
+      "status": 503,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "10000000-0000-4000-8000-000000000001",
+        "request_id": "10000000-0000-4000-8000-000000000002",
+        "support_id": "ISG-ABCDEF123456",
+        "outcome": "rejected",
+        "code": "RETRYABLE_FAILURE"
+      },
+      "valid": false
+    }
+  ],
+  "transitions": [
+    {
+      "id": "prepared_submit_true",
+      "phase": "prepared",
+      "event": "submit",
+      "same_context": true,
+      "next_phase": "submitting",
+      "effect": "submit_same_key"
+    },
+    {
+      "id": "prepared_submit_false",
+      "phase": "prepared",
+      "event": "submit",
+      "same_context": false,
+      "next_phase": "prepared",
+      "effect": "none"
+    },
+    {
+      "id": "prepared_transport_loss_true",
+      "phase": "prepared",
+      "event": "transport_loss",
+      "same_context": true,
+      "next_phase": "prepared",
+      "effect": "none"
+    },
+    {
+      "id": "prepared_transport_loss_false",
+      "phase": "prepared",
+      "event": "transport_loss",
+      "same_context": false,
+      "next_phase": "prepared",
+      "effect": "none"
+    },
+    {
+      "id": "prepared_committed_true",
+      "phase": "prepared",
+      "event": "committed",
+      "same_context": true,
+      "next_phase": "prepared",
+      "effect": "none"
+    },
+    {
+      "id": "prepared_committed_false",
+      "phase": "prepared",
+      "event": "committed",
+      "same_context": false,
+      "next_phase": "prepared",
+      "effect": "none"
+    },
+    {
+      "id": "prepared_pending_true",
+      "phase": "prepared",
+      "event": "pending",
+      "same_context": true,
+      "next_phase": "prepared",
+      "effect": "none"
+    },
+    {
+      "id": "prepared_pending_false",
+      "phase": "prepared",
+      "event": "pending",
+      "same_context": false,
+      "next_phase": "prepared",
+      "effect": "none"
+    },
+    {
+      "id": "prepared_indeterminate_true",
+      "phase": "prepared",
+      "event": "indeterminate",
+      "same_context": true,
+      "next_phase": "prepared",
+      "effect": "none"
+    },
+    {
+      "id": "prepared_indeterminate_false",
+      "phase": "prepared",
+      "event": "indeterminate",
+      "same_context": false,
+      "next_phase": "prepared",
+      "effect": "none"
+    },
+    {
+      "id": "prepared_rejected_true",
+      "phase": "prepared",
+      "event": "rejected",
+      "same_context": true,
+      "next_phase": "prepared",
+      "effect": "none"
+    },
+    {
+      "id": "prepared_rejected_false",
+      "phase": "prepared",
+      "event": "rejected",
+      "same_context": false,
+      "next_phase": "prepared",
+      "effect": "none"
+    },
+    {
+      "id": "prepared_account_changed_true",
+      "phase": "prepared",
+      "event": "account_changed",
+      "same_context": true,
+      "next_phase": "detached",
+      "effect": "detach"
+    },
+    {
+      "id": "prepared_account_changed_false",
+      "phase": "prepared",
+      "event": "account_changed",
+      "same_context": false,
+      "next_phase": "prepared",
+      "effect": "none"
+    },
+    {
+      "id": "submitting_submit_true",
+      "phase": "submitting",
+      "event": "submit",
+      "same_context": true,
+      "next_phase": "submitting",
+      "effect": "none"
+    },
+    {
+      "id": "submitting_submit_false",
+      "phase": "submitting",
+      "event": "submit",
+      "same_context": false,
+      "next_phase": "submitting",
+      "effect": "none"
+    },
+    {
+      "id": "submitting_transport_loss_true",
+      "phase": "submitting",
+      "event": "transport_loss",
+      "same_context": true,
+      "next_phase": "reconciling",
+      "effect": "reconcile_same_operation"
+    },
+    {
+      "id": "submitting_transport_loss_false",
+      "phase": "submitting",
+      "event": "transport_loss",
+      "same_context": false,
+      "next_phase": "submitting",
+      "effect": "none"
+    },
+    {
+      "id": "submitting_committed_true",
+      "phase": "submitting",
+      "event": "committed",
+      "same_context": true,
+      "next_phase": "committed",
+      "effect": "show_committed"
+    },
+    {
+      "id": "submitting_committed_false",
+      "phase": "submitting",
+      "event": "committed",
+      "same_context": false,
+      "next_phase": "submitting",
+      "effect": "none"
+    },
+    {
+      "id": "submitting_pending_true",
+      "phase": "submitting",
+      "event": "pending",
+      "same_context": true,
+      "next_phase": "reconciling",
+      "effect": "reconcile_same_operation"
+    },
+    {
+      "id": "submitting_pending_false",
+      "phase": "submitting",
+      "event": "pending",
+      "same_context": false,
+      "next_phase": "submitting",
+      "effect": "none"
+    },
+    {
+      "id": "submitting_indeterminate_true",
+      "phase": "submitting",
+      "event": "indeterminate",
+      "same_context": true,
+      "next_phase": "reconciling",
+      "effect": "reconcile_same_operation"
+    },
+    {
+      "id": "submitting_indeterminate_false",
+      "phase": "submitting",
+      "event": "indeterminate",
+      "same_context": false,
+      "next_phase": "submitting",
+      "effect": "none"
+    },
+    {
+      "id": "submitting_rejected_true",
+      "phase": "submitting",
+      "event": "rejected",
+      "same_context": true,
+      "next_phase": "blocked",
+      "effect": "show_blocked"
+    },
+    {
+      "id": "submitting_rejected_false",
+      "phase": "submitting",
+      "event": "rejected",
+      "same_context": false,
+      "next_phase": "submitting",
+      "effect": "none"
+    },
+    {
+      "id": "submitting_account_changed_true",
+      "phase": "submitting",
+      "event": "account_changed",
+      "same_context": true,
+      "next_phase": "detached",
+      "effect": "detach"
+    },
+    {
+      "id": "submitting_account_changed_false",
+      "phase": "submitting",
+      "event": "account_changed",
+      "same_context": false,
+      "next_phase": "submitting",
+      "effect": "none"
+    },
+    {
+      "id": "reconciling_submit_true",
+      "phase": "reconciling",
+      "event": "submit",
+      "same_context": true,
+      "next_phase": "reconciling",
+      "effect": "none"
+    },
+    {
+      "id": "reconciling_submit_false",
+      "phase": "reconciling",
+      "event": "submit",
+      "same_context": false,
+      "next_phase": "reconciling",
+      "effect": "none"
+    },
+    {
+      "id": "reconciling_transport_loss_true",
+      "phase": "reconciling",
+      "event": "transport_loss",
+      "same_context": true,
+      "next_phase": "reconciling",
+      "effect": "reconcile_same_operation"
+    },
+    {
+      "id": "reconciling_transport_loss_false",
+      "phase": "reconciling",
+      "event": "transport_loss",
+      "same_context": false,
+      "next_phase": "reconciling",
+      "effect": "none"
+    },
+    {
+      "id": "reconciling_committed_true",
+      "phase": "reconciling",
+      "event": "committed",
+      "same_context": true,
+      "next_phase": "committed",
+      "effect": "show_committed"
+    },
+    {
+      "id": "reconciling_committed_false",
+      "phase": "reconciling",
+      "event": "committed",
+      "same_context": false,
+      "next_phase": "reconciling",
+      "effect": "none"
+    },
+    {
+      "id": "reconciling_pending_true",
+      "phase": "reconciling",
+      "event": "pending",
+      "same_context": true,
+      "next_phase": "reconciling",
+      "effect": "reconcile_same_operation"
+    },
+    {
+      "id": "reconciling_pending_false",
+      "phase": "reconciling",
+      "event": "pending",
+      "same_context": false,
+      "next_phase": "reconciling",
+      "effect": "none"
+    },
+    {
+      "id": "reconciling_indeterminate_true",
+      "phase": "reconciling",
+      "event": "indeterminate",
+      "same_context": true,
+      "next_phase": "reconciling",
+      "effect": "reconcile_same_operation"
+    },
+    {
+      "id": "reconciling_indeterminate_false",
+      "phase": "reconciling",
+      "event": "indeterminate",
+      "same_context": false,
+      "next_phase": "reconciling",
+      "effect": "none"
+    },
+    {
+      "id": "reconciling_rejected_true",
+      "phase": "reconciling",
+      "event": "rejected",
+      "same_context": true,
+      "next_phase": "blocked",
+      "effect": "show_blocked"
+    },
+    {
+      "id": "reconciling_rejected_false",
+      "phase": "reconciling",
+      "event": "rejected",
+      "same_context": false,
+      "next_phase": "reconciling",
+      "effect": "none"
+    },
+    {
+      "id": "reconciling_account_changed_true",
+      "phase": "reconciling",
+      "event": "account_changed",
+      "same_context": true,
+      "next_phase": "detached",
+      "effect": "detach"
+    },
+    {
+      "id": "reconciling_account_changed_false",
+      "phase": "reconciling",
+      "event": "account_changed",
+      "same_context": false,
+      "next_phase": "reconciling",
+      "effect": "none"
+    },
+    {
+      "id": "committed_submit_true",
+      "phase": "committed",
+      "event": "submit",
+      "same_context": true,
+      "next_phase": "committed",
+      "effect": "none"
+    },
+    {
+      "id": "committed_submit_false",
+      "phase": "committed",
+      "event": "submit",
+      "same_context": false,
+      "next_phase": "committed",
+      "effect": "none"
+    },
+    {
+      "id": "committed_transport_loss_true",
+      "phase": "committed",
+      "event": "transport_loss",
+      "same_context": true,
+      "next_phase": "committed",
+      "effect": "none"
+    },
+    {
+      "id": "committed_transport_loss_false",
+      "phase": "committed",
+      "event": "transport_loss",
+      "same_context": false,
+      "next_phase": "committed",
+      "effect": "none"
+    },
+    {
+      "id": "committed_committed_true",
+      "phase": "committed",
+      "event": "committed",
+      "same_context": true,
+      "next_phase": "committed",
+      "effect": "none"
+    },
+    {
+      "id": "committed_committed_false",
+      "phase": "committed",
+      "event": "committed",
+      "same_context": false,
+      "next_phase": "committed",
+      "effect": "none"
+    },
+    {
+      "id": "committed_pending_true",
+      "phase": "committed",
+      "event": "pending",
+      "same_context": true,
+      "next_phase": "committed",
+      "effect": "none"
+    },
+    {
+      "id": "committed_pending_false",
+      "phase": "committed",
+      "event": "pending",
+      "same_context": false,
+      "next_phase": "committed",
+      "effect": "none"
+    },
+    {
+      "id": "committed_indeterminate_true",
+      "phase": "committed",
+      "event": "indeterminate",
+      "same_context": true,
+      "next_phase": "committed",
+      "effect": "none"
+    },
+    {
+      "id": "committed_indeterminate_false",
+      "phase": "committed",
+      "event": "indeterminate",
+      "same_context": false,
+      "next_phase": "committed",
+      "effect": "none"
+    },
+    {
+      "id": "committed_rejected_true",
+      "phase": "committed",
+      "event": "rejected",
+      "same_context": true,
+      "next_phase": "committed",
+      "effect": "none"
+    },
+    {
+      "id": "committed_rejected_false",
+      "phase": "committed",
+      "event": "rejected",
+      "same_context": false,
+      "next_phase": "committed",
+      "effect": "none"
+    },
+    {
+      "id": "committed_account_changed_true",
+      "phase": "committed",
+      "event": "account_changed",
+      "same_context": true,
+      "next_phase": "detached",
+      "effect": "detach"
+    },
+    {
+      "id": "committed_account_changed_false",
+      "phase": "committed",
+      "event": "account_changed",
+      "same_context": false,
+      "next_phase": "committed",
+      "effect": "none"
+    },
+    {
+      "id": "blocked_submit_true",
+      "phase": "blocked",
+      "event": "submit",
+      "same_context": true,
+      "next_phase": "blocked",
+      "effect": "none"
+    },
+    {
+      "id": "blocked_submit_false",
+      "phase": "blocked",
+      "event": "submit",
+      "same_context": false,
+      "next_phase": "blocked",
+      "effect": "none"
+    },
+    {
+      "id": "blocked_transport_loss_true",
+      "phase": "blocked",
+      "event": "transport_loss",
+      "same_context": true,
+      "next_phase": "blocked",
+      "effect": "none"
+    },
+    {
+      "id": "blocked_transport_loss_false",
+      "phase": "blocked",
+      "event": "transport_loss",
+      "same_context": false,
+      "next_phase": "blocked",
+      "effect": "none"
+    },
+    {
+      "id": "blocked_committed_true",
+      "phase": "blocked",
+      "event": "committed",
+      "same_context": true,
+      "next_phase": "blocked",
+      "effect": "none"
+    },
+    {
+      "id": "blocked_committed_false",
+      "phase": "blocked",
+      "event": "committed",
+      "same_context": false,
+      "next_phase": "blocked",
+      "effect": "none"
+    },
+    {
+      "id": "blocked_pending_true",
+      "phase": "blocked",
+      "event": "pending",
+      "same_context": true,
+      "next_phase": "blocked",
+      "effect": "none"
+    },
+    {
+      "id": "blocked_pending_false",
+      "phase": "blocked",
+      "event": "pending",
+      "same_context": false,
+      "next_phase": "blocked",
+      "effect": "none"
+    },
+    {
+      "id": "blocked_indeterminate_true",
+      "phase": "blocked",
+      "event": "indeterminate",
+      "same_context": true,
+      "next_phase": "blocked",
+      "effect": "none"
+    },
+    {
+      "id": "blocked_indeterminate_false",
+      "phase": "blocked",
+      "event": "indeterminate",
+      "same_context": false,
+      "next_phase": "blocked",
+      "effect": "none"
+    },
+    {
+      "id": "blocked_rejected_true",
+      "phase": "blocked",
+      "event": "rejected",
+      "same_context": true,
+      "next_phase": "blocked",
+      "effect": "none"
+    },
+    {
+      "id": "blocked_rejected_false",
+      "phase": "blocked",
+      "event": "rejected",
+      "same_context": false,
+      "next_phase": "blocked",
+      "effect": "none"
+    },
+    {
+      "id": "blocked_account_changed_true",
+      "phase": "blocked",
+      "event": "account_changed",
+      "same_context": true,
+      "next_phase": "detached",
+      "effect": "detach"
+    },
+    {
+      "id": "blocked_account_changed_false",
+      "phase": "blocked",
+      "event": "account_changed",
+      "same_context": false,
+      "next_phase": "blocked",
+      "effect": "none"
+    },
+    {
+      "id": "detached_submit_true",
+      "phase": "detached",
+      "event": "submit",
+      "same_context": true,
+      "next_phase": "detached",
+      "effect": "none"
+    },
+    {
+      "id": "detached_submit_false",
+      "phase": "detached",
+      "event": "submit",
+      "same_context": false,
+      "next_phase": "detached",
+      "effect": "none"
+    },
+    {
+      "id": "detached_transport_loss_true",
+      "phase": "detached",
+      "event": "transport_loss",
+      "same_context": true,
+      "next_phase": "detached",
+      "effect": "none"
+    },
+    {
+      "id": "detached_transport_loss_false",
+      "phase": "detached",
+      "event": "transport_loss",
+      "same_context": false,
+      "next_phase": "detached",
+      "effect": "none"
+    },
+    {
+      "id": "detached_committed_true",
+      "phase": "detached",
+      "event": "committed",
+      "same_context": true,
+      "next_phase": "detached",
+      "effect": "none"
+    },
+    {
+      "id": "detached_committed_false",
+      "phase": "detached",
+      "event": "committed",
+      "same_context": false,
+      "next_phase": "detached",
+      "effect": "none"
+    },
+    {
+      "id": "detached_pending_true",
+      "phase": "detached",
+      "event": "pending",
+      "same_context": true,
+      "next_phase": "detached",
+      "effect": "none"
+    },
+    {
+      "id": "detached_pending_false",
+      "phase": "detached",
+      "event": "pending",
+      "same_context": false,
+      "next_phase": "detached",
+      "effect": "none"
+    },
+    {
+      "id": "detached_indeterminate_true",
+      "phase": "detached",
+      "event": "indeterminate",
+      "same_context": true,
+      "next_phase": "detached",
+      "effect": "none"
+    },
+    {
+      "id": "detached_indeterminate_false",
+      "phase": "detached",
+      "event": "indeterminate",
+      "same_context": false,
+      "next_phase": "detached",
+      "effect": "none"
+    },
+    {
+      "id": "detached_rejected_true",
+      "phase": "detached",
+      "event": "rejected",
+      "same_context": true,
+      "next_phase": "detached",
+      "effect": "none"
+    },
+    {
+      "id": "detached_rejected_false",
+      "phase": "detached",
+      "event": "rejected",
+      "same_context": false,
+      "next_phase": "detached",
+      "effect": "none"
+    },
+    {
+      "id": "detached_account_changed_true",
+      "phase": "detached",
+      "event": "account_changed",
+      "same_context": true,
+      "next_phase": "detached",
+      "effect": "none"
+    },
+    {
+      "id": "detached_account_changed_false",
+      "phase": "detached",
+      "event": "account_changed",
+      "same_context": false,
+      "next_phase": "detached",
+      "effect": "none"
+    }
+  ]
+}
