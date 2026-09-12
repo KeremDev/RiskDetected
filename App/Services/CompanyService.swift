@@ -33,8 +33,14 @@ final class CompanyService {
                     .execute()
                     .value
             }
+            // A cancelled view/account request must not publish a late successful list.
+            try Task.checkCancellation()
             return rows
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
+            // URLSession/SDK may wrap cancellation in a transport error.
+            try Task.checkCancellation()
             Self.logger.error("Company list failed: \(error.localizedDescription, privacy: .public)")
             throw AnalysisService.AnalysisError.databaseFailed(RDLocalization.string("localizable.company.service.firmalar.yuklenemedi.7dc2bef5", table: .localizable, fallback: "Firmalar yüklenemedi."))
         }

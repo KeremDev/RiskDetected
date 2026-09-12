@@ -8,6 +8,9 @@ import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.storage.storage
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -42,8 +45,12 @@ class CompanyRepository @Inject constructor(
                 order("created_at", Order.DESCENDING)
             }
             .decodeList<Company>()
+        currentCoroutineContext().ensureActive()
         RdResult.Success(companies)
+    } catch (cancelled: CancellationException) {
+        throw cancelled
     } catch (t: Throwable) {
+        currentCoroutineContext().ensureActive()
         RdResult.Failure("company_list_failed", "Firmalar yüklenemedi.", t)
     }
 

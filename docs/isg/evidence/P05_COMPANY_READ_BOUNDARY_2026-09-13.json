@@ -1,0 +1,20 @@
+{
+  "captured_at": "2026-09-12T23:41:02.905Z",
+  "android_core_data": {
+    "tests": 489,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "source_sha256": {
+    "App/Services/CompanyService.swift": "bb9abd2466b31a2b4179c40224f6c52d76022613cc1011a817e536fbb98c66e4",
+    "android/core/data/src/main/kotlin/com/riskdetectedan/core/data/company/CompanyRepository.kt": "9f7d458c73f3893d18295dc7304e923fb50f2a83fcd9d26f0aa1dfa6ebade4d0",
+    "android/core/data/src/test/kotlin/com/riskdetectedan/core/data/company/CompanyListTransportTest.kt": "288db2c8be7ccf4270b4b38dc276478b26f049d83c858b194613871977af68fd"
+  },
+  "ios_main_build": "PASS",
+  "android_debug_apk_build": "PASS",
+  "company_transport_tests": 2,
+  "production_changed": false,
+  "ios_cancellation_runtime_tested": false,
+  "nova_root_connected": false
+}
