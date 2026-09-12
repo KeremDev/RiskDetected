@@ -9,7 +9,7 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 - P03'ün ilk shadow dilimi hazır: eski şirket SQL truth table ve hak koruma hesabı. Yeni fiyat/limit/floor yayınlanmadı; uygulamaya bağlanmadı.
 - Production'da yalnız read-only envanter ve Auth/Storage şema yedeği alındı. DB/store/paid policy/notification değişikliği yapılmadı.
 - Mevcut app bundle/paket, callback ve entitlement'ları değişmedi. UI ve kullanıcı tasarımı değiştirilmedi.
-- Geliştirme dalı `codex/isg-transition-foundation`. Eski `riskdetected-change-point-20260912` etiketi `dbcc979d` üzerinde korunuyor. V5 plan/registry `0fd78e17`, P00 backup/restore araçları ve kanıtları `0d8b9bce`, P01 ilk test/contract dilimi `2fd6b9ef` commit'lerinde. Henüz push veya deploy yapılmadı.
+- Geliştirme dalı `codex/isg-transition-foundation`. Eski `riskdetected-change-point-20260912` etiketi `dbcc979d` üzerinde korunuyor. V5 plan/registry `0fd78e17`, P00 backup/restore araçları ve kanıtları `0d8b9bce`, P01 ilk test/contract dilimi `2fd6b9ef`, P03 shadow `8252f408` commit'lerinde. Henüz push veya deploy yapılmadı.
 
 ## Tamamlanan kanıtlar
 
@@ -30,6 +30,10 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 | iOS mağaza kimliği | App 6769498181, bundle com.riskdetected.app, SKU riskdetected-ios doğrulandı |
 | iOS ürünler | riskdetected_plus_monthly/yearly ve riskdetected_pro_monthly/yearly APPROVED; mevcut ürünler korunuyor |
 | iOS TUR liste fiyatı | Plus aylık 249,99 / yıllık 2.499,99 TRY; Pro aylık 499,99 / yıllık 4.999,99 TRY. Kohort fiyatı ve teklif fiyatı kanıtı değil |
+| Play katalog | Aynı dört ürün etkin, monthly/yearly base plan, Türkiye fiyatları iOS liste fiyatlarıyla eşleşiyor; aylık grace7/hold53, yıllık grace14/hold46 gün. Hold paid erişim değildir |
+| Play mevcut teklif | Yalnız Plus yıllık trial-7d-v1: 7 gün, uygulamada daha önce hiçbir abonelik edinmemiş kullanıcı, etkin/Türkiye/backward-compatible |
+| RC katalog | default offering dört paket × iki gerçek mağaza; plus/pro sekizer ürün (mağaza + QA); legacy Riskdetected Pro yalnız iki Test Store ürünü; Targeting ve Experiments boş |
+| RC API erişimi | Mevcut anahtar v2 katalog okumasına 403 verdi; anahtar/yetki değişmeden açık dashboard'dan read-only doğrulama yapıldı |
 | Ortak kaynak kontrolü | iOS bundle, Android package/namespace, auth callback, plus/pro entitlement geçerli |
 | Test envanteri | 203 kaynak + 60 geçiş = 263 benzersiz kabul; henüz domain testlerine UNMAPPED, başarı iddiası yok |
 | Foundation ilk test turu | 38/38 Node test; yanlış ortam ve kimlik mutasyon testleri dahil |
@@ -53,6 +57,8 @@ Ek kanıtlar: [Masaüstü şifreli kopya](evidence/P00_DESKTOP_BACKUP_2026-09-12
 
 [P03 shadow kapsamı](P03_CAPACITY_SHADOW.md), [legacy DB matrisi](evidence/P03_LEGACY_CAPACITY_MATRIX_2026-09-12.json), [read-only snapshot karşılaştırması](evidence/P03_CAPACITY_SHADOW_SNAPSHOT_2026-09-12.json).
 
+[Mağaza / RC mevcut katalog](P00_STORE_CATALOG_2026-09-12.md): yönetim sayfalarından read-only gözlemler, trial uygunluğu, grace/hold ayrımı ve offering platform farkı. CI tetik yollarına legacy oracle'ın kullandığı iki tarihsel migration da eklendi; migration değişirse ilgili test job'ları atlanmaz.
+
 ## Kullanılabilir yeni komutlar
 
 ~~~bash
@@ -74,7 +80,7 @@ Restore ve capture araçları offline foundation runner'a dahil değildir. Bunla
 
 1. Auth API login, Storage signed download ve iki mobil platformla restore E2E henüz yapılmadı.
 2. Kullanıcı ikinci kopya konumunu Masaüstü seçti ve kopya doğrulandı. Disk arızası için ayrı fiziksel konum ve anahtarın ayrı güvenli kurtarma kopyası hâlâ yok; bilinmeyen buluta veri gönderilmiyor.
-3. Google Play aktif base plan/offer/fiyat ve RC katalog/offer/mapping envanteri tamamlanmadı.
+3. Play etkin base plan/tek mevcut teklif/Türkiye fiyatları ve RC üretim offering/entitlement eşlemesi doğrulandı. App Store teklif türleri, iki mağazada eski fiyat kohortları ve RC tüm dış servis ayarları hâlâ açık.
 4. iOS/Android aynı-plan gerçek indirim ve izleyen normal renewal deneyi henüz yapılmadı; mağaza yazımı ayrıca onaylı.
 5. Tasarım, ticari aday parametreler ve resmi 2026 eğitim oracle'ı onay kapıları korunuyor.
 6. P01 transport/native fixture, dar function-test map ve transaction/outbox/lease prototipi hazır. Production mutation migration/gerçek Auth-session-capability, tam function inventory/release gate, gerçek native E2E ve tam iOS app CI henüz tamamlanmadı.
