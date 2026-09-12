@@ -1,0 +1,249 @@
+{
+  "schema_version": 1,
+  "run_id": "e31f67ec-df13-4e99-bfdd-0cfcb853b0a1",
+  "started_at": "2026-09-12T18:20:51.196Z",
+  "mode": "isolated_restored_copy",
+  "images": {
+    "db": "public.ecr.aws/supabase/postgres@sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:362659ca70eaa75ba05bbaf963caa84c1c5afe5e8fbf0777e17b830dd5f0f60a",
+    "client": "public.ecr.aws/supabase/storage-api@sha256:28424184c9f699790cc190f78ddf7d6abfb5c87af78af260529a394d12c135e9",
+    "storage": "public.ecr.aws/supabase/storage-api@sha256:28424184c9f699790cc190f78ddf7d6abfb5c87af78af260529a394d12c135e9"
+  },
+  "checks": [
+    {
+      "id": "source_queue_payloads_empty",
+      "result": "PASS"
+    },
+    {
+      "id": "original_user_counts_restored",
+      "result": "PASS"
+    },
+    {
+      "id": "service_ledgers_empty_before_supplement",
+      "result": "PASS"
+    },
+    {
+      "id": "service_ledgers_restored",
+      "result": "PASS"
+    },
+    {
+      "id": "auth_health",
+      "result": "PASS"
+    },
+    {
+      "id": "admin_endpoint_rejects_no_token",
+      "result": "PASS"
+    },
+    {
+      "id": "admin_endpoint_rejects_expired_service_token",
+      "result": "PASS"
+    },
+    {
+      "id": "synthetic_user_created_by_local_admin",
+      "result": "PASS"
+    },
+    {
+      "id": "existing_profile_bootstrap_trigger",
+      "result": "PASS"
+    },
+    {
+      "id": "wrong_password_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "password_login_same_uuid",
+      "result": "PASS"
+    },
+    {
+      "id": "authenticated_user_read",
+      "result": "PASS"
+    },
+    {
+      "id": "user_token_cannot_admin_list",
+      "result": "PASS"
+    },
+    {
+      "id": "refresh_keeps_same_uuid",
+      "result": "PASS"
+    },
+    {
+      "id": "logout_succeeds",
+      "result": "PASS"
+    },
+    {
+      "id": "logged_out_refresh_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_health",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_588_blobs_hydrated_from_verified_backup",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_588_api_download_hash_size_mime_cache_match",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_photos_owner_read_foreign_anon_denied",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_photos_only_owner_can_sign",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_photos_signed_download_hash_and_tamper_rejection",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_photos_signature_bound_to_object_and_required",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_photos_expired_signature_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_reports_owner_read_foreign_anon_denied",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_reports_only_owner_can_sign",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_reports_signed_download_hash_and_tamper_rejection",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_reports_signature_bound_to_object_and_required",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_reports_expired_signature_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_logos_owner_read_foreign_anon_denied",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_logos_only_owner_can_sign",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_logos_signed_download_hash_and_tamper_rejection",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_logos_signature_bound_to_object_and_required",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_logos_expired_signature_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_avatars_owner_read_foreign_anon_denied",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_avatars_only_owner_can_sign",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_avatars_signed_download_hash_and_tamper_rejection",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_avatars_signature_bound_to_object_and_required",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_avatars_expired_signature_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_5_public_legal_documents_without_token",
+      "result": "PASS"
+    },
+    {
+      "id": "storage_object_rows_unchanged_after_hydration_and_download",
+      "result": "PASS"
+    },
+    {
+      "id": "source_counts_unchanged",
+      "result": "PASS"
+    }
+  ],
+  "external_egress": false,
+  "ports_published": false,
+  "source_database_changed": false,
+  "storage_api_tested": true,
+  "mobile_e2e_tested": false,
+  "full_application_restore_proven": false,
+  "source_before": "{\"users\": 208, \"objects\": 588, \"profiles\": 208, \"identities\": 210, \"auth_migrations\": 0, \"storage_migrations\": 0}",
+  "clone_dump_sha256": "b18054db215506de0e9da651840b1890cf44c3679970ce6f49e0e7ddd2977893",
+  "source_only_roles_created_without_passwords": [
+    "supabase_functions_admin"
+  ],
+  "acl_entries_replayed": 474,
+  "empty_analysis_queue_regenerated": true,
+  "auth_health": {
+    "version": "v2.195.0",
+    "name": "GoTrue",
+    "description": "GoTrue is a user registration and authentication API"
+  },
+  "storage": {
+    "all_bytes_tested": true,
+    "private_bucket_rls": [
+      {
+        "bucket": "photos",
+        "checks": "PASS",
+        "fixture_count": 1
+      },
+      {
+        "bucket": "reports",
+        "checks": "PASS",
+        "fixture_count": 1
+      },
+      {
+        "bucket": "logos",
+        "checks": "PASS",
+        "fixture_count": 1
+      },
+      {
+        "bucket": "avatars",
+        "checks": "PASS",
+        "fixture_count": 1
+      }
+    ],
+    "public_bucket_tested": true,
+    "original_etag_and_mtime_preserved": false,
+    "live_credentials_used": false,
+    "original_user_login_tested": false,
+    "objects": 588,
+    "bytes": 512280146
+  },
+  "service_ledger_counts_after_boot": "77\n68",
+  "source_after": "{\"users\": 208, \"objects\": 588, \"profiles\": 208, \"identities\": 210, \"auth_migrations\": 0, \"storage_migrations\": 0}",
+  "ok": true,
+  "disposable_container_cleanup": "PASS",
+  "finished_at": "2026-09-12T18:21:28.966Z",
+  "evidence_directory": "backups/isg-auth-service-restore-20260912-qVkSDk",
+  "source_sha256": {
+    "scripts/isg/run_auth_restore.mjs": "66d465da14b133633402ab4b0a5a012e22691a42f303321c9412d9b2f06a5b9a",
+    "scripts/isg/storage_restore_probe.mjs": "de24634512894206c85b78db79164f7a963ef55beb7df6db195567dd4652ca8b",
+    "scripts/isg/storage_restore_probe.test.mjs": "0e9eac61a546cfde42afc0e09033e4ccdf07a152bc47be33928b06453dc70247",
+    "scripts/isg/auth_restore_guard.mjs": "1a0e0629ed1d83484b5a313d34e6a7622b3d1d9f7993b8803232d970403b05ec"
+  },
+  "offline_foundation": {
+    "total": 80,
+    "pass": 80,
+    "fail": 0,
+    "skip": 0
+  }
+}

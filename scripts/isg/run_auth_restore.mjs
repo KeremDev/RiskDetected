@@ -5,17 +5,21 @@ import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { ROOT } from './lib.mjs';
 import { assertNoExposedRestoreContainer } from './auth_restore_guard.mjs';
+import { probeStorageRestore } from './storage_restore_probe.mjs';
 
 // Restore drill only. The proven source container is read-only; all API writes
 // target a new disposable copy with a shared NONE network namespace. No ports,
 // mounts, SMTP/OAuth credentials, production JWT secrets or external endpoints.
 const source = 'isg_restore_20260912_db';
 const names = { db: 'isg_auth_restore_20260912_db', auth: 'isg_auth_restore_20260912_auth', client: 'isg_auth_restore_20260912_client' };
+const withStorage = process.argv.length === 4 && process.argv[2] === '--isolated-copy' && process.argv[3] === '--with-storage';
+if (withStorage) names.storage = 'isg_auth_restore_20260912_storage';
 const images = {
   db: 'public.ecr.aws/supabase/postgres@sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b',
   auth: 'public.ecr.aws/supabase/gotrue@sha256:362659ca70eaa75ba05bbaf963caa84c1c5afe5e8fbf0777e17b830dd5f0f60a',
   client: 'public.ecr.aws/supabase/storage-api@sha256:28424184c9f699790cc190f78ddf7d6abfb5c87af78af260529a394d12c135e9',
 };
+if (withStorage) images.storage = images.client;
 const owned = new Map(), run = randomUUID(), label = 'com.riskdetected.isg-auth-restore';
 const report = { schema_version: 1, run_id: run, started_at: new Date().toISOString(), mode: 'isolated_restored_copy',
   images, checks: [], external_egress: false, ports_published: false, source_database_changed: false,
@@ -81,9 +85,9 @@ function pass(id, condition) {
   if (!condition) throw new Error(`AUTH_RESTORE_CHECK_FAILED_${id}`);
   report.checks.push({ id, result: 'PASS' });
 }
-function sign(secret, role, expiry = 3600) {
+function sign(secret, role, expiry = 3600, claims = {}) {
   const encode = value => Buffer.from(JSON.stringify(value)).toString('base64url');
-  const payload = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ role, iss: 'supabase', iat: Math.floor(Date.now()/1000), exp: Math.floor(Date.now()/1000)+expiry })}`;
+  const payload = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ ...claims, role, iss: 'supabase', iat: Math.floor(Date.now()/1000), exp: Math.floor(Date.now()/1000)+expiry })}`;
   return `${payload}.${createHmac('sha256', secret).update(payload).digest('base64url')}`;
 }
 async function waitReady(check) {
@@ -113,7 +117,7 @@ for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => {
   cleanup().then(() => { saveReport(); process.exit(130); });
 });
 try {
-  if (process.argv.length !== 3 || process.argv[2] !== '--isolated-copy') throw new Error('AUTH_RESTORE_EXPLICIT_MODE_REQUIRED');
+  if (!withStorage && (process.argv.length !== 3 || process.argv[2] !== '--isolated-copy')) throw new Error('AUTH_RESTORE_EXPLICIT_MODE_REQUIRED');
   sourceGuard();
   for (const name of Object.values(names)) if (docker(['inspect', name]).status === 0) throw new Error('AUTH_RESTORE_TARGET_ALREADY_EXISTS');
   for (const image of Object.values(images)) if (docker(['image', 'inspect', image]).status !== 0) throw new Error('AUTH_RESTORE_PINNED_IMAGE_MISSING');
@@ -212,6 +216,11 @@ try {
   pass('refresh_keeps_same_uuid', refresh.status === 200 && refresh.body.user?.id === id && !!refresh.body.access_token);
   pass('logout_succeeds', request('/logout', { method: 'POST', token: refresh.body.access_token }).status === 204);
   pass('logged_out_refresh_rejected', request('/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: refresh.body.refresh_token } }).status === 400);
+  if (withStorage) {
+    stage = 'storage-service';
+    report.storage = await probeStorageRestore({ sql, start, guard, docker, checked, names, secret, sign, waitReady, pass, foreignSubject: id });
+    report.storage_api_tested = true;
+  }
   report.service_ledger_counts_after_boot = sql('select count(*) from auth.schema_migrations; select count(*) from storage.migrations;');
   report.source_after = sql("BEGIN READ ONLY; SELECT jsonb_build_object('users',(select count(*) from auth.users),'identities',(select count(*) from auth.identities),'profiles',(select count(*) from public.profiles),'objects',(select count(*) from storage.objects),'auth_migrations',(select count(*) from auth.schema_migrations),'storage_migrations',(select count(*) from storage.migrations)); COMMIT;", true);
   pass('source_counts_unchanged', report.source_before === report.source_after);
@@ -222,6 +231,10 @@ try {
   if (target && owned.has('auth')) {
     const logs = docker(['logs', '--tail', '80', owned.get('auth')]);
     writeFileSync(resolve(target, 'auth-diagnostic.txt'), (logs.stdout ?? '') + (logs.stderr ?? ''), { mode: 0o600 });
+  }
+  if (target && owned.has('storage')) {
+    const logs = docker(['logs', '--tail', '80', owned.get('storage')]);
+    writeFileSync(resolve(target, 'storage-diagnostic.txt'), (logs.stdout ?? '') + (logs.stderr ?? ''), { mode: 0o600 });
   }
 } finally {
   await cleanup(); saveReport();
