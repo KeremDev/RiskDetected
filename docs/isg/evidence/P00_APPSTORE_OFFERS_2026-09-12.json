@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-09-12T17:51:17.384Z",
+  "mode": "read_only",
+  "app_id": "6769498181",
+  "command_template": "asc subscriptions offers KIND list --subscription-id ID --paginate",
+  "pagination": "All 16 successful JSON responses had data arrays and no remaining links.next",
+  "counts": [
+    { "subscription_id": "6769501024", "product": "riskdetected_plus_monthly", "introductory": 0, "promotional": 0, "win_back": 0, "offer_codes": 0 },
+    { "subscription_id": "6769501933", "product": "riskdetected_plus_yearly", "introductory": 175, "promotional": 0, "win_back": 0, "offer_codes": 0 },
+    { "subscription_id": "6769504185", "product": "riskdetected_pro_monthly", "introductory": 0, "promotional": 0, "win_back": 0, "offer_codes": 0 },
+    { "subscription_id": "6769504261", "product": "riskdetected_pro_yearly", "introductory": 0, "promotional": 0, "win_back": 0, "offer_codes": 0 }
+  ],
+  "plus_yearly_intro_attributes_identical_for_all_175_records": {
+    "startDate": "2026-05-30", "endDate": "2026-09-30", "duration": "ONE_WEEK",
+    "offerMode": "FREE_TRIAL", "numberOfPeriods": 1, "targetSubscriptionPlanType": "UPFRONT"
+  },
+  "plus_yearly_intro_source_url": "https://api.appstoreconnect.apple.com/v1/subscriptions/6769501933/introductoryOffers?limit=200",
+  "plus_yearly_intro_raw_response_sha256": "6550a18aab421e8047b94add87a932a7d7fb1c964c1ea14de4e4d0f167252673",
+  "limitations": [
+    "Read-only observation, not store configuration backup import or signed attestation.",
+    "No introductory territory relationship was independently resolved in this query; 175 is record count.",
+    "Existing subscriber price cohorts, device/account offer eligibility and billing renewal were not exercised.",
+    "Offer end date was not extended or edited."
+  ],
+  "release_ready": false
+}

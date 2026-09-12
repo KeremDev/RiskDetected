@@ -50,6 +50,21 @@ Diğer üç planın detayları da ayrı ayrı açılarak doğrulandı:
 
 Her dört plan etkin, otomatik yenilemeli, Türkiye ile sınırlı ve eski sürümlerle uyumlu görünüyor. Dördünde de plan/teklif değişimi sonraki fatura tarihinde ücretlendirilir; yeniden aboneliğe izin verilir; etiket alanı boş ve vergi hücresi %20. [Plus aylık](https://play.google.com/console/u/0/developers/8386568735420808034/app/4974055657729042996/subscriptions/s/riskdetected_plus_monthly/base-plans/b/monthly), [Pro aylık](https://play.google.com/console/u/0/developers/8386568735420808034/app/4974055657729042996/subscriptions/s/riskdetected_pro_monthly/base-plans/b/monthly), [Pro yıllık](https://play.google.com/console/u/0/developers/8386568735420808034/app/4974055657729042996/subscriptions/s/riskdetected_pro_yearly/base-plans/b/yearly). Mevcut abonenin korunan eski fiyatı bu tablodan çıkarılamaz. Grace ile account hold aynı erişim durumu değildir; sayısal toplam paid hak süresi olarak kullanılmaz.
 
+## App Store teklif türleri
+
+17:51 UTC'de `asc subscriptions offers {introductory,promotional,win-back,offer-codes} list --subscription-id ID --paginate` ile dört ürünün toplam 16 listesi okundu; tüm çağrılar başarılı, kalan `links.next` yok.
+
+| Ürün | Introductory kayıt | Promotional | Win-back | Offer-code tanımı |
+|---|---:|---:|---:|---:|
+| Plus aylık | 0 | 0 | 0 | 0 |
+| Plus yıllık | 175 | 0 | 0 | 0 |
+| Pro aylık | 0 | 0 | 0 | 0 |
+| Pro yıllık | 0 | 0 | 0 | 0 |
+
+Plus yıllık 175 kaydın bütün attributes alanları aynı: başlangıç `2026-05-30`, **bitiş `2026-09-30`**, `ONE_WEEK`, `FREE_TRIAL`, bir dönem, API'deki `targetSubscriptionPlanType=UPFRONT`. 175 sayısı API kayıt sayısıdır; territory ilişkileri bu sorguda ayrıca çözülmedi. [Salt okunur API kanıtı](evidence/P00_APPSTORE_OFFERS_2026-09-12.json).
+
+**Geçişe etkisi:** iOS deneme takvimi süresiz değil. 30 Eylül bitişi değiştirilmedi ve otomatik uzatma varsayılmadı. P14/P19 testleri bitiş öncesi, sınır tarihi, bitiş sonrası, mağaza hesabı uygun/ineligible/unknown ve eski ürün metadata cache'ini kapsamalı. Store gerçek fiyat/uygunluk verisi kaynak olmalı; yeni istemci sırf V5 veya fixture'da 7 gün yazdığı için deneme vaat etmemeli. Bir teklif süresini uzatmak ayrıca ticari/store yazma onayı gerektirir.
+
 ## Kod ile eşleme ve açık riskler
 
 `App/Services/RDConfig.swift` default offering `default`, entitlement `plus`/`pro` olarak sabit. `SubscriptionManager.swift:231` dolu configured offering bulunamazsa boş paket listesi üretir. Android `BillingRepository.kt:173` ise dolu configured offering bulunamazsa `offerings.current`'a düşer. Bu mevcut platform farkı, yeni hedefleme/QA offering'leri açılmadan önce P14 regresyonuna alınmalı; bu envanter turunda runtime davranışı değiştirilmedi.
@@ -62,7 +77,7 @@ Mevcut Keychain anahtarı ile RevenueCat v2 `GET /projects` 403 `authorization_e
 
 ## Kapanmayan kapılar
 
-- App Store intro/promotional/win-back tekliflerinin tam envanteri ve legacy fiyat kohortları.
+- App Store tekliflerin territory ilişkileri, eski fiyat kohortları ve hesaba özgü uygunluk. Dört teklif türünün listesi yukarıda doğrulandı.
 - Play gerçek eski fiyat kohortları ve mağaza checkout'unda hesaba özgü teklif uygunluğu.
 - Aynı monthly üründe yeni kampanya indirimi ve sonraki normal renewal'ın gerçek sandbox/lisans tester kanıtı; yeni teklif konfigürasyonu için ayrı onay.
 - RC tüm uygulama ayarları, webhook teslim politikası, QA offering detayları, restore transfer politikası ve SDK checkout kanıtı.

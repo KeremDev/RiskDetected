@@ -30,6 +30,7 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 | Canlı şirket helper'ı | Plus 5, Pro 25; bir stored Plus profile için effective limit 0 gözlendi. profiles.tier tek başına aktif paid hak kaynağı olamaz |
 | iOS mağaza kimliği | App 6769498181, bundle com.riskdetected.app, SKU riskdetected-ios doğrulandı |
 | iOS ürünler | riskdetected_plus_monthly/yearly ve riskdetected_pro_monthly/yearly APPROVED; mevcut ürünler korunuyor |
+| iOS teklif türleri | 16 paginated read PASS: yalnız Plus yıllık 175 intro kaydı, tümü 7 gün trial / 30 Eylül 2026 bitiş; dört üründe promotional/win-back/offer-code 0. Territory ilişkileri/hesap uygunluğu ayrı açık |
 | iOS TUR liste fiyatı | Plus aylık 249,99 / yıllık 2.499,99 TRY; Pro aylık 499,99 / yıllık 4.999,99 TRY. Kohort fiyatı ve teklif fiyatı kanıtı değil |
 | Play katalog | Aynı dört ürün etkin, monthly/yearly base plan, Türkiye fiyatları iOS liste fiyatlarıyla eşleşiyor; aylık grace7/hold53, yıllık grace14/hold46 gün. Hold paid erişim değildir |
 | Play mevcut teklif | Yalnız Plus yıllık trial-7d-v1: 7 gün, uygulamada daha önce hiçbir abonelik edinmemiş kullanıcı, etkin/Türkiye/backward-compatible |
@@ -84,7 +85,7 @@ Restore ve capture araçları offline foundation runner'a dahil değildir. Bunla
 
 1. Auth API login, Storage signed download ve iki mobil platformla restore E2E henüz yapılmadı.
 2. Kullanıcı ikinci kopya konumunu Masaüstü seçti ve kopya doğrulandı. Disk arızası için ayrı fiziksel konum ve anahtarın ayrı güvenli kurtarma kopyası hâlâ yok; bilinmeyen buluta veri gönderilmiyor.
-3. Play etkin base plan/tek mevcut teklif/Türkiye fiyatları ve RC üretim offering/entitlement eşlemesi doğrulandı. App Store teklif türleri, iki mağazada eski fiyat kohortları ve RC tüm dış servis ayarları hâlâ açık.
+3. Play etkin base plan/tek mevcut teklif/Türkiye fiyatları, App Store dört teklif türü ve RC üretim offering/entitlement eşlemesi doğrulandı. App Store territory ilişkileri, iki mağazada eski fiyat kohortları ve RC tüm dış servis ayarları hâlâ açık. iOS Plus yıllık deneme bitişi 30 Eylül 2026; değiştirilmedi.
 4. iOS/Android aynı-plan gerçek indirim ve izleyen normal renewal deneyi henüz yapılmadı; mağaza yazımı ayrıca onaylı.
 5. Tasarım, ticari aday parametreler ve resmi 2026 eğitim oracle'ı onay kapıları korunuyor.
 6. P01 transport/native fixture, dar function-test map ve transaction/outbox/lease prototipi hazır. Production mutation migration/gerçek Auth-session-capability, tam function inventory/release gate, gerçek native E2E ve tam iOS app CI henüz tamamlanmadı.
