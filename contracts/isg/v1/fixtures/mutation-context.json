@@ -1,0 +1,647 @@
+{
+  "schema_version": 1,
+  "description": "Synthetic shared transport fixtures; no user data, network or authorization assertions.",
+  "cases": [
+    {
+      "id": "ios_company_create",
+      "valid": true,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "android_company_update",
+      "valid": true,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "android",
+        "client_build": 14,
+        "expected_version": 2,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "company_with_workplace",
+      "valid": true,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333",
+          "workplace_id": "44444444-4444-7444-8444-444444444444"
+        }
+      }
+    },
+    {
+      "id": "personal_scope",
+      "valid": true,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "personal"
+        }
+      }
+    },
+    {
+      "id": "upper_bound_build_and_version",
+      "valid": true,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 2147483647,
+        "expected_version": 9007199254740991,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "invalid_schema_version_5",
+      "valid": false,
+      "input": {
+        "schema_version": 2,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "invalid_schema_version_6",
+      "valid": false,
+      "input": {
+        "schema_version": true,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "invalid_platform_7",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "web",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "invalid_platform_8",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "IOS",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "invalid_client_build_9",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 0,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "invalid_client_build_10",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 2147483648,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "invalid_client_build_11",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 1.1,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "invalid_client_build_12",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": "91",
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "invalid_client_build_13",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": true,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "invalid_expected_version_14",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": -1,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "invalid_expected_version_15",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 1.5,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "invalid_expected_version_16",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 9007199254740992,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "invalid_expected_version_17",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": "1",
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "invalid_operation_id_18",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "invalid",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "invalid_operation_id_19",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111\n",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "invalid_operation_id_20",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "aaaaaaaa-AAAA-4aaa-8aaa-aaaaaaaaaaaa",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "invalid_client_mutation_id_21",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": null,
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "missing_schema_version",
+      "valid": false,
+      "input": {
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "missing_operation_id",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "missing_client_mutation_id",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "missing_platform",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "missing_client_build",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "missing_expected_version",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "missing_scope",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0
+      }
+    },
+    {
+      "id": "unknown_owner_field",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        },
+        "user_id": "11111111-1111-4111-8111-111111111111"
+      }
+    },
+    {
+      "id": "unknown_role",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        },
+        "role": "admin"
+      }
+    },
+    {
+      "id": "unknown_secret_field",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        },
+        "password": "sentinel-do-not-log"
+      }
+    },
+    {
+      "id": "personal_company_link",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "personal",
+          "company_id": "33333333-3333-4333-8333-333333333333"
+        }
+      }
+    },
+    {
+      "id": "personal_entity_link",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "personal",
+          "entity_id": "11111111-1111-4111-8111-111111111111"
+        }
+      }
+    },
+    {
+      "id": "null_workplace",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "33333333-3333-4333-8333-333333333333",
+          "workplace_id": null
+        }
+      }
+    },
+    {
+      "id": "invalid_company",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company",
+          "company_id": "invalid"
+        }
+      }
+    },
+    {
+      "id": "missing_company",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "company"
+        }
+      }
+    },
+    {
+      "id": "scope_unknown_kind",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": {
+          "kind": "employee"
+        }
+      }
+    },
+    {
+      "id": "scope_null",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": null
+      }
+    },
+    {
+      "id": "scope_array",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "client_mutation_id": "22222222-2222-4222-8222-222222222222",
+        "platform": "ios",
+        "client_build": 91,
+        "expected_version": 0,
+        "scope": []
+      }
+    },
+    {
+      "id": "input_null",
+      "valid": false,
+      "input": null
+    },
+    {
+      "id": "input_array",
+      "valid": false,
+      "input": []
+    },
+    {
+      "id": "input_string",
+      "valid": false,
+      "input": "invalid"
+    }
+  ]
+}

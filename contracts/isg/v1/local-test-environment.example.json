@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "environment": "local",
+  "project_id": "isg_test_p01",
+  "supabase_url": "http://127.0.0.1:61321",
+  "database_host": "127.0.0.1",
+  "database_port": 61322,
+  "database_container": "isg_test_p01_db",
+  "outbound_mode": "disabled",
+  "data_class": "synthetic",
+  "store_mode": "mock",
+  "push_mode": "sink",
+  "email_mode": "sink",
+  "ai_mode": "mock"
+}

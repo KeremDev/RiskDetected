@@ -1,0 +1,17 @@
+#!/usr/bin/env node
+import { spawnSync } from 'node:child_process';
+import { ROOT } from './lib.mjs';
+
+// Deliberately no arbitrary command, shell, live target, env fallback or cleanup.
+const suites = {
+  foundation: ['--test', 'scripts/isg/foundation.test.mjs', 'scripts/isg/function_map.test.mjs', 'scripts/isg/ios_contract_inventory.test.mjs', 'scripts/isg/backup_crypto.test.mjs', 'scripts/client_flow_contract_test.mjs'],
+};
+const [suite, ...extra] = process.argv.slice(2);
+if (!Object.hasOwn(suites, suite) || extra.length) {
+  console.error('Usage: node scripts/isg/run_suite.mjs foundation; only offline foundation is enabled.');
+  process.exitCode = 1;
+} else {
+  const result = spawnSync(process.execPath, suites[suite], { cwd: ROOT, stdio: 'inherit', shell: false, timeout: 120_000,
+    env: { PATH: process.env.PATH ?? '', TZ: 'Europe/Istanbul', LANG: 'C.UTF-8' } });
+  process.exitCode = result.status ?? 1;
+}

@@ -1,0 +1,124 @@
+name: isg-foundation
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/isg/**'
+      - 'tests/isg/**'
+      - 'contracts/isg/**'
+      - 'docs/isg/**'
+      - 'App/Services/RDConfig.swift'
+      - 'App/Services/ClientFlowEvents.swift'
+      - 'App/Services/ISG/**'
+      - 'supabase/functions/_shared/isg/**'
+      - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/**'
+      - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/isg/**'
+      - 'RiskDetected.xcodeproj/project.pbxproj'
+      - 'RiskDetected.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved'
+      - 'android/app/build.gradle.kts'
+      - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/telemetry/ClientFlowEvents.kt'
+      - 'scripts/client_flow_contract_test.mjs'
+      - '.github/workflows/isg-foundation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/isg/**'
+      - 'tests/isg/**'
+      - 'contracts/isg/**'
+      - 'docs/isg/**'
+      - 'App/Services/RDConfig.swift'
+      - 'App/Services/ClientFlowEvents.swift'
+      - 'App/Services/ISG/**'
+      - 'supabase/functions/_shared/isg/**'
+      - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/**'
+      - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/isg/**'
+      - 'RiskDetected.xcodeproj/project.pbxproj'
+      - 'android/app/build.gradle.kts'
+      - 'RiskDetected.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved'
+      - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/telemetry/ClientFlowEvents.kt'
+      - 'scripts/client_flow_contract_test.mjs'
+      - '.github/workflows/isg-foundation.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: isg-foundation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-foundation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      # No Supabase secrets, production backups, network tests, installs or deploys.
+      - name: Verify immutable identity and source contract
+        run: node scripts/isg/verify_identity.mjs
+      - name: Verify acceptance inventory (not acceptance execution)
+        run: node scripts/isg/build_test_manifest.mjs
+      - name: Verify new transport function-test bindings
+        run: node scripts/isg/verify_function_map.mjs
+      - name: Run offline foundation and legacy regression
+        run: node scripts/isg/run_suite.mjs foundation
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.7.14
+      - name: Deno shared mutation fixtures (no network or env permissions)
+        run: deno test --allow-read=contracts/isg/v1/fixtures supabase/functions/_shared/isg/mutation-context_test.ts
+
+  swift-transport-fixtures:
+    runs-on: macos-15
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      # Pure Foundation type only: no signing, app launch, SDK resolution or secrets.
+      - name: Compile transport model and fixture harness
+        run: swiftc App/Services/ISG/IsgMutationContext.swift scripts/isg/MutationContextCheck.swift -o "$RUNNER_TEMP/isg-context-check"
+      - name: Verify the same corpus as Kotlin and Deno
+        run: '"$RUNNER_TEMP/isg-context-check" contracts/isg/v1/fixtures/mutation-context.json'
+      - name: Run hostless iOS XCTest on an available CI iPhone
+        shell: bash
+        run: |
+          ISG_CI_SIMULATOR_ID="$(xcrun simctl list devices available -j | node -e '
+            const fs = require("node:fs");
+            const inventory = JSON.parse(fs.readFileSync(0, "utf8"));
+            const runtime = Object.keys(inventory.devices).filter(k => /\.iOS-/.test(k)).sort((a,b) => b.localeCompare(a,"en",{numeric:true}));
+            const phone = runtime.flatMap(k => inventory.devices[k]).find(d => d.isAvailable && /^iPhone /.test(d.name) && /^[A-F0-9-]{36}$/i.test(d.udid));
+            if (!phone) process.exit(1);
+            console.log(phone.udid);
+          ')"
+          xcodebuild test -project tests/isg/ios/ISGContractTests.xcodeproj -scheme ISGContractTests \
+            -destination "platform=iOS Simulator,id=$ISG_CI_SIMULATOR_ID" -parallel-testing-enabled NO \
+            -derivedDataPath "$RUNNER_TEMP/isg-native-derived" -resultBundlePath "$RUNNER_TEMP/isg-native.xcresult" \
+            -disableAutomaticPackageResolution CODE_SIGNING_ALLOWED=NO
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: isg-ios-native-contract-results
+          path: ${{ runner.temp }}/isg-native.xcresult
+          if-no-files-found: warn
+
+  postgres-transaction-prototype:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      # Image download is the only network preparation. Test container has no
+      # network, ports, mounts, real data or credentials. It is not a local reset.
+      - name: Fetch immutable database test image
+        run: docker pull public.ecr.aws/supabase/postgres@sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b
+      - name: Transaction, retry, fault injection and lease tests
+        run: node scripts/isg/run_database_contract.mjs contracts/isg/v1/local-test-environment.example.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: isg-synthetic-db-evidence
+          path: output/isg/runs/*/database-contract.json
+          if-no-files-found: warn

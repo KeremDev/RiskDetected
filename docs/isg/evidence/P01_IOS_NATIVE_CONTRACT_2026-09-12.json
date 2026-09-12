@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "result": "PASS",
+  "passed": 43,
+  "failed": 0,
+  "skipped": 0,
+  "duration_ms": 10792,
+  "tool": "XcodeBuildMCP test_sim",
+  "started_at": "2026-09-12T17:18:28.207Z",
+  "project": "tests/isg/ios/ISGContractTests.xcodeproj",
+  "scheme": "ISGContractTests",
+  "simulator": "iPhone 17 Pro / iOS 26.5",
+  "source_sha256": "ac0662fd95a825bc99d9cc8f6ea9cfce9b2389306e75f8a077fbb71128096fb6",
+  "fixture_sha256": "2011ebed4763fa015b3096d4fd147efdba4366d4c7d7bfbcd3d3edd38b6be00f",
+  "hostless": true,
+  "main_app_launched": false,
+  "supabase_or_store_tested": false,
+  "release_ready": false,
+  "xcresult": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-12T17-18-28-208Z_pid70458_218a5817.xcresult"
+}
