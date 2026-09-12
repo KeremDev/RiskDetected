@@ -28,7 +28,7 @@ Referanstaki beyaz/yeşil buton yazısı yaklaşık **2.01:1**, yeni koyu `#1111
 
 SwiftUI metin leading'i RN `lineHeight` ile tam aynı değildir; fontlar ölçeklenir, tracking/lineSpacing uygulanır ama referans metriklerin görsel eşitliği açık. Pill uzun metinde sarabilir. İkon seti henüz aktarılmadı; iOS galeride SF Symbol, Android galeride metin kullanıyor. Kart gölgesi platforma özgü; iOS yalnız yüzeye uygulanır. Primary gölge, press/ripple, tüm animasyonlar ve loader şekli henüz tam eşlenmedi. Bunlar tasarım değişikliği tamamlandı diye sunulmaz.
 
-Tab bar/drawer, popup/sheet, form/input, arama, liste, şirket çalışma alanı, uygunsuzluk ve diğer domain ekranları sonraki dilimlerdir. Shell'e bağlama, gerçek state/effect coordinator, kamera/klavye, VoiceOver/TalkBack, cihaz/emülatör üzerinde tüm eylemler ve kaynak OSGB ile aynı veri üzerinden screenshot-golden karşılaştırması **açık**. Kayıt envanterindeki263 domain kabul senaryosu bu görsel altyapı testleriyle tamamlanmış sayılmaz.
+Tab bar/drawer ve hızlı işlem panelinin ilk bağımsız native dilimi daha sonra [uzman shell kaydında](P18_EXPERT_NATIVE_SHELL.md) eklendi. Form/input, arama, liste, şirket çalışma alanı, uygunsuzluk ve diğer domain ekranları açık. Canlı root'a bağlama, gerçek state/effect coordinator, kamera/klavye, VoiceOver/TalkBack, cihaz/emülatör üzerinde tüm eylemler ve kaynak OSGB ile aynı veri üzerinden screenshot-golden karşılaştırması **açık**. Kayıt envanterindeki263 domain kabul senaryosu bu görsel altyapı testleriyle tamamlanmış sayılmaz.
 
 ## Test kapsamı
 

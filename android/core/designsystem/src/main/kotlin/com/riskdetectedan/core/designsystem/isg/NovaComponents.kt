@@ -36,7 +36,7 @@ private val LocalNovaDark = staticCompositionLocalOf { false }
 fun NovaRGBA.color() = Color(red / 255f, green / 255f, blue / 255f, alpha.toFloat())
 
 @Composable
-private fun NovaColorToken.color() = rgba(LocalNovaDark.current).color()
+internal fun NovaColorToken.color() = rgba(LocalNovaDark.current).color()
 
 fun NovaTypeToken.textStyle(): TextStyle = spec.let {
     TextStyle(fontFamily = NovaFontFamily, fontWeight = FontWeight(it.weight),

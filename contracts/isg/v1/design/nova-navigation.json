@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "scope": "Expert shell presentation only; not backend authorization",
+  "tabs": [
+    {
+      "id": "home",
+      "title": "Ana Sayfa"
+    },
+    {
+      "id": "findings",
+      "title": "Uygunsuzluk"
+    },
+    {
+      "id": "companies",
+      "title": "Firmalar"
+    },
+    {
+      "id": "profile",
+      "title": "Profil"
+    }
+  ],
+  "destinations": [
+    {
+      "id": "home",
+      "title": "Ana Sayfa",
+      "tab": "home",
+      "iosSymbol": "house",
+      "androidIcon": "Home"
+    },
+    {
+      "id": "newFinding",
+      "title": "Yeni Uygunsuzluk",
+      "tab": "findings",
+      "iosSymbol": "camera",
+      "androidIcon": "PhotoCamera"
+    },
+    {
+      "id": "findings",
+      "title": "Uygunsuzluklar",
+      "tab": "findings",
+      "iosSymbol": "list.bullet",
+      "androidIcon": "List"
+    },
+    {
+      "id": "companies",
+      "title": "Firmalar",
+      "tab": "companies",
+      "iosSymbol": "building.2",
+      "androidIcon": "Business"
+    },
+    {
+      "id": "memory",
+      "title": "İşletme Hafızası",
+      "tab": "home",
+      "iosSymbol": "clock.arrow.circlepath",
+      "androidIcon": "History"
+    },
+    {
+      "id": "documentChecklist",
+      "title": "Evrak Takibi",
+      "tab": "home",
+      "iosSymbol": "doc.text",
+      "androidIcon": "Description"
+    },
+    {
+      "id": "documents",
+      "title": "Diğer Dosyalar",
+      "tab": "home",
+      "iosSymbol": "folder",
+      "androidIcon": "Folder"
+    },
+    {
+      "id": "visits",
+      "title": "Ziyaretler",
+      "tab": "home",
+      "iosSymbol": "mappin.and.ellipse",
+      "androidIcon": "Place"
+    },
+    {
+      "id": "statistics",
+      "title": "İstatistikler",
+      "tab": "home",
+      "iosSymbol": "chart.bar",
+      "androidIcon": "BarChart"
+    },
+    {
+      "id": "training",
+      "title": "Eğitim ve Takip",
+      "tab": "home",
+      "iosSymbol": "graduationcap",
+      "androidIcon": "School"
+    },
+    {
+      "id": "reports",
+      "title": "Rapor Oluştur",
+      "tab": "home",
+      "iosSymbol": "chart.doc",
+      "androidIcon": "Assessment"
+    },
+    {
+      "id": "reportArchive",
+      "title": "Rapor Arşivi",
+      "tab": "home",
+      "iosSymbol": "archivebox",
+      "androidIcon": "Inventory2"
+    },
+    {
+      "id": "notifications",
+      "title": "Bildirim Merkezi",
+      "tab": "home",
+      "iosSymbol": "bell",
+      "androidIcon": "Notifications"
+    },
+    {
+      "id": "profile",
+      "title": "Profil",
+      "tab": "profile",
+      "iosSymbol": "person",
+      "androidIcon": "Person"
+    },
+    {
+      "id": "newDocument",
+      "title": "Dosya Ekle",
+      "tab": "home",
+      "iosSymbol": "doc.badge.plus",
+      "androidIcon": "NoteAdd"
+    },
+    {
+      "id": "newVisit",
+      "title": "Ziyaret Ekle",
+      "tab": "home",
+      "iosSymbol": "calendar.badge.plus",
+      "androidIcon": "Event"
+    },
+    {
+      "id": "newTraining",
+      "title": "Eğitim Ekle",
+      "tab": "home",
+      "iosSymbol": "graduationcap",
+      "androidIcon": "School"
+    }
+  ],
+  "drawer": [
+    "home",
+    "newFinding",
+    "findings",
+    "companies",
+    "memory",
+    "documentChecklist",
+    "documents",
+    "visits",
+    "statistics",
+    "training",
+    "reports",
+    "reportArchive",
+    "notifications"
+  ],
+  "quickAdd": [
+    "newFinding",
+    "newDocument",
+    "newVisit",
+    "newTraining"
+  ],
+  "reference": "OSGBTakip/apps/mobile/src/components/MobileShell.tsx"
+}

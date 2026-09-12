@@ -4,6 +4,8 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 
 ## Güncel durum
 
+- P18 uzman shell dilimi:4 sekme+ortada Ekle,13 drawer/4 hızlı hedef,17 hedef kimliği; sekme bazlı geçmiş, tek panel, epoch reset ve availability gate iOS+Android'de hazır. Swift/Kotlin ortak75 senaryo/185 geçiş; Android design system209/209, iOS hostless18/18. Gerçek domain/root entegrasyonu ve iOS pencere/scroll E2E açık. [Kapsam ve akış](P18_EXPERT_NATIVE_SHELL.md).
+
 - P18 native tasarım ilk dilimi:40×2 renk,17 tipografi,26 ölçü,5 font ağırlığı ve metin/kart/rozet/buton iOS+Android'e eklendi. Kaynak üretim/font testi8, Swift128, Android123token+3Compose testi;12 iOS ortak içerik render senaryosu. Ana ekranlara bağlı değil; boş görüntüyü geçiren ilk render turu kanıt dışı. [Kapsam ve açık farklar](P18_NATIVE_DESIGN_FOUNDATION.md).
 
 - P00 devam ediyor: kaynak/kimlik/yedek kontrolleri, veritabanı restore'u ve kullanıcının seçtiği Masaüstü'ne şifreli ikinci kopya tamamlandı; tam servis/mobil restore ve mağaza envanterinin kalan kısmı açık. Masaüstü aynı disk; off-device koruma değil.
@@ -13,7 +15,7 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 - P14 ilk regresyon düzeltmesi uygulandı: Android explicit offering bulunamadığında current'a fallback yapmıyor; iOS davranışıyla eşleşiyor. Yerel kod değişikliği, mağaza yayını değil.
 - Production'da yalnız read-only envanter ve Auth/Storage şema yedeği alındı. DB/store/paid policy/notification değişikliği yapılmadı.
 - Mevcut app bundle/paket, callback ve entitlement'ları değişmedi. UI ve kullanıcı tasarımı değiştirilmedi.
-- P18 tasarım yönü kullanıcı tarafından belirlendi: OSGBTakip iOS uzman NOVA paneli.113 kaynak hash'i,12 token grubu ve UI kaynak arşivi alındı; eski kaynak değiştirilmedi. Native taşıma/görsel kabul henüz yapılmadı. [Tasarım aktarım kaydı](P18_OSGB_EXPERT_DESIGN_REFERENCE.md).
+- P18 tasarım yönü kullanıcı tarafından belirlendi: OSGBTakip iOS uzman NOVA paneli.113 kaynak hash'i,12 token grubu ve UI kaynak arşivi alındı; eski kaynak değiştirilmedi. İlk native primitive ve shell dilimleri yapıldı; tam taşıma/görsel kabul açık. [Tasarım aktarım kaydı](P18_OSGB_EXPERT_DESIGN_REFERENCE.md).
 - P01 yeni outcome/error/state sözleşmesi üç platformda hazır:221 yanıt+84 geçiş; Deno306,Swift305,Kotlin305 yeni kontrol PASS. Android bütün core:data456/456 ve Debug APK PASS; foundation111/111. Fixture değişiminde testin atlanmasını önlemek için Gradle input takibi eklendi. Eski API/UI bağlı değil; native instrumentation kapsamı ayrı açık.
 - Geliştirme dalı `codex/isg-transition-foundation`. Eski `riskdetected-change-point-20260912` etiketi `dbcc979d` üzerinde korunuyor. V5 plan/registry `0fd78e17`, P00 backup/restore araçları ve kanıtları `0d8b9bce`, P01 ilk test/contract dilimi `2fd6b9ef`, P03 shadow `8252f408` commit'lerinde. Henüz push veya deploy yapılmadı.
 

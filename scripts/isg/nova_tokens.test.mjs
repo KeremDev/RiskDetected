@@ -69,3 +69,33 @@ test('native iOS design harness is hostless, service-free and rejects blank rend
   assert.match(harness, /XCTAssertGreaterThan\(distinct.count, 12/);
   assert.match(harness, /CTFontManagerRegisterFontsForURL/);
 });
+test('expert navigation corpus covers every destination across availability and session freshness', () => {
+  const catalog = JSON.parse(read('contracts/isg/v1/design/nova-navigation.json'));
+  const fixtures = JSON.parse(read('contracts/isg/v1/fixtures/nova-navigation.json')).cases;
+  const ids = fixtures.map(c => c.id);
+  assert.equal(new Set(ids).size, ids.length);
+  assert.deepEqual(catalog.tabs.map(t => t.id), ['home', 'findings', 'companies', 'profile']);
+  assert.equal(catalog.drawer.length, 13);
+  assert.equal(catalog.quickAdd.length, 4);
+  assert.equal(catalog.destinations.length, 17);
+  for (const d of catalog.destinations) for (const availability of ['enabled', 'locked']) for (const epoch of ['fresh', 'stale']) {
+    assert.ok(ids.includes(`route-${d.id}-${availability}-${epoch}`));
+  }
+  for (const c of fixtures) for (const step of c.steps) {
+    assert.deepEqual(Object.keys(step.expected.paths), catalog.tabs.map(t => t.id));
+    assert.ok(!['quickAdd', 'drawer'].includes(step.expected.selected));
+  }
+  assert.match(read('android/core/designsystem/build.gradle.kts').toString(), /inputs\.file\(rootProject\.layout\.projectDirectory\.file\("\.\.\/contracts\/isg\/v1\/fixtures\/nova-navigation.json"\)\)/);
+  assert.match(read('.github/workflows/isg-foundation.yml').toString(), /NovaNavigationCheck.swift/);
+});
+test('native shell has no live service dependency and remains outside legacy roots', () => {
+  for (const path of ['App/DesignSystem/ISG/NovaExpertShell.swift', 'android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaExpertShell.kt']) {
+    const source = read(path).toString();
+    assert.doesNotMatch(source, /import (Supabase|RevenueCat)|URLSession|OkHttpClient|SupabaseClient|Purchases\.shared/);
+    assert.match(source, /nova\.panel\.close/);
+  }
+  assert.doesNotMatch(read('App/Views/Home/MainTabView.swift').toString(), /NovaExpertShell/);
+  const project = read('tests/isg/design-ios/ISGDesignTests.xcodeproj/project.pbxproj').toString();
+  assert.match(project, /NovaNavigation.swift/);
+  assert.match(project, /NovaShellTests.swift/);
+});

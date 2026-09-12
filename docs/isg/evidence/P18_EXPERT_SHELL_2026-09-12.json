@@ -1,0 +1,229 @@
+{
+  "captured_at": "2026-09-12T20:42:26.878Z",
+  "sources": [
+    {
+      "path": "App/DesignSystem/ISG/NovaNavigation.swift",
+      "sha256": "4528e75b03ffdf289eb050095ddc8e71eb929a5c7cb405a014bb4292aed007dc"
+    },
+    {
+      "path": "App/DesignSystem/ISG/NovaExpertShell.swift",
+      "sha256": "bd5cf6c4feee3ad370e04fe29fb76c37a8f310f60074a0c3a8b2e7168fd03f2a"
+    },
+    {
+      "path": "android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaNavigation.kt",
+      "sha256": "63f9540adad415836fcdf3860dfc0536653c9f93b4b93b47f73fe403e38b21e3"
+    },
+    {
+      "path": "android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaExpertShell.kt",
+      "sha256": "96d5dec754abf884b1a418e4c11ff8472209cad42c7d51c66111489e24e30381"
+    },
+    {
+      "path": "android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaComponents.kt",
+      "sha256": "33d8351aa8f85ad7df861dc51f4a00193219f98b2b0eedb08e7b0f04a38b5f8c"
+    },
+    {
+      "path": "android/core/designsystem/src/test/kotlin/com/riskdetectedan/core/designsystem/isg/NovaNavigationTest.kt",
+      "sha256": "e2a75548942057690da655e01eff9c0acd110bb7da0cd55ba5f6f92b1ae45ebf"
+    },
+    {
+      "path": "android/core/designsystem/src/test/kotlin/com/riskdetectedan/core/designsystem/isg/NovaShellTest.kt",
+      "sha256": "d8984a99ee809fba6ad8d884c7e7266151dc4040498479f1adfe51db3d81b38d"
+    },
+    {
+      "path": "scripts/isg/NovaNavigationCheck.swift",
+      "sha256": "4c3faa07169d9df194274b3e053fe58bc29eccd4d15da3af81c04b660c64b935"
+    },
+    {
+      "path": "scripts/isg/nova_tokens.test.mjs",
+      "sha256": "9be9d8897652912694e79d7b7545ee38d19a8646cda25cb54914fd6d586c5c22"
+    },
+    {
+      "path": "contracts/isg/v1/design/nova-navigation.json",
+      "sha256": "dc9e2f28eae9ba7aa91f0528f03248dee6b078cc5c068e5e07824f5a0c83827e"
+    },
+    {
+      "path": "contracts/isg/v1/fixtures/nova-navigation.json",
+      "sha256": "50a73ea58d5d6b2ea9ea580dcb8a81a6595ee15a20fe88dd6300fa4fc170f932"
+    },
+    {
+      "path": "tests/isg/design-ios/NovaShellTests.swift",
+      "sha256": "7fa96e0d77972381d75ac2e179febf831569680b81d04c27829eee99592e2813"
+    },
+    {
+      "path": "tests/isg/design-ios/ISGDesignTests.xcodeproj/project.pbxproj",
+      "sha256": "cc90a0c8bbacf45e9e51f26e5b8458ba34f36e1a3dd549dbf7813b2e0073882e"
+    },
+    {
+      "path": "android/core/designsystem/build.gradle.kts",
+      "sha256": "56da7eb57d5c1b6ec037cedadca44b3cc4d3d5c58a6f641d8749f26519cdf9ac"
+    },
+    {
+      "path": ".github/workflows/isg-foundation.yml",
+      "sha256": "14565a3b8869811819538a3beca57cd18d7c7225b085addb4da21418f1224c94"
+    }
+  ],
+  "android_reports": [
+    {
+      "path": "android/core/designsystem/build/test-results/testDebugUnitTest/TEST-com.riskdetectedan.core.designsystem.isg.NovaComponentTest.xml",
+      "sha256": "9312ffd37e14cdecf9b7abf0a829fdfed1a150357fd76c45e68e0707b44fb55a",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-09-12T20:38:26.539Z"
+    },
+    {
+      "path": "android/core/designsystem/build/test-results/testDebugUnitTest/TEST-com.riskdetectedan.core.designsystem.isg.NovaNavigationTest.xml",
+      "sha256": "86e7daacc77b21970f50c00e756553eca5489737d4a17eccd51715c7fd6b26d4",
+      "tests": 75,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-09-12T20:38:30.537Z"
+    },
+    {
+      "path": "android/core/designsystem/build/test-results/testDebugUnitTest/TEST-com.riskdetectedan.core.designsystem.isg.NovaShellTest.xml",
+      "sha256": "722e551374620ec32231de4e795779f0797953fabb67ca39fbc59307f161f677",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-09-12T20:38:30.548Z"
+    },
+    {
+      "path": "android/core/designsystem/build/test-results/testDebugUnitTest/TEST-com.riskdetectedan.core.designsystem.isg.NovaTokenTest.xml",
+      "sha256": "5e4fd3df43b53ae840d35d7dc1902254aefa1c3e81c7efec7d7be94d3b20edaf",
+      "tests": 123,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "timestamp": "2026-09-12T20:38:31.821Z"
+    }
+  ],
+  "renders": [
+    {
+      "path": "output/isg/nova-shell-final-20260912/694A5412-4DDA-49FA-A4B2-B77E921B3A58.png",
+      "sha256": "557eaf98b11ff7baa75af15f37663a68828afd0fce19a2fcc062fcb2d4a4ea21",
+      "label": "nova-shell-profile-dark-normal_0_B55E9721-79F8-4B00-BC02-57152319031D.png"
+    },
+    {
+      "path": "output/isg/nova-shell-final-20260912/AF3A428F-AAB4-4DB2-A989-BCAD0AE3920D.png",
+      "sha256": "1fb999bde853ff61e9fbaf71fb7c44d2c95f3385705a34e5a396a19e1180946a",
+      "label": "nova-shell-companies-dark-normal_0_E0448D4C-95AA-4905-B19D-6771F4D94AF7.png"
+    },
+    {
+      "path": "output/isg/nova-shell-final-20260912/E4228FEE-1E51-425C-9767-C62A84AD0975.png",
+      "sha256": "c4b3b00b604709608301d36b4c6a7b5e3be1d0aea954ba1c3eb4f8136fb2366a",
+      "label": "nova-shell-findings-dark-normal_0_ADAB0B3B-73E8-4334-A934-F2DB978ED476.png"
+    },
+    {
+      "path": "output/isg/nova-shell-final-20260912/DF464AA0-2B6F-4767-B082-2F2B7FA6766E.png",
+      "sha256": "f108a24a5add39672353bed5036ff24ff96f71af6603dd7cd3e80a9a3e9731ef",
+      "label": "nova-shell-home-dark-normal_0_AA1675C1-D526-4141-AB3F-1EE4F6B0FAE2.png"
+    },
+    {
+      "path": "output/isg/nova-shell-final-20260912/D4EE2AEA-A74E-44C1-BEAF-81AAC2F9E9FE.png",
+      "sha256": "a57d930041e2557134aa11b8918f46be98483241ffcb4f0ee960160870933f81",
+      "label": "nova-shell-profile-light-normal_0_22CBBE65-28AF-4B3F-AABA-329860C581FC.png"
+    },
+    {
+      "path": "output/isg/nova-shell-final-20260912/15A368C7-B81C-4D96-9CE0-4ADEBD5EA475.png",
+      "sha256": "e0da5f33ccf5644c2dd4ffecda89e4a2512f2eed6324f590dd6c5d02d69a1549",
+      "label": "nova-shell-companies-light-normal_0_5F5F0E0B-8534-4D8E-AEF2-DE0C9512F969.png"
+    },
+    {
+      "path": "output/isg/nova-shell-final-20260912/9E59AA70-6223-4E83-AF9F-E65632005FCF.png",
+      "sha256": "366a86cb2d809419d065638e2e4e5b6ed9f2385e39278a6aa38e262ef6866a68",
+      "label": "nova-shell-findings-light-normal_0_6D807D36-72D0-44E0-88AF-50D4B9794198.png"
+    },
+    {
+      "path": "output/isg/nova-shell-final-20260912/9547CDAA-2B50-4A9C-AC46-FE3C9F933E8A.png",
+      "sha256": "c06a175ca8762d55a4ed7ace4a66ea7cb2e4413070c9b86c25a3db8e14a72f08",
+      "label": "nova-shell-home-light-normal_0_44A03EA7-36A6-4094-AAA7-3D86CECC79BF.png"
+    },
+    {
+      "path": "output/isg/nova-shell-final-20260912/67B52BDC-7846-499E-99A9-2D8F1E72D193.png",
+      "sha256": "99b22143df0f4b0c1278337a469c066962eba03fcb1c366099b1002ed8708d0d",
+      "label": "nova-shell-home-dark-ax3_0_925A6E13-6B8C-4869-B068-3309FE211258.png"
+    },
+    {
+      "path": "output/isg/nova-shell-final-20260912/DE94E9F4-5F1F-4EAF-A206-7A79F1E3CFE9.png",
+      "sha256": "a86d3428a83c1cd0155800103cc6f27db6f938b18e993d6e05c5b6214841c365",
+      "label": "nova-shell-home-light-ax3_0_C605D7FA-9FA0-41C2-8EE8-A1915155FED0.png"
+    }
+  ],
+  "schema_version": 1,
+  "scope": "P18 expert native shell presentation only",
+  "base_commit": "d8be46ed7756ff0c4479d62fd38abd4cf4476a31",
+  "shared_navigation": {
+    "status": "PASS",
+    "swift_scenarios": 75,
+    "kotlin_scenarios": 75,
+    "steps_per_platform": 185,
+    "catalog_destinations": 17,
+    "drawer_entries": 13,
+    "quick_add_entries": 4
+  },
+  "node_design": {
+    "passed": 10,
+    "failed": 0
+  },
+  "foundation": {
+    "passed": 111,
+    "failed": 0
+  },
+  "ios": {
+    "passed": 18,
+    "failed": 0,
+    "skipped": 0,
+    "new_state_tests": 4,
+    "new_render_test_groups": 2,
+    "render_images": 10,
+    "prior_gallery_tests": 12,
+    "simulator_id": "4A71277B-053D-49CF-8414-57840D9B010A",
+    "runtime": "iOS 26.5",
+    "result_bundle": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-12T20-37-46-332Z_pid70458_15b7e6eb.xcresult",
+    "main_build": "PASS; Debug no signing, compile only",
+    "main_build_log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-09-12T20-38-46-027Z_pid70458_f51116d7.log",
+    "limitation": "Hostless pure content render and four state tests, not hosted TabView/NavigationStack/modal/scroll. AX3 strip capture intentionally shows leading content only."
+  },
+  "android": {
+    "total_tests": 209,
+    "failed": 0,
+    "shell_ui_tests": 8,
+    "menu_routing_variations": 34,
+    "framework": "Robolectric SDK33 host JVM / Compose",
+    "main_debug_apk_build": "PASS",
+    "lint": "PASS",
+    "device_test": "NOT_RUN"
+  },
+  "preserved": {
+    "ios_bundle": "com.riskdetected.app",
+    "android_package": "com.riskdetectedan.app",
+    "auth_callback": "io.supabase.riskdetected://login-callback",
+    "legacy_roots_unchanged": true,
+    "backend_writes": false,
+    "store_writes": false,
+    "deploy": false
+  },
+  "open": [
+    "Hosted iOS UI and Android emulator interaction",
+    "Production Auth/session/capability/domain coordinator integration",
+    "Typed entity route payloads and secure deeplinks",
+    "Source icon/blur/motion parity and user visual acceptance",
+    "TR/EN and screen-reader focus audit",
+    "P18 completion and 263 domain acceptances",
+    "Remote CI NOT_RUN"
+  ],
+  "discarded_or_superseded": [
+    "First new iOS harness compile failed because a read-only accessibility environment value was set; override removed, no system setting changed.",
+    "First passing 10 header/tab images exposed cramped normal and AX3 text; superseded by final bundle after adaptive layout fix."
+  ],
+  "lint_report": {
+    "path": "android/core/designsystem/build/reports/lint-results-debug.sarif",
+    "sha256": "ecfdfe71acb561193c50a76b3a45d3a5bdfe69be3932eba60b7ca0c37a3141be",
+    "total_findings": 70,
+    "nova_findings": 0,
+    "note": "Findings outside NOVA source; successful task is not zero-warning claim."
+  }
+}

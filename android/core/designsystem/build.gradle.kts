@@ -43,11 +43,14 @@ dependencies {
     testImplementation(libs.androidx.junit)
     testImplementation(libs.androidx.espresso.core)
     debugImplementation(libs.compose.ui.test.manifest)
-    debugImplementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.activity.compose)
 }
 
 tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
     inputs.dir(rootProject.layout.projectDirectory.dir("../contracts/isg/v1/design"))
         .withPropertyName("isgNovaDesignCorpus")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file(rootProject.layout.projectDirectory.file("../contracts/isg/v1/fixtures/nova-navigation.json"))
+        .withPropertyName("isgNovaNavigationCorpus")
         .withPathSensitivity(PathSensitivity.RELATIVE)
 }

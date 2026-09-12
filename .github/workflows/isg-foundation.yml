@@ -114,6 +114,10 @@ jobs:
         run: |
           swiftc App/DesignSystem/ISG/NovaTokens.swift scripts/isg/NovaTokenCheck.swift -o "$RUNNER_TEMP/isg-nova-check"
           "$RUNNER_TEMP/isg-nova-check" contracts/isg/v1/design/nova-native-values.json App/Resources/Fonts
+      - name: Verify shared expert shell navigation corpus
+        run: |
+          swiftc App/DesignSystem/ISG/NovaNavigation.swift scripts/isg/NovaNavigationCheck.swift -o "$RUNNER_TEMP/isg-nova-navigation-check"
+          "$RUNNER_TEMP/isg-nova-navigation-check" contracts/isg/v1
       - name: Run hostless iOS XCTest on an available CI iPhone
         shell: bash
         run: |
