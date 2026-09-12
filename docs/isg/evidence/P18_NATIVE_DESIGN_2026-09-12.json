@@ -1,0 +1,201 @@
+{
+  "capture_started_at": "2026-09-12T19:52:46.537Z",
+  "completed_at_utc": "2026-09-12 19:56:22 UTC",
+  "bindings": [
+    {
+      "path": "App/DesignSystem/ISG/NovaTokens.swift",
+      "sha256": "e4752dff3331a8995fd21a3f68843c980de0981d0573d173dcc739915a8626cb"
+    },
+    {
+      "path": "App/DesignSystem/ISG/NovaComponents.swift",
+      "sha256": "a5b8a76600511a305c0a7bd37ae949b8b12982930e419dd38a1466c28e628303"
+    },
+    {
+      "path": "android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaTokens.kt",
+      "sha256": "93679dce67f3a7da426493129a98efc48a6077db212adbf78f8184e4a18248d9"
+    },
+    {
+      "path": "android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaComponents.kt",
+      "sha256": "1b3c4e94ba15f65491d329005f2d9384de8ecc319b909c6c4a4d944e52e5a1bf"
+    },
+    {
+      "path": "scripts/isg/nova_tokens.mjs",
+      "sha256": "7c4574bbb7a273e15b028ba02d4d84ca3bdd8241589a20daefb54e6ab3a0ae1d"
+    },
+    {
+      "path": "scripts/isg/nova_tokens.test.mjs",
+      "sha256": "7fa22d910fb11af204567c290a241c5d173ffb12e2f2be625786778634689d63"
+    },
+    {
+      "path": "scripts/isg/NovaTokenCheck.swift",
+      "sha256": "f1486f03fca6f7d69516ebd5048d599ede2107f88fb8df9ed57788c21520e3b0"
+    },
+    {
+      "path": "contracts/isg/v1/design/osgb-nova-reference.json",
+      "sha256": "bb9f2f5af45f53a5a0f800590a90fb85d4b6cc4d51c6d11a050c31b13c6feb65"
+    },
+    {
+      "path": "contracts/isg/v1/design/nova-native-values.json",
+      "sha256": "75b8eb2ac58e8e025b2aa721bd84fee87c46627c2c9cbf42ae07a597b56f9a2f"
+    },
+    {
+      "path": "contracts/isg/v1/design/nova-font-assets.json",
+      "sha256": "7ed406707f8b66549a532a5ac029647f7c4454c02431372f9512e295435a043b"
+    },
+    {
+      "path": "tests/isg/design-ios/NovaRenderTests.swift",
+      "sha256": "4277079a711a327d48d3cdb60f5a29865e45eda01a41bcb82dce2a38e69f629a"
+    },
+    {
+      "path": "tests/isg/design-ios/ISGDesignTests.xcodeproj/project.pbxproj",
+      "sha256": "9bed0be9e9288d098c6198af4388ea2076e92b4bf1abfe32765835d9ec54a5a2"
+    },
+    {
+      "path": "android/core/designsystem/src/test/kotlin/com/riskdetectedan/core/designsystem/isg/NovaTokenTest.kt",
+      "sha256": "3432bb8cffb32fe4f5751bd04db0a95dded1fd760766f661537fa03da12021ac"
+    },
+    {
+      "path": "android/core/designsystem/src/test/kotlin/com/riskdetectedan/core/designsystem/isg/NovaComponentTest.kt",
+      "sha256": "0013efcf73f93ccea1ddcef16f964cc2b094349a41a0f380d2e70e9b4150e08f"
+    },
+    {
+      "path": "android/core/designsystem/build.gradle.kts",
+      "sha256": "d9451fef765866405eb8331ff00be026cf6d2b75d59961f6b0813578b301abdb"
+    },
+    {
+      "path": "Config/RiskDetectedInfo.plist",
+      "sha256": "30504cd2c47cabb4b9f3852a7ca3032561e8b1a0913b594db0efa356b97fc625"
+    },
+    {
+      "path": ".github/workflows/isg-foundation.yml",
+      "sha256": "d2a60b49ab81759499de8779ee3be5fb4ddc3f15dcd561acd5c428e5963bd29a"
+    }
+  ],
+  "attachments": [
+    {
+      "test": "NovaRenderTests/test_dark_large_ax3()",
+      "path": "output/isg/nova-final-render-20260912/71BBF9DC-80EC-4931-AD6B-9D721CDE8FD1.png",
+      "sha256": "aae809e4e27b483029162f2e554897b2d53543509406ac5ea7e58215ef87039c"
+    },
+    {
+      "test": "NovaRenderTests/test_dark_large()",
+      "path": "output/isg/nova-final-render-20260912/4FADD58E-2437-4441-8851-379AB6190F2F.png",
+      "sha256": "87433128e65f7f9aeb735ea4c2d1b1f6b41d0b948b67b1bca4533d59e791c175"
+    },
+    {
+      "test": "NovaRenderTests/test_dark_medium_ax3()",
+      "path": "output/isg/nova-final-render-20260912/A4D92832-AC38-4235-8860-100619C1AE9A.png",
+      "sha256": "26ac23ef341f7ee1716c6b3f075e23fd03f7c3d95996419ab4a9fc49761c2931"
+    },
+    {
+      "test": "NovaRenderTests/test_dark_medium()",
+      "path": "output/isg/nova-final-render-20260912/06D94014-FDE9-471A-9361-9FDA00FF7C8C.png",
+      "sha256": "692260e9e24b2bc3db2df158229ca1871f29d285b894480590ceda5b7c50a331"
+    },
+    {
+      "test": "NovaRenderTests/test_dark_small_ax3()",
+      "path": "output/isg/nova-final-render-20260912/EC301042-F5CC-4789-86C4-4EC6F3A4B65B.png",
+      "sha256": "34af5481994977a0d54c9ab60ac699fcc821dbdaee1852d4f3f995332f0a7173"
+    },
+    {
+      "test": "NovaRenderTests/test_dark_small()",
+      "path": "output/isg/nova-final-render-20260912/C45A1003-A4B3-4B41-92A9-A18AB272EFA8.png",
+      "sha256": "92ca5e37d24c600f931304142a3e4dbf8b1dc531643b45633479c4b339a112a5"
+    },
+    {
+      "test": "NovaRenderTests/test_light_large_ax3()",
+      "path": "output/isg/nova-final-render-20260912/505EC050-FFE9-41AC-852F-B214C71F3E6A.png",
+      "sha256": "30538574f10c52c07376e359a317876df8a9dc0ac1c77538c073651a8135b1db"
+    },
+    {
+      "test": "NovaRenderTests/test_light_large()",
+      "path": "output/isg/nova-final-render-20260912/18BE64EE-B8CD-4746-9CD1-A5955FC38FD3.png",
+      "sha256": "02039531d4eef18026878d65e36a66b16452d791fd5995d36e5679b052053f0c"
+    },
+    {
+      "test": "NovaRenderTests/test_light_medium_ax3()",
+      "path": "output/isg/nova-final-render-20260912/FF7926EB-068A-4592-A8AC-F287F43DE18C.png",
+      "sha256": "464df7b2a500a37cfcd2f433877f56f1871e404f0a32c718f015aa78906bd6ac"
+    },
+    {
+      "test": "NovaRenderTests/test_light_medium()",
+      "path": "output/isg/nova-final-render-20260912/8CD912F9-3D06-4127-97AC-C5F3F2A1AEC0.png",
+      "sha256": "47f6bb92d9841bcc20d9b5138f38020c22657c00e194bdf177c37ca71a5f01d1"
+    },
+    {
+      "test": "NovaRenderTests/test_light_small_ax3()",
+      "path": "output/isg/nova-final-render-20260912/41F6A869-B809-4F89-9EC0-372ACB4A1FDB.png",
+      "sha256": "0170ffbb19d09e800a93fb847de7df75472e7233b1d887bfb0bd549f2eb61a90"
+    },
+    {
+      "test": "NovaRenderTests/test_light_small()",
+      "path": "output/isg/nova-final-render-20260912/497986D4-A131-4851-86CB-87A69138BEF3.png",
+      "sha256": "17c39dc2567d5a09c744ae7636cc4ea247c4c1ed0cf039dc35a442d6b64f5f68"
+    }
+  ],
+  "android_apk_sha256": "44a96b81f58dba6ab76a9f21a9d6b9744c4a17047a2d5d53cb37f817fad90bc1",
+  "schema_version": 1,
+  "scope": "P18 additive expert native primitives, not rollout or domain acceptance",
+  "results": {
+    "foundation_node": 111,
+    "nova_node": 8,
+    "swift_tokens_fonts": 128,
+    "android_jvm_tokens": 123,
+    "android_compose_robolectric_tests": 3,
+    "android_button_variations": 24,
+    "ios_content_render": {
+      "status": "SUCCEEDED",
+      "durationMs": 5827,
+      "counts": {
+        "passed": 12,
+        "failed": 0,
+        "skipped": 0
+      },
+      "target": "simulator"
+    },
+    "ios_render_artifacts": {
+      "buildLogPath": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/test_sim_2026-09-12T19-53-36-441Z_pid70458_2a41b2cb.log",
+      "xcresultPath": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-12T19-53-36-442Z_pid70458_94c1aeeb.xcresult",
+      "testProductsPath": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/test-products/test_sim_2026-09-12T19-53-36-442Z_pid70458_3ff714df.xctestproducts"
+    },
+    "ios_app_build": {
+      "result": "PASS",
+      "durationMs": 10105,
+      "log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-09-12T19-52-04-617Z_pid70458_c52c42a6.log",
+      "launch": "NOT_RUN"
+    },
+    "android_debug_apk": "PASS",
+    "bundled_font_sha_checks": 10,
+    "identity": "PASS",
+    "function_map": "PASS (6 transport files, separate from design)",
+    "yaml_syntax": "PASS",
+    "remote_ci": "NOT_RUN"
+  },
+  "prior_render_attempts": [
+    {
+      "result": "INVALIDATED_FALSE_POSITIVE",
+      "path": "output/isg/nova-render-20260912",
+      "reason": "ImageRenderer+ScrollView returned blank canvas; size-only assertions erroneously passed. Not visual evidence."
+    },
+    {
+      "result": "FAILED_12_TESTS",
+      "xcresult": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-12T19-45-19-601Z_pid70458_1156c4a7.xcresult",
+      "reason": "Hostless window hierarchy cannot draw; new blank-render guard rejected it."
+    }
+  ],
+  "limits": [
+    "Final iOS renders use shared pure SwiftUI gallery content, not scrolling/window/interaction capture.",
+    "One iOS26.5 simulator runtime, three proposed sizes; not three devices or minimum-OS run.",
+    "Android behavior tests run on Robolectric SDK33 host JVM, not emulator.",
+    "No OSGB pixel-golden parity, full accessibility, domain screen integration or production rollout.",
+    "Explicit primary ink/danger-tone accessibility adaptations; line metrics, icons, shadows and motion parity remain open.",
+    "263 domain acceptance cases remain unmapped; legacy screens and auth/billing flows were not changed."
+  ],
+  "safety": {
+    "source_osgb_project_modified": false,
+    "production_writes": false,
+    "app_identity_changed": false,
+    "legacy_ui_activated": false,
+    "test_data": "synthetic only"
+  }
+}

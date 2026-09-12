@@ -4,6 +4,8 @@
 
 ## Kaynak ve sabitleme
 
+Devam kaydı: [Native tasarım katmanı ve test kapsamı](P18_NATIVE_DESIGN_FOUNDATION.md). Aşağıdaki envanter ilk capture anını anlatır; font ve ilk bileşen aktarımı artık ayrı native dilimde mevcuttur.
+
 - Kök: `/Users/keremkayalar/Documents/Kerem-APPler/OSGBTakip/apps/mobile`.
 - Git HEAD: `ccb8aa733d6ba744f669e54b5338dcd343635ed8`; **çalışma ağacı dirty**. Özellikle MobileShell/NewFindingScreen gibi ilgili dosyalarda commit dışı değişiklik var. Referans yalnız HEAD değil, mevcut dosya içerikleridir.
 - [Kaynak ve token manifesti](../../contracts/isg/v1/design/osgb-nova-reference.json): 113 theme/component/screen/router dosyasının SHA256 ve boyutu;12 literal token grubu. Tokenlar TypeScript AST literal okumasıyla çıkarıldı; kaynak uygulama/React Native kodu çalıştırılmadı. Manifestte tüm rol renkleri envanter amaçlı bulunur; uygulanacak rol **expert**.

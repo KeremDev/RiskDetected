@@ -16,6 +16,10 @@ android {
         compose = true
     }
 
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -32,4 +36,18 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons.extended)
     debugImplementation(libs.compose.ui.tooling)
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.serialization.json)
+    testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.junit)
+    testImplementation(libs.androidx.espresso.core)
+    debugImplementation(libs.compose.ui.test.manifest)
+    debugImplementation(libs.androidx.activity.compose)
+}
+
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    inputs.dir(rootProject.layout.projectDirectory.dir("../contracts/isg/v1/design"))
+        .withPropertyName("isgNovaDesignCorpus")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
 }

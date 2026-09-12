@@ -2,6 +2,8 @@
 
 Bu ilk dilim production feature açmaz ve mevcut API sözleşmesini değiştirmez.
 
+P18 tasarım kaydı: `design/osgb-nova-reference.json`; expert-only üretilmiş native değerler `design/nova-native-values.json`, font/lisans hash'leri `design/nova-font-assets.json`. `node scripts/isg/run_suite.mjs nova-design` kaynak/token/font sapmasını denetler. Native bileşenler mevcut ekranlara henüz bağlı değildir; görsel eşitlik kabulü açık.
+
 - mutation-context.md / mutation-context.schema.json: actor yetkisi vermeyen, strict ortak taşıma bağlamı. Yeni Deno/Swift/Kotlin parser'ları aynı sentetik corpus'u kullanır; hiçbir canlı endpoint'e bağlı değildir.
 - [mutation-outcome.md](mutation-outcome.md): committed/pending/indeterminate/rejected yanıtları ve altı durumlu saf istemci reducer'ı; üç platformda221 yanıt +84 geçiş, henüz API/UI coordinator'a bağlı değil.
 

@@ -1,0 +1,71 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { resolve } from 'node:path';
+import { ROOT } from './lib.mjs';
+import { reference, renderTokens, tokenModel, rgba } from './nova_tokens.mjs';
+
+const read = p => readFileSync(resolve(ROOT, p));
+const sha = b => createHash('sha256').update(b).digest('hex');
+test('both native token sources and test corpus exactly match the pinned expert reference', () => {
+  for (const [path, expected] of Object.entries(renderTokens())) assert.equal(read(path).toString(), expected, path);
+  const m = tokenModel();
+  assert.deepEqual(Object.fromEntries(Object.entries(m).map(([k, v]) => [k, Object.keys(v).length])),
+    { light: 40, dark: 40, typography: 17, dimensions: 26 });
+});
+test('other-role colors cannot enter the expert native token outputs', () => {
+  const copy = structuredClone(reference);
+  for (const role of ['osgb', 'company', 'assignee']) copy.tokens.roleAccent[role] = { light: 'invalid' };
+  assert.deepEqual(renderTokens(copy), renderTokens());
+});
+test('source change changes native outputs; a stale generated file is detectable', () => {
+  const copy = structuredClone(reference);
+  copy.tokens.roleAccent.expert.light = '#123456';
+  for (const [path, content] of Object.entries(renderTokens(copy))) assert.notEqual(content, read(path).toString());
+});
+test('RGBA conversion preserves transparent source colors and rejects unsupported formats', () => {
+  assert.deepEqual(rgba('rgba(255,255,255,.62)'), [255,255,255,.62]);
+  assert.deepEqual(rgba('#2ed256'), [46,210,86,1]);
+  for (const bad of ['red', '#fff', 'rgba(256,0,0,.1)', 'rgba(1,2,3,2)']) assert.throws(() => rgba(bad));
+});
+test('all five licensed font binaries match across clients and iOS registers each file', () => {
+  const manifest = JSON.parse(read('contracts/isg/v1/design/nova-font-assets.json'));
+  assert.deepEqual(manifest.fonts.map(f => f.weight), [400,500,600,700,800]);
+  const plist = read('Config/RiskDetectedInfo.plist').toString();
+  const compose = read('android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaComponents.kt').toString();
+  for (const f of manifest.fonts) {
+    for (const path of [f.ios, f.android]) { assert.equal(sha(read(path)), f.sha256); assert.equal(read(path).length, f.bytes); }
+    assert.ok(plist.includes(`<string>${f.postscript_name}.ttf</string>`));
+    assert.ok(compose.includes(`R.font.${f.android.split('/').at(-1).replace('.ttf','')}`));
+  }
+  for (const path of ['App/Resources/Fonts/OFL-PlusJakartaSans.txt', 'android/core/designsystem/src/main/res/raw/ofl_plus_jakarta_sans.txt']) {
+    assert.equal(sha(read(path)), manifest.license_sha256);
+    assert.match(read(path).toString(), /SIL OPEN FONT LICENSE Version 1.1/);
+  }
+});
+test('Gradle tracks design corpus changes and the Swift font probe checks Turkish glyphs', () => {
+  assert.match(read('android/core/designsystem/build.gradle.kts').toString(), /inputs\.dir\(rootProject\.layout\.projectDirectory\.dir\("\.\.\/contracts\/isg\/v1\/design"\)\)/);
+  assert.match(read('scripts/isg/NovaTokenCheck.swift').toString(), /CTFontGetGlyphsForCharacters/);
+});
+test('accessible primary label adaptation is explicit in both clients', () => {
+  const luminance = rgb => rgb.map(v => v / 255).map(v => v <= .04045 ? v / 12.92 : ((v+.055)/1.055)**2.4)
+    .reduce((s,v,i) => s+v*[.2126,.7152,.0722][i], 0);
+  const contrast = (a,b) => (Math.max(luminance(a),luminance(b))+.05)/(Math.min(luminance(a),luminance(b))+.05);
+  const green = tokenModel().light.accent.slice(0,3);
+  assert.ok(contrast([255,255,255],green) < 3);
+  assert.ok(contrast([17,17,17],green) > 7);
+  assert.match(read('App/DesignSystem/ISG/NovaComponents.swift').toString(), /NovaRGBA\(red: 17, green: 17, blue: 17, alpha: 1\)/);
+  assert.match(read('android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaComponents.kt').toString(), /Color\(0xFF111111\)/);
+});
+test('native iOS design harness is hostless, service-free and rejects blank renders', () => {
+  const project = read('tests/isg/design-ios/ISGDesignTests.xcodeproj/project.pbxproj').toString();
+  assert.equal((project.match(/TEST_HOST = ""/g) ?? []).length, 2);
+  assert.ok(!/XCRemoteSwiftPackageReference|PBXShellScriptBuildPhase|App\/Services|product-type.application/.test(project));
+  assert.ok(project.includes('../../../App/DesignSystem/ISG/NovaComponents.swift'));
+  const harness = read('tests/isg/design-ios/NovaRenderTests.swift').toString();
+  assert.equal((harness.match(/func test_/g) ?? []).length, 12);
+  assert.match(harness, /NovaComponentGalleryContent/);
+  assert.match(harness, /XCTAssertGreaterThan\(distinct.count, 12/);
+  assert.match(harness, /CTFontManagerRegisterFontsForURL/);
+});

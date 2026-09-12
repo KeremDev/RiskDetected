@@ -105,6 +105,11 @@
 		<string>Mulish-Bold.ttf</string>
 		<string>Mulish-ExtraBold.ttf</string>
 		<string>Mulish-Black.ttf</string>
+		<string>PlusJakartaSans-Regular.ttf</string>
+		<string>PlusJakartaSans-Medium.ttf</string>
+		<string>PlusJakartaSans-SemiBold.ttf</string>
+		<string>PlusJakartaSans-Bold.ttf</string>
+		<string>PlusJakartaSans-ExtraBold.ttf</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict/>

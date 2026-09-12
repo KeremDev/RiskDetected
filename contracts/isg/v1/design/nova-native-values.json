@@ -1,0 +1,635 @@
+{
+  "light": {
+    "canvas": [
+      240,
+      240,
+      240,
+      1
+    ],
+    "canvasSheet": [
+      247,
+      247,
+      248,
+      1
+    ],
+    "surface": [
+      255,
+      255,
+      255,
+      1
+    ],
+    "surfacePressed": [
+      250,
+      250,
+      250,
+      1
+    ],
+    "surfaceMuted": [
+      244,
+      244,
+      245,
+      1
+    ],
+    "glass": [
+      255,
+      255,
+      255,
+      0.62
+    ],
+    "glassBorder": [
+      255,
+      255,
+      255,
+      0.7
+    ],
+    "text": [
+      17,
+      17,
+      17,
+      1
+    ],
+    "textSecondary": [
+      75,
+      75,
+      82,
+      1
+    ],
+    "textTertiary": [
+      107,
+      107,
+      114,
+      1
+    ],
+    "textMuted": [
+      139,
+      139,
+      143,
+      1
+    ],
+    "textSubtle": [
+      168,
+      168,
+      174,
+      1
+    ],
+    "textPlaceholder": [
+      154,
+      154,
+      159,
+      1
+    ],
+    "onDark": [
+      255,
+      255,
+      255,
+      1
+    ],
+    "hairline": [
+      17,
+      17,
+      17,
+      0.07
+    ],
+    "border": [
+      17,
+      17,
+      17,
+      0.1
+    ],
+    "borderStrong": [
+      213,
+      213,
+      218,
+      1
+    ],
+    "borderMuted": [
+      236,
+      236,
+      239,
+      1
+    ],
+    "inverse": [
+      17,
+      17,
+      17,
+      1
+    ],
+    "onInverse": [
+      255,
+      255,
+      255,
+      1
+    ],
+    "scrim": [
+      15,
+      15,
+      17,
+      0.38
+    ],
+    "accent": [
+      46,
+      210,
+      86,
+      1
+    ],
+    "accentInk": [
+      15,
+      122,
+      52,
+      1
+    ],
+    "accentSoft": [
+      234,
+      251,
+      239,
+      1
+    ],
+    "onAccent": [
+      255,
+      255,
+      255,
+      1
+    ],
+    "statusSuccessBg": [
+      234,
+      251,
+      239,
+      1
+    ],
+    "statusSuccessInk": [
+      15,
+      122,
+      52,
+      1
+    ],
+    "statusSuccessDot": [
+      31,
+      168,
+      69,
+      1
+    ],
+    "statusWarningBg": [
+      255,
+      246,
+      232,
+      1
+    ],
+    "statusWarningInk": [
+      164,
+      112,
+      15,
+      1
+    ],
+    "statusWarningDot": [
+      214,
+      139,
+      25,
+      1
+    ],
+    "statusDangerBg": [
+      255,
+      238,
+      236,
+      1
+    ],
+    "statusDangerInk": [
+      201,
+      56,
+      44,
+      1
+    ],
+    "statusDangerDot": [
+      224,
+      69,
+      59,
+      1
+    ],
+    "statusInfoBg": [
+      238,
+      240,
+      255,
+      1
+    ],
+    "statusInfoInk": [
+      63,
+      75,
+      196,
+      1
+    ],
+    "statusInfoDot": [
+      75,
+      87,
+      214,
+      1
+    ],
+    "statusNeutralBg": [
+      244,
+      244,
+      245,
+      1
+    ],
+    "statusNeutralInk": [
+      92,
+      92,
+      99,
+      1
+    ],
+    "statusNeutralDot": [
+      180,
+      180,
+      186,
+      1
+    ]
+  },
+  "dark": {
+    "canvas": [
+      17,
+      17,
+      20,
+      1
+    ],
+    "canvasSheet": [
+      23,
+      23,
+      27,
+      1
+    ],
+    "surface": [
+      28,
+      28,
+      33,
+      1
+    ],
+    "surfacePressed": [
+      35,
+      35,
+      41,
+      1
+    ],
+    "surfaceMuted": [
+      38,
+      38,
+      43,
+      1
+    ],
+    "glass": [
+      28,
+      28,
+      33,
+      0.62
+    ],
+    "glassBorder": [
+      255,
+      255,
+      255,
+      0.09
+    ],
+    "text": [
+      245,
+      245,
+      247,
+      1
+    ],
+    "textSecondary": [
+      201,
+      201,
+      208,
+      1
+    ],
+    "textTertiary": [
+      168,
+      168,
+      174,
+      1
+    ],
+    "textMuted": [
+      139,
+      139,
+      143,
+      1
+    ],
+    "textSubtle": [
+      111,
+      111,
+      119,
+      1
+    ],
+    "textPlaceholder": [
+      124,
+      124,
+      132,
+      1
+    ],
+    "onDark": [
+      255,
+      255,
+      255,
+      1
+    ],
+    "hairline": [
+      255,
+      255,
+      255,
+      0.08
+    ],
+    "border": [
+      255,
+      255,
+      255,
+      0.12
+    ],
+    "borderStrong": [
+      58,
+      58,
+      66,
+      1
+    ],
+    "borderMuted": [
+      43,
+      43,
+      49,
+      1
+    ],
+    "inverse": [
+      245,
+      245,
+      247,
+      1
+    ],
+    "onInverse": [
+      17,
+      17,
+      20,
+      1
+    ],
+    "scrim": [
+      0,
+      0,
+      0,
+      0.55
+    ],
+    "accent": [
+      46,
+      210,
+      86,
+      1
+    ],
+    "accentInk": [
+      15,
+      122,
+      52,
+      1
+    ],
+    "accentSoft": [
+      21,
+      58,
+      36,
+      1
+    ],
+    "onAccent": [
+      255,
+      255,
+      255,
+      1
+    ],
+    "statusSuccessBg": [
+      21,
+      58,
+      36,
+      1
+    ],
+    "statusSuccessInk": [
+      95,
+      224,
+      138,
+      1
+    ],
+    "statusSuccessDot": [
+      46,
+      210,
+      86,
+      1
+    ],
+    "statusWarningBg": [
+      61,
+      47,
+      20,
+      1
+    ],
+    "statusWarningInk": [
+      240,
+      190,
+      106,
+      1
+    ],
+    "statusWarningDot": [
+      232,
+      161,
+      58,
+      1
+    ],
+    "statusDangerBg": [
+      61,
+      30,
+      28,
+      1
+    ],
+    "statusDangerInk": [
+      255,
+      139,
+      129,
+      1
+    ],
+    "statusDangerDot": [
+      224,
+      69,
+      59,
+      1
+    ],
+    "statusInfoBg": [
+      32,
+      36,
+      74,
+      1
+    ],
+    "statusInfoInk": [
+      154,
+      164,
+      255,
+      1
+    ],
+    "statusInfoDot": [
+      91,
+      140,
+      247,
+      1
+    ],
+    "statusNeutralBg": [
+      38,
+      38,
+      43,
+      1
+    ],
+    "statusNeutralInk": [
+      168,
+      168,
+      174,
+      1
+    ],
+    "statusNeutralDot": [
+      107,
+      107,
+      114,
+      1
+    ]
+  },
+  "typography": {
+    "screenTitle": {
+      "fontName": "PlusJakartaSans-ExtraBold",
+      "weight": 800,
+      "size": 22,
+      "tracking": -0.5,
+      "lineHeight": 28
+    },
+    "sheetTitle": {
+      "fontName": "PlusJakartaSans-ExtraBold",
+      "weight": 800,
+      "size": 19,
+      "tracking": -0.4,
+      "lineHeight": 25
+    },
+    "dialogTitle": {
+      "fontName": "PlusJakartaSans-ExtraBold",
+      "weight": 800,
+      "size": 16.5,
+      "tracking": -0.3,
+      "lineHeight": 22
+    },
+    "brand": {
+      "fontName": "PlusJakartaSans-ExtraBold",
+      "weight": 800,
+      "size": 18,
+      "tracking": -0.3,
+      "lineHeight": 23
+    },
+    "sectionTitle": {
+      "fontName": "PlusJakartaSans-ExtraBold",
+      "weight": 800,
+      "size": 14,
+      "tracking": -0.1,
+      "lineHeight": 19
+    },
+    "cardTitle": {
+      "fontName": "PlusJakartaSans-Bold",
+      "weight": 700,
+      "size": 14,
+      "tracking": -0.2,
+      "lineHeight": 17.5
+    },
+    "button": {
+      "fontName": "PlusJakartaSans-Bold",
+      "weight": 700,
+      "size": 15,
+      "tracking": 0,
+      "lineHeight": 20
+    },
+    "buttonSm": {
+      "fontName": "PlusJakartaSans-Bold",
+      "weight": 700,
+      "size": 13.5,
+      "tracking": 0,
+      "lineHeight": 18
+    },
+    "body": {
+      "fontName": "PlusJakartaSans-Medium",
+      "weight": 500,
+      "size": 13,
+      "tracking": 0,
+      "lineHeight": 18
+    },
+    "bodyStrong": {
+      "fontName": "PlusJakartaSans-SemiBold",
+      "weight": 600,
+      "size": 12.5,
+      "tracking": 0,
+      "lineHeight": 17
+    },
+    "label": {
+      "fontName": "PlusJakartaSans-Bold",
+      "weight": 700,
+      "size": 12,
+      "tracking": 0,
+      "lineHeight": 16
+    },
+    "meta": {
+      "fontName": "PlusJakartaSans-SemiBold",
+      "weight": 600,
+      "size": 11.5,
+      "tracking": 0,
+      "lineHeight": 15.5
+    },
+    "metaQuiet": {
+      "fontName": "PlusJakartaSans-Regular",
+      "weight": 400,
+      "size": 12,
+      "tracking": 0,
+      "lineHeight": 16
+    },
+    "badge": {
+      "fontName": "PlusJakartaSans-Bold",
+      "weight": 700,
+      "size": 10.5,
+      "tracking": 0,
+      "lineHeight": 14
+    },
+    "tab": {
+      "fontName": "PlusJakartaSans-Bold",
+      "weight": 700,
+      "size": 9.5,
+      "tracking": 0.1,
+      "lineHeight": 13
+    },
+    "overline": {
+      "fontName": "PlusJakartaSans-ExtraBold",
+      "weight": 800,
+      "size": 10.5,
+      "tracking": 0.5,
+      "lineHeight": 14
+    },
+    "micro": {
+      "fontName": "PlusJakartaSans-ExtraBold",
+      "weight": 800,
+      "size": 9.5,
+      "tracking": 0.6,
+      "lineHeight": 13
+    }
+  },
+  "dimensions": {
+    "radiusXs": 5,
+    "radiusSm": 7,
+    "radiusMd": 12,
+    "radiusControl": 14,
+    "radiusField": 16,
+    "radiusChip": 22,
+    "radiusCard": 22,
+    "radiusPopover": 26,
+    "radiusDialog": 28,
+    "radiusSheet": 32,
+    "radiusTabBar": 34,
+    "radiusPill": 999,
+    "spaceScreenX": 20,
+    "spaceXs": 4,
+    "spaceSm": 7,
+    "spaceMd": 10,
+    "spaceLg": 14,
+    "spaceXl": 18,
+    "space2xl": 24,
+    "layoutTabBarHeight": 66,
+    "layoutTabBarInset": 14,
+    "layoutTabBarBottom": 26,
+    "layoutScrollBottomInset": 122,
+    "layoutScrollTopInset": 58,
+    "layoutDeviceWidth": 402,
+    "layoutDeviceHeight": 874
+  }
+}

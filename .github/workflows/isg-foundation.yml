@@ -10,6 +10,11 @@ on:
       - 'App/Services/RDConfig.swift'
       - 'App/Services/ClientFlowEvents.swift'
       - 'App/Services/ISG/**'
+      - 'App/DesignSystem/ISG/**'
+      - 'App/Resources/Fonts/PlusJakartaSans-*'
+      - 'App/Resources/Fonts/OFL-PlusJakartaSans.txt'
+      - 'Config/RiskDetectedInfo.plist'
+      - 'android/core/designsystem/**'
       - 'supabase/functions/_shared/isg/**'
       - 'supabase/migrations/20260513223911_fix_subscription_quota_review_findings.sql'
       - 'supabase/migrations/20260520154818_add_companies.sql'
@@ -35,6 +40,11 @@ on:
       - 'App/Services/RDConfig.swift'
       - 'App/Services/ClientFlowEvents.swift'
       - 'App/Services/ISG/**'
+      - 'App/DesignSystem/ISG/**'
+      - 'App/Resources/Fonts/PlusJakartaSans-*'
+      - 'App/Resources/Fonts/OFL-PlusJakartaSans.txt'
+      - 'Config/RiskDetectedInfo.plist'
+      - 'android/core/designsystem/**'
       - 'supabase/functions/_shared/isg/**'
       - 'supabase/migrations/20260513223911_fix_subscription_quota_review_findings.sql'
       - 'supabase/migrations/20260520154818_add_companies.sql'
@@ -76,6 +86,8 @@ jobs:
         run: node scripts/isg/verify_function_map.mjs
       - name: Run offline foundation and legacy regression
         run: node scripts/isg/run_suite.mjs foundation
+      - name: Verify pinned expert design, font assets and native source drift
+        run: node scripts/isg/run_suite.mjs nova-design
       - name: Run non-authoritative legacy capacity shadow model
         run: node scripts/isg/run_suite.mjs capacity-shadow
       - uses: denoland/setup-deno@v2
@@ -98,6 +110,10 @@ jobs:
         run: |
           swiftc App/Services/ISG/IsgMutationOutcome.swift scripts/isg/MutationOutcomeCheck.swift -o "$RUNNER_TEMP/isg-outcome-check"
           "$RUNNER_TEMP/isg-outcome-check" contracts/isg/v1/fixtures/mutation-outcome.json
+      - name: Verify native NOVA tokens, fonts and Turkish glyphs
+        run: |
+          swiftc App/DesignSystem/ISG/NovaTokens.swift scripts/isg/NovaTokenCheck.swift -o "$RUNNER_TEMP/isg-nova-check"
+          "$RUNNER_TEMP/isg-nova-check" contracts/isg/v1/design/nova-native-values.json App/Resources/Fonts
       - name: Run hostless iOS XCTest on an available CI iPhone
         shell: bash
         run: |
@@ -113,11 +129,17 @@ jobs:
             -destination "platform=iOS Simulator,id=$ISG_CI_SIMULATOR_ID" -parallel-testing-enabled NO \
             -derivedDataPath "$RUNNER_TEMP/isg-native-derived" -resultBundlePath "$RUNNER_TEMP/isg-native.xcresult" \
             -disableAutomaticPackageResolution CODE_SIGNING_ALLOWED=NO
+          xcodebuild test -project tests/isg/design-ios/ISGDesignTests.xcodeproj -scheme ISGDesignTests \
+            -destination "platform=iOS Simulator,id=$ISG_CI_SIMULATOR_ID" -parallel-testing-enabled NO \
+            -derivedDataPath "$RUNNER_TEMP/isg-design-derived" -resultBundlePath "$RUNNER_TEMP/isg-design.xcresult" \
+            -disableAutomaticPackageResolution CODE_SIGNING_ALLOWED=NO
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: isg-ios-native-contract-results
-          path: ${{ runner.temp }}/isg-native.xcresult
+          path: |
+            ${{ runner.temp }}/isg-native.xcresult
+            ${{ runner.temp }}/isg-design.xcresult
           if-no-files-found: warn
 
   postgres-transaction-prototype:

@@ -4,6 +4,8 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 
 ## Güncel durum
 
+- P18 native tasarım ilk dilimi:40×2 renk,17 tipografi,26 ölçü,5 font ağırlığı ve metin/kart/rozet/buton iOS+Android'e eklendi. Kaynak üretim/font testi8, Swift128, Android123token+3Compose testi;12 iOS ortak içerik render senaryosu. Ana ekranlara bağlı değil; boş görüntüyü geçiren ilk render turu kanıt dışı. [Kapsam ve açık farklar](P18_NATIVE_DESIGN_FOUNDATION.md).
+
 - P00 devam ediyor: kaynak/kimlik/yedek kontrolleri, veritabanı restore'u ve kullanıcının seçtiği Masaüstü'ne şifreli ikinci kopya tamamlandı; tam servis/mobil restore ve mağaza envanterinin kalan kısmı açık. Masaüstü aynı disk; off-device koruma değil.
 - P01'in production'a dokunmayan güvenlik/test dilimi başladı. Domain migration veya gerçek kullanıcıya özellik açılışı yok.
 - P01 session freshness adayı gerçek yerel GoTrue JWT/session ile denendi: logout sonrası hâlâ imzalı token reddi, private ACL ve transaction lock ordering. Production RPC/gateway/domain entegrasyonu yok.

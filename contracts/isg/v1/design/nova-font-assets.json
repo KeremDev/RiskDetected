@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "source": "OSGBTakip/apps/mobile/node_modules/@expo-google-fonts/plus-jakarta-sans",
+  "unmodified": true,
+  "license": "SIL OFL 1.1",
+  "fonts": [
+    {
+      "weight": 400,
+      "postscript_name": "PlusJakartaSans-Regular",
+      "ios": "App/Resources/Fonts/PlusJakartaSans-Regular.ttf",
+      "android": "android/core/designsystem/src/main/res/font/plus_jakarta_sans_regular.ttf",
+      "bytes": 94756,
+      "sha256": "ca6ef907028d1d1808870967d7b7ddcf68c0f33552d15d7f0c6c7d6ae97e7571"
+    },
+    {
+      "weight": 500,
+      "postscript_name": "PlusJakartaSans-Medium",
+      "ios": "App/Resources/Fonts/PlusJakartaSans-Medium.ttf",
+      "android": "android/core/designsystem/src/main/res/font/plus_jakarta_sans_medium.ttf",
+      "bytes": 94808,
+      "sha256": "00ec347136c7f6d904fa8c54decba898cc2c74c17388e62fa4388433de8be226"
+    },
+    {
+      "weight": 600,
+      "postscript_name": "PlusJakartaSans-SemiBold",
+      "ios": "App/Resources/Fonts/PlusJakartaSans-SemiBold.ttf",
+      "android": "android/core/designsystem/src/main/res/font/plus_jakarta_sans_semibold.ttf",
+      "bytes": 94836,
+      "sha256": "bbaa1d21ce4839070547b1cc06d5db2a56f520abe90278d971665b3f6dca6851"
+    },
+    {
+      "weight": 700,
+      "postscript_name": "PlusJakartaSans-Bold",
+      "ios": "App/Resources/Fonts/PlusJakartaSans-Bold.ttf",
+      "android": "android/core/designsystem/src/main/res/font/plus_jakarta_sans_bold.ttf",
+      "bytes": 94772,
+      "sha256": "71af7a0aac7db1b7e30cd389d7aabdabb44b5b5553d470ddd5aa25c0537c8108"
+    },
+    {
+      "weight": 800,
+      "postscript_name": "PlusJakartaSans-ExtraBold",
+      "ios": "App/Resources/Fonts/PlusJakartaSans-ExtraBold.ttf",
+      "android": "android/core/designsystem/src/main/res/font/plus_jakarta_sans_extrabold.ttf",
+      "bytes": 94780,
+      "sha256": "f95af252acb2a09e79452366d05346975e7fda7e0a5831ff671effcb2568504c"
+    }
+  ],
+  "license_sha256": "f9a8e776b4b048227f2f046b8716083eb04b1539d9ad1d4b87e81c1df28f86e3"
+}
