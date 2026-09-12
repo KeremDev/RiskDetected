@@ -89,6 +89,20 @@ class AuthRepository @Inject constructor(
     val currentUserEmail: String?
         get() = client.auth.currentUserOrNull()?.email
 
+    /** Additive P02 adapter. Uses the existing SDK/session and UUID/profile bootstrap.
+     * UI activation waits for signup/recovery/MFA and release-gate integration tests. */
+    suspend fun signInWithPassword(email: String, password: String): RdResult<Unit> {
+        val result = passwordSignIn(client, email, password)
+        if (result is RdResult.Success) backfillProviderIdentityIfNeeded()
+        return result
+    }
+
+    suspend fun signUpWithPassword(email: String, password: String, language: RdAppLanguage): RdResult<Unit> =
+        passwordSignUp(client, email, password, language)
+
+    /** Only requests the email. It does not mark the session as recovery-verified. */
+    suspend fun requestPasswordRecovery(email: String): RdResult<Unit> = passwordRecoveryRequest(client, email)
+
     /** Mirrors AuthService.swift's sendEmailOTP — same data contract, see F6. */
     suspend fun sendEmailOtp(email: String, language: RdAppLanguage): RdResult<Unit> = try {
         client.auth.signInWith(OTP) {

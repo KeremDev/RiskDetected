@@ -9,6 +9,8 @@ import { probeStorageRestore } from './storage_restore_probe.mjs';
 import { parseRestoreMode } from './restore_mode.mjs';
 import { beginSessionProbe } from './auth_session_probe.mjs';
 import { beginAuthMutationProbe } from './auth_mutation_probe.mjs';
+import { probePasswordAuth } from './password_auth_probe.mjs';
+import { probeSignupRecovery } from './signup_recovery_probe.mjs';
 
 // Restore drill only. The proven source container is read-only; all API writes
 // target a new disposable copy with a shared NONE network namespace. No ports,
@@ -101,7 +103,7 @@ function start(kind, env, command = []) {
   owned.set(kind, id); guard(kind);
 }
 const httpProgram = `const http = require('node:http'); let raw=''; process.stdin.on('data',c=>raw+=c); process.stdin.on('end',()=>{
-const q=JSON.parse(raw); if(q.port!==9999 || !/^\\/(health|admin\\/users|token|user|logout)([/?]|$)/.test(q.path))process.exit(2);
+const q=JSON.parse(raw); if(q.port!==9999 || !/^\\/(health|admin\\/users|token|user|logout|signup|verify|recover)([/?]|$)/.test(q.path))process.exit(2);
 const req=http.request({host:'127.0.0.1',port:q.port,path:q.path,method:q.method,headers:{'Content-Type':'application/json',...(q.token?{Authorization:'Bearer '+q.token}:{})}},res=>{
 let body='';res.on('data',c=>body+=c);res.on('end',()=>{let value;try{value=JSON.parse(body)}catch{value={}};process.stdout.write(JSON.stringify({status:res.statusCode,body:value}));});});
 req.setTimeout(10000,()=>req.destroy());req.on('error',()=>process.exit(3));if(q.body)req.write(JSON.stringify(q.body));req.end();});`;
@@ -114,6 +116,14 @@ function request(path, { method = 'GET', token, body } = {}) {
 function pass(id, condition) {
   if (!condition) throw new Error(`AUTH_RESTORE_CHECK_FAILED_${id}`);
   report.checks.push({ id, result: 'PASS' });
+}
+function mailbox() {
+  if (!synthetic) throw new Error('AUTH_RESTORE_EMAIL_SYNTHETIC_REQUIRED');
+  guard('client');
+  const program = "require('node:http').get('http://127.0.0.1:10000/messages',r=>{let b='';r.on('data',c=>b+=c);r.on('end',()=>process.stdout.write(b));}).on('error',()=>process.exit(1));";
+  const result = docker(['exec', '-i', names.client, 'node', '-e', program]);
+  if (result.status !== 0) throw new Error('AUTH_RESTORE_MAILBOX_UNAVAILABLE');
+  return JSON.parse(result.stdout);
 }
 function sign(secret, role, expiry = 3600, claims = {}) {
   const encode = value => Buffer.from(JSON.stringify(value)).toString('base64url');
@@ -232,7 +242,7 @@ try {
   const secret = randomBytes(48).toString('hex'), dbPassword = randomBytes(32).toString('hex');
   sql(`ALTER ROLE supabase_auth_admin PASSWORD '${dbPassword}';`);
   stage = 'auth-boot';
-  start('client', {}, ['-e', 'setInterval(()=>{},1000)']);
+  start('client', {}, ['-e', synthetic ? readFileSync(resolve(ROOT,'scripts/isg/auth_mail_sink.cjs'),'utf8') : 'setInterval(()=>{},1000)']);
   start('auth', { GOTRUE_API_HOST: '127.0.0.1', GOTRUE_API_PORT: '9999',
     API_EXTERNAL_URL: 'http://127.0.0.1:9999/auth/v1', GOTRUE_SITE_URL: 'http://127.0.0.1:9999',
     GOTRUE_DB_DRIVER: 'postgres', GOTRUE_DB_DATABASE_URL: `postgres://supabase_auth_admin:${dbPassword}@127.0.0.1:5432/postgres?sslmode=disable`,
@@ -241,6 +251,11 @@ try {
     GOTRUE_JWT_DEFAULT_GROUP_NAME: 'authenticated', GOTRUE_JWT_ADMIN_ROLES: 'service_role',
     GOTRUE_EXTERNAL_EMAIL_ENABLED: 'true', GOTRUE_EXTERNAL_PHONE_ENABLED: 'false', GOTRUE_MAILER_AUTOCONFIRM: 'true',
     GOTRUE_DISABLE_SIGNUP: 'true', GOTRUE_SECURITY_REFRESH_TOKEN_ROTATION_ENABLED: 'true',
+    ...(synthetic ? { GOTRUE_PASSWORD_MIN_LENGTH:'8', GOTRUE_PASSWORD_REQUIRED_CHARACTERS:'abcdefghijklmnopqrstuvwxyz:ABCDEFGHIJKLMNOPQRSTUVWXYZ:0123456789',
+      GOTRUE_MAILER_AUTOCONFIRM:'false', GOTRUE_DISABLE_SIGNUP:'false', GOTRUE_SMTP_HOST:'127.0.0.1', GOTRUE_SMTP_PORT:'2525',
+      GOTRUE_SMTP_ADMIN_EMAIL:'test@example.invalid', GOTRUE_SMTP_SENDER_NAME:'Isolated QA', GOTRUE_SMTP_MAX_FREQUENCY:'1s',
+      GOTRUE_RATE_LIMIT_EMAIL_SENT:'100', GOTRUE_MAILER_TEMPLATES_CONFIRMATION:'http://127.0.0.1:10000/template',
+      GOTRUE_MAILER_TEMPLATES_RECOVERY:'http://127.0.0.1:10000/template' } : {}),
     GOTRUE_TRACING_ENABLED: 'false', GOTRUE_METRICS_ENABLED: 'false', LOG_LEVEL: 'error' });
   await waitReady(() => { try { return request('/health').status === 200; } catch { return false; } });
   pass('auth_health', true);
@@ -249,7 +264,7 @@ try {
   const admin = sign(secret, 'service_role');
   pass('admin_endpoint_rejects_no_token', [401,403].includes(request('/admin/users').status));
   pass('admin_endpoint_rejects_expired_service_token', [401,403].includes(request('/admin/users', { token: sign(secret, 'service_role', -30) }).status));
-  const email = `isg-restore-${run}@example.invalid`, password = randomBytes(24).toString('base64url');
+  const email = `isg-restore-${run}@example.invalid`, password = 'Aa1' + randomBytes(24).toString('base64url');
   const created = request('/admin/users', { method: 'POST', token: admin, body: { email, password, email_confirm: true } });
   pass('synthetic_user_created_by_local_admin', [200,201].includes(created.status) && /^[a-f0-9-]{36}$/.test(created.body.id ?? ''));
   const id = created.body.id;
@@ -277,6 +292,12 @@ try {
   pass('logged_out_refresh_rejected', request('/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: refresh.body.refresh_token } }).status === 400);
   if (sessionProbe) report.session_guard = sessionProbe.afterLogout();
   if (mutationProbe) report.auth_mutation = mutationProbe.afterLogout();
+  if (mode.synthetic) {
+    stage = 'password-auth-boundaries';
+    report.password_auth = probePasswordAuth({synthetic:true, request, admin, pass});
+    stage = 'signup-recovery-mail';
+    report.signup_recovery = probeSignupRecovery({synthetic:true,request,mailbox,admin,pass});
+  }
   if (withStorage) {
     stage = 'storage-service';
     report.storage = await probeStorageRestore({ sql, start, guard, docker, checked, names, secret, sign, waitReady, pass, foreignSubject: id });
@@ -287,7 +308,7 @@ try {
   report.source_after = sql("BEGIN READ ONLY; SELECT jsonb_build_object('users',(select count(*) from auth.users),'identities',(select count(*) from auth.identities),'profiles',(select count(*) from public.profiles),'objects',(select count(*) from storage.objects),'auth_migrations',(select count(*) from auth.schema_migrations),'storage_migrations',(select count(*) from storage.migrations)); COMMIT;", true);
   pass('source_counts_unchanged', report.source_before === report.source_after);
   } else pass('synthetic_no_backup_or_storage_lane_used',!withStorage && report.original_source_accessed === false);
-  report.source_sha256 = Object.fromEntries(['scripts/isg/run_auth_restore.mjs','scripts/isg/auth_session_probe.mjs','scripts/isg/auth_mutation_probe.mjs','scripts/isg/sql/auth_mutation_fixture.sql','scripts/isg/sql/transaction_fixture.sql','scripts/isg/restore_mode.mjs','scripts/isg/sql/auth_session_fixture.sql','scripts/isg/auth_restore_guard.mjs']
+  report.source_sha256 = Object.fromEntries(['scripts/isg/run_auth_restore.mjs','scripts/isg/password_auth_probe.mjs','scripts/isg/signup_recovery_probe.mjs','scripts/isg/auth_mail_sink.cjs','scripts/isg/auth_session_probe.mjs','scripts/isg/auth_mutation_probe.mjs','scripts/isg/sql/auth_mutation_fixture.sql','scripts/isg/sql/transaction_fixture.sql','scripts/isg/restore_mode.mjs','scripts/isg/sql/auth_session_fixture.sql','scripts/isg/auth_restore_guard.mjs']
     .map(path=>[path,digest(readFileSync(resolve(ROOT,path)))]));
   report.ok = true;
 } catch (error) {

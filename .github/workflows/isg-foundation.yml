@@ -10,6 +10,13 @@ on:
       - 'App/Services/RDConfig.swift'
       - 'App/Services/ClientFlowEvents.swift'
       - 'App/Services/ISG/**'
+      - 'App/Services/Auth/**'
+      - 'App/Services/AuthService.swift'
+      - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/SupabaseModule.kt'
+      - 'supabase/functions/auth-send-email-hook/**'
+      - 'supabase/functions/_shared/auth-email-localization*'
+      - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/auth/**'
+      - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/auth/**'
       - 'App/DesignSystem/ISG/**'
       - 'App/Resources/Fonts/PlusJakartaSans-*'
       - 'App/Resources/Fonts/OFL-PlusJakartaSans.txt'
@@ -42,6 +49,13 @@ on:
       - 'App/Services/RDConfig.swift'
       - 'App/Services/ClientFlowEvents.swift'
       - 'App/Services/ISG/**'
+      - 'App/Services/Auth/**'
+      - 'App/Services/AuthService.swift'
+      - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/SupabaseModule.kt'
+      - 'supabase/functions/auth-send-email-hook/**'
+      - 'supabase/functions/_shared/auth-email-localization*'
+      - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/auth/**'
+      - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/auth/**'
       - 'App/DesignSystem/ISG/**'
       - 'App/Resources/Fonts/PlusJakartaSans-*'
       - 'App/Resources/Fonts/OFL-PlusJakartaSans.txt'
@@ -90,6 +104,8 @@ jobs:
         run: node scripts/isg/verify_function_map.mjs
       - name: Run offline foundation and legacy regression
         run: node scripts/isg/run_suite.mjs foundation
+      - name: Verify password and confirmation test isolation
+        run: node scripts/isg/run_suite.mjs password-auth
       - name: Verify pinned expert design, font assets and native source drift
         run: node scripts/isg/run_suite.mjs nova-design
       - name: Run non-authoritative legacy capacity shadow model
@@ -99,6 +115,8 @@ jobs:
           deno-version: v2.7.14
       - name: Deno shared mutation fixtures (no network or env permissions)
         run: deno test --allow-read=contracts/isg/v1/fixtures supabase/functions/_shared/isg/mutation-context_test.ts supabase/functions/_shared/isg/mutation-outcome_test.ts
+      - name: Auth email locale/action compatibility (renderer and source guards, not provider delivery)
+        run: deno test --allow-read=supabase/functions/auth-send-email-hook,supabase/functions/_shared supabase/functions/_shared/auth-email-localization_test.ts supabase/functions/auth-send-email-hook/index_static_test.ts
 
   swift-transport-fixtures:
     runs-on: macos-15
@@ -108,6 +126,10 @@ jobs:
       # Pure Foundation type only: no signing, app launch, SDK resolution or secrets.
       - name: Compile transport model and fixture harness
         run: swiftc App/Services/ISG/IsgMutationContext.swift scripts/isg/MutationContextCheck.swift -o "$RUNNER_TEMP/isg-context-check"
+      - name: Verify new-password rules against shared Unicode boundary fixtures
+        run: |
+          swiftc App/Services/Auth/IsgPasswordRules.swift scripts/isg/IsgPasswordRulesCheck.swift -o "$RUNNER_TEMP/isg-password-check"
+          "$RUNNER_TEMP/isg-password-check" contracts/isg/v1/fixtures/password-rules.json
       - name: Verify the same corpus as Kotlin and Deno
         run: '"$RUNNER_TEMP/isg-context-check" contracts/isg/v1/fixtures/mutation-context.json'
       - name: Compile and verify mutation outcomes and state transitions

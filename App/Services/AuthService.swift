@@ -57,6 +57,42 @@ final class AuthService: ObservableObject {
         await finishSignIn(with: signedInSession)
     }
 
+    /// P02 additive adapter; signup UI is not activated until rollout gates pass.
+    /// Acceptance is not proof that an existing OAuth/OTP account acquired this password.
+    func signUpWithPassword(email: String, password: String) async throws {
+        try RDLegalReleaseGate.requireAuthAndPurchaseAccess()
+        let address = try passwordEmail(email)
+        guard IsgPasswordRules(password).valid else { throw IsgPasswordAuthError.invalidPassword }
+        guard supabase.client.auth.currentSession == nil else { throw IsgPasswordAuthError.signedIn }
+        let language = RDLanguage.current
+        do {
+            let response = try await supabase.auth.signUp(email: address, password: password,
+                data: ["app_language": .string(language.rawValue),
+                       "content_locale": .string(language == .english ? "en-001" : "tr-TR")],
+                redirectTo: deepLinkURL())
+            guard response.session == nil else { throw IsgPasswordAuthError.confirmationRequired }
+        } catch is CancellationError { throw CancellationError() }
+        catch let error as IsgPasswordAuthError { throw error }
+        catch { throw IsgPasswordAuthError.signupFailed }
+    }
+
+    /// Request only; no recovery grant, fresh-auth flag or password update is inferred here.
+    func requestPasswordRecovery(email: String) async throws {
+        try RDLegalReleaseGate.requireAuthAndPurchaseAccess()
+        let address = try passwordEmail(email)
+        do { try await supabase.auth.resetPasswordForEmail(address, redirectTo: deepLinkURL()) }
+        catch is CancellationError { throw CancellationError() }
+        catch { throw IsgPasswordAuthError.recoveryFailed }
+    }
+
+    private func passwordEmail(_ value: String) throws -> String {
+        let email = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !email.isEmpty, email.filter({ $0 == "@" }).count == 1,
+              !email.hasPrefix("@"), !email.hasSuffix("@"), !email.contains(where: \.isWhitespace)
+        else { throw IsgPasswordAuthError.invalidEmail }
+        return email
+    }
+
     /// E-posta adresine tek kullanımlık doğrulama kodu gönderir.
     func sendEmailOTP(email: String) async throws {
         lastError = nil

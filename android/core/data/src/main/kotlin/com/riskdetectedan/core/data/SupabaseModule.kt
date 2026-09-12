@@ -11,6 +11,7 @@ import io.github.jan.supabase.auth.ExternalAuthAction
 import io.github.jan.supabase.auth.FlowType
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.functions.Functions
+import io.github.jan.supabase.logging.LogLevel
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.storage.Storage
 import javax.inject.Singleton
@@ -28,6 +29,9 @@ object SupabaseModule {
             supabaseKey = config.supabasePublishableKey,
         ) {
             install(Auth) {
+                // Auth SDK parse errors can carry raw response/session material.
+                // Keep safe application error codes, never SDK Auth body diagnostics.
+                logLevel = LogLevel.NONE
                 flowType = FlowType.PKCE
                 scheme = config.applicationId
                 host = "login-callback"
