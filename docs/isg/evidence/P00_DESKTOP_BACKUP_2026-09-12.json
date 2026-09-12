@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "status": "VERIFIED",
+  "finished_at": "2026-09-12T16:59:02.716Z",
+  "directory": "/Users/keremkayalar/Desktop/ISG_Adasi_Yedek_2026-09-12_rX4mVI",
+  "archive": "riskdetected-checkpoint.isgbk",
+  "encrypted_bytes": 3613777956,
+  "encrypted_sha256": "73c10463ee016599e8636ca43f595129be7dc10c6b20b0f258b90b4a2e94cdd8",
+  "plaintext_sha256": "90265931cef9ab5246950d3a364b20103c4bf47bb00c2d90f9144a1b0fc44b1c",
+  "format": "ISGBK001/AES-256-GCM",
+  "authenticated_roundtrip": true,
+  "key_location": "macOS Keychain; service and recovery instructions in restricted backup folder",
+  "same_physical_disk": true,
+  "off_device_backup": false,
+  "contains_current_implementation_worktree": false,
+  "user_destination_choice": "Desktop"
+}

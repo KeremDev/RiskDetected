@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "captured_at": "2026-09-12T16:41:45.003Z",
+  "storage_objects_checked": 588,
+  "storage_bytes_matched": 512280146,
+  "owner_rls": {
+    "own_companies": 4,
+    "expected_own_companies": 4,
+    "foreign_companies": 0,
+    "own_profiles": 1,
+    "foreign_profiles": 0,
+    "foreign_analyses": 0,
+    "foreign_reports": 0
+  },
+  "failure_count": 0,
+  "failures": [],
+  "full_application_restore_proven": false,
+  "remaining": [
+    "Auth API login",
+    "Storage API signed download",
+    "iOS/Android connected E2E",
+    "external configuration restore",
+    "off-device encrypted copy"
+  ]
+}

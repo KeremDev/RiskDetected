@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "baseline_commit": "dbcc979d3e7ad335e525a7d90bed1a0542d8b20d",
+  "baseline_tag": "riskdetected-change-point-20260912",
+  "source_sha256": "1577618e9e32e496708705928647a4f4ab0b8ebe627ece92cf6a32dfe1f89409",
+  "ios_bundle_id": "com.riskdetected.app",
+  "android_application_id": "com.riskdetectedan.app",
+  "android_namespace": "com.riskdetectedan.app",
+  "auth_redirect_url": "io.supabase.riskdetected://login-callback",
+  "entitlements": ["plus", "pro"],
+  "production_project_refs": ["ppcrzemgiztzcgddbins"],
+  "local_api_ports": [61321],
+  "local_database_ports": [61322],
+  "approved_staging_projects": [],
+  "source_acceptance_count": 203,
+  "transition_acceptance_count": 60,
+  "work_package_count": 22
+}
