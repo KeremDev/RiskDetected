@@ -33,6 +33,7 @@ suites.foundation.push('scripts/isg/notebook_api_guard.test.mjs');
 suites.foundation.push('scripts/isg/notebook_reminder_guard.test.mjs');
 suites.foundation.push('scripts/isg/notebook_native.test.mjs');
 suites.foundation.push('scripts/isg/billing_lifecycle_guard.test.mjs');
+suites.foundation.push('scripts/isg/campaign_core_guard.test.mjs');
 if (!Object.hasOwn(suites, suite) || extra.length) {
   console.error('Usage: node scripts/isg/run_suite.mjs foundation|capacity-shadow|nova-design|password-auth; only offline suites are enabled here.');
   process.exitCode = 1;

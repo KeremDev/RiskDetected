@@ -66,10 +66,21 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'reminder_occurrences','device_delivery_claims',
       'billing_lifecycle_evidence','billing_lifecycle_projection','benefit_definitions','benefit_state_edges',
       'benefit_instances','store_offer_mappings','discount_quotes','checkout_intents','benefit_settlements',
-      'settlement_adjustments','billing_reconciliation_jobs']);
+      'settlement_adjustments','billing_reconciliation_jobs',
+      'campaign_definitions','campaign_versions','referral_codes','referral_claims','qualification_events',
+      'campaign_budgets','budget_reservations','winback_episodes','winback_contacts','suppression_records',
+      'eligibility_checks']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([
+      'budget_reservations_budget_reservation_subject_idx','campaign_versions_campaign_version_campaign_idx',
+      'campaign_versions_campaign_version_invitee_reward_idx','campaign_versions_campaign_version_inviter_reward_idx',
+      'campaign_versions_campaign_version_winback_reward_idx','eligibility_checks_eligibility_check_owner_idx',
+      'eligibility_checks_eligibility_check_campaign_idx','referral_claims_referral_claim_inviter_idx',
+      'referral_claims_referral_claim_invitee_idx','referral_codes_referral_code_campaign_idx',
+      'suppression_records_suppression_episode_idx','suppression_records_suppression_campaign_idx',
+      'winback_episodes_winback_episode_campaign_idx','winback_episodes_winback_episode_version_idx',
+      'winback_episodes_winback_episode_owner_idx',
       'benefit_instances_benefit_instance_definition_idx','benefit_settlements_benefit_settlement_evidence_idx',
       'benefit_settlements_benefit_settlement_instance_idx','billing_lifecycle_evidence_billing_evidence_owner_idx',
       'billing_lifecycle_evidence_billing_evidence_review_idx','billing_lifecycle_projection_billing_projection_evidence_idx',

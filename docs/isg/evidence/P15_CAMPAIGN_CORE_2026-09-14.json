@@ -1,0 +1,147 @@
+{
+  "phase": "P15",
+  "slice": "referral, winback, anti-abuse and budget",
+  "date": "2026-09-14",
+  "branch": "codex/isg-transition-foundation",
+  "migration": "supabase/migrations/20260914110000_isg_campaign_core.sql",
+  "rollout_feature": "campaigns",
+  "rollout_left_closed": true,
+  "client_grants": 0,
+  "private_isg_tables_after": 131,
+  "new_tables": 11,
+  "new_functions": 14,
+  "rewards_created_through": "private_isg.grant_benefit (P14)",
+  "cross_phase_reads": [
+    "private_isg.billing_lifecycle_projection (P14)",
+    "private_isg.billing_lifecycle_evidence (P14)",
+    "private_isg.benefit_instances (P14)",
+    "private_isg.notification_consents (P12)"
+  ],
+  "runs": {
+    "synthetic_session": {
+      "evidence_directory": "output/isg/runs/synthetic-auth-lTXyvH",
+      "checks": 932,
+      "unique_check_ids": 931,
+      "all_pass": true,
+      "cleanup": "PASS",
+      "new_campaign_checks": 38
+    },
+    "isolated_copy_p05_upgrade": {
+      "evidence_directory": "backups/isg-auth-service-restore-20260912-PqheT7",
+      "checks": 32,
+      "all_pass": true,
+      "migrations_replayed": 24,
+      "cleanup": "PASS",
+      "legacy_row_fingerprint_unchanged": true,
+      "legacy_helper_bodies_unchanged": true
+    },
+    "offline_foundation": {
+      "tests": 386,
+      "fail": 0,
+      "previous": 375
+    }
+  },
+  "campaign_checks": [
+    "campaign_core_migration_applied_with_closed_rollout",
+    "campaign_core_gate_blocks_the_campaign_ledger_while_rollout_off",
+    "campaign_core_campaign_tables_have_rls_and_no_client_grant",
+    "campaign_core_no_address_network_or_device_column_exists",
+    "campaign_core_a_campaign_version_can_not_publish_itself_without_a_human",
+    "campaign_core_publication_records_the_human_and_keeps_the_values_unapproved",
+    "campaign_core_a_code_belongs_to_one_canonical_account",
+    "campaign_core_nobody_invites_themselves",
+    "campaign_core_one_invitee_belongs_to_one_family_once",
+    "campaign_core_an_invited_account_can_not_invite_its_own_inviter_back",
+    "campaign_core_a_screen_view_has_no_row_shape_and_a_client_claim_is_refused",
+    "campaign_core_one_day_of_work_is_not_enough",
+    "campaign_core_the_same_operation_is_never_counted_twice",
+    "campaign_core_an_unpublished_revision_qualifies_nobody",
+    "campaign_core_two_distinct_days_of_real_work_qualify_without_marketing_consent",
+    "campaign_core_a_client_can_not_relabel_its_own_proof",
+    "campaign_core_no_reward_without_a_budget_row",
+    "campaign_core_an_approved_looking_cap_is_impossible",
+    "campaign_core_a_paid_monthly_inviter_gets_a_discount_and_the_invitee_a_gift",
+    "campaign_core_the_reward_is_committed_against_the_budget",
+    "campaign_core_an_annual_inviter_takes_no_branch_and_is_not_treated_as_free",
+    "campaign_core_an_account_that_never_paid_or_can_not_be_read_is_no_candidate",
+    "campaign_core_an_active_subscriber_is_not_a_winback_candidate",
+    "campaign_core_a_real_expired_monthly_payer_is_eligible",
+    "campaign_core_an_annual_or_unknown_plan_period_is_refused_with_its_own_reason",
+    "campaign_core_a_refused_episode_is_written_down_instead_of_disappearing",
+    "campaign_core_an_episode_waits_the_candidate_seventy_two_hours",
+    "campaign_core_a_family_opens_one_episode_for_a_lifetime",
+    "campaign_core_nothing_is_sent_before_the_waiting_time",
+    "campaign_core_an_os_permission_is_not_a_marketing_consent",
+    "campaign_core_a_consented_contact_is_an_attempt_and_not_a_delivery",
+    "campaign_core_a_second_contact_waits_its_own_gap",
+    "campaign_core_resubscribing_during_the_send_suppresses_without_resetting_the_clock",
+    "campaign_core_a_suppressed_episode_accepts_no_further_contact",
+    "campaign_core_a_pause_stops_new_production_and_keeps_what_was_earned",
+    "campaign_core_a_paused_campaign_rewards_nobody_new_even_when_qualified",
+    "campaign_core_the_budget_refuses_the_third_reward_of_a_two_reward_period",
+    "campaign_core_kill_switch_stops_every_campaign_producer"
+  ],
+  "acceptance_ids_covered": [
+    "X42",
+    "X43",
+    "X44",
+    "X45",
+    "X46"
+  ],
+  "defects_found_and_fixed": [
+    {
+      "check": "an_account_that_never_paid_or_can_not_be_read_is_no_candidate",
+      "cause": "the probe picked its invitee with ORDER BY id LIMIT 1 over public.profiles, which the P14 slice had since changed",
+      "fix": "the probe creates its own accounts and queries the unreadable owner from the projection"
+    },
+    {
+      "check": "personnel_advisor unindexed_foreign_keys",
+      "cause": "four foreign keys were only covered by composites whose leading column was something else",
+      "fix": "four real indexes added to the migration; none of them was silenced in the advisor list"
+    },
+    {
+      "check": "an_unpublished_campaign_qualifies_nobody",
+      "cause": "a random claim id made the call fail on the missing row, not on the publication gate",
+      "fix": "a second draft revision of the same campaign is evaluated with the real claim"
+    },
+    {
+      "check": "the_same_operation_is_never_counted_twice",
+      "cause": "the helper generated a fresh operation id on every call",
+      "fix": "the operation id is reused and a replay is expected"
+    },
+    {
+      "check": "a_paused_campaign_rewards_nobody_new",
+      "cause": "the new claim was never qualified, so the pause gate was never reached",
+      "fix": "claim, qualify, then pause, then award"
+    },
+    {
+      "check": "open_winback_episode suppression record",
+      "cause": "the function recorded the refusal and then raised, so the subtransaction rolled the record back",
+      "fix": "return opened:false with the reason code instead of raising"
+    },
+    {
+      "check": "record_winback_contact consent handling",
+      "cause": "a missing consent closed the episode for good",
+      "fix": "design corrected: consent_missing records a suppression but leaves the episode open; every other refusal closes it and none resets the clock"
+    }
+  ],
+  "production_defects_found": 0,
+  "design_corrections": [
+    "a missing marketing consent no longer ends a winback episode"
+  ],
+  "not_proven": [
+    "approved commercial values (two days, thirty days, 72h, 14 days, two contacts, Plus7, 20 percent)",
+    "any qualification event produced by a real domain mutation",
+    "any real push or email send",
+    "store applicability of the discount reward",
+    "admin, fraud review or monitoring surface",
+    "referral link, deep link or winback screen"
+  ],
+  "source_sha256": {
+    "supabase/migrations/20260914110000_isg_campaign_core.sql": "4caa9e1b4645f1626985615b280490e60b2a7290ce2f04b93447e0dbe5d58782",
+    "scripts/isg/campaign_core_probe.mjs": "3ed413b1cfafc3285d040587e08de6ee8a67e39a27e5f7eed9434235a9e21dc6",
+    "scripts/isg/campaign_core_guard.test.mjs": "89851555ddf32dc5ee291f062df81bc4c27e316d21a1013452d376641b54951b",
+    "contracts/isg/v1/campaign-referral-winback.md": "2e747228d866085d242e09f807e526065fa6df53405c42caae02c1b8fc531af2",
+    "docs/isg/P15_CAMPAIGN_CORE_2026-09-14.md": "0916b4fdb925458018015ba2aa5cece5b51e0f53930d6da9603909a5fb9c3f92"
+  }
+}

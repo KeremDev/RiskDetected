@@ -1,6 +1,8 @@
 # Devir notu — İSG geçişinde sunucu dilimlerini sürdürmek
 
-> **Güncel devam:** [P14 abonelik lifecycle çekirdeği](P14_BILLING_LIFECYCLE_2026-09-14.md): 894 sentetik PASS / 893 tekil, 32 upgrade PASS / 23 migration, 375 foundation PASS. `private_isg` 120 tablo, projeksiyon `access_authority='legacy'`, rollout kapalı, mağaza/RC yapılandırması değişmedi.
+> **Güncel devam:** [P15 davet ve geri kazanım çekirdeği](P15_CAMPAIGN_CORE_2026-09-14.md): 932 sentetik PASS / 931 tekil, 32 upgrade PASS / 24 migration, 386 foundation PASS. `private_isg` 131 tablo, kampanya rollout'u kapalı, hiçbir mesaj gönderilmedi, ödüller P14 defterinden geçiyor.
+
+> **Önceki devam:** [P14 abonelik lifecycle çekirdeği](P14_BILLING_LIFECYCLE_2026-09-14.md): 894 sentetik PASS / 893 tekil, 32 upgrade PASS / 23 migration, 375 foundation PASS. `private_isg` 120 tablo, projeksiyon `access_authority='legacy'`, rollout kapalı, mağaza/RC yapılandırması değişmedi.
 
 > **Önceki devam:** [P12 SQL repository ve kalıcı bekleme](P12_REPOSITORY_WAIT_2026-09-13.md): 768 sentetik PASS / 767 tekil, 32 upgrade PASS / 18 migration, 331 foundation PASS. Gerçek izole PostgreSQL kullanıldı; sağlayıcı ve cihaz kaynağı sentetik, canlı kapalıdır.
 
@@ -27,8 +29,9 @@ P05 (firma/işyeri/personel) daha önce kapanmıştı. 13–14 Eylül'de eklenen
 | P12 | Bildirim omurgası, rıza kökeni, sahiplik/shadow, gönderim-anı kapısı | `20260914050000` | [P12](P12_NOTIFICATION_CORE_2026-09-14.md) |
 | P13 | Kişisel not defteri, çakışma/tombstone, occurrence, teslim sahibi | `20260914070000` | [P13](P13_PERSONAL_NOTES_2026-09-14.md) |
 | P14 | Kanonik lifecycle, hediye/indirim ayrımı, quote/intent/settlement, mutabakat | `20260914090000` | [P14](P14_BILLING_LIFECYCLE_2026-09-14.md) |
+| P15 | Davet/winback, anti-abuse, qualification, bütçe, suppression | `20260914110000` | [P15](P15_CAMPAIGN_CORE_2026-09-14.md) |
 
-Toplam: `private_isg` şemasında **120 tablo**, hepsinde RLS açık, istemciye **sıfır** GRANT. Sentetik kabul koşusu **894/894 PASS** (893 tekil), tam legacy kopya upgrade **32/32 PASS** (23 migration), offline foundation **375 PASS**. Bu tablo yalnız sunucu dilimlerini sayar; araya giren P12 sertleştirme ve P13 sync/reminder API paketleri kendi dokümanlarındadır.
+Toplam: `private_isg` şemasında **131 tablo**, hepsinde RLS açık, istemciye **sıfır** GRANT. Sentetik kabul koşusu **932/932 PASS** (931 tekil), tam legacy kopya upgrade **32/32 PASS** (24 migration), offline foundation **386 PASS**. Bu tablo yalnız sunucu dilimlerini sayar; araya giren P12 sertleştirme ve P13 sync/reminder API paketleri kendi dokümanlarındadır.
 
 **Canlıya hiçbir şey uygulanmadı.** Bütün yeni `private_isg.rollout` satırları ve on iki modül anahtarı kapalı; mağaza, canlı DB, legacy kota otoritesi ve mevcut istemci sözleşmeleri değişmedi.
 
@@ -75,6 +78,9 @@ Toplam: `private_isg` şemasında **120 tablo**, hepsinde RLS açık, istemciye 
 | Sürüm beklentisi bir eksik | Her `advance_*`/`activate_*` çağrısı sürümü ayrı ayrı artırır | Zinciri say: grant(1) → advance(2) → activate(3) |
 | Zaman bağlı sayaç 0 geliyor | Mutabakat/expiry kontrolü ilgili `timeout_at`/`expires_at` anından önce çalıştırılmış | Sentetik saati eşiğin ötesine taşı |
 | `public.profiles`'a satır eklenemiyor | `id` → `auth.users(id)` FK'si var; uydurma UUID geçmez | İkinci hesabı sentetik fixture'dan oku, üçüncüyü `auth.users` + `profiles` olarak açıkça oluştur |
+| Yazılan ret/suppression kaydı ortadan kayboluyor | Fonksiyon kaydı yazıp ardından `RAISE` ediyor; exception subtransaction'ı geri alıyor | Reddi `RAISE` yerine `{opened:false, reason_code}` gibi bir sonuç olarak **döndür** |
+| Probe başka bir probe'un bıraktığı veriye takılıyor | `SELECT ... ORDER BY id LIMIT 1` gibi seçimler önceki dilim yeni hesap eklediğinde başka satır döndürür | Probe kendi hesaplarını açsın; aradığı özel durumu (`lifecycle_state='unknown'` gibi) açıkça sorgulasın |
+| `unindexed_foreign_keys` bulgusu | Composite indeksin **baştaki** sütunu başka; FK'yi kapsamaz | FK sütunu için ayrı indeks aç; advisor listesine ekleyip susturma |
 | Yalnız **bir kod yolunda** patlayan gölgeleme | Değişken adı sütun adıyla aynı ama o satıra sadece bazı dallarda ulaşılıyor (`route`) | `route`, `state`, `version`, `purpose`, `scope`, `position` gibi adları baştan kullanma |
 
 ## 5. Komutlar
@@ -94,8 +100,9 @@ deno test --allow-read=contracts/isg/v1/fixtures supabase/functions/_shared/isg/
 1. **P12'nin ikinci dilimi:** gerçek APNs/FCM/e-posta adaptörleri, onboarding rıza ekranı ve izin durumları, simulate/shadow/canary, gerçek cutover. P01'in dağıtım defteri hâlâ gerçek bir tüketici bekliyor.
 2. **P04'ün ikinci dilimi:** gerçek AV/parser sandbox'ı, DOC/XLS pozitif güvenlik fixture'ları, bucket/storage policy, signed URL. Teknoloji ve maliyet kararı gerekiyor.
 3. **P11'in render worker'ı:** PDF/XLSX üretimi ve görsel kabuller.
-4. **P14'ün ikinci dilimi:** gerçek Apple promotional offer imzası ve Google offer token/replacement provası (iki store spike), RevenueCat/webhook → `record_billing_evidence` adaptörü, onaylı plan/fiyat katalogu ve `access_authority` cutover'ı. Sunucu çekirdeği hazır, hiçbir üretici henüz kanıt yazmıyor.
-5. **P15 referral**, **P16 admin**, **P17 skor**: bağımlılıkları planın §15.1 grafiğinde. P15 P14'ün benefit defterine yazacak; kampanya karar tabloları ve ticari onaylar hâlâ açık.
-6. **P18/P19/P20:** native kabuk, bütünleşik prova, mağaza güncellemesi. Bunlar insan onayı ve gerçek cihaz kanıtı isteyen kapılar.
+4. **P15'in ikinci dilimi:** qualification olaylarını gerçek P05/P06/P07 mutation'larından besleyen köprü, kampanya zamanlayıcısı, gerçek push/e-posta gönderimi ve ticari onaylar (K06–K10). Şu an olayları yalnız test yazıyor.
+5. **P14'ün ikinci dilimi:** gerçek Apple promotional offer imzası ve Google offer token/replacement provası (iki store spike), RevenueCat/webhook → `record_billing_evidence` adaptörü, onaylı plan/fiyat katalogu ve `access_authority` cutover'ı. Sunucu çekirdeği hazır, hiçbir üretici henüz kanıt yazmıyor.
+6. **P16 admin**, **P17 skor**: bağımlılıkları planın §15.1 grafiğinde. P16 her domain için izleme, scope'lu admin sayfaları ve kampanya bütçe/pause/fraud yüzeyini taşır; P17 skor politikası sürümlemesini.
+7. **P18/P19/P20:** native kabuk, bütünleşik prova, mağaza güncellemesi. Bunlar insan onayı ve gerçek cihaz kanıtı isteyen kapılar.
 
 Her fazın kendi dokümanında "Açık kalanlar" bölümü vardır; bir fazı kapatmadan önce oradaki maddeleri kontrol et. Hiçbir faz, kendi dokümanı "kapandı" demeden kapalı sayılmaz.
