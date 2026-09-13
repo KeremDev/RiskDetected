@@ -10,6 +10,7 @@ const suites = {
   'password-auth': ['--test', 'scripts/isg/password_auth_probe.test.mjs'],
 };
 const [suite, ...extra] = process.argv.slice(2);
+suites.foundation.push('scripts/isg/employee_intake.test.mjs');
 if (!Object.hasOwn(suites, suite) || extra.length) {
   console.error('Usage: node scripts/isg/run_suite.mjs foundation|capacity-shadow|nova-design|password-auth; only offline suites are enabled here.');
   process.exitCode = 1;

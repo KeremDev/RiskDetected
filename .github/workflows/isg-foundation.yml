@@ -132,7 +132,7 @@ jobs:
       - name: Auth email locale/action compatibility (renderer and source guards, not provider delivery)
         run: deno test --allow-read=supabase/functions/auth-send-email-hook,supabase/functions/_shared supabase/functions/_shared/auth-email-localization_test.ts supabase/functions/auth-send-email-hook/index_static_test.ts
       - name: Personnel request shared contract
-        run: deno test --allow-read=contracts/isg/v1/fixtures supabase/functions/_shared/personnel/assignment-move_test.ts
+        run: deno test --allow-read=contracts/isg/v1/fixtures supabase/functions/_shared/personnel/assignment-move_test.ts supabase/functions/_shared/personnel/employee-create_test.ts
 
   swift-transport-fixtures:
     runs-on: macos-15
@@ -150,6 +150,10 @@ jobs:
         run: |
           swiftc App/Services/ISG/IsgMutationContext.swift App/Services/Company/IsgAssignmentMove.swift scripts/isg/AssignmentMoveCheck.swift -o "$RUNNER_TEMP/isg-assignment-check"
           "$RUNNER_TEMP/isg-assignment-check" contracts/isg/v1/fixtures/assignment-move.json
+      - name: Verify simplified employee intake shared with Android and server
+        run: |
+          swiftc App/Services/ISG/IsgMutationContext.swift App/Services/Company/IsgEmployeeCreate.swift scripts/isg/EmployeeCreateCheck.swift -o "$RUNNER_TEMP/isg-employee-check"
+          "$RUNNER_TEMP/isg-employee-check" contracts/isg/v1/fixtures/employee-create.json
       - name: Verify the same corpus as Kotlin and Deno
         run: '"$RUNNER_TEMP/isg-context-check" contracts/isg/v1/fixtures/mutation-context.json'
       - name: Compile and verify mutation outcomes and state transitions

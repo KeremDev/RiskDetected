@@ -1,0 +1,1210 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "id": "name-only",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz"
+      },
+      "valid": true,
+      "normalized_name": "Ayşe Yılmaz"
+    },
+    {
+      "id": "no-department",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": null
+      },
+      "valid": true,
+      "normalized_name": "Ayşe Yılmaz"
+    },
+    {
+      "id": "existing-department",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": {
+          "kind": "existing",
+          "id": "00000000-0000-4000-a100-000000000020"
+        }
+      },
+      "valid": true,
+      "normalized_name": "Ayşe Yılmaz"
+    },
+    {
+      "id": "new-department",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": {
+          "kind": "new",
+          "name": "Teknik Servis"
+        }
+      },
+      "valid": true,
+      "normalized_name": "Ayşe Yılmaz"
+    },
+    {
+      "id": "spaces-and-newlines",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": " \tAyşe \r\n Yılmaz  "
+      },
+      "valid": true,
+      "normalized_name": "Ayşe Yılmaz"
+    },
+    {
+      "id": "nfc-name",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz"
+      },
+      "valid": true,
+      "normalized_name": "Ayşe Yılmaz"
+    },
+    {
+      "id": "single-name",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ali"
+      },
+      "valid": true,
+      "normalized_name": "Ali"
+    },
+    {
+      "id": "apostrophe",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "O'Connor Ali"
+      },
+      "valid": true,
+      "normalized_name": "O'Connor Ali"
+    },
+    {
+      "id": "max-name-bytes",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "valid": true,
+      "normalized_name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "id": "unicode-name-limit",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "ŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞ"
+      },
+      "valid": true,
+      "normalized_name": "ŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞ"
+    },
+    {
+      "id": "max-department-bytes",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": {
+          "kind": "new",
+          "name": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      },
+      "valid": true,
+      "normalized_name": "Ayşe Yılmaz"
+    },
+    {
+      "id": "android",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "android",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz"
+      },
+      "valid": true,
+      "normalized_name": "Ayşe Yılmaz"
+    },
+    {
+      "id": "invalid-name-12",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": ""
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-name-13",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": " "
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-name-14",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "\t\n"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-name-15",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": " "
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-name-16",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": " "
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-name-17",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "\u0001"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-name-18",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": ""
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-name-19",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "​"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-name-20",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "﻿"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-name-21",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-name-22",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "ŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞŞ"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-name-23",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-name-24",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": null
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-name-25",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": 123
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-department-name-26",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": {
+          "kind": "new",
+          "name": ""
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-department-name-27",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": {
+          "kind": "new",
+          "name": "  "
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-department-name-28",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": {
+          "kind": "new",
+          "name": "\u0001"
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-department-name-29",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": {
+          "kind": "new",
+          "name": " "
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-department-name-30",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": {
+          "kind": "new",
+          "name": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-department-name-31",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": {
+          "kind": "new",
+          "name": null
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-department-name-32",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": {
+          "kind": "new",
+          "name": 3
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-department-33",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": "x"
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-department-34",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": []
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-department-35",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": {}
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-department-36",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": false
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-department-37",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": {
+          "kind": "existing",
+          "id": "bad"
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-department-38",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": {
+          "kind": "new"
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-department-39",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": {
+          "kind": "existing",
+          "id": "00000000-0000-4000-a100-000000000020",
+          "name": "also"
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-department-40",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": {
+          "kind": "new",
+          "name": "Test",
+          "id": "00000000-0000-4000-a100-000000000020"
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "invalid-department-41",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "department": {
+          "kind": "other",
+          "name": "Test"
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "forbidden-hired_on",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "hired_on": "ignored?"
+      },
+      "valid": false
+    },
+    {
+      "id": "forbidden-employment_ends_before",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "employment_ends_before": "ignored?"
+      },
+      "valid": false
+    },
+    {
+      "id": "forbidden-starts_on",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "starts_on": "ignored?"
+      },
+      "valid": false
+    },
+    {
+      "id": "forbidden-ends_on",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "ends_on": "ignored?"
+      },
+      "valid": false
+    },
+    {
+      "id": "forbidden-job_role_id",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "job_role_id": "ignored?"
+      },
+      "valid": false
+    },
+    {
+      "id": "forbidden-employee_code",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "employee_code": "ignored?"
+      },
+      "valid": false
+    },
+    {
+      "id": "forbidden-user_id",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "user_id": "ignored?"
+      },
+      "valid": false
+    },
+    {
+      "id": "forbidden-health",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "health": "ignored?"
+      },
+      "valid": false
+    },
+    {
+      "id": "forbidden-company_id",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz",
+        "company_id": "ignored?"
+      },
+      "valid": false
+    },
+    {
+      "id": "missing-full_name",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "missing-context",
+      "input": {
+        "full_name": "Ayşe Yılmaz"
+      },
+      "valid": false
+    },
+    {
+      "id": "version-1",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 1,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz"
+      },
+      "valid": false
+    },
+    {
+      "id": "version--1",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": -1,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz"
+      },
+      "valid": false
+    },
+    {
+      "id": "version-0.5",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0.5,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz"
+      },
+      "valid": false
+    },
+    {
+      "id": "version-0",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": "0",
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010"
+          }
+        },
+        "full_name": "Ayşe Yılmaz"
+      },
+      "valid": false
+    },
+    {
+      "id": "personal-scope",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "personal"
+          }
+        },
+        "full_name": "Ayşe Yılmaz"
+      },
+      "valid": false
+    },
+    {
+      "id": "workplace-not-an-input",
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-a100-000000000100",
+          "client_mutation_id": "00000000-0000-4000-a100-000000000101",
+          "platform": "ios",
+          "client_build": 1,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-a100-000000000010",
+            "workplace_id": "00000000-0000-4000-a100-000000000020"
+          }
+        },
+        "full_name": "Ayşe Yılmaz"
+      },
+      "valid": false
+    },
+    {
+      "id": "null-input",
+      "input": null,
+      "valid": false
+    },
+    {
+      "id": "array-input",
+      "input": [],
+      "valid": false
+    }
+  ]
+}

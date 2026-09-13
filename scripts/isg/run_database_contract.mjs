@@ -10,6 +10,7 @@ import { legacyCapacityOracle } from './legacy_capacity_oracle.mjs';
 import { runWorkplaceProbe } from './workplace_probe.mjs';
 import { runPersonnelProbe } from './personnel_probe.mjs';
 import { runPersonnelMutationProbe } from './personnel_mutation_probe.mjs';
+import { runEmployeeIntakeProbe } from './employee_intake_probe.mjs';
 
 // This lane creates and removes ONLY its own new synthetic container. No TCP, API,
 // Supabase credentials, host mounts, migrations, existing container reuse or image pulls.
@@ -19,6 +20,7 @@ const report = { schema_version: 1, run_id: runId, started_at: new Date().toISOS
   suite: 'synthetic_postgres_transaction_prototype', production_contract_implemented: false,
   acceptance_complete: false, seed: 'fixed_uuid_counter_v1', node_version: process.version,
   source_sha256: Object.fromEntries(['scripts/isg/run_database_contract.mjs', 'scripts/isg/sql/transaction_fixture.sql', 'scripts/isg/sql/workplace_fixture.sql', 'scripts/isg/workplace_probe.mjs', 'scripts/isg/sql/personnel_fixture.sql', 'scripts/isg/personnel_probe.mjs', 'scripts/isg/sql/personnel_mutation_fixture.sql', 'scripts/isg/personnel_mutation_probe.mjs', 'supabase/functions/_shared/personnel/assignment-move.ts', 'supabase/functions/_shared/isg/mutation-context.ts', 'contracts/isg/v1/fixtures/assignment-move.json', 'scripts/isg/legacy_capacity_oracle.mjs', 'scripts/isg/verify_environment.mjs', 'contracts/isg/v1/safety-policy.json']
+    .concat(['scripts/isg/sql/employee_intake_fixture.sql', 'scripts/isg/employee_intake_probe.mjs', 'supabase/functions/_shared/personnel/employee-create.ts', 'contracts/isg/v1/fixtures/employee-create.json'])
     .map(path => [path, createHash('sha256').update(readFileSync(resolve(ROOT, path))).digest('hex')])),
   cases: [], cleanup: 'NOT_NEEDED' };
 const childEnv = { PATH: process.env.PATH ?? '', HOME: process.env.HOME ?? '', DOCKER_CONFIG: process.env.DOCKER_CONFIG ?? '', LANG: 'C.UTF-8' };
@@ -253,6 +255,8 @@ try {
   await runPersonnelProbe({ query, concurrent, check, killSleepingTransaction });
   query(readFileSync(resolve(ROOT, 'scripts/isg/sql/personnel_mutation_fixture.sql'), 'utf8'));
   await runPersonnelMutationProbe({ query, concurrent, check, killSleepingTransaction });
+  query(readFileSync(resolve(ROOT, 'scripts/isg/sql/employee_intake_fixture.sql'), 'utf8'));
+  await runEmployeeIntakeProbe({ query, concurrent, check, killSleepingTransaction });
   report.ok = true;
 } catch (error) {
   report.ok = false; report.error_code = /^DB_/.test(error.message) ? error.message : 'DB_CONTRACT_ASSERTION_FAILED';
