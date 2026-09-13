@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-13",
+  "phase": "P09",
+  "slice": "server-defined state machine, corrective actions, expert verification, versioned checklist templates and version-pinned runs",
+  "phase_complete": false,
+  "production_deployed": false,
+  "rollout_enabled_in_migration": false,
+  "client_grant_added": false,
+  "legacy_findings_written": false,
+  "assignee_is_application_user": false,
+  "document_export_implemented": false,
+  "state_machine": {
+    "states": 8,
+    "allowed_edges": 16,
+    "refused_combinations": 48,
+    "matrix_in_database": true
+  },
+  "synthetic_auth_run": {
+    "run_id": "519b7b1f-aafc-4bde-8220-8c9d64859373",
+    "report": "output/isg/runs/synthetic-auth-mfLlR9/REPORT.json",
+    "total_checks": 555,
+    "failures": [],
+    "new_checks": 28,
+    "cleanup": "PASS"
+  },
+  "new_checks": [
+    {
+      "id": "nonconformity_core_migration_applied_with_closed_rollout",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_gate_blocks_the_domain_while_rollout_off",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_nonconformity_tables_have_rls_and_no_client_grant",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_every_allowed_edge_moves_and_every_other_edge_is_refused",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_the_matrix_lives_in_the_database",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_a_stale_version_can_not_move_the_record",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_an_assignment_needs_a_contact",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_a_cancellation_needs_a_reason",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_closing_needs_an_accepted_expert_verification",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_a_verification_is_recorded_once_per_cycle",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_a_verification_needs_a_clean_document",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_reopening_starts_a_new_verification_cycle",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_every_move_leaves_an_audit_row",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_an_action_assignee_is_not_an_application_user",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_a_closed_record_takes_no_new_action",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_a_legacy_finding_is_only_referenced_never_written",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_a_source_backed_record_needs_its_reference",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_an_empty_template_can_not_publish",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_a_published_template_carries_its_approval",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_a_run_pins_the_template_version",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_an_unknown_item_or_a_forbidden_not_applicable_is_refused",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_a_failing_item_opens_one_record_however_often_it_is_tapped",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_an_incomplete_run_can_not_be_submitted",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_a_submitted_run_is_closed_for_edits",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_publishing_a_new_template_never_edits_an_old_run",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_reconciliation_counts_the_real_ledger",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_reconciliation_keeps_one_row_per_day",
+      "result": "PASS"
+    },
+    {
+      "id": "nonconformity_core_kill_switch_stops_the_nonconformity_domain",
+      "result": "PASS"
+    }
+  ],
+  "full_legacy_copy_upgrade": {
+    "run_id": "327cee5f-173a-459e-bc17-d0d95415c16f",
+    "total_checks": 28,
+    "failures": [],
+    "cleanup": "PASS",
+    "migrations_replayed": 11,
+    "new_tables": 65,
+    "legacy_rows_unchanged": true,
+    "legacy_helper_definitions_unchanged": true
+  },
+  "source_sha256": {
+    "supabase/migrations/20260913210000_isg_nonconformity_core.sql": "3f6ad79a032e222abecf1a65a589e188867b100a84690795c8a1bf35925140db",
+    "scripts/isg/nonconformity_core_probe.mjs": "703e852698a2ab758cee885accdd7573c61f63b6e306b0b3a9a40867b3bcdd1b",
+    "scripts/isg/nonconformity_core_guard.test.mjs": "d72554e5d0b99bb1ea72eb77411fb2ff3848db31fdc31f79c3a983e43a62308f",
+    "contracts/isg/v1/nonconformity-lifecycle.md": "f680125e793d746fa461f8fd7beb1f0f9224594dd0901fd8cd715bfeb3f703f1"
+  },
+  "not_proven": [
+    "field screens and evidence capture",
+    "nonconformity notifications",
+    "score contribution",
+    "PDF/XLSX export",
+    "automatic derivation from a risk version",
+    "production migration or rollout"
+  ]
+}

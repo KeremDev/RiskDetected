@@ -50,7 +50,10 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'training_catalogs','training_catalog_versions','training_topic_groups','training_class_rules',
       'company_curriculum_versions','training_plans','training_sessions','training_enrolments',
       'attendance_intervals','assessment_attempts','training_completions','external_credentials',
-      'risk_assessments','risk_assessment_versions','risk_source_links','revision_impacts','risk_file_variants']);
+      'risk_assessments','risk_assessment_versions','risk_source_links','revision_impacts','risk_file_variants',
+      'nonconformity_state_edges','nonconformities','nonconformity_transitions','nonconformity_actions',
+      'verification_records','checklist_templates','checklist_template_versions','checklist_template_items',
+      'checklist_runs','checklist_run_items','nonconformity_reconciliations']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([
@@ -74,6 +77,12 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'risk_assessments_risk_assessment_owner_idx','risk_assessment_versions_risk_version_state_idx',
       'risk_assessment_versions_risk_version_asset_idx','risk_assessment_versions_risk_version_verifier_idx',
       'risk_file_variants_risk_variant_asset_idx',
+      'nonconformities_nonconformity_scope_idx','nonconformities_nonconformity_owner_idx','nonconformities_nonconformity_due_idx',
+      'nonconformity_transitions_transition_actor_idx','nonconformity_actions_action_scope_idx',
+      'verification_records_verification_verifier_idx','verification_records_verification_asset_idx',
+      'checklist_runs_checklist_run_scope_idx','checklist_runs_checklist_run_owner_idx','checklist_runs_checklist_run_template_idx',
+      'checklist_run_items_checklist_item_asset_idx','checklist_run_items_checklist_item_nonconformity_idx',
+      'checklist_template_versions_checklist_version_approver_idx',
     ].map(key=>'unused_index_private_isg_'+key));
     pass('personnel_advisor_no_unreviewed_findings',relevant.every(f=>f.level==='INFO'&&f.metadata?.schema==='private_isg'&&
       ((f.name==='rls_enabled_no_policy'&&denyTables.has(f.metadata?.name))||(f.name==='unused_index'&&reviewedFKIndexes.has(f.cache_key)))));
