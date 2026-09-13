@@ -5689,6 +5689,4668 @@
         }
       }
     },
+    "localizable.notebook.destination.10.dk.ertele.5de1fe5a": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:132; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Snooze 10 min"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10 dk ertele"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.baslik.035bd998": {
+      "comment": "swiftui_text; App/Views/Components/NotebookDestination.swift:205; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Title"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlık"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.baslik.en.cok.200.metin.en.cok.20.000.karakter.158acde5": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:207; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Title at most 200, text at most 20,000 characters."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlık en çok 200, metin en çok 20.000 karakter."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.baslik.f4cde22e": {
+      "comment": "swiftui_text; App/Views/Components/NotebookDestination.swift:184; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Title"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlık"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.basliksiz.not.032c1b51": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:148; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untitled note"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlıksız not"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.basliksiz.not.0ceaa7da": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:169; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untitled note"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlıksız not"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.bildirim.izni.ve.guncel.cihaz.kaydi.gerekli.bild.a2d8f091": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:310; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification permission and a current device registration are required. Turn on notifications and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirim izni ve güncel cihaz kaydı gerekli. Bildirimleri açıp yeniden deneyin."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.checklist.kaydedilemedi.bos.tekrar.eden.alanlari.fc47d00d": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:243; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The checklist could not be saved. Check for empty or repeated fields and the length limits."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checklist kaydedilemedi. Boş/tekrar eden alanları ve uzunluk sınırlarını kontrol edin."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.checklist.maddesini.kaldir.4f80a1e0": {
+      "comment": "swiftui_modifier; App/Views/Components/NotebookDestination.swift:229; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove checklist item"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checklist maddesini kaldır"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.checklist.surumlerini.incele.97092e1b": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:154; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review checklist versions"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checklist sürümlerini incele"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.checklist.taslagi.kaydedildi.esitle.ile.gonderin.69a4d941": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:242; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The checklist draft was saved. Send it with Sync."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checklist taslağı kaydedildi. Eşitle ile gönderin."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.checklist.taslagini.kaydet.378765a8": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:235; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save the checklist draft"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checklist taslağını kaydet"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.checklist.ve.etiket.taslagi.e192ce35": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:149; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checklist and tag draft"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checklist ve etiket taslağı"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.checklist.ve.etiketler.8bf05f5e": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:174; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checklist and tags"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checklist ve etiketler"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.checklist.yuklenemedi.veya.not.silinmis.kaydedil.417bd636": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:256; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The checklist could not be loaded or the note was deleted. Saved drafts are kept."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checklist yüklenemedi veya not silinmiş. Kaydedilmiş taslaklar korunuyor."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.duzenlemeye.don.1c743dcf": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:88; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to editing"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düzenlemeye dön"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.editordeki.degisiklikleri.kaydetmeden.cikmak.ist.636699d9": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:84; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do you want to leave the editor without saving your changes? Previously saved drafts are not deleted."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Editördeki değişiklikleri kaydetmeden çıkmak istiyor musunuz? Daha önce kaydedilmiş taslaklar silinmez."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.esitle.ec7babeb": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:112; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşitle"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.esitleme.kullanilamiyor.bu.cihazdaki.kaydedilmis.bc0dfda7": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:267; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync is unavailable. Your drafts saved on this device are kept."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşitleme kullanılamıyor. Bu cihazdaki kaydedilmiş taslaklarınız korunuyor."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.esitleme.tamamlanamadi.bekleyen.islemler.ayni.ki.544f48e2": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:288; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync could not be completed. Pending operations will be retried with the same identifier."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşitleme tamamlanamadı. Bekleyen işlemler aynı kimlikle yeniden denenecek."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.esitleme.tamamlandi.islem.gerektiren.taslaklar.a.d6d47393": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:285; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sync is complete. Drafts that need action are shown separately."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşitleme tamamlandı. İşlem gerektiren taslaklar ayrıca gösterilir."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.etiketler.virgulle.ayirin.a64c2c8c": {
+      "comment": "swiftui_text; App/Views/Components/NotebookDestination.swift:222; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tags (separate with commas)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Etiketler (virgülle ayırın)"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.gonderilmeyi.bekliyor.303c7ae8": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:147; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting to be sent"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gönderilmeyi bekliyor"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.guncel.sunucu.checklist.i.f6e5b3eb": {
+      "comment": "swiftui_text; App/Views/Components/NotebookDestination.swift:219; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current server checklist"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güncel sunucu checklist'i"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.guncel.sunucu.surumu.df387713": {
+      "comment": "swiftui_text; App/Views/Components/NotebookDestination.swift:202; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current server version"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güncel sunucu sürümü"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.guncel.surum.alinamadi.veya.not.silinmis.taslagi.45311491": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:297; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The current version could not be fetched or the note was deleted. Your draft is kept; sync and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güncel sürüm alınamadı veya not silinmiş. Taslağınız korunuyor; eşitleyip yeniden deneyin."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.hatirlatici.10.dakika.ertelendi.4ccf81b9": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:324; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The reminder was snoozed for 10 minutes."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hatırlatıcı 10 dakika ertelendi."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.hatirlatici.bu.cihazin.sunucu.bildirimi.kaydina..4ea41591": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:307; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The reminder was bound to this device's server notification registration."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hatırlatıcı bu cihazın sunucu bildirimi kaydına bağlandı."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.hatirlatici.degistirilemedi.guncel.listeyi.esitl.b46c2f0f": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:325; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The reminder could not be changed. Sync the current list and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hatırlatıcı değiştirilemedi. Güncel listeyi eşitleyip yeniden deneyin."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.hatirlatici.iptal.edildi.d1892027": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:324; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The reminder was cancelled."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hatırlatıcı iptal edildi."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.hatirlatici.olusturulamadi.baglantiyi.ve.tarihi..a8b8cf37": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:312; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The reminder could not be created. Check the connection and the date, then try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hatırlatıcı oluşturulamadı. Bağlantıyı ve tarihi kontrol edip yeniden deneyin."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.hatirlatici.olusturulamadi.oturumu.ve.alanlari.k.a096b14c": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:311; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The reminder could not be created. Check your session and the fields, then try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hatırlatıcı oluşturulamadı. Oturumu ve alanları kontrol edip yeniden deneyin."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.hatirlatici.tamamlandi.01582ea4": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:324; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The reminder was completed."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hatırlatıcı tamamlandı."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.hatirlaticilar.sunucu.bildirimi.1de99c40": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:114; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders · Server notification"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hatırlatıcılar · Sunucu bildirimi"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.hatirlaticiyi.iptal.et.66814eec": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:137; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel the reminder"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hatırlatıcıyı iptal et"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.hatirlaticiyi.olustur.f3065fd2": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:196; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create the reminder"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hatırlatıcıyı oluştur"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.henuz.not.yok.01cfb913": {
+      "comment": "swiftui_text; App/Views/Components/NotebookDestination.swift:143; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No notes yet"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz not yok"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.iki.surumu.incele.df04069e": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:158; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review both versions"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İki sürümü incele"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.ilk.surumde.yerel.alarm.kullanilmaz.teslimat.bu..a5c0ee4a": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:118; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The first version does not use a local alarm. Delivery is bound to this installation's authorised notification registration."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlk sürümde yerel alarm kullanılmaz. Teslimat, bu kurulumun yetkili bildirim kaydına bağlanır."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.islem.once.cihazda.saklanir.sunucu.onayladiginda.61586112": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:97; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The operation is stored on the device first. Once the server confirms it, the note is deleted on your other devices too."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşlem önce cihazda saklanır. Sunucu onayladığında not diğer cihazlarda da silinir."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.islem.suruyor.3e5058a7": {
+      "comment": "swiftui_modifier; App/Views/Components/NotebookDestination.swift:103; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Operation in progress"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşlem sürüyor"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.kapat.77119d45": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:17; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapat"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.kapat.fc1bf7d5": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:66; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapat"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.kaydedilemedi.metni.kapatmadan.uzunlugu.oturumu..8cd64c3f": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:277; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not be saved. Without closing the text, check the length, your session and device access."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydedilemedi. Metni kapatmadan uzunluğu, oturumu ve cihaz erişimini kontrol edin."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.kaydedilmemis.degisiklikler.40096567": {
+      "comment": "swiftui_text; App/Views/Components/NotebookDestination.swift:83; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unsaved changes"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydedilmemiş değişiklikler"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.kaydetmeden.cik.90c82e30": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:85; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave without saving"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydetmeden çık"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.kisisel.notlar.a3d7499d": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:69; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal Notes"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kişisel Notlar"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.listeye.don.b77bb4b3": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:197; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to the list"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listeye dön"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.listeye.don.d70e4dff": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:214; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to the list"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listeye dön"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.listeye.don.fdea1f52": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:245; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to the list"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listeye dön"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.madde.ekle.cf6ff89c": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:234; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add item"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Madde ekle"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.not.defteri.icin.oturum.acin.b71c112d": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:17; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to use the notebook."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not defteri için oturum açın."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.not.silinsin.mi.7635c311": {
+      "comment": "swiftui_text; App/Views/Components/NotebookDestination.swift:96; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the note?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not silinsin mi?"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.notu.sil.e405f33b": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:212; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the note"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notu sil"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.silme.istegi.fa696aef": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:149; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deletion request"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Silme isteği"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.tamamlandi.0f48813c": {
+      "comment": "swiftui_text; App/Views/Components/NotebookDestination.swift:225; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamamlandı"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.tarih.ve.saat.12f085f6": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:191; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date and time"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarih ve saat"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.taslagi.guvenle.kaydet.53b9a015": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:210; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save the draft securely"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taslağı güvenle kaydet"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.taslaginiz.korunuyor.islem.gerekli.9cc6b790": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:147; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your draft is kept · action needed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taslağınız korunuyor · işlem gerekli"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.taslak.bu.cihazda.kaydedildi.esitle.ile.sunucuya.564ba03c": {
+      "comment": "swift_user_copy; App/Views/Components/NotebookDestination.swift:276; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The draft was saved on this device. You can send it to the server with Sync."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taslak bu cihazda kaydedildi. Eşitle ile sunucuya gönderebilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.teslimat.sahibi.bu.cihazdaki.sunucu.bildirimi.ka.d07077c3": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:193; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delivery owner: this device's server notification registration. Without notification permission or a current device registration, no reminder is created."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teslimat sahibi: bu cihazdaki sunucu bildirimi kaydı. Bildirim izni veya güncel cihaz kaydı yoksa hatırlatıcı oluşturulmaz."
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.ucretsiz.yalniz.size.ait.firmalardan.bagimsiz.0a2e3688": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:71; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free · Yours only · Independent of companies"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ücretsiz · Yalnız size ait · Firmalardan bağımsız"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.vazgec.30cebb09": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:99; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.yapilacak.23e57a0e": {
+      "comment": "swiftui_text; App/Views/Components/NotebookDestination.swift:227; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To do"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yapılacak"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.yeni.hatirlatici.acb2b922": {
+      "comment": "swiftui_text; App/Views/Components/NotebookDestination.swift:183; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New reminder"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni hatırlatıcı"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.yeni.hatirlatici.dbfa239c": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:119; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New reminder"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni hatırlatıcı"
+          }
+        }
+      }
+    },
+    "localizable.notebook.destination.yeni.not.96d419d7": {
+      "comment": "custom_ui_copy; App/Views/Components/NotebookDestination.swift:109; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New note"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni not"
+          }
+        }
+      }
+    },
+    "localizable.notebook.reminder.bir.kez.ef18e5ef": {
+      "comment": "computed_ui_copy; App/Services/Notebook/NotebookReminder.swift:9; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Once"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir kez"
+          }
+        }
+      }
+    },
+    "localizable.notebook.reminder.her.ay.90b7df04": {
+      "comment": "computed_ui_copy; App/Services/Notebook/NotebookReminder.swift:12; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monthly"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Her ay"
+          }
+        }
+      }
+    },
+    "localizable.notebook.reminder.her.gun.ccd74089": {
+      "comment": "computed_ui_copy; App/Services/Notebook/NotebookReminder.swift:10; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daily"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Her gün"
+          }
+        }
+      }
+    },
+    "localizable.notebook.reminder.her.hafta.e78b21ff": {
+      "comment": "computed_ui_copy; App/Services/Notebook/NotebookReminder.swift:11; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekly"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Her hafta"
+          }
+        }
+      }
+    },
+    "localizable.nova.company.error.companies.not.loaded": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaCompanyDestination.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Companies could not be loaded. Please try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmalar yüklenemedi. Lütfen tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.company.gate.back.to.management": {
+      "comment": "nova_manual; App/Views/Components/NovaCompanyManagementGate.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to personnel and workplace management"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personel ve işyeri yönetimine dön"
+          }
+        }
+      }
+    },
+    "localizable.nova.company.management.gate.firma.ekle.duzenle.005d0121": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaCompanyManagementGate.swift:23; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add / edit company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma ekle / düzenle"
+          }
+        }
+      }
+    },
+    "localizable.nova.company.management.gate.firma.erisimi.dogrulaniyor.3bf732f2": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaCompanyManagementGate.swift:13; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifying company access…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma erişimi doğrulanıyor…"
+          }
+        }
+      }
+    },
+    "localizable.nova.company.management.gate.kapat.3148ed17": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaCompanyManagementGate.swift:13; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapat"
+          }
+        }
+      }
+    },
+    "localizable.nova.company.management.gate.salt.okunur.kayitlariniz.korunuyor.2cc72e1b": {
+      "comment": "swiftui_text; App/Views/Components/NovaCompanyManagementGate.swift:63; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read only · your records are kept"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salt okunur · kayıtlarınız korunuyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.company.management.gate.yeni.kayit.ve.duzenleme.su.anda.kullanilamiyor.d83e8253": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaCompanyManagementGate.swift:63; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creating and editing records is currently unavailable."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni kayıt ve düzenleme şu anda kullanılamıyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.components.loading.description": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaComponents.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Operation in progress"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşlem sürüyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.baslangic.tarihini.yyyy.aa.gg.biciminde.gecerli..ab922e2c": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaDirectory.swift:118; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the start date as a valid date in YYYY-MM-DD format."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlangıç tarihini YYYY-AA-GG biçiminde geçerli bir tarih olarak girin."
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.bitis.haric.baslangic.tarihinden.sonra.olmali.634aae6f": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaDirectory.swift:121; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The end (exclusive) must be after the start date."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitiş (hariç), başlangıç tarihinden sonra olmalı."
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.bitis.tarihini.yyyy.aa.gg.biciminde.gecerli.bir..a16549c5": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaDirectory.swift:120; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the end date as a valid date in YYYY-MM-DD format."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitiş tarihini YYYY-AA-GG biçiminde geçerli bir tarih olarak girin."
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.departmani.secili.isyerinin.gecerli.listesinden..06cd2a68": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaDirectory.swift:135; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the department from the selected workplace's current list; you cannot make your own sub-department the parent."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Departmanı seçili işyerinin geçerli listesinden seçin; kendi alt departmanınızı üst departman yapamazsınız."
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.dis.firmalar.0d65ea43": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaDirectory.swift:11; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "External Companies"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dış Firmalar"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.edit.employer.relationship": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit the employer relationship"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşveren ilişkisini düzenle"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.engagement.ongoing": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ongoing"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devam ediyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.error.not.verified.yet": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The operation could not be verified yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşlem henüz doğrulanamadı."
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.error.operation.unverified": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The operation could not be verified. Check the same operation without changing the information, or go back and refresh the pending operation status."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşlem doğrulanamadı. Bilgileri değiştirmeden aynı işlemi kontrol edin veya geri dönüp bekleyen işlem durumunu yenileyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.error.options.not.loaded": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The options could not be loaded. Your information is kept; reload them."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçenekler yüklenemedi. Bilgileriniz korunuyor; tekrar yükleyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.error.record.rejected": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record was not accepted. Check the information; if the record changed, go back and load its current version."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt kabul edilmedi. Bilgileri kontrol edin; kayıt değiştiyse geri dönüp güncel halini yükleyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.error.records.not.loaded": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Records could not be loaded. Check your access and your connection."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlar yüklenemedi. Erişiminizi ve bağlantınızı kontrol edin."
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.field.required": {
+      "comment": "nova_manual; interpolated copy migrated to a format string; placeholders: %@; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is required."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ gerekli."
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.gorev.ve.unvanlar.3b6da780": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaDirectory.swift:10; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Roles and Titles"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görev ve Unvanlar"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.gorevlendirme.gecmisi.292a5411": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaDirectory.swift:14; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assignment History"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görevlendirme Geçmişi"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.isyeri.baglam.gecmisi.68d6a76b": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaDirectory.swift:13; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workplace Context History"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri Bağlam Geçmişi"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.isyeri.iliskileri.aaeec732": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaDirectory.swift:12; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workplace Relationships"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri İlişkileri"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.isyerleri.ba573a76": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaDirectory.swift:8; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workplaces"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyerleri"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.new.record": {
+      "comment": "nova_manual; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New record"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni kayıt"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.onceki.donemi.listeden.yeniden.secin.gerekirse.d.aac0579f": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaDirectory.swift:125; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select the previous period from the list again; load the other records if needed."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önceki dönemi listeden yeniden seçin; gerekirse diğer kayıtları yükleyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.pending.operation": {
+      "comment": "nova_manual; interpolated copy migrated to a format string; placeholders: %@; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending operation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekleyen işlem"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.personelin.isvereni.ca42577b": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaDirectory.swift:15; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Employee's Employer"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personelin İşvereni"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.recheck.same.operation": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check the same operation again"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aynı işlemi tekrar kontrol et"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.record.fallback.title": {
+      "comment": "nova_manual; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.save": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.ad.unvan.409140cb": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:110; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name / title"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ad / unvan"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.adres.0d741be0": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:115; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Address"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adres"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.alt.isveren.963bc955": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaDirectoryScreens.swift:150; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subcontractor"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alt işveren"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.arsivde.65ab5741": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:50; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archived"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivde"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.arsivdekileri.goster.885b965a": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaDirectoryScreens.swift:34; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show archived"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivdekileri göster"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.arsivle.16066149": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaDirectoryScreens.swift:157; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivle"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.baglam.degisikliginin.dayanagi.52cc1a59": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:120; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basis for the context change"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bağlam değişikliğinin dayanağı"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.bekleyen.islemi.tamamla.f65ddd7f": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:40; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Complete the pending operation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekleyen işlemi tamamla"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.bitis.haric.yyyy.aa.gg.377bce27": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:119; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "End (exclusive) · YYYY-MM-DD"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitiş (hariç) · YYYY-AA-GG"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.calisilan.isyerleri.ab67bdf8": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaDirectoryScreens.swift:59; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workplaces worked at"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çalışılan işyerleri"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.cok.5c09224d": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaDirectoryScreens.swift:152; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "High"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çok"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.daha.fazla.f2dbe624": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:66; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha fazla"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.degisiklik.nedeni.saglik.bilgisi.yazmayin.3e3e4fa2": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:121; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reason for the change · do not write health information"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Değişiklik nedeni · sağlık bilgisi yazmayın"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.diger.fbcfe757": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaDirectoryScreens.swift:150; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diğer"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.diger.kayitlar.65cf0945": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaDirectoryScreens.swift:147; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other records"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diğer kayıtlar"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.dis.firma.193c52c0": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:112; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "External company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dış firma"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.duzenle.7e356212": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:54; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düzenle"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.faaliyet.kodu.65b694cf": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:120; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activity code"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faaliyet kodu"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.firma.isyeri.ve.baslangic.degismez.bitisi.ve.aci.5e2c5767": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:130; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The company, workplace and start do not change. You can edit the end and the description."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma, işyeri ve başlangıç değişmez. Bitişi ve açıklamayı düzenleyebilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.gecerlilik.baslangici.yyyy.aa.gg.d31f4d4c": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:113; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valid from · YYYY-MM-DD"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçerlilik başlangıcı · YYYY-AA-GG"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.gorev.aciklamasi.106374f8": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:117; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Role description"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görev açıklaması"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.gorev.unvan.e8ecd075": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:121; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Role / title"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görev / unvan"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.henuz.kayit.yok.282330e3": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:65; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No records yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz kayıt yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.iliski.turu.795a1713": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:118; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Relationship type"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlişki türü"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.isveren.bos.ise.ana.firma.596cbfb9": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:122; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Employer · the main company if empty"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşveren · boş ise ana firma"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.isyeri.dad72a5a": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:111; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workplace"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.mevzuat.bolgesi.91602319": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:120; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jurisdiction"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mevzuat bölgesi"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.onceki.donem.d174ff93": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:120; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous period"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önceki dönem"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.onceki.donemi.secerseniz.bu.kayit.baslangic.tari.aa072143": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:129; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you choose the previous period, this record is split at the start date; the older information is kept. The end day is not included in the period."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önceki dönemi seçerseniz bu kayıt başlangıç tarihinde bölünür; eski bilgiler korunur. Bitiş günü döneme dahil değildir."
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.onceki.gorevlendirme.f27c09cd": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:121; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous assignment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önceki görevlendirme"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.onceki.islemi.dogrulamadan.yeni.kayit.gondermeyi.87c426e4": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:39; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do not send a new record before verifying the previous operation."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önceki işlemi doğrulamadan yeni kayıt göndermeyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.saat.dilimi.or.europe.istanbul.d7de0b12": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:120; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time zone · e.g. Europe/Istanbul"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saat dilimi · ör. Europe/Istanbul"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.salt.okunur.kayit.gecmisiniz.korunuyor.2fdb9d4d": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:44; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read only · your record history is kept."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salt okunur · kayıt geçmişiniz korunuyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.secenekleri.tekrar.yukle.df9dc016": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:159; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reload the options"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçenekleri tekrar yükle"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.secimi.kaldir.0db468a9": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaDirectoryScreens.swift:140; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear the selection"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçimi kaldır"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.secin.5519ecdd": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaDirectoryScreens.swift:152; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçin"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.tarihli.baglam.1cc36fca": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaDirectoryScreens.swift:56; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dated context"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarihli bağlam"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.tedarikci.dfce7f7e": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaDirectoryScreens.swift:150; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supplier"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tedarikçi"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.tehlike.sinifi.95aff6af": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:120; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hazard class"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tehlike sınıfı"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.tekrar.yukle.68942254": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:46; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reload"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekrar yükle"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.ust.departman.8976d96f": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:116; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parent department"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Üst departman"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.yapilan.is.403402ce": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaDirectoryScreens.swift:119; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Work performed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yapılan iş"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.screens.yuklenici.3d11aad1": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaDirectoryScreens.swift:150; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contractor"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yüklenici"
+          }
+        }
+      }
+    },
+    "localizable.nova.directory.yeni.baslangic.onceki.donemin.baslangicindan.son.9f10fbc6": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaDirectory.swift:127; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The new start must be after the previous period's start and, if there is one, before its end."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni başlangıç, önceki dönemin başlangıcından sonra ve varsa bitişinden önce olmalı."
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.ai.asistan.fd9d94db": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:608; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Assistant"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Asistan"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.aramayi.temizle.e3d82e8b": {
+      "comment": "swiftui_modifier; App/DesignSystem/ISG/NovaExpertShell.swift:737; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear search"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aramayı temizle"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.bildirim.merkezine.git.65adaa40": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:411; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to the notification centre"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirim merkezine git"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.bildirimleri.sil.8e14b659": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:381; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete notifications"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirimleri sil"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.bu.ay.6f00fad9": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:524; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This month"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu ay"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.bu.bolum.henuz.kullanima.acik.degil.38c52ea3": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:34; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This section is not available yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu bölüm henüz kullanıma açık değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.bulgu.fotograf.ve.oncelik.6cb3a0fa": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:423; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finding, photo and priority"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulgu, fotoğraf ve öncelik"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.canli.akis.594c801d": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:616; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live Feed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Canlı Akış"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.cikis.yap.6a3d02af": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:328; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çıkış yap"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.egitim.ve.takip.bc2f6a1a": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:553; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training and Follow-up"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitim ve Takip"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.firma.ara.c12d1792": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaExpertShell.swift:733; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search companies..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma ara..."
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.firma.personeline.egitim.kaydi.olustur.17b5c3df": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:426; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a training record for company personnel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma personeline eğitim kaydı oluştur"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.firmalar.alinamadi.6886c13c": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaExpertShell.swift:745; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Companies could not be loaded"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmalar alınamadı"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.firmalar.yukleniyor.af61acb2": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaExpertShell.swift:742; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading companies"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmalar yükleniyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.fotograf.cek.veya.galeriden.sec.bea08bcc": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:659; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take a photo or choose from the gallery"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf çek veya galeriden seç"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.hesabim.f6d2ed00": {
+      "comment": "swiftui_modifier; App/DesignSystem/ISG/NovaExpertShell.swift:105; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My Account"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hesabım"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.isg.uzmani.4d28231f": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:302; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OHS Specialist"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSG Uzmanı"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.kapat.73fe721a": {
+      "comment": "swiftui_modifier; App/DesignSystem/ISG/NovaExpertShell.swift:291; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapat"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.ne.eklemek.istiyorsun.ee07893e": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:338; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What would you like to add?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ne eklemek istiyorsun?"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.ozet.79587bac": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:522; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summary"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Özet"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.panele.don.1bfcbdff": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:774; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to the panel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Panele dön"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.panele.don.641cd095": {
+      "comment": "swiftui_modifier; App/DesignSystem/ISG/NovaExpertShell.swift:725; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to the panel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Panele dön"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.rapor.form.veya.belge.yukle.d2d30a9a": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:424; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upload a report, form or document"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor, form veya belge yükle"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.saha.denetim.asistani.192b4816": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:114; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Field inspection assistant"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saha denetim asistanı"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.son.uygunsuzluklar.6355cdea": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:563; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent Nonconformities"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Son Uygunsuzluklar"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.tekrar.dene.f1867f5e": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaExpertShell.swift:747; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekrar dene"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.tumu.497eccb9": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:620; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tümü"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.tumu.e4457af3": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:565; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tümü"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.tumunu.oku.8adf7334": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:376; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark all as read"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tümünü oku"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.uygunsuzluk.ekle.808de642": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:668; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Nonconformity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygunsuzluk Ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.vazgec.5f0c7644": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:359; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.yeni.bildirim.yok.dcd7439a": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaExpertShell.swift:386; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No new notifications"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni bildirim yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.yeni.kayit.9acd3c41": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:640; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New record"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni kayıt"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.yeni.saha.ziyareti.planla.dbc1aeb4": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:425; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan a new site visit"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni saha ziyareti planla"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.ana.sayfa.1fc29356": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:21; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ana Sayfa"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.ana.sayfa.32b7f210": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:9; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ana Sayfa"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.bildirim.merkezi.e5d0ac4c": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:33; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification Centre"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirim Merkezi"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.diger.dosyalar.f5089207": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:27; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other Files"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diğer Dosyalar"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.dosya.ekle.1d00b6f7": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:35; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add File"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya Ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.egitim.ekle.5662b38f": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:37; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Training"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitim Ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.egitim.ve.takip.59c46410": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:30; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training and Follow-up"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitim ve Takip"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.evrak.takibi.1d59a02d": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:26; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document Tracking"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evrak Takibi"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.isletme.hafizasi.c231f5c8": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:25; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company Memory"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşletme Hafızası"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.istatistikler.da698529": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:29; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Statistics"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İstatistikler"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.rapor.arsivi.67865663": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:32; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report Archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor Arşivi"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.rapor.olustur.3c24b0ae": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:31; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create Report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor Oluştur"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.yeni.uygunsuzluk.0f9172a3": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:22; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Nonconformity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni Uygunsuzluk"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.ziyaret.ekle.061f46a5": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:36; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Visit"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ziyaret Ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.active": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktif"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.archived": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archived"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivde"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.archiving.operation": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archiving operation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivleme işlemi"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.edit": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düzenle"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.edit.title": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit Employee"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personeli Düzenle"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.error.department.ambiguous": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There is more than one department with the same name. Choose from the list."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aynı adlı birden fazla departman var. Listeden seçin."
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.error.not.loaded": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personnel could not be loaded. Please try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personeller yüklenemedi. Lütfen tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.error.pending.unverified": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The pending operation could not be verified. Check it again before creating a new record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekleyen işlem doğrulanamadı. Yeni kayıt açmadan tekrar kontrol edin."
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.error.record.changed": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record has changed. Go back and open the current record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt değişmiş. Geri dönüp güncel kaydı açın."
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.error.rejected": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The operation was rejected. Check the information and your access."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşlem reddedildi. Bilgileri ve erişiminizi kontrol edin."
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.no.department.selected": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No department selected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Departman seçilmedi"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.reactivate": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reactivate"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeniden etkinleştir"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.reactivate.title": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reactivate Employee"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personeli Etkinleştir"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.save": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save the employee"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personeli kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.save.changes": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save changes"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Değişiklikleri kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.ad.soyad.9ca817b1": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaPersonnelScreens.swift:224; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full name"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ad soyad"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.ad.soyad.afff790d": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:223; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full name"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ad soyad"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.arsivde.b15e4fa0": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:90; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archived"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivde"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.arsivdekileri.de.goster.1c9e4bc7": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaPersonnelScreens.swift:65; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Also show archived"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivdekileri de göster"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.arsivle.bfb5fd4d": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:270; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivle"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.ayni.islemi.tekrar.kontrol.et.e7b5d522": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:248; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check the same operation again"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aynı işlemi tekrar kontrol et"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.bekleyen.islemi.tamamla.c7e7dd9b": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:73; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Complete the pending operation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekleyen işlemi tamamla"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.bekleyen.personel.islemi.f9de31cd": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:70; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pending personnel operation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekleyen personel işlemi"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.bos.birakabilirsiniz.yeni.ad.personelle.birlikte.7e36904d": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:234; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You may leave this empty. A new name is saved together with the employee."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boş bırakabilirsiniz. Yeni ad, personelle birlikte kaydedilir."
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.daha.fazla.goster.3e8d6c6b": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:98; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show more"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha fazla göster"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.departman.istege.bagli.baf6041e": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:229; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Department · optional"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Departman · isteğe bağlı"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.departman.listesi.yuklenemedi.bos.birakabilir.ve.256eb508": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:240; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The department list could not be loaded. You may leave it empty or type a new name."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Departman listesi yüklenemedi. Boş bırakabilir veya yeni ad yazabilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.departman.sec.veya.yeni.ad.yaz.70373e55": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaPersonnelScreens.swift:233; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a department or type a new name"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Departman seç veya yeni ad yaz"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.diger.departmanlar.d52232c2": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaPersonnelScreens.swift:239; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other departments"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diğer departmanlar"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.gecmis.kayitlar.silinmez.0e1817f6": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:269; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Past records are not deleted."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçmiş kayıtlar silinmez."
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.gorevlendirme.gecmisi.b56428ce": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:176; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assignment history"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görevlendirme geçmişi"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.henuz.personel.yok.d4c4f866": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:81; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No personnel yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz personel yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.isveren.iliskisi.9ad2bc6f": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:177; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Employer relationship"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşveren ilişkisi"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.kaldir.f6bad754": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaPersonnelScreens.swift:231; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaldır"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.kayit.sonucu.dogrulanamadi.yeni.kayit.acmadan.ay.b06ff69b": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:247; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The result of the record could not be verified. Check the same operation before creating a new record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt sonucu doğrulanamadı. Yeni kayıt açmadan aynı işlemi kontrol edin."
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.onceki.islemin.sonucu.henuz.kesinlesmedi.ayni.is.792fe10f": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:71; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The result of the previous operation is not final yet. Continue by checking it with the same operation key."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önceki işlemin sonucu henüz kesinleşmedi. Aynı işlem anahtarıyla kontrol ederek devam edin."
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.personel.ara.6695c740": {
+      "comment": "swiftui_text; App/DesignSystem/ISG/NovaPersonnelScreens.swift:63; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search personnel…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personel ara…"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.personel.arsivlensin.mi.f0b5b5c4": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:268; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive this employee?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personel arşivlensin mi?"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.personel.detayi.93b8adba": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:165; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personnel Detail"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personel Detayı"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.personel.ekle.565c83dd": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:79; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Personnel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personel Ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.personel.yeniden.etkinlestirilecek.tarihler.ve.g.945b2a9b": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:218; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The employee will be reactivated. Dates and past records do not change; you can add a new assignment later if needed."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personel yeniden etkinleştirilecek. Tarihler ve geçmiş kayıtlar değişmez; gerekirse daha sonra yeni görevlendirme ekleyebilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.personel.yuklenemedi.9398cf6a": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:179; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personnel could not be loaded."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personel yüklenemedi."
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.personeli.arsivle.715aa012": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:252; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive the employee"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personeli arşivle"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.salt.okunur.yeni.kayit.ve.duzenleme.kullanilamiy.7c6bdf36": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:78; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read only · creating and editing records is unavailable."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salt okunur · yeni kayıt ve düzenleme kullanılamıyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.tekrar.dene.c2d238eb": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:80; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekrar dene"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.tekrar.dene.d6e62bf1": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:179; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekrar dene"
+          }
+        }
+      }
+    },
+    "localizable.nova.personnel.screens.vazgec.37a5f5b0": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaPersonnelScreens.swift:274; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
+          }
+        }
+      }
+    },
+    "localizable.nova.shell.add.nonconformity": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Nonconformity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygunsuzluk Ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.shell.assigned.company.count": {
+      "comment": "nova_manual; interpolated copy migrated to a format string; placeholders: %@; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ assigned companies"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ atanmış firma"
+          }
+        }
+      }
+    },
+    "localizable.nova.shell.back": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri"
+          }
+        }
+      }
+    },
+    "localizable.nova.shell.clear.search": {
+      "comment": "nova_manual; icon-only control needs a spoken name; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear search"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aramayı temizle"
+          }
+        }
+      }
+    },
+    "localizable.nova.shell.company.count": {
+      "comment": "nova_manual; interpolated copy migrated to a format string; placeholders: %@; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ companies"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ firma"
+          }
+        }
+      }
+    },
+    "localizable.nova.shell.company.not.found": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No company found"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma bulunamadı"
+          }
+        }
+      }
+    },
+    "localizable.nova.shell.connection.unknown": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No connection information"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bağlantı bilgisi yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.shell.greeting": {
+      "comment": "nova_manual; placeholders: %@; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hello, %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merhaba, %@"
+          }
+        }
+      }
+    },
+    "localizable.nova.shell.no.company.added": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No company added yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz firma eklenmedi."
+          }
+        }
+      }
+    },
+    "localizable.nova.shell.no.company.assigned": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No company is assigned to your account."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hesabına atanmış firma yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.shell.no.recent.activity": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No new activity yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz yeni etkinlik yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.shell.notifications": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirimler"
+          }
+        }
+      }
+    },
+    "localizable.nova.shell.notifications.with.new": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications, there are new notifications"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirimler, yeni bildirim var"
+          }
+        }
+      }
+    },
+    "localizable.nova.shell.open.menu": {
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the menu"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menüyü aç"
+          }
+        }
+      }
+    },
+    "localizable.nova.shell.open.nonconformities.today": {
+      "comment": "nova_manual; interpolated copy migrated to a format string; placeholders: %@; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There are %@ open nonconformities today."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün %@ açık uygunsuzluk var."
+          }
+        }
+      }
+    },
+    "localizable.nova.shell.summary.loading": {
+      "comment": "nova_manual; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading the summary…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Özet yükleniyor…"
+          }
+        }
+      }
+    },
     "localizable.profile.notifications.loading.message": {
       "comment": "computed_ui_copy; App/Views/Profile/ProfileView.swift; notification settings loading message; placeholders: none",
       "extractionState": "manual",
@@ -7921,6 +12583,24 @@
         }
       }
     },
+    "localizable.profile.view.kisisel.notlar.7b030a39": {
+      "comment": "custom_ui_copy; App/Views/Profile/ProfileView.swift:830; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal Notes"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kişisel Notlar"
+          }
+        }
+      }
+    },
     "localizable.profile.view.kontrol.et.50c9c5d5": {
       "comment": "computed_ui_copy; App/Views/Profile/ProfileView.swift:834; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
       "extractionState": "manual",
@@ -9465,6 +14145,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tüm raporlarımı sil"
+          }
+        }
+      }
+    },
+    "localizable.profile.view.ucretsiz.5f5dd787": {
+      "comment": "custom_ui_copy; App/Views/Profile/ProfileView.swift:830; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ücretsiz"
           }
         }
       }

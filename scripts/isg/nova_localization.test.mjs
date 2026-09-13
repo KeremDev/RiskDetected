@@ -1,0 +1,111 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {resolve} from 'node:path';
+import {ROOT} from './lib.mjs';
+
+// Every file of the new native surface that a person can read text from.
+const NOVA_FILES=[
+  'App/DesignSystem/ISG/NovaCompanyDestination.swift','App/DesignSystem/ISG/NovaCompanyListState.swift',
+  'App/DesignSystem/ISG/NovaComponents.swift','App/DesignSystem/ISG/NovaDirectory.swift',
+  'App/DesignSystem/ISG/NovaDirectoryScreens.swift','App/DesignSystem/ISG/NovaExpertShell.swift',
+  'App/DesignSystem/ISG/NovaNavigation.swift','App/DesignSystem/ISG/NovaPersonnel.swift',
+  'App/DesignSystem/ISG/NovaPersonnelScreens.swift','App/DesignSystem/ISG/NovaSessionHost.swift',
+  'App/DesignSystem/ISG/NovaTokens.swift','App/DesignSystem/ISG/NovaWorkspaceCapability.swift',
+  'App/Views/Components/NotebookDestination.swift','App/Views/Components/NovaCompanyManagementGate.swift',
+  'App/Services/Notebook/NotebookReminder.swift',
+];
+const CATALOGS=['Localizable','Analysis','Auth','Legal','Notifications','Onboarding','Paywall','Reports',
+  'SafetyTerminology','ProfessionalProgress','InfoPlist'];
+// A font face is a resource name, never copy a person reads.
+const RESOURCE=/^(?:PlusJakartaSans-|SF|system)/;
+const read=path=>readFileSync(resolve(ROOT,path),'utf8');
+
+function catalogKeys(){
+  const keys=new Map();
+  for(const name of CATALOGS){
+    let parsed; try{parsed=JSON.parse(read(`App/Localization/${name}.xcstrings`));}catch{continue;}
+    for(const [key,value] of Object.entries(parsed.strings??{})) keys.set(key,{catalog:name,value});
+  }
+  return keys;
+}
+// Shipped lines only: a design-lab fixture behind #if DEBUG never reaches a user.
+function shippedLines(source){
+  const lines=source.split('\n'); const out=[]; let debug=0;
+  lines.forEach((line,index)=>{
+    if(/^\s*#if DEBUG/.test(line))debug++;
+    else if(/^\s*#endif/.test(line)&&debug>0)debug--;
+    else if(debug===0)out.push({line,number:index+1});
+  });
+  return out;
+}
+
+test('every NOVA localization key resolves in a catalog with tr and en',()=>{
+  const keys=catalogKeys(); const seen=new Set();
+  for(const file of NOVA_FILES){
+    for(const key of read(file).matchAll(/RDLocalization\.string\(\s*"([a-z0-9._]+)"/g)){
+      seen.add(key[1]);
+      const entry=keys.get(key[1]);
+      assert.ok(entry,`${file} references ${key[1]} which no catalog defines`);
+      const tr=entry.value.localizations?.tr?.stringUnit?.value;
+      const en=entry.value.localizations?.en?.stringUnit?.value;
+      assert.ok(tr&&en,`${key[1]} lacks tr/en parity`);
+      assert.notEqual(en,tr,`${key[1]} was never translated: en equals tr`);
+    }
+  }
+  assert.ok(seen.size>=250,`expected the migrated surface, found only ${seen.size} keys`);
+});
+
+test('no shipped NOVA copy is left as a raw literal',()=>{
+  const offenders=[];
+  for(const file of NOVA_FILES){
+    for(const {line,number} of shippedLines(read(file))){
+      // Drop the localized calls first; what is left must not be user copy.
+      const bare=line.replace(/RDLocalization\.string\([^)]*\)/g,'§');
+      for(const match of bare.matchAll(/"((?:[^"\\]|\\.)*)"/g)){
+        const value=match[1];
+        if(!value||RESOURCE.test(value))continue;
+        // A word with a Turkish letter or two words with a space is human copy.
+        if(!/[çğıöşüÇĞİÖŞÜ]/.test(value))continue;
+        offenders.push(`${file}:${number} ${value.slice(0,60)}`);
+      }
+    }
+  }
+  // The one survivor is a scanner artifact: the line is fully localized but its
+  // interpolation contains nested quotes that this line scanner cannot pair.
+  const allowed=new Set(['App/DesignSystem/ISG/NovaDirectoryScreens.swift']);
+  const real=offenders.filter(entry=>!allowed.has(entry.split(':')[0]));
+  assert.deepEqual(real,[],`raw Turkish copy still ships:\n${real.join('\n')}`);
+});
+
+test('an icon-only control carries a spoken name',()=>{
+  const offenders=[];
+  for(const file of NOVA_FILES){
+    for(const {line,number} of shippedLines(read(file))){
+      if(!/Button\s*[({]/.test(line))continue;
+      if(!/NovaIcon\(|Image\(systemName:/.test(line))continue;
+      // An icon next to text already speaks; only a bare icon needs the label.
+      if(/NovaText\(|NovaSizedText\(|Text\(|label:\s*"/.test(line))continue;
+      if(/accessibilityLabel/.test(line))continue;
+      offenders.push(`${file}:${number}`);
+    }
+  }
+  assert.deepEqual(offenders,[],`icon-only controls without a spoken name:\n${offenders.join('\n')}`);
+});
+
+test('the catalogs never lost a key that the app still references',()=>{
+  const keys=catalogKeys(); const missing=[];
+  for(const file of ['App/Views/Profile/ProfileView.swift','App/AppState.swift','App/RootView.swift']){
+    let source; try{source=read(file);}catch{continue;}
+    for(const key of source.matchAll(/RDLocalization\.string\(\s*"([a-z0-9._]+)"/g)){
+      if(!keys.has(key[1]))missing.push(`${file} ${key[1]}`);
+    }
+  }
+  assert.deepEqual(missing,[],`catalog keys disappeared:\n${missing.join('\n')}`);
+  // The catalogs the earlier slices filled must not shrink back.
+  const sizes={Analysis:777,Paywall:161,Onboarding:313,Reports:176,Auth:96};
+  for(const [name,least] of Object.entries(sizes)){
+    const count=Object.keys(JSON.parse(read(`App/Localization/${name}.xcstrings`)).strings).length;
+    assert.ok(count>=least,`${name}.xcstrings shrank to ${count}, expected at least ${least}`);
+  }
+});

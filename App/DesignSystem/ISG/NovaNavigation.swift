@@ -6,7 +6,7 @@ enum NovaTab: String, CaseIterable, Hashable {
     var root: NovaDestination { NovaDestination(rawValue: rawValue)! }
     var title: String {
         switch self {
-        case .home: return "Ana Sayfa"
+        case .home: return RDLocalization.string("localizable.nova.navigation.ana.sayfa.32b7f210", table: .localizable, fallback: "Ana Sayfa")
         case .findings: return "Uygunsuzluk"
         case .companies: return "Firmalar"
         case .profile: return "Profil"
@@ -18,23 +18,23 @@ enum NovaDestination: String, CaseIterable, Hashable {
     case home, newFinding, findings, companies, memory, documentChecklist, documents, visits, statistics, training, reports, reportArchive, notifications, profile, newDocument, newVisit, newTraining
     var title: String {
         switch self {
-        case .home: return "Ana Sayfa"
-        case .newFinding: return "Yeni Uygunsuzluk"
+        case .home: return RDLocalization.string("localizable.nova.navigation.ana.sayfa.1fc29356", table: .localizable, fallback: "Ana Sayfa")
+        case .newFinding: return RDLocalization.string("localizable.nova.navigation.yeni.uygunsuzluk.0f9172a3", table: .localizable, fallback: "Yeni Uygunsuzluk")
         case .findings: return "Uygunsuzluklar"
         case .companies: return "Firmalar"
-        case .memory: return "İşletme Hafızası"
-        case .documentChecklist: return "Evrak Takibi"
-        case .documents: return "Diğer Dosyalar"
+        case .memory: return RDLocalization.string("localizable.nova.navigation.isletme.hafizasi.c231f5c8", table: .localizable, fallback: "İşletme Hafızası")
+        case .documentChecklist: return RDLocalization.string("localizable.nova.navigation.evrak.takibi.1d59a02d", table: .localizable, fallback: "Evrak Takibi")
+        case .documents: return RDLocalization.string("localizable.nova.navigation.diger.dosyalar.f5089207", table: .localizable, fallback: "Diğer Dosyalar")
         case .visits: return "Ziyaretler"
-        case .statistics: return "İstatistikler"
-        case .training: return "Eğitim ve Takip"
-        case .reports: return "Rapor Oluştur"
-        case .reportArchive: return "Rapor Arşivi"
-        case .notifications: return "Bildirim Merkezi"
+        case .statistics: return RDLocalization.string("localizable.nova.navigation.istatistikler.da698529", table: .localizable, fallback: "İstatistikler")
+        case .training: return RDLocalization.string("localizable.nova.navigation.egitim.ve.takip.59c46410", table: .localizable, fallback: "Eğitim ve Takip")
+        case .reports: return RDLocalization.string("localizable.nova.navigation.rapor.olustur.3c24b0ae", table: .localizable, fallback: "Rapor Oluştur")
+        case .reportArchive: return RDLocalization.string("localizable.nova.navigation.rapor.arsivi.67865663", table: .localizable, fallback: "Rapor Arşivi")
+        case .notifications: return RDLocalization.string("localizable.nova.navigation.bildirim.merkezi.e5d0ac4c", table: .localizable, fallback: "Bildirim Merkezi")
         case .profile: return "Profil"
-        case .newDocument: return "Dosya Ekle"
-        case .newVisit: return "Ziyaret Ekle"
-        case .newTraining: return "Eğitim Ekle"
+        case .newDocument: return RDLocalization.string("localizable.nova.navigation.dosya.ekle.1d00b6f7", table: .localizable, fallback: "Dosya Ekle")
+        case .newVisit: return RDLocalization.string("localizable.nova.navigation.ziyaret.ekle.061f46a5", table: .localizable, fallback: "Ziyaret Ekle")
+        case .newTraining: return RDLocalization.string("localizable.nova.navigation.egitim.ekle.5662b38f", table: .localizable, fallback: "Eğitim Ekle")
         }
     }
     var tab: NovaTab {

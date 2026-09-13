@@ -17,7 +17,7 @@ struct NovaCompanyDestination: View {
         let epoch = host.navigation.epoch
         NovaCompaniesScreen(companies: current.rows.map { .init(id: $0.id.uuidString.lowercased(), name: $0.name, detail: $0.detail) },
             isLoading: current.phase == .loading || current.phase == .idle,
-            error: current.phase == .failed ? "Firmalar yüklenemedi. Lütfen tekrar deneyin." : nil,
+            error: current.phase == .failed ? RDLocalization.string("localizable.nova.company.error.companies.not.loaded", table: .localizable, fallback: "Firmalar yüklenemedi. Lütfen tekrar deneyin.") : nil,
             isOwnedList: true,
             onSelect: { raw in
                 guard let id = UUID(uuidString: raw), let selected = state.select(id, requestID: current.requestID, host: host, includeArchived: includeArchived) else { return }

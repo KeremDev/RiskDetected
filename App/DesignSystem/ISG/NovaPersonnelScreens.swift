@@ -60,25 +60,25 @@ private struct PersonnelContent: View {
             LazyVStack(alignment: .leading, spacing: 14) {
                 PersonnelHeading(title: "Personeller", subtitle: companyName, onBack: onBack)
                 NovaCard(padding: 14) {
-                    HStack { NovaIcon(symbol: "magnifyingglass", size: 18); TextField("Personel ara…", text: $query).font(.custom("PlusJakartaSans-Medium", size: 15)).accessibilityIdentifier("personnel.search") }
+                    HStack { NovaIcon(symbol: "magnifyingglass", size: 18); TextField(RDLocalization.string("localizable.nova.personnel.screens.personel.ara.6695c740", table: .localizable, fallback: "Personel ara…"), text: $query).font(.custom("PlusJakartaSans-Medium", size: 15)).accessibilityIdentifier("personnel.search") }
                 }
-                Toggle("Arşivdekileri de göster", isOn: $archived).font(.subheadline)
+                Toggle(RDLocalization.string("localizable.nova.personnel.screens.arsivdekileri.de.goster.1c9e4bc7", table: .localizable, fallback: "Arşivdekileri de göster"), isOn: $archived).font(.subheadline)
                     .accessibilityIdentifier("personnel.archived")
                 if let pending {
                     NovaCard(padding: 18) {
                         VStack(alignment: .leading, spacing: 12) {
-                            HStack { NovaIcon(symbol: "arrow.clockwise", size: 22); NovaText(text: "Bekleyen personel işlemi", style: .cardTitle).accessibilityIdentifier("personnel.pending") }
-                            NovaText(text: "Önceki işlemin sonucu henüz kesinleşmedi. Aynı işlem anahtarıyla kontrol ederek devam edin.")
-                            NovaText(text: pending.name.isEmpty ? "Arşivleme işlemi" : pending.name, style: .metaQuiet)
-                            NovaButton(label: "Bekleyen işlemi tamamla", symbol: "arrow.clockwise", isEnabled: canWrite, isLoading: reconciling, action: { reconciling = true })
+                            HStack { NovaIcon(symbol: "arrow.clockwise", size: 22); NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.bekleyen.personel.islemi.f9de31cd", table: .localizable, fallback: "Bekleyen personel işlemi"), style: .cardTitle).accessibilityIdentifier("personnel.pending") }
+                            NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.onceki.islemin.sonucu.henuz.kesinlesmedi.ayni.is.792fe10f", table: .localizable, fallback: "Önceki işlemin sonucu henüz kesinleşmedi. Aynı işlem anahtarıyla kontrol ederek devam edin."))
+                            NovaText(text: pending.name.isEmpty ? RDLocalization.string("localizable.nova.personnel.archiving.operation", table: .localizable, fallback: "Arşivleme işlemi") : pending.name, style: .metaQuiet)
+                            NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.bekleyen.islemi.tamamla.c7e7dd9b", table: .localizable, fallback: "Bekleyen işlemi tamamla"), symbol: "arrow.clockwise", isEnabled: canWrite, isLoading: reconciling, action: { reconciling = true })
                                 .accessibilityIdentifier("personnel.recover")
                         }
                     }
                 }
-                if !canWrite { NovaText(text: "Salt okunur · yeni kayıt ve düzenleme kullanılamıyor.", style: .metaQuiet) }
-                NovaButton(label: "Personel Ekle", symbol: "plus", isEnabled: canWrite && pendingChecked && pending == nil && !reconciling, action: { route = .create }).accessibilityIdentifier("personnel.add")
-                if let error { NovaCard(padding: 16) { NovaText(text: error); NovaButton(label: "Tekrar dene", symbol: "arrow.clockwise", variant: .surface, action: { generation = UUID() }) } }
-                if !loading && error == nil && rows.isEmpty { NovaCard(padding: 18) { NovaText(text: "Henüz personel yok.") } }
+                if !canWrite { NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.salt.okunur.yeni.kayit.ve.duzenleme.kullanilamiy.7c6bdf36", table: .localizable, fallback: "Salt okunur · yeni kayıt ve düzenleme kullanılamıyor."), style: .metaQuiet) }
+                NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.personel.ekle.565c83dd", table: .localizable, fallback: "Personel Ekle"), symbol: "plus", isEnabled: canWrite && pendingChecked && pending == nil && !reconciling, action: { route = .create }).accessibilityIdentifier("personnel.add")
+                if let error { NovaCard(padding: 16) { NovaText(text: error); NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.tekrar.dene.c2d238eb", table: .localizable, fallback: "Tekrar dene"), symbol: "arrow.clockwise", variant: .surface, action: { generation = UUID() }) } }
+                if !loading && error == nil && rows.isEmpty { NovaCard(padding: 18) { NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.henuz.personel.yok.d4c4f866", table: .localizable, fallback: "Henüz personel yok.")) } }
                 ForEach(rows) { row in
                     Button { route = .detail(row.id) } label: {
                         NovaCard(padding: 16) {
@@ -86,8 +86,8 @@ private struct PersonnelContent: View {
                                 NovaIcon(symbol: "person", size: 24)
                                 VStack(alignment: .leading, spacing: 5) {
                                     NovaText(text: row.name, style: .cardTitle)
-                                    NovaText(text: row.departmentName ?? "Departman seçilmedi", style: .metaQuiet)
-                                    if row.isArchived { NovaText(text: "Arşivde", style: .metaQuiet) }
+                                    NovaText(text: row.departmentName ?? RDLocalization.string("localizable.nova.personnel.no.department.selected", table: .localizable, fallback: "Departman seçilmedi"), style: .metaQuiet)
+                                    if row.isArchived { NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.arsivde.b15e4fa0", table: .localizable, fallback: "Arşivde"), style: .metaQuiet) }
                                 }
                                 Spacer(); NovaIcon(symbol: "chevron.right", size: 16)
                             }
@@ -95,7 +95,7 @@ private struct PersonnelContent: View {
                     }.buttonStyle(.plain).disabled(pending != nil || reconciling).accessibilityIdentifier("personnel.row.\(row.id.uuidString.lowercased())")
                 }
                 if loading { ProgressView().frame(maxWidth: .infinity).accessibilityIdentifier("personnel.loading") }
-                if let next, !loading { NovaButton(label: "Daha fazla göster", symbol: "chevron.down", variant: .surface, action: { requestedPage = next }) }
+                if let next, !loading { NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.daha.fazla.goster.3e8d6c6b", table: .localizable, fallback: "Daha fazla göster"), symbol: "chevron.down", variant: .surface, action: { requestedPage = next }) }
             }.padding(18).padding(.bottom, 24)
         }
         .task(id: Key(query: query, archived: archived, generation: generation, page: requestedPage)) {
@@ -114,7 +114,7 @@ private struct PersonnelContent: View {
                       result.next == nil || result.next == result.rows.last?.id else { throw NovaPersonnelFailure.unavailable }
                 rows = page == nil ? result.rows : rows + result.rows.filter { item in !rows.contains(where: { $0.id == item.id }) }
                 next = result.next; loading = false
-            } catch { if !Task.isCancelled { self.error = "Personeller yüklenemedi. Lütfen tekrar deneyin."; loading = false } }
+            } catch { if !Task.isCancelled { self.error = RDLocalization.string("localizable.nova.personnel.error.not.loaded", table: .localizable, fallback: "Personeller yüklenemedi. Lütfen tekrar deneyin."); loading = false } }
         }
         .task(id: reconciling) {
             guard canWrite, reconciling, let intent = pending else { return }
@@ -126,7 +126,7 @@ private struct PersonnelContent: View {
                 pending = nil; reconciling = false; requestedPage = nil; generation = UUID()
                 route = result.isArchived ? .list : .detail(result.id)
             } catch {
-                if !Task.isCancelled { reconciling = false; self.error = "Bekleyen işlem doğrulanamadı. Yeni kayıt açmadan tekrar kontrol edin."; generation = UUID() }
+                if !Task.isCancelled { reconciling = false; self.error = RDLocalization.string("localizable.nova.personnel.error.pending.unverified", table: .localizable, fallback: "Bekleyen işlem doğrulanamadı. Yeni kayıt açmadan tekrar kontrol edin."); generation = UUID() }
             }
         }
         .onChange(of: query) { _ in requestedPage = nil }
@@ -141,7 +141,7 @@ private struct PersonnelHeading: View {
     let onBack: () -> Void
     var body: some View {
         HStack(spacing: 12) {
-            Button(action: onBack) { NovaIcon(symbol: "chevron.left", size: 22).frame(width: 44, height: 44).background(.white, in: RoundedRectangle(cornerRadius: 16)) }
+            Button(action: onBack) { NovaIcon(symbol: "chevron.left", size: 22).frame(width: 44, height: 44).background(.white, in: RoundedRectangle(cornerRadius: 16)) }.accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.shell.back", table: .localizable, fallback: "Geri")))
                 .buttonStyle(.plain).disabled(!isBackEnabled).accessibilityLabel("Geri").accessibilityIdentifier("personnel.back")
             VStack(alignment: .leading, spacing: 4) { NovaText(text: title, style: .screenTitle); if !subtitle.isEmpty { NovaText(text: subtitle, style: .metaQuiet) } }
         }
@@ -162,21 +162,21 @@ private struct NovaEmployeeDetail: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                PersonnelHeading(title: "Personel Detayı", onBack: onBack)
+                PersonnelHeading(title: RDLocalization.string("localizable.nova.personnel.screens.personel.detayi.93b8adba", table: .localizable, fallback: "Personel Detayı"), onBack: onBack)
                 if let row {
                     NovaCard(padding: 18) {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack { NovaIcon(symbol: "person", size: 24); NovaText(text: row.name, style: .cardTitle) }
-                            HStack { NovaIcon(symbol: "building.2", size: 20); NovaText(text: row.departmentName ?? "Departman seçilmedi") }
-                            NovaText(text: row.isArchived ? "Arşivde" : "Aktif", style: .metaQuiet)
+                            HStack { NovaIcon(symbol: "building.2", size: 20); NovaText(text: row.departmentName ?? RDLocalization.string("localizable.nova.personnel.no.department.selected", table: .localizable, fallback: "Departman seçilmedi")) }
+                            NovaText(text: row.isArchived ? RDLocalization.string("localizable.nova.personnel.archived", table: .localizable, fallback: "Arşivde") : RDLocalization.string("localizable.nova.personnel.active", table: .localizable, fallback: "Aktif"), style: .metaQuiet)
                         }.frame(maxWidth: .infinity, alignment: .leading)
                     }.accessibilityIdentifier("personnel.detail")
-                    if canWrite { NovaButton(label: row.isArchived ? "Yeniden etkinleştir" : "Düzenle", symbol: row.isArchived ? "arrow.uturn.backward" : "pencil", action: { onEdit(row) }).accessibilityIdentifier(row.isArchived ? "personnel.restore" : "personnel.edit") }
+                    if canWrite { NovaButton(label: row.isArchived ? RDLocalization.string("localizable.nova.personnel.reactivate", table: .localizable, fallback: "Yeniden etkinleştir") : RDLocalization.string("localizable.nova.personnel.edit", table: .localizable, fallback: "Düzenle"), symbol: row.isArchived ? "arrow.uturn.backward" : "pencil", action: { onEdit(row) }).accessibilityIdentifier(row.isArchived ? "personnel.restore" : "personnel.edit") }
                     if let onDirectory {
-                        NovaButton(label: "Görevlendirme geçmişi", symbol: "clock.arrow.circlepath", variant: .surface) { onDirectory(.assignments) }.accessibilityIdentifier("personnel.assignments")
-                        NovaButton(label: "İşveren ilişkisi", symbol: "building.2", variant: .surface) { onDirectory(.employers) }.accessibilityIdentifier("personnel.employers")
+                        NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.gorevlendirme.gecmisi.b56428ce", table: .localizable, fallback: "Görevlendirme geçmişi"), symbol: "clock.arrow.circlepath", variant: .surface) { onDirectory(.assignments) }.accessibilityIdentifier("personnel.assignments")
+                        NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.isveren.iliskisi.9ad2bc6f", table: .localizable, fallback: "İşveren ilişkisi"), symbol: "building.2", variant: .surface) { onDirectory(.employers) }.accessibilityIdentifier("personnel.employers")
                     }
-                } else if error { NovaText(text: "Personel yüklenemedi."); NovaButton(label: "Tekrar dene", symbol: "arrow.clockwise", action: { refresh = UUID() }) }
+                } else if error { NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.personel.yuklenemedi.9398cf6a", table: .localizable, fallback: "Personel yüklenemedi.")); NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.tekrar.dene.d6e62bf1", table: .localizable, fallback: "Tekrar dene"), symbol: "arrow.clockwise", action: { refresh = UUID() }) }
                 else { ProgressView() }
             }.padding(18)
         }.task(id: refresh) {
@@ -210,46 +210,46 @@ private struct NovaEmployeeEditor: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                PersonnelHeading(title: original?.isArchived == true ? "Personeli Etkinleştir" : original == nil ? "Personel Ekle" : "Personeli Düzenle", subtitle: companyName,
+                PersonnelHeading(title: original?.isArchived == true ? RDLocalization.string("localizable.nova.personnel.reactivate.title", table: .localizable, fallback: "Personeli Etkinleştir") : original == nil ? "Personel Ekle" : RDLocalization.string("localizable.nova.personnel.edit.title", table: .localizable, fallback: "Personeli Düzenle"), subtitle: companyName,
                     isBackEnabled: state.phase != .submitting && state.phase != .uncertain, onBack: onBack)
                 if original?.isArchived == true {
                     NovaCard(padding: 18) { VStack(alignment: .leading, spacing: 12) {
                         HStack { NovaIcon(symbol: "person", size: 24); NovaText(text: original?.name ?? "Personel", style: .cardTitle) }
-                        NovaText(text: "Personel yeniden etkinleştirilecek. Tarihler ve geçmiş kayıtlar değişmez; gerekirse daha sonra yeni görevlendirme ekleyebilirsiniz.")
+                        NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.personel.yeniden.etkinlestirilecek.tarihler.ve.g.945b2a9b", table: .localizable, fallback: "Personel yeniden etkinleştirilecek. Tarihler ve geçmiş kayıtlar değişmez; gerekirse daha sonra yeni görevlendirme ekleyebilirsiniz."))
                     } }
                 } else {
                 NovaCard(padding: 18) {
                     VStack(alignment: .leading, spacing: 10) {
-                        HStack { NovaIcon(symbol: "person", size: 20); NovaText(text: "Ad soyad", style: .cardTitle) }
-                        TextField("Ad soyad", text: $state.name).font(.custom("PlusJakartaSans-Medium", size: 15)).textContentType(.name).disabled(!state.canEdit).accessibilityIdentifier("personnel.name")
+                        HStack { NovaIcon(symbol: "person", size: 20); NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.ad.soyad.afff790d", table: .localizable, fallback: "Ad soyad"), style: .cardTitle) }
+                        TextField(RDLocalization.string("localizable.nova.personnel.screens.ad.soyad.9ca817b1", table: .localizable, fallback: "Ad soyad"), text: $state.name).font(.custom("PlusJakartaSans-Medium", size: 15)).textContentType(.name).disabled(!state.canEdit).accessibilityIdentifier("personnel.name")
                     }
                 }
                 NovaCard(padding: 18) {
                     VStack(alignment: .leading, spacing: 10) {
-                        HStack { NovaIcon(symbol: "building.2", size: 20); NovaText(text: "Departman · isteğe bağlı", style: .cardTitle) }
+                        HStack { NovaIcon(symbol: "building.2", size: 20); NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.departman.istege.bagli.baf6041e", table: .localizable, fallback: "Departman · isteğe bağlı"), style: .cardTitle) }
                         if let selected = state.selectedDepartment {
-                            HStack { NovaText(text: selected.name); Spacer(); Button("Kaldır") { state.selectedDepartment = nil; state.departmentText = "" }.disabled(!state.canEdit) }
+                            HStack { NovaText(text: selected.name); Spacer(); Button(RDLocalization.string("localizable.nova.personnel.screens.kaldir.f6bad754", table: .localizable, fallback: "Kaldır")) { state.selectedDepartment = nil; state.departmentText = "" }.disabled(!state.canEdit) }
                         } else {
-                            TextField("Departman seç veya yeni ad yaz", text: $state.departmentText).font(.custom("PlusJakartaSans-Medium", size: 15)).disabled(!state.canEdit).accessibilityIdentifier("personnel.department")
-                            NovaText(text: "Boş bırakabilirsiniz. Yeni ad, personelle birlikte kaydedilir.", style: .metaQuiet)
+                            TextField(RDLocalization.string("localizable.nova.personnel.screens.departman.sec.veya.yeni.ad.yaz.70373e55", table: .localizable, fallback: "Departman seç veya yeni ad yaz"), text: $state.departmentText).font(.custom("PlusJakartaSans-Medium", size: 15)).disabled(!state.canEdit).accessibilityIdentifier("personnel.department")
+                            NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.bos.birakabilirsiniz.yeni.ad.personelle.birlikte.7e36904d", table: .localizable, fallback: "Boş bırakabilirsiniz. Yeni ad, personelle birlikte kaydedilir."), style: .metaQuiet)
                             ForEach(departments) { d in
                                 Button { state.selectedDepartment = d; state.departmentText = "" } label: { HStack { NovaIcon(symbol: "building.2", size: 18); NovaText(text: d.name); Spacer(); NovaIcon(symbol: "plus", size: 16) }.frame(minHeight: 44) }
                                     .buttonStyle(.plain).disabled(!state.canEdit).accessibilityIdentifier("personnel.department.\(d.id.uuidString.lowercased())")
                             }
-                            if let departmentNext { Button("Diğer departmanlar") { departmentPage = departmentNext }.disabled(!state.canEdit) }
-                            if departmentsError { NovaText(text: "Departman listesi yüklenemedi. Boş bırakabilir veya yeni ad yazabilirsiniz.", style: .metaQuiet) }
+                            if let departmentNext { Button(RDLocalization.string("localizable.nova.personnel.screens.diger.departmanlar.d52232c2", table: .localizable, fallback: "Diğer departmanlar")) { departmentPage = departmentNext }.disabled(!state.canEdit) }
+                            if departmentsError { NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.departman.listesi.yuklenemedi.bos.birakabilir.ve.256eb508", table: .localizable, fallback: "Departman listesi yüklenemedi. Boş bırakabilir veya yeni ad yazabilirsiniz."), style: .metaQuiet) }
                         }
                     }
                 }
                 }
                 if let message { NovaText(text: message).accessibilityIdentifier("personnel.message") }
                 if state.phase == .uncertain {
-                    NovaText(text: "Kayıt sonucu doğrulanamadı. Yeni kayıt açmadan aynı işlemi kontrol edin.")
-                    NovaButton(label: "Aynı işlemi tekrar kontrol et", symbol: "arrow.clockwise", action: { if state.retry(scope: scope) != nil { taskID = UUID() } }).accessibilityIdentifier("personnel.retry")
+                    NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.kayit.sonucu.dogrulanamadi.yeni.kayit.acmadan.ay.b06ff69b", table: .localizable, fallback: "Kayıt sonucu doğrulanamadı. Yeni kayıt açmadan aynı işlemi kontrol edin."))
+                    NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.ayni.islemi.tekrar.kontrol.et.e7b5d522", table: .localizable, fallback: "Aynı işlemi tekrar kontrol et"), symbol: "arrow.clockwise", action: { if state.retry(scope: scope) != nil { taskID = UUID() } }).accessibilityIdentifier("personnel.retry")
                 } else {
-                    NovaButton(label: original?.isArchived == true ? "Yeniden etkinleştir" : original == nil ? "Personeli kaydet" : "Değişiklikleri kaydet", symbol: "checkmark", isEnabled: state.canSubmit,
+                    NovaButton(label: original?.isArchived == true ? RDLocalization.string("localizable.nova.personnel.reactivate", table: .localizable, fallback: "Yeniden etkinleştir") : original == nil ? RDLocalization.string("localizable.nova.personnel.save", table: .localizable, fallback: "Personeli kaydet") : RDLocalization.string("localizable.nova.personnel.save.changes", table: .localizable, fallback: "Değişiklikleri kaydet"), symbol: "checkmark", isEnabled: state.canSubmit,
                         isLoading: state.phase == .submitting, action: { if state.begin(scope: scope, original: original, restore: original?.isArchived == true) != nil { taskID = UUID() } }).accessibilityIdentifier("personnel.save")
-                    if original != nil && original?.isArchived == false { NovaButton(label: "Personeli arşivle", symbol: "archivebox", variant: .danger, isEnabled: state.canEdit, action: { confirmation = true }).accessibilityIdentifier("personnel.archive") }
+                    if original != nil && original?.isArchived == false { NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.personeli.arsivle.715aa012", table: .localizable, fallback: "Personeli arşivle"), symbol: "archivebox", variant: .danger, isEnabled: state.canEdit, action: { confirmation = true }).accessibilityIdentifier("personnel.archive") }
                 }
             }.padding(18).padding(.bottom, 24)
         }
@@ -265,13 +265,13 @@ private struct NovaEmployeeEditor: View {
                     Color(red: 15/255, green: 15/255, blue: 17/255).opacity(0.34).ignoresSafeArea().onTapGesture { confirmation = false }
                     NovaPopupSurface {
                         VStack(alignment: .leading, spacing: 16) {
-                            NovaText(text: "Personel arşivlensin mi?", style: .sectionTitle)
-                            NovaText(text: "Geçmiş kayıtlar silinmez.")
-                            NovaButton(label: "Arşivle", symbol: "archivebox", variant: .danger) {
+                            NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.personel.arsivlensin.mi.f0b5b5c4", table: .localizable, fallback: "Personel arşivlensin mi?"), style: .sectionTitle)
+                            NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.gecmis.kayitlar.silinmez.0e1817f6", table: .localizable, fallback: "Geçmiş kayıtlar silinmez."))
+                            NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.arsivle.bfb5fd4d", table: .localizable, fallback: "Arşivle"), symbol: "archivebox", variant: .danger) {
                                 confirmation = false
                                 if state.begin(scope: scope, original: original, archive: true) != nil { taskID = UUID() }
                             }.accessibilityIdentifier("personnel.archive.confirm")
-                            NovaButton(label: "Vazgeç", symbol: "chevron.left", variant: .surface) { confirmation = false }.accessibilityIdentifier("personnel.archive.cancel")
+                            NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.vazgec.37a5f5b0", table: .localizable, fallback: "Vazgeç"), symbol: "chevron.left", variant: .surface) { confirmation = false }.accessibilityIdentifier("personnel.archive.cancel")
                         }
                     }.padding(14).accessibilityAddTraits(.isModal)
                 }
@@ -300,7 +300,7 @@ private struct NovaEmployeeEditor: View {
                 guard !Task.isCancelled else { return }
                 if let failure = error as? NovaPersonnelFailure, failure != .unavailable {
                     state.reject(intent, scope: scope, denied: failure == .denied || failure == .conflict)
-                    message = failure == .selectionRequired ? "Aynı adlı birden fazla departman var. Listeden seçin." : failure == .conflict ? "Kayıt değişmiş. Geri dönüp güncel kaydı açın." : "İşlem reddedildi. Bilgileri ve erişiminizi kontrol edin."
+                    message = failure == .selectionRequired ? RDLocalization.string("localizable.nova.personnel.error.department.ambiguous", table: .localizable, fallback: "Aynı adlı birden fazla departman var. Listeden seçin.") : failure == .conflict ? RDLocalization.string("localizable.nova.personnel.error.record.changed", table: .localizable, fallback: "Kayıt değişmiş. Geri dönüp güncel kaydı açın.") : RDLocalization.string("localizable.nova.personnel.error.rejected", table: .localizable, fallback: "İşlem reddedildi. Bilgileri ve erişiminizi kontrol edin.")
                 } else { state.uncertain(intent, scope: scope) }
             }
         }

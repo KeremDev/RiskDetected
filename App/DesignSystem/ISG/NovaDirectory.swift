@@ -5,14 +5,14 @@ enum NovaDirectoryKind: String, CaseIterable, Codable {
     case workplaces, departments, jobs, contractors, engagements, contexts, assignments, employers
     var title: String {
         switch self {
-        case .workplaces: return "İşyerleri"
+        case .workplaces: return RDLocalization.string("localizable.nova.directory.isyerleri.ba573a76", table: .localizable, fallback: "İşyerleri")
         case .departments: return "Departmanlar"
-        case .jobs: return "Görev ve Unvanlar"
-        case .contractors: return "Dış Firmalar"
-        case .engagements: return "İşyeri İlişkileri"
-        case .contexts: return "İşyeri Bağlam Geçmişi"
-        case .assignments: return "Görevlendirme Geçmişi"
-        case .employers: return "Personelin İşvereni"
+        case .jobs: return RDLocalization.string("localizable.nova.directory.gorev.ve.unvanlar.3b6da780", table: .localizable, fallback: "Görev ve Unvanlar")
+        case .contractors: return RDLocalization.string("localizable.nova.directory.dis.firmalar.0d65ea43", table: .localizable, fallback: "Dış Firmalar")
+        case .engagements: return RDLocalization.string("localizable.nova.directory.isyeri.iliskileri.aaeec732", table: .localizable, fallback: "İşyeri İlişkileri")
+        case .contexts: return RDLocalization.string("localizable.nova.directory.isyeri.baglam.gecmisi.68d6a76b", table: .localizable, fallback: "İşyeri Bağlam Geçmişi")
+        case .assignments: return RDLocalization.string("localizable.nova.directory.gorevlendirme.gecmisi.292a5411", table: .localizable, fallback: "Görevlendirme Geçmişi")
+        case .employers: return RDLocalization.string("localizable.nova.directory.personelin.isvereni.ca42577b", table: .localizable, fallback: "Personelin İşvereni")
         }
     }
     var symbol: String {
@@ -47,7 +47,7 @@ enum NovaDirectoryValue: Codable, Equatable {
 struct NovaDirectoryRow: Identifiable, Equatable {
     let id: UUID
     let fields: [String: NovaDirectoryValue]
-    var title: String { fields["name"]?.text ?? fields["title"]?.text ?? fields["job_title_snapshot"]?.text ?? fields["jurisdiction"]?.text ?? fields["description"]?.text ?? "Kayıt" }
+    var title: String { fields["name"]?.text ?? fields["title"]?.text ?? fields["job_title_snapshot"]?.text ?? fields["jurisdiction"]?.text ?? fields["description"]?.text ?? RDLocalization.string("localizable.nova.directory.record.fallback.title", table: .localizable, fallback: "Kayıt") }
     var version: Int64 { fields["version"]?.integer ?? 0 }
     var isArchived: Bool { fields["is_archived"]?.flag == true }
 }
@@ -115,16 +115,16 @@ enum NovaDirectoryFormRules {
         let values = fields.mapValues { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         if [.engagements, .contexts, .assignments].contains(kind) {
             let start = values["starts_on", default: ""], end = values["ends_before", default: ""]
-            if !isDate(start) { return "Başlangıç tarihini YYYY-AA-GG biçiminde geçerli bir tarih olarak girin." }
+            if !isDate(start) { return RDLocalization.string("localizable.nova.directory.baslangic.tarihini.yyyy.aa.gg.biciminde.gecerli..ab922e2c", table: .localizable, fallback: "Başlangıç tarihini YYYY-AA-GG biçiminde geçerli bir tarih olarak girin.") }
             if kind == .engagements && !end.isEmpty {
-                if !isDate(end) { return "Bitiş tarihini YYYY-AA-GG biçiminde geçerli bir tarih olarak girin." }
-                if end <= start { return "Bitiş (hariç), başlangıç tarihinden sonra olmalı." }
+                if !isDate(end) { return RDLocalization.string("localizable.nova.directory.bitis.tarihini.yyyy.aa.gg.biciminde.gecerli.bir..a16549c5", table: .localizable, fallback: "Bitiş tarihini YYYY-AA-GG biçiminde geçerli bir tarih olarak girin.") }
+                if end <= start { return RDLocalization.string("localizable.nova.directory.bitis.haric.baslangic.tarihinden.sonra.olmali.634aae6f", table: .localizable, fallback: "Bitiş (hariç), başlangıç tarihinden sonra olmalı.") }
             }
             if let previous = values["previous_id"], !previous.isEmpty {
                 guard let row = options["previous_id"]?.first(where: { $0.id.uuidString.lowercased() == previous.lowercased() }),
-                      let priorStart = row.fields["starts_on"]?.text, isDate(priorStart) else { return "Önceki dönemi listeden yeniden seçin; gerekirse diğer kayıtları yükleyin." }
+                      let priorStart = row.fields["starts_on"]?.text, isDate(priorStart) else { return RDLocalization.string("localizable.nova.directory.onceki.donemi.listeden.yeniden.secin.gerekirse.d.aac0579f", table: .localizable, fallback: "Önceki dönemi listeden yeniden seçin; gerekirse diğer kayıtları yükleyin.") }
                 if start <= priorStart || row.fields["ends_before"]?.text.map({ start >= $0 }) == true {
-                    return "Yeni başlangıç, önceki dönemin başlangıcından sonra ve varsa bitişinden önce olmalı."
+                    return RDLocalization.string("localizable.nova.directory.yeni.baslangic.onceki.donemin.baslangicindan.son.9f10fbc6", table: .localizable, fallback: "Yeni başlangıç, önceki dönemin başlangıcından sonra ve varsa bitişinden önce olmalı.")
                 }
             }
         }
@@ -132,7 +132,7 @@ enum NovaDirectoryFormRules {
             guard let selected = values[key], !selected.isEmpty else { continue }
             let rows = options[key, default: []]
             if !allowedOptions(rows, field: key, workplace: values["workplace_id"], originalID: originalID).contains(where: { $0.id.uuidString.lowercased() == selected.lowercased() }) {
-                return "Departmanı seçili işyerinin geçerli listesinden seçin; kendi alt departmanınızı üst departman yapamazsınız."
+                return RDLocalization.string("localizable.nova.directory.departmani.secili.isyerinin.gecerli.listesinden..06cd2a68", table: .localizable, fallback: "Departmanı seçili işyerinin geçerli listesinden seçin; kendi alt departmanınızı üst departman yapamazsınız.")
             }
         }
         return nil

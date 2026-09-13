@@ -10,7 +10,7 @@ struct NovaCompanyManagementGate<Fallback: View>: View {
     var body: some View {
         Group {
             if controller.resolving {
-                NovaPageSurface { VStack(spacing: 18) { ProgressView(); NovaText(text: "Firma erişimi doğrulanıyor…"); NovaButton(label: "Kapat", symbol: "xmark", variant: .surface, action: onClose) }.padding(18) }
+                NovaPageSurface { VStack(spacing: 18) { ProgressView(); NovaText(text: RDLocalization.string("localizable.nova.company.management.gate.firma.erisimi.dogrulaniyor.3bf732f2", table: .localizable, fallback: "Firma erişimi doğrulanıyor…")); NovaButton(label: RDLocalization.string("localizable.nova.company.management.gate.kapat.3148ed17", table: .localizable, fallback: "Kapat"), symbol: "xmark", variant: .surface, action: onClose) }.padding(18) }
             } else if controller.isAvailable && !legacyRequested {
                 NavigationStack {
                     if let scope = controller.scope {
@@ -20,7 +20,7 @@ struct NovaCompanyManagementGate<Fallback: View>: View {
                         VStack(spacing: 0) {
                             NovaCompanyDestination(host: Binding(get: { controller.host }, set: { _ in }),
                                 loadCompanies: { try await loadNovaOwnedCompanies(includeArchived: $0) }, includeArchived: true, onSelect: controller.select, onBack: onClose)
-                            NovaButton(label: "Firma ekle / düzenle", symbol: "building.2", variant: .surface) { legacyRequested = true }.padding(18)
+                            NovaButton(label: RDLocalization.string("localizable.nova.company.management.gate.firma.ekle.duzenle.005d0121", table: .localizable, fallback: "Firma ekle / düzenle"), symbol: "building.2", variant: .surface) { legacyRequested = true }.padding(18)
                         }.background(NovaColorToken.canvas.color(in: .light))
                     }
                 }.id(controller.host.navigation.epoch)
@@ -28,7 +28,7 @@ struct NovaCompanyManagementGate<Fallback: View>: View {
             } else {
                 VStack(spacing: 0) {
                     if legacyRequested && controller.isAvailable {
-                        NovaButton(label: "Personel ve işyeri yönetimine dön", symbol: "chevron.left", variant: .surface) { legacyRequested = false; controller.select(nil) }.padding(12)
+                        NovaButton(label: RDLocalization.string("localizable.nova.company.gate.back.to.management", table: .localizable, fallback: "Personel ve işyeri yönetimine dön"), symbol: "chevron.left", variant: .surface) { legacyRequested = false; controller.select(nil) }.padding(12)
                     }
                     fallback()
                 }
@@ -60,7 +60,7 @@ struct NovaCompanyWorkspace: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
                         HStack { Button(action: onBack) { NovaIcon(symbol: "chevron.left", size: 24).frame(width: 44, height: 44) }; NovaText(text: companyName, style: .screenTitle) }
-                        if !canWrite { NovaCard(padding: 16) { Label("Salt okunur · kayıtlarınız korunuyor", systemImage: "lock"); NovaText(text: "Yeni kayıt ve düzenleme şu anda kullanılamıyor.", style: .metaQuiet) } }
+                        if !canWrite { NovaCard(padding: 16) { Label(RDLocalization.string("localizable.nova.company.management.gate.salt.okunur.kayitlariniz.korunuyor.2cc72e1b", table: .localizable, fallback: "Salt okunur · kayıtlarınız korunuyor"), systemImage: "lock"); NovaText(text: RDLocalization.string("localizable.nova.company.management.gate.yeni.kayit.ve.duzenleme.su.anda.kullanilamiyor.d83e8253", table: .localizable, fallback: "Yeni kayıt ve düzenleme şu anda kullanılamıyor."), style: .metaQuiet) } }
                         entry("Personeller", "person.2") { route = .personnel }
                         ForEach([NovaDirectoryKind.workplaces, .departments, .jobs, .contractors], id: \.self) { kind in
                             entry(kind.title, kind.symbol) { route = .directory(kind) }

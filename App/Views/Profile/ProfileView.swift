@@ -827,7 +827,7 @@ struct ProfileView: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("profile.row.companies")
                 if NotebookUIRelease.enabled {
-                    Button { showNotebook = true } label: { ProfileRow(icon: "note.text", title: "Kişisel Notlar", detail: "Ücretsiz") }
+                    Button { showNotebook = true } label: { ProfileRow(icon: "note.text", title: RDLocalization.string("localizable.profile.view.kisisel.notlar.7b030a39", table: .localizable, fallback: "Kişisel Notlar"), detail: RDLocalization.string("localizable.profile.view.ucretsiz.5f5dd787", table: .localizable, fallback: "Ücretsiz")) }
                         .buttonStyle(.plain).accessibilityIdentifier("profile.row.notebook")
                 }
                 Divider().background(Color.rdLine).padding(.leading, 60)

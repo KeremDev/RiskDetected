@@ -1,6 +1,8 @@
 # Devir notu — İSG geçişinde sunucu dilimlerini sürdürmek
 
-> **Güncel devam:** [P17 skor ve portföy çekirdeği](P17_SCORE_PORTFOLIO_2026-09-14.md): 997 sentetik PASS / 996 tekil, 32 upgrade PASS / 26 migration, 408 foundation PASS. `private_isg` 154 tablo, skor rollout'u kapalı, ağırlıklar onaysız, oracle elle hesaplanmış.
+> **Güncel devam:** [P18 NOVA dil ve erişilebilirlik kataloğu](P18_NOVA_LOCALIZATION_2026-09-14.md): 261 anahtar TR/EN, iOS Debug build PASS, foundation 412/412. **Uyarı:** `migrate_swift_localization_catalogs.mjs --apply` katalogları yeniden yazıp mevcut çevirileri siliyor — o dokümandaki yöntemi okumadan çalıştırma.
+
+> **Önceki devam:** [P17 skor ve portföy çekirdeği](P17_SCORE_PORTFOLIO_2026-09-14.md): 997 sentetik PASS / 996 tekil, 32 upgrade PASS / 26 migration, 408 foundation PASS. `private_isg` 154 tablo, skor rollout'u kapalı, ağırlıklar onaysız, oracle elle hesaplanmış.
 
 > **Önceki devam:** [P16 izleme ve admin çekirdeği](P16_OBSERVABILITY_ADMIN_2026-09-14.md): 966 sentetik PASS / 965 tekil, 32 upgrade PASS / 25 migration, 397 foundation PASS. `private_isg` 144 tablo, izleme rollout'u kapalı, ayrı repodaki operasyon paneli değiştirilmedi.
 
@@ -36,6 +38,7 @@ P05 (firma/işyeri/personel) daha önce kapanmıştı. 13–14 Eylül'de eklenen
 | P15 | Davet/winback, anti-abuse, qualification, bütçe, suppression | `20260914110000` | [P15](P15_CAMPAIGN_CORE_2026-09-14.md) |
 | P16 | Teknik olay zarfı, teşhis zinciri, MFA/scope'lu admin ve audit | `20260914130000` | [P16](P16_OBSERVABILITY_ADMIN_2026-09-14.md) |
 | P17 | Sürümlü skor politikası, açıklanabilir katkı, elle hesaplanmış oracle, portföy | `20260914150000` | [P17](P17_SCORE_PORTFOLIO_2026-09-14.md) |
+| P18 | NOVA yüzeyinin TR/EN kataloğu ve erişilebilir kontrol adları | — (native, migration yok) | [P18](P18_NOVA_LOCALIZATION_2026-09-14.md) |
 
 Toplam: `private_isg` şemasında **154 tablo**, hepsinde RLS açık, istemciye **sıfır** GRANT. Sentetik kabul koşusu **997/997 PASS** (996 tekil), tam legacy kopya upgrade **32/32 PASS** (26 migration), offline foundation **408 PASS**. Bu tablo yalnız sunucu dilimlerini sayar; araya giren P12 sertleştirme ve P13 sync/reminder API paketleri kendi dokümanlarındadır.
 
@@ -88,6 +91,9 @@ Toplam: `private_isg` şemasında **154 tablo**, hepsinde RLS açık, istemciye 
 | Yazılan ret/suppression kaydı ortadan kayboluyor | Fonksiyon kaydı yazıp ardından `RAISE` ediyor; exception subtransaction'ı geri alıyor | Reddi `RAISE` yerine `{opened:false, reason_code}` gibi bir sonuç olarak **döndür** |
 | Probe başka bir probe'un bıraktığı veriye takılıyor | `SELECT ... ORDER BY id LIMIT 1` gibi seçimler önceki dilim yeni hesap eklediğinde başka satır döndürür | Probe kendi hesaplarını açsın; aradığı özel durumu (`lifecycle_state='unknown'` gibi) açıkça sorgulasın |
 | `unindexed_foreign_keys` bulgusu | Composite indeksin **baştaki** sütunu başka; FK'yi kapsamaz | FK sütunu için ayrı indeks aç; advisor listesine ekleyip susturma |
+| `--apply` sonrası kataloglar küçülüyor, çeviriler kayboluyor | `migrate_swift_localization_catalogs.mjs` katalogları yalnız güncel envanterden **yeniden yazıyor**; zaten taşınmış anahtarlar envanterde olmadığı için siliniyor | Yeni anahtarları yakala, katalogları `git checkout` ile geri al, yalnız yeni anahtarları **eklemeli** birleştir; `nova_localization.test.mjs` küçülmeyi yakalar |
+| Yerelleştirme envanteri "temiz" diyor ama ekranda Türkçe kalıyor | Tarayıcı ternary dallarını, `??` varsayılanlarını, `self.error =` atamalarını ve interpolasyon içindeki literalleri görmüyor; Türkçeyi yalnız diakritikle tanıyor | Yüzeyi doğrudan tara; "Aktif", "Kaydet" gibi diakritiksiz kelimeleri elle ara |
+| İzole `swiftc` sözleşme testi aniden kırılıyor | Otomatik taşıma bağımsız bir modele `RDLocalization` yazdı; ana uygulama derlense de tek dosya derlemesi kırılır | Sunum metnini modelden görünüm katmanına taşı |
 | Yalnız **bir kod yolunda** patlayan gölgeleme | Değişken adı sütun adıyla aynı ama o satıra sadece bazı dallarda ulaşılıyor (`route`) | `route`, `state`, `version`, `purpose`, `scope`, `position` gibi adları baştan kullanma |
 
 ## 5. Komutlar
@@ -111,6 +117,7 @@ deno test --allow-read=contracts/isg/v1/fixtures supabase/functions/_shared/isg/
 5. **P14'ün ikinci dilimi:** gerçek Apple promotional offer imzası ve Google offer token/replacement provası (iki store spike), RevenueCat/webhook → `record_billing_evidence` adaptörü, onaylı plan/fiyat katalogu ve `access_authority` cutover'ı. Sunucu çekirdeği hazır, hiçbir üretici henüz kanıt yazmıyor.
 6. **P16'nın ikinci dilimi:** iOS/Android telemetri üreticisi ve ATT ekranı, ayrı repodaki operasyon paneli sayfaları ve Playwright kabulleri (K22 — panelin kendi AGENTS.md sınırları ve kullanıcı değişiklikleri korunarak ayrı görevde), domain mutation'larının teknik olay yazması, retention/silme kararı (K16).
 7. **P17'nin ikinci dilimi:** ağırlık/tavan onayı (K15), P06–P10 üreticilerinin `score_subject_states` yazması, kritik uyarı üreticisi, firma/portföy ekranları ve gerçek veri üzerinde shadow projection.
-8. **P18/P19/P20:** native kabuk, bütünleşik prova, mağaza güncellemesi. Bunlar insan onayı ve gerçek cihaz kanıtı isteyen kapılar.
+8. **P18'in kalanı:** Android `strings.xml` TR/EN kabulü, 261 anahtarın dil incelemesi, gerçek cihazda İngilizce tur + VoiceOver/Dynamic Type, ana uygulamanın yeni köke geçişi, modüllerin gerçek servisleri, final marka/asset. Ayrıca migration aracının yıkıcı `--apply` davranışı düzeltilmeli.
+9. **P19/P20:** bütünleşik prova ve mağaza güncellemesi. Bunlar insan onayı ve gerçek cihaz kanıtı isteyen kapılar.
 
 Her fazın kendi dokümanında "Açık kalanlar" bölümü vardır; bir fazı kapatmadan önce oradaki maddeleri kontrol et. Hiçbir faz, kendi dokümanı "kapandı" demeden kapalı sayılmaz.

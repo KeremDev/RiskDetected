@@ -4,14 +4,6 @@ enum NotebookReminderRecurrence: String, CaseIterable, Codable, Identifiable {
     case once, daily, weekly, monthly
 
     var id: String { rawValue }
-    var label: String {
-        switch self {
-        case .once: return "Bir kez"
-        case .daily: return "Her gün"
-        case .weekly: return "Her hafta"
-        case .monthly: return "Her ay"
-        }
-    }
 }
 
 struct NotebookReminderOccurrence: Codable, Equatable, Identifiable {

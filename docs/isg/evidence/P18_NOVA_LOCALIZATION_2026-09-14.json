@@ -1,0 +1,96 @@
+{
+  "phase": "P18",
+  "slice": "TR/EN catalogue and accessible control names for the NOVA surface",
+  "date": "2026-09-14",
+  "branch": "codex/isg-transition-foundation",
+  "store_identifiers_changed": false,
+  "design_tokens_changed": false,
+  "fonts_or_icons_changed": false,
+  "screen_layout_changed": false,
+  "android_changed": false,
+  "strings_migrated": {
+    "by_tool": 214,
+    "by_hand": 47,
+    "interpolations_to_format_strings": 7,
+    "accessibility_labels_added": 3,
+    "total_catalogue_keys_added": 261
+  },
+  "catalogue_sizes_after": {
+    "Localizable": 940,
+    "Auth": 96,
+    "SafetyTerminology": 15,
+    "Legal": 39,
+    "Notifications": 7,
+    "Onboarding": 313,
+    "InfoPlist": 3,
+    "Reports": 176,
+    "Analysis": 777,
+    "Paywall": 161,
+    "ProfessionalProgress": 115
+  },
+  "gates": {
+    "migrate_check": "passed, 0 pending",
+    "hardcoded_additions_before": 230,
+    "hardcoded_additions_after": 15,
+    "remaining_are": "14 pre-existing legal/plist debt from the 8 September 2026 legal update, 1 line-scanner artefact on a fully localized line",
+    "debt_baseline_refreshed": false
+  },
+  "runs": {
+    "ios_debug_build": "BUILD SUCCEEDED (unsigned simulator)",
+    "foundation": {
+      "tests": 412,
+      "fail": 0,
+      "previous": 408
+    },
+    "nova_design": {
+      "tests": 24,
+      "fail": 0
+    },
+    "verify_identity": "ok"
+  },
+  "defects_found": [
+    {
+      "severity": "P0",
+      "what": "migrate_swift_localization_catalogs.mjs --apply rewrites the catalogues from the current inventory only, deleting every key that was already migrated",
+      "measured": "Analysis 777->557, Paywall 161->101, Onboarding 313->294, Reports 176->175; 300 keys dropped, 216 of them still referenced in Swift",
+      "handled": "new keys captured, catalogues restored with git checkout, only new keys merged additively; no catalogue shrank",
+      "fixed_in_tool": false,
+      "follow_up": "writeCatalogs must merge with the existing catalogue instead of replacing it"
+    },
+    {
+      "severity": "P1",
+      "what": "the inventory scanner misses ternary branches, ?? defaults, assignments and interpolations, and only recognises Turkish by diacritics",
+      "measured": "inventory reported ios_ui=2 while 47 user-visible Turkish literals were still shipped",
+      "handled": "found and migrated by hand; a permanent guard test now scans the NOVA surface directly"
+    },
+    {
+      "severity": "P1",
+      "what": "the automated migration broke the isolated notebook contract check by writing RDLocalization into a dependency-free model",
+      "measured": "notebook_native.test.mjs: cannot find 'RDLocalization' in scope, while the app target still built",
+      "handled": "presentation copy moved from NotebookReminderRecurrence to the view layer"
+    }
+  ],
+  "new_guard": {
+    "file": "scripts/isg/nova_localization.test.mjs",
+    "tests": 4,
+    "covers": [
+      "key resolves with tr and en and en is not a copy of tr",
+      "no raw Turkish copy ships outside #if DEBUG",
+      "no icon-only control without a spoken name",
+      "catalogues never shrink below their earlier size"
+    ]
+  },
+  "not_proven": [
+    "any Android strings.xml TR/EN acceptance",
+    "language review of the 261 new keys",
+    "a real device or simulator pass with the app in English",
+    "VoiceOver end to end",
+    "Dynamic Type AX3 overflow in English",
+    "the remaining P18 closing conditions: app root migration, real module services, final brand assets"
+  ],
+  "source_sha256": {
+    "scripts/isg/nova_localization.test.mjs": "ed5dcb92af2b8151ecbc715b1290c1b3315afb3770035642763813de0f58cd34",
+    "App/Localization/Localizable.xcstrings": "4b7d497152e55712773058b0573ab375abb4fab07a027cf7e870f3254de91fd9",
+    "docs/isg/P18_NOVA_LOCALIZATION_2026-09-14.md": "42ecbb7c0245c899711f694f8e2b6306b12d3fc5715a337d939bde9982beba5a"
+  }
+}

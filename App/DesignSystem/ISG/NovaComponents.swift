@@ -109,7 +109,7 @@ struct NovaButton: View {
     var variant: NovaButtonVariant = .primary
     var isEnabled = true
     var isLoading = false
-    var loadingDescription = "İşlem sürüyor"
+    var loadingDescription = RDLocalization.string("localizable.nova.components.loading.description", table: .localizable, fallback: "İşlem sürüyor")
     let action: () -> Void
     @Environment(\.colorScheme) private var scheme
 
