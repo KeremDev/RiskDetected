@@ -370,10 +370,10 @@ try {
     notesProbe=await beginPersonalNotesProbe({synthetic:true,sql,ownerID:id,pass});
     stage = 'notification-dispatch-safety';
     notificationDispatchProbe=await beginNotificationDispatchProbe({synthetic:true,sql,concurrentSql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
-    stage = 'notification-repository';
-    notificationRepositoryProbe=await beginNotificationRepositoryProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'notification-device';
     report.notification_device=beginNotificationDeviceProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
+    stage = 'notification-repository';
+    notificationRepositoryProbe=await beginNotificationRepositoryProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'notebook-api';
     notebookAPIProbe=await beginNotebookAPIProbe({synthetic:true,sql,concurrentSql,token:refresh.body.access_token,secret,request:personnelHTTPProbe.request,waitReady,pass});
     stage = 'personnel-advisors';

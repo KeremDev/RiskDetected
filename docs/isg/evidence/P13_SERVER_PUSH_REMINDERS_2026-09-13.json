@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-13",
+  "phase": "P13",
+  "slice": "server-push reminder API, native clients, and reminder-aware P12 dispatch binding",
+  "phase_complete": false,
+  "production_deployed": false,
+  "rollout_enabled": false,
+  "local_alarm_fallback": false,
+  "delivery_strategy": "server_push",
+  "provider_called": false,
+  "exactly_once_delivery_promised": false,
+  "synthetic_auth_run": {
+    "run_id": "1d94f69b-1b7c-4512-b958-8d3420a9be75",
+    "report": "output/isg/runs/synthetic-auth-Ks1gUb/REPORT.json",
+    "total_checks": 858,
+    "unique_check_ids": 857,
+    "new_reminder_checks": 20,
+    "failures": [],
+    "cleanup": "PASS",
+    "external_egress": false,
+    "real_http": true,
+    "real_auth_session": true,
+    "server_push_owner": true,
+    "p12_job_binding": true,
+    "trusted_device_source": "synthetic fixture"
+  },
+  "full_legacy_copy_upgrade": {
+    "run_id": "b7a533ea-e7e9-43c3-9e30-0c8511d443c1",
+    "report": "backups/isg-auth-service-restore-20260912-fBTALn/REPORT.json",
+    "total_checks": 32,
+    "failures": [],
+    "cleanup": "PASS",
+    "migrations_replayed": 22,
+    "legacy_rows_unchanged": true,
+    "legacy_helpers_unchanged": true,
+    "production_changed": false
+  },
+  "foundation": {
+    "total_checks": 363,
+    "failures": []
+  },
+  "native": {
+    "swift_contract_and_guard_checks": 6,
+    "swift_failures": [],
+    "android_notebook_unit_tests": 23,
+    "android_failures": [],
+    "android_app_compile": "PASS",
+    "ios_debug_simulator_build": "PASS",
+    "android_device_available": false,
+    "ios_simulators_booted": true,
+    "runtime_ui_e2e": false,
+    "runtime_ui_e2e_reason": "NotebookUIRelease.enabled remains false"
+  },
+  "defects_found_and_fixed": [
+    "reminder RPC endpoints were absent from the synthetic PostgREST allowlist",
+    "device permission RPC endpoint was absent from the synthetic PostgREST allowlist",
+    "iOS APNs token rotation used token identity instead of installation identity",
+    "function-test source fingerprints required refresh after the new binding",
+    "past reminder dates were only rejected by native clients and are now rejected by the database",
+    "reminders could be created while app_reminders was disabled and are now rejected before persistence"
+  ],
+  "failed_attempts_retained": [
+    {
+      "report": "output/isg/runs/synthetic-auth-AGdP5y/REPORT.json",
+      "failed_stage": "notebook-api",
+      "cleanup": "PASS"
+    },
+    {
+      "report": "output/isg/runs/synthetic-auth-64gEwG/REPORT.json",
+      "failed_stage": "notebook-api",
+      "cleanup": "PASS"
+    },
+    {
+      "report": "output/isg/runs/synthetic-auth-kZfz5Y/REPORT.json",
+      "failed_stage": "session-guard",
+      "error_code": "AUTH_RESTORE_LOCAL_TOKEN_INVALID_CLAIMS",
+      "cleanup": "PASS"
+    }
+  ],
+  "source_sha256": {
+    "supabase/migrations/20260914070005_isg_notebook_reminder_api.sql": "5fd430cd2df328baddb15c872869f17b4f6396797f2348afc1bc87dc6508657c",
+    "scripts/isg/notebook_reminder_probe.mjs": "a588fd019a4cef2e5733f8e4ba848c46ad65e0fa1371de7fdce93938fcd6b59f",
+    "scripts/isg/notebook_reminder_guard.test.mjs": "7f31f41186c18c9108424dc8725d3b0aaa4293e725191a812b65e037802f0ad0",
+    "contracts/isg/v1/notebook-reminder-api.md": "da391baf10f420446dd902e6ce7a1212654d2bb98d28dbe4fc10d5f979c3a29b",
+    "App/Services/Notebook/NotebookReminder.swift": "1def9fb2c71a68a1c7c279709080e6343db36343e4d5cf7736ba0cc5e4af6a1a",
+    "android/core/data/src/main/kotlin/com/riskdetectedan/core/data/notebook/NotebookReminder.kt": "95e6226702ab66c0eca049b8e286ebd7dd2df29d431a64955a00a113f7c74812"
+  },
+  "not_proven": [
+    "production worker role, scheduler, pool, or provider credentials",
+    "real APNs or FCM delivery",
+    "physical-device reminder UI and accessibility",
+    "device delivery or user read confirmation",
+    "offline durable reminder mutation queue",
+    "production migration, rollout, or store release"
+  ]
+}

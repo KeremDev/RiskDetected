@@ -45,6 +45,20 @@ final class NotificationService: NSObject, ObservableObject {
         notificationsEnabled && (notificationPreferences?.appReminders ?? false)
     }
 
+    /// Stable, random per-install identity used to bind a personal reminder to
+    /// exactly one server-push registration. It is intentionally not a user or
+    /// vendor identifier and a reinstall receives a fresh value.
+    var serverPushInstallationID: UUID {
+        let defaults = UserDefaults.standard
+        if let raw = defaults.string(forKey: Self.installationIDKey),
+           let value = UUID(uuidString: raw) {
+            return value
+        }
+        let value = UUID()
+        defaults.set(value.uuidString.lowercased(), forKey: Self.installationIDKey)
+        return value
+    }
+
     enum ProgressPreference {
         case weeklySummary
         case monthlySummary
@@ -60,6 +74,7 @@ final class NotificationService: NSObject, ObservableObject {
     }
 
     private static let logger = Logger(subsystem: "com.riskdetected.app", category: "NotificationService")
+    private static let installationIDKey = "rd.notification.installation_id"
     private let supabase = SupabaseService.shared
     private var settingsRefreshGeneration = 0
     private var preferencesUserID: UUID?
@@ -347,12 +362,16 @@ final class NotificationService: NSObject, ObservableObject {
             appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
             deviceModel: UIDevice.current.model,
             notificationsEnabled: preferenceAllowsNotifications,
-            lastRegisteredAt: ISO8601DateFormatter().string(from: Date())
+            lastRegisteredAt: ISO8601DateFormatter().string(from: Date()),
+            provider: "apns",
+            applicationID: Bundle.main.bundleIdentifier,
+            installationID: serverPushInstallationID.uuidString.lowercased(),
+            clientBuild: Bundle.main.infoDictionary?["CFBundleVersion"] as? String
         )
 
         try await supabase.client
             .from("push_device_tokens")
-            .upsert(payload, onConflict: "user_id,token")
+            .upsert(payload, onConflict: "user_id,provider,application_id,installation_id")
             .execute()
         await syncISGDevicePermission(token)
     }
@@ -598,6 +617,10 @@ private struct PushDeviceTokenPayload: Encodable {
     let deviceModel: String
     let notificationsEnabled: Bool
     let lastRegisteredAt: String
+    let provider: String
+    let applicationID: String?
+    let installationID: String
+    let clientBuild: String?
 
     enum CodingKeys: String, CodingKey {
         case userID = "user_id"
@@ -608,6 +631,10 @@ private struct PushDeviceTokenPayload: Encodable {
         case deviceModel = "device_model"
         case notificationsEnabled = "notifications_enabled"
         case lastRegisteredAt = "last_registered_at"
+        case provider
+        case applicationID = "application_id"
+        case installationID = "installation_id"
+        case clientBuild = "client_build"
     }
 }
 

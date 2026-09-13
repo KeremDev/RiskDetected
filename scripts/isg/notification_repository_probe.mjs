@@ -11,6 +11,7 @@ export const notificationRepositoryFiles=[
   'supabase/functions/_shared/isg/notification-repository.ts',
   'supabase/functions/_shared/isg/notification-worker.ts',
   'supabase/functions/_shared/isg/notification-transport.ts',
+  'supabase/migrations/20260914070005_isg_notebook_reminder_api.sql',
 ];
 const q=v=>"'"+String(v).replaceAll("'","''")+"'";
 export async function beginNotificationRepositoryProbe({synthetic,sql,ownerID,companyID,pass}){
@@ -18,6 +19,7 @@ export async function beginNotificationRepositoryProbe({synthetic,sql,ownerID,co
   if(!ownerID||!companyID)throw Error('NOTIFICATION_REPOSITORY_SCOPE_REQUIRED');
   const mark=(id,ok)=>pass('notification_repository_'+id,ok);
   sql(readFileSync(resolve(ROOT,notificationRepositoryFiles[0]),'utf8'));
+  sql(readFileSync(resolve(ROOT,notificationRepositoryFiles[5]),'utf8'));
   mark('migration_keeps_rollout_closed',sql("SELECT NOT read_enabled AND NOT write_enabled FROM private_isg.rollout WHERE feature='notifications';")==='t');
   sql("UPDATE private_isg.rollout SET read_enabled=true,write_enabled=true WHERE feature='notifications';UPDATE private_isg.notification_purposes SET caps_approved=true;");
   let now=Date.parse('2027-04-01T09:00:00Z'),calls=0,status=429,loseAck=false,networkError=false;

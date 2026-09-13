@@ -27,15 +27,29 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import java.util.UUID
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.OffsetDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 object NotebookUIRelease { const val enabled = false }
 data class NotebookEditor(val note: String = UUID.randomUUID().toString(), val version: Long = 0,
     val title: String = "", val body: String = "", val pending: NotebookPending? = null, val serverText: String? = null)
 data class NotebookScreenState(val identity: NotebookIdentity? = null, val notes: List<NotebookRecord> = emptyList(),
     val drafts: List<NotebookPending> = emptyList(), val busy: Boolean = false, val message: String? = null, val editor: NotebookEditor? = null,
-    val organization: NotebookOrganizationEditor? = null)
+    val organization: NotebookOrganizationEditor? = null, val reminders: List<NotebookReminder> = emptyList(),
+    val reminderEditor: NotebookReminderEditor? = null)
 data class NotebookOrganizationEditor(val note: String, val version: Long, val items: List<NotebookItem>, val tags: String,
     val pending: String? = null, val serverText: String? = null)
+data class NotebookReminderEditor(
+    val title: String = "",
+    val recurrence: String = "once",
+    val date: String = LocalDate.now().plusDays(1).toString(),
+    val time: String = LocalTime.now().plusHours(1).format(DateTimeFormatter.ofPattern("HH:mm")),
+)
 
 @HiltViewModel
 class NotebookViewModel @Inject constructor(private val repository: NotebookRepository) : ViewModel() {
@@ -44,8 +58,10 @@ class NotebookViewModel @Inject constructor(private val repository: NotebookRepo
     init { viewModelScope.launch { repository.identities.collect { next ->
         if (next != mutable.value.identity) { mutable.value = NotebookScreenState(identity = next); if (next != null) refresh() }
     } } }
-    fun edit(value: NotebookEditor?) { if (!mutable.value.busy) mutable.value = mutable.value.copy(editor = value, organization = null) }
-    fun editOrganization(value: NotebookOrganizationEditor) { if (!mutable.value.busy) mutable.value = mutable.value.copy(organization = value, editor = null) }
+    fun edit(value: NotebookEditor?) { if (!mutable.value.busy) mutable.value = mutable.value.copy(editor = value, organization = null, reminderEditor = null) }
+    fun editOrganization(value: NotebookOrganizationEditor) { if (!mutable.value.busy) mutable.value = mutable.value.copy(organization = value, editor = null, reminderEditor = null) }
+    fun editReminder(value: NotebookReminderEditor?) { if (!mutable.value.busy) mutable.value = mutable.value.copy(reminderEditor = value, editor = null, organization = null) }
+    fun clearEditors() { if (!mutable.value.busy) mutable.value = mutable.value.copy(editor = null, organization = null, reminderEditor = null) }
     fun openOrganization(note: String, pending: NotebookPending? = null) = action { owner ->
         val data = repository.organization(note, owner); require(!data.tombstone)
         if (repository.identity() == owner && mutable.value.identity == owner) mutable.value = mutable.value.copy(organization = NotebookOrganizationEditor(
@@ -75,7 +91,8 @@ class NotebookViewModel @Inject constructor(private val repository: NotebookRepo
     }
     private suspend fun publish(owner: NotebookIdentity) {
         val snapshot = repository.snapshot(owner)
-        if (repository.identity() == owner && mutable.value.identity == owner) mutable.value = mutable.value.copy(notes = snapshot.notes, drafts = snapshot.drafts)
+        val reminders = repository.reminders(owner)
+        if (repository.identity() == owner && mutable.value.identity == owner) mutable.value = mutable.value.copy(notes = snapshot.notes, drafts = snapshot.drafts, reminders = reminders)
     }
     fun refresh() = action { owner -> publish(owner); repository.reader.refresh(owner); publish(owner) }
     fun sync() = action { owner ->
@@ -100,6 +117,27 @@ class NotebookViewModel @Inject constructor(private val repository: NotebookRepo
         if (repository.identity() == owner && mutable.value.identity == owner) mutable.value = mutable.value.copy(editor = NotebookEditor(note.note_id, note.version,
             pending.intent.title ?: "", pending.intent.body ?: "", pending, (note.title ?: "") + "\n" + (note.body ?: "")))
     }
+    fun createReminder() {
+        val editor = mutable.value.reminderEditor ?: return
+        action { owner ->
+            val dateTime = LocalDateTime.of(LocalDate.parse(editor.date), LocalTime.parse(editor.time))
+            repository.createReminder(editor.title, editor.recurrence, dateTime.atZone(ZoneId.systemDefault()).toInstant(), owner)
+            publish(owner)
+            if (mutable.value.identity == owner) mutable.value = mutable.value.copy(reminderEditor = null,
+                message = "Hatırlatıcı bu cihazın sunucu bildirimi kaydına bağlandı.")
+        }
+    }
+    fun settleReminder(operation: String, reminder: NotebookReminder, occurrence: NotebookReminderOccurrence? = null) = action { owner ->
+        val due = occurrence?.effective_due_at?.let { OffsetDateTime.parse(it).toInstant() }
+        val snoozedUntil = if (operation == "snooze") maxOf(due ?: Instant.now(), Instant.now()).plusSeconds(10 * 60L) else null
+        repository.settleReminder(operation, reminder, occurrence, snoozedUntil, owner)
+        publish(owner)
+        if (mutable.value.identity == owner) mutable.value = mutable.value.copy(message = when (operation) {
+            "complete" -> "Hatırlatıcı tamamlandı."
+            "snooze" -> "Hatırlatıcı 10 dakika ertelendi."
+            else -> "Hatırlatıcı iptal edildi."
+        })
+    }
 }
 
 @Composable
@@ -108,7 +146,7 @@ fun NotebookScreen(onClose: () -> Unit, model: NotebookViewModel = hiltViewModel
     var deleteConfirmation by remember(state.identity) { mutableStateOf(false) }
     var exitConfirmation by remember(state.identity) { mutableStateOf(false) }
     var closeAfterExit by remember(state.identity) { mutableStateOf(false) }
-    fun requestClose() { if (state.editor == null && state.organization == null) onClose() else { closeAfterExit = true; exitConfirmation = true } }
+    fun requestClose() { if (state.editor == null && state.organization == null && state.reminderEditor == null) onClose() else { closeAfterExit = true; exitConfirmation = true } }
     BackHandler { if (!state.busy) requestClose() }
     val green = Color(0xFF23CE50)
     Column(Modifier.fillMaxSize().background(Color(0xFFEFEFEF)).blur(if (deleteConfirmation || exitConfirmation) 7.dp else 0.dp).verticalScroll(rememberScrollState()).padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -121,6 +159,7 @@ fun NotebookScreen(onClose: () -> Unit, model: NotebookViewModel = hiltViewModel
             if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth(), color = green)
             val editor = state.editor
             val organization = state.organization
+            val reminderEditor = state.reminderEditor
             if (organization != null) {
                 organization.serverText?.let { NoteCard { Text("Güncel sunucu checklist'i"); Text(it) } }
                 NoteCard {
@@ -138,6 +177,26 @@ fun NotebookScreen(onClose: () -> Unit, model: NotebookViewModel = hiltViewModel
                 NoteAction("Madde ekle", Icons.Outlined.Add, !state.busy && organization.items.size < 500) { model.editOrganization(organization.copy(items = organization.items + NotebookItem(UUID.randomUUID().toString(), "", false))) }
                 NoteAction("Checklist taslağını kaydet", Icons.Outlined.Check, !state.busy, model::saveOrganization)
                 NoteAction("Listeye dön", Icons.Outlined.ArrowBack, !state.busy) { closeAfterExit = false; exitConfirmation = true }
+            } else if (reminderEditor != null) {
+                NoteCard {
+                    Text("Yeni hatırlatıcı", style = MaterialTheme.typography.titleLarge)
+                    OutlinedTextField(reminderEditor.title, { model.editReminder(reminderEditor.copy(title = it)) },
+                        label = { Text("Başlık") }, enabled = !state.busy, modifier = Modifier.fillMaxWidth().testTag("notebook.reminder.title"))
+                    Text("Tekrar", style = MaterialTheme.typography.titleSmall)
+                    listOf("once" to "Bir kez", "daily" to "Her gün", "weekly" to "Her hafta", "monthly" to "Her ay").forEach { (value, label) ->
+                        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            RadioButton(reminderEditor.recurrence == value, { model.editReminder(reminderEditor.copy(recurrence = value)) }, enabled = !state.busy)
+                            Text(label)
+                        }
+                    }
+                    OutlinedTextField(reminderEditor.date, { model.editReminder(reminderEditor.copy(date = it)) },
+                        label = { Text("Tarih (YYYY-AA-GG)") }, singleLine = true, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(reminderEditor.time, { model.editReminder(reminderEditor.copy(time = it)) },
+                        label = { Text("Saat (SS:DD)") }, singleLine = true, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
+                    Text("Teslimat sahibi bu cihazdaki sunucu bildirimi kaydıdır; yerel alarm kullanılmaz.", color = Color.Gray)
+                }
+                NoteAction("Hatırlatıcıyı oluştur", Icons.Outlined.Check, !state.busy, model::createReminder)
+                NoteAction("Listeye dön", Icons.Outlined.ArrowBack, !state.busy) { closeAfterExit = false; exitConfirmation = true }
             } else if (editor != null) {
                 editor.serverText?.let { NoteCard { Text("Güncel sunucu sürümü"); Text(it) } }
                 NoteCard {
@@ -151,6 +210,21 @@ fun NotebookScreen(onClose: () -> Unit, model: NotebookViewModel = hiltViewModel
             } else {
                 NoteAction("Yeni not", Icons.Outlined.EditNote, !state.busy) { model.edit(NotebookEditor()) }
                 NoteAction("Eşitle", Icons.Outlined.Sync, !state.busy, model::sync)
+                Text("Hatırlatıcılar · Sunucu bildirimi", style = MaterialTheme.typography.titleLarge)
+                Text("İlk sürümde yerel alarm kullanılmaz. Teslimat, bu kurulumun yetkili bildirim kaydına bağlanır.", color = Color.Gray)
+                NoteAction("Yeni hatırlatıcı", Icons.Outlined.NotificationsActive, !state.busy) { model.editReminder(NotebookReminderEditor()) }
+                state.reminders.filter { it.state == "active" }.forEach { reminder ->
+                    key(reminder.reminder_id) { NoteCard {
+                        Text(reminder.title, style = MaterialTheme.typography.titleMedium)
+                        val date = reminder.next_occurrence?.effective_due_at?.let { runCatching { OffsetDateTime.parse(it) }.getOrNull() }
+                        Text(reminderRecurrenceLabel(reminder.recurrence) + (date?.let { " · " + it.atZoneSameInstant(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("d MMM yyyy HH:mm")) } ?: ""), color = Color.Gray)
+                        reminder.next_occurrence?.let { occurrence ->
+                            NoteAction("Tamamla", Icons.Outlined.Check, !state.busy) { model.settleReminder("complete", reminder, occurrence) }
+                            NoteAction("10 dk ertele", Icons.Outlined.Snooze, !state.busy) { model.settleReminder("snooze", reminder, occurrence) }
+                        }
+                        NoteAction("Hatırlatıcıyı iptal et", Icons.Outlined.NotificationsOff, !state.busy) { model.settleReminder("cancel", reminder) }
+                    } }
+                }
                 if (state.notes.isEmpty() && state.drafts.isEmpty()) NoteCard { Icon(Icons.Outlined.Note, null, tint = green); Text("Henüz not yok") }
                 state.drafts.forEach { draft ->
                     key(draft.intent.mutation) { NoteCard {
@@ -183,7 +257,7 @@ fun NotebookScreen(onClose: () -> Unit, model: NotebookViewModel = hiltViewModel
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Text("Kaydedilmemiş değişiklikler", style = MaterialTheme.typography.titleLarge)
                 Text("Editördeki değişiklikleri kaydetmeden çıkmak istiyor musunuz? Daha önce kaydedilmiş taslaklar silinmez.")
-                NoteAction("Kaydetmeden çık", Icons.Outlined.Close, true) { exitConfirmation = false; model.edit(null); if (closeAfterExit) onClose() }
+                NoteAction("Kaydetmeden çık", Icons.Outlined.Close, true) { exitConfirmation = false; model.clearEditors(); if (closeAfterExit) onClose() }
                 NoteAction("Düzenlemeye dön", Icons.Outlined.Edit, true) { exitConfirmation = false }
             }
         }
@@ -198,6 +272,12 @@ fun NotebookScreen(onClose: () -> Unit, model: NotebookViewModel = hiltViewModel
             }
         }
     }
+}
+private fun reminderRecurrenceLabel(value: String) = when (value) {
+    "daily" -> "Her gün"
+    "weekly" -> "Her hafta"
+    "monthly" -> "Her ay"
+    else -> "Bir kez"
 }
 @Composable private fun NoteCard(content: @Composable ColumnScope.() -> Unit) {
     Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), color = Color.White) {

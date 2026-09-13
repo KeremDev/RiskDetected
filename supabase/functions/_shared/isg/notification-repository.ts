@@ -2,7 +2,7 @@ import { type Claim, type Receipt, type Repository, type Snapshot, validOutcome,
 // Driver adapter must bind values, return the single JSON scalar, and throw on
 // SQL errors. No SQL interpolation, credentials, connections or public RPC here.
 export type QueryPort = (statement: string, values: readonly unknown[]) => Promise<unknown>;
-const CLAIM = 'SELECT private_isg.dispatch_notification($1::uuid,$2::jsonb,$3::timestamptz)';
+const CLAIM = 'SELECT private_isg.dispatch_bound_notification($1::uuid,$2::jsonb,$3::timestamptz)';
 const COMPLETE = 'SELECT private_isg.complete_notification_delivery_with_retry($1::uuid,$2::uuid,$3::text,$4::text,$5::text,$6::timestamptz,$7::integer)';
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const object = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -23,7 +23,8 @@ export function createNotificationRepository(query: QueryPort, loadTrusted: (job
       return structuredClone(value);
     },
     async claim(job, device, now) {
-      if (!uuid.test(job) || !uuid.test(device.owner_id) || !stamp(now) || !Number.isInteger(device.app_build) ||
+      if (!uuid.test(job) || !uuid.test(device.owner_id) ||
+        (device.installation_id !== undefined && !uuid.test(device.installation_id)) || !stamp(now) || !Number.isInteger(device.app_build) ||
         device.app_build < 1 || device.app_build > 2147483647 || typeof device.category_enabled !== 'boolean' || typeof device.os_authorized !== 'boolean') throw Error('NOTIFICATION_SCOPE_INVALID');
       const r = await execute(CLAIM, [job, JSON.stringify(device), now]);
       if (r.job_id !== job || typeof r.allowed !== 'boolean') throw Error('NOTIFICATION_CLAIM_INVALID');

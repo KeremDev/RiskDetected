@@ -4,8 +4,9 @@ import { resolve } from 'node:path';
 import { ROOT } from './lib.mjs';
 import { verifyLocalSessionToken } from './auth_session_probe.mjs';
 import { probeNotebookOrganization } from './notebook_organization_probe.mjs';
+import { probeNotebookReminders } from './notebook_reminder_probe.mjs';
 const q=v=>"'"+String(v).replaceAll("'","''")+"'";
-export const notebookAPIFiles=['supabase/migrations/20260914070004_isg_notebook_sync_api.sql','scripts/isg/notebook_api_probe.mjs','supabase/migrations/20260913154113_isg_notebook_organization_api.sql','scripts/isg/notebook_organization_probe.mjs'];
+export const notebookAPIFiles=['supabase/migrations/20260914070004_isg_notebook_sync_api.sql','scripts/isg/notebook_api_probe.mjs','supabase/migrations/20260913154113_isg_notebook_organization_api.sql','scripts/isg/notebook_organization_probe.mjs','scripts/isg/notebook_reminder_probe.mjs'];
 export async function beginNotebookAPIProbe({synthetic,sql,concurrentSql,token,secret,request,waitReady,pass}) {
   if(synthetic!==true)throw Error('NOTEBOOK_API_SYNTHETIC_REQUIRED');
   const claims=verifyLocalSessionToken(token,secret),owner=claims.sub;
@@ -73,10 +74,13 @@ export async function beginNotebookAPIProbe({synthetic,sql,concurrentSql,token,s
   const organizedNote=await probeNotebookOrganization({request,waitReady,pass,foreignNote});
   sql("UPDATE private_isg.rollout SET read_enabled=false,write_enabled=false WHERE feature='personal_notes';");
   mark('rollout_remains_closed',read().body.message==='FEATURE_UNAVAILABLE');
+  const reminderProbe=await probeNotebookReminders({request,sql,pass,ownerID:owner});
   return {afterLogout(){
     mark('revoked_session_cannot_read',read().body.message==='AUTH_REQUIRED');
     mark('revoked_session_cannot_read_organization',request('/rpc/isg_notebook_organization_v1',{method:'POST',body:{p_note:organizedNote}}).body.message==='AUTH_REQUIRED');
     mark('revoked_session_cannot_replay',mutate(first).body.message==='AUTH_REQUIRED');
-    return {real_http:true,real_auth_session:true,parallel_pg_connections:4,rollout_closed:true,mobile_sdk_tested:false,production_deployed:false};
+    const reminders=reminderProbe.afterLogout();
+    return {real_http:true,real_auth_session:true,parallel_pg_connections:4,rollout_closed:true,
+      reminder_api:reminders,mobile_sdk_tested:false,production_deployed:false};
   }};
 }

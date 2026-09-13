@@ -29,6 +29,90 @@ import Supabase
         guard identity() == expected, data.count <= 2_000_000 else { throw NotebookFailure.identityChanged }
         let value = try JSONDecoder().decode(NotebookOrganization.self, from: data); try value.validate(note); return value
     }
+    private struct ReminderReadPayload: Encodable {
+        let p_after: UUID?
+        func encode(to encoder: Encoder) throws {
+            var values = encoder.container(keyedBy: CodingKeys.self)
+            if let p_after { try values.encode(p_after, forKey: .p_after) }
+            else { try values.encodeNil(forKey: .p_after) }
+        }
+        enum CodingKeys: String, CodingKey { case p_after }
+    }
+    func reminders(_ expected: NotebookIdentity) async throws -> [NotebookReminder] {
+        guard identity() == expected else { throw NotebookFailure.identityChanged }
+        var result: [NotebookReminder] = []
+        var after: UUID?
+        for _ in 0..<50 {
+            let data = try await sdk.rpc("isg_notebook_reminders_v1", params: ReminderReadPayload(p_after: after)).execute().data
+            try Task.checkCancellation()
+            guard identity() == expected, data.count <= 2_000_000 else { throw NotebookFailure.identityChanged }
+            let page = try JSONDecoder().decode(NotebookReminderPage.self, from: data)
+            try page.validate(after: after)
+            result.append(contentsOf: page.reminders)
+            guard result.count <= 1_000 else { throw NotebookFailure.full }
+            guard page.has_more else { return result }
+            after = page.next_after
+        }
+        throw NotebookFailure.full
+    }
+    @discardableResult
+    func createReminder(title: String, recurrence: NotebookReminderRecurrence, dueAt: Date,
+                        note: UUID? = nil, identity expected: NotebookIdentity) async throws -> UUID {
+        guard identity() == expected, dueAt > Date(),
+              !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              title.unicodeScalars.count <= 200 else { throw NotebookFailure.invalid }
+        let zone = TimeZone.current
+        let day = DateFormatter(); day.calendar = Calendar(identifier: .gregorian); day.locale = Locale(identifier: "en_US_POSIX")
+        day.timeZone = zone; day.dateFormat = "yyyy-MM-dd"
+        let time = DateFormatter(); time.calendar = Calendar(identifier: .gregorian); time.locale = Locale(identifier: "en_US_POSIX")
+        time.timeZone = zone; time.dateFormat = "HH:mm:ss"
+        let payload = NotebookReminderMutationPayload(mutation: UUID(), action: "create", reminder: nil,
+            note: note, occurrence: nil, expected: 0, title: title, recurrence: recurrence,
+            localTime: time.string(from: dueAt), startsOn: day.string(from: dueAt), timezone: zone.identifier,
+            snoozedUntil: nil, installation: NotificationService.shared.serverPushInstallationID)
+        let receipt = try await reminderMutation(payload, identity: expected)
+        guard receipt.state == "active", receipt.delivery_strategy == "server_push",
+              let reminder = receipt.reminder_id else { throw NotebookFailure.invalid }
+        return reminder
+    }
+    func settleReminder(_ action: String, reminder: NotebookReminder,
+                        occurrence: NotebookReminderOccurrence? = nil, snoozedUntil: Date? = nil,
+                        identity expected: NotebookIdentity) async throws {
+        guard ["complete", "snooze", "cancel"].contains(action), reminder.state == "active",
+              (action == "cancel") == (occurrence == nil),
+              (action == "snooze") == (snoozedUntil != nil) else { throw NotebookFailure.invalid }
+        let payload = NotebookReminderMutationPayload(mutation: UUID(), action: action, reminder: reminder.reminder_id,
+            note: nil, occurrence: occurrence?.occurrence_id, expected: reminder.series_version, title: nil,
+            recurrence: nil, localTime: nil, startsOn: nil, timezone: nil,
+            snoozedUntil: snoozedUntil.map(NotebookReminderDate.string), installation: nil)
+        _ = try await reminderMutation(payload, identity: expected)
+    }
+    private struct ReminderReceipt: Decodable {
+        let schema_version: Int
+        let mutation_id: UUID
+        let reminder_id: UUID?
+        let state: String
+        let delivery_strategy: String?
+    }
+    private func reminderMutation(_ payload: NotebookReminderMutationPayload,
+                                  identity expected: NotebookIdentity) async throws -> ReminderReceipt {
+        guard identity() == expected else { throw NotebookFailure.identityChanged }
+        do {
+            let data = try await sdk.rpc("isg_notebook_reminder_mutate_v1", params: payload).execute().data
+            try Task.checkCancellation()
+            guard identity() == expected, data.count <= 16_384 else { throw NotebookFailure.identityChanged }
+            let value = try JSONDecoder().decode(ReminderReceipt.self, from: data)
+            guard value.schema_version == 1, value.mutation_id == payload.mutation else { throw NotebookFailure.invalid }
+            return value
+        } catch let error as PostgrestError {
+            let codes = ["AUTH_REQUIRED", "FEATURE_UNAVAILABLE", "ACCESS_DENIED", "VERSION_CONFLICT",
+                         "IDEMPOTENCY_CONFLICT", "VALIDATION_ERROR", "DEVICE_UNAVAILABLE"]
+            if ["P0001", "28000"].contains(error.code ?? ""), codes.contains(error.message) {
+                throw NotebookServerFailure(code: error.message)
+            }
+            throw NotebookFailure.unavailable
+        }
+    }
     func conflict(_ pending: NotebookPending, identity expected: NotebookIdentity) async throws -> (NotebookRecord, NotebookConflict) {
         guard identity() == expected, let wanted = pending.conflictID else { throw NotebookFailure.identityChanged }
         var after: UUID?; var version: Int64?

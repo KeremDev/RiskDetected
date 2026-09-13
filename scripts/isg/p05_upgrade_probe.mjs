@@ -22,7 +22,8 @@ export const p05UpgradeFiles = ['scripts/isg/p05_upgrade_probe.mjs',
   'supabase/migrations/20260914070001_isg_notification_dispatch_safety.sql',
   'supabase/migrations/20260914070002_isg_notification_provider_wait.sql',
   'supabase/migrations/20260914070003_isg_device_notification_permission.sql',
-  'supabase/migrations/20260914070004_isg_notebook_sync_api.sql'];
+  'supabase/migrations/20260914070004_isg_notebook_sync_api.sql',
+  'supabase/migrations/20260914070005_isg_notebook_reminder_api.sql'];
 
 /** Called only on the runner's freshly cloned, network=none, identity-guarded target. */
 export function probeP05Upgrade({sql,pass,isolatedCopy}) {

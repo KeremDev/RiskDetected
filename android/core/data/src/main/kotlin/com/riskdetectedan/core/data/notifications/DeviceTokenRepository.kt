@@ -72,6 +72,11 @@ class DeviceTokenRepository @Inject constructor(
         return generated
     }
 
+    /** Public only inside the data layer's authenticated reminder flow. No token
+     * or user identifier is exposed; the server still verifies ownership and
+     * current OS permission before accepting the delivery claim. */
+    fun installationIdForServerPush(): String = installationId()
+
     suspend fun registerToken(
         userId: String,
         token: String,

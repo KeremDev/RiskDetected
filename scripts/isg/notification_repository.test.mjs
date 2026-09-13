@@ -21,7 +21,7 @@ test('repository uses fixed SQL and bound values, detaches snapshots',async()=>{
   let statement,args;const repo=createNotificationRepository(async(s,a)=>{statement=s;args=a;return claim;},async()=>snapshot);
   const s=await repo.load(job);s.device.app_build=1;assert.equal(snapshot.device.app_build,120);
   assert.equal((await repo.claim(job,device,now)).allowed,true);
-  assert.match(statement,/dispatch_notification\(\$1::uuid,\$2::jsonb,\$3::timestamptz\)/);
+  assert.match(statement,/dispatch_bound_notification\(\$1::uuid,\$2::jsonb,\$3::timestamptz\)/);
   assert.ok(!statement.includes(job));assert.deepEqual(args,[job,JSON.stringify(device),now]);
 });
 test('complete binds wait and validates SQL acknowledgement',async()=>{

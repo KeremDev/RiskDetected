@@ -14,8 +14,13 @@ export function beginNotificationDeviceProbe({synthetic,sql,ownerID,companyID,pa
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),user_id uuid NOT NULL REFERENCES auth.users(id),
     token text NOT NULL,provider text NOT NULL,platform text NOT NULL,environment text NOT NULL,
     notifications_enabled boolean NOT NULL,application_id text,provider_environment text,
+    installation_id uuid,client_build text,
     UNIQUE(user_id,token));
+    CREATE TABLE public.notification_preferences (
+      user_id uuid PRIMARY KEY REFERENCES auth.users(id),enabled boolean NOT NULL DEFAULT false,
+      app_reminders boolean NOT NULL DEFAULT true);
     ALTER TABLE public.push_device_tokens ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE public.notification_preferences ENABLE ROW LEVEL SECURITY;
     REVOKE ALL ON public.push_device_tokens FROM PUBLIC,anon,authenticated,service_role;`);
   sql(readFileSync(resolve(ROOT,notificationDeviceFiles[0]),'utf8'));
   const session=sql(`SELECT id FROM auth.sessions WHERE user_id=${q(ownerID)} ORDER BY created_at DESC LIMIT 1;`);

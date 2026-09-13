@@ -38,6 +38,11 @@ private struct NotebookOrganizationEditor {
     var items: [NotebookItem]; var tags: String
     var pending: UUID?; var serverText: String?
 }
+private struct NotebookReminderEditor {
+    var title = ""
+    var recurrence = NotebookReminderRecurrence.once
+    var dueAt = Date().addingTimeInterval(60 * 60)
+}
 private struct NotebookContent: View {
     let repository: NotebookRepository
     let identity: NotebookIdentity
@@ -45,6 +50,8 @@ private struct NotebookContent: View {
     @State private var snapshot = NotebookReader.Snapshot(notes: [], drafts: [])
     @State private var editor: NotebookEditorState?
     @State private var organization: NotebookOrganizationEditor?
+    @State private var reminderEditor: NotebookReminderEditor?
+    @State private var reminders: [NotebookReminder] = []
     @State private var busy = false
     @State private var message: String?
     @State private var confirmDelete = false
@@ -57,13 +64,16 @@ private struct NotebookContent: View {
                     VStack(alignment: .leading, spacing: 16) {
                         HStack {
                             NovaButton(label: "Kapat", symbol: "chevron.left", variant: .surface) {
-                                if editor == nil && organization == nil { onClose() } else { closeAfterExit = true; confirmExit = true }
+                                if editor == nil && organization == nil && reminderEditor == nil { onClose() } else { closeAfterExit = true; confirmExit = true }
                             }
                             NovaText(text: "Kişisel Notlar", style: .screenTitle)
                         }
                         NovaText(text: "Ücretsiz · Yalnız size ait · Firmalardan bağımsız", style: .metaQuiet)
                         if let message { NovaCard(padding: 16) { Label(message, systemImage: "info.circle") } }
-                        if organization != nil { organizationFields } else if editor != nil { editorFields } else { list }
+                        if organization != nil { organizationFields }
+                        else if reminderEditor != nil { reminderFields }
+                        else if editor != nil { editorFields }
+                        else { list }
                     }.padding(18)
                 }.disabled(busy || confirmDelete || confirmExit).blur(radius: confirmDelete || confirmExit ? 7 : 0)
                 if confirmExit {
@@ -73,7 +83,7 @@ private struct NotebookContent: View {
                             Label("Kaydedilmemiş değişiklikler", systemImage: "exclamationmark.triangle")
                             NovaText(text: "Editördeki değişiklikleri kaydetmeden çıkmak istiyor musunuz? Daha önce kaydedilmiş taslaklar silinmez.")
                             NovaButton(label: "Kaydetmeden çık", symbol: "xmark", variant: .danger) {
-                                confirmExit = false; editor = nil; organization = nil; if closeAfterExit { onClose() }
+                                confirmExit = false; editor = nil; organization = nil; reminderEditor = nil; if closeAfterExit { onClose() }
                             }
                             NovaButton(label: "Düzenlemeye dön", symbol: "chevron.left", variant: .surface) { confirmExit = false }
                         }
@@ -100,6 +110,36 @@ private struct NotebookContent: View {
                 editor = .init(note: UUID(), version: 0, title: "", body: "")
             }.accessibilityIdentifier("notebook.add")
             NovaButton(label: "Eşitle", symbol: "arrow.triangle.2.circlepath", variant: .surface) { Task { await sync() } }
+            HStack {
+                NovaText(text: "Hatırlatıcılar · Sunucu bildirimi", style: .cardTitle)
+                Spacer()
+                Image(systemName: "bell.badge")
+            }
+            NovaText(text: "İlk sürümde yerel alarm kullanılmaz. Teslimat, bu kurulumun yetkili bildirim kaydına bağlanır.", style: .metaQuiet)
+            NovaButton(label: "Yeni hatırlatıcı", symbol: "bell.badge") {
+                reminderEditor = NotebookReminderEditor()
+            }
+            ForEach(reminders.filter { $0.state == "active" }) { reminder in
+                NovaCard(padding: 18) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label(reminder.title, systemImage: "bell")
+                        NovaText(text: reminder.recurrence.label + reminderSchedule(reminder), style: .metaQuiet)
+                        if let occurrence = reminder.next_occurrence {
+                            HStack {
+                                NovaButton(label: "Tamamla", symbol: "checkmark", variant: .surface) {
+                                    Task { await settleReminder("complete", reminder: reminder, occurrence: occurrence) }
+                                }
+                                NovaButton(label: "10 dk ertele", symbol: "clock.arrow.circlepath", variant: .surface) {
+                                    Task { await settleReminder("snooze", reminder: reminder, occurrence: occurrence) }
+                                }
+                            }
+                        }
+                        NovaButton(label: "Hatırlatıcıyı iptal et", symbol: "bell.slash", variant: .danger) {
+                            Task { await settleReminder("cancel", reminder: reminder) }
+                        }
+                    }
+                }
+            }
             if snapshot.notes.isEmpty && snapshot.drafts.isEmpty { NovaCard(padding: 20) { Label("Henüz not yok", systemImage: "note.text") } }
             ForEach(snapshot.drafts, id: \.intent.mutation) { pending in
                 NovaCard(padding: 18) {
@@ -134,6 +174,27 @@ private struct NotebookContent: View {
                 NovaButton(label: "Checklist ve etiketler", symbol: "checklist", variant: .surface,
                     isEnabled: !snapshot.drafts.contains { $0.intent.note == note.note_id }) { Task { await openOrganization(note.note_id) } }
             }
+        }
+    }
+    private var reminderFields: some View {
+        VStack(spacing: 14) {
+            NovaCard(padding: 18) {
+                VStack(alignment: .leading, spacing: 14) {
+                    Label("Yeni hatırlatıcı", systemImage: "bell.badge")
+                    TextField("Başlık", text: Binding(get: { reminderEditor?.title ?? "" }, set: { reminderEditor?.title = $0 }))
+                        .accessibilityIdentifier("notebook.reminder.title")
+                    Picker("Tekrar", selection: Binding(get: { reminderEditor?.recurrence ?? .once }, set: { reminderEditor?.recurrence = $0 })) {
+                        ForEach(NotebookReminderRecurrence.allCases) { recurrence in
+                            Text(recurrence.label).tag(recurrence)
+                        }
+                    }.pickerStyle(.menu)
+                    DatePicker("Tarih ve saat", selection: Binding(get: { reminderEditor?.dueAt ?? Date() }, set: { reminderEditor?.dueAt = $0 }),
+                               in: Date()..., displayedComponents: [.date, .hourAndMinute])
+                    NovaText(text: "Teslimat sahibi: bu cihazdaki sunucu bildirimi kaydı. Bildirim izni veya güncel cihaz kaydı yoksa hatırlatıcı oluşturulmaz.", style: .metaQuiet)
+                }
+            }
+            NovaButton(label: "Hatırlatıcıyı oluştur", symbol: "checkmark") { Task { await createReminder() } }
+            NovaButton(label: "Listeye dön", symbol: "chevron.left", variant: .surface) { closeAfterExit = false; confirmExit = true }
         }
     }
     private var editorFields: some View {
@@ -199,7 +260,10 @@ private struct NotebookContent: View {
         do {
             snapshot = try repository.snapshot(identity)
             try await repository.reader.refresh(identity)
-            snapshot = try repository.snapshot(identity); message = nil
+            async let currentReminders = repository.reminders(identity)
+            snapshot = try repository.snapshot(identity)
+            reminders = try await currentReminders
+            message = nil
         } catch { message = "Eşitleme kullanılamıyor. Bu cihazdaki kaydedilmiş taslaklarınız korunuyor." }
     }
     private func save(delete: Bool = false) async {
@@ -217,6 +281,7 @@ private struct NotebookContent: View {
         do {
             for _ in 0..<20 { if try await repository.queue.syncNext(identity) == "idle" { break } }
             try await repository.reader.refresh(identity)
+            reminders = try await repository.reminders(identity)
             snapshot = try repository.snapshot(identity); message = "Eşitleme tamamlandı. İşlem gerektiren taslaklar ayrıca gösterilir."
         } catch {
             snapshot = (try? repository.snapshot(identity)) ?? .init(notes: [], drafts: [])
@@ -230,5 +295,38 @@ private struct NotebookContent: View {
             editor = .init(note: note.note_id, version: note.version, title: pending.intent.title ?? "", body: pending.intent.body ?? "", pending: pending,
                 serverText: (note.title ?? "") + "\n" + (note.body ?? ""))
         } catch { message = "Güncel sürüm alınamadı veya not silinmiş. Taslağınız korunuyor; eşitleyip yeniden deneyin." }
+    }
+    private func createReminder() async {
+        guard !busy, let value = reminderEditor else { return }
+        busy = true; defer { busy = false }
+        do {
+            _ = try await repository.createReminder(title: value.title, recurrence: value.recurrence,
+                dueAt: value.dueAt, identity: identity)
+            reminders = try await repository.reminders(identity)
+            reminderEditor = nil
+            message = "Hatırlatıcı bu cihazın sunucu bildirimi kaydına bağlandı."
+        } catch let error as NotebookServerFailure {
+            message = error.code == "DEVICE_UNAVAILABLE"
+                ? "Bildirim izni ve güncel cihaz kaydı gerekli. Bildirimleri açıp yeniden deneyin."
+                : "Hatırlatıcı oluşturulamadı. Oturumu ve alanları kontrol edip yeniden deneyin."
+        } catch { message = "Hatırlatıcı oluşturulamadı. Bağlantıyı ve tarihi kontrol edip yeniden deneyin." }
+    }
+    private func settleReminder(_ action: String, reminder: NotebookReminder,
+                                occurrence: NotebookReminderOccurrence? = nil) async {
+        guard !busy else { return }
+        busy = true; defer { busy = false }
+        do {
+            let baseline = occurrence.flatMap { NotebookReminderDate.parse($0.effective_due_at) } ?? Date()
+            let snoozedUntil = action == "snooze" ? max(baseline, Date()).addingTimeInterval(10 * 60) : nil
+            try await repository.settleReminder(action, reminder: reminder, occurrence: occurrence,
+                snoozedUntil: snoozedUntil, identity: identity)
+            reminders = try await repository.reminders(identity)
+            message = action == "complete" ? "Hatırlatıcı tamamlandı." : action == "snooze" ? "Hatırlatıcı 10 dakika ertelendi." : "Hatırlatıcı iptal edildi."
+        } catch { message = "Hatırlatıcı değiştirilemedi. Güncel listeyi eşitleyip yeniden deneyin." }
+    }
+    private func reminderSchedule(_ reminder: NotebookReminder) -> String {
+        guard let raw = reminder.next_occurrence?.effective_due_at,
+              let date = NotebookReminderDate.parse(raw) else { return "" }
+        return " · " + date.formatted(date: .abbreviated, time: .shortened)
     }
 }

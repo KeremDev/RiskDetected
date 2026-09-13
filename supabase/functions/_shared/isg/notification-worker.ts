@@ -1,6 +1,6 @@
 // Internal orchestration only. No HTTP entry point, scheduler, env lookup or
 // database credentials. Production binding requires a restricted repository.
-export type Device = { owner_id: string; app_build: number; category_enabled: boolean; os_authorized: boolean };
+export type Device = { owner_id: string; installation_id?: string; app_build: number; category_enabled: boolean; os_authorized: boolean };
 export type Snapshot = { job_id: string; device: Device; provider: 'apns' | 'fcm'; token: string; title: string; body: string };
 export type Claim = { job_id: string; allowed: boolean; dispatch_token?: string; expires_at?: string; resolved_route?: string; channel?: string };
 export type Outcome = { state: 'accepted' | 'rejected' | 'error'; failure: string | null; retry_after_seconds?: number };
@@ -23,6 +23,7 @@ export type WorkerPorts = {
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function validSnapshot(s: Snapshot, job: string): boolean {
   return s?.job_id === job && uuid.test(job) && !!s.device && uuid.test(s.device.owner_id) &&
+    (s.device.installation_id === undefined || uuid.test(s.device.installation_id)) &&
     Number.isSafeInteger(s.device.app_build) && s.device.app_build > 0 && s.device.app_build <= 2147483647 &&
     typeof s.device.category_enabled === 'boolean' && typeof s.device.os_authorized === 'boolean' &&
     ['apns', 'fcm'].includes(s.provider) && typeof s.token === 'string' && s.token.length > 0 && s.token.length <= 4096 &&
@@ -31,7 +32,7 @@ export function validSnapshot(s: Snapshot, job: string): boolean {
 }
 function normalized(s: Snapshot): string {
   return JSON.stringify([s.job_id, s.provider, s.token, s.title, s.body, s.device.owner_id,
-    s.device.app_build, s.device.category_enabled, s.device.os_authorized]);
+    s.device.installation_id ?? null, s.device.app_build, s.device.category_enabled, s.device.os_authorized]);
 }
 const unknown: Outcome = { state: 'error', failure: 'TRANSPORT_UNKNOWN' };
 export function validOutcome(o: Outcome): boolean {
