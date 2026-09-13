@@ -1,6 +1,8 @@
 # Devir notu — İSG geçişinde sunucu dilimlerini sürdürmek
 
-> **Güncel devam:** [P12 SQL repository ve kalıcı bekleme](P12_REPOSITORY_WAIT_2026-09-13.md): 768 sentetik PASS / 767 tekil, 32 upgrade PASS / 18 migration, 331 foundation PASS. Gerçek izole PostgreSQL kullanıldı; sağlayıcı ve cihaz kaynağı sentetik, canlı kapalıdır.
+> **Güncel devam:** [P14 abonelik lifecycle çekirdeği](P14_BILLING_LIFECYCLE_2026-09-14.md): 894 sentetik PASS / 893 tekil, 32 upgrade PASS / 23 migration, 375 foundation PASS. `private_isg` 120 tablo, projeksiyon `access_authority='legacy'`, rollout kapalı, mağaza/RC yapılandırması değişmedi.
+
+> **Önceki devam:** [P12 SQL repository ve kalıcı bekleme](P12_REPOSITORY_WAIT_2026-09-13.md): 768 sentetik PASS / 767 tekil, 32 upgrade PASS / 18 migration, 331 foundation PASS. Gerçek izole PostgreSQL kullanıldı; sağlayıcı ve cihaz kaynağı sentetik, canlı kapalıdır.
 
 > **Sonraki paket:** [P12 tek istekli işçi/APNs-FCM adaptörleri](P12_WORKER_TRANSPORT_2026-09-13.md) eklendi; foundation 298 PASS, 53 yeni davranış testi. Gerçek DB/credential bağlaması ve canlı aktivasyon yapılmadı. Aşağıdaki devir sonuçları tarihsel test turlarıdır.
 
@@ -24,8 +26,9 @@ P05 (firma/işyeri/personel) daha önce kapanmıştı. 13–14 Eylül'de eklenen
 | P11 | Belge numarası/snapshot/export + import zinciri | `20260914030000` | [P11](P11_DOCUMENT_IMPORT_CORE_2026-09-14.md) |
 | P12 | Bildirim omurgası, rıza kökeni, sahiplik/shadow, gönderim-anı kapısı | `20260914050000` | [P12](P12_NOTIFICATION_CORE_2026-09-14.md) |
 | P13 | Kişisel not defteri, çakışma/tombstone, occurrence, teslim sahibi | `20260914070000` | [P13](P13_PERSONAL_NOTES_2026-09-14.md) |
+| P14 | Kanonik lifecycle, hediye/indirim ayrımı, quote/intent/settlement, mutabakat | `20260914090000` | [P14](P14_BILLING_LIFECYCLE_2026-09-14.md) |
 
-Toplam: `private_isg` şemasında **107 tablo**, hepsinde RLS açık, istemciye **sıfır** GRANT. Sentetik kabul koşusu **716/716 PASS**, tam legacy kopya upgrade **29/29 PASS** (16 migration), offline foundation **240 PASS**.
+Toplam: `private_isg` şemasında **120 tablo**, hepsinde RLS açık, istemciye **sıfır** GRANT. Sentetik kabul koşusu **894/894 PASS** (893 tekil), tam legacy kopya upgrade **32/32 PASS** (23 migration), offline foundation **375 PASS**. Bu tablo yalnız sunucu dilimlerini sayar; araya giren P12 sertleştirme ve P13 sync/reminder API paketleri kendi dokümanlarındadır.
 
 **Canlıya hiçbir şey uygulanmadı.** Bütün yeni `private_isg.rollout` satırları ve on iki modül anahtarı kapalı; mağaza, canlı DB, legacy kota otoritesi ve mevcut istemci sözleşmeleri değişmedi.
 
@@ -36,7 +39,7 @@ Toplam: `private_isg` şemasında **107 tablo**, hepsinde RLS açık, istemciye 
 3. **Her tabloda RLS.** `CREATE TABLE` sayısı ile `ENABLE ROW LEVEL SECURITY` sayısı eşit olmalı; guard testleri bunu sayar.
 4. **Her fonksiyonda `SET search_path=''`** ve tam nitelikli isimler.
 5. **Onaylanmamış sayı, onaylanmış gibi durmaz.** V5'ten gelen limit/süre/eşik değerleri `*_needs_review` veya `content_approved=false` / `period_source='unapproved_fixture'` gibi açık bir işaretle saklanır.
-6. **"İddia edilmeyecek" şeyler CHECK ile imkânsız yapılır**, varsayılan değerle bırakılmaz. Örnek: `CHECK(NOT official_integration)`, `CHECK(NOT authorises_work)`, `CHECK(NOT ai_text_is_official_record)`, `CHECK(authority='shadow')`.
+6. **"İddia edilmeyecek" şeyler CHECK ile imkânsız yapılır**, varsayılan değerle bırakılmaz. Örnek: `CHECK(NOT official_integration)`, `CHECK(NOT authorises_work)`, `CHECK(NOT ai_text_is_official_record)`, `CHECK(authority='shadow')`, `CHECK(access_authority='legacy')`, `CHECK(NOT signature_material_stored)`.
 7. **Legacy'ye yazılmaz.** `public.findings`, `public.analyses`, `public.reports` ve legacy kota helper'ları okunmaz/yazılmaz; yalnız referans taşınır.
 8. **Takvim aritmetiği.** Yıl 365 güne, ay 30 güne çevrilmez; `private_isg.next_due_on` ve `make_interval` kullanılır.
 9. **Bilinmeyen ≠ hayır.** Eksik kanıt `needs_review`/`review` üretir, sessizce "gerekli değil" olmaz.
@@ -67,6 +70,11 @@ Toplam: `private_isg` şemasında **107 tablo**, hepsinde RLS açık, istemciye 
 | Advisor aşaması kırmızı | Yeni tablolar/indeksler review listelerinde yok | `personnel_advisor_probe.mjs`'deki iki listeyi güncelle; gerçek FK indeks eksiğini **düzelt**, listeye ekleme |
 | Python `str.replace` ile kod düzenlerken sayı bozulması | `"count(*)=3"` deseni `"count(*)=30"` içinde de eşleşti | Daha uzun/benzersiz desen seç, sonra `grep` ile doğrula |
 | Kapı sırası varsayımı | Faz kapısı modül anahtarından **önce** cevap verir | Önce `FEATURE_UNAVAILABLE`, sonra `MODULE_UNAVAILABLE` bekle |
+| Ham SQL ile CHECK denemesi hep "kabul edildi" görünüyor | Runner psql'i `VERBOSITY=sqlstate` ile çalıştırır; kısıt adı ve mesaj kaybolur, hata yalnız `AUTH_RESTORE_SQL_FAILED` olur | Denemeyi `observe` dispatcher'ına sabit bir `force_*` dalı olarak yaz; 23514 → `CHECK_VIOLATION` |
+| "İmkânsız" iddia testi sessizce geçiyor | `UPDATE` hedef satır yokken 0 satır etkiliyor, CHECK hiç çalışmıyor | Kontrolü satır oluştuktan sonraya al ve ayrıca `bool_and(...)` ile doğrula |
+| Sürüm beklentisi bir eksik | Her `advance_*`/`activate_*` çağrısı sürümü ayrı ayrı artırır | Zinciri say: grant(1) → advance(2) → activate(3) |
+| Zaman bağlı sayaç 0 geliyor | Mutabakat/expiry kontrolü ilgili `timeout_at`/`expires_at` anından önce çalıştırılmış | Sentetik saati eşiğin ötesine taşı |
+| `public.profiles`'a satır eklenemiyor | `id` → `auth.users(id)` FK'si var; uydurma UUID geçmez | İkinci hesabı sentetik fixture'dan oku, üçüncüyü `auth.users` + `profiles` olarak açıkça oluştur |
 | Yalnız **bir kod yolunda** patlayan gölgeleme | Değişken adı sütun adıyla aynı ama o satıra sadece bazı dallarda ulaşılıyor (`route`) | `route`, `state`, `version`, `purpose`, `scope`, `position` gibi adları baştan kullanma |
 
 ## 5. Komutlar
@@ -86,7 +94,8 @@ deno test --allow-read=contracts/isg/v1/fixtures supabase/functions/_shared/isg/
 1. **P12'nin ikinci dilimi:** gerçek APNs/FCM/e-posta adaptörleri, onboarding rıza ekranı ve izin durumları, simulate/shadow/canary, gerçek cutover. P01'in dağıtım defteri hâlâ gerçek bir tüketici bekliyor.
 2. **P04'ün ikinci dilimi:** gerçek AV/parser sandbox'ı, DOC/XLS pozitif güvenlik fixture'ları, bucket/storage policy, signed URL. Teknoloji ve maliyet kararı gerekiyor.
 3. **P11'in render worker'ı:** PDF/XLSX üretimi ve görsel kabuller.
-4. **P14 lifecycle/store**, **P15 referral**, **P16 admin**, **P17 skor**: bağımlılıkları planın §15.1 grafiğinde. P13'ün sunucu tarafı bitti; istemci senkron motoru ve cihaz tarafı zamanlama kabulleri açık.
-5. **P18/P19/P20:** native kabuk, bütünleşik prova, mağaza güncellemesi. Bunlar insan onayı ve gerçek cihaz kanıtı isteyen kapılar.
+4. **P14'ün ikinci dilimi:** gerçek Apple promotional offer imzası ve Google offer token/replacement provası (iki store spike), RevenueCat/webhook → `record_billing_evidence` adaptörü, onaylı plan/fiyat katalogu ve `access_authority` cutover'ı. Sunucu çekirdeği hazır, hiçbir üretici henüz kanıt yazmıyor.
+5. **P15 referral**, **P16 admin**, **P17 skor**: bağımlılıkları planın §15.1 grafiğinde. P15 P14'ün benefit defterine yazacak; kampanya karar tabloları ve ticari onaylar hâlâ açık.
+6. **P18/P19/P20:** native kabuk, bütünleşik prova, mağaza güncellemesi. Bunlar insan onayı ve gerçek cihaz kanıtı isteyen kapılar.
 
 Her fazın kendi dokümanında "Açık kalanlar" bölümü vardır; bir fazı kapatmadan önce oradaki maddeleri kontrol et. Hiçbir faz, kendi dokümanı "kapandı" demeden kapalı sayılmaz.

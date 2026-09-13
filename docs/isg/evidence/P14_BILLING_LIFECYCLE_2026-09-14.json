@@ -1,0 +1,144 @@
+{
+  "phase": "P14",
+  "slice": "billing lifecycle, gift/discount separation, quote/intent/settlement",
+  "date": "2026-09-14",
+  "branch": "codex/isg-transition-foundation",
+  "migration": "supabase/migrations/20260914090000_isg_billing_lifecycle.sql",
+  "rollout_feature": "billing_lifecycle",
+  "rollout_left_closed": true,
+  "client_grants": 0,
+  "private_isg_tables_after": 120,
+  "new_tables": 11,
+  "new_functions": 13,
+  "benefit_state_edges": 18,
+  "access_authority_locked_to": "legacy",
+  "runs": {
+    "synthetic_session": {
+      "evidence_directory": "output/isg/runs/synthetic-auth-eqDU5h",
+      "checks": 894,
+      "unique_check_ids": 893,
+      "all_pass": true,
+      "cleanup": "PASS",
+      "new_billing_checks": 36
+    },
+    "isolated_copy_p05_upgrade": {
+      "evidence_directory": "backups/isg-auth-service-restore-20260912-0BSF7o",
+      "checks": 32,
+      "all_pass": true,
+      "migrations_replayed": 23,
+      "cleanup": "PASS",
+      "legacy_row_fingerprint_unchanged": true,
+      "legacy_helper_bodies_unchanged": true
+    },
+    "offline_foundation": {
+      "tests": 375,
+      "fail": 0,
+      "previous": 363
+    }
+  },
+  "billing_checks": [
+    "billing_lifecycle_migration_applied_with_closed_rollout",
+    "billing_lifecycle_gate_blocks_the_ledger_while_rollout_off",
+    "billing_lifecycle_billing_tables_have_rls_and_no_client_grant",
+    "billing_lifecycle_a_discount_definition_can_never_carry_a_capability",
+    "billing_lifecycle_a_gift_can_neither_reset_a_quota_nor_be_a_store_trial",
+    "billing_lifecycle_the_seven_day_window_and_the_percentage_are_unapproved_numbers",
+    "billing_lifecycle_a_purchase_is_recorded_once_and_reports_no_authority",
+    "billing_lifecycle_a_duplicate_webhook_is_not_a_second_purchase",
+    "billing_lifecycle_another_account_can_not_claim_the_same_purchase",
+    "billing_lifecycle_the_first_projection_reports_the_store_state",
+    "billing_lifecycle_an_out_of_order_webhook_never_rewrites_a_newer_state",
+    "billing_lifecycle_a_newer_store_event_moves_the_projection_forward",
+    "billing_lifecycle_the_ledger_can_not_promote_itself_to_the_access_authority",
+    "billing_lifecycle_an_unreadable_lifecycle_is_reviewed_and_not_treated_as_free",
+    "billing_lifecycle_a_sandbox_purchase_is_never_a_paid_production_tier",
+    "billing_lifecycle_the_report_separates_three_sources_and_decides_nothing",
+    "billing_lifecycle_a_family_spends_its_gift_once",
+    "billing_lifecycle_an_unlisted_state_move_does_not_exist",
+    "billing_lifecycle_a_gift_runs_on_the_server_clock_without_touching_a_quota",
+    "billing_lifecycle_a_second_device_activating_the_same_gift_changes_nothing",
+    "billing_lifecycle_the_gift_is_over_at_its_expiry_instant",
+    "billing_lifecycle_no_quota_reservation_was_created_by_a_gift",
+    "billing_lifecycle_a_google_offer_needs_its_token_and_replacement_mode",
+    "billing_lifecycle_no_offer_row_can_hold_signing_material_or_join_the_default_offering",
+    "billing_lifecycle_an_offer_that_costs_more_is_rejected_and_written_down",
+    "billing_lifecycle_a_real_advantage_reserves_the_benefit_under_a_server_quote",
+    "billing_lifecycle_one_quote_can_not_open_two_checkouts",
+    "billing_lifecycle_a_timeout_waits_in_review_instead_of_returning_the_benefit",
+    "billing_lifecycle_another_accounts_receipt_can_not_settle_this_benefit",
+    "billing_lifecycle_a_sync_event_is_not_a_payment_proof",
+    "billing_lifecycle_the_payment_identity_is_read_from_the_store_evidence",
+    "billing_lifecycle_settling_the_same_intent_twice_is_a_replay",
+    "billing_lifecycle_one_payment_settles_exactly_one_benefit",
+    "billing_lifecycle_a_refund_adjusts_the_settlement_without_freeing_the_period",
+    "billing_lifecycle_the_daily_reconciliation_counts_what_is_waiting",
+    "billing_lifecycle_kill_switch_stops_the_billing_ledger"
+  ],
+  "acceptance_ids_covered": [
+    "X32",
+    "X33",
+    "X34",
+    "X35",
+    "X36",
+    "X37",
+    "X38",
+    "X39",
+    "X40",
+    "X41"
+  ],
+  "defects_found_and_fixed": [
+    {
+      "check": "a_discount_definition_can_never_carry_a_capability",
+      "cause": "raw SQL check violation is invisible because the runner's psql uses VERBOSITY=sqlstate",
+      "fix": "moved the impossible-claim attempts into fixed force_* branches of the observe dispatcher"
+    },
+    {
+      "check": "the_ledger_can_not_promote_itself_to_the_access_authority",
+      "cause": "the UPDATE ran before any projection row existed and touched zero rows",
+      "fix": "moved the check after the first projection and added a bool_and assertion"
+    },
+    {
+      "check": "a_second_device_activating_the_same_gift_changes_nothing",
+      "cause": "expected version 2; grant(1)->advance(2)->activate(3)",
+      "fix": "expect 3"
+    },
+    {
+      "check": "the_daily_reconciliation_counts_what_is_waiting",
+      "cause": "reconciliation ran before the second checkout timed out",
+      "fix": "reconcile after the timeout instant"
+    },
+    {
+      "check": "guard: benefit state edge count",
+      "cause": "regex did not match the last line ending in ');'",
+      "fix": "allow [,;] at line end"
+    },
+    {
+      "check": "probe accounts",
+      "cause": "public.profiles.id references auth.users(id); invented uuids violate the FK",
+      "fix": "read the second account from the synthetic fixture, create the third in auth.users explicitly"
+    },
+    {
+      "check": "personnel_advisor_no_unreviewed_findings",
+      "cause": "11 new tables and 12 FK-covering indexes missing from the reviewed lists",
+      "fix": "both lists updated; no real missing FK index existed and no finding was silenced"
+    }
+  ],
+  "production_defects_found": 0,
+  "not_proven": [
+    "real Apple promotional offer signature flow",
+    "real Google offer token and replacement mode",
+    "sandbox or production store purchase",
+    "old binary catalogue behaviour",
+    "RevenueCat or webhook adapter",
+    "approved commercial numbers (7x24h gift, 20 percent)",
+    "any cutover of the access authority",
+    "paywall, admin or monitoring surface"
+  ],
+  "source_sha256": {
+    "supabase/migrations/20260914090000_isg_billing_lifecycle.sql": "18e95b83fe0631bcd5887207d185bcb2e91607d7437981311234f871250eedf4",
+    "scripts/isg/billing_lifecycle_probe.mjs": "4764141febe2b082b237091219ae134d07bd74e81a16e366b2e76332d78cb852",
+    "scripts/isg/billing_lifecycle_guard.test.mjs": "46da709ab17487c6c872a91623b87ef4c4a6c19f4b3609b5a429a203c2ef300d",
+    "contracts/isg/v1/billing-lifecycle.md": "c38b1af4aea4b9618df8db5904bf32fdf58bc0759503417a6cbabeb5fd9f1b2b",
+    "docs/isg/P14_BILLING_LIFECYCLE_2026-09-14.md": "0becb5fe66f27d87907a2940d1affe59ff62e24df0ddd0b797baef1dad15c00a"
+  }
+}

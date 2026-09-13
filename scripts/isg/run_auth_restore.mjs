@@ -26,6 +26,7 @@ import { beginModuleSecondProbe, moduleSecondFiles } from './module_second_probe
 import { beginDocumentImportProbe, documentImportFiles } from './document_import_probe.mjs';
 import { beginNotificationCoreProbe, notificationCoreFiles } from './notification_core_probe.mjs';
 import { beginPersonalNotesProbe, personalNotesFiles } from './personal_notes_probe.mjs';
+import { beginBillingLifecycleProbe, billingLifecycleFiles } from './billing_lifecycle_probe.mjs';
 import { beginNotificationDispatchProbe, notificationDispatchFiles } from './notification_dispatch_probe.mjs';
 import { beginNotificationRepositoryProbe, notificationRepositoryFiles } from './notification_repository_probe.mjs';
 import { beginNotificationDeviceProbe, notificationDeviceFiles } from './notification_device_probe.mjs';
@@ -326,6 +327,7 @@ try {
   let documentProbe;
   let notificationProbe;
   let notesProbe;
+  let billingProbe;
   let notificationDispatchProbe;
   let notificationRepositoryProbe;
   let notebookAPIProbe;
@@ -376,6 +378,8 @@ try {
     notificationRepositoryProbe=await beginNotificationRepositoryProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'notebook-api';
     notebookAPIProbe=await beginNotebookAPIProbe({synthetic:true,sql,concurrentSql,token:refresh.body.access_token,secret,request:personnelHTTPProbe.request,waitReady,pass});
+    stage = 'billing-lifecycle';
+    billingProbe=await beginBillingLifecycleProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'personnel-advisors';
     report.personnel_advisors=await probePersonnelAdvisors({synthetic:true,sql,guard,names,pass,onFindings:value=>{report.personnel_advisors=value;}});
   }
@@ -420,6 +424,7 @@ try {
   if (documentProbe) report.document_import = documentProbe.afterLogout();
   if (notificationProbe) report.notification_core = notificationProbe.afterLogout();
   if (notesProbe) report.personal_notes = notesProbe.afterLogout();
+  if (billingProbe) report.billing_lifecycle = billingProbe.afterLogout();
   if (notificationDispatchProbe) report.notification_dispatch = notificationDispatchProbe.afterLogout();
   if (notificationRepositoryProbe) report.notification_repository = notificationRepositoryProbe.afterLogout();
   if (notebookAPIProbe) report.notebook_api = notebookAPIProbe.afterLogout();
@@ -455,6 +460,7 @@ try {
     .concat(mode.synthetic ? documentImportFiles : [])
     .concat(mode.synthetic ? notificationCoreFiles : [])
     .concat(mode.synthetic ? personalNotesFiles : [])
+    .concat(mode.synthetic ? billingLifecycleFiles : [])
     .concat(mode.synthetic ? notificationDispatchFiles : [])
     .concat(mode.synthetic ? notificationRepositoryFiles : [])
     .concat(mode.synthetic ? notificationDeviceFiles : [])

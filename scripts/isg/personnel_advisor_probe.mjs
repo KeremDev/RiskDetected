@@ -63,10 +63,19 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'notification_purposes','notification_consents','producer_ownership','notification_episodes',
       'notification_jobs','delivery_attempts','notification_device_permissions',
       'personal_notes','note_conflicts','note_items','note_tags','note_tag_links','personal_reminders','note_mutation_receipts',
-      'reminder_occurrences','device_delivery_claims']);
+      'reminder_occurrences','device_delivery_claims',
+      'billing_lifecycle_evidence','billing_lifecycle_projection','benefit_definitions','benefit_state_edges',
+      'benefit_instances','store_offer_mappings','discount_quotes','checkout_intents','benefit_settlements',
+      'settlement_adjustments','billing_reconciliation_jobs']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([
+      'benefit_instances_benefit_instance_definition_idx','benefit_settlements_benefit_settlement_evidence_idx',
+      'benefit_settlements_benefit_settlement_instance_idx','billing_lifecycle_evidence_billing_evidence_owner_idx',
+      'billing_lifecycle_evidence_billing_evidence_review_idx','billing_lifecycle_projection_billing_projection_evidence_idx',
+      'billing_lifecycle_projection_billing_projection_review_idx','discount_quotes_discount_quote_instance_idx',
+      'discount_quotes_discount_quote_mapping_idx','discount_quotes_discount_quote_owner_idx',
+      'settlement_adjustments_settlement_adjustment_idx','store_offer_mappings_store_offer_definition_idx',
       'notification_device_permissions_notification_device_owner_idx','notification_device_permissions_notification_device_session_idx',
       'departments_department_parent_scope_idx','employees_employee_employer_scope_idx',
       'job_roles_job_owner_idx','contractor_organizations_contractor_owner_idx',
