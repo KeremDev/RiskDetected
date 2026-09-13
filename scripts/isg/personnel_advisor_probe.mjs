@@ -114,6 +114,7 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'import_batches_import_asset_idx','import_batches_import_owner_idx','import_rows_import_row_status_idx',
       'notification_consents_consent_owner_idx','notification_consents_consent_purpose_idx',
       'notification_episodes_episode_company_idx','notification_episodes_episode_purpose_idx',
+      'notification_episodes_notification_episode_company_owner_idx',
       'notification_episodes_episode_owner_idx','delivery_attempts_attempt_job_idx',
       'personal_notes_note_owner_idx','note_conflicts_note_conflict_idx','note_items_note_item_idx',
       'note_tags_note_tag_owner_idx','note_tag_links_note_tag_link_idx',

@@ -1,0 +1,319 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-13",
+  "phase": "P12",
+  "slice": "notification dispatch safety following Claude handover",
+  "reviewed_base_commit": "ce4b74fc",
+  "slice_complete": true,
+  "phase_complete": false,
+  "production_deployed": false,
+  "provider_called": false,
+  "mobile_changed": false,
+  "rollout_enabled": false,
+  "exactly_once_delivery_promised": false,
+  "synthetic": {
+    "run_id": "a3da0921-90a0-47d4-b93e-e3c0faa035bd",
+    "report": "output/isg/runs/synthetic-auth-vpJUDe/REPORT.json",
+    "report_sha256": "1276895ed5815797ffcce6f0642d3df43cbeacb969c516b10253f625c1fa0557",
+    "total_checks": 754,
+    "unique_check_ids": 753,
+    "failures": [],
+    "cleanup": "PASS",
+    "finished_at": "2026-09-13T13:37:53.349Z"
+  },
+  "upgrade": {
+    "run_id": "b0570d84-51b9-47d1-829b-7634d63d71fa",
+    "report": "backups/isg-auth-service-restore-20260912-R4vwFi/REPORT.json",
+    "report_sha256": "b062a2dcc43c9d11275055cb7d470fc8bf12ee16e588ba30b916aeb1e92badd6",
+    "total_checks": 31,
+    "unique_check_ids": 31,
+    "failures": [],
+    "cleanup": "PASS",
+    "finished_at": "2026-09-13T13:32:28.877Z",
+    "migrations": 17,
+    "rls_tables": 107,
+    "client_table_grants": 0,
+    "legacy_rows_and_helpers_unchanged": true
+  },
+  "new_checks": [
+    {
+      "id": "notification_dispatch_predecessor_reproduces_future_job_sent_early",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_predecessor_reproduces_scheduled_time_instead_of_send_time",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_predecessor_reproduces_duplicate_send_permission",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_predecessor_reproduces_retry_after_consent_revocation",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_legacy_unfenced_entry_point_is_disabled",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_future_job_is_not_claimed",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_unapproved_policy_cannot_send",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_delayed_daytime_job_respects_current_quiet_hours",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_os_permission_is_separate_and_required",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_email_requires_its_own_consent",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_company_owner_composite_is_enforced",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_existing_foreign_company_cannot_be_attached",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_eight_workers_get_one_token",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_wrong_token_is_fenced",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_provider_must_match_channel",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_accepted_ack_is_idempotent_not_delivery",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_changed_ack_is_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_sent_job_is_never_reclaimed",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_transport_error_is_uncertain_not_retryable",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_expired_claim_never_auto_resends",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_late_known_result_can_reconcile_without_resend",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_definitive_retryable_rejection_has_backoff",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_retry_rechecks_current_consent",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_stale_consent_cannot_restore_permission",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_equal_timestamp_opt_out_wins",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_permanent_rejection_is_terminal",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_parallel_jobs_reserve_one_frequency_slot",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_handover_refuses_an_inflight_send",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_first_registration_and_handover_preserve_inflight_owner",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_final_device_owner_gate",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_final_category_gate",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_final_old_build_falls_back",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_final_shadow_never_sends",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_final_explicit_personal_alarm_survives_quiet_hours",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_quiet_start_inclusive_end_exclusive",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_definitive_retry_gets_new_token_and_old_ack_does_not_reset_job",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_new_functions_are_not_client_executable",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_dispatch_rollout_kill_switch_blocks_dispatch_and_completion",
+      "result": "PASS"
+    }
+  ],
+  "foundation": {
+    "command": "node scripts/isg/run_suite.mjs foundation",
+    "passed": 245,
+    "failed": 0
+  },
+  "advisors": {
+    "total": 251,
+    "relevant": 203,
+    "relevant_levels": {
+      "INFO": 203
+    },
+    "reason": "Private default-deny tables and reviewed unused indexes in synthetic fixture; not a production performance claim"
+  },
+  "dispatch": {
+    "migration_file": "supabase/migrations/20260914070001_isg_notification_dispatch_safety.sql",
+    "predecessor_counterexamples": 4,
+    "parallel_same_job_workers": 8,
+    "parallel_cap_jobs": 2,
+    "provider_called": false,
+    "production_changed": false,
+    "rollout_left_disabled": true,
+    "unknown_result_auto_retry": false
+  },
+  "previous_attempts": [
+    {
+      "report": "output/isg/runs/synthetic-auth-I2jjgt/REPORT.json",
+      "passed": 745,
+      "note": "Before eight final implementation compatibility checks were added"
+    },
+    {
+      "suite": "foundation",
+      "passed": 244,
+      "failed": 1,
+      "note": "New guard assumed stage= without whitespace; fixed with whitespace-independent match"
+    },
+    {
+      "report": "output/isg/runs/synthetic-auth-hrNLCI/REPORT.json",
+      "passed": 753,
+      "note": "Before adding first-producer-registration race coverage"
+    },
+    {
+      "report": "output/isg/runs/synthetic-auth-9HleDZ/REPORT.json",
+      "report_sha256": "d9a922e390ab89a74b57a84becad7a63a99fb816d6a0b2e28421eb0b83d81185",
+      "ok": false,
+      "completed_checks": 667,
+      "failed_stage": "notification-dispatch-safety",
+      "error_code": "AUTH_RESTORE_CHECK_FAILED_notification_dispatch_first_registration_and_handover_preserve_inflight_owner",
+      "cleanup": "PASS"
+    },
+    {
+      "report": "output/isg/runs/synthetic-auth-zMorb2/REPORT.json",
+      "report_sha256": "04c157fadf3df1add865701ae9761e9b3cf4e0f9b4ba0b94910e778197cd49c2",
+      "ok": false,
+      "completed_checks": 12,
+      "failed_stage": "session-guard",
+      "error_code": "AUTH_RESTORE_LOCAL_TOKEN_INVALID_CLAIMS",
+      "cleanup": "PASS"
+    }
+  ],
+  "count_note": "local_smtp_code_received appears twice in the existing mail probe; 754 checks have 753 unique IDs",
+  "source_sha256": {
+    "scripts/isg/run_auth_restore.mjs": "bcdb386f8231cc7ae831da5b8955306486b724b2108e0cce37d821aa09e99bd8",
+    "scripts/isg/password_auth_probe.mjs": "a019d47f0bddd2d4f6b6b179e62503d0fc17aadd90f735263bad4ea86ad5d7cc",
+    "scripts/isg/signup_recovery_probe.mjs": "bbcd21630df79e5fc2095dc354e90d7b5b0e410d3f3b1caf270e877c53099c1d",
+    "scripts/isg/auth_mail_sink.cjs": "07e7e5b6e34cbe08c664b1948b9c6f99b1ebe3f4735d79bb2dbb60c70c6cc275",
+    "scripts/isg/auth_session_probe.mjs": "1c858ffda4550d4b019c08192dfc67c4a4dafbf691ab973caf1968aca37faebe",
+    "scripts/isg/auth_mutation_probe.mjs": "ac64fae84161e4af3f6a761b187ff09df2916cef106bf32dcddb8ee17b9aece9",
+    "scripts/isg/sql/auth_mutation_fixture.sql": "0ed052d6edb148743bfaa6014ac030748a11acf1b41db65ebfad5be399f6d03c",
+    "scripts/isg/sql/transaction_fixture.sql": "87eafb27e40d6db096a6e10837655a3f7e823e75e0aaaaed4b978e2ae8f52b18",
+    "scripts/isg/restore_mode.mjs": "981587b8559f14d58e771563a0921a1ea8c6290d66aa2ff07bc4c752f990136f",
+    "scripts/isg/sql/auth_session_fixture.sql": "bc5deff6efae02be4c0afe88c07101820c338861676f39879e96a136c3ed751d",
+    "scripts/isg/auth_restore_guard.mjs": "8d1bfa75f4036bae891fc827c9f104244628a0973151435622bcf993a61d7845",
+    "scripts/isg/sql/workplace_fixture.sql": "81bb64bcbef8690582a6c70086dafc3194e47dfce63cb1025bb0ef43395236f7",
+    "scripts/isg/sql/personnel_fixture.sql": "b244c04e7c6b113eb5a57fb0f16b5071f517350e809fa0c3da12f90ebc93c9eb",
+    "scripts/isg/sql/personnel_mutation_fixture.sql": "2883d334e4ece4428c1499cedce5e14ac3f08a05fecf4982fb12d1769fc04d21",
+    "scripts/isg/sql/employee_intake_fixture.sql": "7b505578674a737f6c756c80c9515c3ea5e4a40e0965743d6c79a9f3c7b7b453",
+    "scripts/isg/sql/employee_directory_fixture.sql": "093325cfafccc3b8e5e79e2c0543199e536b02dc01aa79b95b41f434fba2e1e8",
+    "scripts/isg/sql/auth_personnel_fixture.sql": "c26b4c51b8b3a9b681c6a6808a4d7ecb801883e5a4e52e5c0e146aa531d135de",
+    "scripts/isg/auth_personnel_probe.mjs": "05e584e85e5e453ab79564bbc0d77245dc63d1fed2e7a4bc1518e7009bbbb9a0",
+    "supabase/functions/_shared/personnel/directory-request.ts": "338aefc2f7bb9198e68ccd3cfcb11b7f4902e706b782137ccbad096a712a4015",
+    "supabase/functions/_shared/personnel/employee-create.ts": "3f50549d7e4fe4319ee286359a1169e77308828fecfc2913215bb98e07ce5635",
+    "supabase/functions/_shared/isg/mutation-context.ts": "7e74a453c320be3fe3f61ae7abc084ccea36e17f3c8b3d480823ca67cdfa7e90",
+    "supabase/migrations/20260913074153_isg_personnel_owner_rpc.sql": "a04da9ebbe6e184776dda705e7110a28e8bbe676b4f57f53a9f5a704816729c7",
+    "supabase/migrations/20260520154818_add_companies.sql": "c7ce21b0c52833812ce1f6be895f2f95b4a149c31794b387b7e7e6dc793a080d",
+    "supabase/migrations/20260513101505_free_plus_pro_subscription_system.sql": "863be44ce77558396c70def1dbbcf6de159608f9894dd18886f39d27aa779c8a",
+    "supabase/migrations/20260513223911_fix_subscription_quota_review_findings.sql": "234b01e049eec7f4b3828549162be6a81843e7073f16db5c69561e63f14d59e1",
+    "scripts/isg/personnel_migration_probe.mjs": "d26f8791871978c5e2a5a2995f07cc7cf09e468799d6fc6b531b89716a45221c",
+    "scripts/isg/personnel_http_probe.mjs": "62a4faa4c0af6fe1200c1c32d497cb5561730d08917d88b3a7491b4dee84df6b",
+    "scripts/isg/personnel_advisor_probe.mjs": "2890ed164f3c23e54690a439b3c09b7ce1e2c4597fcf49e5b5a31de9bd93381b",
+    "supabase/functions/_shared/personnel/rpc-request.ts": "e86d9015efc5a49c4e1208bdcca2a54122740bf8ec2eb5f8fa24917db59785b9",
+    "supabase/migrations/20260913081536_isg_workplace_context_assignments.sql": "69b44f626206dc5f5e2be147f4106f17016e030a86f2bd86e08e76dc043768a0",
+    "scripts/isg/directory_migration_probe.mjs": "2f23ce7e1ecfbead520406900cabc25383ab963d46fd0830aaaa6eabf8f74ad7",
+    "supabase/migrations/20260913084736_isg_workspace_availability.sql": "35c85511a890f0ec34570d29f17c017f7668c5c493c85e58798c07f2f1a5b68f",
+    "scripts/isg/workspace_availability_probe.mjs": "5ff596fcc7becdcdd973a8c21599e919df0262be0684abc48f9eac229af93917",
+    "supabase/migrations/20260913092642_isg_personnel_reactivation.sql": "350f2bfc96ac5866836fd51f8ce1ca8100e8b871121fdc1eb636c18735c11376",
+    "supabase/migrations/20260913110000_isg_event_dispatch.sql": "ed58daf6ea41b61d0cdf0926948867ff2e7c4106e42c5bcc1db5b755c7291c48",
+    "supabase/migrations/20260913113000_isg_quota_reservations.sql": "ad3bde2ce2144abb8ba5edc1fc6e782adc4461f28209b3a2787591c98c491756",
+    "scripts/isg/dispatch_quota_probe.mjs": "fc79fd792b2c6e53f8898e219b99c0c1e11793420273c5cbbe7978eccdb014ad",
+    "supabase/migrations/20260913130000_isg_file_core.sql": "374a8b0a8e1a41520a645bb28f1c0a1f722dc9882df604007365a32807374737",
+    "scripts/isg/file_core_probe.mjs": "0ab7557b7b4d095a249e71c5f296f2e080ce548ac45314dee1f1afa1f6af1148",
+    "supabase/migrations/20260913150000_isg_rule_core.sql": "4ce4c7608847e41cdf652188560052e24cf35f618834deb6e99ae945978bccc3",
+    "scripts/isg/rule_core_probe.mjs": "bef7d1832794566f2c858915c5749ba0dc0c030b0e566805cca8b3a160fcc12b",
+    "supabase/migrations/20260913170000_isg_training_core.sql": "bb4599ef74c1347bc07f4d9cea800734e3ab9de61fac9521e1e3956d5e86927d",
+    "scripts/isg/training_core_probe.mjs": "edfdc4a22af32cdbdb248288f68a9ad812e02bcfd9348916bd8630dc8cd246dd",
+    "supabase/migrations/20260913190000_isg_risk_versioning.sql": "7d1ea9540068e84aa4c1b71a0ee499c95f4d053f2bc3fc0d5bb73d3484dbda5c",
+    "scripts/isg/risk_core_probe.mjs": "131597b05833888529b1d61f30329cc0fc58468d85d86589669baffa191a0c58",
+    "supabase/migrations/20260913210000_isg_nonconformity_core.sql": "3f6ad79a032e222abecf1a65a589e188867b100a84690795c8a1bf35925140db",
+    "scripts/isg/nonconformity_core_probe.mjs": "703e852698a2ab758cee885accdd7573c61f63b6e306b0b3a9a40867b3bcdd1b",
+    "supabase/migrations/20260913230000_isg_module_core.sql": "b587dce412758fb1c3ebe117570f7cc0ae3499fb3a95bca736c3de64318a4bc0",
+    "scripts/isg/module_core_probe.mjs": "56f95d9c814877675731852826a004c9f4d83bcb0db40b3ac6f34192c939851e",
+    "supabase/migrations/20260914010000_isg_module_core_second.sql": "f436594595a7080af1d66e057063b56d0144efedf6f88e78ff773d9fb3aaeeaf",
+    "scripts/isg/module_second_probe.mjs": "6e3ddc7d82559c20e90ea531267c779703520683ec0fc3d8c645e78fb0772bce",
+    "supabase/migrations/20260914030000_isg_document_import_core.sql": "83587399e19583d479098ffa4acb54f99b209b01eac9ee4891da5358cfb0b748",
+    "scripts/isg/document_import_probe.mjs": "e34984964909b733b6b697a60c6ad60c9083600d0ee525379a6c085fe9ceb963",
+    "supabase/migrations/20260914050000_isg_notification_core.sql": "fb85c6dbb191c4ac248e61a258ade506864ea0c897675cddc1c7687e6c2dfc5d",
+    "scripts/isg/notification_core_probe.mjs": "bf04d49f5856f52939276b7395b44f732f75ffb2b6f1d31810b656897d839aac",
+    "supabase/migrations/20260914070000_isg_personal_notes.sql": "a4f753d937fef910ee8c1872d2427282b77d3eb0230343c332cf5c758e2c826e",
+    "scripts/isg/personal_notes_probe.mjs": "07c58c1a59550e6b54a4de857cfb2c46764329678877aa247f31645d91b69406",
+    "supabase/migrations/20260914070001_isg_notification_dispatch_safety.sql": "e8e38371fc9d4fbf4bb1aa7946c93d4e0ab4d48dc11a01b82d48a82911434bfc",
+    "scripts/isg/notification_dispatch_probe.mjs": "4fcc575794bb9996f8ea9ff248c3005322e4bcc1d4086d0c948467e45d4e1f48"
+  },
+  "test_harness_sha256": {
+    "scripts/isg/notification_dispatch_guard.test.mjs": "f397322935a3f72a1653a2f5efb50702988ff7469c53861b14a776a43748f35c",
+    "scripts/isg/personnel_advisor_probe.mjs": "2890ed164f3c23e54690a439b3c09b7ce1e2c4597fcf49e5b5a31de9bd93381b",
+    "scripts/isg/run_suite.mjs": "a27ad23cec7e1bcd811584f2285c3e6c064bf3b632362bb6fc6780bf6bee26a2",
+    ".github/workflows/isg-foundation.yml": "c51469841ecbdfb727285aeb1550f63cabcf9d52e74796d42dfb75ed0bf6b3c0"
+  }
+}

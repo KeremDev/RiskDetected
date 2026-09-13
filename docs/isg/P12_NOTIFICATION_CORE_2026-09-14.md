@@ -1,5 +1,7 @@
 # P12 ilk dilim — tek bildirim omurgası, dört ayrı amaç
 
+> Devir sonrası düzeltme: ilk dilimin gönderim-anı ve retry iddialarında dört davranış açığı bulundu ve ek migration ile giderildi. Bu belgedeki sayılar/endpoint açıklamaları tarihsel ilk dilime aittir; güncel durum için [P12 gönderim güvenliği](P12_DISPATCH_SAFETY_2026-09-13.md) ve [güncel sözleşme](../../contracts/isg/v1/notification-backbone.md) esas alınmalıdır. Tokensız `record_delivery_attempt` artık kullanılamaz.
+
 14 Eylül 2026 · Durum: **yerel geliştirme ve izole kabul tamamlandı; `notifications` rollout satırı kapalı, canlıya uygulanmadı, gerçek sağlayıcı bağlanmadı.**
 
 Migration: [20260914050000_isg_notification_core.sql](../../supabase/migrations/20260914050000_isg_notification_core.sql) · Sözleşme: [bildirim omurgası](../../contracts/isg/v1/notification-backbone.md) · [Kanıt](evidence/P12_NOTIFICATION_CORE_2026-09-14.json).

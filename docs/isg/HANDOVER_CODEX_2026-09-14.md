@@ -1,5 +1,7 @@
 # Devir notu — İSG geçişinde sunucu dilimlerini sürdürmek
 
+> **Codex devralma sonucu (gerçek koşu: 13 Eylül 2026):** aşağıdaki envanter tarihsel devirdir. Bildirim kodundaki dört açık yeniden üretildi ve `20260914070001` ile düzeltildi. Son durum: 754 sentetik PASS (753 tekil ID), 31 upgrade PASS / 17 migration, 245 foundation PASS. [Güncel teslim, API değişikliği ve bekleyenler](P12_DISPATCH_SAFETY_2026-09-13.md). P12 gerçek sağlayıcıya bağlanmış veya kapanmış değildir.
+
 14 Eylül 2026. Bu belge, bu depoda İSG geçişini **devralacak bir sonraki geliştirici veya ajan** içindir. Neyin bittiğini, neyin açık olduğunu, hangi kalıbın izlendiğini ve hangi tuzaklara düşüldüğünü tek yerde toplar.
 
 ## 1. Nerede duruyoruz?
