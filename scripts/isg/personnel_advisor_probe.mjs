@@ -53,7 +53,9 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'risk_assessments','risk_assessment_versions','risk_source_links','revision_impacts','risk_file_variants',
       'nonconformity_state_edges','nonconformities','nonconformity_transitions','nonconformity_actions',
       'verification_records','checklist_templates','checklist_template_versions','checklist_template_items',
-      'checklist_runs','checklist_run_items','nonconformity_reconciliations']);
+      'checklist_runs','checklist_run_items','nonconformity_reconciliations',
+      'module_registry','emergency_plan_versions','drill_records','equipment_items','equipment_inspection_rules',
+      'equipment_inspections','appointments','ppe_handovers','ppe_returns']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([
@@ -83,6 +85,11 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'checklist_runs_checklist_run_scope_idx','checklist_runs_checklist_run_owner_idx','checklist_runs_checklist_run_template_idx',
       'checklist_run_items_checklist_item_asset_idx','checklist_run_items_checklist_item_nonconformity_idx',
       'checklist_template_versions_checklist_version_approver_idx',
+      'emergency_plan_versions_emergency_plan_scope_idx','emergency_plan_versions_emergency_plan_owner_idx',
+      'emergency_plan_versions_emergency_plan_asset_idx','drill_records_drill_scope_idx','drill_records_drill_plan_idx',
+      'equipment_items_equipment_scope_idx','equipment_items_equipment_owner_idx','equipment_inspections_inspection_asset_idx',
+      'appointments_appointment_employee_idx','appointments_appointment_scope_idx','appointments_appointment_asset_idx',
+      'ppe_handovers_ppe_asset_idx',
     ].map(key=>'unused_index_private_isg_'+key));
     pass('personnel_advisor_no_unreviewed_findings',relevant.every(f=>f.level==='INFO'&&f.metadata?.schema==='private_isg'&&
       ((f.name==='rls_enabled_no_policy'&&denyTables.has(f.metadata?.name))||(f.name==='unused_index'&&reviewedFKIndexes.has(f.cache_key)))));

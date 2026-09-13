@@ -41,7 +41,7 @@ Yüzde vermiyoruz: bir altyapı testi ile son kullanıcı kabul testi aynı şey
 | P07 Eğitim | Kısmi; çekirdek dilim yerel olarak tamamlandı | **13 Eylül:** sürümlü katalog + insan onaylı yayın, işyerine özgü G4 curriculum sürümü, plan/oturum/kayıt, yoklama birleşimi, değerlendirme eşiği/deneme sınırı, değişmez tamamlanma, dış sertifika ayrımı ve P06 yükümlülüğünün kapatılması | Resmî 2026 içeriği ve onayı, iki format belge/sertifika üretimi, skor katkısı, bildirim, eğitmen/imza ve native akışlar |
 | P08 Risk sürümleme | Kısmi; sürümleme çekirdeği yerel olarak tamamlandı | **13 Eylül:** dört revizyon türü ve tarih etkileri, gelecek/çok eski tarih kuralları, açık bulgu aktarımı, etki listesi, kaynak drift işareti, tek kazananlı finalize ve gönderim sürüm kapısı | Risk maddesi/matris içeriği, belge üretimi, skor katkısı, uygunsuzluk bağlantısı, G4 review tetikleyicisi ve native yüzey |
 | P09 Uygunsuzluk/checklist | Kısmi; yaşam döngüsü çekirdeği yerel olarak tamamlandı | **13 Eylül:** veritabanında tanımlı 16 kenarlı durum makinesi, sürüm/gerekçe/atama kuralları, uzman doğrulamasına bağlı kapanış, yeniden açma döngüsü, kaynak başına tek kayıt, düzeltici aksiyonlar ve sürümünü sabitleyen checklist run'ı | Saha ekranları ve kanıt akışı, bildirim, skor katkısı, tutanak/PDF üretimi, risk sürümünden otomatik türetme |
-| P10 Diğer İSG modülleri | Bekliyor | Modül sınırları ve menü hedefleri planlandı | Plan §7.5'teki her modülün model/API/native/task/belge/izin dilimi ayrı uygulanacak |
+| P10 Diğer İSG modülleri | Kısmi; 16 modülün 5'i yerel olarak tamamlandı | **13 Eylül:** acil durum planı, tatbikat, ekipman/periyodik kontrol, görevlendirme ve KKD modülleri kendi domain kurallarıyla; modül başına ayrı açma/salt-okunur anahtarı | Kalan on bir modül (ISG-KATİP, yıllık planlar, kurul, defter, çalışma izni, taşeron, saha ziyareti, evrak merkezi, portföy, rehberlik), belge üretimi, task/bildirim, skor ve native yüzey |
 | P11 Import/evrak merkezi | Bekliyor | Ortak belge/import sözleşmesi planda | Güvenli parser, preview/commit/resume, domain şablonları, PDF/XLSX, arama/filtre ve legacy rapor adaptörü |
 | P12 Bildirim | Bekliyor; mevcut taşıyıcı korunuyor | Bildirim paneli sunum katmanı, mevcut bildirim sisteminin envanteri | Consent provenance, producer ownership, jobs, send-time izin, shadow/canary, duplicate önleme ve gerçek cihaz teslimi |
 | P13 Kişisel not/reminder | Bekliyor | Bağımsız owner/şirket dışı kapsam tanımlı | Note/item/tag, offline conflict/tombstone, occurrence ve installation-owner, Free UX |
@@ -250,5 +250,6 @@ Her küçük düzenleme sonrasında tüm testleri çalıştırmak yerine uygulam
 - [P07 eğitim çekirdeği](P07_TRAINING_CORE_2026-09-13.md)
 - [P08 risk sürümleme çekirdeği](P08_RISK_VERSIONING_2026-09-13.md)
 - [P09 uygunsuzluk çekirdeği](P09_NONCONFORMITY_CORE_2026-09-13.md)
+- [P10 modül paketi ilk dilimi](P10_MODULE_CORE_2026-09-13.md)
 
 Kaynak kabul CSV'si başlangıç uygulama/koşum durumlarını içerir; henüz tüm yeni runner sonuçlarıyla güncellenmiş bir canlı coverage tablosu değildir. Güncel tamamlandı/bekliyor değerlendirmesi bu belgede ve bağlantılı kanıtlarda katmanlarıyla belirtilmiştir.

@@ -21,6 +21,8 @@ P18 tasarım kaydı: `design/osgb-nova-reference.json`; expert-only üretilmiş 
 
 - [nonconformity-lifecycle.md](nonconformity-lifecycle.md): veritabanında tanımlı 16 kenarlı durum makinesi, sürüm/gerekçe/atama/doğrulama kuralları, kaynak başına tek kayıt ve sürümünü sabitleyen checklist run'ı. Legacy bulgu yazılmaz, rollout kapalı.
 
+- [module-domains.md](module-domains.md): §7.5'in ilk beş modülü (acil durum planı, tatbikat, ekipman/periyodik kontrol, görevlendirme, KKD) ve modül başına ayrı açma/salt-okunur anahtarı. Her modül kendi domain kuralını taşır; rollout ve tüm modül anahtarları kapalı.
+
 - safety-policy.json: mevcut teknik kimlikler, kaynak hash'i ve bağımsız local test hedefleri. Staging allowlist şu an boş; herhangi bir staging/prod/store isteği kapalıdır.
 - local-test-environment.example.json: yalnız synthetic/mock/sink ortam bildirimi. Dosyanın doğrulanması çalışan veya güvenli bir backend bulunduğu anlamına gelmez.
 - scripts/isg/verify_environment.mjs: manifest'i fail-closed doğrular. DB runner, gerçek Docker inspection'ını da validateContainerInspection ile doğrulamak zorundadır. Normal bridge veya mevcut local stack izolasyon sayılmaz.

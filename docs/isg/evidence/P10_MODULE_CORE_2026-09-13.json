@@ -1,0 +1,197 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-13",
+  "phase": "P10",
+  "slice": "emergency plan, drill, equipment and periodic inspection, appointment, PPE handover and return, behind per-module switches",
+  "phase_complete": false,
+  "production_deployed": false,
+  "rollout_enabled_in_migration": false,
+  "client_grant_added": false,
+  "modules_implemented": [
+    "emergency_plan",
+    "drill",
+    "equipment",
+    "ppe",
+    "appointment"
+  ],
+  "modules_remaining": [
+    "isgkatip_contract",
+    "annual_work_plan",
+    "annual_training_plan",
+    "board_meeting",
+    "approved_notebook",
+    "work_permit",
+    "contractor_package",
+    "site_visit",
+    "document_centre",
+    "portfolio",
+    "product_guidance"
+  ],
+  "synthetic_auth_run": {
+    "run_id": "dcebfaf8-8378-4406-8b4f-8c212168882b",
+    "report": "output/isg/runs/synthetic-auth-5Gf3V8/REPORT.json",
+    "total_checks": 588,
+    "failures": [],
+    "new_checks": 33,
+    "cleanup": "PASS"
+  },
+  "new_checks": [
+    {
+      "id": "module_core_migration_applied_with_closed_rollout",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_gate_blocks_every_module_while_rollout_off",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_a_module_stays_closed_until_its_own_switch_is_open",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_module_tables_have_rls_and_no_client_grant",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_an_unverified_legal_basis_stays_in_review",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_a_renewal_is_a_new_version_not_an_edit",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_an_unknown_plan_can_not_be_versioned",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_a_validity_before_preparation_is_refused",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_planning_a_drill_is_not_performing_one",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_a_drill_needs_a_real_plan_version",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_a_participant_from_outside_the_company_is_refused",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_a_performed_drill_records_its_participants",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_equipment_is_registered_once_per_serial",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_without_a_type_rule_no_due_date_is_invented",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_every_equipment_type_carries_its_own_period",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_the_due_date_follows_the_type_period_in_calendar_months",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_a_failed_inspection_schedules_no_next_period",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_an_unclean_evidence_document_is_refused",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_an_appointment_records_its_scope_and_period",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_the_same_person_can_not_hold_two_overlapping_appointments",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_a_different_kind_or_person_is_not_a_conflict",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_ending_an_appointment_frees_the_period",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_an_end_before_the_start_is_refused",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_an_archived_or_foreign_employee_gets_no_appointment",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_a_non_positive_quantity_is_refused",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_a_signature_is_never_assumed",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_a_handover_is_recorded_once_per_reference",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_a_signed_copy_needs_its_document",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_nothing_comes_back_before_it_was_handed_out",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_a_partial_return_leaves_the_rest_outstanding",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_more_can_not_come_back_than_went_out",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_one_module_can_be_paused_without_touching_another",
+      "result": "PASS"
+    },
+    {
+      "id": "module_core_kill_switch_stops_every_module_at_once",
+      "result": "PASS"
+    }
+  ],
+  "full_legacy_copy_upgrade": {
+    "run_id": "3fe6a023-c883-4f98-b3b6-ef726b4652aa",
+    "total_checks": 29,
+    "failures": [],
+    "cleanup": "PASS",
+    "migrations_replayed": 12,
+    "new_tables": 74,
+    "legacy_rows_unchanged": true,
+    "legacy_helper_definitions_unchanged": true,
+    "module_switches_closed": true
+  },
+  "source_sha256": {
+    "supabase/migrations/20260913230000_isg_module_core.sql": "b587dce412758fb1c3ebe117570f7cc0ae3499fb3a95bca736c3de64318a4bc0",
+    "scripts/isg/module_core_probe.mjs": "56f95d9c814877675731852826a004c9f4d83bcb0db40b3ac6f34192c939851e",
+    "scripts/isg/module_core_guard.test.mjs": "53f988f3b11086845b8fe5aab7909fd65326cc6a9037311518976c33ebf207fd",
+    "contracts/isg/v1/module-domains.md": "189c17c79f1914ca17ddbd31de15435f4155e77eb8fde1e8cef5a1e2f40f1f3b"
+  },
+  "not_proven": [
+    "the remaining eleven modules",
+    "document or PDF/XLSX export",
+    "task and notification triggers",
+    "score contribution",
+    "client or native surface",
+    "production migration or rollout"
+  ]
+}
