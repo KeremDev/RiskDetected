@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-14",
+  "phase": "P13",
+  "slice": "private notebook, conflict preserving sync, tombstone, reminder series with independent occurrences, single delivery owner",
+  "phase_complete": false,
+  "production_deployed": false,
+  "rollout_enabled_in_migration": false,
+  "client_grant_added": false,
+  "company_domain_linked": false,
+  "paid_plan_required": false,
+  "exactly_once_delivery_promised": false,
+  "synthetic_auth_run": {
+    "run_id": "8bbbe19a-cabc-4d38-a3fd-c351ae3a91af",
+    "report": "output/isg/runs/synthetic-auth-Dv5khh/REPORT.json",
+    "total_checks": 716,
+    "failures": [],
+    "new_checks": 27,
+    "cleanup": "PASS"
+  },
+  "new_checks": [
+    {
+      "id": "personal_notes_migration_applied_with_closed_rollout",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_gate_blocks_the_notebook_while_rollout_off",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_note_tables_have_rls_and_no_client_grant",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_no_company_or_entity_column_exists_at_any_level",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_the_notebook_needs_no_paid_plan",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_a_note_is_created_at_version_one",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_an_unchanged_sync_is_not_a_new_version",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_an_edit_moves_the_version",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_a_stale_device_never_overwrites_in_silence",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_a_resolution_keeps_both_texts_and_bumps_the_version",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_another_account_can_not_touch_the_note",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_daylight_saving_moves_the_instant_not_the_local_time",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_an_unknown_timezone_is_refused",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_completing_one_occurrence_does_not_close_the_series",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_snoozing_one_occurrence_leaves_the_rest_scheduled",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_a_snooze_must_move_forward",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_a_settled_occurrence_replays",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_exactly_one_installation_owns_the_delivery",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_a_new_installation_takes_over_instead_of_doubling",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_deleting_a_note_cancels_future_reminders_and_keeps_history",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_a_tombstone_clears_the_text_but_keeps_the_marker",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_an_old_offline_device_can_not_resurrect_a_deleted_note",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_deleting_twice_is_a_replay",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_a_cancelled_series_projects_nothing_new",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_a_once_reminder_projects_a_single_occurrence",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_cancelling_a_series_stops_the_future_and_keeps_the_past",
+      "result": "PASS"
+    },
+    {
+      "id": "personal_notes_kill_switch_stops_the_notebook",
+      "result": "PASS"
+    }
+  ],
+  "full_legacy_copy_upgrade": {
+    "run_id": "43b7ee21-c76b-4ad9-8414-4502ac0f5bfb",
+    "total_checks": 29,
+    "failures": [],
+    "cleanup": "PASS",
+    "migrations_replayed": 16,
+    "new_tables": 107,
+    "legacy_rows_unchanged": true
+  },
+  "defects_found_and_fixed": [],
+  "source_sha256": {
+    "supabase/migrations/20260914070000_isg_personal_notes.sql": "a4f753d937fef910ee8c1872d2427282b77d3eb0230343c332cf5c758e2c826e",
+    "scripts/isg/personal_notes_probe.mjs": "07c58c1a59550e6b54a4de857cfb2c46764329678877aa247f31645d91b69406",
+    "scripts/isg/personal_notes_guard.test.mjs": "f09b475b1c6d1fa4a68120aab01b48850e05f5baa66ac15b57df073cbd6638fb",
+    "contracts/isg/v1/personal-notebook.md": "1f1ec41691c5df961d4b4edd14653c4654e91e558610aeec31e08d9e2c176fc0"
+  },
+  "not_proven": [
+    "client sync engine and offline draft queue",
+    "recovery screen",
+    "device side DST, reboot, app update, Focus, battery optimisation and Android exact alarm behaviour",
+    "tag management functions",
+    "retention policy",
+    "client or native surface",
+    "production migration or rollout"
+  ]
+}

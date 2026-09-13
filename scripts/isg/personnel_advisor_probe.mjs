@@ -61,7 +61,9 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'document_templates','document_template_versions','documents','document_number_sequences','document_versions',
       'export_jobs','import_batches','import_rows','import_checkpoints',
       'notification_purposes','notification_consents','producer_ownership','notification_episodes',
-      'notification_jobs','delivery_attempts']);
+      'notification_jobs','delivery_attempts',
+      'personal_notes','note_conflicts','note_items','note_tags','note_tag_links','personal_reminders',
+      'reminder_occurrences','device_delivery_claims']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([
@@ -113,6 +115,10 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'notification_consents_consent_owner_idx','notification_consents_consent_purpose_idx',
       'notification_episodes_episode_company_idx','notification_episodes_episode_purpose_idx',
       'notification_episodes_episode_owner_idx','delivery_attempts_attempt_job_idx',
+      'personal_notes_note_owner_idx','note_conflicts_note_conflict_idx','note_items_note_item_idx',
+      'note_tags_note_tag_owner_idx','note_tag_links_note_tag_link_idx',
+      'personal_reminders_reminder_owner_idx','personal_reminders_reminder_note_idx',
+      'reminder_occurrences_occurrence_due_idx',
     ].map(key=>'unused_index_private_isg_'+key));
     pass('personnel_advisor_no_unreviewed_findings',relevant.every(f=>f.level==='INFO'&&f.metadata?.schema==='private_isg'&&
       ((f.name==='rls_enabled_no_policy'&&denyTables.has(f.metadata?.name))||(f.name==='unused_index'&&reviewedFKIndexes.has(f.cache_key)))));

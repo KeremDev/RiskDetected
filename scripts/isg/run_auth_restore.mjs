@@ -25,6 +25,7 @@ import { beginModuleCoreProbe, moduleCoreFiles } from './module_core_probe.mjs';
 import { beginModuleSecondProbe, moduleSecondFiles } from './module_second_probe.mjs';
 import { beginDocumentImportProbe, documentImportFiles } from './document_import_probe.mjs';
 import { beginNotificationCoreProbe, notificationCoreFiles } from './notification_core_probe.mjs';
+import { beginPersonalNotesProbe, personalNotesFiles } from './personal_notes_probe.mjs';
 import { probeP05Upgrade, p05UpgradeFiles } from './p05_upgrade_probe.mjs';
 import { probePasswordAuth } from './password_auth_probe.mjs';
 import { probeSignupRecovery } from './signup_recovery_probe.mjs';
@@ -320,6 +321,7 @@ try {
   let moduleSecondProbe;
   let documentProbe;
   let notificationProbe;
+  let notesProbe;
   if (mode.sessionGuard) {
     stage = 'session-guard';
     sessionProbe = await beginSessionProbe({ sql, concurrentSql, token: refresh.body.access_token, secret, pass });
@@ -357,6 +359,8 @@ try {
     documentProbe=await beginDocumentImportProbe({synthetic:true,sql,concurrentSql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'notification-core';
     notificationProbe=await beginNotificationCoreProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
+    stage = 'personal-notes';
+    notesProbe=await beginPersonalNotesProbe({synthetic:true,sql,ownerID:id,pass});
     stage = 'personnel-advisors';
     report.personnel_advisors=await probePersonnelAdvisors({synthetic:true,sql,guard,names,pass,onFindings:value=>{report.personnel_advisors=value;}});
   }
@@ -400,6 +404,7 @@ try {
   if (moduleSecondProbe) report.module_core_second = moduleSecondProbe.afterLogout();
   if (documentProbe) report.document_import = documentProbe.afterLogout();
   if (notificationProbe) report.notification_core = notificationProbe.afterLogout();
+  if (notesProbe) report.personal_notes = notesProbe.afterLogout();
   if (mode.synthetic) {
     stage = 'password-auth-boundaries';
     report.password_auth = probePasswordAuth({synthetic:true, request, admin, pass});
@@ -431,6 +436,7 @@ try {
     .concat(mode.synthetic ? moduleSecondFiles : [])
     .concat(mode.synthetic ? documentImportFiles : [])
     .concat(mode.synthetic ? notificationCoreFiles : [])
+    .concat(mode.synthetic ? personalNotesFiles : [])
     .concat(mode.p05Upgrade ? p05UpgradeFiles : [])
     .concat(mode.nativeE2E ? ['scripts/isg/native_e2e_bridge.mjs','scripts/isg/native_e2e_oracle.mjs','scripts/isg/run_native_android.mjs','tests/isg/native-ios/NativeHarness.swift','tests/isg/native-ios/NativeUITests.swift','android/isg-native-check/src/main/kotlin/com/riskdetectedan/isg/nativecheck/NativeActivity.kt','android/isg-native-check/src/androidTest/kotlin/com/riskdetectedan/isg/nativecheck/NativeFlowTest.kt'] : [])
     .map(path=>[path,digest(readFileSync(resolve(ROOT,path)))]));

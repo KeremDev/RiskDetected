@@ -27,6 +27,8 @@ P18 tasarım kaydı: `design/osgb-nova-reference.json`; expert-only üretilmiş 
 
 - [notification-backbone.md](notification-backbone.md): dört ayrı amaç, rıza kökeni (OS izni pazarlama rızası değildir), üretici sahipliği ve shadow modu, gönderim-anı kapısı ve teslim iddiası taşımayan deneme kaydı. Legacy kuyruk yazılmaz, rollout kapalı.
 
+- [personal-notebook.md](personal-notebook.md): firma domaininden bağımsız, Free kişisel not defteri; iki metni koruyan çakışma çözümü, diriltilemeyen tombstone, seriden bağımsız occurrence ve tek teslim sahibi. Rollout kapalı.
+
 - safety-policy.json: mevcut teknik kimlikler, kaynak hash'i ve bağımsız local test hedefleri. Staging allowlist şu an boş; herhangi bir staging/prod/store isteği kapalıdır.
 - local-test-environment.example.json: yalnız synthetic/mock/sink ortam bildirimi. Dosyanın doğrulanması çalışan veya güvenli bir backend bulunduğu anlamına gelmez.
 - scripts/isg/verify_environment.mjs: manifest'i fail-closed doğrular. DB runner, gerçek Docker inspection'ını da validateContainerInspection ile doğrulamak zorundadır. Normal bridge veya mevcut local stack izolasyon sayılmaz.

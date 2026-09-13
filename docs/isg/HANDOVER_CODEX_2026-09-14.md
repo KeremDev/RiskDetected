@@ -17,8 +17,9 @@ P05 (firma/işyeri/personel) daha önce kapanmıştı. 13–14 Eylül'de eklenen
 | P10 | §7.5 modülleri, iki paket hâlinde 12 başlık | `20260913230000`, `20260914010000` | [P10-1](P10_MODULE_CORE_2026-09-13.md), [P10-2](P10_MODULE_SECOND_2026-09-14.md) |
 | P11 | Belge numarası/snapshot/export + import zinciri | `20260914030000` | [P11](P11_DOCUMENT_IMPORT_CORE_2026-09-14.md) |
 | P12 | Bildirim omurgası, rıza kökeni, sahiplik/shadow, gönderim-anı kapısı | `20260914050000` | [P12](P12_NOTIFICATION_CORE_2026-09-14.md) |
+| P13 | Kişisel not defteri, çakışma/tombstone, occurrence, teslim sahibi | `20260914070000` | [P13](P13_PERSONAL_NOTES_2026-09-14.md) |
 
-Toplam: `private_isg` şemasında **99 tablo**, hepsinde RLS açık, istemciye **sıfır** GRANT. Sentetik kabul koşusu **689/689 PASS**, tam legacy kopya upgrade **29/29 PASS** (15 migration), offline foundation **232 PASS**.
+Toplam: `private_isg` şemasında **107 tablo**, hepsinde RLS açık, istemciye **sıfır** GRANT. Sentetik kabul koşusu **716/716 PASS**, tam legacy kopya upgrade **29/29 PASS** (16 migration), offline foundation **240 PASS**.
 
 **Canlıya hiçbir şey uygulanmadı.** Bütün yeni `private_isg.rollout` satırları ve on iki modül anahtarı kapalı; mağaza, canlı DB, legacy kota otoritesi ve mevcut istemci sözleşmeleri değişmedi.
 
@@ -79,7 +80,7 @@ deno test --allow-read=contracts/isg/v1/fixtures supabase/functions/_shared/isg/
 1. **P12'nin ikinci dilimi:** gerçek APNs/FCM/e-posta adaptörleri, onboarding rıza ekranı ve izin durumları, simulate/shadow/canary, gerçek cutover. P01'in dağıtım defteri hâlâ gerçek bir tüketici bekliyor.
 2. **P04'ün ikinci dilimi:** gerçek AV/parser sandbox'ı, DOC/XLS pozitif güvenlik fixture'ları, bucket/storage policy, signed URL. Teknoloji ve maliyet kararı gerekiyor.
 3. **P11'in render worker'ı:** PDF/XLSX üretimi ve görsel kabuller.
-4. **P13 kişisel not**, **P14 lifecycle/store**, **P15 referral**, **P16 admin**, **P17 skor**: bağımlılıkları planın §15.1 grafiğinde.
+4. **P14 lifecycle/store**, **P15 referral**, **P16 admin**, **P17 skor**: bağımlılıkları planın §15.1 grafiğinde. P13'ün sunucu tarafı bitti; istemci senkron motoru ve cihaz tarafı zamanlama kabulleri açık.
 5. **P18/P19/P20:** native kabuk, bütünleşik prova, mağaza güncellemesi. Bunlar insan onayı ve gerçek cihaz kanıtı isteyen kapılar.
 
 Her fazın kendi dokümanında "Açık kalanlar" bölümü vardır; bir fazı kapatmadan önce oradaki maddeleri kontrol et. Hiçbir faz, kendi dokümanı "kapandı" demeden kapalı sayılmaz.
