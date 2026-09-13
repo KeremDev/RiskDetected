@@ -1,0 +1,233 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-13",
+  "phase": "P06",
+  "slice": "legal source registry, versioned rule publishing gate, bounded applicability expression, dated requirements and schedules",
+  "phase_complete": false,
+  "production_deployed": false,
+  "rollout_enabled_in_migration": false,
+  "client_grant_added": false,
+  "legal_catalogue_loaded": false,
+  "official_2026_content_verified": false,
+  "task_or_notification_consumer_connected": false,
+  "synthetic_auth_run": {
+    "run_id": "6e5955f7-0044-46c4-8bb1-859c5b58b0b4",
+    "report": "output/isg/runs/synthetic-auth-Z8hts4/REPORT.json",
+    "total_checks": 446,
+    "failures": [],
+    "new_checks": 47,
+    "cleanup": "PASS"
+  },
+  "new_checks": [
+    {
+      "id": "rule_core_migration_applied_with_closed_rollout",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_gate_blocks_the_registry_and_the_decision_while_rollout_off",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_rule_tables_have_rls_and_no_client_grant",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_the_expression_grammar_is_bounded",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_all_requires_every_clause",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_missing_fact_is_review_not_a_denial",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_definite_mismatch_outranks_an_unknown_fact",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_fact_of_the_wrong_type_is_unknown_not_false",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_any_needs_one_clause_and_keeps_unknowns_in_review",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_not_in_and_lte_close_the_operator_set",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_month_lands_on_the_last_valid_day",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_year_is_a_calendar_year_not_365_days",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_twelve_months_and_one_year_agree",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_once_rule_is_due_on_its_start_and_rejects_a_length",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_url_alone_never_clears_review",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_reviewer_without_a_written_note_stays_in_review",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_checksummed_reviewed_source_leaves_review",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_the_same_document_is_registered_once",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_retrieval_from_the_future_is_refused",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_new_rule_starts_as_a_draft",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_an_invalid_action_or_period_never_creates_a_version",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_draft_can_not_be_published",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_simulation_reports_the_three_outcomes",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_source_in_review_can_not_be_published",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_publishing_requires_a_named_approval_note",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_verified_simulated_rule_publishes_with_its_approver",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_publishing_replays_without_a_second_effect",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_an_unpublished_rule_makes_no_decision",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_foreign_workplace_is_denied",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_turkish_rule_is_not_applied_abroad",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_an_unknown_jurisdiction_is_review",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_matching_context_becomes_a_required_decision",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_the_same_context_and_day_decides_once",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_changed_context_version_is_decided_again",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_only_a_required_decision_opens_an_obligation",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_an_unknown_timezone_is_refused",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_an_obligation_carries_a_dated_schedule",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_one_obligation_per_rule_action_and_period",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_new_schedule_invalidates_the_old_one_instead_of_editing_it",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_an_unchanged_reschedule_is_a_replay",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_cancelled_obligation_needs_a_reason",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_reconciliation_sees_review_and_missing_obligations",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_reconciliation_keeps_one_row_per_day",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_satisfied_obligation_completes_its_schedule",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_new_published_version_supersedes_the_previous_one",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_a_closed_obligation_is_not_flagged_on_a_superseded_rule",
+      "result": "PASS"
+    },
+    {
+      "id": "rule_core_kill_switch_stops_the_rule_engine",
+      "result": "PASS"
+    }
+  ],
+  "full_legacy_copy_upgrade": {
+    "run_id": "b3bee84a-2488-4809-9b73-4280c699ba9a",
+    "total_checks": 28,
+    "failures": [],
+    "cleanup": "PASS",
+    "legacy_rows_unchanged": true,
+    "legacy_helper_definitions_unchanged": true,
+    "new_tables": 37
+  },
+  "source_sha256": {
+    "supabase/migrations/20260913150000_isg_rule_core.sql": "4ce4c7608847e41cdf652188560052e24cf35f618834deb6e99ae945978bccc3",
+    "scripts/isg/rule_core_probe.mjs": "bef7d1832794566f2c858915c5749ba0dc0c030b0e566805cca8b3a160fcc12b",
+    "scripts/isg/rule_core_guard.test.mjs": "94d53db40af5af765f032fe9f437dfbc4fd99323143b1f473ecd5f50e41fc09f",
+    "contracts/isg/v1/rule-applicability.md": "73318d18d3e6f471b03480381541b5021e2a29598c3b5c667606e83218795c30"
+  },
+  "not_proven": [
+    "any real legal rule content",
+    "2026 training figures",
+    "task, notification or score consumers",
+    "client or native surface",
+    "production migration or rollout"
+  ]
+}

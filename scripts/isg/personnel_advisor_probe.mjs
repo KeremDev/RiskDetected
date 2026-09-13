@@ -44,7 +44,9 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       // P01/P03 ledgers: private by construction, worker/owner only, zero client grant.
       'consumer_registry','event_deliveries','consumer_receipts','dispatch_dead_letters','dispatch_reconciliations',
       'quota_definitions','legacy_entitlement_floors','quota_reservations','quota_settlements','quota_shadow_observations',
-      'file_purposes','upload_intents','file_assets','file_derivatives','file_scan_results']);
+      'file_purposes','upload_intents','file_assets','file_derivatives','file_scan_results',
+      'legal_sources','rule_versions','rule_simulations','applicability_decisions','requirement_instances',
+      'requirement_schedules','rule_reconciliations']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([
@@ -58,6 +60,8 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'quota_reservations_quota_reservation_kind_idx','quota_shadow_observations_quota_shadow_owner_idx',
       'upload_intents_upload_intent_purpose_idx','upload_intents_upload_intent_company_idx','upload_intents_upload_intent_reservation_idx',
       'file_assets_file_asset_owner_idx','file_assets_file_asset_purpose_idx','file_assets_file_asset_company_idx',
+      'rule_versions_rule_version_source_idx','rule_versions_rule_version_approver_idx',
+      'applicability_decisions_decision_scope_idx','legal_sources_legal_source_verifier_idx',
     ].map(key=>'unused_index_private_isg_'+key));
     pass('personnel_advisor_no_unreviewed_findings',relevant.every(f=>f.level==='INFO'&&f.metadata?.schema==='private_isg'&&
       ((f.name==='rls_enabled_no_policy'&&denyTables.has(f.metadata?.name))||(f.name==='unused_index'&&reviewedFKIndexes.has(f.cache_key)))));

@@ -13,6 +13,8 @@ P18 tasarım kaydı: `design/osgb-nova-reference.json`; expert-only üretilmiş 
 
 - [file-acceptance.md](file-acceptance.md): amaç bazlı 13 format kabul matrisi, karantina→tarama→immutable promotion yaşam döngüsü ve anti-TOCTOU kuralı. Bucket/tarayıcı/istemci yüzeyi yok, rollout kapalı.
 
+- [rule-applicability.md](rule-applicability.md): mevzuat kaynağı doğrulaması, sürümlü kural yayın kapısı, sınırlı uygulanabilirlik dili ve takvim aritmetiğine dayalı yükümlülük/schedule sözleşmesi. İçerik yüklenmedi, rollout kapalı.
+
 - safety-policy.json: mevcut teknik kimlikler, kaynak hash'i ve bağımsız local test hedefleri. Staging allowlist şu an boş; herhangi bir staging/prod/store isteği kapalıdır.
 - local-test-environment.example.json: yalnız synthetic/mock/sink ortam bildirimi. Dosyanın doğrulanması çalışan veya güvenli bir backend bulunduğu anlamına gelmez.
 - scripts/isg/verify_environment.mjs: manifest'i fail-closed doğrular. DB runner, gerçek Docker inspection'ını da validateContainerInspection ile doğrulamak zorundadır. Normal bridge veya mevcut local stack izolasyon sayılmaz.

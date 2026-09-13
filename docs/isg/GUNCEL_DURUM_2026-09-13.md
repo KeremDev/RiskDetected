@@ -37,7 +37,7 @@ Yüzde vermiyoruz: bir altyapı testi ile son kullanıcı kabul testi aynı şey
 | P03 Abonelik/legacy/kota | Kısmi | Mevcut SQL hak otoritesi envanteri; Plus 5 hak koruma/floor shadow hesabı; downgrade/read-only ayrımı; eski kota matrisi; **13 Eylül: gölge rezervasyon defteri** — atomik reserve/settle/release/expire, ölçülmüş hak tabanı ve legacy sayaç karşılaştırması | Onaylı plan kataloğu/limitler, eligibility cutoff'u, gift/indirim ayrımı, gerçek floor backfill'i ve cutover; defter `authority='shadow'` kilidinde kaldığı sürece otorite legacy'dir |
 | P04 Güvenli dosya/belge çekirdeği | Kısmi; kabul ve yaşam döngüsü dilimi yerel olarak tamamlandı | **13 Eylül:** amaç bazlı 13 format kabul matrisi, upload intent/karantina, tarayıcı sonucu ayrımı (hata ≠ temiz), anti-TOCTOU immutable promotion, türev/önizleme ayrımı ve gölge depolama rezervasyonu | Gerçek AV/parser sandbox'ı ve DOC/XLS güvenlik fixture'ları, bucket/storage policy/signed URL, belge üretimi ve import dilimleri, iki mobil bağlantı |
 | **P05 Firma/işyeri/personel** | **Yerel geliştirme/kabul tamamlandı; canlı kapalı** | D05 migration/API/backfill; iki native yönetim bağlantısı; sade personel, sekiz rehber formu, tarihçe, arşiv/geri açma; gerçek SDK→DB kabulü, restart/foreground ve hiyerarşi/sayfalama | P05'e ait kapanış işleri tamamlandı. REV21 tüketicileri P06/P07, REV23 tüketicileri P07/P10, X13 import P11; fiziksel cihaz/gateway ve imzalı update P19/P20 kapsamında bekler |
-| P06 Kural/süre/task | Bekliyor | P05 tarihli context ve event üreticisi önkoşulları var | Mevzuat kaynak kayıtları, sürümlü kural motoru, applicability, task/schedule, daily reconcile ve rule publish |
+| P06 Kural/süre/task | Kısmi; çekirdek dilim yerel olarak tamamlandı | **13 Eylül:** mevzuat kaynağı doğrulaması, sürümlü kural + insan onaylı yayın kapısı, sınırlı uygulanabilirlik dili, jurisdiction kapısı, takvim aritmetiği, dönem başına tek yükümlülük, schedule sürümleme ve günlük mutabakat | Gerçek mevzuat içeriği ve 2026 doğrulaması, görev/bildirim tüketicileri, domain bağlantıları (P07–P09), istemci yüzeyi ve canlı rollout |
 | P07 Eğitim | Bekliyor | Personel ve görev geçmişi önkoşulu var; menü/sunum hedefi var | Katalog, eğitim planı/oturumu, katılım, ölçme, tamamlama, dış sertifika, iki format belge ve native domain akışları |
 | P08 Risk sürümleme | Bekliyor | Mevcut legacy analiz sistemi korunuyor | Dört revision türü, açık AI bulgu aktarımı, impact/review ve tarihli schedule; eski analiz, yeni risk motoru değildir |
 | P09 Uygunsuzluk/checklist | Bekliyor | NOVA ekran/menü referansı ve mevcut eski bulgu davranışı korunuyor | Yeni state/action/verification, checklist template/run, finding adapter ve gerçek saha akışları |
@@ -217,7 +217,7 @@ DAT04/05 ve X07 için sentetik backfill/catch-up/fault kanıtı ile bu tur gerç
 
 1. **P05 kapandı:** yerel kabul kanıtı ve kapalı rollout korunacak; sonraki fazlar bu veri/API omurgasını kullanacak.
 2. **P01/P03 sözleşme dilimi tamamlandı (13 Eylül):** olay dağıtımı ve gölge kota defteri gerçek şemada; [kapsam ve açık kalemler](P01_P03_DISPATCH_AND_QUOTA_2026-09-13.md). Gerçek tüketici ve ticari kapılar sonraki fazlarda.
-3. **P04'ün kabul/karantina dilimi uygulandı (13 Eylül):** [kapsam ve açık kalemler](P04_FILE_CORE_2026-09-13.md). Sırada **P06 kural/task çekirdeği**; P04'ün tarayıcı ve belge dilimleri kendi teknoloji/maliyet kararlarıyla ilerler.
+3. **P04'ün kabul/karantina ve P06'nın kural çekirdeği dilimleri uygulandı (13 Eylül):** [dosya](P04_FILE_CORE_2026-09-13.md), [kural](P06_RULE_CORE_2026-09-13.md). P04'ün tarayıcı/belge dilimleri ve P06'nın mevzuat içeriği kendi teknoloji/onay kararlarıyla ilerler.
 4. P07 eğitim, P08 risk, P09 uygunsuzluk ve P10 diğer modülleri bu çekirdeklere bağla.
 5. P11 evrak/import, P12 bildirim, P13 not; P14–P17 ticari/izleme/skor akışlarını kendi bağımlılıklarıyla tamamla.
 6. P18 tam native kök/marka kabulü → P19 bütünleşik prova → insan onaylı P20 update.
@@ -246,5 +246,6 @@ Her küçük düzenleme sonrasında tüm testleri çalıştırmak yerine uygulam
 - [Bu turun çalıştırılabilir kanıtı](evidence/P05_CURRENT_2026-09-13.json)
 - [P01/P03 tüketici ve kota dilimi](P01_P03_DISPATCH_AND_QUOTA_2026-09-13.md)
 - [P04 dosya kabul ve karantina dilimi](P04_FILE_CORE_2026-09-13.md)
+- [P06 kural ve yükümlülük çekirdeği](P06_RULE_CORE_2026-09-13.md)
 
 Kaynak kabul CSV'si başlangıç uygulama/koşum durumlarını içerir; henüz tüm yeni runner sonuçlarıyla güncellenmiş bir canlı coverage tablosu değildir. Güncel tamamlandı/bekliyor değerlendirmesi bu belgede ve bağlantılı kanıtlarda katmanlarıyla belirtilmiştir.
