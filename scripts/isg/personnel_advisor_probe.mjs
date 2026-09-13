@@ -46,7 +46,10 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'quota_definitions','legacy_entitlement_floors','quota_reservations','quota_settlements','quota_shadow_observations',
       'file_purposes','upload_intents','file_assets','file_derivatives','file_scan_results',
       'legal_sources','rule_versions','rule_simulations','applicability_decisions','requirement_instances',
-      'requirement_schedules','rule_reconciliations']);
+      'requirement_schedules','rule_reconciliations',
+      'training_catalogs','training_catalog_versions','training_topic_groups','training_class_rules',
+      'company_curriculum_versions','training_plans','training_sessions','training_enrolments',
+      'attendance_intervals','assessment_attempts','training_completions','external_credentials']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([
@@ -62,6 +65,11 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'file_assets_file_asset_owner_idx','file_assets_file_asset_purpose_idx','file_assets_file_asset_company_idx',
       'rule_versions_rule_version_source_idx','rule_versions_rule_version_approver_idx',
       'applicability_decisions_decision_scope_idx','legal_sources_legal_source_verifier_idx',
+      'company_curriculum_versions_curriculum_scope_idx','company_curriculum_versions_curriculum_owner_idx',
+      'training_plans_plan_scope_idx','training_plans_plan_curriculum_idx','training_plans_plan_requirement_idx',
+      'training_completions_completion_employee_idx','training_completions_completion_validity_idx',
+      'external_credentials_credential_asset_idx',
+      'training_catalog_versions_catalog_version_source_idx','training_catalog_versions_catalog_version_approver_idx',
     ].map(key=>'unused_index_private_isg_'+key));
     pass('personnel_advisor_no_unreviewed_findings',relevant.every(f=>f.level==='INFO'&&f.metadata?.schema==='private_isg'&&
       ((f.name==='rls_enabled_no_policy'&&denyTables.has(f.metadata?.name))||(f.name==='unused_index'&&reviewedFKIndexes.has(f.cache_key)))));

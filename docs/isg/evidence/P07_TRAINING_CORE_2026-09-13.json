@@ -1,0 +1,224 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-13",
+  "phase": "P07",
+  "slice": "versioned catalogue, workplace G4 curriculum, plan/session/enrolment, attendance union, assessment, immutable completion, obligation settlement",
+  "phase_complete": false,
+  "production_deployed": false,
+  "rollout_enabled_in_migration": false,
+  "client_grant_added": false,
+  "official_content_approved": false,
+  "legal_catalogue_loaded": false,
+  "document_export_implemented": false,
+  "score_contribution_connected": false,
+  "synthetic_auth_run": {
+    "run_id": "a8ff06ef-6fe2-46d0-b6e3-f95e31b1aeaf",
+    "report": "output/isg/runs/synthetic-auth-Lebcis/REPORT.json",
+    "total_checks": 489,
+    "failures": [],
+    "new_checks": 43,
+    "cleanup": "PASS"
+  },
+  "new_checks": [
+    {
+      "id": "training_core_migration_applied_with_closed_rollout",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_gate_blocks_publishing_while_rollout_off",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_training_tables_have_rls_and_no_client_grant",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_an_official_catalogue_needs_a_legal_source",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_a_source_in_review_can_not_publish_a_catalogue",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_a_version_without_class_rules_can_not_publish",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_a_published_catalogue_says_its_content_is_unapproved",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_publishing_a_catalogue_replays",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_a_special_course_can_not_claim_approved_official_content",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_the_same_title_does_not_make_a_special_course_official",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_a_curriculum_respects_the_g4_minimum",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_a_curriculum_needs_a_published_catalogue",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_a_foreign_workplace_gets_no_curriculum",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_a_changed_g4_opens_a_new_curriculum_version",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_a_superseded_curriculum_can_not_be_planned",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_a_training_obligation_from_the_rule_engine_is_open",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_a_plan_is_not_a_completion",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_a_plan_can_not_borrow_a_foreign_or_closed_obligation",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_an_unknown_method_is_refused_and_a_session_starts_the_plan",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_an_employee_enrols_once_per_session",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_a_foreign_employee_can_not_be_enrolled",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_attendance_must_fall_inside_the_session",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_overlapping_attendance_is_credited_as_a_union",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_adjacent_attendance_merges_into_one_block",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_the_same_interval_twice_credits_nothing_new",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_one_minute_is_never_credited_to_two_courses",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_another_person_may_attend_the_same_minute",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_the_pass_threshold_is_exact",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_attempts_are_capped",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_an_incomplete_attendance_can_not_complete",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_one_minute_short_is_still_short",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_exactly_the_required_lesson_minutes_completes",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_validity_uses_the_catalogue_repeat_period_in_calendar_years",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_completing_replays_without_a_second_record",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_a_finalised_completion_is_never_rewritten",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_an_obligation_is_not_satisfied_while_a_participant_is_open",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_a_fully_completed_plan_satisfies_the_rule_engine_obligation",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_an_external_certificate_is_not_a_training_completion",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_an_external_certificate_replays",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_an_expiry_before_the_issue_date_is_refused",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_an_unknown_document_can_not_be_the_evidence",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_a_clean_document_takes_the_certificate_out_of_review",
+      "result": "PASS"
+    },
+    {
+      "id": "training_core_kill_switch_stops_the_training_domain",
+      "result": "PASS"
+    }
+  ],
+  "full_legacy_copy_upgrade": {
+    "run_id": "2d789bb7-f037-4b47-8507-0168e9ec9c13",
+    "total_checks": 28,
+    "failures": [],
+    "cleanup": "PASS",
+    "migrations_replayed": 9,
+    "new_tables": 49,
+    "legacy_rows_unchanged": true,
+    "legacy_helper_definitions_unchanged": true
+  },
+  "cross_phase": {
+    "rule_engine_obligation_closed_by_training": true,
+    "file_asset_used_as_external_certificate_evidence": true
+  },
+  "source_sha256": {
+    "supabase/migrations/20260913170000_isg_training_core.sql": "bb4599ef74c1347bc07f4d9cea800734e3ab9de61fac9521e1e3956d5e86927d",
+    "scripts/isg/training_core_probe.mjs": "edfdc4a22af32cdbdb248288f68a9ad812e02bcfd9348916bd8630dc8cd246dd",
+    "scripts/isg/training_core_guard.test.mjs": "63dc39f514739eb0ef6294e6d13e4fb6090c9436cd1b81de6a9d91fca572a8d5",
+    "contracts/isg/v1/training-completion.md": "2a2ac54de0af565ecbf0a712db1ac682a6dc1fca9c0f926d5c303ac43eb72921"
+  },
+  "not_proven": [
+    "official 2026 training content or durations",
+    "document export (PDF/XLSX)",
+    "score contribution",
+    "trainer or attendance signature",
+    "client or native surface",
+    "production migration or rollout"
+  ]
+}
