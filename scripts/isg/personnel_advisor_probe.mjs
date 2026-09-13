@@ -55,7 +55,9 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'verification_records','checklist_templates','checklist_template_versions','checklist_template_items',
       'checklist_runs','checklist_run_items','nonconformity_reconciliations',
       'module_registry','emergency_plan_versions','drill_records','equipment_items','equipment_inspection_rules',
-      'equipment_inspections','appointments','ppe_handovers','ppe_returns']);
+      'equipment_inspections','appointments','ppe_handovers','ppe_returns',
+      'katip_contracts','annual_work_plans','annual_work_plan_items','annual_training_plans','board_meetings',
+      'board_decisions','work_permit_forms','site_visits','site_visit_observations','notebook_archive_entries']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([
@@ -90,6 +92,16 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'equipment_items_equipment_scope_idx','equipment_items_equipment_owner_idx','equipment_inspections_inspection_asset_idx',
       'appointments_appointment_employee_idx','appointments_appointment_scope_idx','appointments_appointment_asset_idx',
       'ppe_handovers_ppe_asset_idx',
+      'katip_contracts_katip_scope_idx','katip_contracts_katip_asset_idx','katip_contracts_katip_owner_idx',
+      'annual_work_plans_work_plan_owner_idx','annual_work_plan_items_work_plan_item_carry_idx',
+      'annual_work_plan_items_work_plan_item_state_idx',
+      'annual_training_plans_training_plan_owner_idx','annual_training_plans_training_plan_realised_idx',
+      'board_meetings_board_scope_idx','board_meetings_board_owner_idx','board_meetings_board_asset_idx',
+      'work_permit_forms_permit_scope_idx','work_permit_forms_permit_owner_idx','work_permit_forms_permit_asset_idx',
+      'site_visits_visit_owner_idx','site_visits_visit_scope_idx',
+      'site_visit_observations_observation_asset_idx','site_visit_observations_observation_nonconformity_idx',
+      'notebook_archive_entries_notebook_scope_idx','notebook_archive_entries_notebook_owner_idx',
+      'notebook_archive_entries_notebook_asset_idx',
     ].map(key=>'unused_index_private_isg_'+key));
     pass('personnel_advisor_no_unreviewed_findings',relevant.every(f=>f.level==='INFO'&&f.metadata?.schema==='private_isg'&&
       ((f.name==='rls_enabled_no_policy'&&denyTables.has(f.metadata?.name))||(f.name==='unused_index'&&reviewedFKIndexes.has(f.cache_key)))));

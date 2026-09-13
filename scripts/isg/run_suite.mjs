@@ -20,6 +20,7 @@ suites.foundation.push('scripts/isg/training_core_guard.test.mjs');
 suites.foundation.push('scripts/isg/risk_core_guard.test.mjs');
 suites.foundation.push('scripts/isg/nonconformity_core_guard.test.mjs');
 suites.foundation.push('scripts/isg/module_core_guard.test.mjs');
+suites.foundation.push('scripts/isg/module_second_guard.test.mjs');
 if (!Object.hasOwn(suites, suite) || extra.length) {
   console.error('Usage: node scripts/isg/run_suite.mjs foundation|capacity-shadow|nova-design|password-auth; only offline suites are enabled here.');
   process.exitCode = 1;

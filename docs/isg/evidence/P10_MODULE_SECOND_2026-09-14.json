@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-14",
+  "phase": "P10",
+  "slice": "second module package: ISG-KATIP contract, annual work plan, annual training plan, board meetings, work permit form, site visit, approved notebook archive",
+  "phase_complete": false,
+  "production_deployed": false,
+  "rollout_enabled_in_migration": false,
+  "client_grant_added": false,
+  "modules_implemented_total": 12,
+  "modules_implemented_here": [
+    "katip_contract",
+    "annual_work_plan",
+    "annual_training_plan",
+    "board",
+    "work_permit",
+    "site_visit",
+    "notebook_archive"
+  ],
+  "remaining_titles": [
+    "document centre (P11)",
+    "contractor package (P05/P11)",
+    "portfolio (P17)",
+    "product guidance (P18)"
+  ],
+  "structurally_impossible_claims": [
+    "official_integration",
+    "authorises_work",
+    "ai_text_is_official_record"
+  ],
+  "synthetic_auth_run": {
+    "run_id": "ed4ae2a6-fa4c-4c18-83d8-369a3c42540c",
+    "report": "output/isg/runs/synthetic-auth-XYSbBP/REPORT.json",
+    "total_checks": 621,
+    "failures": [],
+    "new_checks": 33,
+    "cleanup": "PASS"
+  },
+  "new_checks": [
+    {
+      "id": "module_second_migration_applied_with_closed_switches",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_the_phase_gate_answers_before_the_module_switch",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_a_new_module_stays_closed_until_its_own_switch_opens",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_new_module_tables_have_rls_and_no_client_grant",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_an_open_ended_contract_is_its_own_state",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_a_fixed_term_contract_is_distinguished",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_no_official_integration_can_be_claimed",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_one_work_plan_per_workplace_and_year",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_an_activity_belongs_to_its_own_calendar_year",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_an_item_is_added_once",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_a_carry_over_needs_a_reason_and_a_later_plan",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_a_carried_item_names_its_target_year",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_closing_a_plan_performs_nothing",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_a_closed_plan_takes_no_new_item",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_an_annual_training_plan_is_not_a_completion",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_a_duplicate_training_plan_is_refused",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_an_unknown_catalogue_can_not_be_planned",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_linking_a_realisation_keeps_completions_in_the_training_domain",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_voluntary_use_stays_out_of_the_legal_score",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_a_planned_meeting_has_no_attendance",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_holding_a_meeting_records_attendance_and_decisions",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_a_meeting_can_not_be_held_without_attendance",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_a_permit_form_authorises_nothing",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_a_draft_permit_carries_no_rendered_document",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_rendering_records_a_signed_copy_without_granting_permission",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_an_unclean_document_can_not_be_rendered",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_a_site_visit_is_company_scoped_and_separate_from_private_notes",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_the_same_visit_is_recorded_once",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_a_selected_observation_opens_one_nonconformity",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_an_ai_draft_alone_is_not_an_official_record",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_only_a_signed_copy_is_archived_with_its_draft_as_provenance",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_pausing_one_new_module_leaves_the_others_running",
+      "result": "PASS"
+    },
+    {
+      "id": "module_second_kill_switch_stops_every_new_module",
+      "result": "PASS"
+    }
+  ],
+  "full_legacy_copy_upgrade": {
+    "run_id": "4f570a50-0a78-4c18-a389-b0f8dfd65d27",
+    "total_checks": 29,
+    "failures": [],
+    "cleanup": "PASS",
+    "migrations_replayed": 13,
+    "new_tables": 84,
+    "module_switches_closed": 12,
+    "legacy_rows_unchanged": true
+  },
+  "source_sha256": {
+    "supabase/migrations/20260914010000_isg_module_core_second.sql": "f436594595a7080af1d66e057063b56d0144efedf6f88e78ff773d9fb3aaeeaf",
+    "scripts/isg/module_second_probe.mjs": "6e3ddc7d82559c20e90ea531267c779703520683ec0fc3d8c645e78fb0772bce",
+    "scripts/isg/module_second_guard.test.mjs": "42e3c6b34bb4506c132b3ecefb526a80b113616285508d25a7efccbfceffd04b",
+    "contracts/isg/v1/module-domains.md": "e4756d4e9d3c0cd25b31c5278e2b8ac1eed6783a01877e51f035a555361a34b9"
+  },
+  "not_proven": [
+    "document centre and export",
+    "task and notification triggers",
+    "score contribution",
+    "client or native surface",
+    "production migration or rollout"
+  ]
+}
