@@ -16,6 +16,9 @@ export type WorkerPorts = {
   prepare(snapshot: Snapshot): Promise<Prepared>;
   enabled(): Promise<boolean>;
   now(): number;
+  // A persistent host may journal the exact outcome before the SQL receipt.
+  // A missing journal retains the legacy library contract, not durable recovery.
+  journal?: { save(receipt: Receipt): Promise<void>; acknowledge(receipt: Receipt): Promise<void> };
 };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function validSnapshot(s: Snapshot, job: string): boolean {
@@ -68,7 +71,8 @@ export async function runNotificationJob(job: string, mode: 'off' | 'shadow' | '
   if (claim.job_id !== job || claim.channel !== 'push' || !uuid.test(claim.dispatch_token ?? '') ||
     !/^[a-z][a-z0-9_/-]{2,120}$/.test(claim.resolved_route ?? '') || !Number.isFinite(expiry))
     return { status: 'invalid_claim_reconcile' };
-  const sendTime = ports.now();
+  let sendTime: number;
+  try { sendTime = ports.now(); } catch { return { status: 'expired_claim_reconcile' }; }
   if (!Number.isFinite(sendTime) || expiry - sendTime < timeoutMs + 1000) return { status: 'expired_claim_reconcile' };
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -85,12 +89,20 @@ export async function runNotificationJob(job: string, mode: 'off' | 'shadow' | '
   try { const sampled = ports.now(); if (Number.isFinite(sampled) && Math.abs(sampled) <= 8640000000000000) completedTime = Math.max(sendTime, sampled); } catch { /* retain the known valid send time */ }
   const receipt: Receipt = { ...outcome, job_id: job, dispatch_token: claim.dispatch_token!, provider: snapshot.provider,
     now: new Date(completedTime).toISOString() };
+  if (ports.journal) {
+    try { await ports.journal.save(structuredClone(receipt)); }
+    catch { return { status: 'journal_failed_reconcile', receipt }; }
+  }
   try {
     await ports.repository.complete(receipt);
-    return { status: 'recorded', receipt };
   } catch {
     // Persist/replay this exact receipt at the future repository binding. Do not
     // invoke prepare/send again. If the process dies, the DB lease stays uncertain.
     return { status: 'receipt_pending_reconcile', receipt };
   }
+  if (ports.journal) {
+    try { await ports.journal.acknowledge(structuredClone(receipt)); }
+    catch { return { status: 'journal_ack_pending_reconcile', receipt }; }
+  }
+  return { status: 'recorded', receipt };
 }

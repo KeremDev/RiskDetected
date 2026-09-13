@@ -18,6 +18,7 @@ const runners = {
   'android-outcome': 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/isg/IsgMutationOutcomeTest.kt',
   'node-notification': 'scripts/isg/notification_worker.test.mjs',
   'node-notification-repository': 'scripts/isg/notification_repository.test.mjs',
+  'node-notification-journal': 'scripts/isg/notification_journal.test.mjs',
 };
 const digest = value => createHash('sha256').update(value).digest('hex');
 export function runtimeFiles(root = ROOT) {

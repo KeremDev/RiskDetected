@@ -107,7 +107,7 @@
     {
       "id": "node-notification-worker",
       "source": "supabase/functions/_shared/isg/notification-worker.ts",
-      "source_sha256": "95ca28ee18cc3d174e1683594031db6003f64df49f5bc49ad359cfb25ef05e3d",
+      "source_sha256": "c3ab6f37d9dd766904770346cb5a7e71f797fae1bdaa3e122e3d4372c513daa4",
       "runner": "node-notification",
       "harness": "scripts/isg/notification_worker.test.mjs",
       "harness_sha256": "a2e13c0ac09bdd88015331baf8c77f36392e716877565b64d0c4f37583672f65",
@@ -142,6 +142,16 @@
       ],
       "source_sha256": "4e26be8554526fcc51e620a6c60a121ab2ad058b9a21edef6d2ebfe108fcaaa2",
       "harness_sha256": "1da7b381a7670318c8bbf0af6fcd217f2c5d4886bed6bd43e09d3c9444d85b58"
+    },
+    {
+      "id": "node-notification-journal",
+      "source": "supabase/functions/_shared/isg/notification-journal.ts",
+      "source_sha256": "3e21a011ccae7656ef2964ac9b8f4b9696bd9d58b37dbbb0687307d3a997a104",
+      "runner": "node-notification-journal",
+      "harness": "scripts/isg/notification_journal.test.mjs",
+      "harness_sha256": "cb8ed92dc0abd47accefa97e356e17645314812ede4051633aa9b5a0c5772f5a",
+      "coverage": "targeted_behavior_tests",
+      "symbols": ["canonical", "openNotificationJournal", "reconcileNotificationJournal", "runNotificationBatch"]
     }
   ]
 }
