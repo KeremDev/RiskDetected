@@ -40,7 +40,10 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
     pass('personnel_advisor_cli_completed',true);
     pass('personnel_advisor_new_schema_no_errors',!relevant.some(f=>String(f.level).toUpperCase()==='ERROR'));
     // Deliberate default-deny tables, with no client grants, are not missing policies.
-    const denyTables=new Set(['rollout','workplaces','departments','employees','personnel_receipts','personnel_audit','personnel_outbox','workplace_initializations','job_roles','contractor_organizations','contractor_engagements','workplace_context_versions','employee_assignments','directory_events','directory_outbox']);
+    const denyTables=new Set(['rollout','workplaces','departments','employees','personnel_receipts','personnel_audit','personnel_outbox','workplace_initializations','job_roles','contractor_organizations','contractor_engagements','workplace_context_versions','employee_assignments','directory_events','directory_outbox',
+      // P01/P03 ledgers: private by construction, worker/owner only, zero client grant.
+      'consumer_registry','event_deliveries','consumer_receipts','dispatch_dead_letters','dispatch_reconciliations',
+      'quota_definitions','legacy_entitlement_floors','quota_reservations','quota_settlements','quota_shadow_observations']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([
@@ -50,6 +53,8 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'workplace_context_versions_context_owner_idx','workplace_context_versions_context_workplace_idx',
       'employee_assignments_assignment_owner_idx','employee_assignments_assignment_employee_idx','employee_assignments_assignment_department_idx','employee_assignments_assignment_job_idx','employee_assignments_assignment_employer_idx',
       'directory_events_directory_event_owner_idx',
+      'event_deliveries_dispatch_claimable_idx','quota_reservations_quota_reservation_company_idx',
+      'quota_reservations_quota_reservation_kind_idx','quota_shadow_observations_quota_shadow_owner_idx',
     ].map(key=>'unused_index_private_isg_'+key));
     pass('personnel_advisor_no_unreviewed_findings',relevant.every(f=>f.level==='INFO'&&f.metadata?.schema==='private_isg'&&
       ((f.name==='rls_enabled_no_policy'&&denyTables.has(f.metadata?.name))||(f.name==='unused_index'&&reviewedFKIndexes.has(f.cache_key)))));

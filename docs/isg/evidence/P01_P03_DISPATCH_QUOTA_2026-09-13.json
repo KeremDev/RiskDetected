@@ -1,0 +1,306 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-13",
+  "phase": "P01/P03",
+  "slice": "event dispatch consumer backbone and shadow quota reservation ledger",
+  "phase_complete": false,
+  "production_deployed": false,
+  "rollout_enabled_in_migration": false,
+  "client_grant_added": false,
+  "worker_identity_bound": false,
+  "legacy_quota_authority_replaced": false,
+  "consumer_runtime_implemented": false,
+  "synthetic_auth_run": {
+    "run_id": "d6dd5320-a1a3-4954-9b00-09ae7dfedb82",
+    "report": "output/isg/runs/synthetic-auth-uSHkmB/REPORT.json",
+    "total_checks": 362,
+    "failures": [],
+    "new_checks": 62,
+    "cleanup": "PASS"
+  },
+  "new_checks": [
+    {
+      "id": "dispatch_quota_migrations_applied",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_legacy_helpers_triggers_and_rows_unchanged",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_rollout_defaults_off",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_gate_blocks_fanout_while_rollout_off",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_gate_blocks_claim_while_rollout_off",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_gate_blocks_reconcile_while_rollout_off",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_gate_blocks_reserve_while_rollout_off",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_gate_blocks_floor_read_while_rollout_off",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_new_tables_have_rls_and_no_client_table_grant",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_worker_and_ledger_functions_have_no_client_execute",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_existing_client_rpc_grants_unchanged",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_every_private_function_pins_search_path",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_fanout_creates_one_delivery_per_subscribed_consumer",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_fanout_skips_disabled_consumer",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_fanout_respects_event_type_subscription",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_fanout_reads_the_real_personnel_producer",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_fanout_is_idempotent",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_claim_returns_lowest_aggregate_version",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_claim_blocks_successor_until_prior_is_done",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_consumers_progress_independently",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_complete_writes_receipt_and_marks_done",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_lost_acknowledgement_replay_has_no_second_effect",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_successor_is_claimable_after_prior_is_done",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_wrong_lease_token_cannot_complete",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_failure_returns_event_to_pending_with_backoff",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_event_is_not_claimable_before_its_backoff_window",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_backoff_grows_exponentially",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_attempt_budget_exhaustion_creates_a_dead_letter",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_dead_event_holds_its_successor_instead_of_skipping",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_replay_requires_a_dead_delivery",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_replay_requires_a_reason",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_replay_resets_attempts_and_keeps_dead_letter_history",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_replay_unblocks_the_aggregate",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_expired_lease_is_reclaimed_and_keeps_the_spent_attempt",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_expired_lease_cannot_complete",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_unregistered_consumer_is_denied",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_disabled_consumer_is_denied",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_consumer_effect_and_receipt_commit_together",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_reconcile_reports_the_real_ledger",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_reconcile_keeps_one_row_per_day",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_period_key_requires_a_known_timezone",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_period_keys_follow_the_declared_window",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_period_key_shape_must_match_the_kind",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_reservation_is_shadow_only",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_reserve_denies_beyond_the_supplied_limit",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_reserve_replays_the_same_mutation",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_reserve_conflicts_on_a_changed_body",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_unlimited_is_an_explicit_flag_not_a_large_number",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_a_recorded_floor_creates_no_capacity",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_settlement_records_the_consumption_once",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_settlement_is_idempotent",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_a_settled_consumption_is_never_released",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_release_frees_the_slot_again",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_an_expired_reservation_frees_capacity",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_periods_and_owners_are_separate_windows",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_twenty_parallel_reservations_sell_one_slot",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_unknown_floor_source_must_stay_in_review",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_unlimited_and_numeric_floor_are_mutually_exclusive",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_floor_reports_measurement_without_granting_access",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_an_unrecorded_floor_is_review_not_zero",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_shadow_comparison_records_disagreement_without_changing_legacy",
+      "result": "PASS"
+    },
+    {
+      "id": "dispatch_quota_kill_switch_stops_the_worker_and_the_ledger",
+      "result": "PASS"
+    }
+  ],
+  "advisor": {
+    "total_findings": 91,
+    "relevant_levels": [
+      "INFO"
+    ],
+    "reviewed_reason": "private default-deny tables without policies, plus explicitly retained FK/claim indexes on a fresh fixture"
+  },
+  "source_sha256": {
+    "supabase/migrations/20260913110000_isg_event_dispatch.sql": "ed58daf6ea41b61d0cdf0926948867ff2e7c4106e42c5bcc1db5b755c7291c48",
+    "supabase/migrations/20260913113000_isg_quota_reservations.sql": "ad3bde2ce2144abb8ba5edc1fc6e782adc4461f28209b3a2787591c98c491756",
+    "scripts/isg/dispatch_quota_probe.mjs": "fc79fd792b2c6e53f8898e219b99c0c1e11793420273c5cbbe7978eccdb014ad",
+    "scripts/isg/dispatch_quota_guard.test.mjs": "cda89ad56470438c8297cd1a8393afeff1e0e5ea649b8d2f147ae8fba5523319",
+    "contracts/isg/v1/event-dispatch.md": "ead44ee9c0b36a2f590364c438a168b8510e55ff85592d19bf6a4d76acffee24",
+    "contracts/isg/v1/quota-reservation.md": "6d10e7d714c1e29466dfed8d88a2836c8823112bbe924e3d219889864544f0fb",
+    "scripts/isg/p05_upgrade_probe.mjs": "1bf5f3669cf6bf5d996a83b38f3fdc882cd8ac49a22ecf56aeef3e4df6bea992"
+  },
+  "not_proven": [
+    "real consumer projection",
+    "worker role binding",
+    "production migration",
+    "native or HTTP surface",
+    "approved plan limits, eligibility cutoff or floor backfill",
+    "store/RevenueCat reconciliation"
+  ],
+  "full_legacy_copy_upgrade": {
+    "run_id": "7eecb361-b25c-4847-94c3-2ed975ea74f2",
+    "report": "backups/isg-auth-service-restore-20260912-DfWshx/REPORT.json",
+    "total_checks": 28,
+    "failures": [],
+    "legacy_rows_unchanged": true,
+    "legacy_helper_definitions_unchanged": true,
+    "source_container_unchanged": true,
+    "new_ledgers_replay_empty": true,
+    "cleanup": "PASS"
+  }
+}

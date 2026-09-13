@@ -8,6 +8,9 @@ P18 tasarım kaydı: `design/osgb-nova-reference.json`; expert-only üretilmiş 
 - [mutation-outcome.md](mutation-outcome.md): committed/pending/indeterminate/rejected yanıtları ve altı durumlu saf istemci reducer'ı; üç platformda221 yanıt +84 geçiş, henüz API/UI coordinator'a bağlı değil.
 - [nova-session-host.md](nova-session-host.md): yeni native kabuğun yerel hesap/session/istek sahibi; 88 ortak senaryo/399 geçiş, yalnız offline QA host'larına bağlı. Gerçek Auth/capability/domain veya canlı root entegrasyonu değildir.
 
+- [event-dispatch.md](event-dispatch.md): P05 üreticilerini tüketen sunucu tarafı dağıtım defteri; lease/backoff/dead-letter/replay/reconcile. İstemci GRANT'i yok, rollout kapalı, gerçek tüketici henüz yazılmadı.
+- [quota-reservation.md](quota-reservation.md): gölge kota defteri ve ölçülmüş eski hak tabanı. Her satır `authority='shadow'`; mevcut limit/abonelik otoritesi değişmedi.
+
 - safety-policy.json: mevcut teknik kimlikler, kaynak hash'i ve bağımsız local test hedefleri. Staging allowlist şu an boş; herhangi bir staging/prod/store isteği kapalıdır.
 - local-test-environment.example.json: yalnız synthetic/mock/sink ortam bildirimi. Dosyanın doğrulanması çalışan veya güvenli bir backend bulunduğu anlamına gelmez.
 - scripts/isg/verify_environment.mjs: manifest'i fail-closed doğrular. DB runner, gerçek Docker inspection'ını da validateContainerInspection ile doğrulamak zorundadır. Normal bridge veya mevcut local stack izolasyon sayılmaz.

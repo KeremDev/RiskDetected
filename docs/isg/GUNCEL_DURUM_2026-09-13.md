@@ -32,9 +32,9 @@ Yüzde vermiyoruz: bir altyapı testi ile son kullanıcı kabul testi aynı şey
 | Faz | Güncel durum | Yapılanlar | Kalan işler / kapanış koşulu |
 |---|---|---|---|
 | P00 Başlangıç/yedek/envanter | Kısmi; ana yedek ve servis restore hazır | Kaynak checkpoint, Git bundle, DB/Auth/Storage kapsamı, 588 dosya doğrulaması, Masaüstü şifreli kopya, read-only mağaza/RevenueCat envanteri; bu tur P05 upgrade provası | Aynı disk dışı yedek; bütün imzalı mobil güncelleme/geri kazanım provası, ortam farkları ve SLO/RPO/RTO kararları |
-| P01 Contract/test/işlem omurgası | Kısmi | Ortak mutation/error/state sözleşmeleri; operation/mutation ID, retry, audit/outbox transaction, session freshness ve fault testleri; yerel CI altyapısı | Bütün yeni domain'lerin fonksiyon/kabul eşlemesi; gerçek consumer/worker'lar ve uçtan uca bağlantılar |
+| P01 Contract/test/işlem omurgası | Kısmi | Ortak mutation/error/state sözleşmeleri; operation/mutation ID, retry, audit/outbox transaction, session freshness ve fault testleri; yerel CI altyapısı; **13 Eylül: gerçek şemada tüketici defteri** — producer registry, teslim satırı, consumer receipt, lease/backoff, dead-letter, incelemeli replay ve günlük mutabakat | Gerçek tüketici projection'ları (P06/P07/P12/P17), worker kimliği/rol bağlaması ve DB dışı sağlayıcı idempotency'si; bütün yeni domain'lerin fonksiyon/kabul eşlemesi |
 | P02 Üyelik/Auth | Kısmi | Mevcut iOS parola yolu korunuyor; Android parola servisi, iki platform signup/recovery ve parola kuralları; izole GoTrue testleri | Yeni giriş ekranlarının tam aktivasyonu, OTP/recovery amaç koordinatörü, hesap bağlama/MFA varyasyonları ve gerçek provider teslimi |
-| P03 Abonelik/legacy/kota | Kısmi | Mevcut SQL hak otoritesi envanteri; Plus 5 hak koruma/floor shadow hesabı; downgrade/read-only ayrımı; eski kota matrisi | Yeni policy/floor geçişi, bütün atomic rezervasyon/settlement tüketicileri, hak koruma cutover'ı; ticari karar gerektiren yeni limitler |
+| P03 Abonelik/legacy/kota | Kısmi | Mevcut SQL hak otoritesi envanteri; Plus 5 hak koruma/floor shadow hesabı; downgrade/read-only ayrımı; eski kota matrisi; **13 Eylül: gölge rezervasyon defteri** — atomik reserve/settle/release/expire, ölçülmüş hak tabanı ve legacy sayaç karşılaştırması | Onaylı plan kataloğu/limitler, eligibility cutoff'u, gift/indirim ayrımı, gerçek floor backfill'i ve cutover; defter `authority='shadow'` kilidinde kaldığı sürece otorite legacy'dir |
 | P04 Güvenli dosya/belge çekirdeği | Bekliyor; tasarım/spike işleri tanımlı | Amaç/izolasyon/scan ve belge snapshot gereksinimleri planlandı | Quarantine, upload intent, scan, immutable asset, güvenli render/parse worker ve iki mobil bağlantı |
 | **P05 Firma/işyeri/personel** | **Yerel geliştirme/kabul tamamlandı; canlı kapalı** | D05 migration/API/backfill; iki native yönetim bağlantısı; sade personel, sekiz rehber formu, tarihçe, arşiv/geri açma; gerçek SDK→DB kabulü, restart/foreground ve hiyerarşi/sayfalama | P05'e ait kapanış işleri tamamlandı. REV21 tüketicileri P06/P07, REV23 tüketicileri P07/P10, X13 import P11; fiziksel cihaz/gateway ve imzalı update P19/P20 kapsamında bekler |
 | P06 Kural/süre/task | Bekliyor | P05 tarihli context ve event üreticisi önkoşulları var | Mevzuat kaynak kayıtları, sürümlü kural motoru, applicability, task/schedule, daily reconcile ve rule publish |
@@ -216,7 +216,7 @@ DAT04/05 ve X07 için sentetik backfill/catch-up/fault kanıtı ile bu tur gerç
 ## 10. Önerilen devam sırası
 
 1. **P05 kapandı:** yerel kabul kanıtı ve kapalı rollout korunacak; sonraki fazlar bu veri/API omurgasını kullanacak.
-2. P01/P03'te sonraki domain'lerin ihtiyaç duyduğu consumer/rezervasyon sözleşmelerini tamamla.
+2. **P01/P03 sözleşme dilimi tamamlandı (13 Eylül):** olay dağıtımı ve gölge kota defteri gerçek şemada; [kapsam ve açık kalemler](P01_P03_DISPATCH_AND_QUOTA_2026-09-13.md). Gerçek tüketici ve ticari kapılar sonraki fazlarda.
 3. **P04 güvenli dosya çekirdeği** ve **P06 kural/task çekirdeği** önkoşullarını uygula.
 4. P07 eğitim, P08 risk, P09 uygunsuzluk ve P10 diğer modülleri bu çekirdeklere bağla.
 5. P11 evrak/import, P12 bildirim, P13 not; P14–P17 ticari/izleme/skor akışlarını kendi bağımlılıklarıyla tamamla.
@@ -244,5 +244,6 @@ Her küçük düzenleme sonrasında tüm testleri çalıştırmak yerine uygulam
 - [P18 referans tasarım standardı](P18_REFERENCE_DESIGN_2026-09-13.md)
 - [V5 kaynak kabul envanteri](V5_ACCEPTANCE_TEST_REGISTRY.csv)
 - [Bu turun çalıştırılabilir kanıtı](evidence/P05_CURRENT_2026-09-13.json)
+- [P01/P03 tüketici ve kota dilimi](P01_P03_DISPATCH_AND_QUOTA_2026-09-13.md)
 
 Kaynak kabul CSV'si başlangıç uygulama/koşum durumlarını içerir; henüz tüm yeni runner sonuçlarıyla güncellenmiş bir canlı coverage tablosu değildir. Güncel tamamlandı/bekliyor değerlendirmesi bu belgede ve bağlantılı kanıtlarda katmanlarıyla belirtilmiştir.
