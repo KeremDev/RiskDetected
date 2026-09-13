@@ -4,7 +4,7 @@ import {resolve} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {ROOT} from './lib.mjs';
 import {verifyLocalSessionToken} from './auth_session_probe.mjs';
-export const workspaceAvailabilityFiles = ['supabase/migrations/20260913084736_isg_workspace_availability.sql','scripts/isg/workspace_availability_probe.mjs'];
+export const workspaceAvailabilityFiles = ['supabase/migrations/20260913084736_isg_workspace_availability.sql','scripts/isg/workspace_availability_probe.mjs','supabase/migrations/20260913092642_isg_personnel_reactivation.sql'];
 const q = v => "'" + String(v).replaceAll("'", "''") + "'";
 
 export async function beginWorkspaceAvailabilityProbe({synthetic, sql, token, secret, companyID, request, waitReady, pass}) {
@@ -12,6 +12,7 @@ export async function beginWorkspaceAvailabilityProbe({synthetic, sql, token, se
   const claims = verifyLocalSessionToken(token, secret);
   const mark = (name, ok) => pass('workspace_' + name, ok);
   sql(readFileSync(resolve(ROOT, workspaceAvailabilityFiles[0]), 'utf8'));
+  sql(readFileSync(resolve(ROOT, workspaceAvailabilityFiles[2]), 'utf8'));
   const read = (company = null, extra = {}) => request('/rpc/isg_workspace_availability_v1', {method:'POST', body:{p_company:company}, ...extra});
   await waitReady(() => read().status === 200);
   mark('global_identity_and_no_write', read().body.owner_id === claims.sub && read().body.can_read === true && read().body.can_write === false && read().body.company_id === null);
@@ -38,6 +39,22 @@ export async function beginWorkspaceAvailabilityProbe({synthetic, sql, token, se
   mark('expired_read_only', read(companyID).body.can_read === true && read(companyID).body.can_write === false);
   sql(`UPDATE public.user_subscriptions s SET current_period_ends_at=r.current_period_ends_at FROM jsonb_populate_record(null::public.user_subscriptions,${q(JSON.stringify(subscription))}::jsonb) r WHERE s.user_id=r.user_id;`);
   mark('restored_paid', read(companyID).body.can_write === true);
+  const employee = sql(`INSERT INTO private_isg.employees(company_id,owner_id,employee_code,full_name,is_archived) VALUES(${q(companyID)},${q(claims.sub)},'RESTORE-TEST','Sentetik Arşiv',true) RETURNING id;`).trim();
+  const restore = {p_company:companyID,p_action:'restore',p_operation:randomUUID(),p_mutation:randomUUID(),p_employee:employee,p_expected:0,p_name:null,p_change_department:false,p_department:null,p_department_name:null};
+  const send = args => request('/rpc/isg_personnel_mutate_v1',{method:'POST',body:args});
+  const firstRestore = send(restore);
+  mark('employee_restore_commit', firstRestore.status === 200 && firstRestore.body.is_archived === false && firstRestore.body.version === 1);
+  mark('employee_restore_same_receipt', JSON.stringify(send(restore).body) === JSON.stringify(firstRestore.body));
+  mark('employee_restore_preserves_identity_dates', sql(`SELECT full_name='Sentetik Arşiv' AND employee_code='RESTORE-TEST' AND hired_on IS NULL AND employment_ends_before IS NULL FROM private_isg.employees WHERE id=${q(employee)};`) === 't');
+  mark('employee_restore_no_duplicate_events', sql(`SELECT count(*)=1 FROM private_isg.personnel_outbox o JOIN private_isg.personnel_audit a USING(event_id) WHERE a.employee_id=${q(employee)} AND a.action='restore' AND o.event_type='employee.restored';`) === 't');
+  mark('employee_restore_active_denied', send({...restore,p_operation:randomUUID(),p_mutation:randomUUID(),p_expected:1}).body.message === 'ACCESS_DENIED');
+  mark('employee_restore_foreign_denied', send({...restore,p_company:randomUUID()}).body.message === 'ACCESS_DENIED');
+  mark('employee_restore_no_payload_edits', send({...restore,p_name:'changed'}).body.message === 'VALIDATION_ERROR');
+  sql(`UPDATE private_isg.employees SET is_archived=true WHERE id=${q(employee)};`);
+  mark('employee_restore_stale_version', send({...restore,p_operation:randomUUID(),p_mutation:randomUUID()}).body.message === 'VERSION_CONFLICT');
+  sql('UPDATE private_isg.rollout SET write_enabled=false;');
+  mark('employee_restore_read_only_denied', send({...restore,p_expected:1}).body.message === 'FEATURE_UNAVAILABLE');
+  sql('UPDATE private_isg.rollout SET write_enabled=true;');
   return { afterLogout() {
     mark('logout_global_rejected', read().status === 403);
     mark('logout_selected_rejected', read(companyID).status === 403);

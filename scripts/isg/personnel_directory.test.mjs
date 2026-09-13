@@ -68,6 +68,17 @@ test('production migration probe requires synthetic mode before any SQL',async()
   for(const synthetic of [false,undefined,null,'true',1])await assert.rejects(beginPersonnelMigrationProbe({synthetic,sql:()=>calls++}),/AUTH_RESTORE_PERSONNEL_MIGRATION_SYNTHETIC_REQUIRED/);
   assert.equal(calls,0);
 });
+test('restore RPC keeps explicit nulls and rejects edits or untrusted scope',()=>{
+  const input={action:'restore',context:{...context,expected_version:3},employee_id:id(4)};
+  const result=preparePersonnelRPC(input);
+  assert.equal(result.functionName,'isg_personnel_mutate_v1');
+  assert.equal(result.args.p_action,'restore'); assert.equal(result.args.p_expected,3);
+  assert.equal(result.args.p_name,null); assert.equal(result.args.p_change_department,false);
+  assert.equal(result.args.p_department,null); assert.equal(result.args.p_department_name,null);
+  assert.deepEqual(result,preparePersonnelRPC(structuredClone(input)));
+  for(const extra of [{full_name:'Changed'},{department:null},{owner_id:id(8)},{hired_on:'2026-01-01'}])assert.equal(preparePersonnelRPC({...input,...extra}),null);
+  assert.equal(preparePersonnelRPC({...input,context:{...context,scope:{kind:'global'}}}),null);
+});
 test('production migration probe rejects unverified JWT before DDL',async()=>{
   let calls=0;
   await assert.rejects(beginPersonnelMigrationProbe({synthetic:true,token:'bad.token.signature',secret:'a'.repeat(64),sql:()=>calls++}),/AUTH_RESTORE_LOCAL_TOKEN_INVALID/);

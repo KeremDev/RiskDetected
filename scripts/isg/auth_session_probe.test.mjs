@@ -38,6 +38,7 @@ test('local proof rejects wrong signing key, algorithm confusion, truncation and
   for (const now of [NaN,Infinity,-1,1500.5,'1500']) assert.throws(()=>verifyLocalSessionToken(token(),secret,now),/AUTH_RESTORE_LOCAL_TOKEN_INVALID/);
 });
 test('restore flags accept only explicit independent opt-ins', () => {
+  assert.deepEqual(parseRestoreMode(['--isolated-copy','--p05-upgrade']),{storage:false,sessionGuard:false,synthetic:false,p05Upgrade:true});
   assert.deepEqual(parseRestoreMode(['--isolated-copy']),{storage:false,sessionGuard:false,synthetic:false});
   assert.deepEqual(parseRestoreMode(['--isolated-copy','--with-storage']),{storage:true,sessionGuard:false,synthetic:false});
   assert.deepEqual(parseRestoreMode(['--isolated-copy','--with-session-guard']),{storage:false,sessionGuard:true,synthetic:false});

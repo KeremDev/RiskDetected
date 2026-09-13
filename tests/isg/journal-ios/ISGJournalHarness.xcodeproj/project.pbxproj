@@ -1,0 +1,406 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1429D41C6990FBECCE6BDC1A /* NovaPersonnel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F50D8D95491DD8D8A9B0C360 /* NovaPersonnel.swift */; };
+		3AA22B8E485F867C7853029F /* JournalHarness.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25C4281A5B0231C6CBF55DE8 /* JournalHarness.swift */; };
+		51E8AF4BBF943F233732D3E1 /* NovaPersonnelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01F23FDE566236D9C0D12A57 /* NovaPersonnelService.swift */; };
+		EBC4E7460F9E8B3031988B88 /* JournalUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 834BF43A21EF2AD17A868942 /* JournalUITests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		08B31B6A7C6A821B6F16B387 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6841A4B0183CEF01256EBC16 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6E7B40F07B8F9D6C27E6D30C;
+			remoteInfo = ISGJournalHarness;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		01F23FDE566236D9C0D12A57 /* NovaPersonnelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaPersonnelService.swift; sourceTree = "<group>"; };
+		25C4281A5B0231C6CBF55DE8 /* JournalHarness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalHarness.swift; sourceTree = "<group>"; };
+		32EF8E564B8BA13B9F4542E8 /* ISGJournalUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ISGJournalUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		834BF43A21EF2AD17A868942 /* JournalUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalUITests.swift; sourceTree = "<group>"; };
+		BD4CAE6CE30176F09BDC56F7 /* ISGJournalHarness.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ISGJournalHarness.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F50D8D95491DD8D8A9B0C360 /* NovaPersonnel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaPersonnel.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		18C5813B60F9601466633E2B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BD4CAE6CE30176F09BDC56F7 /* ISGJournalHarness.app */,
+				32EF8E564B8BA13B9F4542E8 /* ISGJournalUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		22C50E2A44EE4F34AEAF6548 /* ISG */ = {
+			isa = PBXGroup;
+			children = (
+				F50D8D95491DD8D8A9B0C360 /* NovaPersonnel.swift */,
+			);
+			name = ISG;
+			path = ../../../App/DesignSystem/ISG;
+			sourceTree = "<group>";
+		};
+		6C2132176997E5820BEB0596 = {
+			isa = PBXGroup;
+			children = (
+				25C4281A5B0231C6CBF55DE8 /* JournalHarness.swift */,
+				834BF43A21EF2AD17A868942 /* JournalUITests.swift */,
+				8952D2DC84858C5DABE75DB6 /* Company */,
+				22C50E2A44EE4F34AEAF6548 /* ISG */,
+				18C5813B60F9601466633E2B /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		8952D2DC84858C5DABE75DB6 /* Company */ = {
+			isa = PBXGroup;
+			children = (
+				01F23FDE566236D9C0D12A57 /* NovaPersonnelService.swift */,
+			);
+			name = Company;
+			path = ../../../App/Services/Company;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		6E7B40F07B8F9D6C27E6D30C /* ISGJournalHarness */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7D517E847CF1E511E67CADC5 /* Build configuration list for PBXNativeTarget "ISGJournalHarness" */;
+			buildPhases = (
+				CD3EFA66A67C45FF76E5A3A3 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ISGJournalHarness;
+			packageProductDependencies = (
+			);
+			productName = ISGJournalHarness;
+			productReference = BD4CAE6CE30176F09BDC56F7 /* ISGJournalHarness.app */;
+			productType = "com.apple.product-type.application";
+		};
+		CC78134451F5CEC0FBACE15B /* ISGJournalUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8B3BED7228F1E844802CD7D8 /* Build configuration list for PBXNativeTarget "ISGJournalUITests" */;
+			buildPhases = (
+				0395E1A20D88EABBAEF439F5 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E715379D36A40D36BB763739 /* PBXTargetDependency */,
+			);
+			name = ISGJournalUITests;
+			packageProductDependencies = (
+			);
+			productName = ISGJournalUITests;
+			productReference = 32EF8E564B8BA13B9F4542E8 /* ISGJournalUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		6841A4B0183CEF01256EBC16 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					CC78134451F5CEC0FBACE15B = {
+						TestTargetID = 6E7B40F07B8F9D6C27E6D30C;
+					};
+				};
+			};
+			buildConfigurationList = 6C03D58978EE317C7D0DDD42 /* Build configuration list for PBXProject "ISGJournalHarness" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 6C2132176997E5820BEB0596;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 18C5813B60F9601466633E2B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				6E7B40F07B8F9D6C27E6D30C /* ISGJournalHarness */,
+				CC78134451F5CEC0FBACE15B /* ISGJournalUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0395E1A20D88EABBAEF439F5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EBC4E7460F9E8B3031988B88 /* JournalUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CD3EFA66A67C45FF76E5A3A3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3AA22B8E485F867C7853029F /* JournalHarness.swift in Sources */,
+				1429D41C6990FBECCE6BDC1A /* NovaPersonnel.swift in Sources */,
+				51E8AF4BBF943F233732D3E1 /* NovaPersonnelService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E715379D36A40D36BB763739 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6E7B40F07B8F9D6C27E6D30C /* ISGJournalHarness */;
+			targetProxy = 08B31B6A7C6A821B6F16B387 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		07DD36D10D68EC0BA145046E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = iphonesimulator;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		1F04F91E7B6C802565A4CC41 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Journal.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.riskdetected.isgjournalharness;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		20D4BC35B23935CEF45FB27D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.riskdetected.isgjournaluitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = ISGJournalHarness;
+			};
+			name = Release;
+		};
+		67FDA80B313D86673F8C02E2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = iphonesimulator;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		BDFDDADC14D382650356CBFE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.riskdetected.isgjournaluitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = ISGJournalHarness;
+			};
+			name = Debug;
+		};
+		CE23F7703A645EF3E1FC6519 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Journal.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.riskdetected.isgjournalharness;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		6C03D58978EE317C7D0DDD42 /* Build configuration list for PBXProject "ISGJournalHarness" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				07DD36D10D68EC0BA145046E /* Debug */,
+				67FDA80B313D86673F8C02E2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7D517E847CF1E511E67CADC5 /* Build configuration list for PBXNativeTarget "ISGJournalHarness" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1F04F91E7B6C802565A4CC41 /* Debug */,
+				CE23F7703A645EF3E1FC6519 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8B3BED7228F1E844802CD7D8 /* Build configuration list for PBXNativeTarget "ISGJournalUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BDFDDADC14D382650356CBFE /* Debug */,
+				20D4BC35B23935CEF45FB27D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 6841A4B0183CEF01256EBC16 /* Project object */;
+}

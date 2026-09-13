@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-13",
+  "phase": "P05",
+  "phase_complete": false,
+  "production_deployed": false,
+  "native_ui_sdk_database_e2e": false,
+  "auth": {
+    "run_id": "0453bc17-ed55-4cf0-a00a-4767cb80d16f",
+    "report": "output/isg/runs/synthetic-auth-NhHHk4/REPORT.json",
+    "passed": 300,
+    "unique_check_ids": 299,
+    "restore_checks": [
+      {
+        "id": "workspace_employee_restore_commit",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_employee_restore_same_receipt",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_employee_restore_preserves_identity_dates",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_employee_restore_no_duplicate_events",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_employee_restore_active_denied",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_employee_restore_foreign_denied",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_employee_restore_no_payload_edits",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_employee_restore_stale_version",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_employee_restore_read_only_denied",
+        "result": "PASS"
+      }
+    ],
+    "advisor": {
+      "total_findings": 77,
+      "relevant_levels": [
+        "INFO"
+      ],
+      "reason": "Private checked RPC design: no direct client table grants; RLS has no client policies. Fresh synthetic unused FK indexes retained."
+    }
+  },
+  "upgrade": {
+    "run_id": "00c104d3-ba47-42db-bda4-a48089bd79cf",
+    "report": "backups/isg-auth-service-restore-20260912-XGKtMU/REPORT.json",
+    "passed": 26,
+    "full_legacy_schema_upgrade": true,
+    "legacy_row_fingerprint": "c35d3dacb259b829e27f76a97f8f3a0e",
+    "original_helper_fingerprint": "adb892f8ec3bacfb7465deb60f43c2e0",
+    "default_backfill_repeated": 2,
+    "production_changed": false,
+    "storage_bytes_tested": false,
+    "source_database_changed": false,
+    "cleanup": "PASS"
+  },
+  "android_journal": {
+    "schema_version": 1,
+    "started_at": "2026-09-13T09:41:49.243Z",
+    "serial": "emulator-5554",
+    "package": "com.riskdetectedan.isg.journalcheck",
+    "production_accessed": false,
+    "network_used": false,
+    "source_sha256": {
+      "android/core/data/src/main/kotlin/com/riskdetectedan/core/data/company/PersonnelPendingStorage.kt": "18a7d57048b20a0c7c15957965477f644a5b5320d7afd93bf4d7707e201749cb",
+      "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/android/isg-journal-check/build/outputs/apk/debug/isg-journal-check-debug.apk": "a0ba69b980cd1bde74dc3ed992c9a4dcd1bfab76e16c9a9ef5090e76fdbb98ce"
+    },
+    "checks": [
+      {
+        "phase": "write",
+        "result": "PASS write encryption randomized-iv size-bound aad namespace"
+      },
+      {
+        "phase": "read",
+        "result": "PASS restart durable-read tamper-rejected isolated-clear"
+      }
+    ],
+    "ok": true,
+    "finished_at": "2026-09-13T09:41:54.473Z"
+  },
+  "source_sha256": {
+    "scripts/isg/run_auth_restore.mjs": "bd7b12c44c1aed69d57aa3fbc80299e15dd2787f6e76dffaef7d213228bf7901",
+    "scripts/isg/password_auth_probe.mjs": "a019d47f0bddd2d4f6b6b179e62503d0fc17aadd90f735263bad4ea86ad5d7cc",
+    "scripts/isg/signup_recovery_probe.mjs": "bbcd21630df79e5fc2095dc354e90d7b5b0e410d3f3b1caf270e877c53099c1d",
+    "scripts/isg/auth_mail_sink.cjs": "07e7e5b6e34cbe08c664b1948b9c6f99b1ebe3f4735d79bb2dbb60c70c6cc275",
+    "scripts/isg/auth_session_probe.mjs": "1c858ffda4550d4b019c08192dfc67c4a4dafbf691ab973caf1968aca37faebe",
+    "scripts/isg/auth_mutation_probe.mjs": "ac64fae84161e4af3f6a761b187ff09df2916cef106bf32dcddb8ee17b9aece9",
+    "scripts/isg/sql/auth_mutation_fixture.sql": "0ed052d6edb148743bfaa6014ac030748a11acf1b41db65ebfad5be399f6d03c",
+    "scripts/isg/sql/transaction_fixture.sql": "87eafb27e40d6db096a6e10837655a3f7e823e75e0aaaaed4b978e2ae8f52b18",
+    "scripts/isg/restore_mode.mjs": "65f89fe28252657f5bb6b49ea9089e5804246875eec4f5fd18a7da1cb2310715",
+    "scripts/isg/sql/auth_session_fixture.sql": "bc5deff6efae02be4c0afe88c07101820c338861676f39879e96a136c3ed751d",
+    "scripts/isg/auth_restore_guard.mjs": "8d1bfa75f4036bae891fc827c9f104244628a0973151435622bcf993a61d7845",
+    "scripts/isg/sql/workplace_fixture.sql": "81bb64bcbef8690582a6c70086dafc3194e47dfce63cb1025bb0ef43395236f7",
+    "scripts/isg/sql/personnel_fixture.sql": "b244c04e7c6b113eb5a57fb0f16b5071f517350e809fa0c3da12f90ebc93c9eb",
+    "scripts/isg/sql/personnel_mutation_fixture.sql": "2883d334e4ece4428c1499cedce5e14ac3f08a05fecf4982fb12d1769fc04d21",
+    "scripts/isg/sql/employee_intake_fixture.sql": "7b505578674a737f6c756c80c9515c3ea5e4a40e0965743d6c79a9f3c7b7b453",
+    "scripts/isg/sql/employee_directory_fixture.sql": "093325cfafccc3b8e5e79e2c0543199e536b02dc01aa79b95b41f434fba2e1e8",
+    "scripts/isg/sql/auth_personnel_fixture.sql": "c26b4c51b8b3a9b681c6a6808a4d7ecb801883e5a4e52e5c0e146aa531d135de",
+    "scripts/isg/auth_personnel_probe.mjs": "05e584e85e5e453ab79564bbc0d77245dc63d1fed2e7a4bc1518e7009bbbb9a0",
+    "supabase/functions/_shared/personnel/directory-request.ts": "338aefc2f7bb9198e68ccd3cfcb11b7f4902e706b782137ccbad096a712a4015",
+    "supabase/functions/_shared/personnel/employee-create.ts": "3f50549d7e4fe4319ee286359a1169e77308828fecfc2913215bb98e07ce5635",
+    "supabase/functions/_shared/isg/mutation-context.ts": "7e74a453c320be3fe3f61ae7abc084ccea36e17f3c8b3d480823ca67cdfa7e90",
+    "supabase/migrations/20260913074153_isg_personnel_owner_rpc.sql": "a04da9ebbe6e184776dda705e7110a28e8bbe676b4f57f53a9f5a704816729c7",
+    "supabase/migrations/20260520154818_add_companies.sql": "c7ce21b0c52833812ce1f6be895f2f95b4a149c31794b387b7e7e6dc793a080d",
+    "supabase/migrations/20260513101505_free_plus_pro_subscription_system.sql": "863be44ce77558396c70def1dbbcf6de159608f9894dd18886f39d27aa779c8a",
+    "supabase/migrations/20260513223911_fix_subscription_quota_review_findings.sql": "234b01e049eec7f4b3828549162be6a81843e7073f16db5c69561e63f14d59e1",
+    "scripts/isg/personnel_migration_probe.mjs": "d26f8791871978c5e2a5a2995f07cc7cf09e468799d6fc6b531b89716a45221c",
+    "scripts/isg/personnel_http_probe.mjs": "62a4faa4c0af6fe1200c1c32d497cb5561730d08917d88b3a7491b4dee84df6b",
+    "scripts/isg/personnel_advisor_probe.mjs": "7408268de530bc2a16bbe7fb3471d9320b0cfb53c555dff6944373069874333b",
+    "supabase/functions/_shared/personnel/rpc-request.ts": "e86d9015efc5a49c4e1208bdcca2a54122740bf8ec2eb5f8fa24917db59785b9",
+    "supabase/migrations/20260913081536_isg_workplace_context_assignments.sql": "69b44f626206dc5f5e2be147f4106f17016e030a86f2bd86e08e76dc043768a0",
+    "scripts/isg/directory_migration_probe.mjs": "2f23ce7e1ecfbead520406900cabc25383ab963d46fd0830aaaa6eabf8f74ad7",
+    "supabase/migrations/20260913084736_isg_workspace_availability.sql": "35c85511a890f0ec34570d29f17c017f7668c5c493c85e58798c07f2f1a5b68f",
+    "scripts/isg/workspace_availability_probe.mjs": "5ff596fcc7becdcdd973a8c21599e919df0262be0684abc48f9eac229af93917",
+    "supabase/migrations/20260913092642_isg_personnel_reactivation.sql": "350f2bfc96ac5866836fd51f8ce1ca8100e8b871121fdc1eb636c18735c11376",
+    "scripts/isg/p05_upgrade_probe.mjs": "90545cbf90e9b46702082f99cbf277a63c4741f964a4e4a4f4485c8c5f93d105",
+    "App/DesignSystem/ISG/NovaPersonnel.swift": "e6f8b358e60a9aa762c38c97d8fd4f4adc3084012a510e37023dc83bc6311d34",
+    "App/DesignSystem/ISG/NovaPersonnelScreens.swift": "59b6caf099d2b6c001d87fcdf809d88bd794f6d02788eaa9891ae0f5c454ae27",
+    "App/Services/Company/NovaPersonnelService.swift": "86dc916b50465e3f13fc075593cfa1f8f1c563c870236f865554ffc6a43c7ef7",
+    "tests/isg/shell-ios/ShellUITests.swift": "6d98e093726a905e0ec09ea2386977955ed23c864d2ad3419d8cef7f5f6ac36e",
+    "tests/isg/journal-ios/JournalHarness.swift": "a1c34b4dfdd81229075a8b7555666d9d39c08be133c527dde064c96f2cff0779",
+    "tests/isg/journal-ios/JournalUITests.swift": "3eee714be4c5b222e30027e5bd8ecb5506eb5fce4a0096086344d91d28319173",
+    "tests/isg/journal-ios/Journal.entitlements": "d42280ee6796421116ad9c44ee933d65ada7a0a6feb5ae6edd840fed8978294c",
+    "android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaPersonnel.kt": "2adf76d1e0cfefacf638be4a7e2b9391277914aed2305e7dbf203d71bfddfb5c",
+    "android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaPersonnelScreens.kt": "fa98b7573d64dd9f71c3ea3f5044c5d0c015a7538f3c0c717f9d1a8a7cc37b45",
+    "android/feature/profile/src/main/kotlin/com/riskdetectedan/feature/profile/NovaPersonnelRepositoryAdapter.kt": "3f4328090be0171edfae767acfde27b2e05c8e077269a5de1eea553ad48674a0",
+    "scripts/isg/run_android_journal_check.mjs": "173f3a8dcdf98c7620e7262f74015dcabe3d429c6fd1443b54f60fd6cd1bc92d",
+    "scripts/isg/NovaPersonnelServiceCheck.swift": "e894a4ffe25e89349692920c28e12b44307f3a7c51c15f61b3a1bf06a28ef13c"
+  },
+  "ios": {
+    "shell": {
+      "passed": 19,
+      "failed": 0,
+      "skipped": 0,
+      "repository": "synthetic",
+      "xcresult": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-13T09-44-45-172Z_pid70458_a0eeb03c.xcresult",
+      "final_cosmetic_retest": {
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "scope": "Reactivation after final font/icon parity change",
+        "xcresult": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-13T09-54-30-175Z_pid70458_b3295791.xcresult"
+      }
+    },
+    "journal": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "real_keychain": true,
+      "physical_device": false,
+      "network": false,
+      "xcresult": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-13T09-44-25-776Z_pid70458_5531f0c2.xcresult"
+    },
+    "main_build": {
+      "result": "PASS",
+      "signing": false,
+      "log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-09-13T09-55-03-070Z_pid70458_a32661e8.log"
+    },
+    "service_check": {
+      "passed": 17,
+      "real_service": true,
+      "storage": "injected memory",
+      "sdk": false
+    }
+  },
+  "android": {
+    "design": 365,
+    "data": 615,
+    "profile": 11,
+    "total": 991,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "main_debug_build": "PASS",
+    "results": [
+      "android/core/designsystem/build/test-results/testDebugUnitTest",
+      "android/core/data/build/test-results/testDebugUnitTest",
+      "android/feature/profile/build/test-results/testDebugUnitTest"
+    ],
+    "main_debug_log": "/tmp/isg-p05-android-verified.log"
+  },
+  "offline": {
+    "node": 206,
+    "foundation_subset": 163,
+    "identity": "PASS",
+    "function_map": "PASS transport-only",
+    "remote_ci": "NOT_RUN"
+  },
+  "failed_attempts": [
+    {
+      "scope": "iOS journal",
+      "reason": "QA host lacked Keychain entitlement (-34018)",
+      "resolution": "Ad-hoc signed simulator QA access group only; production unchanged"
+    },
+    {
+      "scope": "iOS method filter",
+      "reason": "Missing () selected zero tests",
+      "resolution": "Zero test run discarded. Full class and () method filter execute tests"
+    },
+    {
+      "scope": "iOS reactivation UI",
+      "reason": "Toggle label centre did not switch archived filter",
+      "resolution": "Tap trailing switch thumb"
+    },
+    {
+      "scope": "iOS reactivation UI",
+      "reason": "Editor reused previous committed state",
+      "resolution": "Employee/version scoped editor identity; final full 19-test run PASS"
+    },
+    {
+      "scope": "Android runner",
+      "reason": "Generated source path wrong then /dev/tty did not return XML",
+      "resolution": "Validate actual generated path; read known QA-only UI dump"
+    },
+    {
+      "scope": "Swift restore assertion",
+      "reason": "Test asserted p_department_id instead of actual p_department RPC key",
+      "resolution": "Assert actual RPC argument; 17 checks PASS"
+    }
+  ],
+  "remaining": [
+    "Real native workspace + SDK + isolated database E2E on both platforms, including account/foreground/retry/process-loss cases",
+    "Complete dated/hierarchical native UI acceptance matrix",
+    "Layered P05 acceptance mapping; composite REV21/REV23 downstream tests await P06/P07/P10",
+    "Whole application root P18, integration/release P19/P20; no production activation"
+  ]
+}

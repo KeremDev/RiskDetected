@@ -39,6 +39,7 @@ on:
       - 'supabase/migrations/20260913074153_isg_personnel_owner_rpc.sql'
       - 'supabase/migrations/20260913081536_isg_workplace_context_assignments.sql'
       - 'supabase/migrations/20260913084736_isg_workspace_availability.sql'
+      - 'supabase/migrations/20260913092642_isg_personnel_reactivation.sql'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'RiskDetected.xcodeproj/project.pbxproj'
@@ -91,6 +92,7 @@ on:
       - 'supabase/migrations/20260913074153_isg_personnel_owner_rpc.sql'
       - 'supabase/migrations/20260913081536_isg_workplace_context_assignments.sql'
       - 'supabase/migrations/20260913084736_isg_workspace_availability.sql'
+      - 'supabase/migrations/20260913092642_isg_personnel_reactivation.sql'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'RiskDetected.xcodeproj/project.pbxproj'
@@ -271,11 +273,23 @@ jobs:
             assert.equal(summary.failedTests, 0);
             assert.equal(summary.skippedTests, 0);
           '
+          # Simulator-only ad-hoc identity, never the production Keychain access group.
+          xcodebuild test -project tests/isg/journal-ios/ISGJournalHarness.xcodeproj -scheme ISGJournalHarness \
+            -destination "platform=iOS Simulator,id=$ISG_SHELL_SIMULATOR_ID" -parallel-testing-enabled NO \
+            -derivedDataPath "$RUNNER_TEMP/isg-journal-derived" -resultBundlePath "$RUNNER_TEMP/isg-journal.xcresult" \
+            -disableAutomaticPackageResolution CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=-
+          xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/isg-journal.xcresult" --compact | node -e '
+            const fs = require("node:fs"), assert = require("node:assert/strict");
+            const s = JSON.parse(fs.readFileSync(0,"utf8"));
+            assert.equal(s.passedTests, 1); assert.equal(s.failedTests, 0); assert.equal(s.skippedTests, 0);
+          '
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: isg-ios-hosted-shell-results
-          path: ${{ runner.temp }}/isg-shell.xcresult
+          path: |
+            ${{ runner.temp }}/isg-shell.xcresult
+            ${{ runner.temp }}/isg-journal.xcresult
           if-no-files-found: warn
 
   postgres-transaction-prototype:

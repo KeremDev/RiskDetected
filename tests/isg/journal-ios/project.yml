@@ -1,0 +1,44 @@
+name: ISGJournalHarness
+options:
+  deploymentTarget:
+    iOS: '16.0'
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    CODE_SIGNING_ALLOWED: YES
+    CODE_SIGN_IDENTITY: '-'
+    GENERATE_INFOPLIST_FILE: YES
+    SUPPORTED_PLATFORMS: iphonesimulator
+targets:
+  ISGJournalHarness:
+    type: application
+    platform: iOS
+    sources:
+      - path: JournalHarness.swift
+      - path: ../../../App/DesignSystem/ISG/NovaPersonnel.swift
+      - path: ../../../App/Services/Company/NovaPersonnelService.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.riskdetected.isgjournalharness
+        CODE_SIGN_ENTITLEMENTS: Journal.entitlements
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        SKIP_INSTALL: YES
+  ISGJournalUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [JournalUITests.swift]
+    dependencies:
+      - target: ISGJournalHarness
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.riskdetected.isgjournaluitests
+        TEST_TARGET_NAME: ISGJournalHarness
+schemes:
+  ISGJournalHarness:
+    build:
+      targets:
+        ISGJournalHarness: all
+        ISGJournalUITests: [test]
+    test:
+      targets: [ISGJournalUITests]

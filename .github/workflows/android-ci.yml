@@ -95,6 +95,9 @@ jobs:
       - name: Assemble isolated on-device ISG contract harness
         run: ./gradlew :isg-contract-tests:assembleDebugAndroidTest --stacktrace
 
+      - name: Assemble isolated Keystore process-restart harness
+        run: ./gradlew :isg-journal-check:assembleDebug --stacktrace
+
       - name: Assemble QA
         run: ./gradlew :app:assembleQa --stacktrace
 

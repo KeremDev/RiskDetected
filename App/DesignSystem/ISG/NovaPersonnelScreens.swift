@@ -42,6 +42,7 @@ private struct PersonnelContent: View {
             case .edit(let row):
                 NovaEmployeeEditor(scope: scope, companyName: companyName, client: client, original: row,
                     onBack: { route = .detail(row.id) }, onSaved: { row in requestedPage = nil; generation = UUID(); route = row.isArchived ? .list : .detail(row.id) })
+                    .id("edit-\(row.id)-\(row.version)")
             case .detail(let id):
                 NovaEmployeeDetail(scope: scope, employeeID: id, client: client,
                     onBack: { route = .list }, onEdit: { route = .edit($0) }, canWrite: canWrite,
@@ -170,7 +171,7 @@ private struct NovaEmployeeDetail: View {
                             NovaText(text: row.isArchived ? "Arşivde" : "Aktif", style: .metaQuiet)
                         }.frame(maxWidth: .infinity, alignment: .leading)
                     }.accessibilityIdentifier("personnel.detail")
-                    if canWrite && !row.isArchived { NovaButton(label: "Düzenle", symbol: "pencil", action: { onEdit(row) }).accessibilityIdentifier("personnel.edit") }
+                    if canWrite { NovaButton(label: row.isArchived ? "Yeniden etkinleştir" : "Düzenle", symbol: row.isArchived ? "arrow.uturn.backward" : "pencil", action: { onEdit(row) }).accessibilityIdentifier(row.isArchived ? "personnel.restore" : "personnel.edit") }
                     if let onDirectory {
                         NovaButton(label: "Görevlendirme geçmişi", symbol: "clock.arrow.circlepath", variant: .surface) { onDirectory(.assignments) }.accessibilityIdentifier("personnel.assignments")
                         NovaButton(label: "İşveren ilişkisi", symbol: "building.2", variant: .surface) { onDirectory(.employers) }.accessibilityIdentifier("personnel.employers")
@@ -209,8 +210,14 @@ private struct NovaEmployeeEditor: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                PersonnelHeading(title: original == nil ? "Personel Ekle" : "Personeli Düzenle", subtitle: companyName,
+                PersonnelHeading(title: original?.isArchived == true ? "Personeli Etkinleştir" : original == nil ? "Personel Ekle" : "Personeli Düzenle", subtitle: companyName,
                     isBackEnabled: state.phase != .submitting && state.phase != .uncertain, onBack: onBack)
+                if original?.isArchived == true {
+                    NovaCard(padding: 18) { VStack(alignment: .leading, spacing: 12) {
+                        HStack { NovaIcon(symbol: "person", size: 24); NovaText(text: original?.name ?? "Personel", style: .cardTitle) }
+                        NovaText(text: "Personel yeniden etkinleştirilecek. Tarihler ve geçmiş kayıtlar değişmez; gerekirse daha sonra yeni görevlendirme ekleyebilirsiniz.")
+                    } }
+                } else {
                 NovaCard(padding: 18) {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack { NovaIcon(symbol: "person", size: 20); NovaText(text: "Ad soyad", style: .cardTitle) }
@@ -234,14 +241,15 @@ private struct NovaEmployeeEditor: View {
                         }
                     }
                 }
+                }
                 if let message { NovaText(text: message).accessibilityIdentifier("personnel.message") }
                 if state.phase == .uncertain {
                     NovaText(text: "Kayıt sonucu doğrulanamadı. Yeni kayıt açmadan aynı işlemi kontrol edin.")
                     NovaButton(label: "Aynı işlemi tekrar kontrol et", symbol: "arrow.clockwise", action: { if state.retry(scope: scope) != nil { taskID = UUID() } }).accessibilityIdentifier("personnel.retry")
                 } else {
-                    NovaButton(label: original == nil ? "Personeli kaydet" : "Değişiklikleri kaydet", symbol: "checkmark", isEnabled: state.canSubmit,
-                        isLoading: state.phase == .submitting, action: { if state.begin(scope: scope, original: original) != nil { taskID = UUID() } }).accessibilityIdentifier("personnel.save")
-                    if original != nil { NovaButton(label: "Personeli arşivle", symbol: "archivebox", variant: .danger, isEnabled: state.canEdit, action: { confirmation = true }).accessibilityIdentifier("personnel.archive") }
+                    NovaButton(label: original?.isArchived == true ? "Yeniden etkinleştir" : original == nil ? "Personeli kaydet" : "Değişiklikleri kaydet", symbol: "checkmark", isEnabled: state.canSubmit,
+                        isLoading: state.phase == .submitting, action: { if state.begin(scope: scope, original: original, restore: original?.isArchived == true) != nil { taskID = UUID() } }).accessibilityIdentifier("personnel.save")
+                    if original != nil && original?.isArchived == false { NovaButton(label: "Personeli arşivle", symbol: "archivebox", variant: .danger, isEnabled: state.canEdit, action: { confirmation = true }).accessibilityIdentifier("personnel.archive") }
                 }
             }.padding(18).padding(.bottom, 24)
         }

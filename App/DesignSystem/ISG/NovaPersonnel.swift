@@ -30,7 +30,7 @@ struct NovaEmployeeCommit: Equatable {
     let id: UUID; let ownerID: UUID; let companyID: UUID; let version: Int64; let isArchived: Bool
 }
 struct NovaEmployeeIntent: Equatable, Codable {
-    enum Action: String, Codable { case create, edit, archive }
+    enum Action: String, Codable { case create, edit, archive, restore }
     let operationID: UUID
     let mutationID: UUID
     let scope: NovaPersonnelScope
@@ -62,10 +62,11 @@ struct NovaEmployeeEditorState {
     var canEdit: Bool { phase == .editing }
     var canSubmit: Bool { canEdit && !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
-    mutating func begin(scope: NovaPersonnelScope, original: NovaEmployeeRow?, archive: Bool = false) -> NovaEmployeeIntent? {
+    mutating func begin(scope: NovaPersonnelScope, original: NovaEmployeeRow?, archive: Bool = false, restore: Bool = false) -> NovaEmployeeIntent? {
         guard canEdit, archive || canSubmit else { return nil }
         guard !archive || original != nil else { return nil }
-        if let original, original.ownerID != scope.ownerID || original.companyID != scope.companyID || original.isArchived { return nil }
+        guard !restore || (original?.isArchived == true && !archive) else { return nil }
+        if let original, original.ownerID != scope.ownerID || original.companyID != scope.companyID || (original.isArchived && !restore) { return nil }
         if let original, original.version < 0 || original.version >= 9007199254740991 { return nil }
         if let selectedDepartment, selectedDepartment.ownerID != scope.ownerID || selectedDepartment.companyID != scope.companyID { return nil }
         let department: NovaEmployeeDepartment
@@ -79,8 +80,8 @@ struct NovaEmployeeEditorState {
             department = text.isEmpty ? .none : .new(text)
         }
         let intent = NovaEmployeeIntent(operationID: UUID(), mutationID: UUID(), scope: scope,
-            action: archive ? .archive : original == nil ? .create : .edit, employeeID: original?.id,
-            expectedVersion: original?.version ?? 0, name: name, department: department)
+            action: restore ? .restore : archive ? .archive : original == nil ? .create : .edit, employeeID: original?.id,
+            expectedVersion: original?.version ?? 0, name: name, department: restore ? .keep : department)
         pending = intent; phase = .submitting
         return intent
     }

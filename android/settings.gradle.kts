@@ -25,6 +25,8 @@ include(":core:testing")
 include(":isg-contract-tests")
 // Offline visual QA host; never a dependency of :app or a store variant.
 include(":isg-design-preview")
+// Isolated emulator-only persistence proof; never a production app dependency.
+include(":isg-journal-check")
 include(":feature:onboarding")
 include(":feature:capture")
 include(":feature:analysis")

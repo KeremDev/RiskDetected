@@ -70,6 +70,22 @@ import UIKit
         tap("directory.back")
         XCTAssertTrue(app.buttons["personnel.edit"].waitForExistence(timeout: 4))
     }
+    func testArchivedEmployeeCanBeExplicitlyReactivated() {
+        launch(["--personnel"]); personnelAdd()
+        tap("personnel.edit"); app.swipeUp(); tap("personnel.archive"); tap("personnel.archive.confirm")
+        let toggle = app.switches["personnel.archived"]
+        XCTAssertTrue(toggle.waitForExistence(timeout:4))
+        // SwiftUI exposes the whole labeled row as a switch; target its trailing thumb.
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        let row = app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'personnel.row.'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout:4), app.debugDescription); row.tap()
+        tap("personnel.restore")
+        XCTAssertFalse(app.textFields["personnel.name"].exists)
+        XCTAssertFalse(app.buttons["personnel.archive"].exists)
+        tap("personnel.save")
+        XCTAssertTrue(app.buttons["personnel.edit"].waitForExistence(timeout:4), app.debugDescription)
+        XCTAssertTrue(app.staticTexts["Ada Kaya"].exists)
+    }
     func testReadOnlyPersonnelCanReadHistoryButCannotWrite() {
         launch(["--personnel", "--personnel-readonly"])
         XCTAssertTrue(app.buttons["personnel.add"].waitForExistence(timeout: 4))

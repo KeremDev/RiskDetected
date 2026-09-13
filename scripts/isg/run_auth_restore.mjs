@@ -15,6 +15,7 @@ import { beginPersonnelHTTPProbe } from './personnel_http_probe.mjs';
 import { probePersonnelAdvisors } from './personnel_advisor_probe.mjs';
 import { beginDirectoryMigrationProbe, directoryMigrationFiles } from './directory_migration_probe.mjs';
 import { beginWorkspaceAvailabilityProbe, workspaceAvailabilityFiles } from './workspace_availability_probe.mjs';
+import { probeP05Upgrade, p05UpgradeFiles } from './p05_upgrade_probe.mjs';
 import { probePasswordAuth } from './password_auth_probe.mjs';
 import { probeSignupRecovery } from './signup_recovery_probe.mjs';
 
@@ -247,6 +248,10 @@ try {
     pass('synthetic_database_has_no_auth_users',sql('select count(*) from auth.users;') === '0');
     pass('synthetic_database_has_no_application_profile_table',sql("select to_regclass('public.profiles') is null;") === 't');
   }
+  if (mode.p05Upgrade) {
+    stage = 'p05-full-legacy-upgrade';
+    report.p05_upgrade = probeP05Upgrade({sql,pass,isolatedCopy:true});
+  }
   const secret = randomBytes(48).toString('hex'), dbPassword = randomBytes(32).toString('hex');
   sql(`ALTER ROLE supabase_auth_admin PASSWORD '${dbPassword}';`);
   stage = 'auth-boot';
@@ -343,6 +348,7 @@ try {
     .concat(personnelMigrationFiles)
     .concat(directoryMigrationFiles)
     .concat(workspaceAvailabilityFiles)
+    .concat(mode.p05Upgrade ? p05UpgradeFiles : [])
     .map(path=>[path,digest(readFileSync(resolve(ROOT,path)))]));
   report.ok = true;
 } catch (error) {

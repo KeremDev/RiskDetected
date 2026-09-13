@@ -156,7 +156,7 @@ private fun EmployeeDetail(scope: NovaPersonnelScope, id: UUID, client: NovaPers
                 Row { NovaGlyph(Icons.Outlined.Business, null); Spacer(Modifier.width(8.dp)); NovaText(value.departmentName ?: "Departman seçilmedi") }
                 NovaText(if (value.isArchived) "Arşivde" else "Aktif", style = NovaTypeToken.metaQuiet)
             }
-            if (canWrite && !value.isArchived) PersonnelAction("Düzenle", Icons.Outlined.Edit, "personnel.edit", onClick = { onEdit(value) })
+            if (canWrite) PersonnelAction(if (value.isArchived) "Yeniden etkinleştir" else "Düzenle", if (value.isArchived) Icons.Outlined.Restore else Icons.Outlined.Edit, if (value.isArchived) "personnel.restore" else "personnel.edit", onClick = { onEdit(value) })
             onDirectory?.let { open ->
                 PersonnelAction("Görevlendirme geçmişi", Icons.Outlined.History, "personnel.assignments", onClick = { open(NovaDirectoryKind.assignments) })
                 PersonnelAction("İşveren ilişkisi", Icons.Outlined.Business, "personnel.employers", onClick = { open(NovaDirectoryKind.employers) })
@@ -207,7 +207,13 @@ private fun EmployeeEditor(scope: NovaPersonnelScope, companyName: String, clien
         }
     }
     Column(Modifier.fillMaxSize().blur(if (confirmation) 7.dp else 0.dp).verticalScroll(rememberScrollState()).padding(18.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        PersonnelHeading(if (original == null) "Personel Ekle" else "Personeli Düzenle", companyName, canLeave, onBack)
+        PersonnelHeading(if (original?.isArchived == true) "Personeli Etkinleştir" else if (original == null) "Personel Ekle" else "Personeli Düzenle", companyName, canLeave, onBack)
+        if (original?.isArchived == true) {
+            NovaCard { Column {
+                Row { NovaGlyph(Icons.Outlined.Person, null); Spacer(Modifier.width(8.dp)); NovaText(original.name, style = NovaTypeToken.cardTitle) }
+                NovaText("Personel yeniden etkinleştirilecek. Tarihler ve geçmiş kayıtlar değişmez; gerekirse daha sonra yeni görevlendirme ekleyebilirsiniz.")
+            } }
+        } else {
         NovaCard(Modifier.fillMaxWidth(), padding = 18) {
             Row { NovaGlyph(Icons.Outlined.Person, null); Spacer(Modifier.width(8.dp)); NovaText("Ad soyad", style = NovaTypeToken.cardTitle) }
             TextField(state.name, { state = state.copy(name = it) }, enabled = state.canEdit, placeholder = { NovaText("Ad soyad") }, textStyle = NovaTypeToken.body.textStyle(), colors = personnelFieldColors(), singleLine = true, modifier = Modifier.fillMaxWidth().testTag("personnel.name"))
@@ -222,13 +228,14 @@ private fun EmployeeEditor(scope: NovaPersonnelScope, companyName: String, clien
                 if (departmentsFailed) NovaText("Departman listesi yüklenemedi. Boş bırakabilir veya yeni ad yazabilirsiniz.", style = NovaTypeToken.metaQuiet)
             }
         }
+        }
         message?.let { NovaText(it, Modifier.testTag("personnel.message")) }
         if (state.phase == NovaEmployeeEditorState.Phase.uncertain) {
             NovaText("Kayıt sonucu doğrulanamadı. Yeni kayıt açmadan aynı işlemi kontrol edin.")
             PersonnelAction("Aynı işlemi tekrar kontrol et", Icons.Outlined.Refresh, "personnel.retry", onClick = { state = state.retry(scope) })
         } else {
-            PersonnelAction(if (original == null) "Personeli kaydet" else "Değişiklikleri kaydet", Icons.Outlined.Check, "personnel.save", enabled = state.canSubmit, loading = state.phase == NovaEmployeeEditorState.Phase.submitting) { state = state.begin(scope, original) }
-            if (original != null) PersonnelAction("Personeli arşivle", Icons.Outlined.Archive, "personnel.archive", enabled = state.canEdit, onClick = { confirmation = true })
+            PersonnelAction(if (original?.isArchived == true) "Yeniden etkinleştir" else if (original == null) "Personeli kaydet" else "Değişiklikleri kaydet", Icons.Outlined.Check, "personnel.save", enabled = state.canSubmit, loading = state.phase == NovaEmployeeEditorState.Phase.submitting) { state = state.begin(scope, original, restore = original?.isArchived == true) }
+            if (original != null && !original.isArchived) PersonnelAction("Personeli arşivle", Icons.Outlined.Archive, "personnel.archive", enabled = state.canEdit, onClick = { confirmation = true })
         }
         Spacer(Modifier.height(24.dp))
     }

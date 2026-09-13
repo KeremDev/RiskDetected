@@ -79,12 +79,12 @@ internal fun personnelArguments(intent: NovaEmployeeIntent): JsonObject {
         is NovaEmployeeDepartment.New -> departmentName = personnelText(value.name, 120)
     }
     require(intent.action != NovaEmployeeIntent.Action.create || change)
-    if (intent.action == NovaEmployeeIntent.Action.archive) { change = false; department = null; departmentName = null }
+    if (intent.action in setOf(NovaEmployeeIntent.Action.archive, NovaEmployeeIntent.Action.restore)) { change = false; department = null; departmentName = null }
     return buildJsonObject {
         put("p_company", intent.scope.companyID.toString()); put("p_action", intent.action.name)
         put("p_operation", intent.operationID.toString()); put("p_mutation", intent.mutationID.toString())
         put("p_employee", intent.employeeID?.toString()?.let(::JsonPrimitive) ?: JsonNull); put("p_expected", intent.expectedVersion)
-        put("p_name", if (intent.action == NovaEmployeeIntent.Action.archive) JsonNull else JsonPrimitive(personnelText(intent.name, 200)))
+        put("p_name", if (intent.action in setOf(NovaEmployeeIntent.Action.archive, NovaEmployeeIntent.Action.restore)) JsonNull else JsonPrimitive(personnelText(intent.name, 200)))
         put("p_change_department", change); put("p_department", department?.toString()?.let(::JsonPrimitive) ?: JsonNull)
         put("p_department_name", departmentName?.let(::JsonPrimitive) ?: JsonNull)
     }

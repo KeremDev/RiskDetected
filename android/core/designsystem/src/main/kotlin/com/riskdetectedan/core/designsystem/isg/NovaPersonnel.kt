@@ -17,7 +17,7 @@ sealed interface NovaEmployeeDepartment {
 data class NovaEmployeeCommit(val operationID: UUID, val id: UUID, val ownerID: UUID, val companyID: UUID, val version: Long, val isArchived: Boolean)
 data class NovaEmployeeIntent(val operationID: UUID, val mutationID: UUID, val scope: NovaPersonnelScope,
     val action: Action, val employeeID: UUID?, val expectedVersion: Long, val name: String, val department: NovaEmployeeDepartment) {
-    enum class Action { create, edit, archive }
+    enum class Action { create, edit, archive, restore }
 }
 class NovaPersonnelFailure(val kind: Kind): Exception() {
     enum class Kind { denied, validation, conflict, selectionRequired, unavailable }
@@ -35,18 +35,19 @@ data class NovaEmployeeEditorState(val name: String = "", val departmentText: St
     enum class Phase { editing, submitting, uncertain, committed, denied }
     val canEdit get() = phase == Phase.editing
     val canSubmit get() = canEdit && name.isNotBlank()
-    fun begin(scope: NovaPersonnelScope, original: NovaEmployeeRow?, archive: Boolean = false): NovaEmployeeEditorState {
+    fun begin(scope: NovaPersonnelScope, original: NovaEmployeeRow?, archive: Boolean = false, restore: Boolean = false): NovaEmployeeEditorState {
         if (!canEdit || (!archive && !canSubmit)) return this
         if (archive && original == null) return this
-        if (original != null && (original.ownerID != scope.ownerID || original.companyID != scope.companyID || original.isArchived)) return this
+        if (restore && (original?.isArchived != true || archive)) return this
+        if (original != null && (original.ownerID != scope.ownerID || original.companyID != scope.companyID || (original.isArchived && !restore))) return this
         if (original != null && (original.version < 0 || original.version >= 9007199254740991L)) return this
         val selected = selectedDepartment
         if (selected != null && (selected.ownerID != scope.ownerID || selected.companyID != scope.companyID)) return this
         val department = if (original != null && selected?.id == original.departmentID && departmentText.isBlank()) NovaEmployeeDepartment.Keep else selected?.let { NovaEmployeeDepartment.Existing(it.id) }
             ?: departmentText.trim().takeIf { it.isNotEmpty() }?.let { NovaEmployeeDepartment.New(it) } ?: NovaEmployeeDepartment.None
         return copy(phase = Phase.submitting, pending = NovaEmployeeIntent(UUID.randomUUID(), UUID.randomUUID(), scope,
-            if (archive) NovaEmployeeIntent.Action.archive else if (original == null) NovaEmployeeIntent.Action.create else NovaEmployeeIntent.Action.edit,
-            original?.id, original?.version ?: 0, name, department))
+            if (restore) NovaEmployeeIntent.Action.restore else if (archive) NovaEmployeeIntent.Action.archive else if (original == null) NovaEmployeeIntent.Action.create else NovaEmployeeIntent.Action.edit,
+            original?.id, original?.version ?: 0, name, if (restore) NovaEmployeeDepartment.Keep else department))
     }
     fun retry(scope: NovaPersonnelScope) = if (phase == Phase.uncertain && pending?.scope == scope) copy(phase = Phase.submitting) else this
     fun complete(intent: NovaEmployeeIntent, row: NovaEmployeeCommit, scope: NovaPersonnelScope): NovaEmployeeEditorState {

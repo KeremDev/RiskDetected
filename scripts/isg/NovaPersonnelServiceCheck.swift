@@ -65,6 +65,17 @@ import Foundation
         do { _ = try await blocked.client.save(intent); fatalError("storage failure") } catch {}
         check(!called)
         check(NovaPersonnelService.sessionID("invalid") == nil)
+        let archived = NovaEmployeeRow(id: UUID(), ownerID: scope.ownerID, companyID: scope.companyID,
+            name: "Ada Kaya", departmentID: nil, departmentName: nil, version: 3, isArchived: true)
+        var editor = NovaEmployeeEditorState(); editor.name = archived.name
+        check(editor.begin(scope: scope, original: archived) == nil)
+        let restore = editor.begin(scope: scope, original: archived, restore: true)!
+        check(restore.action == .restore && restore.department == .keep && restore.expectedVersion == 3)
+        let restoreArgs = try NovaPersonnelService.arguments(restore)
+        check(restoreArgs["p_name"] == .null && restoreArgs["p_department_name"] == .null && restoreArgs["p_department"] == .null)
+        check(restoreArgs["p_change_department"] == .bool(false))
+        check(editor.complete(restore, row: .init(operationID: restore.operationID, id: archived.id,
+            ownerID: scope.ownerID, companyID: scope.companyID, version: 4, isArchived: false), scope: scope))
         print("Nova personnel service \(checks) checks PASS · injected transport/memory journal, no live SDK or Keychain access")
     }
 }

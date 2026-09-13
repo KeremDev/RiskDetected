@@ -41,6 +41,24 @@ class NovaPersonnelDestinationTest {
         compose.onNodeWithTag("personnel.add").performScrollTo().performClick()
         compose.onNodeWithTag("personnel.name").performTextInput("Ada Kaya")
     }
+    @Test fun archivedEmployeeCanBeExplicitlyReactivatedWithoutEditingHistory() {
+        saved = NovaEmployeeRow(employeeID, scope.ownerID, scope.companyID, "Ada Kaya", null, null, 3, true)
+        start()
+        compose.onNodeWithTag("personnel.archived").performClick()
+        compose.mainClock.advanceTimeBy(250); compose.waitForIdle()
+        compose.onNodeWithTag("personnel.row.$employeeID").performScrollTo().performClick()
+        compose.onNodeWithTag("personnel.restore").performScrollTo().performClick()
+        compose.onNodeWithTag("personnel.name").assertDoesNotExist()
+        compose.onNodeWithTag("personnel.archive").assertDoesNotExist()
+        compose.onNodeWithTag("personnel.save").performScrollTo().performClick()
+        compose.onNodeWithTag("personnel.edit").assertExists()
+        compose.runOnIdle {
+            assertEquals(NovaEmployeeIntent.Action.restore,intents.single().action)
+            assertEquals(NovaEmployeeDepartment.Keep,intents.single().department)
+            assertEquals(4,saved!!.version)
+            assertFalse(saved!!.isArchived)
+        }
+    }
     @Test fun readOnlyPersonnelCanOpenBothAdvancedHistoriesInSameScope() {
         saved = NovaEmployeeRow(employeeID, scope.ownerID, scope.companyID, "Ada Kaya", null, null, 0, false)
         val opened = mutableListOf<NovaDirectoryKind>()

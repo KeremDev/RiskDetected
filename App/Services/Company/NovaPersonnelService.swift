@@ -24,7 +24,8 @@ enum PersonnelRPCValue: Encodable, Equatable {
 
 /// Device-only Keychain; no token, analytics event, Cloud sync, or plain preferences.
 @MainActor final class KeychainPersonnelPendingStorage: PersonnelPendingStorage {
-    private let service = "com.riskdetected.personnel.pending.v1"
+    private let service: String
+    init(service: String = "com.riskdetected.personnel.pending.v1") { self.service = service }
     private func query(_ account: String) -> [String: Any] {
         [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
          kSecAttrAccount as String: account, kSecAttrSynchronizable as String: false]
@@ -106,10 +107,10 @@ enum PersonnelRPCValue: Encodable, Equatable {
         case .new(let name): departmentName = try text(name, limit: 120)
         }
         if intent.action == .create && !change { throw NovaPersonnelFailure.validation }
-        if intent.action == .archive { change = false; department = nil; departmentName = nil }
+        if intent.action == .archive || intent.action == .restore { change = false; department = nil; departmentName = nil }
         return ["p_company": .id(intent.scope.companyID), "p_action": .string(intent.action.rawValue),
             "p_operation": .id(intent.operationID), "p_mutation": .id(intent.mutationID), "p_employee": .id(intent.employeeID),
-            "p_expected": .number(intent.expectedVersion), "p_name": intent.action == .archive ? .null : .string(try text(intent.name, limit: 200)),
+            "p_expected": .number(intent.expectedVersion), "p_name": [.archive, .restore].contains(intent.action) ? .null : .string(try text(intent.name, limit: 200)),
             "p_change_department": .bool(change), "p_department": .id(department), "p_department_name": departmentName.map(PersonnelRPCValue.string) ?? .null]
     }
     private static func text(_ input: String, limit: Int) throws -> String {

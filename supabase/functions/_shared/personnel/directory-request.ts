@@ -21,7 +21,7 @@ export function preparePersonnelDirectory(input:unknown) {
     if(!value||!args)return null;
     return {kind:'create' as const,companyID:args.p_company,operationID:args.p_operation,args};
   }
-  if(action!=='edit'&&action!=='archive')return null;
+  if(action!=='edit'&&action!=='archive'&&action!=='restore')return null;
   const allowed=action==='edit'?['context','employee_id','full_name','department']:['context','employee_id'];
   if(Object.keys(body).length!==allowed.length||!Object.keys(body).every(k=>allowed.includes(k))||!id(body.employee_id))return null;
   const context=parseIsgMutationContext(body.context);
