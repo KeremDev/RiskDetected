@@ -1,0 +1,210 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-14",
+  "phase": "P11",
+  "slice": "document numbering, immutable snapshots, PDF/XLSX export ledger, import preview/commit/compensation with cell rules",
+  "phase_complete": false,
+  "production_deployed": false,
+  "rollout_enabled_in_migration": false,
+  "client_grant_added": false,
+  "renderer_implemented": false,
+  "parser_implemented": false,
+  "synthetic_auth_run": {
+    "run_id": "5b776e11-a067-4dca-afe5-0dfd32eb257d",
+    "report": "output/isg/runs/synthetic-auth-MXN8N1/REPORT.json",
+    "total_checks": 659,
+    "failures": [],
+    "new_checks": 38,
+    "cleanup": "PASS"
+  },
+  "new_checks": [
+    {
+      "id": "document_import_migration_applied_with_closed_rollout",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_gate_blocks_documents_and_imports_while_rollout_off",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_document_tables_have_rls_and_no_client_grant",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_formula_prefix_is_neutralised_not_executed",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_turkish_decimal_is_read_and_an_ambiguous_one_is_reviewed",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_code_keeps_its_leading_zeros",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_both_excel_date_systems_are_supported",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_the_1900_leap_bug_is_refused",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_an_empty_cell_is_not_an_invalid_one",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_health_column_is_refused_at_the_door",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_an_unpublished_template_produces_no_document",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_document_is_registered_once_per_source",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_finalising_allocates_a_number_and_a_snapshot_hash",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_retry_does_not_duplicate_the_logical_document",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_finalised_snapshot_never_follows_its_source",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_twenty_concurrent_allocations_produce_twenty_unique_numbers",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_both_formats_render_the_same_snapshot",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_scanned_original_never_becomes_a_structured_spreadsheet",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_render_failure_is_separate_from_a_ready_document",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_ready_export_is_not_overwritten",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_health_column_stops_the_batch_before_it_opens",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_batch_is_idempotent_per_company_and_mutation",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_the_same_file_for_another_purpose_is_an_explicit_conflict",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_identity_is_never_derived_from_a_name",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_known_code_is_a_duplicate_not_a_second_person",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_missing_name_and_a_leap_bug_date_are_errors",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_serial_date_is_normalised_on_the_row",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_health_column_in_a_row_is_refused_too",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_commit_without_a_preview_is_refused",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_the_preview_lists_every_outcome",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_stale_preview_hash_can_not_commit",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_partial_commit_needs_an_explicit_policy",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_target_that_moved_after_the_preview_conflicts",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_only_clean_rows_are_written_and_the_rest_are_reported",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_commit_replay_writes_nothing_new",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_a_committed_batch_takes_no_new_row",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_compensation_removes_only_what_it_created_and_did_not_change",
+      "result": "PASS"
+    },
+    {
+      "id": "document_import_kill_switch_stops_documents_and_imports",
+      "result": "PASS"
+    }
+  ],
+  "full_legacy_copy_upgrade": {
+    "run_id": "a9206334-3b44-480b-a365-e04905ba8bd8",
+    "total_checks": 29,
+    "failures": [],
+    "cleanup": "PASS",
+    "migrations_replayed": 14,
+    "new_tables": 93,
+    "legacy_rows_unchanged": true
+  },
+  "defects_found_and_fixed": [
+    {
+      "symptom": "AUTH_RESTORE_SQL_FAILED, SQLSTATE 42883",
+      "cause": "date + bigint has no operator in PostgreSQL; the Excel serial variable was declared bigint",
+      "fix": "declared the serial as integer"
+    },
+    {
+      "symptom": "CHECK_VIOLATION while staging an import row",
+      "cause": "import_rows.error_code regex allowed only A-Z and underscore, but EXCEL_1900_LEAP_BUG carries digits",
+      "fix": "widened both error_code regexes to ^[A-Z][A-Z0-9_]{2,n}$"
+    }
+  ],
+  "source_sha256": {
+    "supabase/migrations/20260914030000_isg_document_import_core.sql": "83587399e19583d479098ffa4acb54f99b209b01eac9ee4891da5358cfb0b748",
+    "scripts/isg/document_import_probe.mjs": "e34984964909b733b6b697a60c6ad60c9083600d0ee525379a6c085fe9ceb963",
+    "scripts/isg/document_import_guard.test.mjs": "920bb228b62241cad569f0fac79d50efcc8d4c71d721ba501fbd1f9418c7ab6d",
+    "contracts/isg/v1/document-import.md": "cc6e8609c7dac559e86c4216e292f21be81148b9fb39d42c90c1e78008892d42"
+  },
+  "not_proven": [
+    "PDF/XLSX rendering and its visual acceptance",
+    "safe document parsing",
+    "row scale performance",
+    "search and filter surface",
+    "legacy report adapter",
+    "client or native surface",
+    "production migration or rollout"
+  ]
+}

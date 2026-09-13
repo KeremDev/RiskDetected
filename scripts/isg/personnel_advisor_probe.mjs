@@ -57,7 +57,9 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'module_registry','emergency_plan_versions','drill_records','equipment_items','equipment_inspection_rules',
       'equipment_inspections','appointments','ppe_handovers','ppe_returns',
       'katip_contracts','annual_work_plans','annual_work_plan_items','annual_training_plans','board_meetings',
-      'board_decisions','work_permit_forms','site_visits','site_visit_observations','notebook_archive_entries']);
+      'board_decisions','work_permit_forms','site_visits','site_visit_observations','notebook_archive_entries',
+      'document_templates','document_template_versions','documents','document_number_sequences','document_versions',
+      'export_jobs','import_batches','import_rows','import_checkpoints']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([
@@ -102,6 +104,10 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'site_visit_observations_observation_asset_idx','site_visit_observations_observation_nonconformity_idx',
       'notebook_archive_entries_notebook_scope_idx','notebook_archive_entries_notebook_owner_idx',
       'notebook_archive_entries_notebook_asset_idx',
+      'documents_document_owner_idx','documents_document_template_idx','documents_document_scope_idx',
+      'document_versions_document_version_finalizer_idx','document_template_versions_document_template_approver_idx',
+      'export_jobs_export_state_idx','export_jobs_export_asset_idx',
+      'import_batches_import_asset_idx','import_batches_import_owner_idx','import_rows_import_row_status_idx',
     ].map(key=>'unused_index_private_isg_'+key));
     pass('personnel_advisor_no_unreviewed_findings',relevant.every(f=>f.level==='INFO'&&f.metadata?.schema==='private_isg'&&
       ((f.name==='rls_enabled_no_policy'&&denyTables.has(f.metadata?.name))||(f.name==='unused_index'&&reviewedFKIndexes.has(f.cache_key)))));

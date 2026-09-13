@@ -23,6 +23,7 @@ import { beginRiskCoreProbe, riskCoreFiles } from './risk_core_probe.mjs';
 import { beginNonconformityCoreProbe, nonconformityCoreFiles } from './nonconformity_core_probe.mjs';
 import { beginModuleCoreProbe, moduleCoreFiles } from './module_core_probe.mjs';
 import { beginModuleSecondProbe, moduleSecondFiles } from './module_second_probe.mjs';
+import { beginDocumentImportProbe, documentImportFiles } from './document_import_probe.mjs';
 import { probeP05Upgrade, p05UpgradeFiles } from './p05_upgrade_probe.mjs';
 import { probePasswordAuth } from './password_auth_probe.mjs';
 import { probeSignupRecovery } from './signup_recovery_probe.mjs';
@@ -316,6 +317,7 @@ try {
   let nonconformityProbe;
   let moduleProbe;
   let moduleSecondProbe;
+  let documentProbe;
   if (mode.sessionGuard) {
     stage = 'session-guard';
     sessionProbe = await beginSessionProbe({ sql, concurrentSql, token: refresh.body.access_token, secret, pass });
@@ -349,6 +351,8 @@ try {
     moduleProbe=await beginModuleCoreProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'module-core-second';
     moduleSecondProbe=await beginModuleSecondProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
+    stage = 'document-and-import';
+    documentProbe=await beginDocumentImportProbe({synthetic:true,sql,concurrentSql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'personnel-advisors';
     report.personnel_advisors=await probePersonnelAdvisors({synthetic:true,sql,guard,names,pass,onFindings:value=>{report.personnel_advisors=value;}});
   }
@@ -390,6 +394,7 @@ try {
   if (nonconformityProbe) report.nonconformity_core = nonconformityProbe.afterLogout();
   if (moduleProbe) report.module_core = moduleProbe.afterLogout();
   if (moduleSecondProbe) report.module_core_second = moduleSecondProbe.afterLogout();
+  if (documentProbe) report.document_import = documentProbe.afterLogout();
   if (mode.synthetic) {
     stage = 'password-auth-boundaries';
     report.password_auth = probePasswordAuth({synthetic:true, request, admin, pass});
@@ -419,6 +424,7 @@ try {
     .concat(mode.synthetic ? nonconformityCoreFiles : [])
     .concat(mode.synthetic ? moduleCoreFiles : [])
     .concat(mode.synthetic ? moduleSecondFiles : [])
+    .concat(mode.synthetic ? documentImportFiles : [])
     .concat(mode.p05Upgrade ? p05UpgradeFiles : [])
     .concat(mode.nativeE2E ? ['scripts/isg/native_e2e_bridge.mjs','scripts/isg/native_e2e_oracle.mjs','scripts/isg/run_native_android.mjs','tests/isg/native-ios/NativeHarness.swift','tests/isg/native-ios/NativeUITests.swift','android/isg-native-check/src/main/kotlin/com/riskdetectedan/isg/nativecheck/NativeActivity.kt','android/isg-native-check/src/androidTest/kotlin/com/riskdetectedan/isg/nativecheck/NativeFlowTest.kt'] : [])
     .map(path=>[path,digest(readFileSync(resolve(ROOT,path)))]));
