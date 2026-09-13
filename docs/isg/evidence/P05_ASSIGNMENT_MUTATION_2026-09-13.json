@@ -1,0 +1,532 @@
+{
+  "schema_version": 1,
+  "run_id": "e0398a73-5f9e-4725-b330-cf92b1634690",
+  "started_at": "2026-09-13T06:34:07.137Z",
+  "image": "public.ecr.aws/supabase/postgres@sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b",
+  "suite": "synthetic_postgres_transaction_prototype",
+  "production_contract_implemented": false,
+  "acceptance_complete": false,
+  "seed": "fixed_uuid_counter_v1",
+  "node_version": "v26.7.0",
+  "source_sha256": {
+    "scripts/isg/run_database_contract.mjs": "4a2aa06fc3f49d599ea0eae8002d2e877588be28f1c79ec12f2d124630cb617c",
+    "scripts/isg/sql/transaction_fixture.sql": "87eafb27e40d6db096a6e10837655a3f7e823e75e0aaaaed4b978e2ae8f52b18",
+    "scripts/isg/sql/workplace_fixture.sql": "81bb64bcbef8690582a6c70086dafc3194e47dfce63cb1025bb0ef43395236f7",
+    "scripts/isg/workplace_probe.mjs": "f5f29014f79c0f8b0c81483c9ddfd5ef24f35b141186319a91b82a0d2ca58b04",
+    "scripts/isg/sql/personnel_fixture.sql": "b244c04e7c6b113eb5a57fb0f16b5071f517350e809fa0c3da12f90ebc93c9eb",
+    "scripts/isg/personnel_probe.mjs": "d681188ca252732549ce2f5bab4c829dda334183f2172ee2258a7994f1e63609",
+    "scripts/isg/sql/personnel_mutation_fixture.sql": "2883d334e4ece4428c1499cedce5e14ac3f08a05fecf4982fb12d1769fc04d21",
+    "scripts/isg/personnel_mutation_probe.mjs": "c59330303231ab1ba8c332e524acc30efa516a29e49316c35fdd7177ef7c55da",
+    "supabase/functions/_shared/personnel/assignment-move.ts": "d07cc03a254633f94c6ed0eac8124320934228d6980bee1e0564bfd0746360a6",
+    "supabase/functions/_shared/isg/mutation-context.ts": "7e74a453c320be3fe3f61ae7abc084ccea36e17f3c8b3d480823ca67cdfa7e90",
+    "contracts/isg/v1/fixtures/assignment-move.json": "66a7ca7872e65107f801ca284491c20df9dafd02e0e1fc1db130918c021600b7",
+    "scripts/isg/legacy_capacity_oracle.mjs": "cd67398fca914972c3deec14575c9087c3db67c77127103256a1c6c63f3b5f53",
+    "scripts/isg/verify_environment.mjs": "c6a223fef8c8ea6d34046893674cdedcb01114562b63a7acac564e3ff546e446",
+    "contracts/isg/v1/safety-policy.json": "66cb1eb088bafb97f0ea7a9b78041695c2462e54a39eddc269960e8324d5f8ba"
+  },
+  "cases": [
+    {
+      "id": "TX-01_private_tables_and_workers_not_callable_by_client",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-02_missing_actor_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-03_foreign_and_missing_company_indistinguishable",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-04_cross_company_entity_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-05_invalid_delta_rejected_without_side_effect",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-06_domain_audit_outbox_receipt_commit_together",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-07_identical_retry_returns_original_no_extra_writes",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-08_same_key_different_payload_conflict",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-09_stale_version_no_receipt_or_side_effect",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-10_audit_failure_rolls_back_every_write",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-11_outbox_failure_rolls_back_every_write",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-12_failed_request_can_retry_successfully",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-13_revoked_actor_cannot_replay_cached_success",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-14_twenty_identical_parallel_retries_apply_once",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-15_twenty_competing_versions_have_one_winner",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-16_lease_prevents_parallel_and_out_of_order_claim",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-17_expiry_reclaims_same_event_with_new_fence",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-18_old_worker_cannot_ack_after_lease_loss",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-19_consumer_failure_rolls_back_receipt_and_projection",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-20_commit_then_lost_ack_does_not_repeat_projection",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-21_ordered_events_apply_exactly_once_per_receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-22_expired_lease_cannot_complete_at_boundary",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-23_retry_budget_dead_letters_and_blocks_later_version",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-24_composite_foreign_key_rejects_wrong_scope_even_for_owner",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-25_mutation_key_is_scoped_to_actor",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-26_former_company_owner_cannot_replay_cached_result",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-27_parallel_workers_one_lease_other_company_not_blocked",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-28_null_test_clock_fails_closed",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-29_connection_killed_before_commit_rolls_back_domain_and_all_side_effects",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-30_worker_connection_killed_before_commit_can_retry_without_partial_projection",
+      "status": "PASS"
+    },
+    {
+      "id": "LEGACY-01_original_company_tier_and_limit_truth_table",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-01_private_invoker_initializer_not_client_api",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-02_default_copies_known_context_without_legal_inference",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-03_repeated_initializer_has_no_extra_side_effects",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-04_twenty_parallel_backfill_catchup_calls_create_once",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-05_unknown_hazard_stays_null_needs_review",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-06_archived_legacy_company_remains_archived",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-07_owner_read_isolation_same_owner_multiple_companies",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-08_reader_has_no_direct_writes_or_private_journal_access",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-09_composite_owner_fk_rejects_foreign_owner_even_for_worker",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-10_same_owner_cross_company_department_link_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-11_same_name_second_workplace_is_distinct_and_does_not_replace_default",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-12_archived_default_still_dedupes_and_does_not_unarchive",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-13_duplicate_default_and_wrong_marker_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-14_missing_company_and_null_cannot_create_orphan",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-15_audit_failure_rolls_back_and_retry_succeeds",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-16_outbox_failure_rolls_back_and_retry_succeeds",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-17_old_client_company_after_backfill_is_caught_up",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-18_retries_preserve_new_workplace_context_and_legacy_rows",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-19_invalid_context_cannot_claim_review_complete",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-20_referenced_workplace_and_owner_transfer_require_explicit_workflow",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-21_connection_loss_before_commit_rolls_back_initializer_and_journals",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-01_explicit_read_grants_rls_and_no_client_functions",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-02_same_names_distinct_and_codes_scoped",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-03_wrong_owner_and_workplace_fks_reject",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-04_assignment_captures_server_labels_not_input",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-05_same_owner_foreign_company_employee_job_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-06_wrong_department_workplace_pair_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-07_overlap_any_workplace_or_department_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-08_adjacent_half_open_intervals_and_leap_day",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-09_zero_reversed_and_infinite_dates_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-10_before_hire_and_after_end_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-11_employment_edit_cannot_strand_existing_assignments",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-12_secondary_kind_fails_closed_until_policy_defined",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-13_open_ended_assignment_blocks_future_overlap",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-14_twenty_parallel_overlaps_have_one_winner",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-15_different_employees_parallel_assignments_independent",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-16_rename_preserves_history_and_snapshot_cannot_be_forged",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-17_referenced_people_departments_jobs_cannot_be_deleted",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-18_archived_parents_reject_new_assignment_keep_history",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-19_close_old_assignment_then_open_new_in_one_transaction",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-20_failed_transition_rolls_back_old_interval_close",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-21_archived_employee_can_close_existing_interval_without_deleting_it",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-22_owner_reader_cannot_see_foreign_assignment_or_mutate_history",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-23_connection_loss_rolls_back_transition_and_allows_retry",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-24_non_health_schema_has_no_generic_payload_or_identity_number",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-25_closed_assignment_cannot_be_reopened_or_extended_silently",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-26_ten_employment_end_vs_assignment_races_preserve_containment",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-01_private_acl_and_rls",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-02_foreign_missing_actor_company_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-03_assignment_version_audit_outbox_receipt_atomic",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-04_identical_retry_returns_original_without_writes",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-05_payload_change_conflict_before_version_check",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-06_stale_version_does_not_change_intervals",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-7_personnel_audit_failure_rolls_back_everything",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-8_personnel_outbox_failure_rolls_back_everything",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-9_personnel_receipts_failure_rolls_back_everything",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-10_twenty_parallel_retries_apply_one_move",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-11_twenty_competing_versions_have_one_winner",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-12_access_revocation_blocks_cached_replay",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-13_invalid_destination_rolls_back_old_assignment_close",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-14_missing_previous_and_wrong_date_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-15_connection_loss_rolls_back_and_retry_commits",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-16_receipt_replays_after_later_moves_without_new_event",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-17_finite_employment_end_survives_move",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-18_nulls_overflow_and_operation_change_fail_closed",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-19_actual_server_preparation_matches_all_61_mobile_fixtures",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-20_prepared_mobile_request_commits_moves_and_replays",
+      "status": "PASS"
+    },
+    {
+      "id": "PM-21_prepared_scope_is_not_authority_and_invalid_input_never_executes",
+      "status": "PASS"
+    }
+  ],
+  "cleanup": "PASS",
+  "postgres_version": "17.6",
+  "legacy_capacity": {
+    "passed": 329,
+    "failures": [],
+    "case_count": 329,
+    "source_definitions": [
+      {
+        "name": "private.user_plan_tier",
+        "path": "supabase/migrations/20260513223911_fix_subscription_quota_review_findings.sql",
+        "sha256": "fe214cb67f451eda43e70701e63b41004fac7d84942e6debde96adcb9d21d4d2"
+      },
+      {
+        "name": "private.company_limit_for_user",
+        "path": "supabase/migrations/20260520154818_add_companies.sql",
+        "sha256": "a3af9a461a103b8386a0e5ec589270bc1f0f546aceaf826ad75571934925ed8a"
+      }
+    ]
+  },
+  "personnel_btree_gist_version": "1.7",
+  "ok": true,
+  "finished_at": "2026-09-13T06:34:29.164Z",
+  "passed": 99,
+  "scope": "P05 assignment mutation candidate and shared request parsing; not a production API",
+  "additional_source_sha256": {
+    "App/Services/Company/IsgAssignmentMove.swift": "f2ea62401b92c3c2184d9bb0027833835614c6ca2494adb007ed6e5c57defe1f",
+    "App/Services/ISG/IsgMutationContext.swift": "ac0662fd95a825bc99d9cc8f6ea9cfce9b2389306e75f8a077fbb71128096fb6",
+    "android/core/data/src/main/kotlin/com/riskdetectedan/core/data/company/IsgAssignmentMove.kt": "7b52856e0b68aa3fca2368cfd31c68e020e3b49662cc58a03e2f97e2bc5c965f",
+    "android/core/data/src/test/kotlin/com/riskdetectedan/core/data/company/IsgAssignmentMoveTest.kt": "14db53903df6c948a7d45b3a89633e2b4f14f6ca1b7bd6a0535995758a35dc20",
+    "android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/IsgMutationContext.kt": "901087c9f7a96fff6afe24ee5a2cb4e156a0754f58ab92a73711828a9851e9c4",
+    "supabase/functions/_shared/personnel/assignment-move_test.ts": "3cada570867223e27b30d14b365f994849fc778e26ebf4bf2d8f2509d2760615",
+    "scripts/isg/AssignmentMoveCheck.swift": "988c32f39cf834c6ae2007e7c36d17234dfcaf3e3d2fb096a4eb772234541167",
+    "scripts/isg/assignment_move.test.mjs": "84839395346115b8fb8b4b01ade782181adc78c53f9b7d9eaf9861b05679f7e9",
+    "scripts/isg/run_suite.mjs": "7eeb3c186d6af591b0f8d9959bfef5e9769ba75605fe709a949b55bf752b3024",
+    ".github/workflows/isg-foundation.yml": "9ea62303d7cf80e52a067e0a6f49d71322381583add04c50a92c6a3ae4227a30"
+  },
+  "checks": {
+    "swift": {
+      "passed": 61,
+      "failed": 0,
+      "runner": "scripts/isg/AssignmentMoveCheck.swift"
+    },
+    "deno": {
+      "passed": 62,
+      "failed": 0,
+      "command": "deno test --allow-read=contracts/isg/v1/fixtures supabase/functions/_shared/personnel/assignment-move_test.ts"
+    },
+    "android": {
+      "tests": 550,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "command": "./gradlew :core:data:testDebugUnitTest :app:assembleDebug --offline --console=plain",
+      "jdk": 17,
+      "build": "PASS",
+      "xml_directory": "android/core/data/build/test-results/testDebugUnitTest"
+    },
+    "ios": {
+      "build_sim": "PASS",
+      "project": "RiskDetected.xcodeproj",
+      "scheme": "RiskDetected",
+      "configuration": "Debug",
+      "code_signing_allowed": false,
+      "simulator": "4A71277B-053D-49CF-8414-57840D9B010A",
+      "log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-09-13T06-28-31-586Z_pid70458_33996d88.log",
+      "app_launch": false
+    },
+    "foundation": {
+      "passed": 120,
+      "failed": 0
+    },
+    "nova_design": {
+      "passed": 24,
+      "failed": 0
+    },
+    "identity": "PASS_SOURCE_ONLY",
+    "function_map": "PASS_TRANSPORT_ONLY_6_FILES",
+    "ci_yaml": "PASS",
+    "remote_ci": "NOT_RUN"
+  },
+  "earlier_runs": [
+    {
+      "run_id": "0488593a-0998-489e-b1b6-5901b44885d5",
+      "passed": 92,
+      "failure": "PM-15 DB_CRASH_FIXTURE_NOT_WAITING; application_name truncated at PostgreSQL identifier limit",
+      "cleanup": "PASS"
+    },
+    {
+      "run_id": "4059ca0c-1aa2-4c6f-a708-556d7d7999fd",
+      "passed": 94,
+      "cleanup": "PASS"
+    },
+    {
+      "run_id": "a7f259b8-f224-48ed-84bf-d0ec344b10c1",
+      "passed": 96,
+      "cleanup": "PASS"
+    }
+  ],
+  "limitations": [
+    "Synthetic actor GUC and permission table are not verified Auth/session/paid capability.",
+    "Server parser to real isolated SQL is tested, but no HTTP gateway, SDK write, native person CRUD, or production RPC.",
+    "Outbox consumer and common outcome envelope are not connected.",
+    "Native sources built; no new UI or device instrumentation run in this slice.",
+    "Source identity guard is not a signed-binary/store continuity proof.",
+    "Fixture owner may directly mutate tables; production exclusive writer authorization remains open.",
+    "Not all V5 acceptance cases or variations completed; no deploy or push."
+  ]
+}

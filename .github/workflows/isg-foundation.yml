@@ -29,6 +29,8 @@ on:
       - 'Config/RiskDetectedInfo.plist'
       - 'android/core/designsystem/**'
       - 'supabase/functions/_shared/isg/**'
+      - 'supabase/functions/_shared/personnel/**'
+      - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/company/**'
       - 'supabase/migrations/20260513223911_fix_subscription_quota_review_findings.sql'
       - 'supabase/migrations/20260520154818_add_companies.sql'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/**'
@@ -73,6 +75,8 @@ on:
       - 'Config/RiskDetectedInfo.plist'
       - 'android/core/designsystem/**'
       - 'supabase/functions/_shared/isg/**'
+      - 'supabase/functions/_shared/personnel/**'
+      - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/company/**'
       - 'supabase/migrations/20260513223911_fix_subscription_quota_review_findings.sql'
       - 'supabase/migrations/20260520154818_add_companies.sql'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/**'
@@ -127,6 +131,8 @@ jobs:
         run: deno test --allow-read=contracts/isg/v1/fixtures supabase/functions/_shared/isg/mutation-context_test.ts supabase/functions/_shared/isg/mutation-outcome_test.ts
       - name: Auth email locale/action compatibility (renderer and source guards, not provider delivery)
         run: deno test --allow-read=supabase/functions/auth-send-email-hook,supabase/functions/_shared supabase/functions/_shared/auth-email-localization_test.ts supabase/functions/auth-send-email-hook/index_static_test.ts
+      - name: Personnel request shared contract
+        run: deno test --allow-read=contracts/isg/v1/fixtures supabase/functions/_shared/personnel/assignment-move_test.ts
 
   swift-transport-fixtures:
     runs-on: macos-15
@@ -140,6 +146,10 @@ jobs:
         run: |
           swiftc App/Services/Auth/IsgPasswordRules.swift scripts/isg/IsgPasswordRulesCheck.swift -o "$RUNNER_TEMP/isg-password-check"
           "$RUNNER_TEMP/isg-password-check" contracts/isg/v1/fixtures/password-rules.json
+      - name: Verify assignment request corpus shared with Android and server
+        run: |
+          swiftc App/Services/ISG/IsgMutationContext.swift App/Services/Company/IsgAssignmentMove.swift scripts/isg/AssignmentMoveCheck.swift -o "$RUNNER_TEMP/isg-assignment-check"
+          "$RUNNER_TEMP/isg-assignment-check" contracts/isg/v1/fixtures/assignment-move.json
       - name: Verify the same corpus as Kotlin and Deno
         run: '"$RUNNER_TEMP/isg-context-check" contracts/isg/v1/fixtures/mutation-context.json'
       - name: Compile and verify mutation outcomes and state transitions

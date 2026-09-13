@@ -1,0 +1,1416 @@
+{
+  "schema_version": 1,
+  "scope": "request validation only; not authorization",
+  "cases": [
+    {
+      "id": "first-assignment",
+      "valid": true,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "move-existing",
+      "valid": true,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 4,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": "00000000-0000-4000-b000-000000000099",
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "valid-date-0001-01-01",
+      "valid": true,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "0001-01-01"
+      }
+    },
+    {
+      "id": "valid-date-9999-12-31",
+      "valid": true,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "9999-12-31"
+      }
+    },
+    {
+      "id": "valid-date-2000-02-29",
+      "valid": true,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2000-02-29"
+      }
+    },
+    {
+      "id": "valid-date-2024-02-29",
+      "valid": true,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2024-02-29"
+      }
+    },
+    {
+      "id": "valid-date-2026-04-30",
+      "valid": true,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-04-30"
+      }
+    },
+    {
+      "id": "android",
+      "valid": true,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "android",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "max-incrementable-version",
+      "valid": true,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 9007199254740990,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "invalid-date-2026-02-29",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-02-29"
+      }
+    },
+    {
+      "id": "invalid-date-1900-02-29",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "1900-02-29"
+      }
+    },
+    {
+      "id": "invalid-date-2100-02-29",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2100-02-29"
+      }
+    },
+    {
+      "id": "invalid-date-2026-04-31",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-04-31"
+      }
+    },
+    {
+      "id": "invalid-date-2026-00-01",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-00-01"
+      }
+    },
+    {
+      "id": "invalid-date-2026-13-01",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-13-01"
+      }
+    },
+    {
+      "id": "invalid-date-2026-01-00",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-00"
+      }
+    },
+    {
+      "id": "invalid-date-2026-01-32",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-32"
+      }
+    },
+    {
+      "id": "invalid-date-0000-01-01",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "0000-01-01"
+      }
+    },
+    {
+      "id": "invalid-date-10000-01-01",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "10000-01-01"
+      }
+    },
+    {
+      "id": "invalid-date-2026-1-01",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-1-01"
+      }
+    },
+    {
+      "id": "invalid-date-2026-01-1",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-1"
+      }
+    },
+    {
+      "id": "invalid-date-2026-01-01T00:00:00Z",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01T00:00:00Z"
+      }
+    },
+    {
+      "id": "invalid-date-2026-01-01\n",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01\n"
+      }
+    },
+    {
+      "id": "invalid-date- 2026-01-01",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": " 2026-01-01"
+      }
+    },
+    {
+      "id": "invalid-date-infinity",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "infinity"
+      }
+    },
+    {
+      "id": "invalid-date--infinity",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "-infinity"
+      }
+    },
+    {
+      "id": "invalid-date-٢٠٢٦-٠١-٠١",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "٢٠٢٦-٠١-٠١"
+      }
+    },
+    {
+      "id": "invalid-date-null",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": null
+      }
+    },
+    {
+      "id": "invalid-date-123",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": 123
+      }
+    },
+    {
+      "id": "employee_id-not-uuid",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "not-uuid",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "employee_id-1-1-1-1-1",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "1-1-1-1-1",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "employee_id-123",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": 123,
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "previous_assignment_id-not-uuid",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": "not-uuid",
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "previous_assignment_id-1-1-1-1-1",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": "1-1-1-1-1",
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "previous_assignment_id-123",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": 123,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "department_id-not-uuid",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "not-uuid",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "department_id-1-1-1-1-1",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "1-1-1-1-1",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "department_id-123",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": 123,
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "job_role_id-not-uuid",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "not-uuid",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "job_role_id-1-1-1-1-1",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "1-1-1-1-1",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "job_role_id-123",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": 123,
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "uppercase-uuid",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "missing-context",
+      "valid": false,
+      "input": {
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "missing-employee_id",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "missing-previous_assignment_id",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "missing-department_id",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "missing-job_role_id",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "missing-starts_on",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040"
+      }
+    },
+    {
+      "id": "unknown-user_id",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01",
+        "user_id": "unexpected"
+      }
+    },
+    {
+      "id": "unknown-health",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01",
+        "health": "unexpected"
+      }
+    },
+    {
+      "id": "unknown-metadata",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01",
+        "metadata": "unexpected"
+      }
+    },
+    {
+      "id": "unknown-company_id",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01",
+        "company_id": "unexpected"
+      }
+    },
+    {
+      "id": "unknown-ends_before",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01",
+        "ends_before": "unexpected"
+      }
+    },
+    {
+      "id": "personal-scope",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "personal"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "missing-workplace",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "max-version-overflow",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 9007199254740991,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "negative-version",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": -1,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "fraction-version",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": 0.5,
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "string-version",
+      "valid": false,
+      "input": {
+        "context": {
+          "schema_version": 1,
+          "operation_id": "00000000-0000-4000-b000-000000010100",
+          "client_mutation_id": "00000000-0000-4000-b000-000000000100",
+          "platform": "ios",
+          "client_build": 91,
+          "expected_version": "0",
+          "scope": {
+            "kind": "company",
+            "company_id": "00000000-0000-4000-b000-000000000010",
+            "workplace_id": "00000000-0000-4000-b000-000000000020"
+          }
+        },
+        "employee_id": "00000000-0000-4000-b000-000000000050",
+        "previous_assignment_id": null,
+        "department_id": "00000000-0000-4000-b000-000000000030",
+        "job_role_id": "00000000-0000-4000-b000-000000000040",
+        "starts_on": "2026-01-01"
+      }
+    },
+    {
+      "id": "null-input",
+      "valid": false,
+      "input": null
+    },
+    {
+      "id": "array-input",
+      "valid": false,
+      "input": []
+    }
+  ]
+}

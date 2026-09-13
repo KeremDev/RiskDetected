@@ -9,6 +9,7 @@ import { validateEnvironment, validateContainerInspection } from './verify_envir
 import { legacyCapacityOracle } from './legacy_capacity_oracle.mjs';
 import { runWorkplaceProbe } from './workplace_probe.mjs';
 import { runPersonnelProbe } from './personnel_probe.mjs';
+import { runPersonnelMutationProbe } from './personnel_mutation_probe.mjs';
 
 // This lane creates and removes ONLY its own new synthetic container. No TCP, API,
 // Supabase credentials, host mounts, migrations, existing container reuse or image pulls.
@@ -17,7 +18,7 @@ const runId = randomUUID(); let config, containerId, interrupted = false;
 const report = { schema_version: 1, run_id: runId, started_at: new Date().toISOString(), image,
   suite: 'synthetic_postgres_transaction_prototype', production_contract_implemented: false,
   acceptance_complete: false, seed: 'fixed_uuid_counter_v1', node_version: process.version,
-  source_sha256: Object.fromEntries(['scripts/isg/run_database_contract.mjs', 'scripts/isg/sql/transaction_fixture.sql', 'scripts/isg/sql/workplace_fixture.sql', 'scripts/isg/workplace_probe.mjs', 'scripts/isg/sql/personnel_fixture.sql', 'scripts/isg/personnel_probe.mjs', 'scripts/isg/legacy_capacity_oracle.mjs', 'scripts/isg/verify_environment.mjs', 'contracts/isg/v1/safety-policy.json']
+  source_sha256: Object.fromEntries(['scripts/isg/run_database_contract.mjs', 'scripts/isg/sql/transaction_fixture.sql', 'scripts/isg/sql/workplace_fixture.sql', 'scripts/isg/workplace_probe.mjs', 'scripts/isg/sql/personnel_fixture.sql', 'scripts/isg/personnel_probe.mjs', 'scripts/isg/sql/personnel_mutation_fixture.sql', 'scripts/isg/personnel_mutation_probe.mjs', 'supabase/functions/_shared/personnel/assignment-move.ts', 'supabase/functions/_shared/isg/mutation-context.ts', 'contracts/isg/v1/fixtures/assignment-move.json', 'scripts/isg/legacy_capacity_oracle.mjs', 'scripts/isg/verify_environment.mjs', 'contracts/isg/v1/safety-policy.json']
     .map(path => [path, createHash('sha256').update(readFileSync(resolve(ROOT, path))).digest('hex')])),
   cases: [], cleanup: 'NOT_NEEDED' };
 const childEnv = { PATH: process.env.PATH ?? '', HOME: process.env.HOME ?? '', DOCKER_CONFIG: process.env.DOCKER_CONFIG ?? '', LANG: 'C.UTF-8' };
@@ -69,7 +70,8 @@ async function check(id, fn) {
   catch (error) { report.cases.push({ id, status: 'FAIL' }); throw error; }
 }
 async function killSleepingTransaction(sql, suffix) {
-  const appName = `isg_fixture_crash_${runId.replaceAll('-', '')}_${suffix}`;
+  // PostgreSQL truncates application_name at 63 bytes; bound the suffix too.
+  const appName = `isg_fixture_crash_${runId.replaceAll('-', '')}_${createHash('sha256').update(suffix).digest('hex').slice(0,8)}`;
   const pending = concurrent(`SET application_name='${appName}'; ${sql}`);
   let waiting = false;
   for (let attempt = 0; attempt < 30; attempt++) {
@@ -249,6 +251,8 @@ try {
   query(readFileSync(resolve(ROOT, 'scripts/isg/sql/personnel_fixture.sql'), 'utf8'));
   report.personnel_btree_gist_version = query("SELECT extversion FROM pg_extension WHERE extname='btree_gist';");
   await runPersonnelProbe({ query, concurrent, check, killSleepingTransaction });
+  query(readFileSync(resolve(ROOT, 'scripts/isg/sql/personnel_mutation_fixture.sql'), 'utf8'));
+  await runPersonnelMutationProbe({ query, concurrent, check, killSleepingTransaction });
   report.ok = true;
 } catch (error) {
   report.ok = false; report.error_code = /^DB_/.test(error.message) ? error.message : 'DB_CONTRACT_ASSERTION_FAILED';
