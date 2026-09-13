@@ -9,6 +9,15 @@ import org.junit.Test
 
 class PushDeviceTokenPayloadTest {
     @Test
+    fun `device permission denial is explicitly serialized without owner or client clock`() {
+        val payload = Json { encodeDefaults = false }.encodeToString(DevicePermissionPayload("test-token", "fcm", 120, false))
+        val json = Json.parseToJsonElement(payload).jsonObject
+        assertEquals(setOf("p_token", "p_provider", "p_build", "p_authorized"), json.keys)
+        assertEquals("false", json.getValue("p_authorized").jsonPrimitive.content)
+        assertEquals("120", json.getValue("p_build").jsonPrimitive.content)
+    }
+
+    @Test
     fun `android transport fields survive encodeDefaults false`() {
         val encoded = Json { encodeDefaults = false }.encodeToString(
             PushDeviceTokenPayload(

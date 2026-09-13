@@ -88,6 +88,7 @@ final class NotificationService: NSObject, ObservableObject {
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         guard generation == settingsRefreshGeneration else { return }
         authorizationStatus = settings.authorizationStatus
+        if let token = lastDeviceToken { await syncISGDevicePermission(token) }
         let preferencesLoaded = await refreshPreferences()
         guard generation == settingsRefreshGeneration else { return }
         settingsLoadState = preferencesLoaded ? .loaded : .failed
@@ -353,6 +354,23 @@ final class NotificationService: NSObject, ObservableObject {
             .from("push_device_tokens")
             .upsert(payload, onConflict: "user_id,token")
             .execute()
+        await syncISGDevicePermission(token)
+    }
+
+    // Additive capability sync: unavailable/disabled P12 must not break legacy
+    // APNs registration. Permission is per token, never the platform heartbeat.
+    private func syncISGDevicePermission(_ token: String) async {
+        guard supabase.currentUserID != nil,
+              let rawBuild = Bundle.main.infoDictionary?["CFBundleVersion"] as? String,
+              let build = Int32(rawBuild), build > 0 else { return }
+        do {
+            try await supabase.client.rpc("isg_notification_device_permission_v1", params:
+                ISGDevicePermissionPayload(token: token, provider: "apns", build: build,
+                    authorized: authorizationStatus == .authorized || authorizationStatus == .provisional || authorizationStatus == .ephemeral))
+                .execute()
+        } catch {
+            Self.logger.debug("ISG device permission sync unavailable; legacy registration preserved")
+        }
     }
 
     private func setMasterPreference(enabled: Bool) async throws {
@@ -590,6 +608,16 @@ private struct PushDeviceTokenPayload: Encodable {
         case deviceModel = "device_model"
         case notificationsEnabled = "notifications_enabled"
         case lastRegisteredAt = "last_registered_at"
+    }
+}
+
+private struct ISGDevicePermissionPayload: Encodable {
+    let token: String
+    let provider: String
+    let build: Int32
+    let authorized: Bool
+    enum CodingKeys: String, CodingKey {
+        case token = "p_token", provider = "p_provider", build = "p_build", authorized = "p_authorized"
     }
 }
 

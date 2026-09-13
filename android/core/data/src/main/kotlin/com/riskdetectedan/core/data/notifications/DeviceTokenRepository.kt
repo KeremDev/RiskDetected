@@ -8,8 +8,12 @@ import com.riskdetectedan.core.common.RdResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
 import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
@@ -97,6 +101,16 @@ class DeviceTokenRepository @Inject constructor(
         ) {
             onConflict = "user_id,provider,application_id,installation_id"
         }
+        // The optional P12 RPC may not exist on an older server. Its failure
+        // must not turn a successful legacy FCM registration into a failure.
+        try {
+            client.postgrest.rpc("isg_notification_device_permission_v1",
+                Json.encodeToJsonElement(DevicePermissionPayload(token, "fcm", environmentConfig.appVersionCode, notificationsEnabled)).jsonObject)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            // No token, owner, or raw backend error in telemetry.
+        }
         RdResult.Success(Unit)
     } catch (t: Throwable) {
         RdResult.Failure("device_token_register_failed", t.message ?: "device_token_register_failed", t)
@@ -126,3 +140,11 @@ class DeviceTokenRepository @Inject constructor(
         const val KEY_INSTALLATION_ID = "installation_id"
     }
 }
+
+@Serializable
+internal data class DevicePermissionPayload(
+    @SerialName("p_token") val token: String,
+    @SerialName("p_provider") val provider: String,
+    @SerialName("p_build") val build: Int,
+    @SerialName("p_authorized") val authorized: Boolean,
+)

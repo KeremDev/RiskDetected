@@ -28,6 +28,7 @@ import { beginNotificationCoreProbe, notificationCoreFiles } from './notificatio
 import { beginPersonalNotesProbe, personalNotesFiles } from './personal_notes_probe.mjs';
 import { beginNotificationDispatchProbe, notificationDispatchFiles } from './notification_dispatch_probe.mjs';
 import { beginNotificationRepositoryProbe, notificationRepositoryFiles } from './notification_repository_probe.mjs';
+import { beginNotificationDeviceProbe, notificationDeviceFiles } from './notification_device_probe.mjs';
 import { probeP05Upgrade, p05UpgradeFiles } from './p05_upgrade_probe.mjs';
 import { probePasswordAuth } from './password_auth_probe.mjs';
 import { probeSignupRecovery } from './signup_recovery_probe.mjs';
@@ -369,6 +370,8 @@ try {
     notificationDispatchProbe=await beginNotificationDispatchProbe({synthetic:true,sql,concurrentSql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'notification-repository';
     notificationRepositoryProbe=await beginNotificationRepositoryProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
+    stage = 'notification-device';
+    report.notification_device=beginNotificationDeviceProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'personnel-advisors';
     report.personnel_advisors=await probePersonnelAdvisors({synthetic:true,sql,guard,names,pass,onFindings:value=>{report.personnel_advisors=value;}});
   }
@@ -449,6 +452,7 @@ try {
     .concat(mode.synthetic ? personalNotesFiles : [])
     .concat(mode.synthetic ? notificationDispatchFiles : [])
     .concat(mode.synthetic ? notificationRepositoryFiles : [])
+    .concat(mode.synthetic ? notificationDeviceFiles : [])
     .concat(mode.p05Upgrade ? p05UpgradeFiles : [])
     .concat(mode.nativeE2E ? ['scripts/isg/native_e2e_bridge.mjs','scripts/isg/native_e2e_oracle.mjs','scripts/isg/run_native_android.mjs','tests/isg/native-ios/NativeHarness.swift','tests/isg/native-ios/NativeUITests.swift','android/isg-native-check/src/main/kotlin/com/riskdetectedan/isg/nativecheck/NativeActivity.kt','android/isg-native-check/src/androidTest/kotlin/com/riskdetectedan/isg/nativecheck/NativeFlowTest.kt'] : [])
     .map(path=>[path,digest(readFileSync(resolve(ROOT,path)))]));

@@ -61,12 +61,13 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'document_templates','document_template_versions','documents','document_number_sequences','document_versions',
       'export_jobs','import_batches','import_rows','import_checkpoints',
       'notification_purposes','notification_consents','producer_ownership','notification_episodes',
-      'notification_jobs','delivery_attempts',
+      'notification_jobs','delivery_attempts','notification_device_permissions',
       'personal_notes','note_conflicts','note_items','note_tags','note_tag_links','personal_reminders',
       'reminder_occurrences','device_delivery_claims']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([
+      'notification_device_permissions_notification_device_owner_idx','notification_device_permissions_notification_device_session_idx',
       'departments_department_parent_scope_idx','employees_employee_employer_scope_idx',
       'job_roles_job_owner_idx','contractor_organizations_contractor_owner_idx',
       'contractor_engagements_engagement_owner_idx','contractor_engagements_engagement_organization_idx','contractor_engagements_engagement_workplace_idx',

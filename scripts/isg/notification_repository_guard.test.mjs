@@ -14,5 +14,5 @@ test('provider wait is private, replay fenced and never shortens backoff',()=>{
   assert.match(m,/SECURITY INVOKER SET search_path=''/);
   assert.match(m,/prior_wait IS DISTINCT FROM p_retry_after_seconds/);
   assert.match(m,/greatest\(next_attempt_at,p_now\+make_interval/);
-  assert.equal(p05UpgradeFiles.at(-1),notificationRepositoryFiles[0]);
+  assert.ok(p05UpgradeFiles.indexOf(notificationRepositoryFiles[0]) > p05UpgradeFiles.indexOf('supabase/migrations/20260914070001_isg_notification_dispatch_safety.sql'));
 });

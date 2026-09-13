@@ -7,6 +7,7 @@ import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.core.content.ContextCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.Lifecycle
@@ -68,9 +69,10 @@ class PushTokenRegistrarViewModel @Inject constructor(
         } catch (t: Throwable) {
             null
         } ?: return
-        val notificationsEnabled = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+        val notificationsEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled() &&
+            (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
+            PackageManager.PERMISSION_GRANTED)
         deviceTokenRepository.registerToken(userId, token, notificationsEnabled = notificationsEnabled)
     }
 }

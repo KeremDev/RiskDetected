@@ -62,11 +62,12 @@ class RdFirebaseMessagingService : FirebaseMessagingService() {
         val userId = authRepository.currentUserId ?: return
         scope.launch {
             if (!releasePolicyRepository.resolveGate(AndroidRuntimeGateName.Notifications).enabled) return@launch
-            val notificationsEnabled = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            val notificationsEnabled = NotificationManagerCompat.from(this@RdFirebaseMessagingService).areNotificationsEnabled() &&
+                (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 ContextCompat.checkSelfPermission(
                     this@RdFirebaseMessagingService,
                     Manifest.permission.POST_NOTIFICATIONS,
-                ) == PackageManager.PERMISSION_GRANTED
+                ) == PackageManager.PERMISSION_GRANTED)
             deviceTokenRepository.registerToken(userId, token, notificationsEnabled = notificationsEnabled)
         }
     }
