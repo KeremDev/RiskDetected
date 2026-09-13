@@ -20,7 +20,8 @@ export const p05UpgradeFiles = ['scripts/isg/p05_upgrade_probe.mjs',
   'supabase/migrations/20260914070000_isg_personal_notes.sql',
   'supabase/migrations/20260914070001_isg_notification_dispatch_safety.sql',
   'supabase/migrations/20260914070002_isg_notification_provider_wait.sql',
-  'supabase/migrations/20260914070003_isg_device_notification_permission.sql'];
+  'supabase/migrations/20260914070003_isg_device_notification_permission.sql',
+  'supabase/migrations/20260914070004_isg_notebook_sync_api.sql'];
 
 /** Called only on the runner's freshly cloned, network=none, identity-guarded target. */
 export function probeP05Upgrade({sql,pass,isolatedCopy}) {
@@ -50,7 +51,7 @@ export function probeP05Upgrade({sql,pass,isolatedCopy}) {
   sql('SELECT private_isg.ensure_default(id) IS NOT NULL FROM public.companies;');
   pass('p05_full_copy_backfill_repeat_no_change', state() === first);
   pass('p05_full_copy_legacy_rows_unchanged_after_retry', fingerprint() === before);
-  pass('p05_full_copy_new_schema_rls', sql("SELECT count(*)=108 AND bool_and(rowsecurity) FROM pg_tables WHERE schemaname='private_isg';") === 't');
+  pass('p05_full_copy_new_schema_rls', sql("SELECT count(*)=109 AND bool_and(rowsecurity) FROM pg_tables WHERE schemaname='private_isg';") === 't');
   pass('p05_full_copy_client_table_grants_closed', sql("SELECT count(*) FROM information_schema.role_table_grants WHERE table_schema='private_isg' AND grantee IN ('PUBLIC','anon','authenticated','service_role');") === '0');
   pass('p05_full_copy_notification_dispatch_token_installed', sql("SELECT count(*)=5 FROM information_schema.columns WHERE table_schema='private_isg' AND table_name='notification_jobs' AND column_name IN ('dispatch_token','authorized_at','dispatch_expires_at','next_attempt_at','accepted_at');") === 't');
   pass('p05_full_copy_notification_completion_private', sql("SELECT NOT has_function_privilege('authenticated','private_isg.complete_notification_delivery(uuid,uuid,text,text,text,timestamptz)','EXECUTE') AND NOT has_function_privilege('service_role','private_isg.complete_notification_delivery(uuid,uuid,text,text,text,timestamptz)','EXECUTE');") === 't');

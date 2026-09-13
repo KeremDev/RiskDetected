@@ -62,7 +62,7 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'export_jobs','import_batches','import_rows','import_checkpoints',
       'notification_purposes','notification_consents','producer_ownership','notification_episodes',
       'notification_jobs','delivery_attempts','notification_device_permissions',
-      'personal_notes','note_conflicts','note_items','note_tags','note_tag_links','personal_reminders',
+      'personal_notes','note_conflicts','note_items','note_tags','note_tag_links','personal_reminders','note_mutation_receipts',
       'reminder_occurrences','device_delivery_claims']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.

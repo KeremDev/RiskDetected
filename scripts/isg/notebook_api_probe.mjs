@@ -1,0 +1,78 @@
+import { readFileSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
+import { resolve } from 'node:path';
+import { ROOT } from './lib.mjs';
+import { verifyLocalSessionToken } from './auth_session_probe.mjs';
+const q=v=>"'"+String(v).replaceAll("'","''")+"'";
+export const notebookAPIFiles=['supabase/migrations/20260914070004_isg_notebook_sync_api.sql','scripts/isg/notebook_api_probe.mjs'];
+export async function beginNotebookAPIProbe({synthetic,sql,concurrentSql,token,secret,request,waitReady,pass}) {
+  if(synthetic!==true)throw Error('NOTEBOOK_API_SYNTHETIC_REQUIRED');
+  const claims=verifyLocalSessionToken(token,secret),owner=claims.sub;
+  const mark=(name,ok)=>pass('notebook_api_'+name,ok);
+  sql(readFileSync(resolve(ROOT,notebookAPIFiles[0]),'utf8'));
+  const read=(note=null,after=null,options={})=>request('/rpc/isg_notebook_read_v1',{method:'POST',body:{p_note:note,p_after:after},...options});
+  const mutate=(body,options={})=>request('/rpc/isg_notebook_mutate_v1',{method:'POST',body,...options});
+  const draft=(note=randomUUID(),expected=0,body='Kişisel taslak')=>({p_mutation:randomUUID(),p_note:note,p_action:'sync',p_expected:expected,p_title:'Not',p_body:body,p_conflict:null});
+  await waitReady(()=>read().body?.message==='FEATURE_UNAVAILABLE');
+  mark('new_api_defaults_closed',read().body.message==='FEATURE_UNAVAILABLE');
+  sql("UPDATE private_isg.rollout SET read_enabled=true,write_enabled=true WHERE feature='personal_notes';");
+  const tier=sql(`SELECT tier FROM public.profiles WHERE id=${q(owner)};`);
+  sql(`UPDATE public.profiles SET tier='free' WHERE id=${q(owner)};`);
+  const first=draft(),created=mutate(first);
+  mark('free_account_creates_over_real_http',created.status===200&&created.body.state==='created'&&created.body.version===1);
+  sql(`UPDATE public.profiles SET tier=${q(tier)} WHERE id=${q(owner)};`);
+  mark('same_mutation_replays',mutate(first).body.replayed===true);
+  mark('changed_retry_conflicts',mutate({...first,p_body:'Changed'}).body.message==='IDEMPOTENCY_CONFLICT');
+  mark('write_receipt_has_no_note_text',!JSON.stringify(created.body).includes(first.p_body)&&!Object.hasOwn(created.body,'body'));
+  const edited=mutate(draft(first.p_note,1,'Güncel metin'));
+  mark('edit_advances_version',edited.body.version===2);
+  const stale=draft(first.p_note,1,'Çevrimdışı diğer metin'),conflict=mutate(stale);
+  mark('offline_conflict_preserves_both',conflict.body.state==='conflict'&&conflict.body.both_texts_preserved);
+  const repeated=mutate(stale);
+  mark('conflict_retry_not_duplicated',repeated.body.conflict_id===conflict.body.conflict_id&&repeated.body.replayed===true&&
+    sql(`SELECT count(*) FROM private_isg.note_conflicts WHERE note_id=${q(first.p_note)};`)==='1');
+  const detail=read(first.p_note);
+  mark('owner_can_read_conflict_texts',detail.body.note.body==='Güncel metin'&&detail.body.note.conflicts[0].incoming_body===stale.p_body);
+  const resolution={...draft(first.p_note,2,'Birleştirilmiş metin'),p_action:'resolve',p_conflict:conflict.body.conflict_id};
+  mutate(draft(first.p_note,2,'Üçüncü düzenleme'));
+  mark('stale_resolution_cannot_overwrite_new_edit',mutate(resolution).body.message==='VERSION_CONFLICT'&&read(first.p_note).body.note.body==='Üçüncü düzenleme');
+  const resolved=mutate({...resolution,p_expected:3});
+  mark('current_resolution_succeeds_without_text_receipt',resolved.body.version===4&&resolved.body.state==='resolved'&&!JSON.stringify(resolved.body).includes('metin'));
+  mark('resolved_conflict_cannot_be_reused_as_new_write',mutate({...resolution,p_mutation:randomUUID(),p_expected:4}).body.message==='CONFLICT_ALREADY_RESOLVED');
+  mark('anon_read_and_write_denied',read(null,null,{authorization:null}).status>=400&&mutate(first,{authorization:null}).status>=400);
+  const foreign=sql(`SELECT id FROM public.profiles WHERE id<>${q(owner)} LIMIT 1;`),foreignNote=randomUUID();
+  sql(`SELECT private_isg.sync_personal_note(${q(foreign)},${q(foreignNote)},'Foreign','Private',0,clock_timestamp(),clock_timestamp());`);
+  mark('foreign_note_read_denied',read(foreignNote).body.message==='ACCESS_DENIED');
+  mark('foreign_note_write_denied',mutate(draft(foreignNote,1)).body.message==='ACCESS_DENIED');
+  mark('unknown_company_parameter_rejected',mutate({...draft(),p_company:randomUUID()}).status===404);
+  mark('oversized_text_rejected',mutate(draft(undefined,0,'x'.repeat(20001))).body.message==='VALIDATION_ERROR');
+  // Independent PG connections, not Promise.all around synchronous HTTP calls.
+  const concurrent=draft();
+  const statement=`BEGIN;SET LOCAL ROLE authenticated;SELECT set_config('request.jwt.claims',${q(JSON.stringify(claims))},true) IS NOT NULL;
+    SELECT public.isg_notebook_mutate_v1(${q(concurrent.p_mutation)},${q(concurrent.p_note)},'sync',0,'Not',${q(concurrent.p_body)},NULL);COMMIT;`;
+  const raced=await Promise.all(Array.from({length:4},()=>concurrentSql(statement)));
+  mark('four_connections_one_mutation_receipt',raced.every(r=>r.ok)&&sql(`SELECT count(*) FROM private_isg.note_mutation_receipts WHERE owner_id=${q(owner)} AND mutation_id=${q(concurrent.p_mutation)};`)==='1'&&read(concurrent.p_note).body.note.version===1);
+  sql(`SELECT private_isg.sync_personal_note(${q(owner)},gen_random_uuid(),'Page','Fixture',0,clock_timestamp(),clock_timestamp()) FROM generate_series(1,22);`);
+  const collected=[];let cursor=null,hasMore=true,rounds=0;
+  while(hasMore&&rounds++<10){const page=read(null,cursor);if(page.status!==200)throw Error('NOTEBOOK_PAGE_FAILED');
+    collected.push(...page.body.notes);hasMore=page.body.has_more;cursor=page.body.next_after;if(page.body.notes.length>20)throw Error('NOTEBOOK_PAGE_UNBOUNDED');}
+  mark('bounded_full_scan_has_all_owner_notes',!hasMore&&collected.length===Number(sql(`SELECT count(*) FROM private_isg.personal_notes WHERE owner_id=${q(owner)};`))&&new Set(collected.map(n=>n.note_id)).size===collected.length);
+  mark('foreign_note_absent_from_list',!collected.some(n=>n.note_id===foreignNote));
+  sql(`SELECT private_isg.sync_personal_note(${q(owner)},${q(first.p_note)},'Conflict','Fixture',0,clock_timestamp(),clock_timestamp()) FROM generate_series(1,21);`);
+  const page1=read(first.p_note),page2=read(first.p_note,page1.body.next_conflict_after);
+  mark('conflicts_are_bounded_and_pageable',page1.body.note.conflicts.length===20&&page1.body.has_more_conflicts&&page2.body.note.conflicts.length===1&&!page2.body.has_more_conflicts);
+  const remove={...draft(first.p_note,4),p_action:'delete',p_title:null,p_body:null},deleted=mutate(remove);
+  mark('delete_returns_versioned_tombstone',deleted.body.state==='deleted'&&deleted.body.version===5);
+  mark('deleted_note_exposes_no_text_or_conflicts',read(first.p_note).body.note.tombstone&&read(first.p_note).body.note.body===null&&read(first.p_note).body.note.conflicts.length===0);
+  mark('offline_edit_cannot_resurrect',mutate(draft(first.p_note,4)).body.message==='NOTE_TOMBSTONED');
+  mark('resolution_cannot_resurrect',mutate({...resolution,p_mutation:randomUUID(),p_expected:5}).body.message==='NOTE_TOMBSTONED');
+  mark('delete_retry_is_idempotent',mutate(remove).body.replayed===true&&read(first.p_note).body.note.version===5);
+  mark('tables_stay_private',sql("SELECT NOT has_table_privilege('authenticated','private_isg.note_mutation_receipts','SELECT') AND NOT has_function_privilege('service_role','public.isg_notebook_mutate_v1(uuid,uuid,text,bigint,text,text,uuid)','EXECUTE');")==='t');
+  sql("UPDATE private_isg.rollout SET read_enabled=false,write_enabled=false WHERE feature='personal_notes';");
+  mark('rollout_remains_closed',read().body.message==='FEATURE_UNAVAILABLE');
+  return {afterLogout(){
+    mark('revoked_session_cannot_read',read().body.message==='AUTH_REQUIRED');
+    mark('revoked_session_cannot_replay',mutate(first).body.message==='AUTH_REQUIRED');
+    return {real_http:true,real_auth_session:true,parallel_pg_connections:4,rollout_closed:true,mobile_sdk_tested:false,production_deployed:false};
+  }};
+}

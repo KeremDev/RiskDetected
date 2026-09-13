@@ -1,0 +1,14 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { beginNotebookAPIProbe, notebookAPIFiles } from './notebook_api_probe.mjs';
+import { p05UpgradeFiles } from './p05_upgrade_probe.mjs';
+test('notebook API probe refuses unsafe mode before SQL or HTTP',async()=>{
+  await assert.rejects(beginNotebookAPIProbe({synthetic:false,sql:()=>assert.fail('SQL'),request:()=>assert.fail('HTTP')}),/SYNTHETIC_REQUIRED/);
+});
+test('notebook authenticated boundary has no company or paid-plan dependency',()=>{
+  const sql=readFileSync(notebookAPIFiles[0],'utf8');
+  assert.doesNotMatch(sql,/require_company|user_plan_tier|user_subscriptions|company_id|entity_id/);
+  for(const required of ['active_actor()','notes_gate(true)','notes_gate(false)','IDEMPOTENCY_CONFLICT','NOTE_TOMBSTONED','VERSION_CONFLICT','LIMIT 21','full_scan_restart','ENABLE ROW LEVEL SECURITY'])assert.ok(sql.includes(required));
+  assert.ok(p05UpgradeFiles.includes(notebookAPIFiles[0]));
+});

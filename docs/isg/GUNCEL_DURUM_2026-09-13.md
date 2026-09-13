@@ -5,6 +5,8 @@ Kapsam: V5 geçiş planı, bu tarihe kadar mevcut kaynak kodu ve yerel doğrulam
 
 ## 1. Kısa ve açık sonuç
 
+**Aktif geliştirme P13'e geçti.** P12'nin kapanışı değil, planda açıkça bağımsız olan not defterine geçiştir. P13 authenticated/Free senkron API'si gerçek yerel HTTP ve Auth ile doğrulandı: **30 yeni kontrol, toplam 816 PASS (815 tekil), 32 upgrade, 355 foundation**. Native taslak/kuyruk ve ekranlar sıradadır; P12'nin kalan entegrasyonları ve canlı açılışı bekliyor. [Geçiş kaydı](P12_TO_P13_TRANSITION_2026-09-13.md). Aşağıdaki önceki paket açıklamaları tarihsel kanıttır.
+
 **Son paket — P12 gerçek SQL bağlantısı:** worker'ın claim/complete repository adaptörü ve sağlayıcı bekleme süresi kalıcılaştırıldı. Taklit sağlayıcıyla gerçek izole PostgreSQL zinciri geçti: **768 kontrol (767 tekil), 32 upgrade / 18 migration, 331 foundation, 84 ağsız Deno testi**. Cihaz/token read model'i ve gerçek worker/credential bağlaması henüz yok; canlı gönderim kapalı. [Güncel teslim ve bekleyenler](P12_REPOSITORY_WAIT_2026-09-13.md).
 
 **Son paket — P12 işçi/adaptör:** APNs/FCM için tek istekli adaptör ve claim/sonuç-kaydı koordinatörü eklendi; foundation **298 PASS**, yeni **53** davranış testi ağ/env izni kapalı Deno koşusunda da geçti. Bu katman henüz gerçek repository/credential ve canlı kuyruğa bağlı değildir. SQL ve mobil uygulamalar bu pakette değişmedi. [Yapılanlar ve sıradaki bağlantılar](P12_WORKER_TRANSPORT_2026-09-13.md).

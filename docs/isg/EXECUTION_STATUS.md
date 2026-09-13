@@ -4,6 +4,8 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 
 ## Güncel durum
 
+- **Aktif faz P13 — 13 Eylül:** Plan §10.2 bağımlılığı doğrulandı; P12 tamamlandı sayılmadan bağımsız not defteri geliştirmesine geçildi. Aktif oturumlu/Free notebook API, mutation dedupe, sayfalı okuma, güncel sürümlü conflict çözümü ve tombstone koruması eklendi. **816 sentetik PASS (815 tekil), 30 yeni notebook API kontrolü, 32 upgrade PASS / 20 migration, 355 foundation PASS.** Sırada native güvenli taslak/kuyruk, repository ve ekranlar var. P12 worker/sağlayıcı entegrasyonu hâlâ açık ve canlı kapalı. [Geçiş kararı ve açık işler](P12_TO_P13_TRANSITION_2026-09-13.md).
+
 - **13 Eylül P12 SQL repository / provider wait:** gerçek parametre bağlı claim/complete adaptörü, kalıcı Retry-After ve aynı receipt replay denetimi eklendi. Worker→gerçek izole SQL→taklit sağlayıcı→SQL zinciri **14 yeni kabul** ile doğrulandı. Paket sonu **768 sentetik PASS (767 tekil), 32 upgrade PASS / 18 migration, 331 foundation PASS, ağ/env kapalı Deno 84 PASS; cleanup PASS.** Gerçek cihaz kaynağı/worker rolü/credential ve canlı bağlantılar açık; P12 kapanmadı. [Paket ve sınırlar](P12_REPOSITORY_WAIT_2026-09-13.md).
 
 - **13 Eylül P12 işçi/adaptör devamı:** tek claim ile tek sağlayıcı isteği yapan orchestration, credential sonrası snapshot/kill-switch kontrolü, timeout ve receipt kaybında resend yasağı, APNs/FCM request adaptörleri eklendi. **Foundation 298 PASS; yeni 53 davranış testi Deno'da ağ/env izni kapalı da 53 PASS; üretim TS typecheck PASS.** Gerçek repository/credential kaynağı, e-posta, P01 tüketicisi ve native izin yüzeyi henüz bağlı değil; canlı/SQL değişmedi, **P12 kapanmadı**. [Paket ve bekleyenler](P12_WORKER_TRANSPORT_2026-09-13.md).
