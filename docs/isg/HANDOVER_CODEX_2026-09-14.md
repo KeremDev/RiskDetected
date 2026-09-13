@@ -1,5 +1,7 @@
 # Devir notu — İSG geçişinde sunucu dilimlerini sürdürmek
 
+> **Güncel devam:** [P12 SQL repository ve kalıcı bekleme](P12_REPOSITORY_WAIT_2026-09-13.md): 768 sentetik PASS / 767 tekil, 32 upgrade PASS / 18 migration, 331 foundation PASS. Gerçek izole PostgreSQL kullanıldı; sağlayıcı ve cihaz kaynağı sentetik, canlı kapalıdır.
+
 > **Sonraki paket:** [P12 tek istekli işçi/APNs-FCM adaptörleri](P12_WORKER_TRANSPORT_2026-09-13.md) eklendi; foundation 298 PASS, 53 yeni davranış testi. Gerçek DB/credential bağlaması ve canlı aktivasyon yapılmadı. Aşağıdaki devir sonuçları tarihsel test turlarıdır.
 
 > **Codex devralma sonucu (gerçek koşu: 13 Eylül 2026):** aşağıdaki envanter tarihsel devirdir. Bildirim kodundaki dört açık yeniden üretildi ve `20260914070001` ile düzeltildi. Son durum: 754 sentetik PASS (753 tekil ID), 31 upgrade PASS / 17 migration, 245 foundation PASS. [Güncel teslim, API değişikliği ve bekleyenler](P12_DISPATCH_SAFETY_2026-09-13.md). P12 gerçek sağlayıcıya bağlanmış veya kapanmış değildir.

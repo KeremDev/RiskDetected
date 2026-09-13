@@ -1,5 +1,7 @@
 # P12 — tek istekli işçi ve APNs/FCM adaptörleri
 
+> Sonraki dilim: [SQL repository ve kalıcı sağlayıcı beklemesi](P12_REPOSITORY_WAIT_2026-09-13.md). Aşağıdaki ilk paket kaydı tarihseldir: repository artık mevcut ve izole gerçek SQL ile doğrulanmıştır; 429 beklemesi kalıcılaştırılmıştır. Production cihaz/pool/credential bağlantısı hâlâ yoktur.
+
 13 Eylül 2026 · Başlangıç commit'i `7929c550`.
 
 **Bu işçi/adaptör kütüphanesi dilimi tamamlandı ve yerel doğrulandı. P12 bütünü kapanmadı.** Kod henüz canlı kuyruğa, gerçek cihaz tokenlarına veya bir HTTP/cron girişine bağlanmadı. Canlı gönderim yoktur. Önceki [SQL gönderim güvenliği](P12_DISPATCH_SAFETY_2026-09-13.md) korunur.

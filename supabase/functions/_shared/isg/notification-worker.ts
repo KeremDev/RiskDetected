@@ -3,7 +3,7 @@
 export type Device = { owner_id: string; app_build: number; category_enabled: boolean; os_authorized: boolean };
 export type Snapshot = { job_id: string; device: Device; provider: 'apns' | 'fcm'; token: string; title: string; body: string };
 export type Claim = { job_id: string; allowed: boolean; dispatch_token?: string; expires_at?: string; resolved_route?: string; channel?: string };
-export type Outcome = { state: 'accepted' | 'rejected' | 'error'; failure: string | null };
+export type Outcome = { state: 'accepted' | 'rejected' | 'error'; failure: string | null; retry_after_seconds?: number };
 export type Receipt = Outcome & { job_id: string; dispatch_token: string; provider: 'apns' | 'fcm'; now: string };
 export type Repository = {
   load(job: string): Promise<Snapshot | null>;
@@ -31,9 +31,12 @@ function normalized(s: Snapshot): string {
     s.device.app_build, s.device.category_enabled, s.device.os_authorized]);
 }
 const unknown: Outcome = { state: 'error', failure: 'TRANSPORT_UNKNOWN' };
-function validOutcome(o: Outcome): boolean {
+export function validOutcome(o: Outcome): boolean {
   return !!o && ['accepted', 'rejected', 'error'].includes(o.state) &&
-    (o.state === 'accepted' ? o.failure === null : typeof o.failure === 'string' && /^[A-Z][A-Z0-9_]{2,49}$/.test(o.failure));
+    (o.state === 'accepted' ? o.failure === null : typeof o.failure === 'string' && /^[A-Z][A-Z0-9_]{2,49}$/.test(o.failure)) &&
+    (o.retry_after_seconds === undefined || (o.state === 'rejected' &&
+      ['RATE_LIMITED','PROVIDER_UNAVAILABLE','TEMPORARY_FAILURE'].includes(o.failure ?? '') &&
+      Number.isInteger(o.retry_after_seconds) && o.retry_after_seconds >= 1 && o.retry_after_seconds <= 86400));
 }
 
 /** One invocation, one job, at most ONE network request. Never retry send on

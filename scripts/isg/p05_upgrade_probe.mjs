@@ -18,7 +18,8 @@ export const p05UpgradeFiles = ['scripts/isg/p05_upgrade_probe.mjs',
   'supabase/migrations/20260914030000_isg_document_import_core.sql',
   'supabase/migrations/20260914050000_isg_notification_core.sql',
   'supabase/migrations/20260914070000_isg_personal_notes.sql',
-  'supabase/migrations/20260914070001_isg_notification_dispatch_safety.sql'];
+  'supabase/migrations/20260914070001_isg_notification_dispatch_safety.sql',
+  'supabase/migrations/20260914070002_isg_notification_provider_wait.sql'];
 
 /** Called only on the runner's freshly cloned, network=none, identity-guarded target. */
 export function probeP05Upgrade({sql,pass,isolatedCopy}) {
@@ -52,6 +53,7 @@ export function probeP05Upgrade({sql,pass,isolatedCopy}) {
   pass('p05_full_copy_client_table_grants_closed', sql("SELECT count(*) FROM information_schema.role_table_grants WHERE table_schema='private_isg' AND grantee IN ('PUBLIC','anon','authenticated','service_role');") === '0');
   pass('p05_full_copy_notification_dispatch_token_installed', sql("SELECT count(*)=5 FROM information_schema.columns WHERE table_schema='private_isg' AND table_name='notification_jobs' AND column_name IN ('dispatch_token','authorized_at','dispatch_expires_at','next_attempt_at','accepted_at');") === 't');
   pass('p05_full_copy_notification_completion_private', sql("SELECT NOT has_function_privilege('authenticated','private_isg.complete_notification_delivery(uuid,uuid,text,text,text,timestamptz)','EXECUTE') AND NOT has_function_privilege('service_role','private_isg.complete_notification_delivery(uuid,uuid,text,text,text,timestamptz)','EXECUTE');") === 't');
+  pass('p05_full_copy_notification_provider_wait_installed_private', sql("SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='private_isg' AND table_name='delivery_attempts' AND column_name='retry_after_seconds') AND NOT has_function_privilege('authenticated','private_isg.complete_notification_delivery_with_retry(uuid,uuid,text,text,text,timestamptz,integer)','EXECUTE');") === 't');
   return {full_legacy_schema_upgrade:true,legacy_row_fingerprint:before,original_helper_fingerprint:helpers,default_backfill_repeated:2,production_changed:false,storage_bytes_tested:false};
 }
 

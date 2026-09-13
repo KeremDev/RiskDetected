@@ -6,9 +6,22 @@ export type Credentials =
 const error = (failure: string): Outcome => ({ state: 'error', failure });
 const rejected = (failure: string): Outcome => ({ state: 'rejected', failure });
 
+// Conservative one-minute floor; never truncate a longer provider wait to send
+// early. Unrepresentable waits require review instead of automatic retry.
+export function parseProviderWait(value: string | null, now: number): number | null {
+  if (!Number.isFinite(now)) return null;
+  if (value === null) return 60;
+  let seconds: number;
+  if (/^\d{1,8}$/.test(value)) seconds = Number(value);
+  else if (/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/.test(value))
+    seconds = Math.ceil((Date.parse(value) - now) / 1000);
+  else return null;
+  return Number.isFinite(seconds) && seconds <= 86400 ? Math.max(60, seconds) : null;
+}
+
 // Deliberately do not inherit legacy delivery helpers' internal retry loops.
 // No implicit global fetch or secret loading; callers must supply both ports.
-export function preparePush(snapshot: Snapshot, credentials: Credentials, fetchPort: FetchPort): Prepared {
+export function preparePush(snapshot: Snapshot, credentials: Credentials, fetchPort: FetchPort, now = () => Date.now()): Prepared {
   const s = structuredClone(snapshot), c = structuredClone(credentials);
   if (!validSnapshot(s, s.job_id) || c.provider !== s.provider || typeof c.bearer !== 'string' || c.bearer.length > 8192 || !/^[A-Za-z0-9._~+/-]+=*$/.test(c.bearer)) throw Error('INVALID_TRANSPORT_CONFIG');
   let url: string;
@@ -43,9 +56,10 @@ export function preparePush(snapshot: Snapshot, credentials: Credentials, fetchP
       // turn an accepted message into a retryable failure.
       void response.body?.cancel().catch(() => {});
       if (response.status === 200) return { state: 'accepted', failure: null };
-      // SQL backoff cannot yet persist Retry-After. Hold rather than violate
-      // provider pacing by mapping this to the prototype 30-second retry.
-      if (response.status === 429) return error('PROVIDER_RETRY_POLICY_REQUIRED');
+      if (response.status === 429) {
+        const wait = parseProviderWait(response.headers.get('retry-after'), now());
+        return wait === null ? error('PROVIDER_RETRY_POLICY_REQUIRED') : { state: 'rejected', failure: 'RATE_LIMITED', retry_after_seconds: wait };
+      }
       if (response.status >= 500 || response.status < 400) return error('PROVIDER_RESULT_UNKNOWN');
       if (response.status === 401 || response.status === 403) return rejected('PROVIDER_AUTH_REQUIRED');
       if (response.status === 410 && c.provider === 'apns') return rejected('TOKEN_INVALID');

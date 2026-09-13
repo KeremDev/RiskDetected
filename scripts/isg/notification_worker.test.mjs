@@ -81,7 +81,7 @@ for(const provider of ['apns','fcm']){
     [200,'accepted',null],[201,'error','PROVIDER_RESULT_UNKNOWN'],[302,'error','PROVIDER_RESULT_UNKNOWN'],
     [400,'rejected','PROVIDER_REQUEST_REJECTED'],[401,'rejected','PROVIDER_AUTH_REQUIRED'],[403,'rejected','PROVIDER_AUTH_REQUIRED'],
     [404,'rejected','PROVIDER_REQUEST_REJECTED'],[410,'rejected',provider==='apns'?'TOKEN_INVALID':'PROVIDER_REQUEST_REJECTED'],
-    [429,'error','PROVIDER_RETRY_POLICY_REQUIRED'],[500,'error','PROVIDER_RESULT_UNKNOWN'],[503,'error','PROVIDER_RESULT_UNKNOWN'],
+    [429,'rejected','RATE_LIMITED'],[500,'error','PROVIDER_RESULT_UNKNOWN'],[503,'error','PROVIDER_RESULT_UNKNOWN'],
   ])test(`${provider} ${status}: one request, ${state}/${failure}`,async()=>{
     let count=0;
     const transport=preparePush(snap(),credentials,async(url,init)=>{
@@ -92,7 +92,7 @@ for(const provider of ['apns','fcm']){
       assert.ok(!init.body.includes(credentials.bearer));
       return new Response('not logged',{status});
     });
-    assert.deepEqual(await transport.send('home',token,new AbortController().signal),{state,failure});
+    assert.deepEqual(await transport.send('home',token,new AbortController().signal),{state,failure,...(status===429?{retry_after_seconds:60}:{})});
     await assert.rejects(transport.send('home',token,new AbortController().signal),/ALREADY_USED/);assert.equal(count,1);
   });
   test(`${provider} network loss never retries`,async()=>{

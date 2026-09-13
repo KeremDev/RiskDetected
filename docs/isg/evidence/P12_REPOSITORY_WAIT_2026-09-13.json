@@ -1,0 +1,208 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-13",
+  "phase": "P12",
+  "slice": "SQL repository composition and persisted provider wait",
+  "base_commit": "18f253f3",
+  "slice_complete": true,
+  "phase_complete": false,
+  "production_deployed": false,
+  "real_provider_called": false,
+  "production_device_source_bound": false,
+  "production_worker_role_bound": false,
+  "synthetic": {
+    "run_id": "c093c378-dc14-4b8b-9c23-990e53d08088",
+    "report": "output/isg/runs/synthetic-auth-cw7nHT/REPORT.json",
+    "report_sha256": "ddde0394db06bfcb05afc3ed661f1de969475b1c031edbd3641fdcfafeac77a3",
+    "total_checks": 768,
+    "unique_check_ids": 767,
+    "cleanup": "PASS",
+    "finished_at": "2026-09-13T14:03:00.299Z"
+  },
+  "upgrade": {
+    "run_id": "171dea92-6a11-465f-8b60-5d9c080b6775",
+    "report": "backups/isg-auth-service-restore-20260912-tFgEXf/REPORT.json",
+    "report_sha256": "a980a18a5bf15f625e2e296d78f15331094b7888c808260b22884e31811dd704",
+    "total_checks": 32,
+    "unique_check_ids": 32,
+    "cleanup": "PASS",
+    "finished_at": "2026-09-13T14:01:20.201Z",
+    "migrations": 18,
+    "rls_tables": 107,
+    "client_table_grants": 0,
+    "legacy_unchanged": true
+  },
+  "new_checks": [
+    {
+      "id": "notification_repository_migration_keeps_rollout_closed",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_repository_real_sql_claim_provider_stub_and_receipt_compose",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_repository_provider_wait_persisted_atomically",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_repository_same_receipt_replay_preserves_wait",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_repository_changed_wait_conflicts_without_mutation",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_repository_before_provider_wait_no_new_send",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_repository_at_wait_boundary_new_claim_and_one_send",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_repository_committed_receipt_lost_response_returns_pending",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_repository_restart_does_not_resend_committed_job",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_repository_pending_receipt_reconciles_idempotently",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_repository_unknown_transport_persisted_without_retry",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_repository_eight_worker_invocations_one_real_sql_winner",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_repository_completion_api_has_no_client_grants",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_repository_disabled_worker_makes_no_provider_request",
+      "result": "PASS"
+    }
+  ],
+  "composition": {
+    "real_postgres_prepared_calls": true,
+    "worker_repository_transport_composed": true,
+    "provider_stub_only": true,
+    "trusted_device_source": "synthetic fixture",
+    "external_egress": false,
+    "production_changed": false,
+    "rollout_left_disabled": true,
+    "receipt_response_loss_replayed": true
+  },
+  "foundation": {
+    "passed": 331,
+    "failed": 0,
+    "command": "node scripts/isg/run_suite.mjs foundation",
+    "log_sha256": "af363f9197826df5f80527f3d6769ebdaec52902bb0ff0be8297e65ccc2ae3a7"
+  },
+  "deno": {
+    "passed": 84,
+    "failed": 0,
+    "network_permission": false,
+    "environment_permission": false,
+    "same_scenarios_as_node": true,
+    "log_sha256": "f5a0810c4697e520caf5dc9df61d53a46fefa60da186a69a3066446e43a42985"
+  },
+  "typecheck": {
+    "files": 3,
+    "passed": true
+  },
+  "advisors": {
+    "relevant": 203,
+    "levels": {
+      "INFO": 203
+    },
+    "production_audit": false
+  },
+  "limitations": [
+    "Snapshot source and provider response synthetic; PostgreSQL real and isolated",
+    "restart-named check is a new invocation in the same process, not OS restart",
+    "No durable receipt outbox or process-loss reconciliation proof",
+    "One repeated existing mail-check ID; totals not unique scenario counts"
+  ],
+  "source_sha256": {
+    "scripts/isg/run_auth_restore.mjs": "766c31de9b96d3a2dc2e52f05f105ddf8e4aca4d8105cde29ba39068de068c76",
+    "scripts/isg/password_auth_probe.mjs": "a019d47f0bddd2d4f6b6b179e62503d0fc17aadd90f735263bad4ea86ad5d7cc",
+    "scripts/isg/signup_recovery_probe.mjs": "bbcd21630df79e5fc2095dc354e90d7b5b0e410d3f3b1caf270e877c53099c1d",
+    "scripts/isg/auth_mail_sink.cjs": "07e7e5b6e34cbe08c664b1948b9c6f99b1ebe3f4735d79bb2dbb60c70c6cc275",
+    "scripts/isg/auth_session_probe.mjs": "1c858ffda4550d4b019c08192dfc67c4a4dafbf691ab973caf1968aca37faebe",
+    "scripts/isg/auth_mutation_probe.mjs": "ac64fae84161e4af3f6a761b187ff09df2916cef106bf32dcddb8ee17b9aece9",
+    "scripts/isg/sql/auth_mutation_fixture.sql": "0ed052d6edb148743bfaa6014ac030748a11acf1b41db65ebfad5be399f6d03c",
+    "scripts/isg/sql/transaction_fixture.sql": "87eafb27e40d6db096a6e10837655a3f7e823e75e0aaaaed4b978e2ae8f52b18",
+    "scripts/isg/restore_mode.mjs": "981587b8559f14d58e771563a0921a1ea8c6290d66aa2ff07bc4c752f990136f",
+    "scripts/isg/sql/auth_session_fixture.sql": "bc5deff6efae02be4c0afe88c07101820c338861676f39879e96a136c3ed751d",
+    "scripts/isg/auth_restore_guard.mjs": "8d1bfa75f4036bae891fc827c9f104244628a0973151435622bcf993a61d7845",
+    "scripts/isg/sql/workplace_fixture.sql": "81bb64bcbef8690582a6c70086dafc3194e47dfce63cb1025bb0ef43395236f7",
+    "scripts/isg/sql/personnel_fixture.sql": "b244c04e7c6b113eb5a57fb0f16b5071f517350e809fa0c3da12f90ebc93c9eb",
+    "scripts/isg/sql/personnel_mutation_fixture.sql": "2883d334e4ece4428c1499cedce5e14ac3f08a05fecf4982fb12d1769fc04d21",
+    "scripts/isg/sql/employee_intake_fixture.sql": "7b505578674a737f6c756c80c9515c3ea5e4a40e0965743d6c79a9f3c7b7b453",
+    "scripts/isg/sql/employee_directory_fixture.sql": "093325cfafccc3b8e5e79e2c0543199e536b02dc01aa79b95b41f434fba2e1e8",
+    "scripts/isg/sql/auth_personnel_fixture.sql": "c26b4c51b8b3a9b681c6a6808a4d7ecb801883e5a4e52e5c0e146aa531d135de",
+    "scripts/isg/auth_personnel_probe.mjs": "05e584e85e5e453ab79564bbc0d77245dc63d1fed2e7a4bc1518e7009bbbb9a0",
+    "supabase/functions/_shared/personnel/directory-request.ts": "338aefc2f7bb9198e68ccd3cfcb11b7f4902e706b782137ccbad096a712a4015",
+    "supabase/functions/_shared/personnel/employee-create.ts": "3f50549d7e4fe4319ee286359a1169e77308828fecfc2913215bb98e07ce5635",
+    "supabase/functions/_shared/isg/mutation-context.ts": "7e74a453c320be3fe3f61ae7abc084ccea36e17f3c8b3d480823ca67cdfa7e90",
+    "supabase/migrations/20260913074153_isg_personnel_owner_rpc.sql": "a04da9ebbe6e184776dda705e7110a28e8bbe676b4f57f53a9f5a704816729c7",
+    "supabase/migrations/20260520154818_add_companies.sql": "c7ce21b0c52833812ce1f6be895f2f95b4a149c31794b387b7e7e6dc793a080d",
+    "supabase/migrations/20260513101505_free_plus_pro_subscription_system.sql": "863be44ce77558396c70def1dbbcf6de159608f9894dd18886f39d27aa779c8a",
+    "supabase/migrations/20260513223911_fix_subscription_quota_review_findings.sql": "234b01e049eec7f4b3828549162be6a81843e7073f16db5c69561e63f14d59e1",
+    "scripts/isg/personnel_migration_probe.mjs": "d26f8791871978c5e2a5a2995f07cc7cf09e468799d6fc6b531b89716a45221c",
+    "scripts/isg/personnel_http_probe.mjs": "62a4faa4c0af6fe1200c1c32d497cb5561730d08917d88b3a7491b4dee84df6b",
+    "scripts/isg/personnel_advisor_probe.mjs": "2890ed164f3c23e54690a439b3c09b7ce1e2c4597fcf49e5b5a31de9bd93381b",
+    "supabase/functions/_shared/personnel/rpc-request.ts": "e86d9015efc5a49c4e1208bdcca2a54122740bf8ec2eb5f8fa24917db59785b9",
+    "supabase/migrations/20260913081536_isg_workplace_context_assignments.sql": "69b44f626206dc5f5e2be147f4106f17016e030a86f2bd86e08e76dc043768a0",
+    "scripts/isg/directory_migration_probe.mjs": "2f23ce7e1ecfbead520406900cabc25383ab963d46fd0830aaaa6eabf8f74ad7",
+    "supabase/migrations/20260913084736_isg_workspace_availability.sql": "35c85511a890f0ec34570d29f17c017f7668c5c493c85e58798c07f2f1a5b68f",
+    "scripts/isg/workspace_availability_probe.mjs": "5ff596fcc7becdcdd973a8c21599e919df0262be0684abc48f9eac229af93917",
+    "supabase/migrations/20260913092642_isg_personnel_reactivation.sql": "350f2bfc96ac5866836fd51f8ce1ca8100e8b871121fdc1eb636c18735c11376",
+    "supabase/migrations/20260913110000_isg_event_dispatch.sql": "ed58daf6ea41b61d0cdf0926948867ff2e7c4106e42c5bcc1db5b755c7291c48",
+    "supabase/migrations/20260913113000_isg_quota_reservations.sql": "ad3bde2ce2144abb8ba5edc1fc6e782adc4461f28209b3a2787591c98c491756",
+    "scripts/isg/dispatch_quota_probe.mjs": "fc79fd792b2c6e53f8898e219b99c0c1e11793420273c5cbbe7978eccdb014ad",
+    "supabase/migrations/20260913130000_isg_file_core.sql": "374a8b0a8e1a41520a645bb28f1c0a1f722dc9882df604007365a32807374737",
+    "scripts/isg/file_core_probe.mjs": "0ab7557b7b4d095a249e71c5f296f2e080ce548ac45314dee1f1afa1f6af1148",
+    "supabase/migrations/20260913150000_isg_rule_core.sql": "4ce4c7608847e41cdf652188560052e24cf35f618834deb6e99ae945978bccc3",
+    "scripts/isg/rule_core_probe.mjs": "bef7d1832794566f2c858915c5749ba0dc0c030b0e566805cca8b3a160fcc12b",
+    "supabase/migrations/20260913170000_isg_training_core.sql": "bb4599ef74c1347bc07f4d9cea800734e3ab9de61fac9521e1e3956d5e86927d",
+    "scripts/isg/training_core_probe.mjs": "edfdc4a22af32cdbdb248288f68a9ad812e02bcfd9348916bd8630dc8cd246dd",
+    "supabase/migrations/20260913190000_isg_risk_versioning.sql": "7d1ea9540068e84aa4c1b71a0ee499c95f4d053f2bc3fc0d5bb73d3484dbda5c",
+    "scripts/isg/risk_core_probe.mjs": "131597b05833888529b1d61f30329cc0fc58468d85d86589669baffa191a0c58",
+    "supabase/migrations/20260913210000_isg_nonconformity_core.sql": "3f6ad79a032e222abecf1a65a589e188867b100a84690795c8a1bf35925140db",
+    "scripts/isg/nonconformity_core_probe.mjs": "703e852698a2ab758cee885accdd7573c61f63b6e306b0b3a9a40867b3bcdd1b",
+    "supabase/migrations/20260913230000_isg_module_core.sql": "b587dce412758fb1c3ebe117570f7cc0ae3499fb3a95bca736c3de64318a4bc0",
+    "scripts/isg/module_core_probe.mjs": "56f95d9c814877675731852826a004c9f4d83bcb0db40b3ac6f34192c939851e",
+    "supabase/migrations/20260914010000_isg_module_core_second.sql": "f436594595a7080af1d66e057063b56d0144efedf6f88e78ff773d9fb3aaeeaf",
+    "scripts/isg/module_second_probe.mjs": "6e3ddc7d82559c20e90ea531267c779703520683ec0fc3d8c645e78fb0772bce",
+    "supabase/migrations/20260914030000_isg_document_import_core.sql": "83587399e19583d479098ffa4acb54f99b209b01eac9ee4891da5358cfb0b748",
+    "scripts/isg/document_import_probe.mjs": "e34984964909b733b6b697a60c6ad60c9083600d0ee525379a6c085fe9ceb963",
+    "supabase/migrations/20260914050000_isg_notification_core.sql": "fb85c6dbb191c4ac248e61a258ade506864ea0c897675cddc1c7687e6c2dfc5d",
+    "scripts/isg/notification_core_probe.mjs": "bf04d49f5856f52939276b7395b44f732f75ffb2b6f1d31810b656897d839aac",
+    "supabase/migrations/20260914070000_isg_personal_notes.sql": "a4f753d937fef910ee8c1872d2427282b77d3eb0230343c332cf5c758e2c826e",
+    "scripts/isg/personal_notes_probe.mjs": "07c58c1a59550e6b54a4de857cfb2c46764329678877aa247f31645d91b69406",
+    "supabase/migrations/20260914070001_isg_notification_dispatch_safety.sql": "e8e38371fc9d4fbf4bb1aa7946c93d4e0ab4d48dc11a01b82d48a82911434bfc",
+    "scripts/isg/notification_dispatch_probe.mjs": "4fcc575794bb9996f8ea9ff248c3005322e4bcc1d4086d0c948467e45d4e1f48",
+    "supabase/migrations/20260914070002_isg_notification_provider_wait.sql": "ddcbc298912d8a8170bdc1505ddcb690c82f7ac99dc1fe948bf4a32f28924ae7",
+    "scripts/isg/notification_repository_probe.mjs": "41296fc00c71e334c891dd90efe93699bd0dd80a71d328a3a24d18614cbbdd8c",
+    "supabase/functions/_shared/isg/notification-repository.ts": "4e26be8554526fcc51e620a6c60a121ab2ad058b9a21edef6d2ebfe108fcaaa2",
+    "supabase/functions/_shared/isg/notification-worker.ts": "95ca28ee18cc3d174e1683594031db6003f64df49f5bc49ad359cfb25ef05e3d",
+    "supabase/functions/_shared/isg/notification-transport.ts": "02908573c8ba5c540d2dc515e3d229e35c8fc012547f062d78658b9f5b459df0",
+    "scripts/isg/notification_repository.test.mjs": "1da7b381a7670318c8bbf0af6fcd217f2c5d4886bed6bd43e09d3c9444d85b58",
+    "scripts/isg/notification_repository_guard.test.mjs": "852fc220352ec23ef36b0a13109bb393293d1a02e54948be574b834eeeeff793",
+    "scripts/isg/notification_worker.test.mjs": "a2e13c0ac09bdd88015331baf8c77f36392e716877565b64d0c4f37583672f65",
+    "scripts/isg/verify_function_map.mjs": "69e5883a7c3ab0eb7ddce2de1b444a8256add947927e5c4419bf9beb3fba4dd4",
+    "scripts/isg/function_map.test.mjs": "b924d946ee62c041b1fbbce5e56e42584efdfd3ab6b65bb8866b358cdf5eb558",
+    "contracts/isg/v1/function-test-map.json": "5472bf5be2b529648f5a963818f0ba79be4d983eaf96b6eafd886b787a1a37db",
+    "scripts/isg/run_suite.mjs": "f2f08c12e4b092c41c94cc57eb03ec47b95f2099ca7ddeefda44c19214a754a0",
+    ".github/workflows/isg-foundation.yml": "9debedda68319125db27e660929e19099435c6332284010d5e2ef9aed4bd5fc6"
+  }
+}

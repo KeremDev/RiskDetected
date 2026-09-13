@@ -27,6 +27,7 @@ import { beginDocumentImportProbe, documentImportFiles } from './document_import
 import { beginNotificationCoreProbe, notificationCoreFiles } from './notification_core_probe.mjs';
 import { beginPersonalNotesProbe, personalNotesFiles } from './personal_notes_probe.mjs';
 import { beginNotificationDispatchProbe, notificationDispatchFiles } from './notification_dispatch_probe.mjs';
+import { beginNotificationRepositoryProbe, notificationRepositoryFiles } from './notification_repository_probe.mjs';
 import { probeP05Upgrade, p05UpgradeFiles } from './p05_upgrade_probe.mjs';
 import { probePasswordAuth } from './password_auth_probe.mjs';
 import { probeSignupRecovery } from './signup_recovery_probe.mjs';
@@ -324,6 +325,7 @@ try {
   let notificationProbe;
   let notesProbe;
   let notificationDispatchProbe;
+  let notificationRepositoryProbe;
   if (mode.sessionGuard) {
     stage = 'session-guard';
     sessionProbe = await beginSessionProbe({ sql, concurrentSql, token: refresh.body.access_token, secret, pass });
@@ -365,6 +367,8 @@ try {
     notesProbe=await beginPersonalNotesProbe({synthetic:true,sql,ownerID:id,pass});
     stage = 'notification-dispatch-safety';
     notificationDispatchProbe=await beginNotificationDispatchProbe({synthetic:true,sql,concurrentSql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
+    stage = 'notification-repository';
+    notificationRepositoryProbe=await beginNotificationRepositoryProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'personnel-advisors';
     report.personnel_advisors=await probePersonnelAdvisors({synthetic:true,sql,guard,names,pass,onFindings:value=>{report.personnel_advisors=value;}});
   }
@@ -410,6 +414,7 @@ try {
   if (notificationProbe) report.notification_core = notificationProbe.afterLogout();
   if (notesProbe) report.personal_notes = notesProbe.afterLogout();
   if (notificationDispatchProbe) report.notification_dispatch = notificationDispatchProbe.afterLogout();
+  if (notificationRepositoryProbe) report.notification_repository = notificationRepositoryProbe.afterLogout();
   if (mode.synthetic) {
     stage = 'password-auth-boundaries';
     report.password_auth = probePasswordAuth({synthetic:true, request, admin, pass});
@@ -443,6 +448,7 @@ try {
     .concat(mode.synthetic ? notificationCoreFiles : [])
     .concat(mode.synthetic ? personalNotesFiles : [])
     .concat(mode.synthetic ? notificationDispatchFiles : [])
+    .concat(mode.synthetic ? notificationRepositoryFiles : [])
     .concat(mode.p05Upgrade ? p05UpgradeFiles : [])
     .concat(mode.nativeE2E ? ['scripts/isg/native_e2e_bridge.mjs','scripts/isg/native_e2e_oracle.mjs','scripts/isg/run_native_android.mjs','tests/isg/native-ios/NativeHarness.swift','tests/isg/native-ios/NativeUITests.swift','android/isg-native-check/src/main/kotlin/com/riskdetectedan/isg/nativecheck/NativeActivity.kt','android/isg-native-check/src/androidTest/kotlin/com/riskdetectedan/isg/nativecheck/NativeFlowTest.kt'] : [])
     .map(path=>[path,digest(readFileSync(resolve(ROOT,path)))]));

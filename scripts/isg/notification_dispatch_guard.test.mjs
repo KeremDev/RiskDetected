@@ -47,8 +47,9 @@ test('safety probe runs and hashes after predecessor, upgrade ordering and both 
   const dispatchStage=runner.search(/stage\s*=\s*'notification-dispatch-safety'/);
   const notesStage=runner.search(/stage\s*=\s*'personal-notes'/);
   assert.ok(notesStage>=0&&dispatchStage>notesStage);
-  assert.equal(p05UpgradeFiles.at(-1),notificationDispatchFiles[0]);
-  assert.ok(p05UpgradeFiles.at(-2)<notificationDispatchFiles[0]);
+  const migrationIndex=p05UpgradeFiles.indexOf(notificationDispatchFiles[0]);
+  assert.ok(migrationIndex>0);
+  assert.ok(p05UpgradeFiles[migrationIndex-1]<notificationDispatchFiles[0]);
   assert.equal(read('.github/workflows/isg-foundation.yml').split(notificationDispatchFiles[0]).length-1,2);
   assert.match(read('scripts/isg/run_suite.mjs'),/notification_dispatch_guard\.test\.mjs/);
 });

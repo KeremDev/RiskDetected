@@ -53,6 +53,7 @@ on:
       - 'supabase/migrations/20260914050000_isg_notification_core.sql'
       - 'supabase/migrations/20260914070000_isg_personal_notes.sql'
       - 'supabase/migrations/20260914070001_isg_notification_dispatch_safety.sql'
+      - 'supabase/migrations/20260914070002_isg_notification_provider_wait.sql'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'RiskDetected.xcodeproj/project.pbxproj'
@@ -119,6 +120,7 @@ on:
       - 'supabase/migrations/20260914050000_isg_notification_core.sql'
       - 'supabase/migrations/20260914070000_isg_personal_notes.sql'
       - 'supabase/migrations/20260914070001_isg_notification_dispatch_safety.sql'
+      - 'supabase/migrations/20260914070002_isg_notification_provider_wait.sql'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'RiskDetected.xcodeproj/project.pbxproj'
@@ -168,9 +170,9 @@ jobs:
         with:
           deno-version: v2.7.14
       - name: Typecheck notification worker and transports
-        run: deno check supabase/functions/_shared/isg/notification-worker.ts supabase/functions/_shared/isg/notification-transport.ts
+        run: deno check supabase/functions/_shared/isg/notification-worker.ts supabase/functions/_shared/isg/notification-transport.ts supabase/functions/_shared/isg/notification-repository.ts
       - name: Notification behavior without network or environment permission
-        run: deno test --no-check --deny-net --deny-env --allow-read=supabase/functions/_shared/isg scripts/isg/notification_worker.test.mjs
+        run: deno test --no-check --deny-net --deny-env --allow-read=supabase/functions/_shared/isg scripts/isg/notification_worker.test.mjs scripts/isg/notification_repository.test.mjs
       - name: Deno shared mutation fixtures (no network or env permissions)
         run: deno test --allow-read=contracts/isg/v1/fixtures supabase/functions/_shared/isg/mutation-context_test.ts supabase/functions/_shared/isg/mutation-outcome_test.ts
       - name: Auth email locale/action compatibility (renderer and source guards, not provider delivery)

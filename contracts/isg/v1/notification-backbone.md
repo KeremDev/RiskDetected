@@ -1,5 +1,7 @@
 # Bildirim omurgası — v1 sunucu sözleşmesi
 
+Güncel ek: [SQL repository ve provider wait sözleşmesi](../../../docs/isg/P12_REPOSITORY_WAIT_2026-09-13.md). Yeni `complete_notification_delivery_with_retry(job, token, provider, state, failure, now, retry_after_seconds)` eski tokenlı tamamlayıcıyı aynı transaction'da kullanır, 1–86400 saniyelik sağlayıcı girdisini attempt'e kaydeder ve `next_attempt_at` değerini yalnız ileri taşır. `RATE_LIMITED` en az 60 saniyedir; aynı tokenla değişen bekleme değeri idempotency çakışmasıdır. İşçi repository'si bu yeni fonksiyonu kullanır; önceki fonksiyon eski iç çağrılar için kalır. Yeni fonksiyon client rollerine kapalıdır.
+
 İşçi tarafı devamı: [tek istekli APNs/FCM adaptörü ve orchestration portları](../../../docs/isg/P12_WORKER_TRANSPORT_2026-09-13.md). Adaptör kütüphanesi mevcut; gerçek credential/repository/cihaz bağlantısı ve canlı gönderim henüz yoktur. Bu dosyanın SQL sözleşmesi değişmedi.
 
 14 Eylül 2026 başlıklı ilk dilimin güncellenmiş sözleşmesi. Gerçek APNs/FCM/e-posta bağlantısı **yoktur**; APNs/FCM kütüphane adaptörleri yukarıdaki devam paketinde bulunur. Burası taşıyıcıların uyacağı rıza, sahiplik ve gönderim-anı kural yüzeyidir. Mevcut legacy bildirim kuyruğu, tip CHECK'i ve üreticileri okunmaz ve yazılmaz.
