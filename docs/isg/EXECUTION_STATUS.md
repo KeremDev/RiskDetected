@@ -4,6 +4,8 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 
 ## Güncel durum
 
+- 13 Eylül P05 işyeri temeli: ağa kapalı sentetik PostgreSQL'de default workplace initializer, tekil legacy marker, owner/company composite FK, salt okunur RLS, atomik audit/outbox ve backfill/catch-up testleri eklendi. Yeni 21/21; bütün DB suite 52/52 + oracle içindeki 329/329; foundation 114/114 PASS. 20 paralel çağrı ve commit öncesi bağlantı kaybı denendi; üç koşunun geçici container'ları temizlendi. İlk private EXECUTE testi aday şemadaki default-privilege sorununu yakaladı ve düzeltildi. Production migration/backfill, gerçek Auth-capability ve personel CRUD açık. [Kapsam/akış](P05_WORKPLACE_FOUNDATION_2026-09-13.md).
+
 - 13 Eylül P05/P18 native firma loader dilimi: hesap/oturum/request/arşiv kapsamı ve eski kart seçimi korumaları; hesap değişiminde arama reseti; gerçek Company servis adaptörleri eklendi. Swift 34/34, Android tasarım 348/348 + profil 6/6 + veri 489/489, lint/APK ve ana iOS build PASS. iOS tam 14/14 ardından son kaynakla yeni 3/3 UI tekrar PASS; nova-design 24/24. Gri tuval/beyaz kart korundu. Ana root/gerçek Auth-capability bağlantısı ve P05 domain işleri hâlâ açık. [Akış ve kapsam](P05_NATIVE_COMPANY_LOADER_2026-09-13.md).
 
 - 13 Eylül P05/P18 firma okuma sınırı: mevcut iOS/Android liste servislerinde iptal artık normal başarı/yükleme hatasına dönüşmüyor. Android gerçek SDK loopback aktif/arşiv sorgusu + iptal 2/2, bütün core:data 489/489 ve APK; iOS ana build PASS. Firma veri eşlemesi ve V5 owner modeli kaydedildi; OSGB uzman ataması/sektör varsayılmadı. Typed loader/request yarışı ve NOVA gerçek root bağlantısı hâlâ açık. [Kapsam ve sonraki bağlantı](P05_COMPANY_READ_BOUNDARY_2026-09-13.md).

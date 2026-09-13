@@ -7,6 +7,7 @@ import { resolve } from 'node:path';
 import { ROOT } from './lib.mjs';
 import { validateEnvironment, validateContainerInspection } from './verify_environment.mjs';
 import { legacyCapacityOracle } from './legacy_capacity_oracle.mjs';
+import { runWorkplaceProbe } from './workplace_probe.mjs';
 
 // This lane creates and removes ONLY its own new synthetic container. No TCP, API,
 // Supabase credentials, host mounts, migrations, existing container reuse or image pulls.
@@ -15,7 +16,7 @@ const runId = randomUUID(); let config, containerId, interrupted = false;
 const report = { schema_version: 1, run_id: runId, started_at: new Date().toISOString(), image,
   suite: 'synthetic_postgres_transaction_prototype', production_contract_implemented: false,
   acceptance_complete: false, seed: 'fixed_uuid_counter_v1', node_version: process.version,
-  source_sha256: Object.fromEntries(['scripts/isg/run_database_contract.mjs', 'scripts/isg/sql/transaction_fixture.sql', 'scripts/isg/legacy_capacity_oracle.mjs', 'scripts/isg/verify_environment.mjs', 'contracts/isg/v1/safety-policy.json']
+  source_sha256: Object.fromEntries(['scripts/isg/run_database_contract.mjs', 'scripts/isg/sql/transaction_fixture.sql', 'scripts/isg/sql/workplace_fixture.sql', 'scripts/isg/workplace_probe.mjs', 'scripts/isg/legacy_capacity_oracle.mjs', 'scripts/isg/verify_environment.mjs', 'contracts/isg/v1/safety-policy.json']
     .map(path => [path, createHash('sha256').update(readFileSync(resolve(ROOT, path))).digest('hex')])),
   cases: [], cleanup: 'NOT_NEEDED' };
 const childEnv = { PATH: process.env.PATH ?? '', HOME: process.env.HOME ?? '', DOCKER_CONFIG: process.env.DOCKER_CONFIG ?? '', LANG: 'C.UTF-8' };
@@ -242,6 +243,8 @@ try {
     assert.deepEqual(report.legacy_capacity.failures, []);
     assert.equal(query("SELECT to_regclass('public.profiles') IS NULL AND to_regclass('public.user_subscriptions') IS NULL;"), 't');
   });
+  query(readFileSync(resolve(ROOT, 'scripts/isg/sql/workplace_fixture.sql'), 'utf8'));
+  await runWorkplaceProbe({ query, concurrent, check, killSleepingTransaction });
   report.ok = true;
 } catch (error) {
   report.ok = false; report.error_code = /^DB_/.test(error.message) ? error.message : 'DB_CONTRACT_ASSERTION_FAILED';
