@@ -67,13 +67,13 @@ private struct PersonnelContent: View {
                 if let pending {
                     NovaCard(padding: 18) {
                         VStack(alignment: .leading, spacing: 12) {
-                            HStack { NovaIcon(symbol: "arrow.clockwise", size: 22); NovaText(text: "Bekleyen personel işlemi", style: .cardTitle) }
+                            HStack { NovaIcon(symbol: "arrow.clockwise", size: 22); NovaText(text: "Bekleyen personel işlemi", style: .cardTitle).accessibilityIdentifier("personnel.pending") }
                             NovaText(text: "Önceki işlemin sonucu henüz kesinleşmedi. Aynı işlem anahtarıyla kontrol ederek devam edin.")
                             NovaText(text: pending.name.isEmpty ? "Arşivleme işlemi" : pending.name, style: .metaQuiet)
                             NovaButton(label: "Bekleyen işlemi tamamla", symbol: "arrow.clockwise", isEnabled: canWrite, isLoading: reconciling, action: { reconciling = true })
                                 .accessibilityIdentifier("personnel.recover")
                         }
-                    }.accessibilityIdentifier("personnel.pending")
+                    }
                 }
                 if !canWrite { NovaText(text: "Salt okunur · yeni kayıt ve düzenleme kullanılamıyor.", style: .metaQuiet) }
                 NovaButton(label: "Personel Ekle", symbol: "plus", isEnabled: canWrite && pendingChecked && pending == nil && !reconciling, action: { route = .create }).accessibilityIdentifier("personnel.add")

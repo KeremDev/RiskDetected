@@ -1,0 +1,1646 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-13T11:30:00Z",
+  "phase": "P05",
+  "phase_development_acceptance_complete": true,
+  "production_enabled": false,
+  "physical_device_release_acceptance": false,
+  "scope": "P05-owned implementation and layered local acceptance; not full REV21/REV23/X13 cross-phase composites",
+  "run_directory": "output/isg/runs/synthetic-auth-m1sW6B",
+  "native": {
+    "platforms": {
+      "android": {
+        "audit": 4,
+        "events": 4,
+        "receipts": 4,
+        "restored": true,
+        "employees": 1,
+        "directory": {
+          "catalogs": true,
+          "contexts": true,
+          "employer": true,
+          "snapshots": true,
+          "engagement": true,
+          "assignments": true,
+          "context_values": true,
+          "ok": true
+        },
+        "ok": true
+      },
+      "ios": {
+        "audit": 4,
+        "events": 4,
+        "receipts": 4,
+        "restored": true,
+        "employees": 1,
+        "directory": {
+          "catalogs": true,
+          "contexts": true,
+          "employer": true,
+          "snapshots": true,
+          "engagement": true,
+          "assignments": true,
+          "context_values": true,
+          "ok": true
+        },
+        "ok": true
+      }
+    },
+    "dropped": {
+      "android": 2,
+      "ios": 1
+    },
+    "requests": {
+      "ios": 119,
+      "android": 127
+    },
+    "loopback_only": true,
+    "synthetic": true
+  },
+  "backend": {
+    "run_id": "0a3d5ea9-afa0-4e3b-8a8c-77e7990ee439",
+    "checks": [
+      {
+        "id": "synthetic_database_has_no_auth_users",
+        "result": "PASS"
+      },
+      {
+        "id": "synthetic_database_has_no_application_profile_table",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_health",
+        "result": "PASS"
+      },
+      {
+        "id": "admin_endpoint_rejects_no_token",
+        "result": "PASS"
+      },
+      {
+        "id": "admin_endpoint_rejects_expired_service_token",
+        "result": "PASS"
+      },
+      {
+        "id": "synthetic_user_created_by_local_admin",
+        "result": "PASS"
+      },
+      {
+        "id": "synthetic_auth_contains_only_one_fixture_user",
+        "result": "PASS"
+      },
+      {
+        "id": "wrong_password_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "password_login_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "authenticated_user_read",
+        "result": "PASS"
+      },
+      {
+        "id": "user_token_cannot_admin_list",
+        "result": "PASS"
+      },
+      {
+        "id": "refresh_keeps_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_allows_real_signed_login",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_private_acl",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_missing_claims",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_empty_claims",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_array_claims",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_missing_session",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_bad_session",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_unknown_session",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_other_actor",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_bad_actor",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_anonymous_role",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_service_role",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_expired_token",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_missing_expiry",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_string_expiry",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_fractional_expiry",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_metadata_cannot_supply_session",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_metadata_cannot_supply_actor",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_ignores_user_metadata_authority",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_expired_database_session",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_accepts_future_not_after",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_banned_user",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_deleted_user",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_anonymous_user",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_restores_synthetic_user_eligibility",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_transaction_lock_ready",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_active_transaction_blocks_logout_delete",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_active_transaction_blocks_ban_update",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_authorized_transaction_completes",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_lock_probe_preserves_session",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_private_acl",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_real_session_commits",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_actor_is_verified_sub_not_legacy_guc",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_atomic_four_records",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_same_retry_returns_saved_result",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_changed_payload_conflict",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_stale_version_no_side_effect",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_foreign_company_no_side_effect",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_missing_company_indistinguishable",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_cross_company_entity_no_side_effect",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_missing_entity_indistinguishable",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_missing_session_no_side_effect",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_expired_claim_no_side_effect",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_revoked_permission_rejects_new",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_revoked_permission_rejects_saved_receipt",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_user_metadata_cannot_grant_permission",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_missing_permission_fail_closed",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_audit_failure_rolls_back_all",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_outbox_failure_rolls_back_all",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_capability_lock_ready",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_permission_revoke_waits_for_transaction",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_authorized_lock_probe_completes",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_lock_probe_rollback_preserves_state",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_recovers_after_denials",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_twenty_retries_same_result",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_twenty_retries_one_commit",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_twenty_versions_one_winner",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_version_race_one_atomic_commit",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_personnel_acl_no_raw_domain_or_table_write",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_personnel_create_with_real_session",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_personnel_fresh_owner_overrides_forged_legacy_sub",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_personnel_create_receipt_retry_one_employee",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_personnel_edit_with_real_session",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_personnel_foreign_company",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_personnel_missing_session",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_personnel_expired_token",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_personnel_revoked_create_retry",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_personnel_revoked_edit_retry",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_personnel_metadata_cannot_grant_write",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_personnel_revoked_write_keeps_read_access",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_personnel_archive_preserves_row",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_legacy_rows_unchanged",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_backfill_one_default_each_and_unknown_context",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_rollout_default_off_read",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_rollout_default_off_write",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_private_tables_rls_and_zero_client_privileges",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_public_wrappers_invoker_only",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_checked_entry_points_only_and_fixed_search_path",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_foreign_company",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_mismatched_legacy_sub",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_paid_session_name_only_inline_department",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_dates_remain_unknown",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_create_retry_no_duplicate",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_same_key_different_body",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_personnel_audit_fault_rolls_back_employee_department_and_events",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_personnel_outbox_fault_rolls_back_employee_department_and_events",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_personnel_receipts_fault_rolls_back_employee_department_and_events",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_turkish_department_reused",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_unknown_department_no_side_effect",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_subscription_lock_probe_ready",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_subscription_revoke_waits_for_authorized_transaction",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_subscription_lock_authorized_write_completes",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_twenty_edit_races_one_commit",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_paid_active_future",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_paid_trialing_future",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_paid_grace_period_future",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_paid_expired_future",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_paid_paused_future",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_paid_billing_issue_future",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_paid_inactive_future",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_paid_cancelled_future",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_paid_active_past",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_paid_active_null",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_profile_pro_cannot_grant_access",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_user_metadata_cannot_grant_access",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_free_owner_can_read_retained_records",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_archive_and_retry_same_receipt",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_archive_retains_employee",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_archived_create_receipt_not_replayed",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_archived_employee_cannot_edit",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_active_list_excludes_archived",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_archive_filter_includes_retained",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_keyset_pages_50_50_5_no_duplicates",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_search_wildcards_are_literal",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_kill_switch_denies_cached_receipt",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_kill_switch_keeps_read",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_legacy_new_company_catchup_while_rollout_disabled",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_backfill_retry_stable_ids",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_disposable_company_personnel_created",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_company_deletion_cascades_entire_new_graph",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_other_company_survives_cascade",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_http_no_token_denied",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_http_forged_signature_denied",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_http_verified_login_creates_via_public_wrapper",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_http_retry_same_receipt",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_http_changed_payload_conflict",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_http_owner_list",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_http_detail_includes_department",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_http_department_list",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_http_edit_removes_optional_department",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_http_stale_version_denied",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_http_archive_retains_record",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_http_unknown_company_denied",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_http_private_schema_not_exposed",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_http_private_rpc_not_exposed",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_http_private_table_not_in_public",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_1_http_owner_read",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_2_rls_all_tables",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_3_no_direct_client_grants",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_4_five_checked_private_entries",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_5_no_anon_or_service_entry",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_6_workplaces_create",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_7_departments_create",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_8_departments_create",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_9_jobs_create",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_10_contractors_create",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_11_engagements_create",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_12_replay_workplaces",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_13_replay_departments",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_14_replay_departments",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_15_replay_jobs",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_16_replay_contractors",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_17_replay_engagements",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_18_hierarchy_cycle",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_19_cross_workplace_department",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_20_stale_job",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_21_duplicate_code",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_22_numeric_name",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_23_extra_health_field",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_24_foreign_read",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_25_foreign_write",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_26_overlap_engagement",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_27_non_iso_date",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_28_invalid_date",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_29_employer_link",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_30_assignment_created",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_31_assignment_overlap",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_32_job_rename",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_33_snapshot_preserved",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_34_assignment_split",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_35_new_snapshot",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_36_unknown_context_no_default",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_37_context_created",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_38_context_overlap",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_39_context_bad_timezone",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_40_context_historical",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_41_context_boundary",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_42_context_before_history_unknown",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_43_parent_version",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_44_rollback_directory_events",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_45_rollback_directory_outbox",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_46_rollback_personnel_receipts",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_47_http_mutation",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_48_http_replay",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_49_http_no_token",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_50_http_forged_token",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_51_http_context_resolver",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_52_rollout_off_replay",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_global_identity_and_no_write",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_paid_owner_can_write",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_six_checked_private_entries",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_wrapper_invoker",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_anon_service_revoked",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_foreign_company_denied",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_anonymous_denied",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_metadata_cannot_grant",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_write_rollout_read_only",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_disabled_global",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_disabled_hides_company",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_archived_read_only",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_expired_read_only",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_restored_paid",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_employee_restore_commit",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_employee_restore_same_receipt",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_employee_restore_preserves_identity_dates",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_employee_restore_no_duplicate_events",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_employee_restore_active_denied",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_employee_restore_foreign_denied",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_employee_restore_no_payload_edits",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_employee_restore_stale_version",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_employee_restore_read_only_denied",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_advisor_cli_completed",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_advisor_new_schema_no_errors",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_advisor_no_unreviewed_findings",
+        "result": "PASS"
+      },
+      {
+        "id": "native_second_auth_user_created",
+        "result": "PASS"
+      },
+      {
+        "id": "logout_succeeds",
+        "result": "PASS"
+      },
+      {
+        "id": "logged_out_refresh_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_logout_token_still_cryptographically_valid",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_logout_removes_actual_auth_session",
+        "result": "PASS"
+      },
+      {
+        "id": "session_guard_rejects_still_signed_logged_out_token",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_logged_out_signed_token_cannot_write",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_mutation_logged_out_signed_token_cannot_replay",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_personnel_logout_denies_read",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_personnel_logout_denies_create",
+        "result": "PASS"
+      },
+      {
+        "id": "auth_personnel_logout_denies_archive_receipt",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_logout_read",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_migration_logout_write",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_http_revoked_session_read_denied",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_http_revoked_session_write_denied",
+        "result": "PASS"
+      },
+      {
+        "id": "personnel_http_revoked_session_receipt_denied",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_53_logout_read",
+        "result": "PASS"
+      },
+      {
+        "id": "directory_54_logout_write_and_receipt",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_logout_global_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "workspace_logout_selected_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "password_fixture_created",
+        "result": "PASS"
+      },
+      {
+        "id": "password_fixture_login",
+        "result": "PASS"
+      },
+      {
+        "id": "password_missing_uppercase_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "password_missing_uppercase_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "password_missing_lowercase_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "password_missing_lowercase_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "password_missing_digit_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "password_missing_digit_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "password_seven_ascii_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "password_seven_ascii_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "password_eight_ascii_accepted",
+        "result": "PASS"
+      },
+      {
+        "id": "password_eight_ascii_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "password_whitespace_preserved_accepted",
+        "result": "PASS"
+      },
+      {
+        "id": "password_whitespace_preserved_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "password_trimmed_variant_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "password_turkish_extra_accepted",
+        "result": "PASS"
+      },
+      {
+        "id": "password_turkish_extra_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "password_decomposed_extra_accepted",
+        "result": "PASS"
+      },
+      {
+        "id": "password_decomposed_extra_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "password_normalized_variant_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "password_ascii_72_accepted",
+        "result": "PASS"
+      },
+      {
+        "id": "password_ascii_72_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "password_ascii_73_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "password_ascii_73_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "password_unicode_72_bytes_accepted",
+        "result": "PASS"
+      },
+      {
+        "id": "password_unicode_72_bytes_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "password_unicode_74_bytes_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "password_unicode_74_bytes_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "password_server_counts_bytes_not_characters_accepted",
+        "result": "PASS"
+      },
+      {
+        "id": "password_server_counts_bytes_not_characters_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "password_update_requires_session",
+        "result": "PASS"
+      },
+      {
+        "id": "password_update_keeps_email",
+        "result": "PASS"
+      },
+      {
+        "id": "password_fixture_removed",
+        "result": "PASS"
+      },
+      {
+        "id": "signup_requires_confirmation",
+        "result": "PASS"
+      },
+      {
+        "id": "unconfirmed_password_login_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "local_smtp_code_received",
+        "result": "PASS"
+      },
+      {
+        "id": "signup_code_wrong_purpose_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "signup_code_foreign_email_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "signup_bad_code_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "signup_email_code_keeps_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "signup_code_single_use",
+        "result": "PASS"
+      },
+      {
+        "id": "confirmed_password_login",
+        "result": "PASS"
+      },
+      {
+        "id": "recovery_request_accepted",
+        "result": "PASS"
+      },
+      {
+        "id": "local_smtp_code_received",
+        "result": "PASS"
+      },
+      {
+        "id": "recovery_code_is_not_signup_code",
+        "result": "PASS"
+      },
+      {
+        "id": "recovery_code_wrong_purpose_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "recovery_code_foreign_email_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "recovery_code_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "recovery_code_single_use",
+        "result": "PASS"
+      },
+      {
+        "id": "recovery_password_updated_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "recovery_old_password_rejected",
+        "result": "PASS"
+      },
+      {
+        "id": "recovery_new_password_same_uuid",
+        "result": "PASS"
+      },
+      {
+        "id": "recovery_existing_and_missing_share_generic_response",
+        "result": "PASS"
+      },
+      {
+        "id": "signup_recovery_fixture_removed",
+        "result": "PASS"
+      },
+      {
+        "id": "synthetic_no_backup_or_storage_lane_used",
+        "result": "PASS"
+      }
+    ],
+    "ok": true,
+    "images": {
+      "db": "public.ecr.aws/supabase/postgres@sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b",
+      "auth": "public.ecr.aws/supabase/gotrue@sha256:362659ca70eaa75ba05bbaf963caa84c1c5afe5e8fbf0777e17b830dd5f0f60a",
+      "client": "public.ecr.aws/supabase/storage-api@sha256:28424184c9f699790cc190f78ddf7d6abfb5c87af78af260529a394d12c135e9",
+      "rest": "public.ecr.aws/supabase/postgrest@sha256:2f8e7b656f09db697a8875177694b417b35cb76c21370de07fc54e711e902326"
+    },
+    "source_sha256": {
+      "scripts/isg/run_auth_restore.mjs": "06558daff4c76f471bb5919f20becffc36f9364f1bf739e7db36bea34828a5f4",
+      "scripts/isg/password_auth_probe.mjs": "a019d47f0bddd2d4f6b6b179e62503d0fc17aadd90f735263bad4ea86ad5d7cc",
+      "scripts/isg/signup_recovery_probe.mjs": "bbcd21630df79e5fc2095dc354e90d7b5b0e410d3f3b1caf270e877c53099c1d",
+      "scripts/isg/auth_mail_sink.cjs": "07e7e5b6e34cbe08c664b1948b9c6f99b1ebe3f4735d79bb2dbb60c70c6cc275",
+      "scripts/isg/auth_session_probe.mjs": "1c858ffda4550d4b019c08192dfc67c4a4dafbf691ab973caf1968aca37faebe",
+      "scripts/isg/auth_mutation_probe.mjs": "ac64fae84161e4af3f6a761b187ff09df2916cef106bf32dcddb8ee17b9aece9",
+      "scripts/isg/sql/auth_mutation_fixture.sql": "0ed052d6edb148743bfaa6014ac030748a11acf1b41db65ebfad5be399f6d03c",
+      "scripts/isg/sql/transaction_fixture.sql": "87eafb27e40d6db096a6e10837655a3f7e823e75e0aaaaed4b978e2ae8f52b18",
+      "scripts/isg/restore_mode.mjs": "981587b8559f14d58e771563a0921a1ea8c6290d66aa2ff07bc4c752f990136f",
+      "scripts/isg/sql/auth_session_fixture.sql": "bc5deff6efae02be4c0afe88c07101820c338861676f39879e96a136c3ed751d",
+      "scripts/isg/auth_restore_guard.mjs": "8d1bfa75f4036bae891fc827c9f104244628a0973151435622bcf993a61d7845",
+      "scripts/isg/sql/workplace_fixture.sql": "81bb64bcbef8690582a6c70086dafc3194e47dfce63cb1025bb0ef43395236f7",
+      "scripts/isg/sql/personnel_fixture.sql": "b244c04e7c6b113eb5a57fb0f16b5071f517350e809fa0c3da12f90ebc93c9eb",
+      "scripts/isg/sql/personnel_mutation_fixture.sql": "2883d334e4ece4428c1499cedce5e14ac3f08a05fecf4982fb12d1769fc04d21",
+      "scripts/isg/sql/employee_intake_fixture.sql": "7b505578674a737f6c756c80c9515c3ea5e4a40e0965743d6c79a9f3c7b7b453",
+      "scripts/isg/sql/employee_directory_fixture.sql": "093325cfafccc3b8e5e79e2c0543199e536b02dc01aa79b95b41f434fba2e1e8",
+      "scripts/isg/sql/auth_personnel_fixture.sql": "c26b4c51b8b3a9b681c6a6808a4d7ecb801883e5a4e52e5c0e146aa531d135de",
+      "scripts/isg/auth_personnel_probe.mjs": "05e584e85e5e453ab79564bbc0d77245dc63d1fed2e7a4bc1518e7009bbbb9a0",
+      "supabase/functions/_shared/personnel/directory-request.ts": "338aefc2f7bb9198e68ccd3cfcb11b7f4902e706b782137ccbad096a712a4015",
+      "supabase/functions/_shared/personnel/employee-create.ts": "3f50549d7e4fe4319ee286359a1169e77308828fecfc2913215bb98e07ce5635",
+      "supabase/functions/_shared/isg/mutation-context.ts": "7e74a453c320be3fe3f61ae7abc084ccea36e17f3c8b3d480823ca67cdfa7e90",
+      "supabase/migrations/20260913074153_isg_personnel_owner_rpc.sql": "a04da9ebbe6e184776dda705e7110a28e8bbe676b4f57f53a9f5a704816729c7",
+      "supabase/migrations/20260520154818_add_companies.sql": "c7ce21b0c52833812ce1f6be895f2f95b4a149c31794b387b7e7e6dc793a080d",
+      "supabase/migrations/20260513101505_free_plus_pro_subscription_system.sql": "863be44ce77558396c70def1dbbcf6de159608f9894dd18886f39d27aa779c8a",
+      "supabase/migrations/20260513223911_fix_subscription_quota_review_findings.sql": "234b01e049eec7f4b3828549162be6a81843e7073f16db5c69561e63f14d59e1",
+      "scripts/isg/personnel_migration_probe.mjs": "d26f8791871978c5e2a5a2995f07cc7cf09e468799d6fc6b531b89716a45221c",
+      "scripts/isg/personnel_http_probe.mjs": "62a4faa4c0af6fe1200c1c32d497cb5561730d08917d88b3a7491b4dee84df6b",
+      "scripts/isg/personnel_advisor_probe.mjs": "7408268de530bc2a16bbe7fb3471d9320b0cfb53c555dff6944373069874333b",
+      "supabase/functions/_shared/personnel/rpc-request.ts": "e86d9015efc5a49c4e1208bdcca2a54122740bf8ec2eb5f8fa24917db59785b9",
+      "supabase/migrations/20260913081536_isg_workplace_context_assignments.sql": "69b44f626206dc5f5e2be147f4106f17016e030a86f2bd86e08e76dc043768a0",
+      "scripts/isg/directory_migration_probe.mjs": "2f23ce7e1ecfbead520406900cabc25383ab963d46fd0830aaaa6eabf8f74ad7",
+      "supabase/migrations/20260913084736_isg_workspace_availability.sql": "35c85511a890f0ec34570d29f17c017f7668c5c493c85e58798c07f2f1a5b68f",
+      "scripts/isg/workspace_availability_probe.mjs": "5ff596fcc7becdcdd973a8c21599e919df0262be0684abc48f9eac229af93917",
+      "supabase/migrations/20260913092642_isg_personnel_reactivation.sql": "350f2bfc96ac5866836fd51f8ce1ca8100e8b871121fdc1eb636c18735c11376",
+      "scripts/isg/native_e2e_bridge.mjs": "76eb934444d345ac2959493455bf0fbc4a2e306697aa53fe1f3c6e02eaa0571c",
+      "scripts/isg/native_e2e_oracle.mjs": "b38943db6002dc915606c694946e1d01aede5ece6f44b0b20949b71ea8114d17",
+      "scripts/isg/run_native_android.mjs": "5a3737e4d673854635864f01a922dd96726d4e637db5ca960c44b743e370b98b",
+      "tests/isg/native-ios/NativeHarness.swift": "853da9828d4c9bd573fe7d7ce3c40a6af811a8846f7bf680fbea5aca4ca9ad87",
+      "tests/isg/native-ios/NativeUITests.swift": "9e78c8fbace248154ac1cb8a7f61e97a8726c88d2db27cb448fc50e56d84b2df",
+      "android/isg-native-check/src/main/kotlin/com/riskdetectedan/isg/nativecheck/NativeActivity.kt": "84978726a5edf61aa373fe286df03807fde0aa2a2036ba469ab0dcb319fec4b0",
+      "android/isg-native-check/src/androidTest/kotlin/com/riskdetectedan/isg/nativecheck/NativeFlowTest.kt": "ad11faa3e4d69100773792de277bbc0fb035d496a5b93fe2e0c170b3e81b098f"
+    },
+    "disposable_container_cleanup": "PASS",
+    "external_egress": false,
+    "source_database_changed": false
+  },
+  "ios_native": {
+    "lifecycle": {
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 93783,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      },
+      "artifacts": {
+        "buildLogPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/test_sim_2026-09-13T11-13-36-795Z_pid70458_3dff894c.log",
+        "xcresultPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-13T11-13-36-796Z_pid70458_349f2658.xcresult",
+        "testProductsPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/test-products/test_sim_2026-09-13T11-13-36-796Z_pid70458_d3ef7d36.xctestproducts"
+      },
+      "diagnostics": {
+        "warnings": [],
+        "errors": [],
+        "testFailures": []
+      },
+      "testCases": [
+        {
+          "suite": "NativeUITests",
+          "test": "testRealNativePersonnelLifecycleAndBoundaries",
+          "status": "passed",
+          "durationMs": 77121
+        }
+      ]
+    },
+    "catalogs": {
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 71093,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      },
+      "artifacts": {
+        "buildLogPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/test_sim_2026-09-13T11-15-36-715Z_pid70458_a2a873e7.log",
+        "xcresultPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-13T11-15-36-715Z_pid70458_308eb5ab.xcresult",
+        "testProductsPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/test-products/test_sim_2026-09-13T11-15-36-716Z_pid70458_7a37ae92.xctestproducts"
+      },
+      "diagnostics": {
+        "warnings": [],
+        "errors": [],
+        "testFailures": []
+      },
+      "testCases": [
+        {
+          "suite": "NativeUITests",
+          "test": "testDirectoryCatalogs",
+          "status": "passed",
+          "durationMs": 62178
+        }
+      ]
+    },
+    "contexts": {
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 91506,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      },
+      "artifacts": {
+        "buildLogPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/test_sim_2026-09-13T11-17-52-065Z_pid70458_00025679.log",
+        "xcresultPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-13T11-17-52-066Z_pid70458_01acb958.xcresult",
+        "testProductsPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/test-products/test_sim_2026-09-13T11-17-52-066Z_pid70458_74a09d20.xctestproducts"
+      },
+      "diagnostics": {
+        "warnings": [],
+        "errors": [],
+        "testFailures": []
+      },
+      "testCases": [
+        {
+          "suite": "NativeUITests",
+          "test": "testDirectoryDatedContextAndEngagement",
+          "status": "passed",
+          "durationMs": 82252
+        }
+      ]
+    },
+    "assignments": {
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 74908,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      },
+      "artifacts": {
+        "buildLogPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/test_sim_2026-09-13T11-19-37-562Z_pid70458_89fe580f.log",
+        "xcresultPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-13T11-19-37-562Z_pid70458_4904869e.xcresult",
+        "testProductsPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/test-products/test_sim_2026-09-13T11-19-37-562Z_pid70458_10d2f985.xctestproducts"
+      },
+      "diagnostics": {
+        "warnings": [],
+        "errors": [],
+        "testFailures": []
+      },
+      "testCases": [
+        {
+          "suite": "NativeUITests",
+          "test": "testDirectoryAssignmentsAndEmployer",
+          "status": "passed",
+          "durationMs": 66309
+        }
+      ]
+    },
+    "boundaries": {
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 84613,
+        "counts": {
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      },
+      "artifacts": {
+        "buildLogPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/test_sim_2026-09-13T11-23-11-400Z_pid70458_5574ed6f.log",
+        "xcresultPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-13T11-23-11-400Z_pid70458_d8b9ecbe.xcresult",
+        "testProductsPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/test-products/test_sim_2026-09-13T11-23-11-400Z_pid70458_00ebcac9.xctestproducts"
+      },
+      "diagnostics": {
+        "warnings": [],
+        "errors": [],
+        "testFailures": []
+      },
+      "testCases": [
+        {
+          "suite": "NativeUITests",
+          "test": "testWorkspaceBoundaries",
+          "status": "passed",
+          "durationMs": 77122
+        }
+      ]
+    }
+  },
+  "ios_component": {
+    "initial": {
+      "summary": {
+        "status": "FAILED",
+        "durationMs": 57966,
+        "counts": {
+          "passed": 4,
+          "failed": 1,
+          "skipped": 0
+        },
+        "target": "simulator"
+      },
+      "artifacts": {
+        "buildLogPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/test_sim_2026-09-13T11-25-00-815Z_pid70458_03d9caf8.log",
+        "xcresultPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-13T11-25-00-815Z_pid70458_a5dcf4cf.xcresult",
+        "testProductsPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/test-products/test_sim_2026-09-13T11-25-00-815Z_pid70458_117b0e7f.xctestproducts"
+      },
+      "diagnostics": {
+        "warnings": [],
+        "errors": [],
+        "testFailures": [
+          {
+            "suite": "ShellUITests",
+            "test": "testDirectoryEngagementDateGuardAndImmutableKeys",
+            "message": "XCTAssertTrue failed - Optional(Attributes: Application, 0x114452e40, pid: 48348, label: 'ISG Shell QA'",
+            "location": "/Users/keremkayalar/Documents/Kerem-APPler/RiskDetected/tests/isg/shell-ios/ShellUITests.swift:63"
+          },
+          {
+            "suite": "ShellUITests",
+            "test": "testDirectoryEngagementDateGuardAndImmutableKeys()",
+            "message": "XCTAssertTrue failed - Optional(Attributes: Application, 0x114452e40, pid: 48348, label: 'ISG Shell QA'\nElement subtree:\n →Application, 0x114452e40, pid: 48348, label: 'ISG Shell QA'\n    Window (Main), 0x1144521c0, {{0.0, 0.0}, {440.0, 956.0}}\n      Other, 0x114452300, {{0.0, 0.0}, {440.0, 956.0}}\n        Other, 0x1144535c0, {{0.0, 0.0}, {440.0, 956.0}}\n          Other, 0x1144526c0, {{0.0, 0.0}, {440.0, 956.0}}\n            Other, 0x114450dc0, {{0.0, 0.0}, {440.0, 956.0}}\n              Button, 0x114450f00, {{20.0, 70.0}, {44.0, 44.0}}, identifier: 'nova.menu', label: 'Menüyü aç'\n                Image, 0x114451040, {{20.0, 70.0}, {44.0, 44.0}}, identifier: 'line.3.horizontal', label: 'Drag'\n              StaticText, 0x114451180, {{166.5, 72.3}, {53.0, 23.0}}, label: 'NOVA'\n              StaticText, 0x1144512c0, {{130.5, 96.3}, {125.0, 15.3}}, label: 'Saha denetim asistanı'\n              Button, 0x114451400, {{322.0, 70.0}, {44.0, 44.0}}, identifier: 'nova.notifications', label: 'Bildirimler, yeni bildirim var'\n                Image, 0x114451540, {{322.0, 70.0}, {44.0, 44.0}}, label: 'Nova_bell'\n              Other, 0x114451680, {{351.0, 77.0}, {8.0, 8.0}}\n              Button, 0x1144517c0, {{376.0, 70.0}, {44.0, 44.0}}, identifier: 'nova.profile', label: 'Hesabım'\n              Other, 0x114451900, {{0.0, 132.0}, {440.0, 372.0}}\n                Other, 0x114451a40, {{0.0, 132.0}, {440.0, 372.0}}\n                  Other, 0x114451b80, {{0.0, 132.0}, {440.0, 372.0}}\n                    Other, 0x114451cc0, {{0.0, 132.0}, {440.0, 372.0}}\n                      Other, 0x114451e00, {{0.0, 132.0}, {440.0, 372.0}}\n                        Other, 0x114451f40, {{0.0, 132.0}, {440.0, 372.0}}\n                          Other, 0x114452d00, {{0.0, 132.0}, {440.0, 372.0}}\n                            Other, 0x114453980, {{0.0, 132.0}, {440.0, 372.0}}\n                              Other, 0x114453ac0, {{0.0, 132.0}, {440.0, 372.0}}\n                                Other, 0x114453c00, {{0.0, 132.0}, {440.0, 372.0}}\n                                  Other, 0x114453d40, {{0.0, 132.0}, {440.0, 372.0}}\n                                    ScrollView, 0x114453e80, {{0.0, 132.0}, {440.0, 372.0}}\n                                      Other, 0x104e3b340, {{0.0, 31.0}, {440.0, 669.7}}\n                                        Button, 0x104e3b480, {{18.0, 49.0}, {44.0, 44.0}}, identifier: 'directory.editor.back', label: 'Geri'\n                                          Image, 0x104e3b5c0, {{18.0, 49.0}, {44.0, 44.0}}, identifier: 'chevron.left', label: 'Back'\n                                        StaticText, 0x104e3b700, {{70.0, 57.0}, {134.7, 28.0}}, label: 'İşyeri İlişkileri'\n                                        StaticText, 0x104e3b840, {{18.0, 107.0}, {308.3, 34.3}}, label: 'Firma, işyeri ve başlangıç değişmez. Bitişi ve açıklamayı düzenleyebilirsiniz.'\n                                        StaticText, 0x104e3b980, {{62.0, 172.5}, {57.0, 17.7}}, label: 'Dış firma', Disabled\n                                        Button, 0x104e3bac0, {{34.0, 201.3}, {371.0, 16.7}}, identifier: 'directory.field.organization_id', label: 'Sentetik Yüklenici', Disabled\n                                          StaticText, 0x104e3bc00, {{34.0, 201.3}, {109.7, 16.7}}, label: 'Sentetik Yüklenici', Disabled\n                                          Image, 0x104e3bd40, {{391.3, 206.0}, {13.7, 7.7}}, identifier: 'chevron.down', label: 'Go Down', Disabled\n                                        StaticText, 0x104e3be80, {{62.0, 265.2}, {35.3, 17.7}}, label: 'İşyeri', Disabled\n                                        Button, 0x11469c000, {{34.0, 294.0}, {371.0, 16.7}}, identifier: 'directory.field.workplace_id', label: 'Sentetik İşyeri', Disabled\n                                          StaticText, 0x11469c140, {{34.0, 294.0}, {87.3, 16.7}}, label: 'Sentetik İşyeri', Disabled\n                                          Image, 0x11469c280, {{391.3, 298.7}, {13.7, 7.7}}, identifier: 'chevron.down', label: 'Go Down', Disabled\n                                        StaticText, 0x11469c3c0, {{62.0, 357.8}, {235.7, 17.7}}, label: 'Geçerlilik başlangıcı · YYYY-AA-GG', Disabled\n                                        TextField, 0x11469c500, {{34.0, 386.7}, {372.0, 20.7}}, identifier: 'directory.field.starts_on', placeholderValue: 'Geçerlilik başlangıcı · YYYY-AA-GG', value: 2026-01-01, Disabled\n                                        StaticText, 0x11469c640, {{62.0, 454.5}, {178.0, 17.7}}, label: 'Bitiş (hariç) · YYYY-AA-GG'\n                                        TextField, 0x11469c780, {{34.0, 483.3}, {372.0, 20.7}}, identifier: 'directory.field.ends_before', placeholderValue: 'Bitiş (hariç) · YYYY-AA-GG', value: 2025-12-31, Keyboard Focused\n                                        StaticText, 0x11469c8c0, {{62.0, 551.2}, {60.3, 17.7}}, label: 'Yapılan iş'\n                                        TextField, 0x11469ca00, {{34.0, 580.0}, {372.0, 20.7}}, identifier: 'directory.field.description', placeholderValue: 'Yapılan iş', value: Sentetik iş\n                                        Button, 0x11469cb40, {{18.0, 630.7}, {404.0, 52.0}}, identifier: 'directory.save', label: 'Kaydet'\n                                          Image, 0x11469cc80, {{182.3, 649.7}, {14.3, 14.3}}, identifier: 'checkmark', label: 'Selected', Selected\n                                          StaticText, 0x11469cdc0, {{18.0, 630.7}, {404.0, 52.0}}, label: 'Kaydet'\n                                      Other, 0x11469cf00, {{407.0, 132.0}, {30.0, 372.0}}, label: 'Vertical scroll bar, 2 pages', value: %34\n                                        Other, 0x11469d040, {{434.0, 190.3}, {3.0, 203.3}}\n                                      Other, 0x11469d180, {{407.0, 132.0}, {30.0, 372.0}}, label: 'Vertical scroll bar, 2 pages', value: %34\n                                        Other, 0x11469d2c0, {{434.0, 190.3}, {3.0, 203.3}}\n                            Other, 0x11469d400, {{0.0, 132.0}, {440.0, 372.0}}\n                              Other, 0x11469d540, {{0.0, 132.0}, {440.0, 372.0}}\n                Other, 0x11469d680, {{0.0, 421.0}, {440.0, 83.0}}\n                  Other, 0x11469d7c0, {{0.0, 132.0}, {440.0, 372.0}}\n                  Other, 0x11469d900, {{0.0, 421.0}, {440.0, 83.0}}\n              Button, 0x11469da40, {{26.0, 415.3}, {77.7, 56.7}}, identifier: 'nova.tab.home', label: 'Ana Sayfa', Selected\n                Image, 0x11469db80, {{55.3, 427.0}, {19.0, 19.0}}, label: 'Nova_home'\n                StaticText, 0x11469dcc0, {{26.0, 415.3}, {77.7, 56.7}}, label: 'Ana Sayfa'\n              Button, 0x11469de00, {{103.7, 415.3}, {77.7, 56.7}}, identifier: 'nova.tab.findings', label: 'Uygunsuzluk'\n                Image, 0x11469df40, {{133.0, 427.0}, {19.0, 19.0}}, label: 'Nova_list'\n                StaticText, 0x11469e080, {{103.7, 415.3}, {77.7, 56.7}}, label: 'Uygunsuzluk'\n              Button, 0x11469e1c0, {{181.3, 415.3}, {77.3, 56.7}}, identifier: 'nova.add', label: 'Ekle'\n                Image, 0x11469e300, {{211.3, 427.7}, {17.7, 17.7}}, identifier: 'plus', label: 'Add'\n                StaticText, 0x11469e440, {{209.5, 459.3}, {21.0, 12.7}}, label: 'Ekle'\n              Button, 0x11469e580, {{258.7, 415.3}, {77.7, 56.7}}, identifier: 'nova.tab.companies', label: 'Firmalar'\n                Image, 0x11469e6c0, {{288.0, 427.0}, {19.0, 19.0}}, label: 'Nova_firm'\n                StaticText, 0x11469e800, {{258.7, 415.3}, {77.7, 56.7}}, label: 'Firmalar'\n              Button, 0x11469e940, {{336.3, 415.3}, {77.7, 56.7}}, identifier: 'nova.tab.profile', label: 'Profil'\n                Image, 0x11469ea80, {{365.7, 427.0}, {19.0, 19.0}}, label: 'Nova_who'\n                StaticText, 0x11469ebc0, {{336.3, 415.3}, {77.7, 56.7}}, label: 'Profil'\n              StaticText, 0x11469ed00, {{188.0, 508.0}, {64.0, 20.3}}, identifier: 'qa.directory.saves', label: 'saves=0'\n              StaticText, 0x11469ee40, {{119.5, 532.3}, {201.0, 12.0}}, identifier: 'qa.state', label: 'QA · synthetic-a · home · home · fonts=ok'\n              Button, 0x11469ef80, {{52.7, 548.3}, {73.3, 27.3}}, identifier: 'qa.capture', label: 'Yakalama'\n              Button, 0x11469f0c0, {{134.0, 548.3}, {87.3, 27.3}}, identifier: 'qa.reset', label: 'Hesap reset'\n              Button, 0x11469f200, {{229.3, 548.3}, {76.0, 27.3}}, identifier: 'qa.replay', label: 'Eski işlem'\n              Button, 0x11469f340, {{313.3, 548.3}, {74.3, 27.3}}, identifier: 'qa.revoke', label: 'İzin kaldır'\n              Button, 0x11469f480, {{134.0, 579.7}, {83.7, 27.3}}, identifier: 'qa.host.refresh', label: 'Yetki yenile'\n              Button, 0x11469f5c0, {{225.7, 579.7}, {80.3, 27.3}}, identifier: 'qa.host.deliver', label: 'Yanıtı getir'\n    Window, 0x11469f700, {{0.0, 0.0}, {440.0, 956.0}}\n      Other, 0x11469f840, {{0.0, 0.0}, {440.0, 956.0}}\n        Other, 0x11469f980, {{0.0, 0.0}, {440.0, 956.0}}\n        Other, 0x11469fac0, {{0.0, 611.0}, {440.0, 345.0}}\n          Other, 0x11469fc00, {{0.0, 611.0}, {440.0, 345.0}}, identifier: 'inputView'\n    Window, 0x11469fd40, {{0.0, 0.0}, {440.0, 956.0}}\n      Other, 0x11469fe80, {{0.0, 0.0}, {440.0, 956.0}}\n        Other, 0x1146a8000, {{0.0, 611.0}, {440.0, 345.0}}\n          Other, 0x1146a8140, {{0.0, 611.0}, {440.0, 44.0}}, identifier: 'SystemInputAssistantView'\n            Other, 0x1146a8280, {{0.0, 611.0}, {440.0, 44.0}}\n              Other, 0x1146a83c0, {{0.0, 611.0}, {440.0, 44.0}}, identifier: 'CenterPageView'\n                Other, 0x1146a8500, {{0.0, 11.0}, {440.0, 1244.0}}\n                  ScrollView, 0x1146a8640, {{0.0, 611.0}, {440.0, 44.0}}\n                Other, 0x1146a8780, {{0.0, 611.0}, {440.0, 44.0}}\n                  Other, 0x1146a88c0, {{0.0, 611.0}, {440.0, 44.0}}, label: 'Typing Predictions'\n                    Other, 0x1146a8a00, {{0.0, 611.0}, {440.0, 44.0}}\n                      Other, 0x1146a8b40, {{0.0, 611.0}, {440.0, 44.0}}\n                        Other, 0x1146a8c80, {{0.0, 611.0}, {146.7, 44.0}}\n                        Other, 0x1146a8dc0, {{146.7, 611.0}, {146.7, 44.0}}\n                        Other, 0x1146a8f00, {{293.3, 611.0}, {146.7, 44.0}}\n          Other, 0x1146a9040, {{0.0, 611.0}, {440.0, 345.0}}\n            Other, 0x1146a9180, {{0.0, 611.0}, {440.0, 345.0}}\n              Other, 0x1146a92c0, {{0.0, 611.0}, {440.0, 345.0}}\n          Other, 0x1146a9400, {{0.0, 655.0}, {440.0, 243.0}}\n            Keyboard, 0x1146a9540, {{0.0, 655.0}, {440.0, 243.0}}\n              Other, 0x1146a9680, {{0.0, 655.0}, {440.0, 243.0}}\n                Other, 0x1146a97c0, {{0.0, 655.0}, {440.0, 243.0}}, identifier: 'UIKeyboardLayoutStar Preview'\n                  Key, 0x1146a9900, {{0.0, 655.0}, {0.0, 0.0}}, label: 'Padding-Left'\n                  Key, 0x1146a9a40, {{4.7, 662.0}, {36.0, 56.0}}, label: 'q'\n                  Key, 0x1146a9b80, {{40.7, 662.0}, {36.0, 56.0}}, label: 'w'\n                  Key, 0x1146a9cc0, {{76.7, 662.0}, {36.0, 56.0}}, label: 'e'\n                  Key, 0x1146a9e00, {{112.7, 662.0}, {36.3, 56.0}}, label: 'r'\n                  Key, 0x1146a9f40, {{149.0, 662.0}, {36.0, 56.0}}, label: 't'\n                  Key, 0x1146aa080, {{185.0, 662.0}, {36.0, 56.0}}, label: 'y'\n                  Key, 0x1146aa1c0, {{221.0, 662.0}, {36.0, 56.0}}, label: 'u'\n                  Key, 0x1146aa300, {{257.0, 662.0}, {36.3, 56.0}}, label: 'ı'\n                  Key, 0x1146aa440, {{293.3, 662.0}, {36.0, 56.0}}, label: 'o'\n                  Key, 0x1146aa580, {{329.3, 662.0}, {36.0, 56.0}}, label: 'p'\n                  Key, 0x1146aa6c0, {{365.3, 662.0}, {36.0, 56.0}}, label: 'ğ'\n                  Key, 0x1146aa800, {{401.3, 662.0}, {36.3, 56.0}}, label: 'ü'\n                  Key, 0x1146aa940, {{0.0, 655.0}, {0.0, 0.0}}, label: 'Padding-Right'\n                  Key, 0x1146aaa80, {{0.0, 655.0}, {0.0, 0.0}}, label: 'Padding-Left'\n                  Key, 0x1146aabc0, {{22.7, 718.0}, {36.0, 56.0}}, label: 'a'\n                  Key, 0x1146aad00, {{58.7, 718.0}, {36.0, 56.0}}, label: 's'\n                  Key, 0x1146aae40, {{94.7, 718.0}, {36.0, 56.0}}, label: 'd'\n                  Key, 0x1146aaf80, {{130.7, 718.0}, {36.3, 56.0}}, label: 'f'\n                  Key, 0x1146ab0c0, {{167.0, 718.0}, {36.0, 56.0}}, label: 'g'\n                  Key, 0x1146ab200, {{203.0, 718.0}, {36.0, 56.0}}, label: 'h'\n                  Key, 0x1146ab340, {{239.0, 718.0}, {36.0, 56.0}}, label: 'j'\n                  Key, 0x1146ab480, {{275.0, 718.0}, {36.3, 56.0}}, label: 'k'\n                  Key, 0x1146ab5c0, {{311.3, 718.0}, {36.0, 56.0}}, label: 'l'\n                  Key, 0x1146ab700, {{347.3, 718.0}, {36.0, 56.0}}, label: 'ş'\n                  Key, 0x1146ab840, {{383.3, 718.0}, {36.0, 56.0}}, label: 'i'\n                  Key, 0x1146ab980, {{0.0, 655.0}, {0.0, 0.0}}, label: 'Padding-Right'\n                  Button, 0x1146abac0, {{4.7, 774.0}, {54.0, 56.0}}, identifier: 'shift', label: 'shift'\n                  Key, 0x1146abc00, {{58.7, 774.0}, {36.0, 56.0}}, label: 'z'\n                  Key, 0x1146abd40, {{94.7, 774.0}, {36.0, 56.0}}, label: 'x'\n                  Key, 0x1146abe80, {{130.7, 774.0}, {36.3, 56.0}}, label: 'c'\n                  Key, 0x1146b4000, {{167.0, 774.0}, {36.0, 56.0}}, label: 'v'\n                  Key, 0x1146b4140, {{203.0, 774.0}, {36.0, 56.0}}, label: 'b'\n                  Key, 0x1146b4280, {{239.0, 774.0}, {36.0, 56.0}}, label: 'n'\n                  Key, 0x1146b43c0, {{275.0, 774.0}, {36.3, 56.0}}, label: 'm'\n                  Key, 0x1146b4500, {{311.3, 774.0}, {36.0, 56.0}}, label: 'ö'\n                  Key, 0x1146b4640, {{347.3, 774.0}, {36.0, 56.0}}, label: 'ç'\n                  Key, 0x1146b4780, {{383.3, 774.0}, {54.3, 56.0}}, identifier: 'delete', label: 'Sil'\n                  Key, 0x1146b48c0, {{4.7, 830.0}, {54.0, 56.0}}, identifier: 'more', label: 'sayılar'\n                  Button, 0x1146b4a00, {{58.7, 830.0}, {54.0, 56.0}}, identifier: 'emoji', label: 'Emoji'\n                  Key, 0x1146b4b40, {{112.7, 830.0}, {216.7, 56.0}}, identifier: 'space', label: ' '\n                  Button, 0x1146b4c80, {{329.3, 830.0}, {108.3, 56.0}}, identifier: 'Done', label: 'Bitti'\n          Other, 0x1146b4dc0, {{0.0, 655.0}, {440.0, 301.0}}\n            Button, 0x1146b4f00, {{2.5, 887.7}, {80.1, 68.7}}, label: 'Next keyboard', value: English (US)\n              StaticText, 0x1146b5040, {{2.5, 887.7}, {0.0, 0.0}}\n            Button, 0x1146b5180, {{357.4, 887.4}, {80.1, 68.7}}, identifier: 'dictation', label: 'Dictate'\n              StaticText, 0x1146b52c0, {{357.4, 887.4}, {0.0, 0.0}}\n            Button, 0x1146b5400, {{357.4, 887.4}, {80.1, 68.7}}, identifier: 'dictation', label: 'Dictate'\n              StaticText, 0x1146b5540, {{357.4, 887.4}, {0.0, 0.0}}\nPath to element:\n →Application, 0x114452e40, pid: 48348, label: 'ISG Shell QA'\nQuery chain:\n →Find: Target Application 'com.riskdetected.isgshellharness'\n  Output: {\n    Application, 0x1146b5680, pid: 48348, label: 'ISG Shell QA'\n  }\n)",
+            "location": "ShellUITests.swift:63"
+          }
+        ]
+      },
+      "testCases": [
+        {
+          "suite": "ShellUITests",
+          "test": "testDirectoryEngagementDateGuardAndImmutableKeys",
+          "status": "failed",
+          "durationMs": 12213
+        },
+        {
+          "suite": "ShellUITests",
+          "test": "testDirectoryHierarchyExcludesSelfAndDescendant",
+          "status": "passed",
+          "durationMs": 6688
+        },
+        {
+          "suite": "ShellUITests",
+          "test": "testDirectoryOptionFailureRequiresRetryWithoutLosingForm",
+          "status": "passed",
+          "durationMs": 7605
+        },
+        {
+          "suite": "ShellUITests",
+          "test": "testPersonnelAdvancedRoutesReturnToSameEmployee",
+          "status": "passed",
+          "durationMs": 13470
+        },
+        {
+          "suite": "ShellUITests",
+          "test": "testReadOnlyPersonnelCanReadHistoryButCannotWrite",
+          "status": "passed",
+          "durationMs": 9143
+        }
+      ]
+    },
+    "repaired": {
+      "summary": {
+        "status": "SUCCEEDED",
+        "durationMs": 34407,
+        "counts": {
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0
+        },
+        "target": "simulator"
+      },
+      "artifacts": {
+        "buildLogPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/test_sim_2026-09-13T11-27-35-133Z_pid70458_28ea06d5.log",
+        "xcresultPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-13T11-27-35-134Z_pid70458_3ce00326.xcresult",
+        "testProductsPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/test-products/test_sim_2026-09-13T11-27-35-134Z_pid70458_a428065f.xctestproducts"
+      },
+      "diagnostics": {
+        "warnings": [],
+        "errors": [],
+        "testFailures": []
+      },
+      "testCases": [
+        {
+          "suite": "ShellUITests",
+          "test": "testDirectoryEngagementDateGuardAndImmutableKeys",
+          "status": "passed",
+          "durationMs": 11561
+        },
+        {
+          "suite": "ShellUITests",
+          "test": "testDirectoryHierarchyReparentLoadsSecondPage",
+          "status": "passed",
+          "durationMs": 7386
+        },
+        {
+          "suite": "ShellUITests",
+          "test": "testDirectoryHierarchyReparentLoadsSecondPage",
+          "status": "passed",
+          "durationMs": 7414
+        }
+      ]
+    },
+    "unique_final_passing_scenarios": 6,
+    "note": "Initial run: four passed, one keyboard-wait test failed; new selector omitted. Corrected rerun: date and second-page reparent passed. Duplicate selector execution is not an additional scenario."
+  },
+  "ios_debug": {
+    "summary": {
+      "status": "SUCCEEDED",
+      "durationMs": 13131,
+      "target": "simulator"
+    },
+    "artifacts": {
+      "buildLogPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-09-13T11-28-21-582Z_pid70458_8ee8815a.log"
+    },
+    "diagnostics": {
+      "warnings": [],
+      "errors": []
+    }
+  },
+  "android": {
+    "designsystem": {
+      "tests": 374,
+      "failed": 0,
+      "skipped": 0,
+      "task": "executed"
+    },
+    "data": {
+      "tests": 615,
+      "failed": 0,
+      "skipped": 0,
+      "task": "UP-TO-DATE"
+    },
+    "profile": {
+      "tests": 11,
+      "failed": 0,
+      "skipped": 0,
+      "task": "UP-TO-DATE"
+    },
+    "debug_build": "PASS",
+    "native_successful_phases": [
+      "prepare",
+      "complete",
+      "restore",
+      "catalogs",
+      "contexts",
+      "assignment_transition",
+      "foreground"
+    ],
+    "native_assignment_note": "Initial assignment form committed. The second-period UI selector matched both selected job and prior period, so that invocation failed. Scoped option-tag fix passed transition/employer retry; independent SQL asserts both periods and snapshots. The failed assignments log is retained; this is not presented as one uninterrupted green invocation.",
+    "native_logs": "output/isg/runs/synthetic-auth-m1sW6B/native-android-*.log",
+    "regression_log": "/tmp/isg-p05-final-android-regression2.log"
+  },
+  "swift_rule_checks": 46,
+  "node": {
+    "passed": 209,
+    "failed": 0,
+    "log": "/tmp/isg-p05-final-node-tests.log"
+  },
+  "limitations": [
+    "No live migration/rollout/store/billing mutation",
+    "No claim of exhaustive device/OS/input permutations",
+    "GoTrue/PostgREST/DB through allowlisted loopback broker, not production gateway or physical-device/store-update proof",
+    "REV21 consumers P06/P07; REV23 training/permit consumers P07/P10; X13 import consumer P11 remain open"
+  ]
+}

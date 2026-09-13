@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application android:label="ISG Native QA" android:allowBackup="false" android:networkSecurityConfig="@xml/native_network">
+        <activity android:name=".NativeActivity" android:exported="true" android:theme="@android:style/Theme.Material.Light.NoActionBar" />
+    </application>
+</manifest>

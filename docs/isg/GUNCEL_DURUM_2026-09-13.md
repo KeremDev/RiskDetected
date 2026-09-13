@@ -5,11 +5,11 @@ Kapsam: V5 geçiş planı, bu tarihe kadar mevcut kaynak kodu ve yerel doğrulam
 
 ## 1. Kısa ve açık sonuç
 
-**P05'in firma/personel altyapısı, iki native yönetim bağlantısı, basit personel formu, tarihli rehber API'leri ve arşivden yeniden etkinleştirme kodu hazır. Ancak P05'in bütün kabul kapıları kapanmış değil.** Gerçek mobil yönetim sahibi + SDK + izole veritabanı üzerinden uçtan uca kabul ve tarihli/hiyerarşik ekran matrisinin tamamı hâlâ bekliyor. Bu nedenle P05'i “tamamlandı/yayına hazır” olarak işaretlemiyoruz.
+**P05'in kendisine ait geliştirme ve katmanlı yerel kabulü tamamlandı. Canlıya açılmadı.** Gerçek iOS/Android ekranları → üretim çalışma alanı yöneticisi → SDK → izole Auth/DB zinciri, sekiz rehber formu, süreç yeniden başlatma, foreground yetki kaybı ve tarihli/hiyerarşik ekran kabulleri tamamlandı. [Faz kapanışı, test ayrıntıları ve açık bağımlılıklar](P05_CLOSURE_2026-09-13.md).
 
-Bu tur iki önemli eski açığı kapattık: tam legacy veritabanı kopyasında P05 migration/backfill provası ve iOS Keychain/Android Keystore üzerinde uygulama yeniden başlatma doğrulaması. Ayrıca arşivden dönüşü ekledik ve iOS'ta önceki form durumunun yeni forma taşınması hatasını düzelttik.
+Önceki paketlerde tamamlanan legacy upgrade/backfill, sade personel girişi, arşivden dönüş ve Keychain/Keystore altyapısı korundu. Kapanışta gerçek native kurtarma, kayıtların bağımsız SQL ile doğrulanması ve ikinci sayfadan üst departman seçerek ilişki değiştirme kabulü eklendi.
 
-**13 Eylül sonraki toplu paket:** Tarih/aralık/önceki dönem ve departman hiyerarşisi form korumaları, seçenek yeniden yükleme, değişmez ilişki alanları ve iOS klavye erişimi iki platformda tamamlandı. Android 999, Swift 46, iOS ilgili UI 5/5, Node 206 ve ana Debug buildler başarılı. Bunlar aşağıdaki eski koşularla toplanmaz; data görevi değişmedi/UP-TO-DATE. [Yeni paketin ayrıntıları ve açık kabul sınırı](P05_DIRECTORY_FORM_BATCH_2026-09-13.md).
+**Kapanış testi:** iOS gerçek native 5 senaryo; Android 7 başarılı aşama ve belgelenmiş görevlendirme düzeltme izi; iki platform bağımsız SQL oracle PASS. İzole servisler 301 kontrol, Swift 46, Node 209; Android 374 tasarım testi çalıştırıldı, 615 data + 11 profile UP-TO-DATE. iOS ekran katmanında 6 tekil senaryonun son sonucu ve iki ana Debug build PASS. Başarısız ilk denemeler/düzeltmeler kanıtta korunuyor; sayılar eski koşularla toplanmaz. [Kapanış kanıtı](evidence/P05_NATIVE_ACCEPTANCE_2026-09-13.json).
 
 **Canlı Supabase'e bu geçiş migration'ları uygulanmadı, rollout açılmadı, mağazaya yeni sürüm gönderilmedi.** Kaynakta geliştirilmiş bir özellik, şu an mağazadaki uygulamada aktif demek değildir. Geçiş sırasında teknik iOS bundle/Android package kimlikleri, mevcut abonelik ürünleri, fiyatlar ve kazanılmış haklar değiştirilmedi.
 
@@ -36,7 +36,7 @@ Yüzde vermiyoruz: bir altyapı testi ile son kullanıcı kabul testi aynı şey
 | P02 Üyelik/Auth | Kısmi | Mevcut iOS parola yolu korunuyor; Android parola servisi, iki platform signup/recovery ve parola kuralları; izole GoTrue testleri | Yeni giriş ekranlarının tam aktivasyonu, OTP/recovery amaç koordinatörü, hesap bağlama/MFA varyasyonları ve gerçek provider teslimi |
 | P03 Abonelik/legacy/kota | Kısmi | Mevcut SQL hak otoritesi envanteri; Plus 5 hak koruma/floor shadow hesabı; downgrade/read-only ayrımı; eski kota matrisi | Yeni policy/floor geçişi, bütün atomic rezervasyon/settlement tüketicileri, hak koruma cutover'ı; ticari karar gerektiren yeni limitler |
 | P04 Güvenli dosya/belge çekirdeği | Bekliyor; tasarım/spike işleri tanımlı | Amaç/izolasyon/scan ve belge snapshot gereksinimleri planlandı | Quarantine, upload intent, scan, immutable asset, güvenli render/parse worker ve iki mobil bağlantı |
-| **P05 Firma/işyeri/personel** | **İleri kısmi; kabul açık** | D05 migration/API; default workplace backfill/catch-up; iki native liste/form/detail ve çalışma alanı bağlantısı; personel, rehber, tarihçe, şifreli pending; arşiv/yeniden etkinleştirme | **Gerçek native UI→SDK→izole DB E2E; tüm tarihli/hiyerarşik ekran varyasyonlarının kabulü; ilgili kabul ID'lerinin katman bazlı kapatılması** |
+| **P05 Firma/işyeri/personel** | **Yerel geliştirme/kabul tamamlandı; canlı kapalı** | D05 migration/API/backfill; iki native yönetim bağlantısı; sade personel, sekiz rehber formu, tarihçe, arşiv/geri açma; gerçek SDK→DB kabulü, restart/foreground ve hiyerarşi/sayfalama | P05'e ait kapanış işleri tamamlandı. REV21 tüketicileri P06/P07, REV23 tüketicileri P07/P10, X13 import P11; fiziksel cihaz/gateway ve imzalı update P19/P20 kapsamında bekler |
 | P06 Kural/süre/task | Bekliyor | P05 tarihli context ve event üreticisi önkoşulları var | Mevzuat kaynak kayıtları, sürümlü kural motoru, applicability, task/schedule, daily reconcile ve rule publish |
 | P07 Eğitim | Bekliyor | Personel ve görev geçmişi önkoşulu var; menü/sunum hedefi var | Katalog, eğitim planı/oturumu, katılım, ölçme, tamamlama, dış sertifika, iki format belge ve native domain akışları |
 | P08 Risk sürümleme | Bekliyor | Mevcut legacy analiz sistemi korunuyor | Dört revision türü, açık AI bulgu aktarımı, impact/review ve tarihli schedule; eski analiz, yeni risk motoru değildir |
@@ -198,16 +198,16 @@ iOS: `WhenUnlockedThisDeviceOnly`, synchronizable=false, boyut sınırı, farkl�
 
 Android: şifreli dosyada plaintext bulunmaması, rastgele IV, authenticated associated data ile yanlış hesabın ciphertext'ini reddetme, boyut sınırı, ayrı directory namespace, force-stop sonrası okuma, ciphertext bozma reddi ve yalnız ilgili test kaydını temizleme.
 
-## 9. P05'i gerçekten kapatmak için kalan kabul listesi
+## 9. P05 kapanış kabulü ve fazlar arası sınırlar
 
-Bu liste fazı daha kolay “bitti” saymak amacıyla başka faza taşınmış değildir.
+Önceki dört açık kalem aşağıdaki katmanlarda kapatıldı. Sonraki domain tüketicileri geliştirilmiş veya bileşik kabul ID'leri bütünüyle geçmiş sayılmadı.
 
-| Açık kabul | Yapılacak doğrulama | Mevcut kısmi kanıt |
+| Kabul | Sonuç | Kanıt |
 |---|---|---|
-| Gerçek native yönetim→SDK→izole DB | İki platformda oturum aç, firma seç, personel/departman ekle, düzenle, arşivle/geri aç; DB sonucu ve tek receipt/event doğrula | Gerçek SDK adaptörleri ve ayrı sunucu/ekran testleri |
-| Oturum/foreground/bağlantı kaybı E2E | Aynı native zincirde hesap değişimi, foreground paid/rollout kaybı, commit sonrası yanıt kaybı ve yeniden başlatma | Host/scope reducer, RPC, journal ve fault testleri ayrı ayrı mevcut |
-| Bütün tarihli/hiyerarşik ekran varyasyonları | İki firma/iki işyeri, hiyerarşi cycle/reparent, tarih sınırları, çakışma, geçmiş/gelecek, işveren ve archived/read-only ekran matrisi | Backend constraint/API testleri ve sınırlı native rehber testleri |
-| Katmanlı kabul eşlemesi | REV01/21/23, DAT04/05, X07/12/13 için hangi alt koşulun geçtiğini, hangi bağımlılığın beklediğini runner kanıtına bağla | V5 registry başlangıç kaydı, önceki dilim raporları ve yeni kanıtlar |
+| Gerçek native yönetim→SDK→izole DB | İki platformda personel/departman CRUD, arşiv/geri açma; tek kayıt ve dört receipt/audit/outbox PASS | Native QA hedefleri ve bağımsız SQL oracle |
+| Oturum/foreground/bağlantı kaybı E2E | Hesap/firma değişimi, arka planda paid/rollout kaybı, commit sonrası yanıt kaybı ve gerçek süreç yeniden açılışı PASS | Aynı SDK zinciri; Keychain/Keystore pending |
+| Tarihli/hiyerarşik ekran matrisi | Sekiz tür gerçek form; tarih sınırları/önceki dönem; hiyerarşi ikinci sayfa/reparent/cycle; immutable alan/retry/read-only PASS | Native E2E + altı iOS ekran senaryosu + Android Compose kuralları/ekranları; server overlap/composite testleri ayrı katman |
+| Katmanlı kabul eşlemesi | REV01, DAT04/05, X07/12 ve REV21/23/X13'ün P05 parçaları kanıta bağlandı | [Kapanıştaki ID tablosu](P05_CLOSURE_2026-09-13.md); downstream parçalar açık |
 
 REV-21 “yeni ihtiyaç önerilir; eski sertifikadaki unvan değişmez” koşulunun tarih/snapshot altyapısı P05'te, ihtiyaç motoru P06/P07'dedir. REV-23'ün tek personel ve işveren bağı P05'te; eğitim/izin formu bağlantısı P07/P10'dadır. Bu bileşik testler bugün **tam PASS değildir**.
 
@@ -215,7 +215,7 @@ DAT04/05 ve X07 için sentetik backfill/catch-up/fault kanıtı ile bu tur gerç
 
 ## 10. Önerilen devam sırası
 
-1. **P05 kabul açığını kapat:** iki platform gerçek native E2E fixture/runner ve tarihli ekran matrisi; sorun çıkarsa düzelt, tek faz sonu regresyonu yap.
+1. **P05 kapandı:** yerel kabul kanıtı ve kapalı rollout korunacak; sonraki fazlar bu veri/API omurgasını kullanacak.
 2. P01/P03'te sonraki domain'lerin ihtiyaç duyduğu consumer/rezervasyon sözleşmelerini tamamla.
 3. **P04 güvenli dosya çekirdeği** ve **P06 kural/task çekirdeği** önkoşullarını uygula.
 4. P07 eğitim, P08 risk, P09 uygunsuzluk ve P10 diğer modülleri bu çekirdeklere bağla.

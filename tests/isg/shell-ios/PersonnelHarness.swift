@@ -16,18 +16,27 @@ import SwiftUI
         let args = ProcessInfo.processInfo.arguments
         let selected: NovaDirectoryKind = args.contains("--directory-departments") ? .departments : .engagements
         func row(_ id: UUID, _ fields: [String: String]) -> NovaDirectoryRow { .init(id: id, fields: fields.mapValues { .string($0) }) }
-        return .init(read: { _, kind, _, _, _ in
+        return .init(read: { _, kind, _, after, _ in
             if args.contains("--directory-option-retry"), kind == .workplaces, !self.directoryOptionFailed {
                 self.directoryOptionFailed = true; throw NovaPersonnelFailure.unavailable
             }
             if kind == .workplaces { return .init(rows: [row(Self.workplaceID, ["name": "Sentetik İşyeri"])], next: nil, parentVersion: nil) }
             if kind == .contractors { return .init(rows: [row(Self.contractorID, ["name": "Sentetik Yüklenici"])], next: nil, parentVersion: nil) }
+            if args.contains("--directory-paging"), let after {
+                precondition(after == Self.contractorID)
+                return .init(rows: [row(UUID(uuidString:"66666666-6666-4666-8666-666666666666")!,["name":"İkinci sayfa üst departman","workplace_id":Self.workplaceID.uuidString.lowercased()])],next:nil,parentVersion:0)
+            }
             let rows = self.directoryRows ?? (selected == .departments ? [
                 row(Self.directoryID, ["name": "Ana departman", "code": "ANA", "workplace_id": Self.workplaceID.uuidString.lowercased()]),
                 row(Self.contractorID, ["name": "Alt departman", "code": "ALT", "workplace_id": Self.workplaceID.uuidString.lowercased(), "parent_id": Self.directoryID.uuidString.lowercased()])
             ] : [row(Self.directoryID, ["description": "Sentetik iş", "organization_id": Self.contractorID.uuidString.lowercased(), "workplace_id": Self.workplaceID.uuidString.lowercased(), "starts_on": "2026-01-01", "ends_before": "2027-01-01"])])
-            return .init(rows: rows, next: nil, parentVersion: 0)
+            return .init(rows: rows, next: args.contains("--directory-paging") && self.directoryRows == nil ? Self.contractorID : nil, parentVersion: 0)
         }, save: { intent in
+            if args.contains("--directory-paging") {
+                precondition(intent.entityID == Self.directoryID)
+                precondition(intent.body["parent_id"]?.text == "66666666-6666-4666-8666-666666666666")
+                precondition(intent.body["name"]?.text == "Ana departman")
+            }
             self.directorySaves += 1
             self.directoryRows = [.init(id: intent.entityID ?? Self.directoryID, fields: intent.body)]
             return .init(operationID: intent.operationID, entityID: intent.entityID ?? Self.directoryID, version: intent.expectedVersion + 1)

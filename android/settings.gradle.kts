@@ -27,6 +27,8 @@ include(":isg-contract-tests")
 include(":isg-design-preview")
 // Isolated emulator-only persistence proof; never a production app dependency.
 include(":isg-journal-check")
+// Real native SDK acceptance against an explicit loopback-only synthetic fixture.
+include(":isg-native-check")
 include(":feature:onboarding")
 include(":feature:capture")
 include(":feature:analysis")

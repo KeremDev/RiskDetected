@@ -67,6 +67,8 @@ import UIKit
         directoryScroll(field); field.tap()
         let text = field.value as? String ?? ""
         field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: text.count) + value + "\n")
+        let done = app.keyboards.buttons["Done"]
+        if done.exists && done.isHittable { done.tap() }
     }
     func testDirectoryEngagementDateGuardAndImmutableKeys() {
         launch(["--directory"])
@@ -92,6 +94,20 @@ import UIKit
         directoryScroll(app.buttons["directory.save"]); tap("directory.save")
         XCTAssertTrue(app.buttons["directory.add"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["qa.directory.saves"].label, "saves=1")
+    }
+    func testDirectoryHierarchyReparentLoadsSecondPage() {
+        launch(["--directory", "--directory-departments", "--directory-paging"])
+        tap("directory.edit.33333333-3333-4333-8333-333333333333")
+        let parent = app.buttons["directory.field.parent_id"]
+        directoryScroll(parent); tap("directory.field.parent_id")
+        XCTAssertFalse(app.buttons["directory.option.parent_id.33333333-3333-4333-8333-333333333333"].exists)
+        XCTAssertFalse(app.buttons["directory.option.parent_id.55555555-5555-4555-8555-555555555555"].exists)
+        let more=app.buttons["Diğer kayıtlar"];directoryScroll(more);more.tap()
+        let option=app.buttons["directory.option.parent_id.66666666-6666-4666-8666-666666666666"]
+        directoryScroll(option);option.tap()
+        directoryScroll(app.buttons["directory.save"]);tap("directory.save")
+        XCTAssertTrue(app.buttons["directory.add"].waitForExistence(timeout:5))
+        XCTAssertEqual(app.staticTexts["qa.directory.saves"].label,"saves=1")
     }
     func testDirectoryOptionFailureRequiresRetryWithoutLosingForm() {
         launch(["--directory", "--directory-option-retry"])

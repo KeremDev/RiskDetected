@@ -18,6 +18,8 @@ import { beginWorkspaceAvailabilityProbe, workspaceAvailabilityFiles } from './w
 import { probeP05Upgrade, p05UpgradeFiles } from './p05_upgrade_probe.mjs';
 import { probePasswordAuth } from './password_auth_probe.mjs';
 import { probeSignupRecovery } from './signup_recovery_probe.mjs';
+import { nativeE2EBridge } from './native_e2e_bridge.mjs';
+import { verifyNativeDirectory } from './native_e2e_oracle.mjs';
 
 // Restore drill only. The proven source container is read-only; all API writes
 // target a new disposable copy with a shared NONE network namespace. No ports,
@@ -25,7 +27,7 @@ import { probeSignupRecovery } from './signup_recovery_probe.mjs';
 const source = 'isg_restore_20260912_db';
 const names = { db: 'isg_auth_restore_20260912_db', auth: 'isg_auth_restore_20260912_auth', client: 'isg_auth_restore_20260912_client' };
 const withStorage = process.argv.includes('--with-storage');
-const synthetic = process.argv.length === 3 && process.argv[2] === '--synthetic-session';
+const synthetic = process.argv[2] === '--synthetic-session' && (process.argv.length === 3 || (process.argv.length === 4 && process.argv[3] === '--native-e2e'));
 if (synthetic) for (const kind of Object.keys(names)) names[kind] = `isg_test_auth_session_${kind}`;
 if (synthetic) names.rest = 'isg_test_auth_session_rest';
 if (withStorage) names.storage = 'isg_auth_restore_20260912_storage';
@@ -318,6 +320,27 @@ try {
     stage = 'personnel-advisors';
     report.personnel_advisors=await probePersonnelAdvisors({synthetic:true,sql,guard,names,pass,onFindings:value=>{report.personnel_advisors=value;}});
   }
+  if (mode.nativeE2E) {
+    stage='native-e2e';
+    const secondPassword='Aa1'+randomBytes(24).toString('base64url'), secondEmail=`native-${run}@example.invalid`;
+    const second=request('/admin/users',{method:'POST',token:admin,body:{email:secondEmail,password:secondPassword,email_confirm:true}});
+    pass('native_second_auth_user_created',second.status===200||second.status===201);
+    const secondCompany=randomUUID();
+    sql(`INSERT INTO public.profiles(id,tier) VALUES('${second.body.id}','pro');
+      INSERT INTO public.user_subscriptions(user_id,tier,status,current_period_ends_at) VALUES('${second.body.id}','plus','active',now()+interval '2 hours');
+      INSERT INTO public.companies(id,user_id,name,hazard_class) VALUES('${secondCompany}','${second.body.id}','Native Firma B','high');`);
+    const reset=()=>sql(`UPDATE private_isg.rollout SET read_enabled=true,write_enabled=true;UPDATE public.user_subscriptions SET current_period_ends_at=now()+interval '2 hours' WHERE user_id='${id}';`);
+    reset();
+    report.native_e2e=await nativeE2EBridge({synthetic:true,target,fixture:{email,password,company:personnelMigrationProbe.companyID,secondEmail,secondPassword,secondCompany},auth:request,rest:personnelHTTPProbe.request,
+      control(action){if(action==='reset')reset();else if(action==='paid_off')sql(`UPDATE public.user_subscriptions SET current_period_ends_at=now()-interval '1 day' WHERE user_id='${id}';`);else sql(`UPDATE private_isg.rollout SET ${action==='read_off'?'read_enabled=false,write_enabled=false':'write_enabled=false'};`);},
+      verify(platform){const name=`Native ${platform} Son`;const result=JSON.parse(sql(`WITH people AS (SELECT * FROM private_isg.employees WHERE company_id='${personnelMigrationProbe.companyID}' AND full_name='${name}')
+        SELECT jsonb_build_object('employees',(SELECT count(*) FROM people),
+          'restored',(SELECT coalesce(bool_and(NOT is_archived AND record_version>=3 AND hired_on IS NULL AND employment_ends_before IS NULL AND intake_department_id IS NOT NULL),false) FROM people),
+          'audit',(SELECT count(*) FROM private_isg.personnel_audit WHERE employee_id IN(SELECT id FROM people)),
+          'events',(SELECT count(*) FROM private_isg.personnel_outbox o JOIN private_isg.personnel_audit a USING(event_id) WHERE a.employee_id IN(SELECT id FROM people)),
+          'receipts',(SELECT count(*) FROM private_isg.personnel_receipts WHERE response->>'employee_id' IN(SELECT id::text FROM people)));`));const directory=verifyNativeDirectory(sql,personnelMigrationProbe.companyID,platform);return {...result,directory,ok:result.employees===1&&result.restored===true&&result.audit===4&&result.events===4&&result.receipts===4&&directory.ok};}});
+    reset();report.mobile_e2e_tested=true;
+  }
   pass('logout_succeeds', request('/logout', { method: 'POST', token: refresh.body.access_token }).status === 204);
   pass('logged_out_refresh_rejected', request('/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: refresh.body.refresh_token } }).status === 400);
   if (sessionProbe) report.session_guard = sessionProbe.afterLogout();
@@ -349,6 +372,7 @@ try {
     .concat(directoryMigrationFiles)
     .concat(workspaceAvailabilityFiles)
     .concat(mode.p05Upgrade ? p05UpgradeFiles : [])
+    .concat(mode.nativeE2E ? ['scripts/isg/native_e2e_bridge.mjs','scripts/isg/native_e2e_oracle.mjs','scripts/isg/run_native_android.mjs','tests/isg/native-ios/NativeHarness.swift','tests/isg/native-ios/NativeUITests.swift','android/isg-native-check/src/main/kotlin/com/riskdetectedan/isg/nativecheck/NativeActivity.kt','android/isg-native-check/src/androidTest/kotlin/com/riskdetectedan/isg/nativecheck/NativeFlowTest.kt'] : [])
     .map(path=>[path,digest(readFileSync(resolve(ROOT,path)))]));
   report.ok = true;
 } catch (error) {

@@ -1,0 +1,70 @@
+name: ISGNativeHarness
+options:
+  deploymentTarget:
+    iOS: '16.0'
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift.git
+    exactVersion: 2.46.0
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    CODE_SIGNING_ALLOWED: YES
+    CODE_SIGN_IDENTITY: '-'
+    GENERATE_INFOPLIST_FILE: YES
+    SUPPORTED_PLATFORMS: iphonesimulator
+targets:
+  ISGNativeHarness:
+    type: application
+    platform: iOS
+    sources:
+      - path: NativeHarness.swift
+      - path: ../../../App/DesignSystem/ISG/NovaPersonnel.swift
+      - path: ../../../App/DesignSystem/ISG/NovaPersonnelScreens.swift
+      - path: ../../../App/DesignSystem/ISG/NovaDirectory.swift
+      - path: ../../../App/DesignSystem/ISG/NovaDirectoryScreens.swift
+      - path: ../../../App/DesignSystem/ISG/NovaTokens.swift
+      - path: ../../../App/DesignSystem/ISG/NovaComponents.swift
+      - path: ../../../App/DesignSystem/ISG/NovaExpertShell.swift
+      - path: ../../../App/DesignSystem/ISG/NovaNavigation.swift
+      - path: ../../../App/DesignSystem/ISG/NovaSessionHost.swift
+      - path: ../../../App/DesignSystem/ISG/NovaWorkspaceCapability.swift
+      - path: ../../../App/Services/Company/NovaPersonnelService.swift
+      - path: ../../../App/Services/Company/NovaPersonnelLiveAdapter.swift
+      - path: ../../../App/Services/Company/NovaDirectoryService.swift
+      - path: ../../../App/Services/Company/NovaWorkspaceController.swift
+      - path: ../../../App/Resources/NovaIcons.xcassets
+        buildPhase: resources
+      - path: ../../../App/Resources/Fonts
+        includes: ['PlusJakartaSans-*.ttf', 'OFL-PlusJakartaSans.txt']
+        buildPhase: resources
+    dependencies:
+      - package: Supabase
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.riskdetected.isgnativeharness
+        CODE_SIGN_ENTITLEMENTS: Native.entitlements
+        INFOPLIST_FILE: NativeInfo.plist
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        SKIP_INSTALL: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: ''
+  ISGNativeUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [NativeUITests.swift]
+    dependencies:
+      - target: ISGNativeHarness
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.riskdetected.isgnativeuitests
+        TEST_TARGET_NAME: ISGNativeHarness
+schemes:
+  ISGNativeHarness:
+    build:
+      targets:
+        ISGNativeHarness: all
+        ISGNativeUITests: [test]
+    test:
+      targets: [ISGNativeUITests]
+      parallelizeBuild: false

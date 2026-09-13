@@ -112,4 +112,22 @@ class NovaDirectoryDestinationTest {
         compose.onNodeWithTag("directory.save").performScrollTo().assertIsEnabled().performClick()
         compose.onNodeWithTag("directory.add").assertExists()
     }
+    @Test fun hierarchyReparentLoadsSecondPageAndPreservesTheRecord() {
+        val child=UUID.randomUUID();val parent=UUID.randomUUID();var saved:NovaDirectoryIntent?=null;var secondPage=false
+        fun row(key:UUID,name:String,ancestor:UUID?=null)=NovaDirectoryRow(key,mapOf("name" to NovaDirectoryValue.Text(name),"code" to NovaDirectoryValue.Text("CODE"),"workplace_id" to NovaDirectoryValue.Text(id.toString())) + (ancestor?.let{mapOf("parent_id" to NovaDirectoryValue.Text(it.toString()))}?:emptyMap()))
+        val client=NovaDirectoryClient(read={_,kind,_,after,_->
+            if(kind==NovaDirectoryKind.workplaces)NovaDirectoryPage(listOf(row(id,"İşyeri")),null,0)
+            else if(after==null)NovaDirectoryPage(listOf(row(id,"Ana"),row(child,"Alt",id)),child,0)
+            else {assertEquals(child,after);secondPage=true;NovaDirectoryPage(listOf(row(parent,"İkinci sayfa üst departman")),null,0)}
+        },save={saved=it;NovaDirectoryCommit(it.operationID,id,1)},pending={null})
+        compose.setContent{NovaTheme(false){NovaDirectoryDestination(scope,NovaDirectoryKind.departments,client=client,onBack={})}}
+        compose.onNodeWithTag("directory.edit.$id").performScrollTo().performClick()
+        compose.onNodeWithTag("directory.field.parent_id").performScrollTo().performClick()
+        compose.onNodeWithTag("directory.option.parent_id.$id").assertDoesNotExist()
+        compose.onNodeWithTag("directory.option.parent_id.$child").assertDoesNotExist()
+        compose.onNodeWithText("Diğer kayıtlar").performScrollTo().performClick()
+        compose.onNodeWithTag("directory.option.parent_id.$parent").performScrollTo().performClick()
+        compose.onNodeWithTag("directory.save").performScrollTo().performClick()
+        compose.runOnIdle{assertTrue(secondPage);assertEquals(id,saved!!.entityID);assertEquals("Ana",(saved!!.body["name"] as NovaDirectoryValue.Text).value);assertEquals(parent.toString(),(saved!!.body["parent_id"] as NovaDirectoryValue.Text).value)}
+    }
 }
