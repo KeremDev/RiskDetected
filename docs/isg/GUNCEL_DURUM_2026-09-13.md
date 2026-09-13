@@ -9,6 +9,8 @@ Kapsam: V5 geçiş planı, bu tarihe kadar mevcut kaynak kodu ve yerel doğrulam
 
 Bu tur iki önemli eski açığı kapattık: tam legacy veritabanı kopyasında P05 migration/backfill provası ve iOS Keychain/Android Keystore üzerinde uygulama yeniden başlatma doğrulaması. Ayrıca arşivden dönüşü ekledik ve iOS'ta önceki form durumunun yeni forma taşınması hatasını düzelttik.
 
+**13 Eylül sonraki toplu paket:** Tarih/aralık/önceki dönem ve departman hiyerarşisi form korumaları, seçenek yeniden yükleme, değişmez ilişki alanları ve iOS klavye erişimi iki platformda tamamlandı. Android 999, Swift 46, iOS ilgili UI 5/5, Node 206 ve ana Debug buildler başarılı. Bunlar aşağıdaki eski koşularla toplanmaz; data görevi değişmedi/UP-TO-DATE. [Yeni paketin ayrıntıları ve açık kabul sınırı](P05_DIRECTORY_FORM_BATCH_2026-09-13.md).
+
 **Canlı Supabase'e bu geçiş migration'ları uygulanmadı, rollout açılmadı, mağazaya yeni sürüm gönderilmedi.** Kaynakta geliştirilmiş bir özellik, şu an mağazadaki uygulamada aktif demek değildir. Geçiş sırasında teknik iOS bundle/Android package kimlikleri, mevcut abonelik ürünleri, fiyatlar ve kazanılmış haklar değiştirilmedi.
 
 Yüzde vermiyoruz: bir altyapı testi ile son kullanıcı kabul testi aynı şey değil; fazların büyüklükleri de eşit değil.

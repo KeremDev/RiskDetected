@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.currentCoroutineContext
@@ -55,7 +56,8 @@ private fun DirectoryContent(scope: NovaPersonnelScope, kind: NovaDirectoryKind,
     }
     BackHandler(onBack = onBack)
     LaunchedEffect(page, archived, refresh) {
-        loading = true; error = null
+        loading = true; error = null; next = null
+        if (page == null) { rows = emptyList(); parentVersion = 0 }
         try {
             pending = client.pending(scope); currentCoroutineContext().ensureActive()
             val result = client.read(scope, kind, parent, page, archived); currentCoroutineContext().ensureActive()
@@ -84,7 +86,7 @@ private fun DirectoryContent(scope: NovaPersonnelScope, kind: NovaDirectoryKind,
                 NovaButton("Bekleyen işlemi tamamla", { recovering = true }, enabled = canWrite, loading = recovering)
             } } }
             if (!canWrite) NovaText("Salt okunur · kayıt geçmişiniz korunuyor.", style = NovaTypeToken.metaQuiet)
-            DirectoryAction(if (kind == NovaDirectoryKind.employers) "İşveren ilişkisini düzenle" else "Yeni kayıt", Icons.Outlined.Add, canWrite && !loading && error == null && pending == null) {
+            DirectoryAction(if (kind == NovaDirectoryKind.employers) "İşveren ilişkisini düzenle" else "Yeni kayıt", Icons.Outlined.Add, canWrite && !loading && error == null && pending == null, "directory.add") {
                 original = if (kind == NovaDirectoryKind.employers) rows.firstOrNull() else null; editing = true
             }
             error?.let { NovaCard { Column { NovaText(it); DirectoryAction("Tekrar yükle", Icons.Outlined.Refresh) { refresh = UUID.randomUUID() } } } }
@@ -94,7 +96,7 @@ private fun DirectoryContent(scope: NovaPersonnelScope, kind: NovaDirectoryKind,
                 row.text("starts_on")?.let { NovaText("$it → ${row.text("ends_before") ?: "Devam ediyor"}", style = NovaTypeToken.metaQuiet) }
                 row.text("department_name_snapshot")?.let { NovaText(it, style = NovaTypeToken.metaQuiet) }
                 if (row.archived) NovaText("Arşivde", style = NovaTypeToken.metaQuiet)
-                if (canWrite && (kind.isCatalog || kind == NovaDirectoryKind.engagements)) DirectoryAction("Düzenle", Icons.Outlined.Edit, pending == null) { original = row; editing = true }
+                if (canWrite && (kind.isCatalog || kind == NovaDirectoryKind.engagements)) DirectoryAction("Düzenle", Icons.Outlined.Edit, !loading && error == null && pending == null, "directory.edit.${row.id}") { original = row; editing = true }
                 if (kind == NovaDirectoryKind.workplaces) DirectoryAction("Tarihli bağlam", Icons.Outlined.History) { child = NovaDirectoryKind.contexts to row.id }
                 if (kind == NovaDirectoryKind.contractors) DirectoryAction("Çalışılan işyerleri", Icons.Outlined.Business) { child = NovaDirectoryKind.engagements to row.id }
             } } }
@@ -133,11 +135,15 @@ private fun DirectoryEditor(scope: NovaPersonnelScope, kind: NovaDirectoryKind, 
     var pending by remember { mutableStateOf<NovaDirectoryIntent?>(null) }
     var submitting by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
+    var optionsLoading by remember { mutableStateOf(true) }
+    var optionsFailed by remember { mutableStateOf(false) }
+    var optionsRefresh by remember { mutableStateOf(0) }
     BackHandler(enabled = !submitting, onBack = onBack)
     suspend fun load(field: DirectoryField, cursor: UUID?) {
         val target = field.choices ?: if (field.id == "previous_id") kind else return
         val result = client.read(scope, target, if (field.id == "previous_id") parent else null, cursor, false); currentCoroutineContext().ensureActive()
-        options = options + (field.id to (if (cursor == null) emptyList() else options[field.id].orEmpty()) + result.rows.filter { it.id != original?.id })
+        val existing = if (cursor == null) emptyList() else options[field.id].orEmpty()
+        options = options + (field.id to (existing + result.rows).distinctBy { it.id })
         cursors = cursors + (field.id to result.next)
     }
     LaunchedEffect(Unit) {
@@ -145,13 +151,19 @@ private fun DirectoryEditor(scope: NovaPersonnelScope, kind: NovaDirectoryKind, 
         if (kind == NovaDirectoryKind.employers) fields = fields + ("organization_id" to (original?.text("employer_org_id") ?: ""))
         if (original == null) fields = fields + mapOf("code" to UUID.randomUUID().toString().take(8), "relationship" to "other")
         if (kind == NovaDirectoryKind.engagements && original == null && parent != null) fields = fields + ("organization_id" to parent.toString())
-        try { definition.forEach { field -> load(field, null) } }
-        catch (_: Exception) { currentCoroutineContext().ensureActive(); message = "Seçenekler yüklenemedi. Geri dönüp tekrar açabilirsiniz." }
+    }
+    LaunchedEffect(optionsRefresh) {
+        optionsLoading = true; optionsFailed = false; message = null
+        definition.forEach { field ->
+            try { load(field, null) }
+            catch (_: Exception) { currentCoroutineContext().ensureActive(); optionsFailed = true; message = "Seçenekler yüklenemedi. Bilgileriniz korunuyor; tekrar yükleyin." }
+        }
+        optionsLoading = false
     }
     LaunchedEffect(more) {
         val field = definition.firstOrNull { it.id == more }
         if (field != null) {
-            try { load(field, cursors[field.id]) } catch (_: Exception) { currentCoroutineContext().ensureActive(); message = "Diğer kayıtlar yüklenemedi." }
+            try { load(field, cursors[field.id]) } catch (_: Exception) { currentCoroutineContext().ensureActive(); optionsFailed = true; message = "Diğer kayıtlar yüklenemedi. Seçenekleri tekrar yükleyin." }
             more = null
         }
     }
@@ -170,30 +182,36 @@ private fun DirectoryEditor(scope: NovaPersonnelScope, kind: NovaDirectoryKind, 
     NovaPageSurface {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             DirectoryHeading(kind.title, onBack, !submitting)
+            if (kind in setOf(NovaDirectoryKind.contexts, NovaDirectoryKind.assignments)) NovaCard {
+                NovaText("Önceki dönemi seçerseniz bu kayıt başlangıç tarihinde bölünür; eski bilgiler korunur. Bitiş günü döneme dahil değildir.", style = NovaTypeToken.metaQuiet)
+            }
+            if (kind == NovaDirectoryKind.engagements && original != null) NovaText("Firma, işyeri ve başlangıç değişmez. Bitişi ve açıklamayı düzenleyebilirsiniz.", style = NovaTypeToken.metaQuiet)
             definition.forEach { field -> NovaCard { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 DirectoryLabel(field.label, field.choices?.icon ?: Icons.Outlined.Edit)
+                val editable = pending == null && !(kind == NovaDirectoryKind.engagements && original != null && field.id in setOf("organization_id", "workplace_id", "starts_on"))
                 val fixed = when(field.id) { "relationship" -> listOf("subcontractor" to "Alt işveren", "contractor" to "Yüklenici", "supplier" to "Tedarikçi", "other" to "Diğer"); "hazard_class" -> listOf("low" to "Az tehlikeli", "medium" to "Tehlikeli", "high" to "Çok tehlikeli"); else -> null }
                 if (field.choices != null || field.id == "previous_id" || fixed != null) {
                     val selected = fields[field.id].orEmpty()
-                    TextButton({ expanded = if (expanded == field.id) null else field.id }, enabled = pending == null) {
-                        Text(fixed?.firstOrNull { it.first == selected }?.second ?: options[field.id]?.firstOrNull { it.id.toString() == selected }?.title ?: if (selected.isEmpty()) "Seçilmedi" else "Seçildi")
+                    TextButton({ expanded = if (expanded == field.id) null else field.id }, enabled = editable, modifier = Modifier.testTag("directory.field.${field.id}")) {
+                        NovaText(fixed?.firstOrNull { it.first == selected }?.second ?: options[field.id]?.firstOrNull { it.id.toString() == selected }?.title ?: if (selected.isEmpty()) "Seçilmedi" else "Seçildi")
                         NovaGlyph(Icons.Outlined.ExpandMore, "Seçenekler")
                     }
-                    if (expanded == field.id && pending == null) {
-                        if (field.nullable) TextButton({ fields = fields + (field.id to ""); expanded = null }) { Text("Seçimi kaldır") }
-                        val choices = fixed ?: options[field.id].orEmpty().filter { field.choices != NovaDirectoryKind.departments || it.text("workplace_id") == fields["workplace_id"] }.map { it.id.toString() to (it.title + (it.text("starts_on")?.let { day -> " · $day" } ?: "")) }
+                    if (expanded == field.id && editable) {
+                        if (field.nullable) TextButton({ fields = fields + (field.id to ""); expanded = null }) { NovaText("Seçimi kaldır") }
+                        val choices = fixed ?: NovaDirectoryFormRules.allowedOptions(options[field.id].orEmpty(), field.id, fields["workplace_id"], original?.id).map { it.id.toString() to (it.title + (it.text("starts_on")?.let { day -> " · $day → ${it.text("ends_before") ?: "Devam ediyor"}" } ?: "")) }
                         choices.forEach { (value, label) -> TextButton({
-                            fields = fields + (field.id to value)
-                            if (field.id == "workplace_id") fields = fields + mapOf("parent_id" to "", "department_id" to "")
+                            fields = NovaDirectoryFormRules.selecting(field.id, value, fields)
                             expanded = null
-                        }) { Text(label) } }
-                        if (cursors[field.id] != null) TextButton({ more = field.id }, enabled = more == null) { Text("Diğer kayıtlar") }
+                        }, modifier = Modifier.testTag("directory.option.${field.id}.$value")) { NovaGlyph(Icons.Outlined.CheckCircle, null); NovaText(label) } }
+                        if (cursors[field.id] != null) TextButton({ more = field.id }, enabled = more == null && !optionsLoading) { NovaText("Diğer kayıtlar") }
                     }
-                } else OutlinedTextField(fields[field.id].orEmpty(), { fields = fields + (field.id to it) }, enabled = pending == null, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                } else OutlinedTextField(fields[field.id].orEmpty(), { fields = fields + (field.id to it) }, enabled = editable, modifier = Modifier.fillMaxWidth().testTag("directory.field.${field.id}"), singleLine = true)
             } } }
             if (original != null && kind.isCatalog) Row(verticalAlignment = Alignment.CenterVertically) { NovaText("Arşivle", Modifier.weight(1f)); Switch(archived, { archived = it }, enabled = pending == null) }
-            message?.let { NovaText(it) }
-            DirectoryAction(if (pending == null) "Kaydet" else "Aynı işlemi tekrar kontrol et", Icons.Outlined.Check, !submitting) {
+            if (optionsLoading || more != null) CircularProgressIndicator()
+            if (optionsFailed) DirectoryAction("Seçenekleri tekrar yükle", Icons.Outlined.Refresh, !optionsLoading && pending == null, "directory.options.retry") { optionsRefresh++ }
+            message?.let { NovaText(it, Modifier.testTag("directory.error")) }
+            DirectoryAction(if (pending == null) "Kaydet" else "Aynı işlemi tekrar kontrol et", Icons.Outlined.Check, !submitting && (pending != null || (!optionsLoading && !optionsFailed && more == null)), "directory.save") {
                 if (pending != null) { submitting = true; return@DirectoryAction }
                 val body = mutableMapOf<String, NovaDirectoryValue>()
                 for (field in definition) {
@@ -201,6 +219,8 @@ private fun DirectoryEditor(scope: NovaPersonnelScope, kind: NovaDirectoryKind, 
                     if (value.isEmpty() && !field.nullable) { message = "${field.label} gerekli."; return@DirectoryAction }
                     body[field.id] = if (value.isEmpty() && field.nullable && field.id !in setOf("description", "reason")) NovaDirectoryValue.Null else NovaDirectoryValue.Text(value)
                 }
+                val validation = NovaDirectoryFormRules.validation(kind, fields, options, original?.id)
+                if (validation != null) { message = validation; return@DirectoryAction }
                 if (kind.isCatalog) body["is_archived"] = NovaDirectoryValue.Flag(archived)
                 if (kind in setOf(NovaDirectoryKind.contexts, NovaDirectoryKind.assignments)) {
                     if (parent == null) { message = "Kayıt kapsamı bulunamadı."; return@DirectoryAction }
@@ -220,6 +240,6 @@ private fun DirectoryEditor(scope: NovaPersonnelScope, kind: NovaDirectoryKind, 
 @Composable private fun DirectoryLabel(title: String, icon: ImageVector) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { NovaGlyph(icon, title); NovaText(title, style = NovaTypeToken.cardTitle) }
 }
-@Composable private fun DirectoryAction(title: String, icon: ImageVector, enabled: Boolean = true, onClick: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { NovaGlyph(icon, title); NovaButton(title, onClick, Modifier.weight(1f), enabled = enabled) }
+@Composable private fun DirectoryAction(title: String, icon: ImageVector, enabled: Boolean = true, testID: String = "", onClick: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { NovaGlyph(icon, title); NovaButton(title, onClick, Modifier.weight(1f).testTag(testID), enabled = enabled) }
 }

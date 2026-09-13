@@ -58,6 +58,52 @@ import UIKit
         app.swipeUp()
         tap("personnel.save")
     }
+    private func directoryScroll(_ node: XCUIElement) {
+        for _ in 0..<10 { if node.exists && node.isHittable { return }; app.scrollViews.firstMatch.swipeUp() }
+        XCTAssertTrue(node.isHittable, app.debugDescription)
+    }
+    private func replaceDirectory(_ key: String, _ value: String) {
+        let field = app.textFields["directory.field.\(key)"]
+        directoryScroll(field); field.tap()
+        let text = field.value as? String ?? ""
+        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: text.count) + value + "\n")
+    }
+    func testDirectoryEngagementDateGuardAndImmutableKeys() {
+        launch(["--directory"])
+        tap("directory.edit.33333333-3333-4333-8333-333333333333")
+        XCTAssertFalse(app.buttons["directory.field.organization_id"].isEnabled)
+        XCTAssertFalse(app.buttons["directory.field.workplace_id"].isEnabled)
+        replaceDirectory("ends_before", "2025-12-31")
+        directoryScroll(app.buttons["directory.save"]); tap("directory.save")
+        XCTAssertTrue(app.staticTexts["directory.error"].label.contains("başlangıç tarihinden sonra"))
+        XCTAssertEqual(app.staticTexts["qa.directory.saves"].label, "saves=0")
+        app.swipeDown(); replaceDirectory("ends_before", "2026-12-31")
+        directoryScroll(app.buttons["directory.save"]); tap("directory.save")
+        XCTAssertTrue(app.buttons["directory.add"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["qa.directory.saves"].label, "saves=1")
+    }
+    func testDirectoryHierarchyExcludesSelfAndDescendant() {
+        launch(["--directory", "--directory-departments"])
+        tap("directory.edit.33333333-3333-4333-8333-333333333333")
+        let parent = app.buttons["directory.field.parent_id"]
+        directoryScroll(parent); tap("directory.field.parent_id")
+        XCTAssertFalse(app.buttons["directory.option.parent_id.33333333-3333-4333-8333-333333333333"].exists)
+        XCTAssertFalse(app.buttons["directory.option.parent_id.55555555-5555-4555-8555-555555555555"].exists)
+        directoryScroll(app.buttons["directory.save"]); tap("directory.save")
+        XCTAssertTrue(app.buttons["directory.add"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["qa.directory.saves"].label, "saves=1")
+    }
+    func testDirectoryOptionFailureRequiresRetryWithoutLosingForm() {
+        launch(["--directory", "--directory-option-retry"])
+        tap("directory.edit.33333333-3333-4333-8333-333333333333")
+        directoryScroll(app.buttons["directory.save"])
+        XCTAssertFalse(app.buttons["directory.save"].isEnabled)
+        tap("directory.options.retry")
+        XCTAssertTrue(app.buttons["directory.save"].isEnabled)
+        tap("directory.save")
+        XCTAssertTrue(app.buttons["directory.add"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["qa.directory.saves"].label, "saves=1")
+    }
     func testPersonnelAdvancedRoutesReturnToSameEmployee() {
         launch(["--personnel"])
         personnelAdd()

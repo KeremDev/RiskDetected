@@ -64,4 +64,52 @@ class NovaDirectoryDestinationTest {
         compose.onNodeWithText("Yeni kayıt").assertIsNotEnabled()
         compose.onNodeWithText("Tekrar yükle").assertExists()
     }
+    private fun engagement() = NovaDirectoryRow(id, mapOf(
+        "organization_id" to NovaDirectoryValue.Text(id.toString()), "workplace_id" to NovaDirectoryValue.Text(id.toString()),
+        "starts_on" to NovaDirectoryValue.Text("2026-01-01"), "ends_before" to NovaDirectoryValue.Text("2027-01-01"), "description" to NovaDirectoryValue.Text("Sentetik iş")))
+    @Test fun engagementValidatesDatesBeforeSaveAndLocksImmutableKeys() {
+        var saved: NovaDirectoryIntent? = null
+        val client = NovaDirectoryClient(read = { _, kind, _, _, _ -> NovaDirectoryPage(if (kind == NovaDirectoryKind.engagements) listOf(engagement()) else listOf(NovaDirectoryRow(id, mapOf("name" to NovaDirectoryValue.Text("Sentetik seçim")))), null, 0) },
+            save = { saved = it; NovaDirectoryCommit(it.operationID, id, 1) }, pending = { null })
+        compose.setContent { NovaTheme(false) { NovaDirectoryDestination(scope, NovaDirectoryKind.engagements, client = client, onBack = {}) } }
+        compose.onNodeWithTag("directory.edit.$id").performScrollTo().performClick()
+        compose.onNodeWithTag("directory.field.organization_id").assertIsNotEnabled()
+        compose.onNodeWithTag("directory.field.workplace_id").assertIsNotEnabled()
+        compose.onNodeWithTag("directory.field.starts_on").assertIsNotEnabled()
+        compose.onNodeWithTag("directory.field.ends_before").performScrollTo().performTextReplacement("2025-12-31")
+        compose.onNodeWithTag("directory.save").performScrollTo().performClick()
+        compose.runOnIdle { assertNull(saved) }
+        compose.onNodeWithTag("directory.error").assertTextContains("Bitiş (hariç), başlangıç tarihinden sonra olmalı.")
+        compose.onNodeWithTag("directory.field.ends_before").performScrollTo().performTextReplacement("2026-12-31")
+        compose.onNodeWithTag("directory.save").performScrollTo().performClick()
+        compose.runOnIdle { assertEquals("2026-12-31", (saved!!.body["ends_before"] as NovaDirectoryValue.Text).value); assertEquals(id, saved!!.entityID) }
+    }
+    @Test fun optionFailureBlocksSaveAndRetryKeepsUserEdits() {
+        var failed = false; var saved: NovaDirectoryIntent? = null
+        val client = NovaDirectoryClient(read = { _, kind, _, _, _ ->
+            if (kind == NovaDirectoryKind.workplaces && !failed) { failed = true; throw NovaPersonnelFailure(NovaPersonnelFailure.Kind.unavailable) }
+            NovaDirectoryPage(if (kind == NovaDirectoryKind.engagements) listOf(engagement()) else listOf(NovaDirectoryRow(id, mapOf("name" to NovaDirectoryValue.Text("Sentetik seçim")))), null, 0)
+        }, save = { saved = it; NovaDirectoryCommit(it.operationID, id, 1) }, pending = { null })
+        compose.setContent { NovaTheme(false) { NovaDirectoryDestination(scope, NovaDirectoryKind.engagements, client = client, onBack = {}) } }
+        compose.onNodeWithTag("directory.edit.$id").performScrollTo().performClick()
+        compose.onNodeWithTag("directory.field.description").performScrollTo().performTextReplacement("Korunan taslak")
+        compose.onNodeWithTag("directory.save").assertIsNotEnabled()
+        compose.onNodeWithTag("directory.options.retry").performScrollTo().performClick()
+        compose.onNodeWithTag("directory.save").performScrollTo().assertIsEnabled().performClick()
+        compose.runOnIdle { assertEquals("Korunan taslak", (saved!!.body["description"] as NovaDirectoryValue.Text).value) }
+    }
+    @Test fun hierarchyPickerHidesSelfAndDescendants() {
+        val child = UUID.randomUUID()
+        val rows = listOf(NovaDirectoryRow(id, mapOf("name" to NovaDirectoryValue.Text("Ana"), "code" to NovaDirectoryValue.Text("ANA"), "workplace_id" to NovaDirectoryValue.Text(id.toString()))),
+            NovaDirectoryRow(child, mapOf("name" to NovaDirectoryValue.Text("Alt"), "workplace_id" to NovaDirectoryValue.Text(id.toString()), "parent_id" to NovaDirectoryValue.Text(id.toString()))))
+        val client = NovaDirectoryClient(read = { _, kind, _, _, _ -> NovaDirectoryPage(if (kind == NovaDirectoryKind.departments) rows else listOf(NovaDirectoryRow(id, mapOf("name" to NovaDirectoryValue.Text("İşyeri")))), null, 0) },
+            save = { NovaDirectoryCommit(it.operationID, id, 1) }, pending = { null })
+        compose.setContent { NovaTheme(false) { NovaDirectoryDestination(scope, NovaDirectoryKind.departments, client = client, onBack = {}) } }
+        compose.onNodeWithTag("directory.edit.$id").performScrollTo().performClick()
+        compose.onNodeWithTag("directory.field.parent_id").performScrollTo().performClick()
+        compose.onNodeWithTag("directory.option.parent_id.$id").assertDoesNotExist()
+        compose.onNodeWithTag("directory.option.parent_id.$child").assertDoesNotExist()
+        compose.onNodeWithTag("directory.save").performScrollTo().assertIsEnabled().performClick()
+        compose.onNodeWithTag("directory.add").assertExists()
+    }
 }

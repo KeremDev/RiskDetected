@@ -49,7 +49,11 @@ struct ShellHarnessRoot: View {
                 onReadAll: { noticeSnapshot = sessionHost.scope(notices.map { var n = $0; n.unread = false; return n }, from: navigation.epoch) },
                 onClearNotifications: { noticeSnapshot = sessionHost.scope([], from: navigation.epoch) },
                 onLogout: { sessionHost.adopt(nil) }) { destination in
-                if args.contains("--personnel"), destination == .home, let identity = sessionHost.identity {
+                if args.contains("--directory"), destination == .home, let identity = sessionHost.identity {
+                    NovaDirectoryDestination(scope: .init(ownerID: identity.userID, sessionID: identity.sessionID,
+                        companyID: UUID(uuidString: "11111111-1111-4111-8111-111111111111")!, epoch: navigation.epoch),
+                        kind: args.contains("--directory-departments") ? .departments : .engagements, client: personnel.directoryFixture, onBack: {})
+                } else if args.contains("--personnel"), destination == .home, let identity = sessionHost.identity {
                     NovaPersonnelDestination(scope: .init(ownerID: identity.userID, sessionID: identity.sessionID,
                         companyID: UUID(uuidString: "11111111-1111-4111-8111-111111111111")!, epoch: navigation.epoch),
                         companyName: "Sentetik firma", client: personnel.client, onBack: {}, directory: personnel.directory, canWrite: !args.contains("--personnel-readonly"))
@@ -82,6 +86,7 @@ struct ShellHarnessRoot: View {
             }
             if args.contains("--qa-toolbar") {
                 VStack(spacing: 4) {
+                    if args.contains("--directory") { Text("saves=\(personnel.directorySaves)").accessibilityIdentifier("qa.directory.saves") }
                     if args.contains("--company-loader") {
                         Button("Firma hesabını değiştir") {
                             sessionHost.adopt(Self.actorB)

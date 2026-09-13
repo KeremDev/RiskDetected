@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-13T10:21:46.189Z",
+  "phase": "P05",
+  "phase_complete": false,
+  "scope": "Native directory form validation and UI acceptance subset",
+  "production_mutated": false,
+  "native_ui_sdk_database_e2e": false,
+  "full_dated_hierarchy_ui_matrix_complete": false,
+  "android": {
+    "designsystem": {
+      "tests": 373,
+      "failed": 0
+    },
+    "data": {
+      "tests": 615,
+      "failed": 0,
+      "gradle_task": "UP-TO-DATE; unchanged data sources"
+    },
+    "profile": {
+      "tests": 11,
+      "failed": 0
+    },
+    "debug_build": "PASS",
+    "log": "/tmp/isg-p05-directory-batch-android.log"
+  },
+  "swift_rule_checks": 46,
+  "node_tests": {
+    "passed": 206,
+    "failed": 0,
+    "includes_nova_tokens_12": true,
+    "log": "/tmp/isg-p05-directory-batch-node.log"
+  },
+  "ios_ui": {
+    "summary": {
+      "status": "SUCCEEDED",
+      "durationMs": 56508,
+      "counts": {
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0
+      },
+      "target": "simulator"
+    },
+    "artifacts": {
+      "buildLogPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/test_sim_2026-09-13T10-18-32-510Z_pid70458_a3df8eba.log",
+      "xcresultPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-13T10-18-32-510Z_pid70458_97f037fc.xcresult",
+      "testProductsPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/test-products/test_sim_2026-09-13T10-18-32-510Z_pid70458_a6a2c9cd.xctestproducts"
+    },
+    "diagnostics": {
+      "warnings": [],
+      "errors": [],
+      "testFailures": []
+    },
+    "testCases": [
+      {
+        "suite": "ShellUITests",
+        "test": "testDirectoryEngagementDateGuardAndImmutableKeys",
+        "status": "passed",
+        "durationMs": 11099
+      },
+      {
+        "suite": "ShellUITests",
+        "test": "testDirectoryHierarchyExcludesSelfAndDescendant",
+        "status": "passed",
+        "durationMs": 6661
+      },
+      {
+        "suite": "ShellUITests",
+        "test": "testDirectoryOptionFailureRequiresRetryWithoutLosingForm",
+        "status": "passed",
+        "durationMs": 7664
+      },
+      {
+        "suite": "ShellUITests",
+        "test": "testPersonnelAdvancedRoutesReturnToSameEmployee",
+        "status": "passed",
+        "durationMs": 13394
+      },
+      {
+        "suite": "ShellUITests",
+        "test": "testReadOnlyPersonnelCanReadHistoryButCannotWrite",
+        "status": "passed",
+        "durationMs": 9163
+      }
+    ]
+  },
+  "ios_build": {
+    "summary": {
+      "status": "SUCCEEDED",
+      "durationMs": 11466,
+      "target": "simulator"
+    },
+    "artifacts": {
+      "buildLogPath": "~/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-09-13T10-20-09-698Z_pid70458_db194991.log"
+    },
+    "diagnostics": {
+      "warnings": [],
+      "errors": []
+    }
+  },
+  "initial_failure": "First iOS batch: 4 passed/1 failed; keyboard obstructed save scrolling. Added Done/focus dismissal and interactive keyboard dismissal; corrected scoped test scroll; all 5 passed on rerun.",
+  "source_sha256": {
+    "App/DesignSystem/ISG/NovaDirectory.swift": "19bc6e1db0c1a851c58f0c50adc48ee467d011c9659c0933490d0167781c2e5a",
+    "App/DesignSystem/ISG/NovaDirectoryScreens.swift": "f9364013db0174885f02ff91472ca716055af116d055a668e3fe823ef7b80a15",
+    "android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaDirectory.kt": "8f870e301b37301c70459846b00899bc844863dc89ceb7fb4da3f891f64b2f6a",
+    "android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaDirectoryScreens.kt": "5f2804167b208aadc699b842d4556c67e9a057ee048021c8d5536fd8aea47c3b",
+    "tests/isg/NovaDirectoryFormRulesCheck.swift": "105f051b46fc4ccbae970afd5021a633746be7cc9f01057a229fb30d884cbc41",
+    "tests/isg/shell-ios/PersonnelHarness.swift": "c1dd040b962d0674d926e1d6ae2bf3868c9a51ba3d929016cd66501c732c240b",
+    "tests/isg/shell-ios/ShellHarnessApp.swift": "569a93a20827ebf9c43c30c49bba6cd282b2790832fe944c618b0f92457df550",
+    "tests/isg/shell-ios/ShellUITests.swift": "5cb462ca8dea3d54521a918dd5910758cbe88ac35e88c92090b034d32916e5fa",
+    "android/core/designsystem/src/test/kotlin/com/riskdetectedan/core/designsystem/isg/NovaDirectoryFormRulesTest.kt": "9ce626cb554033123e1905eb0563780cc3443d8138aed3e398b7bdc80ccca747",
+    "android/core/designsystem/src/test/kotlin/com/riskdetectedan/core/designsystem/isg/NovaDirectoryDestinationTest.kt": "07e7327081223d710bf5a1cc2293e474623945faa6f7974c5910a94882db7a17"
+  }
+}

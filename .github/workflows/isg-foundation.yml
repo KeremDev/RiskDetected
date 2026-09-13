@@ -198,6 +198,8 @@ jobs:
         # Actual service logic with an injected in-memory journal; no Keychain calls or network.
         run: |
           swiftc App/DesignSystem/ISG/NovaPersonnel.swift App/DesignSystem/ISG/NovaDirectory.swift scripts/isg/NovaDirectoryCheck.swift -o "$RUNNER_TEMP/isg-directory-check"
+          swiftc -parse-as-library App/DesignSystem/ISG/NovaPersonnel.swift App/DesignSystem/ISG/NovaDirectory.swift tests/isg/NovaDirectoryFormRulesCheck.swift -o "$RUNNER_TEMP/isg-directory-form-check"
+          "$RUNNER_TEMP/isg-directory-form-check"
           "$RUNNER_TEMP/isg-directory-check"
           swiftc App/DesignSystem/ISG/NovaPersonnel.swift App/Services/Company/NovaPersonnelService.swift scripts/isg/NovaPersonnelServiceCheck.swift -o "$RUNNER_TEMP/isg-personnel-service-check"
           "$RUNNER_TEMP/isg-personnel-service-check"

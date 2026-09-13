@@ -6,6 +6,33 @@ import SwiftUI
 
 /// Isolated QA storage; never imported by the production app.
 @MainActor final class PersonnelHarness: ObservableObject {
+    @Published var directorySaves = 0
+    private var directoryRows: [NovaDirectoryRow]?
+    private var directoryOptionFailed = false
+    static let directoryID = UUID(uuidString: "33333333-3333-4333-8333-333333333333")!
+    static let workplaceID = UUID(uuidString: "44444444-4444-4444-8444-444444444444")!
+    static let contractorID = UUID(uuidString: "55555555-5555-4555-8555-555555555555")!
+    var directoryFixture: NovaDirectoryClient {
+        let args = ProcessInfo.processInfo.arguments
+        let selected: NovaDirectoryKind = args.contains("--directory-departments") ? .departments : .engagements
+        func row(_ id: UUID, _ fields: [String: String]) -> NovaDirectoryRow { .init(id: id, fields: fields.mapValues { .string($0) }) }
+        return .init(read: { _, kind, _, _, _ in
+            if args.contains("--directory-option-retry"), kind == .workplaces, !self.directoryOptionFailed {
+                self.directoryOptionFailed = true; throw NovaPersonnelFailure.unavailable
+            }
+            if kind == .workplaces { return .init(rows: [row(Self.workplaceID, ["name": "Sentetik İşyeri"])], next: nil, parentVersion: nil) }
+            if kind == .contractors { return .init(rows: [row(Self.contractorID, ["name": "Sentetik Yüklenici"])], next: nil, parentVersion: nil) }
+            let rows = self.directoryRows ?? (selected == .departments ? [
+                row(Self.directoryID, ["name": "Ana departman", "code": "ANA", "workplace_id": Self.workplaceID.uuidString.lowercased()]),
+                row(Self.contractorID, ["name": "Alt departman", "code": "ALT", "workplace_id": Self.workplaceID.uuidString.lowercased(), "parent_id": Self.directoryID.uuidString.lowercased()])
+            ] : [row(Self.directoryID, ["description": "Sentetik iş", "organization_id": Self.contractorID.uuidString.lowercased(), "workplace_id": Self.workplaceID.uuidString.lowercased(), "starts_on": "2026-01-01", "ends_before": "2027-01-01"])])
+            return .init(rows: rows, next: nil, parentVersion: 0)
+        }, save: { intent in
+            self.directorySaves += 1
+            self.directoryRows = [.init(id: intent.entityID ?? Self.directoryID, fields: intent.body)]
+            return .init(operationID: intent.operationID, entityID: intent.entityID ?? Self.directoryID, version: intent.expectedVersion + 1)
+        }, pending: { _ in nil })
+    }
     private var rows: [UUID: NovaEmployeeRow] = [:]
     private var receipts: [UUID: NovaEmployeeCommit] = [:]
     private var departments: [NovaDepartmentRow] = []
