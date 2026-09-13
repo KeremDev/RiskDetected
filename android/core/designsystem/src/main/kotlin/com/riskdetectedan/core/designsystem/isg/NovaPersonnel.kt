@@ -27,6 +27,7 @@ class NovaPersonnelClient(
     val departments: suspend (NovaPersonnelScope, String, UUID?) -> NovaDepartmentPage,
     val detail: suspend (NovaPersonnelScope, UUID) -> NovaEmployeeRow,
     val save: suspend (NovaEmployeeIntent) -> NovaEmployeeCommit,
+    val pending: suspend (NovaPersonnelScope) -> NovaEmployeeIntent? = { null },
 )
 data class NovaEmployeeEditorState(val name: String = "", val departmentText: String = "",
     val selectedDepartment: NovaDepartmentRow? = null, val phase: Phase = Phase.editing,

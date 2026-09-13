@@ -35,6 +35,7 @@ on:
       - 'supabase/migrations/20260520154818_add_companies.sql'
       - 'supabase/migrations/20260513101505_free_plus_pro_subscription_system.sql'
       - 'supabase/migrations/20260913074153_isg_personnel_owner_rpc.sql'
+      - 'supabase/migrations/20260913081536_isg_workplace_context_assignments.sql'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'RiskDetected.xcodeproj/project.pbxproj'
@@ -83,6 +84,7 @@ on:
       - 'supabase/migrations/20260520154818_add_companies.sql'
       - 'supabase/migrations/20260513101505_free_plus_pro_subscription_system.sql'
       - 'supabase/migrations/20260913074153_isg_personnel_owner_rpc.sql'
+      - 'supabase/migrations/20260913081536_isg_workplace_context_assignments.sql'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'RiskDetected.xcodeproj/project.pbxproj'
@@ -180,6 +182,13 @@ jobs:
         run: |
           swiftc App/DesignSystem/ISG/NovaPersonnel.swift scripts/isg/NovaPersonnelCheck.swift -o "$RUNNER_TEMP/isg-personnel-check"
           "$RUNNER_TEMP/isg-personnel-check"
+      - name: Verify directory scalar contract and persisted personnel recovery
+        # Actual service logic with an injected in-memory journal; no Keychain calls or network.
+        run: |
+          swiftc App/DesignSystem/ISG/NovaPersonnel.swift App/DesignSystem/ISG/NovaDirectory.swift scripts/isg/NovaDirectoryCheck.swift -o "$RUNNER_TEMP/isg-directory-check"
+          "$RUNNER_TEMP/isg-directory-check"
+          swiftc App/DesignSystem/ISG/NovaPersonnel.swift App/Services/Company/NovaPersonnelService.swift scripts/isg/NovaPersonnelServiceCheck.swift -o "$RUNNER_TEMP/isg-personnel-service-check"
+          "$RUNNER_TEMP/isg-personnel-service-check"
       - name: Verify account-scoped NOVA host corpus
         # Presentation session fixtures run without any Auth SDK or network.
         # Runtime UI ownership is separately exercised by ios-shell-integration.

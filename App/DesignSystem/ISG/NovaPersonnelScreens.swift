@@ -23,6 +23,9 @@ private struct PersonnelContent: View {
     @State private var route: Route = .list
     @State private var generation = UUID()
     @State private var requestedPage: UUID?
+    @State private var pending: NovaEmployeeIntent?
+    @State private var pendingChecked = false
+    @State private var reconciling = false
     private enum Route: Equatable { case list, create, detail(UUID), edit(NovaEmployeeRow) }
     private struct Key: Equatable { let query: String; let archived: Bool; let generation: UUID; let page: UUID? }
     var body: some View {
@@ -50,7 +53,18 @@ private struct PersonnelContent: View {
                 }
                 Toggle("Arşivdekileri de göster", isOn: $archived).font(.subheadline)
                     .accessibilityIdentifier("personnel.archived")
-                NovaButton(label: "Personel Ekle", symbol: "plus", action: { route = .create }).accessibilityIdentifier("personnel.add")
+                if let pending {
+                    NovaCard(padding: 18) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack { NovaIcon(symbol: "arrow.clockwise", size: 22); NovaText(text: "Bekleyen personel işlemi", style: .cardTitle) }
+                            NovaText(text: "Önceki işlemin sonucu henüz kesinleşmedi. Aynı işlem anahtarıyla kontrol ederek devam edin.")
+                            NovaText(text: pending.name.isEmpty ? "Arşivleme işlemi" : pending.name, style: .metaQuiet)
+                            NovaButton(label: "Bekleyen işlemi tamamla", symbol: "arrow.clockwise", isLoading: reconciling, action: { reconciling = true })
+                                .accessibilityIdentifier("personnel.recover")
+                        }
+                    }.accessibilityIdentifier("personnel.pending")
+                }
+                NovaButton(label: "Personel Ekle", symbol: "plus", isEnabled: pendingChecked && pending == nil && !reconciling, action: { route = .create }).accessibilityIdentifier("personnel.add")
                 if let error { NovaCard(padding: 16) { NovaText(text: error); NovaButton(label: "Tekrar dene", symbol: "arrow.clockwise", variant: .surface, action: { generation = UUID() }) } }
                 if !loading && error == nil && rows.isEmpty { NovaCard(padding: 18) { NovaText(text: "Henüz personel yok.") } }
                 ForEach(rows) { row in
@@ -66,7 +80,7 @@ private struct PersonnelContent: View {
                                 Spacer(); NovaIcon(symbol: "chevron.right", size: 16)
                             }
                         }
-                    }.buttonStyle(.plain).accessibilityIdentifier("personnel.row.\(row.id.uuidString.lowercased())")
+                    }.buttonStyle(.plain).disabled(pending != nil || reconciling).accessibilityIdentifier("personnel.row.\(row.id.uuidString.lowercased())")
                 }
                 if loading { ProgressView().frame(maxWidth: .infinity).accessibilityIdentifier("personnel.loading") }
                 if let next, !loading { NovaButton(label: "Daha fazla göster", symbol: "chevron.down", variant: .surface, action: { requestedPage = next }) }
@@ -74,10 +88,13 @@ private struct PersonnelContent: View {
         }
         .task(id: Key(query: query, archived: archived, generation: generation, page: requestedPage)) {
             let requestedQuery = query, requestedArchive = archived, page = requestedPage
-            loading = true; error = nil
+            loading = true; error = nil; pendingChecked = false
             if page == nil { rows = []; next = nil }
             do {
                 try await Task.sleep(nanoseconds: 180_000_000)
+                let recovered = try await client.pending(scope); try Task.checkCancellation()
+                guard recovered == nil || recovered?.scope == scope else { throw NovaPersonnelFailure.unavailable }
+                pending = recovered; pendingChecked = true
                 let result = try await client.employees(scope, requestedQuery, requestedArchive, page)
                 try Task.checkCancellation()
                 guard result.rows.count <= 50, result.rows.allSatisfy({ $0.ownerID == scope.ownerID && $0.companyID == scope.companyID && (requestedArchive || !$0.isArchived) }),
@@ -86,6 +103,19 @@ private struct PersonnelContent: View {
                 rows = page == nil ? result.rows : rows + result.rows.filter { item in !rows.contains(where: { $0.id == item.id }) }
                 next = result.next; loading = false
             } catch { if !Task.isCancelled { self.error = "Personeller yüklenemedi. Lütfen tekrar deneyin."; loading = false } }
+        }
+        .task(id: reconciling) {
+            guard reconciling, let intent = pending else { return }
+            do {
+                let result = try await client.save(intent); try Task.checkCancellation()
+                guard result.ownerID == scope.ownerID, result.companyID == scope.companyID, result.operationID == intent.operationID,
+                      intent.employeeID == nil || intent.employeeID == result.id,
+                      result.version == (intent.action == .create ? 0 : intent.expectedVersion + 1), result.isArchived == (intent.action == .archive) else { throw NovaPersonnelFailure.unavailable }
+                pending = nil; reconciling = false; requestedPage = nil; generation = UUID()
+                route = result.isArchived ? .list : .detail(result.id)
+            } catch {
+                if !Task.isCancelled { reconciling = false; self.error = "Bekleyen işlem doğrulanamadı. Yeni kayıt açmadan tekrar kontrol edin."; generation = UUID() }
+            }
         }
         .onChange(of: query) { _ in requestedPage = nil }
         .onChange(of: archived) { _ in requestedPage = nil }

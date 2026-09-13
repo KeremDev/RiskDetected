@@ -4,7 +4,7 @@ import {preparePersonnelRPC} from '../../supabase/functions/_shared/personnel/rp
 
 // Dedicated allowlisted HTTP client in the same network=none namespace. No host ports.
 const program=`const http=require('node:http');let raw='';process.stdin.on('data',c=>raw+=c);process.stdin.on('end',()=>{
-const q=JSON.parse(raw);if(!['/','/employees','/rpc/read_personnel','/rpc/isg_personnel_read_v1','/rpc/isg_personnel_mutate_v1'].includes(q.path)||!['GET','POST'].includes(q.method)||!['public','private_isg'].includes(q.schema))process.exit(2);
+const q=JSON.parse(raw);if(!['/','/employees','/rpc/read_personnel','/rpc/isg_personnel_read_v1','/rpc/isg_personnel_mutate_v1','/rpc/isg_directory_read_v1','/rpc/isg_directory_mutate_v1','/rpc/isg_context_at_v1'].includes(q.path)||!['GET','POST'].includes(q.method)||!['public','private_isg'].includes(q.schema))process.exit(2);
 const req=http.request({host:'127.0.0.1',port:3000,path:q.path,method:q.method,headers:{'Content-Type':'application/json','Accept-Profile':q.schema,'Content-Profile':q.schema,...(q.token?{Authorization:'Bearer '+q.token}:{})}},res=>{
 let body='';res.on('data',c=>{body+=c;if(body.length>1048576)req.destroy();});res.on('end',()=>{let value;try{value=JSON.parse(body)}catch{value=null;}process.stdout.write(JSON.stringify({status:res.statusCode,body:value}));});});
 req.setTimeout(10000,()=>req.destroy());req.on('error',()=>process.exit(3));if(q.body)req.write(JSON.stringify(q.body));req.end();});`;
@@ -49,7 +49,7 @@ export async function beginPersonnelHTTPProbe({synthetic,token,secret,companyID,
   mark('private_schema_not_exposed',request('/employees',{schema:'private_isg'}).status===406);
   mark('private_rpc_not_exposed',request('/rpc/read_personnel',{method:'POST',body:preparePersonnelRPC(list).args}).status===404);
   mark('private_table_not_in_public',request('/employees').status===404);
-  return {afterLogout(){
+  return {request,afterLogout(){
     const read=send(list),write=send(create),retry=send(archive);
     mark('revoked_session_read_denied',read.status===403&&read.body.message==='AUTH_REQUIRED');
     mark('revoked_session_write_denied',write.status===403&&write.body.message==='AUTH_REQUIRED');

@@ -68,18 +68,34 @@ private fun EmployeeList(scope: NovaPersonnelScope, companyName: String, client:
     var retry by remember { mutableStateOf(UUID.randomUUID()) }
     var loading by remember { mutableStateOf(true) }
     var failed by remember { mutableStateOf(false) }
+    var pending by remember { mutableStateOf<NovaEmployeeIntent?>(null) }
+    var pendingChecked by remember { mutableStateOf(false) }
+    var reconciling by remember { mutableStateOf(false) }
     BackHandler { onBack() }
     LaunchedEffect(query, archived, requestedPage, refresh, retry) {
         val page = requestedPage
-        loading = true; failed = false
+        loading = true; failed = false; pendingChecked = false
         if (page == null) { rows = emptyList(); next = null }
         try {
             delay(180)
+            val recovered = client.pending(scope); currentCoroutineContext().ensureActive()
+            check(recovered == null || recovered.scope == scope); pending = recovered; pendingChecked = true
             val result = client.employees(scope, query, archived, page); currentCoroutineContext().ensureActive()
             check(result.rows.size <= 50 && result.rows.all { it.ownerID == scope.ownerID && it.companyID == scope.companyID && (archived || !it.isArchived) })
             check(result.rows.map { it.id }.distinct().size == result.rows.size && (result.next == null || result.next == result.rows.lastOrNull()?.id))
             rows = if (page == null) result.rows else (rows + result.rows).distinctBy { it.id }; next = result.next; loading = false
         } catch (_: Exception) { currentCoroutineContext().ensureActive(); failed = true; loading = false }
+    }
+    LaunchedEffect(reconciling) {
+        val intent = pending
+        if (!reconciling || intent == null) return@LaunchedEffect
+        try {
+            val result = client.save(intent); currentCoroutineContext().ensureActive()
+            check(result.ownerID == scope.ownerID && result.companyID == scope.companyID && result.operationID == intent.operationID && (intent.employeeID == null || intent.employeeID == result.id))
+            check(result.version == (if (intent.action == NovaEmployeeIntent.Action.create) 0 else intent.expectedVersion + 1) && result.isArchived == (intent.action == NovaEmployeeIntent.Action.archive))
+            pending = null; reconciling = false; requestedPage = null; retry = UUID.randomUUID()
+            if (!result.isArchived) onSelect(result.id)
+        } catch (_: Exception) { currentCoroutineContext().ensureActive(); reconciling = false; failed = true; retry = UUID.randomUUID() }
     }
     LazyColumn(Modifier.fillMaxSize().testTag("personnel.list"), contentPadding = PaddingValues(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { PersonnelHeading("Personeller", companyName, onBack = onBack) }
@@ -89,11 +105,19 @@ private fun EmployeeList(scope: NovaPersonnelScope, companyName: String, client:
                 modifier = Modifier.fillMaxWidth().testTag("personnel.search"), colors = personnelFieldColors(), singleLine = true)
         } }
         item { Row(verticalAlignment = Alignment.CenterVertically) { Switch(archived, { archived = it; requestedPage = null }, Modifier.testTag("personnel.archived")); NovaText("Arşivdekileri de göster") } }
-        item { PersonnelAction("Personel Ekle", Icons.Outlined.Add, "personnel.add", onClick = onAdd) }
+        pending?.let { saved -> item {
+            NovaCard(Modifier.fillMaxWidth().testTag("personnel.pending"), padding = 18) {
+                Row { NovaGlyph(Icons.Outlined.Refresh, null); NovaText("Bekleyen personel işlemi", style = NovaTypeToken.cardTitle) }
+                NovaText("Önceki işlemin sonucu henüz kesinleşmedi. Aynı işlem anahtarıyla kontrol ederek devam edin.")
+                NovaText(saved.name.ifEmpty { "Arşivleme işlemi" }, style = NovaTypeToken.metaQuiet)
+                PersonnelAction("Bekleyen işlemi tamamla", Icons.Outlined.Refresh, "personnel.recover", enabled = !reconciling, onClick = { reconciling = true })
+            }
+        } }
+        item { PersonnelAction("Personel Ekle", Icons.Outlined.Add, "personnel.add", enabled = pendingChecked && pending == null && !reconciling, onClick = onAdd) }
         if (failed) item { NovaCard(Modifier.fillMaxWidth(), padding = 16) { NovaText("Personeller yüklenemedi. Lütfen tekrar deneyin."); PersonnelAction("Tekrar dene", Icons.Outlined.Refresh, "personnel.reload", onClick = { retry = UUID.randomUUID() }) } }
         if (!loading && !failed && rows.isEmpty()) item { NovaCard(Modifier.fillMaxWidth(), padding = 18) { NovaText("Henüz personel yok.") } }
         items(rows, key = { it.id }) { row ->
-            NovaCard(Modifier.fillMaxWidth().clickable { onSelect(row.id) }.testTag("personnel.row.${row.id}"), padding = 16) {
+            NovaCard(Modifier.fillMaxWidth().clickable(enabled = pending == null && !reconciling) { onSelect(row.id) }.testTag("personnel.row.${row.id}"), padding = 16) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     NovaGlyph(Icons.Outlined.Person, null, Modifier.size(24.dp))
                     Column(Modifier.weight(1f)) { NovaText(row.name, style = NovaTypeToken.cardTitle); NovaText(row.departmentName ?: "Departman seçilmedi", style = NovaTypeToken.metaQuiet); if (row.isArchived) NovaText("Arşivde", style = NovaTypeToken.metaQuiet) }

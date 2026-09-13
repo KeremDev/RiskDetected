@@ -13,6 +13,7 @@ import { beginAuthPersonnelProbe, personnelAuthFiles } from './auth_personnel_pr
 import { beginPersonnelMigrationProbe, personnelMigrationFiles } from './personnel_migration_probe.mjs';
 import { beginPersonnelHTTPProbe } from './personnel_http_probe.mjs';
 import { probePersonnelAdvisors } from './personnel_advisor_probe.mjs';
+import { beginDirectoryMigrationProbe, directoryMigrationFiles } from './directory_migration_probe.mjs';
 import { probePasswordAuth } from './password_auth_probe.mjs';
 import { probeSignupRecovery } from './signup_recovery_probe.mjs';
 
@@ -289,6 +290,7 @@ try {
   let personnelProbe;
   let personnelMigrationProbe;
   let personnelHTTPProbe;
+  let directoryProbe;
   if (mode.sessionGuard) {
     stage = 'session-guard';
     sessionProbe = await beginSessionProbe({ sql, concurrentSql, token: refresh.body.access_token, secret, pass });
@@ -302,8 +304,10 @@ try {
     personnelMigrationProbe = await beginPersonnelMigrationProbe({ synthetic:true, sql, concurrentSql, token:refresh.body.access_token, secret, pass });
     stage = 'personnel-http';
     personnelHTTPProbe = await beginPersonnelHTTPProbe({synthetic:true,token:refresh.body.access_token,secret,companyID:personnelMigrationProbe.companyID,sql,start,guard,docker,names,waitReady,pass});
+    stage = 'directory-production-migration';
+    directoryProbe=await beginDirectoryMigrationProbe({synthetic:true,sql,token:refresh.body.access_token,secret,companyID:personnelMigrationProbe.companyID,request:personnelHTTPProbe.request,waitReady,pass});
     stage = 'personnel-advisors';
-    report.personnel_advisors=await probePersonnelAdvisors({synthetic:true,sql,guard,names,pass});
+    report.personnel_advisors=await probePersonnelAdvisors({synthetic:true,sql,guard,names,pass,onFindings:value=>{report.personnel_advisors=value;}});
   }
   pass('logout_succeeds', request('/logout', { method: 'POST', token: refresh.body.access_token }).status === 204);
   pass('logged_out_refresh_rejected', request('/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: refresh.body.refresh_token } }).status === 400);
@@ -312,6 +316,7 @@ try {
   if (personnelProbe) report.auth_personnel = personnelProbe.afterLogout();
   if (personnelMigrationProbe) report.personnel_migration = personnelMigrationProbe.afterLogout();
   if (personnelHTTPProbe) report.personnel_http = personnelHTTPProbe.afterLogout();
+  if (directoryProbe) report.directory = directoryProbe.afterLogout();
   if (mode.synthetic) {
     stage = 'password-auth-boundaries';
     report.password_auth = probePasswordAuth({synthetic:true, request, admin, pass});
@@ -331,6 +336,7 @@ try {
   report.source_sha256 = Object.fromEntries(['scripts/isg/run_auth_restore.mjs','scripts/isg/password_auth_probe.mjs','scripts/isg/signup_recovery_probe.mjs','scripts/isg/auth_mail_sink.cjs','scripts/isg/auth_session_probe.mjs','scripts/isg/auth_mutation_probe.mjs','scripts/isg/sql/auth_mutation_fixture.sql','scripts/isg/sql/transaction_fixture.sql','scripts/isg/restore_mode.mjs','scripts/isg/sql/auth_session_fixture.sql','scripts/isg/auth_restore_guard.mjs']
     .concat(personnelAuthFiles, ['scripts/isg/auth_personnel_probe.mjs','supabase/functions/_shared/personnel/directory-request.ts','supabase/functions/_shared/personnel/employee-create.ts','supabase/functions/_shared/isg/mutation-context.ts'])
     .concat(personnelMigrationFiles)
+    .concat(directoryMigrationFiles)
     .map(path=>[path,digest(readFileSync(resolve(ROOT,path)))]));
   report.ok = true;
 } catch (error) {

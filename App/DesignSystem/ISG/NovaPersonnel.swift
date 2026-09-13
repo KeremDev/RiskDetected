@@ -1,6 +1,6 @@
 import Foundation
 
-struct NovaPersonnelScope: Equatable, Hashable {
+struct NovaPersonnelScope: Equatable, Hashable, Codable {
     let ownerID: UUID
     let sessionID: UUID
     let companyID: UUID
@@ -24,13 +24,13 @@ struct NovaDepartmentRow: Equatable, Identifiable {
 }
 struct NovaEmployeePage { let rows: [NovaEmployeeRow]; let next: UUID? }
 struct NovaDepartmentPage { let rows: [NovaDepartmentRow]; let next: UUID? }
-enum NovaEmployeeDepartment: Equatable { case keep, none, existing(UUID), new(String) }
+enum NovaEmployeeDepartment: Equatable, Codable { case keep, none, existing(UUID), new(String) }
 struct NovaEmployeeCommit: Equatable {
     let operationID: UUID
     let id: UUID; let ownerID: UUID; let companyID: UUID; let version: Int64; let isArchived: Bool
 }
-struct NovaEmployeeIntent: Equatable {
-    enum Action: String { case create, edit, archive }
+struct NovaEmployeeIntent: Equatable, Codable {
+    enum Action: String, Codable { case create, edit, archive }
     let operationID: UUID
     let mutationID: UUID
     let scope: NovaPersonnelScope
@@ -48,6 +48,7 @@ enum NovaPersonnelFailure: Error { case denied, validation, conflict, selectionR
     let departments: (NovaPersonnelScope, String, UUID?) async throws -> NovaDepartmentPage
     let detail: (NovaPersonnelScope, UUID) async throws -> NovaEmployeeRow
     let save: (NovaEmployeeIntent) async throws -> NovaEmployeeCommit
+    var pending: (NovaPersonnelScope) async throws -> NovaEmployeeIntent? = { _ in nil }
 }
 
 struct NovaEmployeeEditorState {

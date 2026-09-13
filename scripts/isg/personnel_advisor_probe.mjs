@@ -6,7 +6,7 @@ import {randomBytes} from 'node:crypto';
 /** CLI gets only a private Unix socket into our owned network=none test container.
  * No TCP listener, published port, Docker mount, production URL or persistent secret.
  */
-export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass}) {
+export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onFindings=()=>{}}) {
   if(synthetic!==true)throw Error('AUTH_RESTORE_ADVISOR_SYNTHETIC_REQUIRED');
   guard('client');guard('db');
   const password=randomBytes(32).toString('hex');
@@ -35,14 +35,26 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass}) {
     let parsed;try{parsed=JSON.parse(result.stdout);}catch{throw Error('AUTH_RESTORE_ADVISOR_OUTPUT_INVALID');}
     const findings=Array.isArray(parsed)?parsed:parsed.lints??parsed.advisors;
     if(!Array.isArray(findings))throw Error('AUTH_RESTORE_ADVISOR_OUTPUT_INVALID');
-    const relevant=findings.filter(f=>JSON.stringify(f).includes('private_isg')||JSON.stringify(f).includes('isg_personnel_')||JSON.stringify(f).includes('companies_id_user_isg_unique'));
+    const relevant=findings.filter(f=>JSON.stringify(f).includes('private_isg')||JSON.stringify(f).includes('isg_personnel_')||JSON.stringify(f).includes('isg_directory_')||JSON.stringify(f).includes('isg_context_')||JSON.stringify(f).includes('companies_id_user_isg_unique'));
+    onFindings({total_findings:findings.length,relevant_findings:relevant});
     pass('personnel_advisor_cli_completed',true);
     pass('personnel_advisor_new_schema_no_errors',!relevant.some(f=>String(f.level).toUpperCase()==='ERROR'));
     // Deliberate default-deny tables, with no client grants, are not missing policies.
-    const denyTables=new Set(['rollout','workplaces','departments','employees','personnel_receipts','personnel_audit','personnel_outbox','workplace_initializations']);
-    pass('personnel_advisor_no_unreviewed_findings',relevant.every(f=>f.name==='rls_enabled_no_policy'&&f.level==='INFO'&&f.metadata?.schema==='private_isg'&&denyTables.has(f.metadata?.name)));
+    const denyTables=new Set(['rollout','workplaces','departments','employees','personnel_receipts','personnel_audit','personnel_outbox','workplace_initializations','job_roles','contractor_organizations','contractor_engagements','workplace_context_versions','employee_assignments','directory_events','directory_outbox']);
+    // This fresh, tiny fixture has no representative query workload. Keep the
+    // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
+    const reviewedFKIndexes=new Set([
+      'departments_department_parent_scope_idx','employees_employee_employer_scope_idx',
+      'job_roles_job_owner_idx','contractor_organizations_contractor_owner_idx',
+      'contractor_engagements_engagement_owner_idx','contractor_engagements_engagement_organization_idx','contractor_engagements_engagement_workplace_idx',
+      'workplace_context_versions_context_owner_idx','workplace_context_versions_context_workplace_idx',
+      'employee_assignments_assignment_owner_idx','employee_assignments_assignment_employee_idx','employee_assignments_assignment_department_idx','employee_assignments_assignment_job_idx','employee_assignments_assignment_employer_idx',
+      'directory_events_directory_event_owner_idx',
+    ].map(key=>'unused_index_private_isg_'+key));
+    pass('personnel_advisor_no_unreviewed_findings',relevant.every(f=>f.level==='INFO'&&f.metadata?.schema==='private_isg'&&
+      ((f.name==='rls_enabled_no_policy'&&denyTables.has(f.metadata?.name))||(f.name==='unused_index'&&reviewedFKIndexes.has(f.cache_key)))));
     return {cli:true,read_only_role:true,private_unix_socket:true,full_schema_restore:false,
-      total_findings:findings.length,relevant_findings:relevant};
+      total_findings:findings.length,relevant_findings:relevant,reviewed_unused_fk_index_reason:'Fresh synthetic database; retain explicit FK coverage. This is not production performance evidence.'};
   } finally {
     for(const connection of connections)connection.destroy();
     for(const child of children)child.kill();
