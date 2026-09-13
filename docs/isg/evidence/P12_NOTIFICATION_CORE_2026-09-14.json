@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-14",
+  "phase": "P12",
+  "slice": "four purposes, consent provenance, producer ownership with shadow mode, send-time gate, delivery attempts without a delivery claim",
+  "phase_complete": false,
+  "production_deployed": false,
+  "rollout_enabled_in_migration": false,
+  "client_grant_added": false,
+  "legacy_queue_written": false,
+  "real_provider_connected": false,
+  "delivery_or_read_claimed": false,
+  "caps_approved": false,
+  "synthetic_auth_run": {
+    "run_id": "bfd66735-4add-476f-8dd3-d24b046cd6c1",
+    "report": "output/isg/runs/synthetic-auth-Ynzphm/REPORT.json",
+    "total_checks": 689,
+    "failures": [],
+    "new_checks": 30,
+    "cleanup": "PASS"
+  },
+  "new_checks": [
+    {
+      "id": "notification_core_migration_applied_with_closed_rollout",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_gate_blocks_the_backbone_while_rollout_off",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_notification_tables_have_rls_and_no_client_grant",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_an_os_prompt_is_never_a_marketing_consent",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_push_and_email_consents_are_separate_records",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_a_migration_can_record_an_opt_out_but_never_overturn_one",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_a_revoked_consent_records_when_it_was_revoked",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_an_unregistered_episode_kind_produces_nothing",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_only_the_registered_owner_may_produce",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_an_episode_and_a_job_are_created_once",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_a_handover_cancels_what_the_previous_owner_left_pending",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_a_shadow_producer_never_sends",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_a_suppressed_job_can_not_be_sent",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_a_send_time_check_is_required_before_any_attempt",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_an_allowed_job_resolves_its_route",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_provider_accepted_is_not_delivered_or_read",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_a_rejected_attempt_leaves_the_job_failed_and_retryable",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_an_old_build_gets_the_safe_existing_screen",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_another_account_device_is_never_sent_to",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_a_disabled_category_suppresses_the_job",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_quiet_hours_suppress_a_business_notification",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_an_explicit_personal_alarm_is_not_silenced_by_quiet_hours",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_an_explicit_alarm_belongs_only_to_a_personal_reminder",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_a_daily_cap_suppresses_the_third_operational_message",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_the_cap_window_is_the_local_day",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_marketing_without_an_explicit_consent_is_suppressed",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_a_weekly_cap_holds_the_next_campaign",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_consent_revoked_after_enqueue_stops_the_send",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_the_legacy_notification_queue_is_untouched",
+      "result": "PASS"
+    },
+    {
+      "id": "notification_core_kill_switch_stops_the_backbone",
+      "result": "PASS"
+    }
+  ],
+  "full_legacy_copy_upgrade": {
+    "run_id": "d36a5303-b327-4e62-8056-8b4d3ce54dfc",
+    "total_checks": 29,
+    "failures": [],
+    "cleanup": "PASS",
+    "migrations_replayed": 15,
+    "new_tables": 99,
+    "legacy_rows_unchanged": true
+  },
+  "defects_found_and_fixed": [
+    {
+      "symptom": "AUTH_RESTORE_SQL_FAILED, SQLSTATE 42702 (ambiguous_column) only on the allowed dispatch path",
+      "cause": "the plpgsql variable was named route while notification_jobs also has a route column; UPDATE ... SET resolved_route=route was ambiguous. Suppressed paths returned before that statement, so the first dispatch checks passed",
+      "fix": "renamed the variable to resolved"
+    },
+    {
+      "symptom": "advisor stage red with unindexed_foreign_keys on notification_consents and notification_episodes",
+      "cause": "both tables reference notification_purposes(purpose) with no leading index on that column",
+      "fix": "added consent_purpose_idx and episode_purpose_idx"
+    }
+  ],
+  "source_sha256": {
+    "supabase/migrations/20260914050000_isg_notification_core.sql": "fb85c6dbb191c4ac248e61a258ade506864ea0c897675cddc1c7687e6c2dfc5d",
+    "scripts/isg/notification_core_probe.mjs": "bf04d49f5856f52939276b7395b44f732f75ffb2b6f1d31810b656897d839aac",
+    "scripts/isg/notification_core_guard.test.mjs": "1162cbac1e437a5d49955bbe382854699497f440ab9abd10fc6acffc2f2c8f0c",
+    "contracts/isg/v1/notification-backbone.md": "561392ebace50db620620656230bf49f5849ae432be029c7fc1d367a5e4384df"
+  },
+  "not_proven": [
+    "real APNs/FCM/email adapters and device tokens",
+    "onboarding consent screen and OS permission states",
+    "simulate/shadow/canary operations",
+    "recommendation cooldown policy",
+    "delivery or read metrics",
+    "real cutover from the legacy producers",
+    "client or native surface",
+    "production migration or rollout"
+  ]
+}

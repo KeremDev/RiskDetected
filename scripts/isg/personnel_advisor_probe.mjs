@@ -59,7 +59,9 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'katip_contracts','annual_work_plans','annual_work_plan_items','annual_training_plans','board_meetings',
       'board_decisions','work_permit_forms','site_visits','site_visit_observations','notebook_archive_entries',
       'document_templates','document_template_versions','documents','document_number_sequences','document_versions',
-      'export_jobs','import_batches','import_rows','import_checkpoints']);
+      'export_jobs','import_batches','import_rows','import_checkpoints',
+      'notification_purposes','notification_consents','producer_ownership','notification_episodes',
+      'notification_jobs','delivery_attempts']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([
@@ -108,6 +110,9 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'document_versions_document_version_finalizer_idx','document_template_versions_document_template_approver_idx',
       'export_jobs_export_state_idx','export_jobs_export_asset_idx',
       'import_batches_import_asset_idx','import_batches_import_owner_idx','import_rows_import_row_status_idx',
+      'notification_consents_consent_owner_idx','notification_consents_consent_purpose_idx',
+      'notification_episodes_episode_company_idx','notification_episodes_episode_purpose_idx',
+      'notification_episodes_episode_owner_idx','delivery_attempts_attempt_job_idx',
     ].map(key=>'unused_index_private_isg_'+key));
     pass('personnel_advisor_no_unreviewed_findings',relevant.every(f=>f.level==='INFO'&&f.metadata?.schema==='private_isg'&&
       ((f.name==='rls_enabled_no_policy'&&denyTables.has(f.metadata?.name))||(f.name==='unused_index'&&reviewedFKIndexes.has(f.cache_key)))));

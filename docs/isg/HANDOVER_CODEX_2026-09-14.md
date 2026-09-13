@@ -16,8 +16,9 @@ P05 (firma/işyeri/personel) daha önce kapanmıştı. 13–14 Eylül'de eklenen
 | P09 | Uygunsuzluk durum makinesi ve checklist | `20260913210000` | [P09](P09_NONCONFORMITY_CORE_2026-09-13.md) |
 | P10 | §7.5 modülleri, iki paket hâlinde 12 başlık | `20260913230000`, `20260914010000` | [P10-1](P10_MODULE_CORE_2026-09-13.md), [P10-2](P10_MODULE_SECOND_2026-09-14.md) |
 | P11 | Belge numarası/snapshot/export + import zinciri | `20260914030000` | [P11](P11_DOCUMENT_IMPORT_CORE_2026-09-14.md) |
+| P12 | Bildirim omurgası, rıza kökeni, sahiplik/shadow, gönderim-anı kapısı | `20260914050000` | [P12](P12_NOTIFICATION_CORE_2026-09-14.md) |
 
-Toplam: `private_isg` şemasında **93 tablo**, hepsinde RLS açık, istemciye **sıfır** GRANT. Sentetik kabul koşusu **659/659 PASS**, tam legacy kopya upgrade **29/29 PASS**, offline foundation **224 PASS**.
+Toplam: `private_isg` şemasında **99 tablo**, hepsinde RLS açık, istemciye **sıfır** GRANT. Sentetik kabul koşusu **689/689 PASS**, tam legacy kopya upgrade **29/29 PASS** (15 migration), offline foundation **232 PASS**.
 
 **Canlıya hiçbir şey uygulanmadı.** Bütün yeni `private_isg.rollout` satırları ve on iki modül anahtarı kapalı; mağaza, canlı DB, legacy kota otoritesi ve mevcut istemci sözleşmeleri değişmedi.
 
@@ -59,6 +60,7 @@ Toplam: `private_isg` şemasında **93 tablo**, hepsinde RLS açık, istemciye *
 | Advisor aşaması kırmızı | Yeni tablolar/indeksler review listelerinde yok | `personnel_advisor_probe.mjs`'deki iki listeyi güncelle; gerçek FK indeks eksiğini **düzelt**, listeye ekleme |
 | Python `str.replace` ile kod düzenlerken sayı bozulması | `"count(*)=3"` deseni `"count(*)=30"` içinde de eşleşti | Daha uzun/benzersiz desen seç, sonra `grep` ile doğrula |
 | Kapı sırası varsayımı | Faz kapısı modül anahtarından **önce** cevap verir | Önce `FEATURE_UNAVAILABLE`, sonra `MODULE_UNAVAILABLE` bekle |
+| Yalnız **bir kod yolunda** patlayan gölgeleme | Değişken adı sütun adıyla aynı ama o satıra sadece bazı dallarda ulaşılıyor (`route`) | `route`, `state`, `version`, `purpose`, `scope`, `position` gibi adları baştan kullanma |
 
 ## 5. Komutlar
 
@@ -74,7 +76,7 @@ deno test --allow-read=contracts/isg/v1/fixtures supabase/functions/_shared/isg/
 
 ## 6. Sıradaki işler
 
-1. **P12 bildirim:** consent provenance, producer ownership registry, send-time izin, duplicate önleme. P01'in dağıtım defteri hazır tüketici bekliyor.
+1. **P12'nin ikinci dilimi:** gerçek APNs/FCM/e-posta adaptörleri, onboarding rıza ekranı ve izin durumları, simulate/shadow/canary, gerçek cutover. P01'in dağıtım defteri hâlâ gerçek bir tüketici bekliyor.
 2. **P04'ün ikinci dilimi:** gerçek AV/parser sandbox'ı, DOC/XLS pozitif güvenlik fixture'ları, bucket/storage policy, signed URL. Teknoloji ve maliyet kararı gerekiyor.
 3. **P11'in render worker'ı:** PDF/XLSX üretimi ve görsel kabuller.
 4. **P13 kişisel not**, **P14 lifecycle/store**, **P15 referral**, **P16 admin**, **P17 skor**: bağımlılıkları planın §15.1 grafiğinde.
