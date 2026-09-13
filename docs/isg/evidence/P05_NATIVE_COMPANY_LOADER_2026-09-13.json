@@ -1,0 +1,46 @@
+{
+  "date": "2026-09-13",
+  "scope": "native account-scoped company loader; additive, not production root activation",
+  "production_root_enabled": false,
+  "live_requests": false,
+  "deploy_or_push": false,
+  "results": {
+    "swift_shared_corpus": {"passed": 34},
+    "android_designsystem": {"passed": 348, "failed": 0, "errors": 0, "skipped": 0},
+    "android_profile": {"passed": 6, "failed": 0, "errors": 0, "skipped": 0},
+    "android_data": {"passed": 489, "failed": 0, "errors": 0, "skipped": 0},
+    "android_lint": "PASS",
+    "android_debug_apk": "PASS_UP_TO_DATE",
+    "ios_full_ui_before_final_scope_tightening": {"passed": 14, "duration_seconds": 183.2},
+    "ios_final_targeted_company_ui": {"passed": 3, "duration_seconds": 37.1},
+    "ios_main_build": "PASS_DEBUG_UNSIGNED",
+    "foundation": {"passed": 111},
+    "password_auth_guards": {"passed": 7},
+    "nova_design_guards": {"passed": 24},
+    "identity_function_map_yaml_secret_scan_whitespace": "PASS"
+  },
+  "local_artifacts": {
+    "ios_full_ui": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-12T23-52-42-962Z_pid70458_2743ce76.xcresult",
+    "ios_final_company_ui": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-12T23-59-58-610Z_pid70458_99101e3d.xcresult",
+    "ios_main_build_log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-09-13T00-04-46-795Z_pid70458_7ddc6acc.log",
+    "android_reports": ["android/core/designsystem/build/test-results/testDebugUnitTest", "android/core/data/build/test-results/testDebugUnitTest", "android/feature/profile/build/test-results/testDebugUnitTest"],
+    "inspected_synthetic_screenshot": "output/isg/owned-company-ui-20260913/CC4FE61E-A188-445D-BA75-893D9A41A2EB.png"
+  },
+  "limitations": [
+    "SDK/service adapters compile in real applications; UI runtime uses synthetic injected loaders.",
+    "Not RLS, billing, production Auth/capability, physical-device or full V5 acceptance evidence.",
+    "Android search test first failed due duplicate text semantics; unique tag and EditableText assertions passed.",
+    "Full iOS 14-case run preceded final archive-read-scope and search-reset changes; final 3 company cases reran afterward.",
+    "A profile switch using display label (default) failed; main project was explicitly selected in isg-main and successfully built. The intervening shell-only build is not main-app evidence."
+  ],
+  "source_sha256": {
+    "App/DesignSystem/ISG/NovaCompanyListState.swift": "a93083875e78444c2cabadf98a61dbe39b3acc51ada9ca5bc5e84b553aa959b5",
+    "App/DesignSystem/ISG/NovaCompanyDestination.swift": "6521d397a55a836afd515faaeb0696cced62d9b607557b8cee6891be10da830f",
+    "App/Services/Company/NovaCompanyServiceAdapter.swift": "dee1ca7a0543acba7bcf9cf2145a1545063523760e2dd6a4840c929bf605c632",
+    "android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaCompanyListState.kt": "62e59a240d74a78ac396488c666df936dc0422a3c73514675532de1272bba3a0",
+    "android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaCompanyDestination.kt": "f03637fd37f001a49525da58b09f390590f4607450ae28d7af17cf670959189f",
+    "android/feature/profile/src/main/kotlin/com/riskdetectedan/feature/profile/NovaCompanyRepositoryAdapter.kt": "48fcc03222080cd2beffbfa1d08644f0be7e7f44e7634891f7e19d245c1098d2",
+    "contracts/isg/v1/fixtures/nova-company-list.json": "a8b467aecf83033bd990419af85486cc150eae5df3e57737d7d6803c322a638c",
+    "tests/isg/shell-ios/ShellUITests.swift": "fc864839df944f41ab958f54014fbd714cec2bfd8b2953fc55289ad501a3d868"
+  }
+}

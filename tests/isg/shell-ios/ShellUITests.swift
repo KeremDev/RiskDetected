@@ -82,6 +82,36 @@ import UIKit
         XCTAssertTrue(app.buttons["nova.menu"].waitForExistence(timeout: 8))
     }
 
+    func testOwnedCompanyLoaderDisplaysRowsAndNavigates() {
+        launch(["--company-loader", "--companies"])
+        XCTAssertTrue(app.staticTexts["Firma A"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["1 firma"].exists)
+        screenshot("owned-company-loaded")
+        tap("nova.company.11111111-1111-4111-8111-111111111111")
+        visible("memory")
+    }
+
+    func testOwnedCompanyLoaderRetriesWithoutLeakingRawError() {
+        launch(["--company-loader", "--companies", "--company-loader-failure"])
+        XCTAssertTrue(app.buttons["Tekrar dene"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.debugDescription.contains("synthetic-private-body-must-not-appear"))
+        tap("Tekrar dene")
+        XCTAssertTrue(app.staticTexts["Firma A"].waitForExistence(timeout: 5))
+    }
+
+    func testOwnedCompanyLoaderReplacesPreviousAccountRows() {
+        launch(["--company-loader", "--companies"])
+        XCTAssertTrue(app.staticTexts["Firma A"].waitForExistence(timeout: 5))
+        let search = app.textFields["nova.companies.search"]
+        search.tap()
+        search.typeText("Firma A")
+        tap("qa.company.switch")
+        XCTAssertTrue(app.staticTexts["Firma B"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Firma A"].exists)
+        XCTAssertNotEqual(app.textFields["nova.companies.search"].value as? String, "Firma A")
+        screenshot("owned-company-account-b")
+    }
+
     func testFiveReferenceScreensAndNotificationActions() {
         launchDesign()
         XCTAssertTrue(app.buttons["nova.home.photo"].isHittable)

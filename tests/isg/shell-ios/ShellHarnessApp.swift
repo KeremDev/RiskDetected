@@ -16,6 +16,7 @@ struct ShellHarnessRoot: View {
     @State private var staleAction: (() -> Void)?
     @State private var delayedResponse: (() -> Void)?
     @State private var noticeSnapshot: NovaScopedValue<[NovaNotice]>?
+    @State private var companyRequests = 0
     private static let fixtureNotices = [
         NovaNotice(id: "overdue", title: "Termini geçen aksiyonlar", detail: "Geciken düzeltmeleri önceliklendirerek inceleyin.", count: 1, symbol: "risk", tone: .statusDangerInk),
         NovaNotice(id: "active", title: "Aktif uygunsuzluklar", detail: "Sorumluluğunuzdaki firmalarda halen açık bulunan kayıtlar.", count: 1, symbol: "bell.fill", tone: .statusInfoInk)
@@ -47,7 +48,20 @@ struct ShellHarnessRoot: View {
                 onReadAll: { noticeSnapshot = sessionHost.scope(notices.map { var n = $0; n.unread = false; return n }, from: navigation.epoch) },
                 onClearNotifications: { noticeSnapshot = sessionHost.scope([], from: navigation.epoch) },
                 onLogout: { sessionHost.adopt(nil) }) { destination in
-                if args.contains("--design"), destination == .home {
+                if args.contains("--company-loader"), destination == .companies {
+                    NovaCompanyDestination(host: $sessionHost, loadCompanies: { _ in
+                        companyRequests += 1
+                        let owner = sessionHost.identity!.userID
+                        if args.contains("--company-loader-failure"), companyRequests == 1 {
+                            throw NSError(domain: "synthetic-private-body-must-not-appear", code: 1)
+                        }
+                        // Deliberately uncooperative synthetic provider: the destination's
+                        // post-await cancellation and current-host guards must still protect UI.
+                        try? await Task.sleep(nanoseconds: 100_000_000)
+                        return [.init(id: UUID(uuidString: "11111111-1111-4111-8111-111111111111")!, ownerID: owner,
+                            name: owner == Self.actorA.userID ? "Firma A" : "Firma B", detail: "Sentetik adres · Çok Tehlikeli", isArchived: false)]
+                    }, onSelect: { _ in navigate(.memory) }, onBack: { navigate(.home) })
+                } else if args.contains("--design"), destination == .home {
                     NovaDashboardScreen(data: Self.dashboard, onNavigate: navigate,
                         onPhoto: { navigate(.newFinding) }, onAssistant: { navigate(.newFinding) }, onFinding: { _ in navigate(.findings) })
                 } else if args.contains("--design"), destination == .companies {
@@ -63,6 +77,13 @@ struct ShellHarnessRoot: View {
             }
             if args.contains("--qa-toolbar") {
                 VStack(spacing: 4) {
+                    if args.contains("--company-loader") {
+                        Button("Firma hesabını değiştir") {
+                            sessionHost.adopt(Self.actorB)
+                            resolveImmediately(Set(NovaDestination.allCases))
+                            sessionHost.apply(.select(.companies), from: sessionHost.navigation.epoch)
+                        }.accessibilityIdentifier("qa.company.switch")
+                    }
                     Text("QA · \(sessionHost.identity == Self.actorA ? "synthetic-a" : "synthetic-b") · \(navigation.selected.rawValue) · \(navigation.current.rawValue) · fonts=\(fontsOK ? "ok" : "FAIL")")
                         .font(.system(size: 10)).accessibilityIdentifier("qa.state")
                     HStack {

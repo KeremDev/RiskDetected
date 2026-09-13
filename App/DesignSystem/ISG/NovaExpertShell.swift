@@ -706,6 +706,7 @@ struct NovaCompaniesScreen: View {
     let companies: [NovaCompanyItem]
     var isLoading = false
     var error: String?
+    var isOwnedList = false
     let onSelect: (String) -> Void
     let onBack: () -> Void
     let onRetry: () -> Void
@@ -724,7 +725,7 @@ struct NovaCompaniesScreen: View {
                         .accessibilityLabel("Panele dön")
                     VStack(alignment: .leading, spacing: 2) {
                         NovaSizedText(text: "Firmalar", size: 20, weight: "ExtraBold")
-                        NovaText(text: "\(filtered.count) atanmış firma", style: .metaQuiet, color: NovaColorToken.textMuted.color(in: scheme))
+                        NovaText(text: isOwnedList ? "\(filtered.count) firma" : "\(filtered.count) atanmış firma", style: .metaQuiet, color: NovaColorToken.textMuted.color(in: scheme))
                     }
                 }
                 HStack(spacing: 10) {
@@ -746,7 +747,7 @@ struct NovaCompaniesScreen: View {
                         Button(action: onRetry) { Label("Tekrar dene", systemImage: "arrow.clockwise") }.frame(minHeight: 44)
                     }.padding(14)
                 } else if filtered.isEmpty {
-                    Label(search.isEmpty ? "Hesabına atanmış firma yok." : "Firma bulunamadı", systemImage: "building.2")
+                    Label(search.isEmpty ? (isOwnedList ? "Henüz firma eklenmedi." : "Hesabına atanmış firma yok.") : "Firma bulunamadı", systemImage: "building.2")
                         .padding(14)
                 } else {
                     ForEach(filtered) { company in

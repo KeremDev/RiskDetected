@@ -201,7 +201,7 @@ fun NovaDashboardScreen(data: NovaDashboardData, onNavigate: (NovaDestination) -
 
 @Composable
 fun NovaCompaniesScreen(companies: List<NovaCompanyItem>, isLoading: Boolean = false, error: String? = null,
-                         onSelect: (String) -> Unit, onBack: () -> Unit, onRetry: () -> Unit) {
+                         onSelect: (String) -> Unit, onBack: () -> Unit, onRetry: () -> Unit, isOwnedList: Boolean = false) {
     var query by rememberSaveable { mutableStateOf("") }
     val filtered = filterNovaCompanies(companies, query)
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 122.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -209,7 +209,7 @@ fun NovaCompaniesScreen(companies: List<NovaCompanyItem>, isLoading: Boolean = f
             IconButton(onClick = onBack) { NovaGlyph(Icons.Outlined.ChevronLeft, "Panele dön", Modifier.size(18.dp)) }
             Column {
                 NovaText("Firmalar", style = NovaTypeToken.screenTitle)
-                NovaText("${filtered.size} atanmış firma", style = NovaTypeToken.metaQuiet, color = NovaColorToken.textMuted.color())
+                NovaText(if (isOwnedList) "${filtered.size} firma" else "${filtered.size} atanmış firma", style = NovaTypeToken.metaQuiet, color = NovaColorToken.textMuted.color())
             }
         }
         Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).background(NovaColorToken.surface.color(), RoundedCornerShape(16.dp)).padding(horizontal = 14.dp),
@@ -233,7 +233,7 @@ fun NovaCompaniesScreen(companies: List<NovaCompanyItem>, isLoading: Boolean = f
             }
             filtered.isEmpty() -> Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 NovaGlyph(Icons.Outlined.Business, null, Modifier.size(20.dp))
-                NovaText(if (query.isEmpty()) "Hesabına atanmış firma yok." else "Firma bulunamadı")
+                NovaText(if (query.isEmpty()) { if (isOwnedList) "Henüz firma eklenmedi." else "Hesabına atanmış firma yok." } else "Firma bulunamadı")
             }
             else -> filtered.forEach { company ->
                 Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).background(NovaColorToken.surface.color(), RoundedCornerShape(22.dp))

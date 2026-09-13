@@ -1,0 +1,924 @@
+{
+  "schema_version": 1,
+  "scope": "presentation_only_no_server_grant",
+  "rows": {
+    "one": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "ownerID": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "name": "Işık İşletmesi",
+      "detail": "Adres · Çok Tehlikeli",
+      "isArchived": false
+    },
+    "archived": {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "ownerID": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "name": "Arşiv Firma",
+      "detail": "Adres · Çok Tehlikeli",
+      "isArchived": true
+    }
+  },
+  "responses": {
+    "valid": [
+      "one"
+    ],
+    "empty": [],
+    "mixed": [
+      "one",
+      "archived"
+    ],
+    "foreign": [
+      {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "ownerID": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "name": "Işık İşletmesi",
+        "detail": "Adres · Çok Tehlikeli",
+        "isArchived": false
+      }
+    ],
+    "duplicate": [
+      "one",
+      "one"
+    ],
+    "blank": [
+      {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "ownerID": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "name": " \n ",
+        "detail": "Adres · Çok Tehlikeli",
+        "isArchived": false
+      }
+    ]
+  },
+  "cases": [
+    {
+      "id": "loading-clears-rows",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        }
+      ],
+      "expected": {
+        "phase": "loading",
+        "rows": [],
+        "pending": true,
+        "selected": false
+      }
+    },
+    {
+      "id": "loaded-owned-active",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "valid"
+        }
+      ],
+      "expected": {
+        "phase": "loaded",
+        "rows": [
+          "one"
+        ],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "empty-success",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "empty"
+        }
+      ],
+      "expected": {
+        "phase": "loaded",
+        "rows": [],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "archived-hidden",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "mixed"
+        }
+      ],
+      "expected": {
+        "phase": "loaded",
+        "rows": [
+          "one"
+        ],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "archived-included",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": true
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "mixed"
+        }
+      ],
+      "expected": {
+        "phase": "loaded",
+        "rows": [
+          "one",
+          "archived"
+        ],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "foreign-fails-entire-response",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "foreign"
+        }
+      ],
+      "expected": {
+        "phase": "failed",
+        "rows": [],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "duplicate-fails-entire-response",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "duplicate"
+        }
+      ],
+      "expected": {
+        "phase": "failed",
+        "rows": [],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "blank-fails-entire-response",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "blank"
+        }
+      ],
+      "expected": {
+        "phase": "failed",
+        "rows": [],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "latest-success-wins",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "begin",
+          "key": "next",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "next",
+          "rows": "valid"
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "empty"
+        }
+      ],
+      "expected": {
+        "phase": "loaded",
+        "rows": [
+          "one"
+        ],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "late-error-ignored",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "begin",
+          "key": "next",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "next",
+          "rows": "valid"
+        },
+        {
+          "op": "fail",
+          "key": "first"
+        }
+      ],
+      "expected": {
+        "phase": "loaded",
+        "rows": [
+          "one"
+        ],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "late-success-after-new-error",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "begin",
+          "key": "next",
+          "archived": false
+        },
+        {
+          "op": "fail",
+          "key": "next"
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "valid"
+        }
+      ],
+      "expected": {
+        "phase": "failed",
+        "rows": [],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "duplicate-completion-ignored",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "valid"
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "empty"
+        }
+      ],
+      "expected": {
+        "phase": "loaded",
+        "rows": [
+          "one"
+        ],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "error-after-success-ignored",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "valid"
+        },
+        {
+          "op": "fail",
+          "key": "first"
+        }
+      ],
+      "expected": {
+        "phase": "loaded",
+        "rows": [
+          "one"
+        ],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "retry-after-failure",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "fail",
+          "key": "first"
+        },
+        {
+          "op": "begin",
+          "key": "next",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "next",
+          "rows": "valid"
+        }
+      ],
+      "expected": {
+        "phase": "loaded",
+        "rows": [
+          "one"
+        ],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "cancel-consumes-ticket",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "cancel",
+          "key": "first"
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "valid"
+        }
+      ],
+      "expected": {
+        "phase": "idle",
+        "rows": [],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "old-cancel-keeps-new-request",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "begin",
+          "key": "next",
+          "archived": false
+        },
+        {
+          "op": "cancel",
+          "key": "first"
+        }
+      ],
+      "expected": {
+        "phase": "loading",
+        "rows": [],
+        "pending": true,
+        "selected": false
+      }
+    },
+    {
+      "id": "refresh-hides-old-rows",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "valid"
+        },
+        {
+          "op": "begin",
+          "key": "next",
+          "archived": false
+        }
+      ],
+      "expected": {
+        "phase": "loading",
+        "rows": [],
+        "pending": true,
+        "selected": false
+      }
+    },
+    {
+      "id": "same-session-event-keeps-request",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "tokenRefresh"
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "valid"
+        }
+      ],
+      "expected": {
+        "phase": "loaded",
+        "rows": [
+          "one"
+        ],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "logout-hides-loaded-content",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "valid"
+        },
+        {
+          "op": "adopt",
+          "actor": "out"
+        }
+      ],
+      "expected": {
+        "phase": "idle",
+        "rows": [],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "account-switch-rejects-old-completion",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "ready",
+          "actor": "b"
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "valid"
+        }
+      ],
+      "expected": {
+        "phase": "idle",
+        "rows": [],
+        "pending": true,
+        "selected": false
+      }
+    },
+    {
+      "id": "same-user-new-session-rejects-completion",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "ready",
+          "actor": "a2"
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "valid"
+        }
+      ],
+      "expected": {
+        "phase": "idle",
+        "rows": [],
+        "pending": true,
+        "selected": false
+      }
+    },
+    {
+      "id": "aba-rejects-old-completion",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "ready",
+          "actor": "b"
+        },
+        {
+          "op": "ready",
+          "actor": "a"
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "valid"
+        }
+      ],
+      "expected": {
+        "phase": "idle",
+        "rows": [],
+        "pending": true,
+        "selected": false
+      }
+    },
+    {
+      "id": "availability-refresh-hides-content",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "valid"
+        },
+        {
+          "op": "hostRefresh"
+        }
+      ],
+      "expected": {
+        "phase": "idle",
+        "rows": [],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "revocation-hides-content",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "valid"
+        },
+        {
+          "op": "revoke"
+        }
+      ],
+      "expected": {
+        "phase": "idle",
+        "rows": [],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "signed-out-cannot-begin",
+      "steps": [
+        {
+          "op": "adopt",
+          "actor": "out"
+        },
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        }
+      ],
+      "expected": {
+        "phase": "idle",
+        "rows": [],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "disabled-cannot-begin",
+      "steps": [
+        {
+          "op": "revoke"
+        },
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        }
+      ],
+      "expected": {
+        "phase": "idle",
+        "rows": [],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "selection-current-response",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "valid"
+        },
+        {
+          "op": "capture",
+          "key": "old"
+        },
+        {
+          "op": "select",
+          "key": "old",
+          "row": "one"
+        }
+      ],
+      "expected": {
+        "phase": "loaded",
+        "rows": [
+          "one"
+        ],
+        "pending": false,
+        "selected": true
+      }
+    },
+    {
+      "id": "selection-previous-render-rejected",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "valid"
+        },
+        {
+          "op": "capture",
+          "key": "old"
+        },
+        {
+          "op": "begin",
+          "key": "next",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "next",
+          "rows": "valid"
+        },
+        {
+          "op": "select",
+          "key": "old",
+          "row": "one"
+        }
+      ],
+      "expected": {
+        "phase": "loaded",
+        "rows": [
+          "one"
+        ],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "selection-missing-id-rejected",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "valid"
+        },
+        {
+          "op": "capture",
+          "key": "old"
+        },
+        {
+          "op": "select",
+          "key": "old",
+          "row": "archived"
+        }
+      ],
+      "expected": {
+        "phase": "loaded",
+        "rows": [
+          "one"
+        ],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "selection-after-logout-rejected",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "valid"
+        },
+        {
+          "op": "capture",
+          "key": "old"
+        },
+        {
+          "op": "adopt",
+          "actor": "out"
+        },
+        {
+          "op": "select",
+          "key": "old",
+          "row": "one"
+        }
+      ],
+      "expected": {
+        "phase": "idle",
+        "rows": [],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "old-cancel-after-new-success",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": false
+        },
+        {
+          "op": "begin",
+          "key": "next",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "next",
+          "rows": "valid"
+        },
+        {
+          "op": "cancel",
+          "key": "first"
+        }
+      ],
+      "expected": {
+        "phase": "loaded",
+        "rows": [
+          "one"
+        ],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "archive-scope-supersedes-request",
+      "steps": [
+        {
+          "op": "begin",
+          "key": "first",
+          "archived": true
+        },
+        {
+          "op": "begin",
+          "key": "next",
+          "archived": false
+        },
+        {
+          "op": "complete",
+          "key": "next",
+          "rows": "mixed"
+        },
+        {
+          "op": "complete",
+          "key": "first",
+          "rows": "mixed"
+        }
+      ],
+      "expected": {
+        "phase": "loaded",
+        "rows": [
+          "one"
+        ],
+        "pending": false,
+        "selected": false
+      }
+    },
+    {
+      "id": "filter-change-hides-loaded-rows-before-next-request",
+      "steps": [
+        {"op":"begin","key":"first","archived":true},
+        {"op":"complete","key":"first","rows":"mixed"},
+        {"op":"filter","archived":false}
+      ],
+      "expected": {"phase":"idle","rows":[],"pending":false,"selected":false}
+    },
+    {
+      "id": "filter-change-rejects-old-selection",
+      "steps": [
+        {"op":"begin","key":"first","archived":true},
+        {"op":"complete","key":"first","rows":"mixed"},
+        {"op":"capture","key":"old"},
+        {"op":"filter","archived":false},
+        {"op":"select","key":"old","row":"archived"}
+      ],
+      "expected": {"phase":"idle","rows":[],"pending":false,"selected":false}
+    }
+  ]
+}

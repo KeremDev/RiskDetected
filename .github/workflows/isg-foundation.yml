@@ -12,6 +12,11 @@ on:
       - 'App/Services/ISG/**'
       - 'App/Services/Auth/**'
       - 'App/Services/AuthService.swift'
+      - 'App/Services/Company/**'
+      - 'App/Services/CompanyService.swift'
+      - 'App/Models/Company.swift'
+      - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/company/**'
+      - 'android/feature/profile/**'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/SupabaseModule.kt'
       - 'supabase/functions/auth-send-email-hook/**'
       - 'supabase/functions/_shared/auth-email-localization*'
@@ -51,6 +56,11 @@ on:
       - 'App/Services/ISG/**'
       - 'App/Services/Auth/**'
       - 'App/Services/AuthService.swift'
+      - 'App/Services/Company/**'
+      - 'App/Services/CompanyService.swift'
+      - 'App/Models/Company.swift'
+      - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/company/**'
+      - 'android/feature/profile/**'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/SupabaseModule.kt'
       - 'supabase/functions/auth-send-email-hook/**'
       - 'supabase/functions/_shared/auth-email-localization*'
@@ -144,6 +154,10 @@ jobs:
         run: |
           swiftc App/DesignSystem/ISG/NovaNavigation.swift scripts/isg/NovaNavigationCheck.swift -o "$RUNNER_TEMP/isg-nova-navigation-check"
           "$RUNNER_TEMP/isg-nova-navigation-check" contracts/isg/v1
+      - name: Verify company load ownership, latest-request and selection corpus
+        run: |
+          swiftc App/DesignSystem/ISG/NovaNavigation.swift App/DesignSystem/ISG/NovaSessionHost.swift App/DesignSystem/ISG/NovaCompanyListState.swift scripts/isg/NovaCompanyListCheck.swift -o "$RUNNER_TEMP/isg-company-list-check"
+          "$RUNNER_TEMP/isg-company-list-check" contracts/isg/v1/fixtures/nova-company-list.json
       - name: Verify account-scoped NOVA host corpus
         # Presentation session fixtures run without any Auth SDK or network.
         # Runtime UI ownership is separately exercised by ios-shell-integration.
