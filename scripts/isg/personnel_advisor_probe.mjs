@@ -72,10 +72,17 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'eligibility_checks',
       'funnel_stages','telemetry_event_kinds','support_chains','technical_events','telemetry_queue_reports',
       'attribution_records','admin_scopes','admin_sessions','admin_audit_entries','admin_actions',
-      'admin_exports','admin_operation_state','funnel_progress']);
+      'admin_exports','admin_operation_state','funnel_progress',
+      'score_policy_versions','score_processes','score_subject_states','score_snapshots','score_contributions',
+      'score_critical_findings','score_oracle_fixtures','score_simulations','portfolio_projections',
+      'portfolio_entries']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([
+      'portfolio_entries_portfolio_entry_company_idx','portfolio_entries_portfolio_entry_snapshot_idx',
+      'portfolio_projections_portfolio_projection_policy_idx','score_contributions_score_contribution_process_idx',
+      'score_simulations_score_simulation_from_idx','score_simulations_score_simulation_to_idx',
+      'score_snapshots_score_snapshot_superseded_idx',
       'admin_actions_admin_action_audit_idx','admin_actions_admin_action_scope_idx',
       'admin_actions_admin_action_session_idx','admin_audit_entries_admin_audit_scope_idx',
       'admin_audit_entries_admin_audit_session_idx','admin_sessions_admin_session_user_idx',

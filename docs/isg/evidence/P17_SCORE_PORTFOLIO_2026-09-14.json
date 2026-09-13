@@ -1,0 +1,131 @@
+{
+  "phase": "P17",
+  "slice": "versioned score policy, explainable contributions and portfolio",
+  "date": "2026-09-14",
+  "branch": "codex/isg-transition-foundation",
+  "migration": "supabase/migrations/20260914150000_isg_score_portfolio.sql",
+  "rollout_feature": "score",
+  "rollout_left_closed": true,
+  "client_grants": 0,
+  "private_isg_tables_after": 154,
+  "new_tables": 10,
+  "new_functions": 10,
+  "weights_approved": false,
+  "official_certificate_claimed": false,
+  "hand_computed_oracle": {
+    "golden_mixed_company": {
+      "expected_main_score": 56.67,
+      "expected_total_weight": 75.0,
+      "expected_earned_points": 42.5,
+      "expected_provisional": true,
+      "derivation": "0.5*25=12.5 plus 1*25=25 plus min(1*15,5)=5 plus 0 over 25+25+15+10"
+    },
+    "golden_empty_company": {
+      "expected_main_score": null,
+      "expected_total_weight": 100.0,
+      "expected_earned_points": 0.0,
+      "expected_provisional": true,
+      "derivation": "no data, so no number"
+    },
+    "golden_all_voluntary": {
+      "expected_main_score": null,
+      "expected_total_weight": 0.0,
+      "expected_earned_points": 0.0,
+      "expected_provisional": true,
+      "derivation": "voluntary is neutral on both sides"
+    },
+    "policy_revision_2_delta": 13.33
+  },
+  "runs": {
+    "synthetic_session": {
+      "evidence_directory": "output/isg/runs/synthetic-auth-zbcBsK",
+      "checks": 997,
+      "unique_check_ids": 996,
+      "all_pass": true,
+      "cleanup": "PASS",
+      "new_score_checks": 31
+    },
+    "isolated_copy_p05_upgrade": {
+      "evidence_directory": "backups/isg-auth-service-restore-20260912-1iMulh",
+      "checks": 32,
+      "all_pass": true,
+      "migrations_replayed": 26,
+      "cleanup": "PASS",
+      "legacy_row_fingerprint_unchanged": true,
+      "legacy_helper_bodies_unchanged": true
+    },
+    "offline_foundation": {
+      "tests": 408,
+      "fail": 0,
+      "previous": 397
+    }
+  },
+  "score_checks": [
+    "score_portfolio_migration_applied_with_closed_rollout",
+    "score_portfolio_gate_blocks_the_score_while_rollout_off",
+    "score_portfolio_score_tables_have_rls_and_no_client_grant",
+    "score_portfolio_a_policy_can_not_publish_itself_without_a_human",
+    "score_portfolio_the_score_can_never_call_itself_an_official_certificate",
+    "score_portfolio_a_cap_can_never_exceed_its_own_weight",
+    "score_portfolio_a_policy_without_a_single_process_can_not_publish",
+    "score_portfolio_publication_records_the_human_and_keeps_the_weights_unapproved",
+    "score_portfolio_an_unpublished_policy_computes_nothing",
+    "score_portfolio_leaving_a_process_out_of_the_score_needs_a_verified_reason",
+    "score_portfolio_a_voluntary_record_never_enters_the_main_score",
+    "score_portfolio_the_production_number_matches_a_hand_computed_oracle",
+    "score_portfolio_the_oracle_can_not_be_relabelled_as_a_second_call",
+    "score_portfolio_every_number_on_screen_traces_back_to_one_process",
+    "score_portfolio_a_contribution_cap_really_limits_one_process",
+    "score_portfolio_a_verified_exemption_leaves_the_denominator_entirely",
+    "score_portfolio_an_unknown_process_stays_in_the_denominator_and_marks_the_answer_provisional",
+    "score_portfolio_a_voluntary_process_is_neutral_on_both_sides",
+    "score_portfolio_a_company_with_no_data_is_never_a_hundred",
+    "score_portfolio_a_missing_row_is_unknown_and_never_an_exemption",
+    "score_portfolio_a_company_that_only_volunteers_has_no_number_either",
+    "score_portfolio_a_critical_warning_stands_beside_the_number_not_inside_it",
+    "score_portfolio_recomputing_the_same_day_is_a_replay",
+    "score_portfolio_a_simulation_writes_no_snapshot_and_rewrites_no_history",
+    "score_portfolio_the_simulated_delta_matches_the_hand_computed_change",
+    "score_portfolio_a_new_policy_adds_a_snapshot_and_never_rewrites_the_old_one",
+    "score_portfolio_a_big_company_never_takes_over_the_portfolio",
+    "score_portfolio_a_headcount_can_never_become_a_weight",
+    "score_portfolio_a_portfolio_with_nothing_scored_has_no_average",
+    "score_portfolio_no_snapshot_can_be_relabelled_as_a_certificate",
+    "score_portfolio_kill_switch_stops_the_score_ledger"
+  ],
+  "acceptance_ids_covered": [
+    "SCO",
+    "REV04",
+    "REV05",
+    "REV06",
+    "X20"
+  ],
+  "defects_found_and_fixed": [],
+  "production_defects_found": 0,
+  "first_run_green": true,
+  "advisor_lists_updated": {
+    "denyTables": 10,
+    "reviewedFKIndexes": 7,
+    "unindexed_foreign_keys_found": 0
+  },
+  "deliberate_design_decisions": [
+    "a process with required_units=0 scores a ratio of 1; this is not an approved commercial rule",
+    "a company made entirely of voluntary records returns NULL, not zero, because nothing was measurable"
+  ],
+  "not_proven": [
+    "approved weights or caps (K15)",
+    "any domain producer writing score_subject_states (P06, P07, P08, P09, P10)",
+    "any critical finding producer",
+    "the company score, explanation or portfolio screen",
+    "admin explainability pages",
+    "a shadow projection against real data",
+    "any cutover"
+  ],
+  "source_sha256": {
+    "supabase/migrations/20260914150000_isg_score_portfolio.sql": "d8983384fed517edf871231dc510965878108dc67176fb291f93aee17379b798",
+    "scripts/isg/score_portfolio_probe.mjs": "b35df487ca00a7045b169150cb867dd6c9a7b89eb5be1d1cbaea16c0e42c0821",
+    "scripts/isg/score_portfolio_guard.test.mjs": "2f0070777aa1f80ae003752322f86fb9abb7a431aa9f3d3c2dc56e643bcec3c1",
+    "contracts/isg/v1/score-portfolio.md": "2adbee13ac630311ca10c84c4ba6f2f30235c6989d411d8db4553ad2d19a8965",
+    "docs/isg/P17_SCORE_PORTFOLIO_2026-09-14.md": "1f8676337427ad8b3bd0a49187b6bb590ff75df37d2c9fc5487eab836b276200"
+  }
+}

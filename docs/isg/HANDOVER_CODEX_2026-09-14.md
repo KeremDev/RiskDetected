@@ -1,6 +1,8 @@
 # Devir notu — İSG geçişinde sunucu dilimlerini sürdürmek
 
-> **Güncel devam:** [P16 izleme ve admin çekirdeği](P16_OBSERVABILITY_ADMIN_2026-09-14.md): 966 sentetik PASS / 965 tekil, 32 upgrade PASS / 25 migration, 397 foundation PASS. `private_isg` 144 tablo, izleme rollout'u kapalı, ayrı repodaki operasyon paneli değiştirilmedi.
+> **Güncel devam:** [P17 skor ve portföy çekirdeği](P17_SCORE_PORTFOLIO_2026-09-14.md): 997 sentetik PASS / 996 tekil, 32 upgrade PASS / 26 migration, 408 foundation PASS. `private_isg` 154 tablo, skor rollout'u kapalı, ağırlıklar onaysız, oracle elle hesaplanmış.
+
+> **Önceki devam:** [P16 izleme ve admin çekirdeği](P16_OBSERVABILITY_ADMIN_2026-09-14.md): 966 sentetik PASS / 965 tekil, 32 upgrade PASS / 25 migration, 397 foundation PASS. `private_isg` 144 tablo, izleme rollout'u kapalı, ayrı repodaki operasyon paneli değiştirilmedi.
 
 > **Önceki devam:** [P15 davet ve geri kazanım çekirdeği](P15_CAMPAIGN_CORE_2026-09-14.md): 932 sentetik PASS / 931 tekil, 32 upgrade PASS / 24 migration, 386 foundation PASS. `private_isg` 131 tablo, kampanya rollout'u kapalı, hiçbir mesaj gönderilmedi, ödüller P14 defterinden geçiyor.
 
@@ -33,8 +35,9 @@ P05 (firma/işyeri/personel) daha önce kapanmıştı. 13–14 Eylül'de eklenen
 | P14 | Kanonik lifecycle, hediye/indirim ayrımı, quote/intent/settlement, mutabakat | `20260914090000` | [P14](P14_BILLING_LIFECYCLE_2026-09-14.md) |
 | P15 | Davet/winback, anti-abuse, qualification, bütçe, suppression | `20260914110000` | [P15](P15_CAMPAIGN_CORE_2026-09-14.md) |
 | P16 | Teknik olay zarfı, teşhis zinciri, MFA/scope'lu admin ve audit | `20260914130000` | [P16](P16_OBSERVABILITY_ADMIN_2026-09-14.md) |
+| P17 | Sürümlü skor politikası, açıklanabilir katkı, elle hesaplanmış oracle, portföy | `20260914150000` | [P17](P17_SCORE_PORTFOLIO_2026-09-14.md) |
 
-Toplam: `private_isg` şemasında **144 tablo**, hepsinde RLS açık, istemciye **sıfır** GRANT. Sentetik kabul koşusu **966/966 PASS** (965 tekil), tam legacy kopya upgrade **32/32 PASS** (25 migration), offline foundation **397 PASS**. Bu tablo yalnız sunucu dilimlerini sayar; araya giren P12 sertleştirme ve P13 sync/reminder API paketleri kendi dokümanlarındadır.
+Toplam: `private_isg` şemasında **154 tablo**, hepsinde RLS açık, istemciye **sıfır** GRANT. Sentetik kabul koşusu **997/997 PASS** (996 tekil), tam legacy kopya upgrade **32/32 PASS** (26 migration), offline foundation **408 PASS**. Bu tablo yalnız sunucu dilimlerini sayar; araya giren P12 sertleştirme ve P13 sync/reminder API paketleri kendi dokümanlarındadır.
 
 **Canlıya hiçbir şey uygulanmadı.** Bütün yeni `private_isg.rollout` satırları ve on iki modül anahtarı kapalı; mağaza, canlı DB, legacy kota otoritesi ve mevcut istemci sözleşmeleri değişmedi.
 
@@ -49,6 +52,7 @@ Toplam: `private_isg` şemasında **144 tablo**, hepsinde RLS açık, istemciye 
 7. **Legacy'ye yazılmaz.** `public.findings`, `public.analyses`, `public.reports` ve legacy kota helper'ları okunmaz/yazılmaz; yalnız referans taşınır.
 8. **Takvim aritmetiği.** Yıl 365 güne, ay 30 güne çevrilmez; `private_isg.next_due_on` ve `make_interval` kullanılır.
 9. **Bilinmeyen ≠ hayır.** Eksik kanıt `needs_review`/`review` üretir, sessizce "gerekli değil" olmaz.
+10. **Test oracle'ı üretim fonksiyonunun ikinci çağrısı olamaz.** Beklenen değer elle hesaplanır, sabit olarak yazılır ve `CHECK(hand_computed)` / `CHECK(NOT computed_by_production_function)` ile işaretlenir.
 
 ## 3. Yeni bir dilim nasıl eklenir? (sırayla)
 
@@ -106,7 +110,7 @@ deno test --allow-read=contracts/isg/v1/fixtures supabase/functions/_shared/isg/
 4. **P15'in ikinci dilimi:** qualification olaylarını gerçek P05/P06/P07 mutation'larından besleyen köprü, kampanya zamanlayıcısı, gerçek push/e-posta gönderimi ve ticari onaylar (K06–K10). Şu an olayları yalnız test yazıyor.
 5. **P14'ün ikinci dilimi:** gerçek Apple promotional offer imzası ve Google offer token/replacement provası (iki store spike), RevenueCat/webhook → `record_billing_evidence` adaptörü, onaylı plan/fiyat katalogu ve `access_authority` cutover'ı. Sunucu çekirdeği hazır, hiçbir üretici henüz kanıt yazmıyor.
 6. **P16'nın ikinci dilimi:** iOS/Android telemetri üreticisi ve ATT ekranı, ayrı repodaki operasyon paneli sayfaları ve Playwright kabulleri (K22 — panelin kendi AGENTS.md sınırları ve kullanıcı değişiklikleri korunarak ayrı görevde), domain mutation'larının teknik olay yazması, retention/silme kararı (K16).
-7. **P17 skor/portföy:** sürümlü skor politikası, açıklanabilir katkılar ve bağımsız oracle.
+7. **P17'nin ikinci dilimi:** ağırlık/tavan onayı (K15), P06–P10 üreticilerinin `score_subject_states` yazması, kritik uyarı üreticisi, firma/portföy ekranları ve gerçek veri üzerinde shadow projection.
 8. **P18/P19/P20:** native kabuk, bütünleşik prova, mağaza güncellemesi. Bunlar insan onayı ve gerçek cihaz kanıtı isteyen kapılar.
 
 Her fazın kendi dokümanında "Açık kalanlar" bölümü vardır; bir fazı kapatmadan önce oradaki maddeleri kontrol et. Hiçbir faz, kendi dokümanı "kapandı" demeden kapalı sayılmaz.

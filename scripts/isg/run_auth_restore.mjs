@@ -29,6 +29,7 @@ import { beginPersonalNotesProbe, personalNotesFiles } from './personal_notes_pr
 import { beginBillingLifecycleProbe, billingLifecycleFiles } from './billing_lifecycle_probe.mjs';
 import { beginCampaignCoreProbe, campaignCoreFiles } from './campaign_core_probe.mjs';
 import { beginObservabilityAdminProbe, observabilityAdminFiles } from './observability_admin_probe.mjs';
+import { beginScorePortfolioProbe, scorePortfolioFiles } from './score_portfolio_probe.mjs';
 import { beginNotificationDispatchProbe, notificationDispatchFiles } from './notification_dispatch_probe.mjs';
 import { beginNotificationRepositoryProbe, notificationRepositoryFiles } from './notification_repository_probe.mjs';
 import { beginNotificationDeviceProbe, notificationDeviceFiles } from './notification_device_probe.mjs';
@@ -332,6 +333,7 @@ try {
   let billingProbe;
   let campaignProbe;
   let observabilityProbe;
+  let scoreProbe;
   let notificationDispatchProbe;
   let notificationRepositoryProbe;
   let notebookAPIProbe;
@@ -388,6 +390,8 @@ try {
     campaignProbe=await beginCampaignCoreProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'observability-admin';
     observabilityProbe=await beginObservabilityAdminProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
+    stage = 'score-portfolio';
+    scoreProbe=await beginScorePortfolioProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'personnel-advisors';
     report.personnel_advisors=await probePersonnelAdvisors({synthetic:true,sql,guard,names,pass,onFindings:value=>{report.personnel_advisors=value;}});
   }
@@ -435,6 +439,7 @@ try {
   if (billingProbe) report.billing_lifecycle = billingProbe.afterLogout();
   if (campaignProbe) report.campaign_core = campaignProbe.afterLogout();
   if (observabilityProbe) report.observability_admin = observabilityProbe.afterLogout();
+  if (scoreProbe) report.score_portfolio = scoreProbe.afterLogout();
   if (notificationDispatchProbe) report.notification_dispatch = notificationDispatchProbe.afterLogout();
   if (notificationRepositoryProbe) report.notification_repository = notificationRepositoryProbe.afterLogout();
   if (notebookAPIProbe) report.notebook_api = notebookAPIProbe.afterLogout();
@@ -473,6 +478,7 @@ try {
     .concat(mode.synthetic ? billingLifecycleFiles : [])
     .concat(mode.synthetic ? campaignCoreFiles : [])
     .concat(mode.synthetic ? observabilityAdminFiles : [])
+    .concat(mode.synthetic ? scorePortfolioFiles : [])
     .concat(mode.synthetic ? notificationDispatchFiles : [])
     .concat(mode.synthetic ? notificationRepositoryFiles : [])
     .concat(mode.synthetic ? notificationDeviceFiles : [])
