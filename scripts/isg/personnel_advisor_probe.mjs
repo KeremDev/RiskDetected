@@ -49,7 +49,8 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'requirement_schedules','rule_reconciliations',
       'training_catalogs','training_catalog_versions','training_topic_groups','training_class_rules',
       'company_curriculum_versions','training_plans','training_sessions','training_enrolments',
-      'attendance_intervals','assessment_attempts','training_completions','external_credentials']);
+      'attendance_intervals','assessment_attempts','training_completions','external_credentials',
+      'risk_assessments','risk_assessment_versions','risk_source_links','revision_impacts','risk_file_variants']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([
@@ -70,6 +71,9 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'training_completions_completion_employee_idx','training_completions_completion_validity_idx',
       'external_credentials_credential_asset_idx',
       'training_catalog_versions_catalog_version_source_idx','training_catalog_versions_catalog_version_approver_idx',
+      'risk_assessments_risk_assessment_owner_idx','risk_assessment_versions_risk_version_state_idx',
+      'risk_assessment_versions_risk_version_asset_idx','risk_assessment_versions_risk_version_verifier_idx',
+      'risk_file_variants_risk_variant_asset_idx',
     ].map(key=>'unused_index_private_isg_'+key));
     pass('personnel_advisor_no_unreviewed_findings',relevant.every(f=>f.level==='INFO'&&f.metadata?.schema==='private_isg'&&
       ((f.name==='rls_enabled_no_policy'&&denyTables.has(f.metadata?.name))||(f.name==='unused_index'&&reviewedFKIndexes.has(f.cache_key)))));

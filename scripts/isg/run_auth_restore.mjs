@@ -19,6 +19,7 @@ import { beginDispatchQuotaProbe, dispatchQuotaFiles } from './dispatch_quota_pr
 import { beginFileCoreProbe, fileCoreFiles } from './file_core_probe.mjs';
 import { beginRuleCoreProbe, ruleCoreFiles } from './rule_core_probe.mjs';
 import { beginTrainingCoreProbe, trainingCoreFiles } from './training_core_probe.mjs';
+import { beginRiskCoreProbe, riskCoreFiles } from './risk_core_probe.mjs';
 import { probeP05Upgrade, p05UpgradeFiles } from './p05_upgrade_probe.mjs';
 import { probePasswordAuth } from './password_auth_probe.mjs';
 import { probeSignupRecovery } from './signup_recovery_probe.mjs';
@@ -308,6 +309,7 @@ try {
   let fileProbe;
   let ruleProbe;
   let trainingProbe;
+  let riskProbe;
   if (mode.sessionGuard) {
     stage = 'session-guard';
     sessionProbe = await beginSessionProbe({ sql, concurrentSql, token: refresh.body.access_token, secret, pass });
@@ -333,6 +335,8 @@ try {
     ruleProbe=await beginRuleCoreProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'training-core';
     trainingProbe=await beginTrainingCoreProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
+    stage = 'risk-core';
+    riskProbe=await beginRiskCoreProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'personnel-advisors';
     report.personnel_advisors=await probePersonnelAdvisors({synthetic:true,sql,guard,names,pass,onFindings:value=>{report.personnel_advisors=value;}});
   }
@@ -370,6 +374,7 @@ try {
   if (fileProbe) report.file_core = fileProbe.afterLogout();
   if (ruleProbe) report.rule_core = ruleProbe.afterLogout();
   if (trainingProbe) report.training_core = trainingProbe.afterLogout();
+  if (riskProbe) report.risk_core = riskProbe.afterLogout();
   if (mode.synthetic) {
     stage = 'password-auth-boundaries';
     report.password_auth = probePasswordAuth({synthetic:true, request, admin, pass});
@@ -395,6 +400,7 @@ try {
     .concat(mode.synthetic ? fileCoreFiles : [])
     .concat(mode.synthetic ? ruleCoreFiles : [])
     .concat(mode.synthetic ? trainingCoreFiles : [])
+    .concat(mode.synthetic ? riskCoreFiles : [])
     .concat(mode.p05Upgrade ? p05UpgradeFiles : [])
     .concat(mode.nativeE2E ? ['scripts/isg/native_e2e_bridge.mjs','scripts/isg/native_e2e_oracle.mjs','scripts/isg/run_native_android.mjs','tests/isg/native-ios/NativeHarness.swift','tests/isg/native-ios/NativeUITests.swift','android/isg-native-check/src/main/kotlin/com/riskdetectedan/isg/nativecheck/NativeActivity.kt','android/isg-native-check/src/androidTest/kotlin/com/riskdetectedan/isg/nativecheck/NativeFlowTest.kt'] : [])
     .map(path=>[path,digest(readFileSync(resolve(ROOT,path)))]));

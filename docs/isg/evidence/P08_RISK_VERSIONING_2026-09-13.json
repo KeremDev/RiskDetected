@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-13",
+  "phase": "P08",
+  "slice": "four revision kinds with their own date rules, explicit finding transfer, impact list, source drift, single-winner finalisation, dispatch version guard",
+  "phase_complete": false,
+  "production_deployed": false,
+  "rollout_enabled_in_migration": false,
+  "client_grant_added": false,
+  "legacy_analysis_written": false,
+  "document_export_implemented": false,
+  "score_contribution_connected": false,
+  "synthetic_auth_run": {
+    "run_id": "5e385e1b-e75f-4c90-b62e-3a795f7dd81d",
+    "report": "output/isg/runs/synthetic-auth-lPcS9R/REPORT.json",
+    "total_checks": 527,
+    "failures": [],
+    "new_checks": 38,
+    "cleanup": "PASS"
+  },
+  "new_checks": [
+    {
+      "id": "risk_core_migration_applied_with_closed_rollout",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_gate_blocks_the_domain_while_rollout_off",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_risk_tables_have_rls_and_no_client_grant",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_an_assessment_opens_empty_and_replays",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_foreign_workplace_has_no_assessment",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_future_assessment_date_is_refused",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_full_assessment_needs_its_real_date",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_revision_before_any_assessment_is_refused",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_stale_expected_version_conflicts",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_an_unknown_document_can_not_back_a_version",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_full_draft_opens_at_version_one",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_only_one_draft_at_a_time",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_finding_enters_only_by_explicit_selection",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_an_impact_list_belongs_to_a_scoped_revision",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_finalising_needs_a_named_verification",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_full_renewal_needs_an_explicit_period",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_full_renewal_runs_its_period_from_the_assessment_date",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_finalising_replays_without_a_second_effect",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_finalised_version_takes_no_more_sources",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_rescan_can_not_move_the_legal_date",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_rescan_inherits_the_original_date",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_better_scan_is_a_file_variant_not_a_renewal",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_rescan_can_not_ask_for_a_new_period",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_an_upload_day_never_becomes_the_legal_date",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_the_previous_final_is_superseded_but_unchanged",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_metadata_correction_needs_a_reason",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_metadata_correction_resets_no_period",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_partial_revision_needs_a_scope",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_scoped_revision_lists_what_it_touches",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_scoped_revision_does_not_reset_the_whole_workplace",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_full_renewal_can_use_a_published_rule_period",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_an_unpublished_rule_can_not_set_the_period",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_an_unchanged_source_raises_no_drift",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_drifting_source_only_suggests_a_review",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_drift_needs_a_linked_source",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_stale_queued_document_is_stopped",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_a_very_old_date_is_flagged_for_review",
+      "result": "PASS"
+    },
+    {
+      "id": "risk_core_kill_switch_stops_the_risk_domain",
+      "result": "PASS"
+    }
+  ],
+  "full_legacy_copy_upgrade": {
+    "run_id": "b74d9b98-ba52-4200-9595-42576f92269f",
+    "total_checks": 28,
+    "failures": [],
+    "cleanup": "PASS",
+    "migrations_replayed": 10,
+    "new_tables": 54,
+    "legacy_rows_unchanged": true,
+    "legacy_helper_definitions_unchanged": true
+  },
+  "source_sha256": {
+    "supabase/migrations/20260913190000_isg_risk_versioning.sql": "7d1ea9540068e84aa4c1b71a0ee499c95f4d053f2bc3fc0d5bb73d3484dbda5c",
+    "scripts/isg/risk_core_probe.mjs": "131597b05833888529b1d61f30329cc0fc58468d85d86589669baffa191a0c58",
+    "scripts/isg/risk_core_guard.test.mjs": "544b1e359d4746c626f3dd146d32f7cd03ba19716d219617db13f2bcf4cce3c6",
+    "contracts/isg/v1/risk-versioning.md": "e39525faefd1f4a58fff7d802de9b7beec19965d221da62744db899a49f47eb2"
+  },
+  "not_proven": [
+    "risk item or matrix content",
+    "PDF/XLSX export",
+    "score contribution",
+    "nonconformity link",
+    "client or native surface",
+    "production migration or rollout"
+  ]
+}

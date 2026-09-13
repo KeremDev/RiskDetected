@@ -17,6 +17,8 @@ P18 tasarım kaydı: `design/osgb-nova-reference.json`; expert-only üretilmiş 
 
 - [training-completion.md](training-completion.md): sürümlü eğitim kataloğu, işyerine özgü G4 curriculum sürümü, yoklama birleşimi, değerlendirme eşiği ve değişmez tamamlanma; tamamlanan plan P06 yükümlülüğünü kapatır. İçerik onaysız, rollout kapalı.
 
+- [risk-versioning.md](risk-versioning.md): dört revizyon türü ve tarih etkileri, açık uzman seçimiyle bulgu aktarımı, kaynak drift işareti, tek kazananlı finalize ve güncel sürüm kanıtı olmadan gönderim yasağı. Legacy analiz yazılmaz, rollout kapalı.
+
 - safety-policy.json: mevcut teknik kimlikler, kaynak hash'i ve bağımsız local test hedefleri. Staging allowlist şu an boş; herhangi bir staging/prod/store isteği kapalıdır.
 - local-test-environment.example.json: yalnız synthetic/mock/sink ortam bildirimi. Dosyanın doğrulanması çalışan veya güvenli bir backend bulunduğu anlamına gelmez.
 - scripts/isg/verify_environment.mjs: manifest'i fail-closed doğrular. DB runner, gerçek Docker inspection'ını da validateContainerInspection ile doğrulamak zorundadır. Normal bridge veya mevcut local stack izolasyon sayılmaz.

@@ -10,7 +10,8 @@ export const p05UpgradeFiles = ['scripts/isg/p05_upgrade_probe.mjs',
   'supabase/migrations/20260913113000_isg_quota_reservations.sql',
   'supabase/migrations/20260913130000_isg_file_core.sql',
   'supabase/migrations/20260913150000_isg_rule_core.sql',
-  'supabase/migrations/20260913170000_isg_training_core.sql'];
+  'supabase/migrations/20260913170000_isg_training_core.sql',
+  'supabase/migrations/20260913190000_isg_risk_versioning.sql'];
 
 /** Called only on the runner's freshly cloned, network=none, identity-guarded target. */
 export function probeP05Upgrade({sql,pass,isolatedCopy}) {
@@ -29,9 +30,9 @@ export function probeP05Upgrade({sql,pass,isolatedCopy}) {
   pass('p05_full_copy_legacy_rows_unchanged', fingerprint() === before);
   pass('p05_full_copy_legacy_helpers_unchanged', helperSnapshot() === helpers);
   pass('p05_full_copy_rollout_closed', sql("SELECT NOT read_enabled AND NOT write_enabled FROM private_isg.rollout WHERE feature='personnel';") === 't');
-  pass('p05_full_copy_dispatch_and_quota_rollout_closed', sql("SELECT count(*)=5 AND bool_and(NOT read_enabled AND NOT write_enabled) FROM private_isg.rollout WHERE feature IN ('event_dispatch','quota_ledger','file_core','rule_engine','training');") === 't');
+  pass('p05_full_copy_dispatch_and_quota_rollout_closed', sql("SELECT count(*)=6 AND bool_and(NOT read_enabled AND NOT write_enabled) FROM private_isg.rollout WHERE feature IN ('event_dispatch','quota_ledger','file_core','rule_engine','training','risk');") === 't');
   // Nothing consumes or reserves yet: the new ledgers replay empty on real legacy data.
-  pass('p05_full_copy_ledgers_start_empty', sql("SELECT (SELECT count(*) FROM private_isg.consumer_registry)+(SELECT count(*) FROM private_isg.event_deliveries)+(SELECT count(*) FROM private_isg.quota_reservations)+(SELECT count(*) FROM private_isg.legacy_entitlement_floors)+(SELECT count(*) FROM private_isg.upload_intents)+(SELECT count(*) FROM private_isg.file_assets)+(SELECT count(*) FROM private_isg.legal_sources)+(SELECT count(*) FROM private_isg.rule_versions)+(SELECT count(*) FROM private_isg.training_catalogs)+(SELECT count(*) FROM private_isg.training_completions);") === '0');
+  pass('p05_full_copy_ledgers_start_empty', sql("SELECT (SELECT count(*) FROM private_isg.consumer_registry)+(SELECT count(*) FROM private_isg.event_deliveries)+(SELECT count(*) FROM private_isg.quota_reservations)+(SELECT count(*) FROM private_isg.legacy_entitlement_floors)+(SELECT count(*) FROM private_isg.upload_intents)+(SELECT count(*) FROM private_isg.file_assets)+(SELECT count(*) FROM private_isg.legal_sources)+(SELECT count(*) FROM private_isg.rule_versions)+(SELECT count(*) FROM private_isg.training_catalogs)+(SELECT count(*) FROM private_isg.training_completions)+(SELECT count(*) FROM private_isg.risk_assessments);") === '0');
   pass('p05_full_copy_one_default_per_company', sql("SELECT NOT EXISTS(SELECT c.id FROM public.companies c LEFT JOIN private_isg.workplaces w ON w.company_id=c.id AND w.legacy_company_id=c.id GROUP BY c.id HAVING count(w.id)<>1);") === 't');
   const state = () => sql("SELECT md5(string_agg(to_jsonb(w)::text,'' ORDER BY id)) FROM private_isg.workplaces w;SELECT count(*) FROM private_isg.workplace_initializations;");
   const first = state();
@@ -39,7 +40,7 @@ export function probeP05Upgrade({sql,pass,isolatedCopy}) {
   sql('SELECT private_isg.ensure_default(id) IS NOT NULL FROM public.companies;');
   pass('p05_full_copy_backfill_repeat_no_change', state() === first);
   pass('p05_full_copy_legacy_rows_unchanged_after_retry', fingerprint() === before);
-  pass('p05_full_copy_new_schema_rls', sql("SELECT count(*)=49 AND bool_and(rowsecurity) FROM pg_tables WHERE schemaname='private_isg';") === 't');
+  pass('p05_full_copy_new_schema_rls', sql("SELECT count(*)=54 AND bool_and(rowsecurity) FROM pg_tables WHERE schemaname='private_isg';") === 't');
   pass('p05_full_copy_client_table_grants_closed', sql("SELECT count(*) FROM information_schema.role_table_grants WHERE table_schema='private_isg' AND grantee IN ('PUBLIC','anon','authenticated','service_role');") === '0');
   return {full_legacy_schema_upgrade:true,legacy_row_fingerprint:before,original_helper_fingerprint:helpers,default_backfill_repeated:2,production_changed:false,storage_bytes_tested:false};
 }

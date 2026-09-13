@@ -39,7 +39,7 @@ Yüzde vermiyoruz: bir altyapı testi ile son kullanıcı kabul testi aynı şey
 | **P05 Firma/işyeri/personel** | **Yerel geliştirme/kabul tamamlandı; canlı kapalı** | D05 migration/API/backfill; iki native yönetim bağlantısı; sade personel, sekiz rehber formu, tarihçe, arşiv/geri açma; gerçek SDK→DB kabulü, restart/foreground ve hiyerarşi/sayfalama | P05'e ait kapanış işleri tamamlandı. REV21 tüketicileri P06/P07, REV23 tüketicileri P07/P10, X13 import P11; fiziksel cihaz/gateway ve imzalı update P19/P20 kapsamında bekler |
 | P06 Kural/süre/task | Kısmi; çekirdek dilim yerel olarak tamamlandı | **13 Eylül:** mevzuat kaynağı doğrulaması, sürümlü kural + insan onaylı yayın kapısı, sınırlı uygulanabilirlik dili, jurisdiction kapısı, takvim aritmetiği, dönem başına tek yükümlülük, schedule sürümleme ve günlük mutabakat | Gerçek mevzuat içeriği ve 2026 doğrulaması, görev/bildirim tüketicileri, domain bağlantıları (P07–P09), istemci yüzeyi ve canlı rollout |
 | P07 Eğitim | Kısmi; çekirdek dilim yerel olarak tamamlandı | **13 Eylül:** sürümlü katalog + insan onaylı yayın, işyerine özgü G4 curriculum sürümü, plan/oturum/kayıt, yoklama birleşimi, değerlendirme eşiği/deneme sınırı, değişmez tamamlanma, dış sertifika ayrımı ve P06 yükümlülüğünün kapatılması | Resmî 2026 içeriği ve onayı, iki format belge/sertifika üretimi, skor katkısı, bildirim, eğitmen/imza ve native akışlar |
-| P08 Risk sürümleme | Bekliyor | Mevcut legacy analiz sistemi korunuyor | Dört revision türü, açık AI bulgu aktarımı, impact/review ve tarihli schedule; eski analiz, yeni risk motoru değildir |
+| P08 Risk sürümleme | Kısmi; sürümleme çekirdeği yerel olarak tamamlandı | **13 Eylül:** dört revizyon türü ve tarih etkileri, gelecek/çok eski tarih kuralları, açık bulgu aktarımı, etki listesi, kaynak drift işareti, tek kazananlı finalize ve gönderim sürüm kapısı | Risk maddesi/matris içeriği, belge üretimi, skor katkısı, uygunsuzluk bağlantısı, G4 review tetikleyicisi ve native yüzey |
 | P09 Uygunsuzluk/checklist | Bekliyor | NOVA ekran/menü referansı ve mevcut eski bulgu davranışı korunuyor | Yeni state/action/verification, checklist template/run, finding adapter ve gerçek saha akışları |
 | P10 Diğer İSG modülleri | Bekliyor | Modül sınırları ve menü hedefleri planlandı | Plan §7.5'teki her modülün model/API/native/task/belge/izin dilimi ayrı uygulanacak |
 | P11 Import/evrak merkezi | Bekliyor | Ortak belge/import sözleşmesi planda | Güvenli parser, preview/commit/resume, domain şablonları, PDF/XLSX, arama/filtre ve legacy rapor adaptörü |
@@ -248,5 +248,6 @@ Her küçük düzenleme sonrasında tüm testleri çalıştırmak yerine uygulam
 - [P04 dosya kabul ve karantina dilimi](P04_FILE_CORE_2026-09-13.md)
 - [P06 kural ve yükümlülük çekirdeği](P06_RULE_CORE_2026-09-13.md)
 - [P07 eğitim çekirdeği](P07_TRAINING_CORE_2026-09-13.md)
+- [P08 risk sürümleme çekirdeği](P08_RISK_VERSIONING_2026-09-13.md)
 
 Kaynak kabul CSV'si başlangıç uygulama/koşum durumlarını içerir; henüz tüm yeni runner sonuçlarıyla güncellenmiş bir canlı coverage tablosu değildir. Güncel tamamlandı/bekliyor değerlendirmesi bu belgede ve bağlantılı kanıtlarda katmanlarıyla belirtilmiştir.
