@@ -376,7 +376,7 @@ internal fun NovaExpertShellDemo() {
 
 /** Exact OSGB source vectors, converted without changing path coordinates or stroke widths. */
 @Composable
-internal fun NovaGlyph(imageVector: ImageVector, contentDescription: String?, modifier: Modifier = Modifier, tint: Color = NovaColorToken.text.color()) {
+fun NovaGlyph(imageVector: ImageVector, contentDescription: String?, modifier: Modifier = Modifier, tint: Color = NovaColorToken.text.color()) {
     val source = when (imageVector.name.substringAfterLast('.')) {
         "Home" -> R.drawable.nova_home
         "List" -> R.drawable.nova_list

@@ -26,24 +26,27 @@ import kotlinx.coroutines.ensureActive
 import java.util.UUID
 
 @Composable
-fun NovaPersonnelDestination(scope: NovaPersonnelScope, companyName: String, client: NovaPersonnelClient, onBack: () -> Unit) {
-    key(scope) { PersonnelContent(scope, companyName, client, onBack) }
+fun NovaPersonnelDestination(scope: NovaPersonnelScope, companyName: String, client: NovaPersonnelClient, onBack: () -> Unit, directory: NovaDirectoryClient? = null, canWrite: Boolean = true) {
+    key(scope, canWrite) { PersonnelContent(scope, companyName, client, onBack, directory, canWrite) }
 }
 private sealed interface PersonnelRoute {
     data object List: PersonnelRoute
     data object Create: PersonnelRoute
     data class Detail(val id: UUID): PersonnelRoute
     data class Edit(val row: NovaEmployeeRow): PersonnelRoute
+    data class Advanced(val id: UUID, val kind: NovaDirectoryKind): PersonnelRoute
 }
 @Composable
-private fun PersonnelContent(scope: NovaPersonnelScope, companyName: String, client: NovaPersonnelClient, onBack: () -> Unit) {
+private fun PersonnelContent(scope: NovaPersonnelScope, companyName: String, client: NovaPersonnelClient, onBack: () -> Unit, directory: NovaDirectoryClient?, canWrite: Boolean) {
     var route by remember { mutableStateOf<PersonnelRoute>(PersonnelRoute.List) }
     var refresh by remember { mutableStateOf(UUID.randomUUID()) }
     NovaPageSurface {
         when(val current = route) {
-            PersonnelRoute.List -> EmployeeList(scope, companyName, client, refresh, onBack, { route = PersonnelRoute.Create }, { route = PersonnelRoute.Detail(it) })
+            PersonnelRoute.List -> EmployeeList(scope, companyName, client, refresh, onBack, { route = PersonnelRoute.Create }, { route = PersonnelRoute.Detail(it) }, canWrite)
             PersonnelRoute.Create -> EmployeeEditor(scope, companyName, client, null, { route = PersonnelRoute.List }) { refresh = UUID.randomUUID(); route = PersonnelRoute.Detail(it.id) }
-            is PersonnelRoute.Detail -> EmployeeDetail(scope, current.id, client, { route = PersonnelRoute.List }) { route = PersonnelRoute.Edit(it) }
+            is PersonnelRoute.Detail -> EmployeeDetail(scope, current.id, client, { route = PersonnelRoute.List }, { route = PersonnelRoute.Edit(it) }, canWrite,
+                if (directory == null) null else { kind -> route = PersonnelRoute.Advanced(current.id, kind) })
+            is PersonnelRoute.Advanced -> directory?.let { NovaDirectoryDestination(scope, current.kind, current.id, it, canWrite = canWrite) { route = PersonnelRoute.Detail(current.id) } }
             is PersonnelRoute.Edit -> EmployeeEditor(scope, companyName, client, current.row, { route = PersonnelRoute.Detail(current.row.id) }) {
                 refresh = UUID.randomUUID(); route = if (it.isArchived) PersonnelRoute.List else PersonnelRoute.Detail(it.id)
             }
@@ -59,7 +62,7 @@ private fun PersonnelHeading(title: String, subtitle: String = "", enabled: Bool
 }
 @Composable
 private fun EmployeeList(scope: NovaPersonnelScope, companyName: String, client: NovaPersonnelClient, refresh: UUID,
-    onBack: () -> Unit, onAdd: () -> Unit, onSelect: (UUID) -> Unit) {
+    onBack: () -> Unit, onAdd: () -> Unit, onSelect: (UUID) -> Unit, canWrite: Boolean) {
     var rows by remember { mutableStateOf(emptyList<NovaEmployeeRow>()) }
     var query by remember { mutableStateOf("") }
     var archived by remember { mutableStateOf(false) }
@@ -88,7 +91,7 @@ private fun EmployeeList(scope: NovaPersonnelScope, companyName: String, client:
     }
     LaunchedEffect(reconciling) {
         val intent = pending
-        if (!reconciling || intent == null) return@LaunchedEffect
+        if (!canWrite || !reconciling || intent == null) return@LaunchedEffect
         try {
             val result = client.save(intent); currentCoroutineContext().ensureActive()
             check(result.ownerID == scope.ownerID && result.companyID == scope.companyID && result.operationID == intent.operationID && (intent.employeeID == null || intent.employeeID == result.id))
@@ -110,10 +113,11 @@ private fun EmployeeList(scope: NovaPersonnelScope, companyName: String, client:
                 Row { NovaGlyph(Icons.Outlined.Refresh, null); NovaText("Bekleyen personel işlemi", style = NovaTypeToken.cardTitle) }
                 NovaText("Önceki işlemin sonucu henüz kesinleşmedi. Aynı işlem anahtarıyla kontrol ederek devam edin.")
                 NovaText(saved.name.ifEmpty { "Arşivleme işlemi" }, style = NovaTypeToken.metaQuiet)
-                PersonnelAction("Bekleyen işlemi tamamla", Icons.Outlined.Refresh, "personnel.recover", enabled = !reconciling, onClick = { reconciling = true })
+                PersonnelAction("Bekleyen işlemi tamamla", Icons.Outlined.Refresh, "personnel.recover", enabled = canWrite && !reconciling, onClick = { reconciling = true })
             }
         } }
-        item { PersonnelAction("Personel Ekle", Icons.Outlined.Add, "personnel.add", enabled = pendingChecked && pending == null && !reconciling, onClick = onAdd) }
+        if (!canWrite) item { NovaText("Salt okunur · yeni kayıt ve düzenleme kullanılamıyor.", style = NovaTypeToken.metaQuiet) }
+        item { PersonnelAction("Personel Ekle", Icons.Outlined.Add, "personnel.add", enabled = canWrite && pendingChecked && pending == null && !reconciling, onClick = onAdd) }
         if (failed) item { NovaCard(Modifier.fillMaxWidth(), padding = 16) { NovaText("Personeller yüklenemedi. Lütfen tekrar deneyin."); PersonnelAction("Tekrar dene", Icons.Outlined.Refresh, "personnel.reload", onClick = { retry = UUID.randomUUID() }) } }
         if (!loading && !failed && rows.isEmpty()) item { NovaCard(Modifier.fillMaxWidth(), padding = 18) { NovaText("Henüz personel yok.") } }
         items(rows, key = { it.id }) { row ->
@@ -131,7 +135,7 @@ private fun EmployeeList(scope: NovaPersonnelScope, companyName: String, client:
     }
 }
 @Composable
-private fun EmployeeDetail(scope: NovaPersonnelScope, id: UUID, client: NovaPersonnelClient, onBack: () -> Unit, onEdit: (NovaEmployeeRow) -> Unit) {
+private fun EmployeeDetail(scope: NovaPersonnelScope, id: UUID, client: NovaPersonnelClient, onBack: () -> Unit, onEdit: (NovaEmployeeRow) -> Unit, canWrite: Boolean, onDirectory: ((NovaDirectoryKind) -> Unit)?) {
     var row by remember(id) { mutableStateOf<NovaEmployeeRow?>(null) }
     var failed by remember { mutableStateOf(false) }
     var refresh by remember { mutableStateOf(UUID.randomUUID()) }
@@ -152,7 +156,11 @@ private fun EmployeeDetail(scope: NovaPersonnelScope, id: UUID, client: NovaPers
                 Row { NovaGlyph(Icons.Outlined.Business, null); Spacer(Modifier.width(8.dp)); NovaText(value.departmentName ?: "Departman seçilmedi") }
                 NovaText(if (value.isArchived) "Arşivde" else "Aktif", style = NovaTypeToken.metaQuiet)
             }
-            if (!value.isArchived) PersonnelAction("Düzenle", Icons.Outlined.Edit, "personnel.edit", onClick = { onEdit(value) })
+            if (canWrite && !value.isArchived) PersonnelAction("Düzenle", Icons.Outlined.Edit, "personnel.edit", onClick = { onEdit(value) })
+            onDirectory?.let { open ->
+                PersonnelAction("Görevlendirme geçmişi", Icons.Outlined.History, "personnel.assignments", onClick = { open(NovaDirectoryKind.assignments) })
+                PersonnelAction("İşveren ilişkisi", Icons.Outlined.Business, "personnel.employers", onClick = { open(NovaDirectoryKind.employers) })
+            }
         } ?: if (failed) { NovaText("Personel yüklenemedi."); PersonnelAction("Tekrar dene", Icons.Outlined.Refresh, "personnel.reload", onClick = { refresh = UUID.randomUUID() }) } else CircularProgressIndicator()
     }
 }

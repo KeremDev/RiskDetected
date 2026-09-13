@@ -7,6 +7,7 @@ struct NovaDirectoryDestination: View {
     var parent: UUID? = nil
     let client: NovaDirectoryClient
     var onBack: (() -> Void)? = nil
+    var canWrite = true
     @Environment(\.dismiss) private var dismiss
     @State private var rows: [NovaDirectoryRow] = []
     @State private var next: UUID?
@@ -23,24 +24,25 @@ struct NovaDirectoryDestination: View {
     private struct Key: Equatable { let scope: NovaPersonnelScope; let kind: NovaDirectoryKind; let parent: UUID?; let page: UUID?; let archived: Bool; let refresh: UUID }
     var body: some View {
         NovaPageSurface {
-            if let editor {
+            if let editor, canWrite {
                 NovaDirectoryEditor(scope: scope, kind: kind, parent: parent, parentVersion: parentVersion, original: editor.row, history: rows, client: client,
                     onBack: { self.editor = nil }, onSaved: { self.editor = nil; page = nil; refresh = UUID() }).id(editor.id)
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 14) {
-                        HStack { Button { if let onBack { onBack() } else { dismiss() } } label: { NovaIcon(symbol: "chevron.left", size: 24).frame(width: 44, height: 44) }; NovaText(text: kind.title, style: .screenTitle) }
+                        HStack { Button { if let onBack { onBack() } else { dismiss() } } label: { NovaIcon(symbol: "chevron.left", size: 24).frame(width: 44, height: 44) }.accessibilityLabel("Geri").accessibilityIdentifier("directory.back"); NovaText(text: kind.title, style: .screenTitle) }
                         if kind.isCatalog { Toggle("Arşivdekileri göster", isOn: $archived).onChange(of: archived) { _ in page = nil } }
                         if let pending {
                             NovaCard(padding: 18) {
                                 VStack(alignment: .leading, spacing: 10) {
                                     Label("Bekleyen işlem · \(pending.kind.title)", systemImage: "arrow.clockwise")
                                     NovaText(text: "Önceki işlemi doğrulamadan yeni kayıt göndermeyin.")
-                                    NovaButton(label: "Bekleyen işlemi tamamla", symbol: "arrow.clockwise", isLoading: recovering) { recovering = true }
+                                    NovaButton(label: "Bekleyen işlemi tamamla", symbol: "arrow.clockwise", isEnabled: canWrite, isLoading: recovering) { recovering = true }
                                 }
                             }
                         }
-                        NovaButton(label: kind == .employers ? "İşveren ilişkisini düzenle" : "Yeni kayıt", symbol: "plus", isEnabled: !loading && pending == nil && error == nil) { editor = Editor(row: kind == .employers ? rows.first : nil) }
+                        if !canWrite { NovaText(text: "Salt okunur · kayıt geçmişiniz korunuyor.", style: .metaQuiet) }
+                        NovaButton(label: kind == .employers ? "İşveren ilişkisini düzenle" : "Yeni kayıt", symbol: "plus", isEnabled: canWrite && !loading && pending == nil && error == nil) { editor = Editor(row: kind == .employers ? rows.first : nil) }
                         if let error { NovaCard(padding: 16) { VStack(alignment: .leading) { NovaText(text: error); NovaButton(label: "Tekrar yükle", symbol: "arrow.clockwise", variant: .surface) { refresh = UUID() } } } }
                         ForEach(rows) { row in
                             NovaCard(padding: 18) {
@@ -49,12 +51,12 @@ struct NovaDirectoryDestination: View {
                                     if let code = row.fields["code"]?.text { NovaText(text: code, style: .metaQuiet) }
                                     if let start = row.fields["starts_on"]?.text { NovaText(text: "\(start) → \(row.fields["ends_before"]?.text ?? "Devam ediyor")", style: .metaQuiet) }
                                     if let job = row.fields["department_name_snapshot"]?.text { NovaText(text: job, style: .metaQuiet) }
-                                    if kind.isCatalog || kind == .engagements { NovaButton(label: "Düzenle", symbol: "pencil", variant: .surface, isEnabled: pending == nil) { editor = Editor(row: row) } }
+                                    if canWrite && (kind.isCatalog || kind == .engagements) { NovaButton(label: "Düzenle", symbol: "pencil", variant: .surface, isEnabled: pending == nil) { editor = Editor(row: row) } }
                                     if kind == .workplaces {
-                                        NavigationLink { NovaDirectoryDestination(scope: scope, kind: .contexts, parent: row.id, client: client) } label: { Label("Tarihli bağlam", systemImage: "clock.arrow.circlepath") }
+                                        NavigationLink { NovaDirectoryDestination(scope: scope, kind: .contexts, parent: row.id, client: client, canWrite: canWrite) } label: { Label("Tarihli bağlam", systemImage: "clock.arrow.circlepath") }
                                     }
                                     if kind == .contractors {
-                                        NavigationLink { NovaDirectoryDestination(scope: scope, kind: .engagements, parent: row.id, client: client) } label: { Label("Çalışılan işyerleri", systemImage: "building.2") }
+                                        NavigationLink { NovaDirectoryDestination(scope: scope, kind: .engagements, parent: row.id, client: client, canWrite: canWrite) } label: { Label("Çalışılan işyerleri", systemImage: "building.2") }
                                     }
                                 }
                             }
@@ -74,7 +76,7 @@ struct NovaDirectoryDestination: View {
                     } catch { if !Task.isCancelled { loading = false; self.error = "Kayıtlar yüklenemedi. Erişiminizi ve bağlantınızı kontrol edin." } }
                 }
                 .task(id: recovering) {
-                    guard recovering, let pending else { return }
+                    guard canWrite, recovering, let pending else { return }
                     do { _ = try await client.save(pending); try Task.checkCancellation(); self.pending = nil; recovering = false; refresh = UUID() }
                     catch { if !Task.isCancelled { recovering = false; self.error = "İşlem henüz doğrulanamadı."; refresh = UUID() } }
                 }

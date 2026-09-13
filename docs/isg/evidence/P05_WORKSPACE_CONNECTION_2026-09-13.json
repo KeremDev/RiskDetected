@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-13",
+  "base_commit": "e4e8a4ee",
+  "status": "workspace_package_verified_phase_open",
+  "production_deployed": false,
+  "management_entry_connected": true,
+  "whole_app_root_connected": false,
+  "full_legacy_restore": false,
+  "device_keychain_keystore_tested": false,
+  "mobile_ui_to_db_e2e": false,
+  "auth_database_http": {
+    "run_id": "a18aa274-e60d-4c7f-b665-354da82ebd04",
+    "report": "output/isg/runs/synthetic-auth-EN5i6k/REPORT.json",
+    "checks": 291,
+    "unique_check_ids": 290,
+    "workspace_checks": 16,
+    "cleanup": "PASS",
+    "source_sha256": {
+      "scripts/isg/run_auth_restore.mjs": "39aa228ac58870c6974727c4c67e1010141d4d28a7b5bd7619c9a9a3fefd1da5",
+      "scripts/isg/password_auth_probe.mjs": "a019d47f0bddd2d4f6b6b179e62503d0fc17aadd90f735263bad4ea86ad5d7cc",
+      "scripts/isg/signup_recovery_probe.mjs": "bbcd21630df79e5fc2095dc354e90d7b5b0e410d3f3b1caf270e877c53099c1d",
+      "scripts/isg/auth_mail_sink.cjs": "07e7e5b6e34cbe08c664b1948b9c6f99b1ebe3f4735d79bb2dbb60c70c6cc275",
+      "scripts/isg/auth_session_probe.mjs": "1c858ffda4550d4b019c08192dfc67c4a4dafbf691ab973caf1968aca37faebe",
+      "scripts/isg/auth_mutation_probe.mjs": "ac64fae84161e4af3f6a761b187ff09df2916cef106bf32dcddb8ee17b9aece9",
+      "scripts/isg/sql/auth_mutation_fixture.sql": "0ed052d6edb148743bfaa6014ac030748a11acf1b41db65ebfad5be399f6d03c",
+      "scripts/isg/sql/transaction_fixture.sql": "87eafb27e40d6db096a6e10837655a3f7e823e75e0aaaaed4b978e2ae8f52b18",
+      "scripts/isg/restore_mode.mjs": "0cd2c5cdd3d2ee07e57ce4d1998e7cba63428e4522306b8f210ec381b79ce700",
+      "scripts/isg/sql/auth_session_fixture.sql": "bc5deff6efae02be4c0afe88c07101820c338861676f39879e96a136c3ed751d",
+      "scripts/isg/auth_restore_guard.mjs": "8d1bfa75f4036bae891fc827c9f104244628a0973151435622bcf993a61d7845",
+      "scripts/isg/sql/workplace_fixture.sql": "81bb64bcbef8690582a6c70086dafc3194e47dfce63cb1025bb0ef43395236f7",
+      "scripts/isg/sql/personnel_fixture.sql": "b244c04e7c6b113eb5a57fb0f16b5071f517350e809fa0c3da12f90ebc93c9eb",
+      "scripts/isg/sql/personnel_mutation_fixture.sql": "2883d334e4ece4428c1499cedce5e14ac3f08a05fecf4982fb12d1769fc04d21",
+      "scripts/isg/sql/employee_intake_fixture.sql": "7b505578674a737f6c756c80c9515c3ea5e4a40e0965743d6c79a9f3c7b7b453",
+      "scripts/isg/sql/employee_directory_fixture.sql": "093325cfafccc3b8e5e79e2c0543199e536b02dc01aa79b95b41f434fba2e1e8",
+      "scripts/isg/sql/auth_personnel_fixture.sql": "c26b4c51b8b3a9b681c6a6808a4d7ecb801883e5a4e52e5c0e146aa531d135de",
+      "scripts/isg/auth_personnel_probe.mjs": "05e584e85e5e453ab79564bbc0d77245dc63d1fed2e7a4bc1518e7009bbbb9a0",
+      "supabase/functions/_shared/personnel/directory-request.ts": "d24bf622958c0a5d254fa344d95ca11e41a7c0936862ea7ff03d23b3f7c9cb17",
+      "supabase/functions/_shared/personnel/employee-create.ts": "3f50549d7e4fe4319ee286359a1169e77308828fecfc2913215bb98e07ce5635",
+      "supabase/functions/_shared/isg/mutation-context.ts": "7e74a453c320be3fe3f61ae7abc084ccea36e17f3c8b3d480823ca67cdfa7e90",
+      "supabase/migrations/20260913074153_isg_personnel_owner_rpc.sql": "a04da9ebbe6e184776dda705e7110a28e8bbe676b4f57f53a9f5a704816729c7",
+      "supabase/migrations/20260520154818_add_companies.sql": "c7ce21b0c52833812ce1f6be895f2f95b4a149c31794b387b7e7e6dc793a080d",
+      "supabase/migrations/20260513101505_free_plus_pro_subscription_system.sql": "863be44ce77558396c70def1dbbcf6de159608f9894dd18886f39d27aa779c8a",
+      "supabase/migrations/20260513223911_fix_subscription_quota_review_findings.sql": "234b01e049eec7f4b3828549162be6a81843e7073f16db5c69561e63f14d59e1",
+      "scripts/isg/personnel_migration_probe.mjs": "d26f8791871978c5e2a5a2995f07cc7cf09e468799d6fc6b531b89716a45221c",
+      "scripts/isg/personnel_http_probe.mjs": "62a4faa4c0af6fe1200c1c32d497cb5561730d08917d88b3a7491b4dee84df6b",
+      "scripts/isg/personnel_advisor_probe.mjs": "7408268de530bc2a16bbe7fb3471d9320b0cfb53c555dff6944373069874333b",
+      "supabase/functions/_shared/personnel/rpc-request.ts": "e86d9015efc5a49c4e1208bdcca2a54122740bf8ec2eb5f8fa24917db59785b9",
+      "supabase/migrations/20260913081536_isg_workplace_context_assignments.sql": "69b44f626206dc5f5e2be147f4106f17016e030a86f2bd86e08e76dc043768a0",
+      "scripts/isg/directory_migration_probe.mjs": "2f23ce7e1ecfbead520406900cabc25383ab963d46fd0830aaaa6eabf8f74ad7",
+      "supabase/migrations/20260913084736_isg_workspace_availability.sql": "35c85511a890f0ec34570d29f17c017f7668c5c493c85e58798c07f2f1a5b68f",
+      "scripts/isg/workspace_availability_probe.mjs": "b1db8451a25be6ff8108b84c1fdeae27b375cff7fd6ae09b7aeec33806df034a"
+    },
+    "advisor_relevant_count": 30
+  },
+  "android": {
+    "design": 364,
+    "data": 615,
+    "profile": 11,
+    "failed": 0,
+    "skipped": 0,
+    "apk": "PASS",
+    "log": "/tmp/isg-workspace-android.log"
+  },
+  "swift_capability": {
+    "checks": 14,
+    "status": "PASS"
+  },
+  "ios": {
+    "main_build": "PASS",
+    "build_log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-09-13T09-02-21-131Z_pid70458_2aefdeda.log",
+    "hosted_ui": {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "xcresult": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-13T09-05-32-784Z_pid70458_104ee697.xcresult",
+      "transport": "synthetic_in_memory_not_sdk"
+    }
+  },
+  "node": {
+    "passed": 205,
+    "failed": 0
+  },
+  "foundation": {
+    "passed": 162,
+    "failed": 0
+  },
+  "identity_source_assertions": "PASS",
+  "native_source_sha256": {
+    "App/Services/Company/NovaWorkspaceController.swift": "10a7c0fbea72796ff30616102f61175af8eac5cc34aee9935e55bfd18b228f4e",
+    "App/Views/Components/NovaCompanyManagementGate.swift": "d33aacf49b9b4265d8c247de593e241bbf439267a6f5e1625a8651bb48b33f83",
+    "App/DesignSystem/ISG/NovaWorkspaceCapability.swift": "28b616f6ba6269c0b5683538afd3f44e86de98b2149865f0a9187a6f65190f45",
+    "App/DesignSystem/ISG/NovaPersonnelScreens.swift": "125a300e143fa364b6b656d926537c99c5c1bb1d07d6d7d8b358892073f82dda",
+    "App/DesignSystem/ISG/NovaDirectoryScreens.swift": "91472e658e37196229324b11c8a74b5a83a846c389f5f96f57d7e7ed803fe519",
+    "android/feature/profile/src/main/kotlin/com/riskdetectedan/feature/profile/NovaWorkspaceViewModel.kt": "81ff7c678c5a32328e88b7aadb2ef359ac699c03f8d4aa1e329344685e1657cc",
+    "android/feature/profile/src/main/kotlin/com/riskdetectedan/feature/profile/NovaCompanyManagementGate.kt": "85662c857d6617900441b98d051cda509f434db88a712fa6382a06b2c26c0338",
+    "android/core/data/src/main/kotlin/com/riskdetectedan/core/data/company/PersonnelRepository.kt": "d3ff3544f417b258f1e51f194c7319146fb1f224e921bbd9cad54c6a51d05153",
+    "android/core/data/src/main/kotlin/com/riskdetectedan/core/data/company/PersonnelWorkspaceCapability.kt": "c998b94c5cdfbd6df62ec4f0ca6899d4d26cf0822f51fa8cb45207d4a2cabf76"
+  }
+}

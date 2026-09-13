@@ -52,7 +52,7 @@ struct ShellHarnessRoot: View {
                 if args.contains("--personnel"), destination == .home, let identity = sessionHost.identity {
                     NovaPersonnelDestination(scope: .init(ownerID: identity.userID, sessionID: identity.sessionID,
                         companyID: UUID(uuidString: "11111111-1111-4111-8111-111111111111")!, epoch: navigation.epoch),
-                        companyName: "Sentetik firma", client: personnel.client, onBack: {})
+                        companyName: "Sentetik firma", client: personnel.client, onBack: {}, directory: personnel.directory, canWrite: !args.contains("--personnel-readonly"))
                 } else if args.contains("--company-loader"), destination == .companies {
                     NovaCompanyDestination(host: $sessionHost, loadCompanies: { _ in
                         companyRequests += 1

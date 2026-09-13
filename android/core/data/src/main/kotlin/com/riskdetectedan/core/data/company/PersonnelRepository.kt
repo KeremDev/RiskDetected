@@ -8,6 +8,8 @@ import io.ktor.client.plugins.ResponseException
 import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.*
@@ -21,6 +23,20 @@ class PersonnelServiceFailure(val code: String): Exception(code)
 /** Real SDK path; UI supplies expected scope, but only PostgreSQL grants access. */
 @Singleton
 class PersonnelRepository @Inject constructor(private val client: SupabaseClient, private val pendingStorage: PersonnelPendingStorage) {
+    /** Identity correlation only; the server decides availability, never profile metadata. */
+    val workspaceIdentity = client.auth.sessionStatus.map { workspaceIdentityNow() }.distinctUntilChanged()
+    fun workspaceIdentityNow(): PersonnelWorkspaceIdentity? = runCatching {
+        val session = client.auth.currentSessionOrNull() ?: return null
+        val owner = client.auth.currentUserOrNull()?.id ?: return null
+        val payload = Json.parseToJsonElement(String(Base64.getUrlDecoder().decode(session.accessToken.split('.')[1]), Charsets.UTF_8)).jsonObject
+        PersonnelWorkspaceIdentity(UUID.fromString(owner), UUID.fromString(payload.getValue("session_id").jsonPrimitive.content))
+    }.getOrNull()
+    suspend fun workspaceAvailability(identity: PersonnelWorkspaceIdentity, company: UUID?): PersonnelWorkspaceCapability {
+        check(identity.ownerID.toString(), identity.sessionID.toString())
+        val result = invoke("isg_workspace_availability_v1", buildJsonObject { put("p_company", company?.toString()?.let(::JsonPrimitive) ?: JsonNull) })
+        check(identity.ownerID.toString(), identity.sessionID.toString())
+        return PersonnelWorkspaceCapability.decode(result, identity, company)
+    }
     private val mutex = Mutex()
     private val json = Json { ignoreUnknownKeys = false }
     private val terminal = setOf("AUTH_REQUIRED", "ACCESS_DENIED", "PAID_PLAN_REQUIRED", "VALIDATION_ERROR", "DEPARTMENT_SCOPE_INVALID", "VERSION_CONFLICT", "DEPARTMENT_SELECTION_REQUIRED", "ASSIGNMENT_CHANGE_REQUIRED", "EMPLOYMENT_INTERVAL_INVALID")

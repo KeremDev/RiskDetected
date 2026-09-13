@@ -67,7 +67,7 @@ import java.io.ByteArrayOutputStream
  * output which is already JPEG. Repository/ViewModel logic unchanged.
  */
 @Composable
-fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel = hiltViewModel()) {
+internal fun LegacyCompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel = hiltViewModel()) {
     val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
     val saveError by viewModel.saveError.collectAsState()

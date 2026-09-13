@@ -10,12 +10,25 @@ import SwiftUI
     private var receipts: [UUID: NovaEmployeeCommit] = [:]
     private var departments: [NovaDepartmentRow] = []
     private var failed = false
+    private let sampleID = UUID(uuidString: "22222222-2222-4222-8222-222222222222")!
+    private func sample(_ scope: NovaPersonnelScope) -> NovaEmployeeRow {
+        .init(id: sampleID, ownerID: scope.ownerID, companyID: scope.companyID, name: "Ada Kaya", departmentID: nil, departmentName: nil, version: 0, isArchived: false)
+    }
+    var directory: NovaDirectoryClient {
+        .init(read: { scope, kind, parent, _, _ in
+            guard [.assignments, .employers].contains(kind), let id = parent,
+                  (self.rows[id] ?? (id == self.sampleID ? self.sample(scope) : nil))?.companyID == scope.companyID else { throw NovaPersonnelFailure.denied }
+            return .init(rows: [], next: nil, parentVersion: 0)
+        }, save: { _ in throw NovaPersonnelFailure.denied }, pending: { _ in nil })
+    }
     var client: NovaPersonnelClient {
         NovaPersonnelClient(employees: { scope, query, archived, _ in
-            .init(rows: self.rows.values.filter { $0.ownerID == scope.ownerID && $0.companyID == scope.companyID && (archived || !$0.isArchived) && (query.isEmpty || $0.name.localizedCaseInsensitiveContains(query)) }.sorted { $0.id.uuidString < $1.id.uuidString }, next: nil)
+            if ProcessInfo.processInfo.arguments.contains("--personnel-readonly") { return .init(rows: [self.sample(scope)], next: nil) }
+            return .init(rows: self.rows.values.filter { $0.ownerID == scope.ownerID && $0.companyID == scope.companyID && (archived || !$0.isArchived) && (query.isEmpty || $0.name.localizedCaseInsensitiveContains(query)) }.sorted { $0.id.uuidString < $1.id.uuidString }, next: nil)
         }, departments: { scope, _, _ in
             .init(rows: self.departments.filter { $0.companyID == scope.companyID && $0.ownerID == scope.ownerID }, next: nil)
         }, detail: { scope, id in
+            if ProcessInfo.processInfo.arguments.contains("--personnel-readonly"), id == self.sampleID { return self.sample(scope) }
             guard let row = self.rows[id], row.companyID == scope.companyID, row.ownerID == scope.ownerID else { throw NovaPersonnelFailure.denied }
             return row
         }, save: { intent in

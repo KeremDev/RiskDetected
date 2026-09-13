@@ -102,12 +102,12 @@ test('native shell has no live service dependency and remains outside legacy roo
 test('hosted iOS shell target compiles only the real NOVA sources and synthetic harness', () => {
   const project = read('tests/isg/shell-ios/ISGShellHarness.xcodeproj/project.pbxproj').toString();
   const swiftFiles = [...project.matchAll(/path = ([A-Za-z]+\.swift);/g)].map(m => m[1]).sort();
-  assert.deepEqual(swiftFiles, ['NovaCompanyDestination.swift', 'NovaCompanyListState.swift', 'NovaComponents.swift', 'NovaExpertShell.swift', 'NovaNavigation.swift', 'NovaPersonnel.swift', 'NovaPersonnelScreens.swift', 'NovaSessionHost.swift', 'NovaTokens.swift', 'PersonnelHarness.swift', 'ShellHarnessApp.swift', 'ShellUITests.swift']);
+  assert.deepEqual(swiftFiles, ['NovaCompanyDestination.swift', 'NovaCompanyListState.swift', 'NovaComponents.swift', 'NovaDirectory.swift', 'NovaDirectoryScreens.swift', 'NovaExpertShell.swift', 'NovaNavigation.swift', 'NovaPersonnel.swift', 'NovaPersonnelScreens.swift', 'NovaSessionHost.swift', 'NovaTokens.swift', 'PersonnelHarness.swift', 'ShellHarnessApp.swift', 'ShellUITests.swift']);
   assert.match(project, /path = \.\.\/\.\.\/\.\.\/App\/DesignSystem\/ISG;/);
   assert.match(project, /SUPPORTED_PLATFORMS = iphonesimulator;/);
   assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = com\.riskdetected\.isgshellharness;/);
   assert.doesNotMatch(project, /XCRemoteSwiftPackageReference|PBXShellScriptBuildPhase|App\/Services|RiskDetected\.xcodeproj|CODE_SIGN_ENTITLEMENTS/);
-  for (const file of ['NovaComponents.swift', 'NovaExpertShell.swift', 'NovaNavigation.swift', 'NovaTokens.swift', 'NovaPersonnel.swift', 'NovaPersonnelScreens.swift']) {
+  for (const file of ['NovaComponents.swift', 'NovaExpertShell.swift', 'NovaNavigation.swift', 'NovaTokens.swift', 'NovaPersonnel.swift', 'NovaPersonnelScreens.swift', 'NovaDirectory.swift', 'NovaDirectoryScreens.swift']) {
     const imports = [...read(`App/DesignSystem/ISG/${file}`).toString().matchAll(/^import (\w+)/gm)].map(m => m[1]);
     assert.ok(imports.every(name => ['Foundation', 'SwiftUI'].includes(name)));
   }

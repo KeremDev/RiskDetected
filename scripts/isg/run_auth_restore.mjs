@@ -14,6 +14,7 @@ import { beginPersonnelMigrationProbe, personnelMigrationFiles } from './personn
 import { beginPersonnelHTTPProbe } from './personnel_http_probe.mjs';
 import { probePersonnelAdvisors } from './personnel_advisor_probe.mjs';
 import { beginDirectoryMigrationProbe, directoryMigrationFiles } from './directory_migration_probe.mjs';
+import { beginWorkspaceAvailabilityProbe, workspaceAvailabilityFiles } from './workspace_availability_probe.mjs';
 import { probePasswordAuth } from './password_auth_probe.mjs';
 import { probeSignupRecovery } from './signup_recovery_probe.mjs';
 
@@ -291,6 +292,7 @@ try {
   let personnelMigrationProbe;
   let personnelHTTPProbe;
   let directoryProbe;
+  let workspaceProbe;
   if (mode.sessionGuard) {
     stage = 'session-guard';
     sessionProbe = await beginSessionProbe({ sql, concurrentSql, token: refresh.body.access_token, secret, pass });
@@ -306,6 +308,8 @@ try {
     personnelHTTPProbe = await beginPersonnelHTTPProbe({synthetic:true,token:refresh.body.access_token,secret,companyID:personnelMigrationProbe.companyID,sql,start,guard,docker,names,waitReady,pass});
     stage = 'directory-production-migration';
     directoryProbe=await beginDirectoryMigrationProbe({synthetic:true,sql,token:refresh.body.access_token,secret,companyID:personnelMigrationProbe.companyID,request:personnelHTTPProbe.request,waitReady,pass});
+    stage = 'workspace-availability';
+    workspaceProbe=await beginWorkspaceAvailabilityProbe({synthetic:true,sql,token:refresh.body.access_token,secret,companyID:personnelMigrationProbe.companyID,request:personnelHTTPProbe.request,waitReady,pass});
     stage = 'personnel-advisors';
     report.personnel_advisors=await probePersonnelAdvisors({synthetic:true,sql,guard,names,pass,onFindings:value=>{report.personnel_advisors=value;}});
   }
@@ -317,6 +321,7 @@ try {
   if (personnelMigrationProbe) report.personnel_migration = personnelMigrationProbe.afterLogout();
   if (personnelHTTPProbe) report.personnel_http = personnelHTTPProbe.afterLogout();
   if (directoryProbe) report.directory = directoryProbe.afterLogout();
+  if (workspaceProbe) report.workspace = workspaceProbe.afterLogout();
   if (mode.synthetic) {
     stage = 'password-auth-boundaries';
     report.password_auth = probePasswordAuth({synthetic:true, request, admin, pass});
@@ -337,6 +342,7 @@ try {
     .concat(personnelAuthFiles, ['scripts/isg/auth_personnel_probe.mjs','supabase/functions/_shared/personnel/directory-request.ts','supabase/functions/_shared/personnel/employee-create.ts','supabase/functions/_shared/isg/mutation-context.ts'])
     .concat(personnelMigrationFiles)
     .concat(directoryMigrationFiles)
+    .concat(workspaceAvailabilityFiles)
     .map(path=>[path,digest(readFileSync(resolve(ROOT,path)))]));
   report.ok = true;
 } catch (error) {

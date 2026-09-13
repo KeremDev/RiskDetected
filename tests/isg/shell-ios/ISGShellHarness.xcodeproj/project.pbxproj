@@ -14,9 +14,11 @@
 		2A92C79FBAD102C131F65C76 /* ShellHarnessApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61EFAEB3118250F6A259A792 /* ShellHarnessApp.swift */; };
 		376FBE081D5ECC1498249838 /* NovaCompanyDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22201BFCBD33F1693D2EA5AF /* NovaCompanyDestination.swift */; };
 		3D08EC551F9B835211FBEB0D /* NovaTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AAD0E7E86C4C2ED97C225D /* NovaTokens.swift */; };
+		5D56F82098AFD68767DE3F24 /* NovaDirectoryScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = E477B050F6B861FDFC86F009 /* NovaDirectoryScreens.swift */; };
 		629E25E29178C6C39D12B85F /* NovaComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D274B7037ECC80B6E4DC4C2 /* NovaComponents.swift */; };
 		640B9191EAB4C9B7C325B051 /* PlusJakartaSans-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4811953EFC404AE2CC37F765 /* PlusJakartaSans-Bold.ttf */; };
 		7353DCFB7F55C832F3A23465 /* NovaExpertShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = D37480469BDE690E05D13567 /* NovaExpertShell.swift */; };
+		74489AFADCC94F233225121C /* NovaDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 860233F96560BACA6F5475C1 /* NovaDirectory.swift */; };
 		7D29551AE559F99CF9BD7065 /* NovaIcons.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FAFB347A0F9AD0F29F6E3DE2 /* NovaIcons.xcassets */; };
 		8DB343EF6A6FAF19A63797C0 /* PlusJakartaSans-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3E92C3A78403B6514328D693 /* PlusJakartaSans-ExtraBold.ttf */; };
 		8F2058FD473ABAFA8830DA14 /* ShellUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 229A20930EF12E6D36134178 /* ShellUITests.swift */; };
@@ -52,6 +54,7 @@
 		4D029452FBC44CA6CE19D565 /* ISGShellUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ISGShellUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		61EFAEB3118250F6A259A792 /* ShellHarnessApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHarnessApp.swift; sourceTree = "<group>"; };
 		7EE42513CAD27D8342EBDD9C /* NovaNavigation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaNavigation.swift; sourceTree = "<group>"; };
+		860233F96560BACA6F5475C1 /* NovaDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaDirectory.swift; sourceTree = "<group>"; };
 		9436586D0E1CF4B902485274 /* PlusJakartaSans-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlusJakartaSans-Medium.ttf"; sourceTree = "<group>"; };
 		A928E65A914B9551341C6AC4 /* PlusJakartaSans-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlusJakartaSans-Regular.ttf"; sourceTree = "<group>"; };
 		B981D45A911FB02F8ACC0A6A /* NovaSessionHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaSessionHost.swift; sourceTree = "<group>"; };
@@ -59,6 +62,7 @@
 		D37480469BDE690E05D13567 /* NovaExpertShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaExpertShell.swift; sourceTree = "<group>"; };
 		DAB42C20891D6FA8479B6206 /* PersonnelHarness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonnelHarness.swift; sourceTree = "<group>"; };
 		E0D231D3AE94AA038EEE0812 /* NovaCompanyListState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaCompanyListState.swift; sourceTree = "<group>"; };
+		E477B050F6B861FDFC86F009 /* NovaDirectoryScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaDirectoryScreens.swift; sourceTree = "<group>"; };
 		FAFB347A0F9AD0F29F6E3DE2 /* NovaIcons.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = NovaIcons.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -69,6 +73,8 @@
 				22201BFCBD33F1693D2EA5AF /* NovaCompanyDestination.swift */,
 				E0D231D3AE94AA038EEE0812 /* NovaCompanyListState.swift */,
 				2D274B7037ECC80B6E4DC4C2 /* NovaComponents.swift */,
+				860233F96560BACA6F5475C1 /* NovaDirectory.swift */,
+				E477B050F6B861FDFC86F009 /* NovaDirectoryScreens.swift */,
 				D37480469BDE690E05D13567 /* NovaExpertShell.swift */,
 				7EE42513CAD27D8342EBDD9C /* NovaNavigation.swift */,
 				1D2DF85D18FB04E236C11CB9 /* NovaPersonnel.swift */,
@@ -223,6 +229,8 @@
 				376FBE081D5ECC1498249838 /* NovaCompanyDestination.swift in Sources */,
 				106E822E6983ECE5FC4D4FA7 /* NovaCompanyListState.swift in Sources */,
 				629E25E29178C6C39D12B85F /* NovaComponents.swift in Sources */,
+				74489AFADCC94F233225121C /* NovaDirectory.swift in Sources */,
+				5D56F82098AFD68767DE3F24 /* NovaDirectoryScreens.swift in Sources */,
 				7353DCFB7F55C832F3A23465 /* NovaExpertShell.swift in Sources */,
 				F065AD9A01874260DB16DCC7 /* NovaNavigation.swift in Sources */,
 				16C7BF48EDCD5594E6976CF5 /* NovaPersonnel.swift in Sources */,

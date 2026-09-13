@@ -144,6 +144,7 @@ struct ProfileView: View {
             .preferredColorScheme(preferredModalColorScheme)
         }
         .sheet(isPresented: $showCompanyPicker) {
+            NovaCompanyManagementGate(onClose: { showCompanyPicker = false }) {
             CompanyPickerSheet(
                 title: RDLocalization.string("localizable.profile.view.firmalarim.720bb423", table: .localizable, fallback: "Firmalarım"),
                 accessTier: app.currentTier,
@@ -165,6 +166,8 @@ struct ProfileView: View {
             .presentationDetents(CompanyPickerSheet.presentationDetents(for: app.currentTier, allowNoCompany: false))
             .presentationDragIndicator(.visible)
             .preferredColorScheme(preferredModalColorScheme)
+            }
+            .presentationDetents([.large])
         }
         .sheet(isPresented: $showNotificationSettings) {
             NotificationSettingsSheet(

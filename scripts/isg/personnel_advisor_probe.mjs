@@ -35,7 +35,7 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
     let parsed;try{parsed=JSON.parse(result.stdout);}catch{throw Error('AUTH_RESTORE_ADVISOR_OUTPUT_INVALID');}
     const findings=Array.isArray(parsed)?parsed:parsed.lints??parsed.advisors;
     if(!Array.isArray(findings))throw Error('AUTH_RESTORE_ADVISOR_OUTPUT_INVALID');
-    const relevant=findings.filter(f=>JSON.stringify(f).includes('private_isg')||JSON.stringify(f).includes('isg_personnel_')||JSON.stringify(f).includes('isg_directory_')||JSON.stringify(f).includes('isg_context_')||JSON.stringify(f).includes('companies_id_user_isg_unique'));
+    const relevant=findings.filter(f=>JSON.stringify(f).includes('private_isg')||JSON.stringify(f).includes('isg_workspace_')||JSON.stringify(f).includes('isg_personnel_')||JSON.stringify(f).includes('isg_directory_')||JSON.stringify(f).includes('isg_context_')||JSON.stringify(f).includes('companies_id_user_isg_unique'));
     onFindings({total_findings:findings.length,relevant_findings:relevant});
     pass('personnel_advisor_cli_completed',true);
     pass('personnel_advisor_new_schema_no_errors',!relevant.some(f=>String(f.level).toUpperCase()==='ERROR'));

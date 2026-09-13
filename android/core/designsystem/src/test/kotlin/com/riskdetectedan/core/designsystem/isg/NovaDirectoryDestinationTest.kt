@@ -17,6 +17,22 @@ class NovaDirectoryDestinationTest {
     private val scope = NovaPersonnelScope(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "first")
     private val id = UUID.randomUUID()
     private val intent = NovaDirectoryIntent(scope, NovaDirectoryKind.jobs, UUID.randomUUID(), UUID.randomUUID(), null, 0, mapOf("name" to NovaDirectoryValue.Text("Operatör")))
+    @Test fun readOnlyPreservesPendingWithoutSendingIt() {
+        val client = NovaDirectoryClient(read = { _, _, _, _, _ -> NovaDirectoryPage(emptyList(), null, null) },
+            save = { error("Read-only must never send") }, pending = { intent })
+        compose.setContent { NovaTheme(false) { NovaDirectoryDestination(scope, NovaDirectoryKind.jobs, client = client, canWrite = false, onBack = {}) } }
+        compose.onNodeWithText("Yeni kayıt").assertIsNotEnabled()
+        compose.onNodeWithText("Bekleyen işlemi tamamla").assertIsNotEnabled()
+    }
+    @Test fun readOnlyIsPropagatedIntoWorkplaceHistory() {
+        val row = NovaDirectoryRow(id, mapOf("name" to NovaDirectoryValue.Text("Sentetik İşyeri")))
+        val client = NovaDirectoryClient(read = { _, kind, _, _, _ -> NovaDirectoryPage(if (kind == NovaDirectoryKind.workplaces) listOf(row) else emptyList(), null, 0) },
+            save = { error("No writes expected") }, pending = { null })
+        compose.setContent { NovaTheme(false) { NovaDirectoryDestination(scope, NovaDirectoryKind.workplaces, client = client, canWrite = false, onBack = {}) } }
+        compose.onNodeWithText("Düzenle").assertDoesNotExist()
+        compose.onNodeWithText("Tarihli bağlam").performScrollTo().performClick()
+        compose.onNodeWithText("Yeni kayıt").assertIsNotEnabled()
+    }
     @Test fun pendingWriteBlocksNewRecordAndRetryUsesSameIntent() {
         var pending: NovaDirectoryIntent? = intent
         var actual: NovaDirectoryIntent? = null

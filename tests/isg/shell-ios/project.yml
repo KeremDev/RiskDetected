@@ -21,6 +21,8 @@ targets:
       - path: PersonnelHarness.swift
       - path: ../../../App/DesignSystem/ISG/NovaPersonnel.swift
       - path: ../../../App/DesignSystem/ISG/NovaPersonnelScreens.swift
+      - path: ../../../App/DesignSystem/ISG/NovaDirectory.swift
+      - path: ../../../App/DesignSystem/ISG/NovaDirectoryScreens.swift
       - path: ../../../App/DesignSystem/ISG/NovaTokens.swift
       - path: ../../../App/DesignSystem/ISG/NovaComponents.swift
       - path: ../../../App/DesignSystem/ISG/NovaNavigation.swift

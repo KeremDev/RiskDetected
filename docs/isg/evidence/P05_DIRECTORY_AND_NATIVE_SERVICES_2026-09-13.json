@@ -11,7 +11,7 @@
   "mobile_ui_to_db_e2e": false,
   "auth_database_http": {
     "run_id": "7ceea6d4-568d-4377-9581-954208ccdb68",
-    "report": "undefined/REPORT.json",
+    "report": "output/isg/runs/synthetic-auth-ghwbBH/REPORT.json",
     "checks": 275,
     "directory_checks": 54,
     "unique_check_ids": 274,

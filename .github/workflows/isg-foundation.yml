@@ -14,6 +14,8 @@ on:
       - 'App/Services/AuthService.swift'
       - 'App/Services/Company/**'
       - 'App/Services/CompanyService.swift'
+      - 'App/Views/Profile/ProfileView.swift'
+      - 'App/Views/Components/NovaCompanyManagementGate.swift'
       - 'App/Models/Company.swift'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/company/**'
       - 'android/feature/profile/**'
@@ -36,6 +38,7 @@ on:
       - 'supabase/migrations/20260513101505_free_plus_pro_subscription_system.sql'
       - 'supabase/migrations/20260913074153_isg_personnel_owner_rpc.sql'
       - 'supabase/migrations/20260913081536_isg_workplace_context_assignments.sql'
+      - 'supabase/migrations/20260913084736_isg_workspace_availability.sql'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'RiskDetected.xcodeproj/project.pbxproj'
@@ -63,6 +66,8 @@ on:
       - 'App/Services/AuthService.swift'
       - 'App/Services/Company/**'
       - 'App/Services/CompanyService.swift'
+      - 'App/Views/Profile/ProfileView.swift'
+      - 'App/Views/Components/NovaCompanyManagementGate.swift'
       - 'App/Models/Company.swift'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/company/**'
       - 'android/feature/profile/**'
@@ -85,6 +90,7 @@ on:
       - 'supabase/migrations/20260513101505_free_plus_pro_subscription_system.sql'
       - 'supabase/migrations/20260913074153_isg_personnel_owner_rpc.sql'
       - 'supabase/migrations/20260913081536_isg_workplace_context_assignments.sql'
+      - 'supabase/migrations/20260913084736_isg_workspace_availability.sql'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'RiskDetected.xcodeproj/project.pbxproj'
@@ -182,6 +188,10 @@ jobs:
         run: |
           swiftc App/DesignSystem/ISG/NovaPersonnel.swift scripts/isg/NovaPersonnelCheck.swift -o "$RUNNER_TEMP/isg-personnel-check"
           "$RUNNER_TEMP/isg-personnel-check"
+      - name: Verify workspace capability response correlation
+        run: |
+          swiftc App/DesignSystem/ISG/NovaPersonnel.swift App/DesignSystem/ISG/NovaWorkspaceCapability.swift tests/isg/NovaWorkspaceCapabilityCheck.swift -o "$RUNNER_TEMP/isg-workspace-check"
+          "$RUNNER_TEMP/isg-workspace-check"
       - name: Verify directory scalar contract and persisted personnel recovery
         # Actual service logic with an injected in-memory journal; no Keychain calls or network.
         run: |

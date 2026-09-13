@@ -24,11 +24,11 @@ private val NovaDirectoryKind.icon: ImageVector get() = when(this) {
     else -> Icons.Outlined.PersonOutline
 }
 @Composable
-fun NovaDirectoryDestination(scope: NovaPersonnelScope, kind: NovaDirectoryKind, parent: UUID? = null, client: NovaDirectoryClient, onBack: () -> Unit) {
-    key(scope, kind, parent) { DirectoryContent(scope, kind, parent, client, onBack) }
+fun NovaDirectoryDestination(scope: NovaPersonnelScope, kind: NovaDirectoryKind, parent: UUID? = null, client: NovaDirectoryClient, canWrite: Boolean = true, onBack: () -> Unit) {
+    key(scope, kind, parent, canWrite) { DirectoryContent(scope, kind, parent, client, canWrite, onBack) }
 }
 @Composable
-private fun DirectoryContent(scope: NovaPersonnelScope, kind: NovaDirectoryKind, parent: UUID?, client: NovaDirectoryClient, onBack: () -> Unit) {
+private fun DirectoryContent(scope: NovaPersonnelScope, kind: NovaDirectoryKind, parent: UUID?, client: NovaDirectoryClient, canWrite: Boolean, onBack: () -> Unit) {
     var rows by remember { mutableStateOf(emptyList<NovaDirectoryRow>()) }
     var next by remember { mutableStateOf<UUID?>(null) }
     var page by remember { mutableStateOf<UUID?>(null) }
@@ -44,10 +44,10 @@ private fun DirectoryContent(scope: NovaPersonnelScope, kind: NovaDirectoryKind,
     var child by remember { mutableStateOf<Pair<NovaDirectoryKind, UUID>?>(null) }
     if (child != null) {
         val route = child!!
-        NovaDirectoryDestination(scope, route.first, route.second, client) { child = null }
+        NovaDirectoryDestination(scope, route.first, route.second, client, canWrite) { child = null }
         return
     }
-    if (editing) {
+    if (editing && canWrite) {
         key(original?.id) { DirectoryEditor(scope, kind, parent, parentVersion, original, rows, client, { editing = false; refresh = UUID.randomUUID() }) {
             editing = false; page = null; refresh = UUID.randomUUID()
         } }
@@ -66,7 +66,7 @@ private fun DirectoryContent(scope: NovaPersonnelScope, kind: NovaDirectoryKind,
     }
     LaunchedEffect(recovering) {
         val intent = pending
-        if (recovering && intent != null) {
+        if (canWrite && recovering && intent != null) {
             try { client.save(intent); currentCoroutineContext().ensureActive(); pending = null }
             catch (_: Exception) { currentCoroutineContext().ensureActive(); error = "İşlem henüz doğrulanamadı." }
             recovering = false; refresh = UUID.randomUUID()
@@ -81,9 +81,10 @@ private fun DirectoryContent(scope: NovaPersonnelScope, kind: NovaDirectoryKind,
             pending?.let { p -> NovaCard { Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 DirectoryLabel("Bekleyen işlem · ${p.kind.title}", Icons.Outlined.Refresh)
                 NovaText("Önceki işlemi doğrulamadan yeni kayıt göndermeyin.")
-                NovaButton("Bekleyen işlemi tamamla", { recovering = true }, loading = recovering)
+                NovaButton("Bekleyen işlemi tamamla", { recovering = true }, enabled = canWrite, loading = recovering)
             } } }
-            DirectoryAction(if (kind == NovaDirectoryKind.employers) "İşveren ilişkisini düzenle" else "Yeni kayıt", Icons.Outlined.Add, !loading && error == null && pending == null) {
+            if (!canWrite) NovaText("Salt okunur · kayıt geçmişiniz korunuyor.", style = NovaTypeToken.metaQuiet)
+            DirectoryAction(if (kind == NovaDirectoryKind.employers) "İşveren ilişkisini düzenle" else "Yeni kayıt", Icons.Outlined.Add, canWrite && !loading && error == null && pending == null) {
                 original = if (kind == NovaDirectoryKind.employers) rows.firstOrNull() else null; editing = true
             }
             error?.let { NovaCard { Column { NovaText(it); DirectoryAction("Tekrar yükle", Icons.Outlined.Refresh) { refresh = UUID.randomUUID() } } } }
@@ -93,7 +94,7 @@ private fun DirectoryContent(scope: NovaPersonnelScope, kind: NovaDirectoryKind,
                 row.text("starts_on")?.let { NovaText("$it → ${row.text("ends_before") ?: "Devam ediyor"}", style = NovaTypeToken.metaQuiet) }
                 row.text("department_name_snapshot")?.let { NovaText(it, style = NovaTypeToken.metaQuiet) }
                 if (row.archived) NovaText("Arşivde", style = NovaTypeToken.metaQuiet)
-                if (kind.isCatalog || kind == NovaDirectoryKind.engagements) DirectoryAction("Düzenle", Icons.Outlined.Edit, pending == null) { original = row; editing = true }
+                if (canWrite && (kind.isCatalog || kind == NovaDirectoryKind.engagements)) DirectoryAction("Düzenle", Icons.Outlined.Edit, pending == null) { original = row; editing = true }
                 if (kind == NovaDirectoryKind.workplaces) DirectoryAction("Tarihli bağlam", Icons.Outlined.History) { child = NovaDirectoryKind.contexts to row.id }
                 if (kind == NovaDirectoryKind.contractors) DirectoryAction("Çalışılan işyerleri", Icons.Outlined.Business) { child = NovaDirectoryKind.engagements to row.id }
             } } }

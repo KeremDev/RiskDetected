@@ -58,6 +58,31 @@ import UIKit
         app.swipeUp()
         tap("personnel.save")
     }
+    func testPersonnelAdvancedRoutesReturnToSameEmployee() {
+        launch(["--personnel"])
+        personnelAdd()
+        tap("personnel.assignments")
+        XCTAssertTrue(app.staticTexts["Görevlendirme Geçmişi"].waitForExistence(timeout: 4))
+        tap("directory.back")
+        XCTAssertTrue(app.staticTexts["Ada Kaya"].waitForExistence(timeout: 4))
+        tap("personnel.employers")
+        XCTAssertTrue(app.staticTexts["Personelin İşvereni"].waitForExistence(timeout: 4))
+        tap("directory.back")
+        XCTAssertTrue(app.buttons["personnel.edit"].waitForExistence(timeout: 4))
+    }
+    func testReadOnlyPersonnelCanReadHistoryButCannotWrite() {
+        launch(["--personnel", "--personnel-readonly"])
+        XCTAssertTrue(app.buttons["personnel.add"].waitForExistence(timeout: 4))
+        XCTAssertFalse(app.buttons["personnel.add"].isEnabled)
+        tap("personnel.row.22222222-2222-4222-8222-222222222222")
+        XCTAssertFalse(app.buttons["personnel.edit"].exists)
+        tap("personnel.assignments")
+        XCTAssertTrue(app.buttons["Yeni kayıt"].waitForExistence(timeout: 4))
+        XCTAssertFalse(app.buttons["Yeni kayıt"].isEnabled)
+        tap("directory.back"); tap("personnel.employers")
+        XCTAssertTrue(app.buttons["İşveren ilişkisini düzenle"].waitForExistence(timeout: 4))
+        XCTAssertFalse(app.buttons["İşveren ilişkisini düzenle"].isEnabled)
+    }
 
     func testPersonnelNameOnlyCreateAndArchiveConfirmation() {
         launch(["--personnel"])

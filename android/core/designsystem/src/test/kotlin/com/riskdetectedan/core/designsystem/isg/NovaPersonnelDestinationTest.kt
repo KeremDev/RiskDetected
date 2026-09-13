@@ -41,6 +41,24 @@ class NovaPersonnelDestinationTest {
         compose.onNodeWithTag("personnel.add").performScrollTo().performClick()
         compose.onNodeWithTag("personnel.name").performTextInput("Ada Kaya")
     }
+    @Test fun readOnlyPersonnelCanOpenBothAdvancedHistoriesInSameScope() {
+        saved = NovaEmployeeRow(employeeID, scope.ownerID, scope.companyID, "Ada Kaya", null, null, 0, false)
+        val opened = mutableListOf<NovaDirectoryKind>()
+        val directory = NovaDirectoryClient(read = { requested, kind, parent, _, _ ->
+            assertEquals(scope, requested); assertEquals(employeeID, parent); opened.add(kind); NovaDirectoryPage(emptyList(), null, 0)
+        }, save = { error("No write") }, pending = { null })
+        compose.setContent { NovaTheme(false) { NovaPersonnelDestination(scope, "Firma", client(), {}, directory, false) } }
+        compose.mainClock.advanceTimeBy(250); compose.waitForIdle()
+        compose.onNodeWithTag("personnel.add").assertIsNotEnabled()
+        compose.onNodeWithTag("personnel.row.$employeeID").performScrollTo().performClick()
+        compose.onNodeWithTag("personnel.edit").assertDoesNotExist()
+        compose.onNodeWithTag("personnel.assignments").performScrollTo().performClick()
+        compose.onNodeWithText("Yeni kayıt").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Geri").performClick()
+        compose.onNodeWithTag("personnel.employers").performScrollTo().performClick()
+        compose.onNodeWithText("İşveren ilişkisini düzenle").assertIsNotEnabled()
+        compose.runOnIdle { assertEquals(listOf(NovaDirectoryKind.assignments, NovaDirectoryKind.employers), opened) }
+    }
     @Test fun nameAloneCreatesAndOpensDetailWithoutDateFields() {
         start();add()
         compose.onNodeWithText("Başlangıç tarihi").assertDoesNotExist()

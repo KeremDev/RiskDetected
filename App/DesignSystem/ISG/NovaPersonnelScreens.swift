@@ -6,7 +6,9 @@ struct NovaPersonnelDestination: View {
     let companyName: String
     let client: NovaPersonnelClient
     let onBack: () -> Void
-    var body: some View { PersonnelContent(scope: scope, companyName: companyName, client: client, onBack: onBack).id(scope) }
+    var directory: NovaDirectoryClient? = nil
+    var canWrite = true
+    var body: some View { PersonnelContent(scope: scope, companyName: companyName, client: client, onBack: onBack, directory: directory, canWrite: canWrite).id(scope).id(canWrite) }
 }
 
 private struct PersonnelContent: View {
@@ -14,6 +16,8 @@ private struct PersonnelContent: View {
     let companyName: String
     let client: NovaPersonnelClient
     let onBack: () -> Void
+    let directory: NovaDirectoryClient?
+    let canWrite: Bool
     @State private var rows: [NovaEmployeeRow] = []
     @State private var query = ""
     @State private var archived = false
@@ -26,7 +30,7 @@ private struct PersonnelContent: View {
     @State private var pending: NovaEmployeeIntent?
     @State private var pendingChecked = false
     @State private var reconciling = false
-    private enum Route: Equatable { case list, create, detail(UUID), edit(NovaEmployeeRow) }
+    private enum Route: Equatable { case list, create, detail(UUID), edit(NovaEmployeeRow), advanced(UUID, NovaDirectoryKind) }
     private struct Key: Equatable { let query: String; let archived: Bool; let generation: UUID; let page: UUID? }
     var body: some View {
         NovaPageSurface {
@@ -40,7 +44,13 @@ private struct PersonnelContent: View {
                     onBack: { route = .detail(row.id) }, onSaved: { row in requestedPage = nil; generation = UUID(); route = row.isArchived ? .list : .detail(row.id) })
             case .detail(let id):
                 NovaEmployeeDetail(scope: scope, employeeID: id, client: client,
-                    onBack: { route = .list }, onEdit: { route = .edit($0) })
+                    onBack: { route = .list }, onEdit: { route = .edit($0) }, canWrite: canWrite,
+                    onDirectory: directory == nil ? nil : { route = .advanced(id, $0) })
+            case .advanced(let id, let kind):
+                if let directory {
+                    NovaDirectoryDestination(scope: scope, kind: kind, parent: id, client: directory,
+                        onBack: { route = .detail(id) }, canWrite: canWrite)
+                }
             }
         }
     }
@@ -59,12 +69,13 @@ private struct PersonnelContent: View {
                             HStack { NovaIcon(symbol: "arrow.clockwise", size: 22); NovaText(text: "Bekleyen personel işlemi", style: .cardTitle) }
                             NovaText(text: "Önceki işlemin sonucu henüz kesinleşmedi. Aynı işlem anahtarıyla kontrol ederek devam edin.")
                             NovaText(text: pending.name.isEmpty ? "Arşivleme işlemi" : pending.name, style: .metaQuiet)
-                            NovaButton(label: "Bekleyen işlemi tamamla", symbol: "arrow.clockwise", isLoading: reconciling, action: { reconciling = true })
+                            NovaButton(label: "Bekleyen işlemi tamamla", symbol: "arrow.clockwise", isEnabled: canWrite, isLoading: reconciling, action: { reconciling = true })
                                 .accessibilityIdentifier("personnel.recover")
                         }
                     }.accessibilityIdentifier("personnel.pending")
                 }
-                NovaButton(label: "Personel Ekle", symbol: "plus", isEnabled: pendingChecked && pending == nil && !reconciling, action: { route = .create }).accessibilityIdentifier("personnel.add")
+                if !canWrite { NovaText(text: "Salt okunur · yeni kayıt ve düzenleme kullanılamıyor.", style: .metaQuiet) }
+                NovaButton(label: "Personel Ekle", symbol: "plus", isEnabled: canWrite && pendingChecked && pending == nil && !reconciling, action: { route = .create }).accessibilityIdentifier("personnel.add")
                 if let error { NovaCard(padding: 16) { NovaText(text: error); NovaButton(label: "Tekrar dene", symbol: "arrow.clockwise", variant: .surface, action: { generation = UUID() }) } }
                 if !loading && error == nil && rows.isEmpty { NovaCard(padding: 18) { NovaText(text: "Henüz personel yok.") } }
                 ForEach(rows) { row in
@@ -105,7 +116,7 @@ private struct PersonnelContent: View {
             } catch { if !Task.isCancelled { self.error = "Personeller yüklenemedi. Lütfen tekrar deneyin."; loading = false } }
         }
         .task(id: reconciling) {
-            guard reconciling, let intent = pending else { return }
+            guard canWrite, reconciling, let intent = pending else { return }
             do {
                 let result = try await client.save(intent); try Task.checkCancellation()
                 guard result.ownerID == scope.ownerID, result.companyID == scope.companyID, result.operationID == intent.operationID,
@@ -142,6 +153,8 @@ private struct NovaEmployeeDetail: View {
     let client: NovaPersonnelClient
     let onBack: () -> Void
     let onEdit: (NovaEmployeeRow) -> Void
+    let canWrite: Bool
+    let onDirectory: ((NovaDirectoryKind) -> Void)?
     @State private var row: NovaEmployeeRow?
     @State private var error = false
     @State private var refresh = UUID()
@@ -157,7 +170,11 @@ private struct NovaEmployeeDetail: View {
                             NovaText(text: row.isArchived ? "Arşivde" : "Aktif", style: .metaQuiet)
                         }.frame(maxWidth: .infinity, alignment: .leading)
                     }.accessibilityIdentifier("personnel.detail")
-                    if !row.isArchived { NovaButton(label: "Düzenle", symbol: "pencil", action: { onEdit(row) }).accessibilityIdentifier("personnel.edit") }
+                    if canWrite && !row.isArchived { NovaButton(label: "Düzenle", symbol: "pencil", action: { onEdit(row) }).accessibilityIdentifier("personnel.edit") }
+                    if let onDirectory {
+                        NovaButton(label: "Görevlendirme geçmişi", symbol: "clock.arrow.circlepath", variant: .surface) { onDirectory(.assignments) }.accessibilityIdentifier("personnel.assignments")
+                        NovaButton(label: "İşveren ilişkisi", symbol: "building.2", variant: .surface) { onDirectory(.employers) }.accessibilityIdentifier("personnel.employers")
+                    }
                 } else if error { NovaText(text: "Personel yüklenemedi."); NovaButton(label: "Tekrar dene", symbol: "arrow.clockwise", action: { refresh = UUID() }) }
                 else { ProgressView() }
             }.padding(18)
