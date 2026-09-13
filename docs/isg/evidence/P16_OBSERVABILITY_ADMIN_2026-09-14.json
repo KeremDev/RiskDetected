@@ -1,0 +1,123 @@
+{
+  "phase": "P16",
+  "slice": "technical event envelope, support chain and scoped admin operations",
+  "date": "2026-09-14",
+  "branch": "codex/isg-transition-foundation",
+  "migration": "supabase/migrations/20260914130000_isg_observability_admin.sql",
+  "rollout_feature": "observability",
+  "rollout_left_closed": true,
+  "client_grants": 0,
+  "private_isg_tables_after": 144,
+  "new_tables": 13,
+  "new_functions": 13,
+  "funnel_stages": 10,
+  "operations_panel_repo_changed": false,
+  "cross_phase_reads": [
+    "private_isg.record_billing_evidence (P14, during the admin write pause)"
+  ],
+  "runs": {
+    "synthetic_session": {
+      "evidence_directory": "output/isg/runs/synthetic-auth-GgYC6s",
+      "checks": 966,
+      "unique_check_ids": 965,
+      "all_pass": true,
+      "cleanup": "PASS",
+      "new_observability_checks": 34
+    },
+    "isolated_copy_p05_upgrade": {
+      "evidence_directory": "backups/isg-auth-service-restore-20260912-mruSeS",
+      "checks": 32,
+      "all_pass": true,
+      "migrations_replayed": 25,
+      "cleanup": "PASS",
+      "legacy_row_fingerprint_unchanged": true,
+      "legacy_helper_bodies_unchanged": true
+    },
+    "offline_foundation": {
+      "tests": 397,
+      "fail": 0,
+      "previous": 386
+    }
+  },
+  "observability_checks": [
+    "observability_admin_migration_applied_with_closed_rollout",
+    "observability_admin_gate_blocks_the_telemetry_ledger_while_rollout_off",
+    "observability_admin_observability_tables_have_rls_and_no_client_grant",
+    "observability_admin_the_envelope_has_no_column_for_a_secret_or_a_body",
+    "observability_admin_a_chain_starts_before_any_analysis_row_exists",
+    "observability_admin_an_unlisted_metadata_key_is_refused",
+    "observability_admin_an_address_a_bearer_token_a_jwt_or_a_signed_url_is_refused",
+    "observability_admin_a_body_of_text_never_fits_in_the_envelope",
+    "observability_admin_an_allowlisted_event_is_recorded_without_user_content",
+    "observability_admin_a_stage_can_never_go_backwards",
+    "observability_admin_a_failure_before_submit_leaves_no_analysis_row",
+    "observability_admin_a_failure_that_never_reached_the_server_is_counted_separately",
+    "observability_admin_a_closed_chain_accepts_no_further_event",
+    "observability_admin_the_analysis_row_appears_only_once_the_server_queued_the_job",
+    "observability_admin_a_result_that_was_never_rendered_is_not_a_success",
+    "observability_admin_only_a_rendered_chain_is_a_successful_user_outcome",
+    "observability_admin_a_full_or_dead_telemetry_queue_is_reported_not_escalated",
+    "observability_admin_without_a_tracking_authorization_the_attribution_is_unknown",
+    "observability_admin_an_authorized_account_may_record_a_real_source",
+    "observability_admin_the_server_never_trusts_a_scope_claimed_by_the_client",
+    "observability_admin_an_admin_without_mfa_is_refused",
+    "observability_admin_an_admin_without_the_scope_is_refused",
+    "observability_admin_an_expired_session_is_refused",
+    "observability_admin_every_admin_scope_demands_a_second_factor",
+    "observability_admin_a_simulation_reports_without_changing_a_domain_row",
+    "observability_admin_a_published_action_without_its_audit_has_no_row_shape",
+    "observability_admin_a_publish_writes_its_audit_before_it_publishes",
+    "observability_admin_another_session_can_not_publish_this_action",
+    "observability_admin_an_export_can_not_name_a_column_nobody_allowed",
+    "observability_admin_an_export_masks_what_must_be_masked_and_carries_no_raw_pii",
+    "observability_admin_pausing_admin_writes_stops_a_publish",
+    "observability_admin_the_audit_trail_and_the_billing_chain_keep_running_while_writes_are_paused",
+    "observability_admin_resuming_lets_the_same_action_publish",
+    "observability_admin_kill_switch_stops_the_observability_ledger"
+  ],
+  "acceptance_ids_covered": [
+    "X53",
+    "X54",
+    "X55",
+    "E14 (server side)"
+  ],
+  "defects_found_and_fixed": [
+    {
+      "check": "the_envelope_has_no_column_for_a_secret_or_a_body",
+      "cause": "a stray semicolon inside the regex made one of the two queries unable to match anything",
+      "fix": "reduced to a single correct regex"
+    },
+    {
+      "check": "a_simulation_reports_without_changing_a_domain_row",
+      "cause": "the assertion compared the same query with itself",
+      "fix": "the pre-simulation count is captured and compared afterwards"
+    },
+    {
+      "check": "a_publish_without_a_simulation_is_refused",
+      "cause": "a random action id measured the missing row, not the gate; SIMULATION_REQUIRED is structurally unreachable because of the CHECK",
+      "fix": "the check now proves another session cannot publish this action; the simulation requirement is asserted as a CHECK in the guard test"
+    },
+    {
+      "check": "personnel_advisor_no_unreviewed_findings",
+      "cause": "13 new tables and 12 indexes missing from the reviewed lists",
+      "fix": "both lists updated; no unindexed foreign key was reported in this slice"
+    }
+  ],
+  "production_defects_found": 0,
+  "not_proven": [
+    "any client telemetry producer on iOS or Android",
+    "the ATT permission screen",
+    "any change to the operations panel repository",
+    "Playwright or panel API acceptance for X55",
+    "retention or deletion behaviour for technical events",
+    "the Supabase logs.all endpoint migration",
+    "domain mutations emitting technical events"
+  ],
+  "source_sha256": {
+    "supabase/migrations/20260914130000_isg_observability_admin.sql": "991c1ce8635daa21e0975c3dfe3aa3ca590393a72bbe011b859213c41ba0523e",
+    "scripts/isg/observability_admin_probe.mjs": "d3be5c1c14d1fcb211b24f6d331ca8bc8064b3c5fc38570eb1a17470867ed211",
+    "scripts/isg/observability_admin_guard.test.mjs": "24fa0b7fbe4f376a9177653f83e312b7eb358baf414acbfccf7708d731050a03",
+    "contracts/isg/v1/observability-admin.md": "c3fde2c36fa7ece078ce87445f80139e7640c54269efc615d9c00c2823bac5f8",
+    "docs/isg/P16_OBSERVABILITY_ADMIN_2026-09-14.md": "8f33463845606c40390252c5ddfb31f3f895e293f760cd5398fc7f2621ea67cb"
+  }
+}

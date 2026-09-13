@@ -69,10 +69,19 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'settlement_adjustments','billing_reconciliation_jobs',
       'campaign_definitions','campaign_versions','referral_codes','referral_claims','qualification_events',
       'campaign_budgets','budget_reservations','winback_episodes','winback_contacts','suppression_records',
-      'eligibility_checks']);
+      'eligibility_checks',
+      'funnel_stages','telemetry_event_kinds','support_chains','technical_events','telemetry_queue_reports',
+      'attribution_records','admin_scopes','admin_sessions','admin_audit_entries','admin_actions',
+      'admin_exports','admin_operation_state','funnel_progress']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([
+      'admin_actions_admin_action_audit_idx','admin_actions_admin_action_scope_idx',
+      'admin_actions_admin_action_session_idx','admin_audit_entries_admin_audit_scope_idx',
+      'admin_audit_entries_admin_audit_session_idx','admin_sessions_admin_session_user_idx',
+      'funnel_progress_funnel_progress_stage_idx','support_chains_support_chain_owner_idx',
+      'support_chains_support_chain_stage_idx','technical_events_technical_event_chain_idx',
+      'technical_events_technical_event_stage_idx','telemetry_queue_reports_telemetry_queue_owner_idx',
       'budget_reservations_budget_reservation_subject_idx','campaign_versions_campaign_version_campaign_idx',
       'campaign_versions_campaign_version_invitee_reward_idx','campaign_versions_campaign_version_inviter_reward_idx',
       'campaign_versions_campaign_version_winback_reward_idx','eligibility_checks_eligibility_check_owner_idx',

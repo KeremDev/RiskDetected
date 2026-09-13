@@ -27,6 +27,8 @@ P18 tasarım kaydı: `design/osgb-nova-reference.json`; expert-only üretilmiş 
 
 - [notification-backbone.md](notification-backbone.md): dört ayrı amaç, rıza kökeni (OS izni pazarlama rızası değildir), üretici sahipliği ve shadow modu, gönderim-anı kapısı ve teslim iddiası taşımayan deneme kaydı. Legacy kuyruk yazılmaz, rollout kapalı.
 
+- [observability-admin.md](observability-admin.md): yasak yük taşıyamayan teknik olay zarfı, analiz satırından önce başlayan teşhis zinciri, görülmeyen sonucun başarı sayılmaması, engellemeyen telemetri, izinsiz atıf yasağı ve MFA/scope/simulate/audit ile fail-closed admin publish'i. Rollout kapalı; panel bu turda değişmedi.
+
 - [campaign-referral-winback.md](campaign-referral-winback.md): insan onaylı kampanya yayını, kanonik hesap anti-abuse'u, yalnız sunucu kanıtıyla qualification, aile başına tek winback episode'u, gönderim-anı yeniden doğrulaması ve saat sıfırlamayan suppression. Ödüller P14 defterinden geçer; rollout kapalı.
 
 - [billing-lifecycle.md](billing-lifecycle.md): kanonik lifecycle defteri, hediye/indirim yapısal ayrımı, mağaza fiyatına dayalı quote, tek canlı checkout ve family'siz tek settlement anahtarı. Projeksiyon `access_authority='legacy'`, rollout kapalı.
