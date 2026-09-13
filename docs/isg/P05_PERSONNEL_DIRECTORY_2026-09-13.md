@@ -2,6 +2,8 @@
 
 Tarih: 13 Eylül 2026. Durum: **bu alt dilim doğrulandı; P05 bütünü açık**.
 
+Sonraki ilerleme: [gerçek migration ve HTTP/RPC dilimi](P05_PERSONNEL_MIGRATION_2026-09-13.md) eklendi. Aşağıdaki SQL/Auth adayı ve test sayıları bu önceki turun tarihsel kaydıdır; native SDK/root ve kalıcı pending eksikleri devam eder.
+
 ## Yapılanlar
 
 - iOS ve Android: firmaya bağlı personel listesi, arama, 50 kayıtlık sayfalama, arşiv filtresi, detay, ekleme, düzenleme ve arşivleme onayı.

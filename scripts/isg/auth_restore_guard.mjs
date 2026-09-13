@@ -17,7 +17,7 @@ export function assertNoExposedRestoreContainer(i) {
 // Resolve the installed image ID from the approved immutable RepoDigest first;
 // a container must match that ID, not assume its ID equals the registry digest.
 export function resolvePinnedRestoreImage(info, reference) {
-  if (!/^public\.ecr\.aws\/supabase\/(postgres|gotrue|storage-api)@sha256:[a-f0-9]{64}$/.test(reference) ||
+  if (!/^public\.ecr\.aws\/supabase\/(postgres|gotrue|storage-api|postgrest)@sha256:[a-f0-9]{64}$/.test(reference) ||
       !info || !/^sha256:[a-f0-9]{64}$/.test(info.Id ?? '') || !Array.isArray(info.RepoDigests) ||
       !info.RepoDigests.includes(reference) || info.Os !== 'linux' || !['arm64','amd64'].includes(info.Architecture)) {
     throw new Error('AUTH_RESTORE_PINNED_IMAGE_INVALID');

@@ -1,0 +1,460 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-13",
+  "phase": "P05",
+  "phase_complete": false,
+  "production_deployed": false,
+  "run_id": "4545dd35-6fba-4bd6-bc97-e84ae4ed0984",
+  "started_at": "2026-09-13T08:05:55.123Z",
+  "finished_at": "2026-09-13T08:06:28.559Z",
+  "total_checks": 221,
+  "passed": 221,
+  "migration_checks": 52,
+  "http_checks": 18,
+  "advisor_checks": 3,
+  "checks": [
+    {
+      "id": "personnel_migration_legacy_rows_unchanged",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_backfill_one_default_each_and_unknown_context",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_rollout_default_off_read",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_rollout_default_off_write",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_private_tables_rls_and_zero_client_privileges",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_public_wrappers_invoker_only",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_checked_entry_points_only_and_fixed_search_path",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_foreign_company",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_mismatched_legacy_sub",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_paid_session_name_only_inline_department",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_dates_remain_unknown",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_create_retry_no_duplicate",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_same_key_different_body",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_personnel_audit_fault_rolls_back_employee_department_and_events",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_personnel_outbox_fault_rolls_back_employee_department_and_events",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_personnel_receipts_fault_rolls_back_employee_department_and_events",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_turkish_department_reused",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_unknown_department_no_side_effect",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_subscription_lock_probe_ready",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_subscription_revoke_waits_for_authorized_transaction",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_subscription_lock_authorized_write_completes",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_twenty_edit_races_one_commit",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_paid_active_future",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_paid_trialing_future",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_paid_grace_period_future",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_paid_expired_future",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_paid_paused_future",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_paid_billing_issue_future",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_paid_inactive_future",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_paid_cancelled_future",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_paid_active_past",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_paid_active_null",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_profile_pro_cannot_grant_access",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_user_metadata_cannot_grant_access",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_free_owner_can_read_retained_records",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_archive_and_retry_same_receipt",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_archive_retains_employee",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_archived_create_receipt_not_replayed",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_archived_employee_cannot_edit",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_active_list_excludes_archived",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_archive_filter_includes_retained",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_keyset_pages_50_50_5_no_duplicates",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_search_wildcards_are_literal",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_kill_switch_denies_cached_receipt",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_kill_switch_keeps_read",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_legacy_new_company_catchup_while_rollout_disabled",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_backfill_retry_stable_ids",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_disposable_company_personnel_created",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_company_deletion_cascades_entire_new_graph",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_other_company_survives_cascade",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_http_no_token_denied",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_http_forged_signature_denied",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_http_verified_login_creates_via_public_wrapper",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_http_retry_same_receipt",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_http_changed_payload_conflict",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_http_owner_list",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_http_detail_includes_department",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_http_department_list",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_http_edit_removes_optional_department",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_http_stale_version_denied",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_http_archive_retains_record",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_http_unknown_company_denied",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_http_private_schema_not_exposed",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_http_private_rpc_not_exposed",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_http_private_table_not_in_public",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_advisor_cli_completed",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_advisor_new_schema_no_errors",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_advisor_no_unreviewed_findings",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_logout_read",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_migration_logout_write",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_http_revoked_session_read_denied",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_http_revoked_session_write_denied",
+      "result": "PASS"
+    },
+    {
+      "id": "personnel_http_revoked_session_receipt_denied",
+      "result": "PASS"
+    }
+  ],
+  "migration": {
+    "migration_file": "supabase/migrations/20260913074153_isg_personnel_owner_rpc.sql",
+    "exact_migration_executed": true,
+    "real_local_auth": true,
+    "existing_subscription_helper": true,
+    "full_schema_restore": false,
+    "http_e2e_tested_by_this_probe": false,
+    "production_deployed": false
+  },
+  "http": {
+    "postgrest": true,
+    "verified_local_gotrue_token": true,
+    "public_schema_only": true,
+    "kong_gateway": false,
+    "mobile_sdk": false,
+    "production_deployed": false
+  },
+  "advisors": {
+    "cli": true,
+    "read_only_role": true,
+    "private_unix_socket": true,
+    "full_schema_restore": false,
+    "total_findings": 55,
+    "relevant_findings": [
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "metadata": {
+          "name": "departments",
+          "type": "table",
+          "schema": "private_isg"
+        }
+      },
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "metadata": {
+          "name": "employees",
+          "type": "table",
+          "schema": "private_isg"
+        }
+      },
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "metadata": {
+          "name": "personnel_audit",
+          "type": "table",
+          "schema": "private_isg"
+        }
+      },
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "metadata": {
+          "name": "personnel_outbox",
+          "type": "table",
+          "schema": "private_isg"
+        }
+      },
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "metadata": {
+          "name": "personnel_receipts",
+          "type": "table",
+          "schema": "private_isg"
+        }
+      },
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "metadata": {
+          "name": "rollout",
+          "type": "table",
+          "schema": "private_isg"
+        }
+      },
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "metadata": {
+          "name": "workplace_initializations",
+          "type": "table",
+          "schema": "private_isg"
+        }
+      },
+      {
+        "name": "rls_enabled_no_policy",
+        "level": "INFO",
+        "metadata": {
+          "name": "workplaces",
+          "type": "table",
+          "schema": "private_isg"
+        }
+      }
+    ]
+  },
+  "images": {
+    "db": "public.ecr.aws/supabase/postgres@sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b",
+    "auth": "public.ecr.aws/supabase/gotrue@sha256:362659ca70eaa75ba05bbaf963caa84c1c5afe5e8fbf0777e17b830dd5f0f60a",
+    "client": "public.ecr.aws/supabase/storage-api@sha256:28424184c9f699790cc190f78ddf7d6abfb5c87af78af260529a394d12c135e9",
+    "rest": "public.ecr.aws/supabase/postgrest@sha256:2f8e7b656f09db697a8875177694b417b35cb76c21370de07fc54e711e902326"
+  },
+  "source_sha256": {
+    "scripts/isg/run_auth_restore.mjs": "2ed93fe82de9c84afa95e0da208c238eaae2d97101e26c24409ddbb41d0dcdbd",
+    "scripts/isg/password_auth_probe.mjs": "a019d47f0bddd2d4f6b6b179e62503d0fc17aadd90f735263bad4ea86ad5d7cc",
+    "scripts/isg/signup_recovery_probe.mjs": "bbcd21630df79e5fc2095dc354e90d7b5b0e410d3f3b1caf270e877c53099c1d",
+    "scripts/isg/auth_mail_sink.cjs": "07e7e5b6e34cbe08c664b1948b9c6f99b1ebe3f4735d79bb2dbb60c70c6cc275",
+    "scripts/isg/auth_session_probe.mjs": "1c858ffda4550d4b019c08192dfc67c4a4dafbf691ab973caf1968aca37faebe",
+    "scripts/isg/auth_mutation_probe.mjs": "ac64fae84161e4af3f6a761b187ff09df2916cef106bf32dcddb8ee17b9aece9",
+    "scripts/isg/sql/auth_mutation_fixture.sql": "0ed052d6edb148743bfaa6014ac030748a11acf1b41db65ebfad5be399f6d03c",
+    "scripts/isg/sql/transaction_fixture.sql": "87eafb27e40d6db096a6e10837655a3f7e823e75e0aaaaed4b978e2ae8f52b18",
+    "scripts/isg/restore_mode.mjs": "0cd2c5cdd3d2ee07e57ce4d1998e7cba63428e4522306b8f210ec381b79ce700",
+    "scripts/isg/sql/auth_session_fixture.sql": "bc5deff6efae02be4c0afe88c07101820c338861676f39879e96a136c3ed751d",
+    "scripts/isg/auth_restore_guard.mjs": "8d1bfa75f4036bae891fc827c9f104244628a0973151435622bcf993a61d7845",
+    "scripts/isg/sql/workplace_fixture.sql": "81bb64bcbef8690582a6c70086dafc3194e47dfce63cb1025bb0ef43395236f7",
+    "scripts/isg/sql/personnel_fixture.sql": "b244c04e7c6b113eb5a57fb0f16b5071f517350e809fa0c3da12f90ebc93c9eb",
+    "scripts/isg/sql/personnel_mutation_fixture.sql": "2883d334e4ece4428c1499cedce5e14ac3f08a05fecf4982fb12d1769fc04d21",
+    "scripts/isg/sql/employee_intake_fixture.sql": "7b505578674a737f6c756c80c9515c3ea5e4a40e0965743d6c79a9f3c7b7b453",
+    "scripts/isg/sql/employee_directory_fixture.sql": "093325cfafccc3b8e5e79e2c0543199e536b02dc01aa79b95b41f434fba2e1e8",
+    "scripts/isg/sql/auth_personnel_fixture.sql": "c26b4c51b8b3a9b681c6a6808a4d7ecb801883e5a4e52e5c0e146aa531d135de",
+    "scripts/isg/auth_personnel_probe.mjs": "05e584e85e5e453ab79564bbc0d77245dc63d1fed2e7a4bc1518e7009bbbb9a0",
+    "supabase/functions/_shared/personnel/directory-request.ts": "d24bf622958c0a5d254fa344d95ca11e41a7c0936862ea7ff03d23b3f7c9cb17",
+    "supabase/functions/_shared/personnel/employee-create.ts": "3f50549d7e4fe4319ee286359a1169e77308828fecfc2913215bb98e07ce5635",
+    "supabase/functions/_shared/isg/mutation-context.ts": "7e74a453c320be3fe3f61ae7abc084ccea36e17f3c8b3d480823ca67cdfa7e90",
+    "supabase/migrations/20260913074153_isg_personnel_owner_rpc.sql": "a04da9ebbe6e184776dda705e7110a28e8bbe676b4f57f53a9f5a704816729c7",
+    "supabase/migrations/20260520154818_add_companies.sql": "c7ce21b0c52833812ce1f6be895f2f95b4a149c31794b387b7e7e6dc793a080d",
+    "supabase/migrations/20260513101505_free_plus_pro_subscription_system.sql": "863be44ce77558396c70def1dbbcf6de159608f9894dd18886f39d27aa779c8a",
+    "supabase/migrations/20260513223911_fix_subscription_quota_review_findings.sql": "234b01e049eec7f4b3828549162be6a81843e7073f16db5c69561e63f14d59e1",
+    "scripts/isg/personnel_migration_probe.mjs": "d26f8791871978c5e2a5a2995f07cc7cf09e468799d6fc6b531b89716a45221c",
+    "scripts/isg/personnel_http_probe.mjs": "75def47c1e51039cd093ab6999adee2e578d8b9a9d25d466a68d6260943d5767",
+    "scripts/isg/personnel_advisor_probe.mjs": "434379b2ad8efc1518d1b428b9db5d96a53a60970849a3749ae7b66acf102687",
+    "supabase/functions/_shared/personnel/rpc-request.ts": "e86d9015efc5a49c4e1208bdcca2a54122740bf8ec2eb5f8fa24917db59785b9"
+  },
+  "cleanup": "PASS",
+  "original_source_accessed": false,
+  "ports_published": false,
+  "mobile_e2e_tested": false,
+  "regressions": {
+    "database": {
+      "run_id": "72bfdb37-366b-4b12-b325-0ab6b4ae14a1",
+      "passed": 135,
+      "legacy_oracle_passed": 329,
+      "cleanup": "PASS"
+    },
+    "foundation": 159,
+    "nova_design": 24,
+    "deno_typecheck": "PASS",
+    "identity_source_check": "PASS"
+  }
+}

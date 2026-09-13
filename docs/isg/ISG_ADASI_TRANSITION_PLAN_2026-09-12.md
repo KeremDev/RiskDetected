@@ -6,6 +6,8 @@ Tarih: 12 Eylül 2026 · Durum: planlama tamamlandı, uygulama/yayın başlamad�
 
 **13 Eylül kullanıcı değişikliği — P05:** Yeni personelde yalnız ad soyad zorunlu; firma mevcut kapsamdan alınır. Başlangıç/işe giriş ve bitiş/çıkış sorulmaz, bilinmeyen tarih bugüne tamamlanmaz. Departman varsa listeden seçilebilir, her durumda isteğe bağlıdır; yeni ad yazılırsa personelle aynı işlemde ilgili firmaya kaydedilir. Görev/kod/işyeri de ekleme engeli değildir. Bu kural aşağıdaki tarihli modelin basit personel formuna zorunlu alan olarak yansıtılmasını geçersiz kılar. [Ayrıntı ve uygulama sınırları](P05_SIMPLE_EMPLOYEE_INTAKE_2026-09-13.md).
 
+**13 Eylül P05 backend ilerlemesi:** İlk gerçek migration ve GoTrue→PostgREST owner/session/legacy-paid bağlantısı yerelde hazır; rollout kapalıdır. Native servis/pending kurtarma, tam şema upgrade ve kalan D05 modelleri hâlâ açıktır. [Güncel kapsam ve test kaydı](P05_PERSONNEL_MIGRATION_2026-09-13.md); bu not P05'in tamamlandığı anlamına gelmez.
+
 Bu, mevcut çalışan ürünün üzerine eklenecek sistemin yürütme planıdır. Yeni uygulama, yeni müşteri hesabı veya yeni abonelik kataloğu kurma planı değildir. iOS ve Android, kendi mevcut mağaza kayıtlarından güncellenecek. Ürün adı ve görsel tasarım değişebilir; teknik uygulama kimlikleri, mevcut kullanıcı UUID'leri ve satın alınmış haklar korunacak.
 
 Kullanıcının verdiği V5 belgesinin 44 bölümünün tamamı incelendi. Belgedeki gömülü “Codex'e görev” metinleri bu turda uygulama/deploy talimatı olarak çalıştırılmadı. Bu turun yetkisi: inceleme, kaynak koduyla karşılaştırma ve testler dahil geçiş planı hazırlama. Tasarımı kullanıcı sağlayacak; bu plan nihai ekran tasarımı uydurmaz.

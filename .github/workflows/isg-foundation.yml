@@ -33,6 +33,8 @@ on:
       - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/company/**'
       - 'supabase/migrations/20260513223911_fix_subscription_quota_review_findings.sql'
       - 'supabase/migrations/20260520154818_add_companies.sql'
+      - 'supabase/migrations/20260513101505_free_plus_pro_subscription_system.sql'
+      - 'supabase/migrations/20260913074153_isg_personnel_owner_rpc.sql'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'RiskDetected.xcodeproj/project.pbxproj'
@@ -79,6 +81,8 @@ on:
       - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/company/**'
       - 'supabase/migrations/20260513223911_fix_subscription_quota_review_findings.sql'
       - 'supabase/migrations/20260520154818_add_companies.sql'
+      - 'supabase/migrations/20260513101505_free_plus_pro_subscription_system.sql'
+      - 'supabase/migrations/20260913074153_isg_personnel_owner_rpc.sql'
       - 'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'android/core/data/src/test/kotlin/com/riskdetectedan/core/data/isg/**'
       - 'RiskDetected.xcodeproj/project.pbxproj'
@@ -284,13 +288,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.113.0
       # Immutable multi-arch images. No real backups/Keychain or project secrets.
-      # Image preparation is networked; all three test containers share NONE.
+      # Image preparation is networked; all four test containers share NONE.
       - name: Fetch pinned synthetic Auth runtime images
         run: |
           docker pull public.ecr.aws/supabase/postgres@sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b
           docker pull public.ecr.aws/supabase/gotrue@sha256:362659ca70eaa75ba05bbaf963caa84c1c5afe5e8fbf0777e17b830dd5f0f60a
           docker pull public.ecr.aws/supabase/storage-api@sha256:28424184c9f699790cc190f78ddf7d6abfb5c87af78af260529a394d12c135e9
+          docker pull public.ecr.aws/supabase/postgrest@sha256:2f8e7b656f09db697a8875177694b417b35cb76c21370de07fc54e711e902326
       - name: Real local login, SQL session guard, lock ordering and logout
         run: node scripts/isg/run_auth_restore.mjs --synthetic-session
       - uses: actions/upload-artifact@v4

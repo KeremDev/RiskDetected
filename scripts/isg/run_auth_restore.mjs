@@ -10,6 +10,9 @@ import { parseRestoreMode } from './restore_mode.mjs';
 import { beginSessionProbe } from './auth_session_probe.mjs';
 import { beginAuthMutationProbe } from './auth_mutation_probe.mjs';
 import { beginAuthPersonnelProbe, personnelAuthFiles } from './auth_personnel_probe.mjs';
+import { beginPersonnelMigrationProbe, personnelMigrationFiles } from './personnel_migration_probe.mjs';
+import { beginPersonnelHTTPProbe } from './personnel_http_probe.mjs';
+import { probePersonnelAdvisors } from './personnel_advisor_probe.mjs';
 import { probePasswordAuth } from './password_auth_probe.mjs';
 import { probeSignupRecovery } from './signup_recovery_probe.mjs';
 
@@ -21,6 +24,7 @@ const names = { db: 'isg_auth_restore_20260912_db', auth: 'isg_auth_restore_2026
 const withStorage = process.argv.includes('--with-storage');
 const synthetic = process.argv.length === 3 && process.argv[2] === '--synthetic-session';
 if (synthetic) for (const kind of Object.keys(names)) names[kind] = `isg_test_auth_session_${kind}`;
+if (synthetic) names.rest = 'isg_test_auth_session_rest';
 if (withStorage) names.storage = 'isg_auth_restore_20260912_storage';
 const images = {
   db: 'public.ecr.aws/supabase/postgres@sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b',
@@ -28,6 +32,7 @@ const images = {
   client: 'public.ecr.aws/supabase/storage-api@sha256:28424184c9f699790cc190f78ddf7d6abfb5c87af78af260529a394d12c135e9',
 };
 if (withStorage) images.storage = images.client;
+if (synthetic) images.rest = 'public.ecr.aws/supabase/postgrest@sha256:2f8e7b656f09db697a8875177694b417b35cb76c21370de07fc54e711e902326';
 const owned = new Map(), run = randomUUID(), label = 'com.riskdetected.isg-auth-restore';
 const resolvedImages = new Map();
 const report = { schema_version: 1, run_id: run, started_at: new Date().toISOString(), mode: synthetic ? 'synthetic_auth_session' : 'isolated_restored_copy',
@@ -282,6 +287,8 @@ try {
   let sessionProbe;
   let mutationProbe;
   let personnelProbe;
+  let personnelMigrationProbe;
+  let personnelHTTPProbe;
   if (mode.sessionGuard) {
     stage = 'session-guard';
     sessionProbe = await beginSessionProbe({ sql, concurrentSql, token: refresh.body.access_token, secret, pass });
@@ -291,12 +298,20 @@ try {
     mutationProbe = await beginAuthMutationProbe({ synthetic:true, sql, concurrentSql, token:refresh.body.access_token, secret, pass });
     stage = 'auth-personnel-composition';
     personnelProbe = beginAuthPersonnelProbe({ synthetic:true, sql, token:refresh.body.access_token, secret, pass });
+    stage = 'personnel-production-migration';
+    personnelMigrationProbe = await beginPersonnelMigrationProbe({ synthetic:true, sql, concurrentSql, token:refresh.body.access_token, secret, pass });
+    stage = 'personnel-http';
+    personnelHTTPProbe = await beginPersonnelHTTPProbe({synthetic:true,token:refresh.body.access_token,secret,companyID:personnelMigrationProbe.companyID,sql,start,guard,docker,names,waitReady,pass});
+    stage = 'personnel-advisors';
+    report.personnel_advisors=await probePersonnelAdvisors({synthetic:true,sql,guard,names,pass});
   }
   pass('logout_succeeds', request('/logout', { method: 'POST', token: refresh.body.access_token }).status === 204);
   pass('logged_out_refresh_rejected', request('/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: refresh.body.refresh_token } }).status === 400);
   if (sessionProbe) report.session_guard = sessionProbe.afterLogout();
   if (mutationProbe) report.auth_mutation = mutationProbe.afterLogout();
   if (personnelProbe) report.auth_personnel = personnelProbe.afterLogout();
+  if (personnelMigrationProbe) report.personnel_migration = personnelMigrationProbe.afterLogout();
+  if (personnelHTTPProbe) report.personnel_http = personnelHTTPProbe.afterLogout();
   if (mode.synthetic) {
     stage = 'password-auth-boundaries';
     report.password_auth = probePasswordAuth({synthetic:true, request, admin, pass});
@@ -315,6 +330,7 @@ try {
   } else pass('synthetic_no_backup_or_storage_lane_used',!withStorage && report.original_source_accessed === false);
   report.source_sha256 = Object.fromEntries(['scripts/isg/run_auth_restore.mjs','scripts/isg/password_auth_probe.mjs','scripts/isg/signup_recovery_probe.mjs','scripts/isg/auth_mail_sink.cjs','scripts/isg/auth_session_probe.mjs','scripts/isg/auth_mutation_probe.mjs','scripts/isg/sql/auth_mutation_fixture.sql','scripts/isg/sql/transaction_fixture.sql','scripts/isg/restore_mode.mjs','scripts/isg/sql/auth_session_fixture.sql','scripts/isg/auth_restore_guard.mjs']
     .concat(personnelAuthFiles, ['scripts/isg/auth_personnel_probe.mjs','supabase/functions/_shared/personnel/directory-request.ts','supabase/functions/_shared/personnel/employee-create.ts','supabase/functions/_shared/isg/mutation-context.ts'])
+    .concat(personnelMigrationFiles)
     .map(path=>[path,digest(readFileSync(resolve(ROOT,path)))]));
   report.ok = true;
 } catch (error) {
