@@ -11,6 +11,8 @@ P18 tasarım kaydı: `design/osgb-nova-reference.json`; expert-only üretilmiş 
 - [event-dispatch.md](event-dispatch.md): P05 üreticilerini tüketen sunucu tarafı dağıtım defteri; lease/backoff/dead-letter/replay/reconcile. İstemci GRANT'i yok, rollout kapalı, gerçek tüketici henüz yazılmadı.
 - [quota-reservation.md](quota-reservation.md): gölge kota defteri ve ölçülmüş eski hak tabanı. Her satır `authority='shadow'`; mevcut limit/abonelik otoritesi değişmedi.
 
+- [file-acceptance.md](file-acceptance.md): amaç bazlı 13 format kabul matrisi, karantina→tarama→immutable promotion yaşam döngüsü ve anti-TOCTOU kuralı. Bucket/tarayıcı/istemci yüzeyi yok, rollout kapalı.
+
 - safety-policy.json: mevcut teknik kimlikler, kaynak hash'i ve bağımsız local test hedefleri. Staging allowlist şu an boş; herhangi bir staging/prod/store isteği kapalıdır.
 - local-test-environment.example.json: yalnız synthetic/mock/sink ortam bildirimi. Dosyanın doğrulanması çalışan veya güvenli bir backend bulunduğu anlamına gelmez.
 - scripts/isg/verify_environment.mjs: manifest'i fail-closed doğrular. DB runner, gerçek Docker inspection'ını da validateContainerInspection ile doğrulamak zorundadır. Normal bridge veya mevcut local stack izolasyon sayılmaz.

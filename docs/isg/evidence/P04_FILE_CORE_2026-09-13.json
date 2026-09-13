@@ -1,0 +1,202 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-13",
+  "phase": "P04",
+  "slice": "purpose acceptance matrix, upload intent, quarantine state machine, anti-TOCTOU promotion, derivatives",
+  "phase_complete": false,
+  "production_deployed": false,
+  "rollout_enabled_in_migration": false,
+  "client_grant_added": false,
+  "storage_bucket_created": false,
+  "real_scanner_connected": false,
+  "document_parser_security_spike_done": false,
+  "document_generation_or_import_implemented": false,
+  "synthetic_auth_run": {
+    "run_id": "1e24a78e-4020-466a-b451-9630105763ff",
+    "report": "output/isg/runs/synthetic-auth-Zaq7sn/REPORT.json",
+    "total_checks": 399,
+    "failures": [],
+    "new_checks": 37,
+    "cleanup": "PASS"
+  },
+  "new_checks": [
+    {
+      "id": "file_core_migration_applied",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_rollout_defaults_off",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_acceptance_matrix_reads_without_the_rollout",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_gate_blocks_intent_while_rollout_off",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_file_tables_have_rls_and_no_client_grant",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_purpose_matrix_accepts_and_rejects_every_pair",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_csv_is_import_only_and_heic_is_never_a_logo",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_extension_case_is_normalized_but_unknown_purpose_is_refused",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_candidate_size_limits_are_marked_unapproved",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_intent_opens_in_quarantine_with_a_unique_path",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_intent_replays_the_same_mutation",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_intent_conflicts_on_a_changed_body",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_unsupported_format_never_creates_an_intent",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_oversized_declaration_never_creates_an_intent",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_a_different_hash_than_declared_is_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_a_different_size_than_declared_is_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_an_unusable_media_type_is_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_a_matching_upload_becomes_uploaded_and_replays",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_promotion_requires_a_clean_scan",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_a_scan_of_different_bytes_is_a_hash_mismatch",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_a_rejecting_scanner_verdict_stops_the_file",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_a_scanner_outage_is_never_clean",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_a_clean_scan_marks_the_intent_clean",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_promotion_reverifies_the_scanned_bytes",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_only_a_clean_reverified_original_becomes_an_asset",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_promotion_replays_without_a_second_asset",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_a_promoted_intent_can_not_be_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_an_immutable_path_can_not_be_overwritten",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_a_failed_preview_leaves_the_original_clean_and_readable",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_a_derivative_is_upserted_per_renderer_version",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_a_derivative_needs_a_real_asset",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_an_expired_intent_is_closed_not_left_open",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_an_open_intent_reserves_storage_in_the_shadow_ledger",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_promotion_settles_and_rejection_releases_the_reservation",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_a_shadow_storage_denial_does_not_block_the_upload",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_a_closed_ledger_does_not_block_the_file_core",
+      "result": "PASS"
+    },
+    {
+      "id": "file_core_kill_switch_stops_every_file_entry_point",
+      "result": "PASS"
+    }
+  ],
+  "full_legacy_copy_upgrade": {
+    "run_id": "17bb0fd0-9d89-4e12-8f96-a79cea951465",
+    "total_checks": 28,
+    "failures": [],
+    "legacy_rows_unchanged": true,
+    "legacy_helper_definitions_unchanged": true,
+    "source_container_unchanged": true,
+    "cleanup": "PASS"
+  },
+  "acceptance_matrix": {
+    "purposes": 4,
+    "formats": 13,
+    "accepted_pairs": 19,
+    "rejected_pairs": 33,
+    "size_limits": "v5_candidate, limit_approved=false"
+  },
+  "source_sha256": {
+    "supabase/migrations/20260913130000_isg_file_core.sql": "374a8b0a8e1a41520a645bb28f1c0a1f722dc9882df604007365a32807374737",
+    "scripts/isg/file_core_probe.mjs": "0ab7557b7b4d095a249e71c5f296f2e080ce548ac45314dee1f1afa1f6af1148",
+    "scripts/isg/file_core_guard.test.mjs": "8c9aadef11366023fb07674d495ef19d2764a92e8200062d41ecadbd04e2131e",
+    "contracts/isg/v1/file-acceptance.md": "0f153891c89250998044120e11003e5c8760cc582af9ad4040348eadf72a3d00"
+  },
+  "not_proven": [
+    "AV or parser sandbox behaviour",
+    "DOC/XLS positive security fixtures",
+    "signed URL and bucket policy",
+    "document generation and import",
+    "native or HTTP upload surface",
+    "production migration or rollout"
+  ]
+}

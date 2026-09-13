@@ -16,6 +16,7 @@ import { probePersonnelAdvisors } from './personnel_advisor_probe.mjs';
 import { beginDirectoryMigrationProbe, directoryMigrationFiles } from './directory_migration_probe.mjs';
 import { beginWorkspaceAvailabilityProbe, workspaceAvailabilityFiles } from './workspace_availability_probe.mjs';
 import { beginDispatchQuotaProbe, dispatchQuotaFiles } from './dispatch_quota_probe.mjs';
+import { beginFileCoreProbe, fileCoreFiles } from './file_core_probe.mjs';
 import { probeP05Upgrade, p05UpgradeFiles } from './p05_upgrade_probe.mjs';
 import { probePasswordAuth } from './password_auth_probe.mjs';
 import { probeSignupRecovery } from './signup_recovery_probe.mjs';
@@ -302,6 +303,7 @@ try {
   let directoryProbe;
   let workspaceProbe;
   let dispatchProbe;
+  let fileProbe;
   if (mode.sessionGuard) {
     stage = 'session-guard';
     sessionProbe = await beginSessionProbe({ sql, concurrentSql, token: refresh.body.access_token, secret, pass });
@@ -321,6 +323,8 @@ try {
     workspaceProbe=await beginWorkspaceAvailabilityProbe({synthetic:true,sql,token:refresh.body.access_token,secret,companyID:personnelMigrationProbe.companyID,request:personnelHTTPProbe.request,waitReady,pass});
     stage = 'dispatch-and-quota-ledger';
     dispatchProbe=await beginDispatchQuotaProbe({synthetic:true,sql,concurrentSql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
+    stage = 'file-core';
+    fileProbe=await beginFileCoreProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'personnel-advisors';
     report.personnel_advisors=await probePersonnelAdvisors({synthetic:true,sql,guard,names,pass,onFindings:value=>{report.personnel_advisors=value;}});
   }
@@ -355,6 +359,7 @@ try {
   if (directoryProbe) report.directory = directoryProbe.afterLogout();
   if (workspaceProbe) report.workspace = workspaceProbe.afterLogout();
   if (dispatchProbe) report.dispatch_quota = dispatchProbe.afterLogout();
+  if (fileProbe) report.file_core = fileProbe.afterLogout();
   if (mode.synthetic) {
     stage = 'password-auth-boundaries';
     report.password_auth = probePasswordAuth({synthetic:true, request, admin, pass});
@@ -377,6 +382,7 @@ try {
     .concat(directoryMigrationFiles)
     .concat(workspaceAvailabilityFiles)
     .concat(mode.synthetic ? dispatchQuotaFiles : [])
+    .concat(mode.synthetic ? fileCoreFiles : [])
     .concat(mode.p05Upgrade ? p05UpgradeFiles : [])
     .concat(mode.nativeE2E ? ['scripts/isg/native_e2e_bridge.mjs','scripts/isg/native_e2e_oracle.mjs','scripts/isg/run_native_android.mjs','tests/isg/native-ios/NativeHarness.swift','tests/isg/native-ios/NativeUITests.swift','android/isg-native-check/src/main/kotlin/com/riskdetectedan/isg/nativecheck/NativeActivity.kt','android/isg-native-check/src/androidTest/kotlin/com/riskdetectedan/isg/nativecheck/NativeFlowTest.kt'] : [])
     .map(path=>[path,digest(readFileSync(resolve(ROOT,path)))]));
