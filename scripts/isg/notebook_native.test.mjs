@@ -1,0 +1,19 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { ROOT } from './lib.mjs';
+
+// Local pure-core test only: does not access Keychain, Supabase or an app account.
+test('Swift production notebook queue: retry, identity isolation and conflict preservation', { skip: process.platform !== 'darwin' }, t => {
+  const directory = mkdtempSync(join(tmpdir(), 'isg-notebook-core-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const binary = join(directory, 'check');
+  const compiled = spawnSync('swiftc', ['-parse-as-library', 'App/Services/Notebook/NotebookQueue.swift', 'scripts/isg/NotebookQueueCheck.swift', '-o', binary], { cwd: ROOT, encoding: 'utf8', timeout: 60000 });
+  assert.equal(compiled.status, 0, compiled.stderr);
+  const executed = spawnSync(binary, [], { encoding: 'utf8', timeout: 10000 });
+  assert.equal(executed.status, 0, executed.stderr);
+  assert.match(executed.stdout, /28 checks PASS/);
+});
