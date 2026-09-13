@@ -103,6 +103,31 @@
       "fixture_sha256": "0bb5b207a5b69b2393bfdb21f6a4c8abeb9acbf1df9397244ae9e87678e4c5b3",
       "fixture_count": 221,
       "transition_count": 84
+    },
+    {
+      "id": "node-notification-worker",
+      "source": "supabase/functions/_shared/isg/notification-worker.ts",
+      "source_sha256": "05f259b7b7b676bd090c2f9ea35db018e6da5b074ecc3abb7bd5e8743ff2bbf0",
+      "runner": "node-notification",
+      "harness": "scripts/isg/notification_worker.test.mjs",
+      "harness_sha256": "749b4c9c08bf125f29d8ee637a371a58e80fb9a0b6e8536d6a2426f8f2a3736b",
+      "coverage": "targeted_behavior_tests",
+      "symbols": [
+        "validSnapshot",
+        "runNotificationJob"
+      ]
+    },
+    {
+      "id": "node-notification-transport",
+      "source": "supabase/functions/_shared/isg/notification-transport.ts",
+      "source_sha256": "612d6e910e2631abd2c0026555eaa6537d623304382664e2b462af816190adfd",
+      "runner": "node-notification",
+      "harness": "scripts/isg/notification_worker.test.mjs",
+      "harness_sha256": "749b4c9c08bf125f29d8ee637a371a58e80fb9a0b6e8536d6a2426f8f2a3736b",
+      "coverage": "targeted_behavior_tests",
+      "symbols": [
+        "preparePush"
+      ]
     }
   ]
 }

@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-13",
+  "phase": "P12",
+  "slice": "one-shot push worker orchestration and APNs/FCM transport library",
+  "slice_complete": true,
+  "phase_complete": false,
+  "base_commit": "7929c550",
+  "production_deployed": false,
+  "real_provider_called": false,
+  "real_repository_bound": false,
+  "sql_changed": false,
+  "native_changed": false,
+  "foundation": {
+    "passed": 298,
+    "failed": 0,
+    "command": "node scripts/isg/run_suite.mjs foundation",
+    "log_sha256": "f0d8a631dcac38dfade7543dae111d62dc5f469c0f94dd5b4d73db05d53e68df"
+  },
+  "behavior": {
+    "passed": 53,
+    "failed": 0,
+    "network_permission": false,
+    "environment_permission": false,
+    "command": "deno test --no-check --deny-net --deny-env --allow-read=supabase/functions/_shared/isg scripts/isg/notification_worker.test.mjs",
+    "log_sha256": "bd4a2c49dadc2d402572e021a25a2723c34cd9e6ed701fe054d8d255d64009de",
+    "note": "Same 53 scenarios as foundation, not 53 additional unique cases"
+  },
+  "types": {
+    "passed": true,
+    "command": "deno check supabase/functions/_shared/isg/notification-worker.ts supabase/functions/_shared/isg/notification-transport.ts"
+  },
+  "prior_failures": [
+    "First foundation: 293 pass / 4 fail; absolute URL accepted by route regex (3 tests), two unmapped runtime files (1 test). Fixed.",
+    "First Deno JS default typecheck could not resolve local @types/node. Production TS checked separately; JS suite executed with --no-check and deny-net/deny-env."
+  ],
+  "source_sha256": {
+    "supabase/functions/_shared/isg/notification-worker.ts": "05f259b7b7b676bd090c2f9ea35db018e6da5b074ecc3abb7bd5e8743ff2bbf0",
+    "supabase/functions/_shared/isg/notification-transport.ts": "612d6e910e2631abd2c0026555eaa6537d623304382664e2b462af816190adfd",
+    "scripts/isg/notification_worker.test.mjs": "749b4c9c08bf125f29d8ee637a371a58e80fb9a0b6e8536d6a2426f8f2a3736b",
+    "scripts/isg/run_suite.mjs": "fbee979319ef3d08922160e98ff8cf75e22e502c10b070b31793187fc2f0af60",
+    "scripts/isg/verify_function_map.mjs": "c9b45f9a08fd4073892a5427b8c3848683356c1d3d9692c46ef89bfb5f2e6f56",
+    "scripts/isg/function_map.test.mjs": "ec684f1819b5e48f3559a33b00588594d5d0d35e0d91d689fccbb2949c5a0d3f",
+    "contracts/isg/v1/function-test-map.json": "02818536698bec65b4c3171de232e6036828b0080c8139374d44fe3b66249b9c",
+    ".github/workflows/isg-foundation.yml": "7704c85e4447cae33325534cc32c9039c2814e523e85a92933286c7f85fabbe0"
+  }
+}

@@ -167,6 +167,10 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.7.14
+      - name: Typecheck notification worker and transports
+        run: deno check supabase/functions/_shared/isg/notification-worker.ts supabase/functions/_shared/isg/notification-transport.ts
+      - name: Notification behavior without network or environment permission
+        run: deno test --no-check --deny-net --deny-env --allow-read=supabase/functions/_shared/isg scripts/isg/notification_worker.test.mjs
       - name: Deno shared mutation fixtures (no network or env permissions)
         run: deno test --allow-read=contracts/isg/v1/fixtures supabase/functions/_shared/isg/mutation-context_test.ts supabase/functions/_shared/isg/mutation-outcome_test.ts
       - name: Auth email locale/action compatibility (renderer and source guards, not provider delivery)

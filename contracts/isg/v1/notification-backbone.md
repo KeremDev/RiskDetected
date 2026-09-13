@@ -1,6 +1,8 @@
 # Bildirim omurgası — v1 sunucu sözleşmesi
 
-14 Eylül 2026. P12'nin ilk dilimi. Gerçek APNs/FCM/e-posta adaptörü **yoktur**; burası onların uyacağı rıza, sahiplik ve gönderim-anı kural yüzeyidir. Mevcut legacy bildirim kuyruğu, tip CHECK'i ve üreticileri okunmaz ve yazılmaz.
+İşçi tarafı devamı: [tek istekli APNs/FCM adaptörü ve orchestration portları](../../../docs/isg/P12_WORKER_TRANSPORT_2026-09-13.md). Adaptör kütüphanesi mevcut; gerçek credential/repository/cihaz bağlantısı ve canlı gönderim henüz yoktur. Bu dosyanın SQL sözleşmesi değişmedi.
+
+14 Eylül 2026 başlıklı ilk dilimin güncellenmiş sözleşmesi. Gerçek APNs/FCM/e-posta bağlantısı **yoktur**; APNs/FCM kütüphane adaptörleri yukarıdaki devam paketinde bulunur. Burası taşıyıcıların uyacağı rıza, sahiplik ve gönderim-anı kural yüzeyidir. Mevcut legacy bildirim kuyruğu, tip CHECK'i ve üreticileri okunmaz ve yazılmaz.
 
 Migration zinciri: [ilk omurga](../../../supabase/migrations/20260914050000_isg_notification_core.sql) → [gönderim güvenliği düzeltmesi](../../../supabase/migrations/20260914070001_isg_notification_dispatch_safety.sql). Aşağıdaki sözleşme zincirin **son** durumunu anlatır; ilk migration tek başına güvenli gönderim kanıtı değildir.
 
