@@ -1,0 +1,89 @@
+{
+  "recorded_at": "2026-09-13T07:38:36.688Z",
+  "phase": "P05",
+  "phase_complete": false,
+  "production_deployed": false,
+  "source_sha256": {
+    "App/DesignSystem/ISG/NovaPersonnel.swift": "c95662328c55bb9441ad23c0e019d1e620631e5a17a39b20917fb6ae937d537c",
+    "App/DesignSystem/ISG/NovaPersonnelScreens.swift": "f8559e08f80badf2f4c9eaa7492feecba58cee3489a3d2a41bc77febe51dd7fa",
+    "android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaPersonnel.kt": "9e2e823b431e1b7b5a0633febc6c2d53731d81f272e0966da4abcc7fe15690fd",
+    "android/core/designsystem/src/main/kotlin/com/riskdetectedan/core/designsystem/isg/NovaPersonnelScreens.kt": "142cd0a80c2099ce587389b5c6d5a9599f88d67ec889c188a9f1c62e5112b108",
+    "android/core/designsystem/src/test/kotlin/com/riskdetectedan/core/designsystem/isg/NovaPersonnelDestinationTest.kt": "fda263a2d422231a6fb70bc0af87374a7c9e38cf20748bcd2fe757bd28589f0b",
+    "android/core/designsystem/src/test/kotlin/com/riskdetectedan/core/designsystem/isg/NovaPersonnelTest.kt": "d0352ebc2890fc62515fa192809e5f05af944ed3f9249ba8a427bd8ade7459d0",
+    "scripts/isg/NovaPersonnelCheck.swift": "af74ebeb8154f725dfcfebcd2d7e982c45952512a0e9aed8cf03193e6f03ca46",
+    "scripts/isg/auth_personnel_probe.mjs": "05e584e85e5e453ab79564bbc0d77245dc63d1fed2e7a4bc1518e7009bbbb9a0",
+    "scripts/isg/employee_directory_probe.mjs": "9005b7106b24cba865bd1f4345a1fed119d7120f99187f55709d350c897edcb4",
+    "scripts/isg/personnel_directory.test.mjs": "93c56edbe47f8450c103223d290a5ae5eba72f6e519831fcc288376189a3e053",
+    "scripts/isg/sql/auth_personnel_fixture.sql": "c26b4c51b8b3a9b681c6a6808a4d7ecb801883e5a4e52e5c0e146aa531d135de",
+    "scripts/isg/sql/employee_directory_fixture.sql": "093325cfafccc3b8e5e79e2c0543199e536b02dc01aa79b95b41f434fba2e1e8",
+    "supabase/functions/_shared/personnel/directory-request.ts": "d24bf622958c0a5d254fa344d95ca11e41a7c0936862ea7ff03d23b3f7c9cb17",
+    "tests/isg/shell-ios/PersonnelHarness.swift": "9e7c510a2b3e0ab017eebca9ac3218118fd5ba0c930256d39434cd5dfd4a6239",
+    ".github/workflows/isg-foundation.yml": "854a6717acbc788c2a9f4b4d7ccb79f228e6a735a3d0cc1d11e763411df55fbb",
+    "scripts/isg/nova_tokens.test.mjs": "e5e49a90f69db643492cd0983d3bc02205d4aec01ad1f3f3dff16aea62269e74",
+    "scripts/isg/run_auth_restore.mjs": "0bdfcb6f1f33275b8f0c00915dcd69109fab3c0b4c94676ec4af252a17a83e22",
+    "scripts/isg/run_database_contract.mjs": "8145ecd3bf24ac1fe1c08dfcc86c8312bfb5214f3148749423572f6b96e64ca1",
+    "scripts/isg/run_suite.mjs": "32f6db27968d0327420cd58a89bf58b40a9ad269dcf17ab4a81468d74768edf0",
+    "tests/isg/shell-ios/ISGShellHarness.xcodeproj/project.pbxproj": "f3ba745ec381099af0e78201570cf8954a7c44ac75170040d86bfd03cfd70eeb",
+    "tests/isg/shell-ios/ShellHarnessApp.swift": "bb18ca5b50bb1b4fc033bf040d4519296074ec9d042f29034cca7776d60b22b0",
+    "tests/isg/shell-ios/ShellUITests.swift": "de10d3f406f5062adf42ac2db9ee6619044d254204013e26312e01ff39fba06d",
+    "tests/isg/shell-ios/project.yml": "953182786fd0f0f4eefc231c249eecaba9ec4d1b03f6837868e34cf96ee28a47"
+  },
+  "database": {
+    "run_id": "69c3d434-573d-4519-b7fd-f2b55a8a2f38",
+    "passed": 135,
+    "ok": true,
+    "cleanup": "PASS"
+  },
+  "auth": {
+    "run_id": "9d38219e-9dea-4cf6-85bb-d8497cb580d2",
+    "checks": 148,
+    "passed": 148,
+    "ok": true,
+    "cleanup": "PASS"
+  },
+  "android": {
+    "designsystem": {
+      "tests": 358,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "data": {
+      "tests": 611,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "android_apk_build": "PASS",
+  "ios": {
+    "main_build": "PASS",
+    "main_build_log": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/logs/build_sim_2026-09-13T07-34-06-911Z_pid70458_9cf0c5c8.log",
+    "shell_full": {
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0,
+      "result": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-13T07-23-41-721Z_pid70458_db6ee750.xcresult"
+    },
+    "personnel_final": {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0,
+      "result": "/Users/keremkayalar/Library/Developer/XcodeBuildMCP/workspaces/RiskDetected-c2163d1a8d63/result-bundles/test_sim_2026-09-13T07-32-29-441Z_pid70458_8faa6cc7.xcresult"
+    },
+    "screenshots": "output/isg/personnel-ui-final-20260913/manifest.json"
+  },
+  "offline": {
+    "foundation_passed": 154,
+    "nova_passed": 24,
+    "swift_editor_check": "PASS",
+    "deno_typecheck": "PASS"
+  },
+  "limitations": [
+    "Native clients injected only into isolated UI harnesses, not production roots",
+    "SQL candidate and verified-session wrapper are synthetic-only, not production migrations or HTTP API",
+    "Paid access is a synthetic switch, not actual subscription authorization",
+    "Pending intents do not yet survive navigation/process death",
+    "Full P05 context/hierarchy/employer/assignment UI and E2E acceptance remain open"
+  ]
+}

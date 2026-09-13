@@ -17,6 +17,7 @@ struct ShellHarnessRoot: View {
     @State private var delayedResponse: (() -> Void)?
     @State private var noticeSnapshot: NovaScopedValue<[NovaNotice]>?
     @State private var companyRequests = 0
+    @StateObject private var personnel = PersonnelHarness()
     private static let fixtureNotices = [
         NovaNotice(id: "overdue", title: "Termini geçen aksiyonlar", detail: "Geciken düzeltmeleri önceliklendirerek inceleyin.", count: 1, symbol: "risk", tone: .statusDangerInk),
         NovaNotice(id: "active", title: "Aktif uygunsuzluklar", detail: "Sorumluluğunuzdaki firmalarda halen açık bulunan kayıtlar.", count: 1, symbol: "bell.fill", tone: .statusInfoInk)
@@ -48,7 +49,11 @@ struct ShellHarnessRoot: View {
                 onReadAll: { noticeSnapshot = sessionHost.scope(notices.map { var n = $0; n.unread = false; return n }, from: navigation.epoch) },
                 onClearNotifications: { noticeSnapshot = sessionHost.scope([], from: navigation.epoch) },
                 onLogout: { sessionHost.adopt(nil) }) { destination in
-                if args.contains("--company-loader"), destination == .companies {
+                if args.contains("--personnel"), destination == .home, let identity = sessionHost.identity {
+                    NovaPersonnelDestination(scope: .init(ownerID: identity.userID, sessionID: identity.sessionID,
+                        companyID: UUID(uuidString: "11111111-1111-4111-8111-111111111111")!, epoch: navigation.epoch),
+                        companyName: "Sentetik firma", client: personnel.client, onBack: {})
+                } else if args.contains("--company-loader"), destination == .companies {
                     NovaCompanyDestination(host: $sessionHost, loadCompanies: { _ in
                         companyRequests += 1
                         let owner = sessionHost.identity!.userID

@@ -47,6 +47,49 @@ import UIKit
         item.name = name; item.lifetime = .keepAlways; add(item)
     }
 
+    private func personnelAdd(_ department: String? = nil) {
+        tap("personnel.add")
+        let name = app.textFields["personnel.name"]
+        XCTAssertTrue(name.waitForExistence(timeout: 4)); name.tap(); name.typeText("Ada Kaya")
+        if let department {
+            let field = app.textFields["personnel.department"]
+            field.tap(); field.typeText(department)
+        }
+        app.swipeUp()
+        tap("personnel.save")
+    }
+
+    func testPersonnelNameOnlyCreateAndArchiveConfirmation() {
+        launch(["--personnel"])
+        personnelAdd()
+        XCTAssertTrue(app.staticTexts["Ada Kaya"].waitForExistence(timeout: 4))
+        XCTAssertTrue(app.staticTexts["Departman seçilmedi"].exists)
+        XCTAssertEqual(app.datePickers.count, 0)
+        screenshot("personnel-name-only-detail")
+        tap("personnel.edit")
+        app.swipeUp(); tap("personnel.archive")
+        XCTAssertTrue(app.buttons["personnel.archive.confirm"].waitForExistence(timeout: 4))
+        screenshot("personnel-archive-popup")
+        tap("personnel.archive.cancel")
+        XCTAssertFalse(app.buttons["personnel.archive.confirm"].exists)
+        tap("personnel.archive"); tap("personnel.archive.confirm")
+        XCTAssertTrue(app.staticTexts["Henüz personel yok."].waitForExistence(timeout: 4))
+    }
+
+    func testPersonnelInlineDepartmentAndCommittedResponseLossRetry() {
+        launch(["--personnel", "--personnel-retry"])
+        personnelAdd("Bakım")
+        XCTAssertTrue(app.buttons["personnel.retry"].waitForExistence(timeout: 4))
+        XCTAssertFalse(app.buttons["personnel.back"].isEnabled)
+        tap("personnel.retry")
+        XCTAssertTrue(app.staticTexts["Ada Kaya"].waitForExistence(timeout: 4))
+        XCTAssertTrue(app.staticTexts["Bakım"].exists)
+        tap("personnel.back")
+        XCTAssertTrue(app.staticTexts["Ada Kaya"].waitForExistence(timeout: 4))
+        XCTAssertEqual(app.staticTexts.matching(identifier: "Ada Kaya").count, 1)
+        screenshot("personnel-inline-department-list")
+    }
+
     /// Check rendered pixels, including pushed UIKit navigation destinations (not just token values).
     private func assertLightPageSurface(_ route: String) {
         XCTAssertFalse(app.navigationBars.firstMatch.exists, "NOVA owns the back button: \(route)")

@@ -9,6 +9,7 @@ import { probeStorageRestore } from './storage_restore_probe.mjs';
 import { parseRestoreMode } from './restore_mode.mjs';
 import { beginSessionProbe } from './auth_session_probe.mjs';
 import { beginAuthMutationProbe } from './auth_mutation_probe.mjs';
+import { beginAuthPersonnelProbe, personnelAuthFiles } from './auth_personnel_probe.mjs';
 import { probePasswordAuth } from './password_auth_probe.mjs';
 import { probeSignupRecovery } from './signup_recovery_probe.mjs';
 
@@ -280,6 +281,7 @@ try {
   pass('refresh_keeps_same_uuid', refresh.status === 200 && refresh.body.user?.id === id && !!refresh.body.access_token);
   let sessionProbe;
   let mutationProbe;
+  let personnelProbe;
   if (mode.sessionGuard) {
     stage = 'session-guard';
     sessionProbe = await beginSessionProbe({ sql, concurrentSql, token: refresh.body.access_token, secret, pass });
@@ -287,11 +289,14 @@ try {
   if (mode.synthetic) {
     stage = 'auth-mutation-composition';
     mutationProbe = await beginAuthMutationProbe({ synthetic:true, sql, concurrentSql, token:refresh.body.access_token, secret, pass });
+    stage = 'auth-personnel-composition';
+    personnelProbe = beginAuthPersonnelProbe({ synthetic:true, sql, token:refresh.body.access_token, secret, pass });
   }
   pass('logout_succeeds', request('/logout', { method: 'POST', token: refresh.body.access_token }).status === 204);
   pass('logged_out_refresh_rejected', request('/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: refresh.body.refresh_token } }).status === 400);
   if (sessionProbe) report.session_guard = sessionProbe.afterLogout();
   if (mutationProbe) report.auth_mutation = mutationProbe.afterLogout();
+  if (personnelProbe) report.auth_personnel = personnelProbe.afterLogout();
   if (mode.synthetic) {
     stage = 'password-auth-boundaries';
     report.password_auth = probePasswordAuth({synthetic:true, request, admin, pass});
@@ -309,6 +314,7 @@ try {
   pass('source_counts_unchanged', report.source_before === report.source_after);
   } else pass('synthetic_no_backup_or_storage_lane_used',!withStorage && report.original_source_accessed === false);
   report.source_sha256 = Object.fromEntries(['scripts/isg/run_auth_restore.mjs','scripts/isg/password_auth_probe.mjs','scripts/isg/signup_recovery_probe.mjs','scripts/isg/auth_mail_sink.cjs','scripts/isg/auth_session_probe.mjs','scripts/isg/auth_mutation_probe.mjs','scripts/isg/sql/auth_mutation_fixture.sql','scripts/isg/sql/transaction_fixture.sql','scripts/isg/restore_mode.mjs','scripts/isg/sql/auth_session_fixture.sql','scripts/isg/auth_restore_guard.mjs']
+    .concat(personnelAuthFiles, ['scripts/isg/auth_personnel_probe.mjs','supabase/functions/_shared/personnel/directory-request.ts','supabase/functions/_shared/personnel/employee-create.ts','supabase/functions/_shared/isg/mutation-context.ts'])
     .map(path=>[path,digest(readFileSync(resolve(ROOT,path)))]));
   report.ok = true;
 } catch (error) {

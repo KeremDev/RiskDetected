@@ -172,6 +172,10 @@ jobs:
         run: |
           swiftc App/DesignSystem/ISG/NovaNavigation.swift App/DesignSystem/ISG/NovaSessionHost.swift App/DesignSystem/ISG/NovaCompanyListState.swift scripts/isg/NovaCompanyListCheck.swift -o "$RUNNER_TEMP/isg-company-list-check"
           "$RUNNER_TEMP/isg-company-list-check" contracts/isg/v1/fixtures/nova-company-list.json
+      - name: Verify personnel editor retry and scope invariants
+        run: |
+          swiftc App/DesignSystem/ISG/NovaPersonnel.swift scripts/isg/NovaPersonnelCheck.swift -o "$RUNNER_TEMP/isg-personnel-check"
+          "$RUNNER_TEMP/isg-personnel-check"
       - name: Verify account-scoped NOVA host corpus
         # Presentation session fixtures run without any Auth SDK or network.
         # Runtime UI ownership is separately exercised by ios-shell-integration.

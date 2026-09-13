@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		0DCFC72D09F94A9FD3DD6D44 /* NovaSessionHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = B981D45A911FB02F8ACC0A6A /* NovaSessionHost.swift */; };
 		106E822E6983ECE5FC4D4FA7 /* NovaCompanyListState.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0D231D3AE94AA038EEE0812 /* NovaCompanyListState.swift */; };
+		12465EB17F3180A8C2741EB6 /* NovaPersonnelScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 440E16D04FF9687F9FC1DEE8 /* NovaPersonnelScreens.swift */; };
+		16C7BF48EDCD5594E6976CF5 /* NovaPersonnel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2DF85D18FB04E236C11CB9 /* NovaPersonnel.swift */; };
 		2A92C79FBAD102C131F65C76 /* ShellHarnessApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61EFAEB3118250F6A259A792 /* ShellHarnessApp.swift */; };
 		376FBE081D5ECC1498249838 /* NovaCompanyDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22201BFCBD33F1693D2EA5AF /* NovaCompanyDestination.swift */; };
 		3D08EC551F9B835211FBEB0D /* NovaTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29AAD0E7E86C4C2ED97C225D /* NovaTokens.swift */; };
@@ -19,6 +21,7 @@
 		8DB343EF6A6FAF19A63797C0 /* PlusJakartaSans-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3E92C3A78403B6514328D693 /* PlusJakartaSans-ExtraBold.ttf */; };
 		8F2058FD473ABAFA8830DA14 /* ShellUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 229A20930EF12E6D36134178 /* ShellUITests.swift */; };
 		E14FCEB658E2433B57B4456C /* PlusJakartaSans-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9436586D0E1CF4B902485274 /* PlusJakartaSans-Medium.ttf */; };
+		E1E5FE46512977961B001384 /* PersonnelHarness.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAB42C20891D6FA8479B6206 /* PersonnelHarness.swift */; };
 		E50A14FE441DCD084ABD0386 /* PlusJakartaSans-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A928E65A914B9551341C6AC4 /* PlusJakartaSans-Regular.ttf */; };
 		EFF203F4E3161CB263D39299 /* PlusJakartaSans-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CEFB3D3403D066C1F758CE34 /* PlusJakartaSans-SemiBold.ttf */; };
 		F065AD9A01874260DB16DCC7 /* NovaNavigation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EE42513CAD27D8342EBDD9C /* NovaNavigation.swift */; };
@@ -36,6 +39,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		1D2DF85D18FB04E236C11CB9 /* NovaPersonnel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaPersonnel.swift; sourceTree = "<group>"; };
 		22201BFCBD33F1693D2EA5AF /* NovaCompanyDestination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaCompanyDestination.swift; sourceTree = "<group>"; };
 		229A20930EF12E6D36134178 /* ShellUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellUITests.swift; sourceTree = "<group>"; };
 		29AAD0E7E86C4C2ED97C225D /* NovaTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaTokens.swift; sourceTree = "<group>"; };
@@ -43,6 +47,7 @@
 		31818D489D70B5C47D608F1F /* OFL-PlusJakartaSans.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "OFL-PlusJakartaSans.txt"; sourceTree = "<group>"; };
 		3E92C3A78403B6514328D693 /* PlusJakartaSans-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlusJakartaSans-ExtraBold.ttf"; sourceTree = "<group>"; };
 		3F71CBE9588976AC0385D2D6 /* ISGShellHarness.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ISGShellHarness.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		440E16D04FF9687F9FC1DEE8 /* NovaPersonnelScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaPersonnelScreens.swift; sourceTree = "<group>"; };
 		4811953EFC404AE2CC37F765 /* PlusJakartaSans-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlusJakartaSans-Bold.ttf"; sourceTree = "<group>"; };
 		4D029452FBC44CA6CE19D565 /* ISGShellUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ISGShellUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		61EFAEB3118250F6A259A792 /* ShellHarnessApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellHarnessApp.swift; sourceTree = "<group>"; };
@@ -52,6 +57,7 @@
 		B981D45A911FB02F8ACC0A6A /* NovaSessionHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaSessionHost.swift; sourceTree = "<group>"; };
 		CEFB3D3403D066C1F758CE34 /* PlusJakartaSans-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlusJakartaSans-SemiBold.ttf"; sourceTree = "<group>"; };
 		D37480469BDE690E05D13567 /* NovaExpertShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaExpertShell.swift; sourceTree = "<group>"; };
+		DAB42C20891D6FA8479B6206 /* PersonnelHarness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonnelHarness.swift; sourceTree = "<group>"; };
 		E0D231D3AE94AA038EEE0812 /* NovaCompanyListState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaCompanyListState.swift; sourceTree = "<group>"; };
 		FAFB347A0F9AD0F29F6E3DE2 /* NovaIcons.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = NovaIcons.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -65,6 +71,8 @@
 				2D274B7037ECC80B6E4DC4C2 /* NovaComponents.swift */,
 				D37480469BDE690E05D13567 /* NovaExpertShell.swift */,
 				7EE42513CAD27D8342EBDD9C /* NovaNavigation.swift */,
+				1D2DF85D18FB04E236C11CB9 /* NovaPersonnel.swift */,
+				440E16D04FF9687F9FC1DEE8 /* NovaPersonnelScreens.swift */,
 				B981D45A911FB02F8ACC0A6A /* NovaSessionHost.swift */,
 				29AAD0E7E86C4C2ED97C225D /* NovaTokens.swift */,
 			);
@@ -93,6 +101,7 @@
 		76C81660B2C116F473864226 = {
 			isa = PBXGroup;
 			children = (
+				DAB42C20891D6FA8479B6206 /* PersonnelHarness.swift */,
 				61EFAEB3118250F6A259A792 /* ShellHarnessApp.swift */,
 				229A20930EF12E6D36134178 /* ShellUITests.swift */,
 				C4CF32A6A8A5DF916212D47C /* Fonts */,
@@ -216,8 +225,11 @@
 				629E25E29178C6C39D12B85F /* NovaComponents.swift in Sources */,
 				7353DCFB7F55C832F3A23465 /* NovaExpertShell.swift in Sources */,
 				F065AD9A01874260DB16DCC7 /* NovaNavigation.swift in Sources */,
+				16C7BF48EDCD5594E6976CF5 /* NovaPersonnel.swift in Sources */,
+				12465EB17F3180A8C2741EB6 /* NovaPersonnelScreens.swift in Sources */,
 				0DCFC72D09F94A9FD3DD6D44 /* NovaSessionHost.swift in Sources */,
 				3D08EC551F9B835211FBEB0D /* NovaTokens.swift in Sources */,
+				E1E5FE46512977961B001384 /* PersonnelHarness.swift in Sources */,
 				2A92C79FBAD102C131F65C76 /* ShellHarnessApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
