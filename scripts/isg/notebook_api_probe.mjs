@@ -3,13 +3,15 @@ import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { ROOT } from './lib.mjs';
 import { verifyLocalSessionToken } from './auth_session_probe.mjs';
+import { probeNotebookOrganization } from './notebook_organization_probe.mjs';
 const q=v=>"'"+String(v).replaceAll("'","''")+"'";
-export const notebookAPIFiles=['supabase/migrations/20260914070004_isg_notebook_sync_api.sql','scripts/isg/notebook_api_probe.mjs'];
+export const notebookAPIFiles=['supabase/migrations/20260914070004_isg_notebook_sync_api.sql','scripts/isg/notebook_api_probe.mjs','supabase/migrations/20260913154113_isg_notebook_organization_api.sql','scripts/isg/notebook_organization_probe.mjs'];
 export async function beginNotebookAPIProbe({synthetic,sql,concurrentSql,token,secret,request,waitReady,pass}) {
   if(synthetic!==true)throw Error('NOTEBOOK_API_SYNTHETIC_REQUIRED');
   const claims=verifyLocalSessionToken(token,secret),owner=claims.sub;
   const mark=(name,ok)=>pass('notebook_api_'+name,ok);
   sql(readFileSync(resolve(ROOT,notebookAPIFiles[0]),'utf8'));
+  sql(readFileSync(resolve(ROOT,notebookAPIFiles[2]),'utf8'));
   const read=(note=null,after=null,options={})=>request('/rpc/isg_notebook_read_v1',{method:'POST',body:{p_note:note,p_after:after},...options});
   const mutate=(body,options={})=>request('/rpc/isg_notebook_mutate_v1',{method:'POST',body,...options});
   const draft=(note=randomUUID(),expected=0,body='Kişisel taslak')=>({p_mutation:randomUUID(),p_note:note,p_action:'sync',p_expected:expected,p_title:'Not',p_body:body,p_conflict:null});
@@ -68,10 +70,12 @@ export async function beginNotebookAPIProbe({synthetic,sql,concurrentSql,token,s
   mark('resolution_cannot_resurrect',mutate({...resolution,p_mutation:randomUUID(),p_expected:5}).body.message==='NOTE_TOMBSTONED');
   mark('delete_retry_is_idempotent',mutate(remove).body.replayed===true&&read(first.p_note).body.note.version===5);
   mark('tables_stay_private',sql("SELECT NOT has_table_privilege('authenticated','private_isg.note_mutation_receipts','SELECT') AND NOT has_function_privilege('service_role','public.isg_notebook_mutate_v1(uuid,uuid,text,bigint,text,text,uuid)','EXECUTE');")==='t');
+  const organizedNote=await probeNotebookOrganization({request,waitReady,pass,foreignNote});
   sql("UPDATE private_isg.rollout SET read_enabled=false,write_enabled=false WHERE feature='personal_notes';");
   mark('rollout_remains_closed',read().body.message==='FEATURE_UNAVAILABLE');
   return {afterLogout(){
     mark('revoked_session_cannot_read',read().body.message==='AUTH_REQUIRED');
+    mark('revoked_session_cannot_read_organization',request('/rpc/isg_notebook_organization_v1',{method:'POST',body:{p_note:organizedNote}}).body.message==='AUTH_REQUIRED');
     mark('revoked_session_cannot_replay',mutate(first).body.message==='AUTH_REQUIRED');
     return {real_http:true,real_auth_session:true,parallel_pg_connections:4,rollout_closed:true,mobile_sdk_tested:false,production_deployed:false};
   }};

@@ -26,4 +26,4 @@ Migration: `20260914070004_isg_notebook_sync_api.sql`. İki RPC `public` şemas�
 
 Yerel taslak ve mutation UUID ağ isteğinden önce owner'a ayrılmış güvenli depoya yazılmalı. Hesap değişiminde eski hesabın kuyruk ve cache'i yeni hesaba bağlanmamalı. Ağ hatası aynı mutation ile tekrar denenmeli; `VERSION_CONFLICT` veya `NOTE_TOMBSTONED` otomatik yeni mutation üretmemeli. Conflict içerikleri yalnız sahibi için gösterilmeli, log/analytics içine alınmamalı.
 
-Bu API henüz native offline kuyruk, ekran, etiket/checklist düzenleme veya hatırlatıcı teslim entegrasyonu değildir. Gerçek istemci uçtan uca kabulü ayrıca yapılacaktır. Sunucu API'sinin test edilmesi P13 faz kapanışı sayılmaz.
+Native şifreli kuyruk, sürüm kontrollü okuma, not/çakışma ekranları ve ayrı etiket/checklist API'si eklendi; ayrıntılar [organizasyon ve native sözleşmesinde](notebook-organization-api.md). UI ve sunucu rollout kapalıdır. Hatırlatıcı teslim entegrasyonu ve gerçek istemci uçtan uca kabulü tamamlanmadı. Sunucu API'sinin test edilmesi P13 faz kapanışı sayılmaz.

@@ -13,6 +13,7 @@ struct ProfileView: View {
     @State private var showPaywall = false
     @State private var showProfileEditor = false
     @State private var showCompanyPicker = false
+    @State private var showNotebook = false
     @State private var showNotificationSettings = false
     @State private var showDataControls = false
     @State private var showPreferences = false
@@ -77,6 +78,7 @@ struct ProfileView: View {
         }
         .background(Color.rdPaper)
         .accessibilityIdentifier("profile.root")
+        .fullScreenCover(isPresented: $showNotebook) { NotebookDestination(onClose: { showNotebook = false }) }
         .task {
             await loadStats()
             await loadProfessionalProgress()
@@ -824,6 +826,10 @@ struct ProfileView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("profile.row.companies")
+                if NotebookUIRelease.enabled {
+                    Button { showNotebook = true } label: { ProfileRow(icon: "note.text", title: "Kişisel Notlar", detail: "Ücretsiz") }
+                        .buttonStyle(.plain).accessibilityIdentifier("profile.row.notebook")
+                }
                 Divider().background(Color.rdLine).padding(.leading, 60)
                 Button {
                     withAnimation(.easeInOut(duration: 0.15)) {

@@ -10,7 +10,15 @@ struct NotebookMutation: Codable, Equatable {
     let title: String?
     let body: String?
     let conflict: UUID?
+    var items: [NotebookItem]? = nil
+    var tags: [String]? = nil
     func validate() throws {
+        if action == "organize" {
+            guard (1...9007199254740990).contains(expected), title == nil, body == nil, conflict == nil,
+                  let items, let tags else { throw NotebookFailure.invalid }
+            try validateNotebookOrganization(items, tags); return
+        }
+        guard items == nil, tags == nil else { throw NotebookFailure.invalid }
         guard ["sync", "delete", "resolve"].contains(action), (0...9007199254740990).contains(expected),
               (title?.unicodeScalars.count ?? 0) <= 200, (body?.unicodeScalars.count ?? 0) <= 20000,
               (action == "resolve") == (conflict != nil),
@@ -18,6 +26,10 @@ struct NotebookMutation: Codable, Equatable {
     }
     func arguments() throws -> Data {
         try validate()
+        if action == "organize" {
+            let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
+            return try encoder.encode(NotebookOrganizationPayload(p_mutation: mutation, p_note: note, p_expected: expected, p_items: items!, p_tags: tags!))
+        }
         return try JSONSerialization.data(withJSONObject: ["p_mutation": mutation.uuidString.lowercased(),
             "p_note": note.uuidString.lowercased(), "p_action": action, "p_expected": expected,
             "p_title": title as Any? ?? NSNull(), "p_body": body as Any? ?? NSNull(),
@@ -94,6 +106,16 @@ struct NotebookServerFailure: Error { let code: String }
               !ledger.entries.contains(where: { $0.intent.mutation == replacement.mutation }) else { throw NotebookFailure.invalid }
         ledger.entries[i] = NotebookPending(intent: replacement); try persist(ledger)
     }
+    func replaceOrganization(_ mutation: UUID, with replacement: NotebookMutation, identity: NotebookIdentity) throws {
+        try check(identity); try replacement.validate()
+        guard !Self.sending.contains(identity.owner) else { throw NotebookFailure.busy }
+        var ledger = try load(identity.owner)
+        guard let i = ledger.entries.firstIndex(where: { $0.intent.mutation == mutation }),
+              ledger.entries[i].blocked == "VERSION_CONFLICT", ledger.entries[i].intent.action == "organize",
+              replacement.action == "organize", replacement.note == ledger.entries[i].intent.note,
+              !ledger.entries.contains(where: { $0.intent.mutation == replacement.mutation }) else { throw NotebookFailure.invalid }
+        ledger.entries[i] = NotebookPending(intent: replacement); try persist(ledger)
+    }
     func syncNext(_ identity: NotebookIdentity) async throws -> String {
         try check(identity)
         guard !Self.sending.contains(identity.owner) else { throw NotebookFailure.busy }
@@ -119,7 +141,9 @@ struct NotebookServerFailure: Error { let code: String }
                ["VERSION_CONFLICT","NOTE_TOMBSTONED","IDEMPOTENCY_CONFLICT","ACCESS_DENIED","VALIDATION_ERROR","CONFLICT_ALREADY_RESOLVED"].contains(code) {
                 var latest = try load(identity.owner)
                 guard let i = latest.entries.firstIndex(where: { $0.intent == intent }) else { throw NotebookFailure.invalid }
-                latest.entries[i].blocked = code; try persist(latest); return "blocked"
+                latest.entries[i].blocked = code
+                if code == "VERSION_CONFLICT", intent.action == "resolve" { latest.entries[i].conflictID = intent.conflict }
+                try persist(latest); return "blocked"
             }
             throw NotebookFailure.unavailable // Preserve the draft, never expose raw errors.
         }
@@ -139,11 +163,16 @@ struct NotebookServerFailure: Error { let code: String }
             latest.entries[i].blocked = "VERSION_CONFLICT"; latest.entries[i].conflictID = conflict
             try persist(latest); return "conflict"
         }
-        let allowed = intent.action == "delete" ? ["deleted"] : intent.action == "resolve" ? ["resolved"] : ["created","updated","unchanged"]
+        let allowed = intent.action == "organize" ? ["organized"] : intent.action == "delete" ? ["deleted"] : intent.action == "resolve" ? ["resolved"] : ["created","updated","unchanged"]
         guard allowed.contains(ack.state), let version = ack.version, (1...9007199254740991).contains(version),
               intent.action != "resolve" || ack.conflict_id == intent.conflict,
               ack.state == "deleted" || version == intent.expected + (ack.state == "unchanged" ? 0 : 1) else { throw NotebookFailure.invalid }
         latest.entries.remove(at: i); try persist(latest)
         return "committed"
     }
+}
+
+struct NotebookOrganizationPayload: Codable {
+    let p_mutation: UUID; let p_note: UUID; let p_expected: Int64
+    let p_items: [NotebookItem]; let p_tags: [String]
 }

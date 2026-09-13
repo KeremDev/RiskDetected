@@ -50,6 +50,21 @@ import Foundation
         let args = try JSONSerialization.jsonObject(with: intent.arguments()) as! [String: Any]
         check(Set(args.keys) == Set(["p_mutation","p_note","p_action","p_expected","p_title","p_body","p_conflict"]))
         check(args["p_conflict"] is NSNull)
+        let organization = NotebookMutation(mutation: UUID(), note: UUID(), action: "organize", expected: 1, title: nil, body: nil, conflict: nil,
+            items: [.init(item_id: UUID(), text: "Task", done: true)], tags: ["Tag"])
+        let orgStore = MemoryNotebook()
+        let orgQueue = NotebookQueue(storage: orgStore, current: { identity }, send: { _ in throw NotebookServerFailure(code: "VERSION_CONFLICT") })
+        try orgQueue.stage(organization, identity: identity)
+        check(try await orgQueue.syncNext(identity) == "blocked")
+        var orgReplacement = organization
+        orgReplacement = .init(mutation: UUID(), note: organization.note, action: "organize", expected: 3, title: nil, body: nil, conflict: nil, items: organization.items, tags: organization.tags)
+        try orgQueue.replaceOrganization(organization.mutation, with: orgReplacement, identity: identity)
+        check(try orgQueue.pending(identity).first?.intent == orgReplacement)
+        let orgArgs = try JSONSerialization.jsonObject(with: organization.arguments()) as! [String: Any]
+        check(Set(orgArgs.keys) == Set(["p_mutation", "p_note", "p_expected", "p_items", "p_tags"]))
+        let racing = NotebookQueue(storage: MemoryNotebook(), current: { identity }, send: { _ in throw NotebookServerFailure(code: "VERSION_CONFLICT") })
+        try racing.stage(replacement, identity: identity); _ = try await racing.syncNext(identity)
+        check(try racing.pending(identity).first?.conflictID == conflict)
         print("NotebookQueue: \(checks) checks PASS; memory storage / fake RPC; not device persistence evidence")
     }
 }

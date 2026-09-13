@@ -14,10 +14,15 @@ class NotebookServerFailure(val code: String) : Exception(code)
 data class NotebookIdentity(val owner: UUID, val session: UUID)
 @Serializable
 data class NotebookMutation(val mutation: String, val note: String, val action: String, val expected: Long,
-    val title: String?, val body: String?, val conflict: String?) {
+    val title: String?, val body: String?, val conflict: String?, val items: List<NotebookItem>? = null, val tags: List<String>? = null) {
     fun validate() {
         require(UUID.fromString(mutation).toString() == mutation && UUID.fromString(note).toString() == note)
         require(conflict == null || UUID.fromString(conflict).toString() == conflict)
+        if (action == "organize") {
+            require(expected in 1..9007199254740990L && title == null && body == null && conflict == null && items != null && tags != null)
+            validateNotebookOrganization(items, tags); return
+        }
+        require(items == null && tags == null)
         require(action in setOf("sync", "delete", "resolve") && expected in 0..9007199254740990L)
         require((title?.codePointCount(0, title.length) ?: 0) <= 200 && (body?.codePointCount(0, body.length) ?: 0) <= 20000)
         require((action == "resolve") == (conflict != null))
@@ -25,6 +30,10 @@ data class NotebookMutation(val mutation: String, val note: String, val action: 
     }
     fun arguments(): JsonObject {
         validate()
+        if (action == "organize") return buildJsonObject {
+            put("p_mutation", mutation); put("p_note", note); put("p_expected", expected)
+            put("p_items", Json.encodeToJsonElement(items!!)); put("p_tags", Json.encodeToJsonElement(tags!!))
+        }
         return buildJsonObject {
             put("p_mutation", mutation); put("p_note", note); put("p_action", action); put("p_expected", expected)
             put("p_title", title?.let(::JsonPrimitive) ?: JsonNull); put("p_body", body?.let(::JsonPrimitive) ?: JsonNull)
@@ -93,7 +102,9 @@ class NotebookQueue(private val storage: NotebookStorage, private val current: (
             check(identity)
             val code = (error as? NotebookServerFailure)?.code
             if (code in setOf("VERSION_CONFLICT", "NOTE_TOMBSTONED", "IDEMPOTENCY_CONFLICT", "ACCESS_DENIED", "VALIDATION_ERROR", "CONFLICT_ALREADY_RESOLVED")) {
-                entries[index] = entries[index].copy(blocked = code); persist(ledger.copy(entries = entries)); return@withLock "blocked"
+                entries[index] = entries[index].copy(blocked = code,
+                    conflictID = if (code == "VERSION_CONFLICT" && intent.action == "resolve") intent.conflict else entries[index].conflictID)
+                persist(ledger.copy(entries = entries)); return@withLock "blocked"
             }
             throw NotebookFailure("UNAVAILABLE")
         }
@@ -109,10 +120,18 @@ class NotebookQueue(private val storage: NotebookStorage, private val current: (
             entries[index] = entries[index].copy(blocked = "VERSION_CONFLICT", conflictID = conflict)
             persist(ledger.copy(entries = entries)); return@withLock "conflict"
         }
-        val allowed = when (intent.action) { "delete" -> setOf("deleted"); "resolve" -> setOf("resolved"); else -> setOf("created", "updated", "unchanged") }
+        val allowed = when (intent.action) { "organize" -> setOf("organized"); "delete" -> setOf("deleted"); "resolve" -> setOf("resolved"); else -> setOf("created", "updated", "unchanged") }
         val version = ack["version"]!!.jsonPrimitive.long
         require(intent.action != "resolve" || ack["conflict_id"]?.jsonPrimitive?.content == intent.conflict)
         require(state in allowed && version in 1..9007199254740991L && (state == "deleted" || version == intent.expected + if (state == "unchanged") 0 else 1))
         entries.removeAt(index); persist(ledger.copy(entries = entries)); "committed"
+    }
+    suspend fun replaceOrganization(mutation: String, replacement: NotebookMutation, identity: NotebookIdentity) = lock.withLock {
+        check(identity); replacement.validate(); val ledger = load(identity.owner)
+        val index = ledger.entries.indexOfFirst { it.intent.mutation == mutation }; require(index >= 0)
+        val prior = ledger.entries[index]
+        require(prior.blocked == "VERSION_CONFLICT" && prior.intent.action == "organize" && replacement.action == "organize" &&
+            replacement.note == prior.intent.note && ledger.entries.none { it.intent.mutation == replacement.mutation })
+        val entries = ledger.entries.toMutableList(); entries[index] = NotebookPending(replacement); persist(ledger.copy(entries = entries))
     }
 }

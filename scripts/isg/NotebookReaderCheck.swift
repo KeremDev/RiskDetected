@@ -34,6 +34,15 @@ import Foundation
         let other = current
         do { try await changing.refresh(other); preconditionFailure() } catch {}
         check(try changing.snapshot(identity, drafts: []).notes.isEmpty)
+        let conflict = NotebookConflict(conflict_id: UUID(), base_version: 0, server_version: 1,
+            incoming_title: "Local", incoming_body: "Local body", server_title: "Remote", server_body: "Remote body")
+        let detail = NotebookConflictPage.Detail(note_id: id, title: "Current", body: "Current body", version: 2, tombstone: false, updated_at: "2026-09-13", conflicts: [conflict])
+        let conflictPage = NotebookConflictPage(schema_version: 1, note: detail, has_more_conflicts: false, next_conflict_after: nil)
+        try conflictPage.validate(noteID: id, after: nil)
+        do { try conflictPage.validate(noteID: UUID(), after: nil); preconditionFailure() } catch {}
+        do { try conflictPage.validate(noteID: id, after: conflict.conflict_id); preconditionFailure() } catch {}
+        let bad = NotebookConflictPage(schema_version: 1, note: detail, has_more_conflicts: true, next_conflict_after: conflict.conflict_id)
+        do { try bad.validate(noteID: id, after: nil); preconditionFailure() } catch {}
         print("NotebookReader: PASS (stale version, absence, tombstone, session isolation, late response)")
     }
 }

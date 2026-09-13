@@ -19,6 +19,32 @@ class NotebookQueueTest {
         put("state", state); put("replayed", false); put("version", intent.expected + 1)
         intent.conflict?.let { put("conflict_id", it) }
     }
+    @Test fun `organization payload persists and retries with unchanged fields`() = runBlocking {
+        val intent = draft().copy(action = "organize", expected = 1, title = null, body = null,
+            items = listOf(NotebookItem(UUID.randomUUID().toString(), "Task", true)), tags = listOf("Tag"))
+        val store = Memory(); val sent = mutableListOf<JsonObject>()
+        val queue = NotebookQueue(store, { owner }) { sent += it; throw NotebookFailure("network") }
+        queue.stage(intent, owner); assertTrue(runCatching { queue.syncNext(owner) }.isFailure)
+        val reopened = NotebookQueue(store, { owner }) { sent += it; ack(intent, "organized") }
+        assertEquals(intent, reopened.pending(owner).single().intent)
+        assertEquals("committed", reopened.syncNext(owner)); assertEquals(sent[0], sent[1])
+        assertEquals(setOf("p_mutation", "p_note", "p_expected", "p_items", "p_tags"), sent[0].keys)
+    }
+    @Test fun `organization stale version keeps items until explicit replacement`() = runBlocking {
+        val intent = draft().copy(action = "organize", expected = 1, title = null, body = null,
+            items = listOf(NotebookItem(UUID.randomUUID().toString(), "Task", true)), tags = listOf("Tag"))
+        val queue = NotebookQueue(Memory(), { owner }) { throw NotebookServerFailure("VERSION_CONFLICT") }
+        queue.stage(intent, owner); assertEquals("blocked", queue.syncNext(owner))
+        val replacement = intent.copy(mutation = UUID.randomUUID().toString(), expected = 3)
+        queue.replaceOrganization(intent.mutation, replacement, owner)
+        assertEquals(replacement, queue.pending(owner).single().intent)
+    }
+    @Test fun `resolution race retains conflict identifier for recovery`() = runBlocking {
+        val intent = draft().copy(action = "resolve", expected = 2, conflict = UUID.randomUUID().toString())
+        val queue = NotebookQueue(Memory(), { owner }) { throw NotebookServerFailure("VERSION_CONFLICT") }
+        queue.stage(intent, owner); queue.syncNext(owner)
+        assertEquals(intent.conflict, queue.pending(owner).single().conflictID)
+    }
     @Test fun `persists before network and retries exact mutation after reopening`() = runBlocking {
         val store = Memory(); val intent = draft(); val sent = mutableListOf<JsonObject>()
         val queue = NotebookQueue(store, { owner }) { sent += it; assertNotNull(store.read(owner.owner)); throw NotebookFailure("network") }

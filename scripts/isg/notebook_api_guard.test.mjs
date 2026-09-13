@@ -12,3 +12,21 @@ test('notebook authenticated boundary has no company or paid-plan dependency',()
   for(const required of ['active_actor()','notes_gate(true)','notes_gate(false)','IDEMPOTENCY_CONFLICT','NOTE_TOMBSTONED','VERSION_CONFLICT','LIMIT 21','full_scan_restart','ENABLE ROW LEVEL SECURITY'])assert.ok(sql.includes(required));
   assert.ok(p05UpgradeFiles.includes(notebookAPIFiles[0]));
 });
+test('organization API preserves owner, version, immutable retry and bounded payload guards',()=>{
+  const sql=readFileSync(notebookAPIFiles[2],'utf8');
+  for(const expected of ['active_actor()','notes_gate(true)','notes_gate(false)','IDEMPOTENCY_CONFLICT','VERSION_CONFLICT','NOTE_TOMBSTONED','jsonb_array_length(p_items)>500','jsonb_array_length(p_tags)>30','FOR UPDATE','FOR SHARE','entry.owner_id<>actor']) assert.ok(sql.includes(expected),expected);
+  assert.doesNotMatch(sql,/company_id|employee_id|entity_id|user_plan_tier|user_subscriptions/);
+  assert.ok(p05UpgradeFiles.includes(notebookAPIFiles[2]));
+  const migrations=p05UpgradeFiles.filter(p=>p.endsWith('.sql'));
+  assert.deepEqual(migrations,[...migrations].sort());
+});
+test('native notebook entry stays closed and never uses a paid capability gate',()=>{
+  const swift=readFileSync('App/Views/Components/NotebookDestination.swift','utf8');
+  const kotlin=readFileSync('android/feature/profile/src/main/kotlin/com/riskdetectedan/feature/profile/NotebookScreen.kt','utf8');
+  for(const source of [swift,kotlin]) {
+    assert.match(source,/enabled = false/);
+    assert.doesNotMatch(source,/isPaid|currentTier|company_id|Analytics|Logger|println\(/);
+    assert.match(source,/Kaydetmeden çık/);
+    assert.match(source,/İki sürümü incele/);
+  }
+});

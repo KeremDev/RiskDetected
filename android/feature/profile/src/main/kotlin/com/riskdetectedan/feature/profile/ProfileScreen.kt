@@ -158,9 +158,17 @@ fun ProfileScreen(
     val state by viewModel.state.collectAsState()
     val restoreState by viewModel.restoreState.collectAsState()
     var isEditing by remember { mutableStateOf(false) }
+    var showNotebook by remember { mutableStateOf(false) }
+    if (showNotebook && NotebookUIRelease.enabled) {
+        NotebookScreen(onClose = { showNotebook = false })
+        return
+    }
     var showSignOutConfirmation by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize().background(colors.paper)) {
+        if (NotebookUIRelease.enabled && state is ProfileUiState.Loaded) {
+            TextButton(onClick = { showNotebook = true }) { Text("Kişisel Notlar · Ücretsiz") }
+        }
         if (onBack != null) {
             RdScreenHeader(title = stringResource(RdR.string.rd_profil), onBack = onBack)
         }
