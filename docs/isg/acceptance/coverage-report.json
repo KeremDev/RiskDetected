@@ -1,0 +1,4228 @@
+{
+  "schema_version": 1,
+  "generated_for": "P19",
+  "total": 263,
+  "source_count": 203,
+  "transition_count": 60,
+  "counts": {
+    "covered": 0,
+    "partial": 20,
+    "blocked": 166,
+    "unclaimed": 77
+  },
+  "release_ready": false,
+  "blocking_layers": [
+    {
+      "layer": "ADMIN",
+      "status": "none",
+      "blocker": "The operations panel repository was deliberately not touched; no scoped page or Playwright flow exists."
+    },
+    {
+      "layer": "AUTH",
+      "status": "partial",
+      "blocker": "The OTP and recovery purpose coordinator, account linking and MFA variations were never run."
+    },
+    {
+      "layer": "BILLING",
+      "status": "partial",
+      "blocker": "No RevenueCat or webhook adapter writes evidence, and the access authority is still the legacy helper."
+    },
+    {
+      "layer": "CAMPAIGN",
+      "status": "partial",
+      "blocker": "No qualification producer, no real send, and no approved commercial values."
+    },
+    {
+      "layer": "COMPATIBILITY",
+      "status": "none",
+      "blocker": "The sixteen old binary and new backend combinations have never been run."
+    },
+    {
+      "layer": "CROSS_LAYER_ACCEPTANCE",
+      "status": "none",
+      "blocker": "No scenario has been walked from a real client through the server to a visible user outcome in one run."
+    },
+    {
+      "layer": "DELETION",
+      "status": "none",
+      "blocker": "Account deletion across the new domains was never designed or built."
+    },
+    {
+      "layer": "DESIGN",
+      "status": "partial",
+      "blocker": "No English pass on a real device, no VoiceOver run, and the app root has not moved to the new shell."
+    },
+    {
+      "layer": "DOCUMENT",
+      "status": "partial",
+      "blocker": "No render worker, so no PDF or XLSX has ever been produced or compared."
+    },
+    {
+      "layer": "FILE_SECURITY",
+      "status": "partial",
+      "blocker": "No antivirus or parser sandbox and no positive DOC or XLS security fixtures."
+    },
+    {
+      "layer": "IMPORT",
+      "status": "partial",
+      "blocker": "No safe parser and no row-scale run; the equipment import target does not exist."
+    },
+    {
+      "layer": "NATIVE_E2E",
+      "status": "partial",
+      "blocker": "Only the P05 personnel and directory flows have a real native end-to-end run; every other domain has none."
+    },
+    {
+      "layer": "NETWORK_PRIVACY",
+      "status": "partial",
+      "blocker": "The rules are enforced in the database, but no network inspection of a real install has been done."
+    },
+    {
+      "layer": "NOTES",
+      "status": "partial",
+      "blocker": "The offline mutation queue and a second-device conflict run on real hardware are missing."
+    },
+    {
+      "layer": "NOTIFICATION",
+      "status": "partial",
+      "blocker": "No real APNs, FCM or email provider has ever been called."
+    },
+    {
+      "layer": "OBSERVABILITY",
+      "status": "partial",
+      "blocker": "No client telemetry producer exists, so no real technical event has ever been recorded."
+    },
+    {
+      "layer": "OPERATIONS",
+      "status": "none",
+      "blocker": "The support chain has no client producer and the panel has no diagnosis surface, so the operator story was never walked."
+    },
+    {
+      "layer": "REMINDER",
+      "status": "partial",
+      "blocker": "No physical device acceptance for permission, token, time zone, reboot or Focus."
+    },
+    {
+      "layer": "STORAGE",
+      "status": "partial",
+      "blocker": "Bucket policy, signed URLs and a byte-level restore of real objects are untested."
+    },
+    {
+      "layer": "STORE_QA",
+      "status": "none",
+      "blocker": "No store spike on either store; no sandbox or production purchase, offer signature or offer token has ever been exercised."
+    }
+  ],
+  "problems": [],
+  "cases": [
+    {
+      "id": "V5:24.1:REV-01",
+      "short": "REV-01",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-02",
+      "short": "REV-02",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-03",
+      "short": "REV-03",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-04",
+      "short": "REV-04",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-05",
+      "short": "REV-05",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-06",
+      "short": "REV-06",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-07",
+      "short": "REV-07",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-08",
+      "short": "REV-08",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-09",
+      "short": "REV-09",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-10",
+      "short": "REV-10",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-11",
+      "short": "REV-11",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-12",
+      "short": "REV-12",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-13",
+      "short": "REV-13",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-14",
+      "short": "REV-14",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-15",
+      "short": "REV-15",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-16",
+      "short": "REV-16",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-17",
+      "short": "REV-17",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-18",
+      "short": "REV-18",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-19",
+      "short": "REV-19",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-20",
+      "short": "REV-20",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-21",
+      "short": "REV-21",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-22",
+      "short": "REV-22",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-23",
+      "short": "REV-23",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.1:REV-24",
+      "short": "REV-24",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:SEC-01",
+      "short": "SEC-01",
+      "kind": "source",
+      "required_layers": [
+        "SECURITY",
+        "DB",
+        "API"
+      ],
+      "blocking_layers": [],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:SEC-02",
+      "short": "SEC-02",
+      "kind": "source",
+      "required_layers": [
+        "SECURITY",
+        "DB",
+        "API"
+      ],
+      "blocking_layers": [],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:SEC-03",
+      "short": "SEC-03",
+      "kind": "source",
+      "required_layers": [
+        "SECURITY",
+        "DB",
+        "API"
+      ],
+      "blocking_layers": [],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:SEC-04",
+      "short": "SEC-04",
+      "kind": "source",
+      "required_layers": [
+        "SECURITY",
+        "DB",
+        "API"
+      ],
+      "blocking_layers": [],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:SEC-05",
+      "short": "SEC-05",
+      "kind": "source",
+      "required_layers": [
+        "SECURITY",
+        "DB",
+        "API"
+      ],
+      "blocking_layers": [],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:DAT-01",
+      "short": "DAT-01",
+      "kind": "source",
+      "required_layers": [
+        "DB",
+        "FAULT_INJECTION"
+      ],
+      "blocking_layers": [],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:DAT-02",
+      "short": "DAT-02",
+      "kind": "source",
+      "required_layers": [
+        "DB",
+        "FAULT_INJECTION"
+      ],
+      "blocking_layers": [],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:DAT-03",
+      "short": "DAT-03",
+      "kind": "source",
+      "required_layers": [
+        "DB",
+        "FAULT_INJECTION"
+      ],
+      "blocking_layers": [],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:DAT-04",
+      "short": "DAT-04",
+      "kind": "source",
+      "required_layers": [
+        "DB",
+        "FAULT_INJECTION"
+      ],
+      "blocking_layers": [],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:DAT-05",
+      "short": "DAT-05",
+      "kind": "source",
+      "required_layers": [
+        "DB",
+        "FAULT_INJECTION"
+      ],
+      "blocking_layers": [],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:IMP-01",
+      "short": "IMP-01",
+      "kind": "source",
+      "required_layers": [
+        "IMPORT",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "IMPORT",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:IMP-02",
+      "short": "IMP-02",
+      "kind": "source",
+      "required_layers": [
+        "IMPORT",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "IMPORT",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:IMP-03",
+      "short": "IMP-03",
+      "kind": "source",
+      "required_layers": [
+        "IMPORT",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "IMPORT",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:DOC-01",
+      "short": "DOC-01",
+      "kind": "source",
+      "required_layers": [
+        "DOCUMENT",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "DOCUMENT",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:DOC-02",
+      "short": "DOC-02",
+      "kind": "source",
+      "required_layers": [
+        "DOCUMENT",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "DOCUMENT",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:DOC-03",
+      "short": "DOC-03",
+      "kind": "source",
+      "required_layers": [
+        "DOCUMENT",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "DOCUMENT",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:DOC-04",
+      "short": "DOC-04",
+      "kind": "source",
+      "required_layers": [
+        "DOCUMENT",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "DOCUMENT",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:SCO-01",
+      "short": "SCO-01",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB"
+      ],
+      "blocking_layers": [],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:SCO-02",
+      "short": "SCO-02",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB"
+      ],
+      "blocking_layers": [],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:SCO-03",
+      "short": "SCO-03",
+      "kind": "source",
+      "required_layers": [
+        "DOMAIN",
+        "DB"
+      ],
+      "blocking_layers": [],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:24.2:DEL-01",
+      "short": "DEL-01",
+      "kind": "source",
+      "required_layers": [
+        "DELETION",
+        "DB",
+        "STORAGE"
+      ],
+      "blocking_layers": [
+        "DELETION",
+        "STORAGE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:24.2:DEL-02",
+      "short": "DEL-02",
+      "kind": "source",
+      "required_layers": [
+        "DELETION",
+        "DB",
+        "STORAGE"
+      ],
+      "blocking_layers": [
+        "DELETION",
+        "STORAGE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:24.2:OPS-01",
+      "short": "OPS-01",
+      "kind": "source",
+      "required_layers": [
+        "OPERATIONS",
+        "COMPATIBILITY"
+      ],
+      "blocking_layers": [
+        "OPERATIONS",
+        "COMPATIBILITY"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:24.2:OPS-02",
+      "short": "OPS-02",
+      "kind": "source",
+      "required_layers": [
+        "OPERATIONS",
+        "COMPATIBILITY"
+      ],
+      "blocking_layers": [
+        "OPERATIONS",
+        "COMPATIBILITY"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:24.2:OPS-03",
+      "short": "OPS-03",
+      "kind": "source",
+      "required_layers": [
+        "OPERATIONS",
+        "COMPATIBILITY"
+      ],
+      "blocking_layers": [
+        "OPERATIONS",
+        "COMPATIBILITY"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:24.2:OPS-04",
+      "short": "OPS-04",
+      "kind": "source",
+      "required_layers": [
+        "OPERATIONS",
+        "COMPATIBILITY"
+      ],
+      "blocking_layers": [
+        "OPERATIONS",
+        "COMPATIBILITY"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:24.2:OPS-05",
+      "short": "OPS-05",
+      "kind": "source",
+      "required_layers": [
+        "OPERATIONS",
+        "COMPATIBILITY"
+      ],
+      "blocking_layers": [
+        "OPERATIONS",
+        "COMPATIBILITY"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:37.3:AUTH-01",
+      "short": "AUTH-01",
+      "kind": "source",
+      "required_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:AUTH-02",
+      "short": "AUTH-02",
+      "kind": "source",
+      "required_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:AUTH-03",
+      "short": "AUTH-03",
+      "kind": "source",
+      "required_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:AUTH-04",
+      "short": "AUTH-04",
+      "kind": "source",
+      "required_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:AUTH-05",
+      "short": "AUTH-05",
+      "kind": "source",
+      "required_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:AUTH-06",
+      "short": "AUTH-06",
+      "kind": "source",
+      "required_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:AUTH-07",
+      "short": "AUTH-07",
+      "kind": "source",
+      "required_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:AUTH-08",
+      "short": "AUTH-08",
+      "kind": "source",
+      "required_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:BILL-01",
+      "short": "BILL-01",
+      "kind": "source",
+      "required_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:37.3:BILL-02",
+      "short": "BILL-02",
+      "kind": "source",
+      "required_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:37.3:BILL-03",
+      "short": "BILL-03",
+      "kind": "source",
+      "required_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:37.3:BILL-04",
+      "short": "BILL-04",
+      "kind": "source",
+      "required_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:37.3:BILL-05",
+      "short": "BILL-05",
+      "kind": "source",
+      "required_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:37.3:BILL-06",
+      "short": "BILL-06",
+      "kind": "source",
+      "required_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:37.3:BILL-07",
+      "short": "BILL-07",
+      "kind": "source",
+      "required_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:37.3:BILL-08",
+      "short": "BILL-08",
+      "kind": "source",
+      "required_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:37.3:QUOTA-01",
+      "short": "QUOTA-01",
+      "kind": "source",
+      "required_layers": [
+        "DB",
+        "CONCURRENCY"
+      ],
+      "blocking_layers": [],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:QUOTA-02",
+      "short": "QUOTA-02",
+      "kind": "source",
+      "required_layers": [
+        "DB",
+        "CONCURRENCY"
+      ],
+      "blocking_layers": [],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:QUOTA-03",
+      "short": "QUOTA-03",
+      "kind": "source",
+      "required_layers": [
+        "DB",
+        "CONCURRENCY"
+      ],
+      "blocking_layers": [],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:QUOTA-04",
+      "short": "QUOTA-04",
+      "kind": "source",
+      "required_layers": [
+        "DB",
+        "CONCURRENCY"
+      ],
+      "blocking_layers": [],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:PRIV-01",
+      "short": "PRIV-01",
+      "kind": "source",
+      "required_layers": [
+        "NETWORK_PRIVACY",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NETWORK_PRIVACY",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:PRIV-02",
+      "short": "PRIV-02",
+      "kind": "source",
+      "required_layers": [
+        "NETWORK_PRIVACY",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NETWORK_PRIVACY",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:PRIV-03",
+      "short": "PRIV-03",
+      "kind": "source",
+      "required_layers": [
+        "NETWORK_PRIVACY",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NETWORK_PRIVACY",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:OBS-01",
+      "short": "OBS-01",
+      "kind": "source",
+      "required_layers": [
+        "OBSERVABILITY",
+        "ADMIN"
+      ],
+      "blocking_layers": [
+        "OBSERVABILITY",
+        "ADMIN"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:37.3:OBS-02",
+      "short": "OBS-02",
+      "kind": "source",
+      "required_layers": [
+        "OBSERVABILITY",
+        "ADMIN"
+      ],
+      "blocking_layers": [
+        "OBSERVABILITY",
+        "ADMIN"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:37.3:OBS-03",
+      "short": "OBS-03",
+      "kind": "source",
+      "required_layers": [
+        "OBSERVABILITY",
+        "ADMIN"
+      ],
+      "blocking_layers": [
+        "OBSERVABILITY",
+        "ADMIN"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:37.3:FILE-01",
+      "short": "FILE-01",
+      "kind": "source",
+      "required_layers": [
+        "FILE_SECURITY",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "FILE_SECURITY",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:FILE-02",
+      "short": "FILE-02",
+      "kind": "source",
+      "required_layers": [
+        "FILE_SECURITY",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "FILE_SECURITY",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:FILE-03",
+      "short": "FILE-03",
+      "kind": "source",
+      "required_layers": [
+        "FILE_SECURITY",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "FILE_SECURITY",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:FILE-04",
+      "short": "FILE-04",
+      "kind": "source",
+      "required_layers": [
+        "FILE_SECURITY",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "FILE_SECURITY",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:FILE-05",
+      "short": "FILE-05",
+      "kind": "source",
+      "required_layers": [
+        "FILE_SECURITY",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "FILE_SECURITY",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:FILE-06",
+      "short": "FILE-06",
+      "kind": "source",
+      "required_layers": [
+        "FILE_SECURITY",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "FILE_SECURITY",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:NOTIF-01",
+      "short": "NOTIF-01",
+      "kind": "source",
+      "required_layers": [
+        "NOTIFICATION",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NOTIFICATION",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:NOTIF-02",
+      "short": "NOTIF-02",
+      "kind": "source",
+      "required_layers": [
+        "NOTIFICATION",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NOTIFICATION",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:NOTIF-03",
+      "short": "NOTIF-03",
+      "kind": "source",
+      "required_layers": [
+        "NOTIFICATION",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NOTIFICATION",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:NOTIF-04",
+      "short": "NOTIF-04",
+      "kind": "source",
+      "required_layers": [
+        "NOTIFICATION",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NOTIFICATION",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:NOTIF-05",
+      "short": "NOTIF-05",
+      "kind": "source",
+      "required_layers": [
+        "NOTIFICATION",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NOTIFICATION",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:NOTIF-06",
+      "short": "NOTIF-06",
+      "kind": "source",
+      "required_layers": [
+        "NOTIFICATION",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NOTIFICATION",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:REF-01",
+      "short": "REF-01",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "DB",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:37.3:REF-02",
+      "short": "REF-02",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "DB",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:37.3:REF-03",
+      "short": "REF-03",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "DB",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:37.3:NOTE-01",
+      "short": "NOTE-01",
+      "kind": "source",
+      "required_layers": [
+        "NOTES",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NOTES",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:NOTE-02",
+      "short": "NOTE-02",
+      "kind": "source",
+      "required_layers": [
+        "NOTES",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "NOTES",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:REM-01",
+      "short": "REM-01",
+      "kind": "source",
+      "required_layers": [
+        "REMINDER",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "REMINDER",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:REM-02",
+      "short": "REM-02",
+      "kind": "source",
+      "required_layers": [
+        "REMINDER",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "REMINDER",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:REM-03",
+      "short": "REM-03",
+      "kind": "source",
+      "required_layers": [
+        "REMINDER",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "REMINDER",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:UX-01",
+      "short": "UX-01",
+      "kind": "source",
+      "required_layers": [
+        "DESIGN",
+        "NATIVE_E2E"
+      ],
+      "blocking_layers": [
+        "DESIGN",
+        "NATIVE_E2E"
+      ],
+      "claimed_by": [],
+      "status": "unclaimed",
+      "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
+    },
+    {
+      "id": "V5:37.3:DEL-01",
+      "short": "DEL-01",
+      "kind": "source",
+      "required_layers": [
+        "DELETION",
+        "DB",
+        "STORAGE"
+      ],
+      "blocking_layers": [
+        "DELETION",
+        "STORAGE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-01",
+      "short": "V4-01",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-02",
+      "short": "V4-02",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-03",
+      "short": "V4-03",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-04",
+      "short": "V4-04",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-05",
+      "short": "V4-05",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-06",
+      "short": "V4-06",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-07",
+      "short": "V4-07",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-08",
+      "short": "V4-08",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-09",
+      "short": "V4-09",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-10",
+      "short": "V4-10",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-11",
+      "short": "V4-11",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-12",
+      "short": "V4-12",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-13",
+      "short": "V4-13",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-14",
+      "short": "V4-14",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-15",
+      "short": "V4-15",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-16",
+      "short": "V4-16",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-17",
+      "short": "V4-17",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-18",
+      "short": "V4-18",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-19",
+      "short": "V4-19",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-20",
+      "short": "V4-20",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-21",
+      "short": "V4-21",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-22",
+      "short": "V4-22",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-23",
+      "short": "V4-23",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-24",
+      "short": "V4-24",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-25",
+      "short": "V4-25",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-26",
+      "short": "V4-26",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-27",
+      "short": "V4-27",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-28",
+      "short": "V4-28",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-29",
+      "short": "V4-29",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-30",
+      "short": "V4-30",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-31",
+      "short": "V4-31",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-32",
+      "short": "V4-32",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-33",
+      "short": "V4-33",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-34",
+      "short": "V4-34",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-35",
+      "short": "V4-35",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-36",
+      "short": "V4-36",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-37",
+      "short": "V4-37",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-38",
+      "short": "V4-38",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-39",
+      "short": "V4-39",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-40",
+      "short": "V4-40",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-41",
+      "short": "V4-41",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-42",
+      "short": "V4-42",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-43",
+      "short": "V4-43",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-44",
+      "short": "V4-44",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-45",
+      "short": "V4-45",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-46",
+      "short": "V4-46",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-47",
+      "short": "V4-47",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:40.2:V4-48",
+      "short": "V4-48",
+      "kind": "source",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-01",
+      "short": "V5-01",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-02",
+      "short": "V5-02",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-03",
+      "short": "V5-03",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-04",
+      "short": "V5-04",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-05",
+      "short": "V5-05",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-06",
+      "short": "V5-06",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-07",
+      "short": "V5-07",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-08",
+      "short": "V5-08",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-09",
+      "short": "V5-09",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-10",
+      "short": "V5-10",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-11",
+      "short": "V5-11",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-12",
+      "short": "V5-12",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-13",
+      "short": "V5-13",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-14",
+      "short": "V5-14",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-15",
+      "short": "V5-15",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-16",
+      "short": "V5-16",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-17",
+      "short": "V5-17",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-18",
+      "short": "V5-18",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-19",
+      "short": "V5-19",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-20",
+      "short": "V5-20",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-21",
+      "short": "V5-21",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-22",
+      "short": "V5-22",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-23",
+      "short": "V5-23",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-24",
+      "short": "V5-24",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-25",
+      "short": "V5-25",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-26",
+      "short": "V5-26",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-27",
+      "short": "V5-27",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-28",
+      "short": "V5-28",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-29",
+      "short": "V5-29",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-30",
+      "short": "V5-30",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-31",
+      "short": "V5-31",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-32",
+      "short": "V5-32",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-33",
+      "short": "V5-33",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-34",
+      "short": "V5-34",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-35",
+      "short": "V5-35",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-36",
+      "short": "V5-36",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-37",
+      "short": "V5-37",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-38",
+      "short": "V5-38",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-39",
+      "short": "V5-39",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-40",
+      "short": "V5-40",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-41",
+      "short": "V5-41",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-42",
+      "short": "V5-42",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-43",
+      "short": "V5-43",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-44",
+      "short": "V5-44",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-45",
+      "short": "V5-45",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-46",
+      "short": "V5-46",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-47",
+      "short": "V5-47",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-48",
+      "short": "V5-48",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-49",
+      "short": "V5-49",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-50",
+      "short": "V5-50",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-51",
+      "short": "V5-51",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-52",
+      "short": "V5-52",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-53",
+      "short": "V5-53",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-54",
+      "short": "V5-54",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-55",
+      "short": "V5-55",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "V5:44.2:V5-56",
+      "short": "V5-56",
+      "kind": "source",
+      "required_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "blocking_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X01",
+      "short": "X01",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X02",
+      "short": "X02",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X03",
+      "short": "X03",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X04",
+      "short": "X04",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X05",
+      "short": "X05",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X06",
+      "short": "X06",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X07",
+      "short": "X07",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X08",
+      "short": "X08",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X09",
+      "short": "X09",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X10",
+      "short": "X10",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X11",
+      "short": "X11",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X12",
+      "short": "X12",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X13",
+      "short": "X13",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X14",
+      "short": "X14",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X15",
+      "short": "X15",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X16",
+      "short": "X16",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X17",
+      "short": "X17",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X18",
+      "short": "X18",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X19",
+      "short": "X19",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X20",
+      "short": "X20",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P17_SCORE_PORTFOLIO_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X21",
+      "short": "X21",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X22",
+      "short": "X22",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X23",
+      "short": "X23",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X24",
+      "short": "X24",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X25",
+      "short": "X25",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X26",
+      "short": "X26",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X27",
+      "short": "X27",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X28",
+      "short": "X28",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X29",
+      "short": "X29",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X30",
+      "short": "X30",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X31",
+      "short": "X31",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X32",
+      "short": "X32",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X33",
+      "short": "X33",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X34",
+      "short": "X34",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X35",
+      "short": "X35",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X36",
+      "short": "X36",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X37",
+      "short": "X37",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X38",
+      "short": "X38",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X39",
+      "short": "X39",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X40",
+      "short": "X40",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X41",
+      "short": "X41",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X42",
+      "short": "X42",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P15_CAMPAIGN_CORE_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X43",
+      "short": "X43",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P15_CAMPAIGN_CORE_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X44",
+      "short": "X44",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P15_CAMPAIGN_CORE_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X45",
+      "short": "X45",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P15_CAMPAIGN_CORE_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X46",
+      "short": "X46",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P15_CAMPAIGN_CORE_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X47",
+      "short": "X47",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X48",
+      "short": "X48",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X49",
+      "short": "X49",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X50",
+      "short": "X50",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X51",
+      "short": "X51",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X52",
+      "short": "X52",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X53",
+      "short": "X53",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P16_OBSERVABILITY_ADMIN_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X54",
+      "short": "X54",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P16_OBSERVABILITY_ADMIN_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X55",
+      "short": "X55",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P16_OBSERVABILITY_ADMIN_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X56",
+      "short": "X56",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X57",
+      "short": "X57",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X58",
+      "short": "X58",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [
+        "docs/isg/evidence/P19_INTEGRATED_REHEARSAL_2026-09-14.json"
+      ],
+      "status": "partial",
+      "reason": "claimed, but a required layer is not full yet"
+    },
+    {
+      "id": "TRANSITION:X59",
+      "short": "X59",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    },
+    {
+      "id": "TRANSITION:X60",
+      "short": "X60",
+      "kind": "transition",
+      "required_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "blocking_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "claimed_by": [],
+      "status": "blocked",
+      "reason": "a required layer has produced nothing at all"
+    }
+  ]
+}

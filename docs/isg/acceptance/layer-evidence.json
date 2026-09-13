@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "note": "What each acceptance layer can actually show today. 'full' means a real, repeatable run exists for that layer; 'partial' means one side of it ran and a named piece is still missing; 'none' means nothing has been run. A layer is never marked 'full' because its code exists.",
+  "layers": {
+    "DB": {"status": "full", "evidence": ["docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json", "docs/isg/evidence/P15_CAMPAIGN_CORE_2026-09-14.json", "docs/isg/evidence/P16_OBSERVABILITY_ADMIN_2026-09-14.json", "docs/isg/evidence/P17_SCORE_PORTFOLIO_2026-09-14.json"], "note": "Synthetic acceptance on a real isolated PostgreSQL plus a full legacy-copy migration replay."},
+    "DOMAIN": {"status": "full", "evidence": ["docs/isg/evidence/P06_RULE_CORE_2026-09-13.json", "docs/isg/evidence/P07_TRAINING_CORE_2026-09-13.json", "docs/isg/evidence/P08_RISK_VERSIONING_2026-09-13.json", "docs/isg/evidence/P09_NONCONFORMITY_CORE_2026-09-13.json"], "note": "Domain rules are exercised through their own SQL functions; the content inside them is not approved."},
+    "SECURITY": {"status": "full", "evidence": ["docs/isg/evidence/P05_CURRENT_2026-09-13.json", "docs/isg/evidence/P05_NATIVE_ACCEPTANCE_2026-09-13.json"], "note": "RLS, zero client grants, owner and composite guards are asserted in every phase probe and over real HTTP for P05."},
+    "API": {"status": "full", "evidence": ["docs/isg/evidence/P05_CURRENT_2026-09-13.json"], "note": "Real PostgREST calls against the isolated stack."},
+    "CONCURRENCY": {"status": "full", "evidence": ["docs/isg/evidence/P01_P03_DISPATCH_QUOTA_2026-09-13.json", "docs/isg/evidence/P11_DOCUMENT_IMPORT_2026-09-14.json"], "note": "Parallel sessions against the same isolated database."},
+    "FAULT_INJECTION": {"status": "full", "evidence": ["docs/isg/evidence/P01_TRANSACTION_PROTOTYPE_2026-09-12.json", "docs/isg/evidence/P01_AUTH_MUTATION_COMPOSITION_2026-09-12.json"], "note": "Crash, lost response and retry paths on the isolated stack."},
+    "IMPORT": {"status": "partial", "evidence": ["docs/isg/evidence/P11_DOCUMENT_IMPORT_2026-09-14.json"], "blocker": "No safe parser and no row-scale run; the equipment import target does not exist."},
+    "DOCUMENT": {"status": "partial", "evidence": ["docs/isg/evidence/P11_DOCUMENT_IMPORT_2026-09-14.json"], "blocker": "No render worker, so no PDF or XLSX has ever been produced or compared."},
+    "STORAGE": {"status": "partial", "evidence": ["docs/isg/evidence/P00_STORAGE_SERVICE_RESTORE_2026-09-12.json"], "blocker": "Bucket policy, signed URLs and a byte-level restore of real objects are untested."},
+    "FILE_SECURITY": {"status": "partial", "evidence": ["docs/isg/evidence/P04_FILE_CORE_2026-09-13.json"], "blocker": "No antivirus or parser sandbox and no positive DOC or XLS security fixtures."},
+    "AUTH": {"status": "partial", "evidence": ["docs/isg/evidence/P02_SYNTHETIC_PASSWORD_AUTH_2026-09-13.json", "docs/isg/evidence/P01_AUTH_SESSION_GUARD_2026-09-12.json"], "blocker": "The OTP and recovery purpose coordinator, account linking and MFA variations were never run."},
+    "NOTIFICATION": {"status": "partial", "evidence": ["docs/isg/evidence/P12_NOTIFICATION_CORE_2026-09-14.json", "docs/isg/evidence/P12_REPOSITORY_WAIT_2026-09-13.json"], "blocker": "No real APNs, FCM or email provider has ever been called."},
+    "REMINDER": {"status": "partial", "evidence": ["docs/isg/evidence/P13_SERVER_PUSH_REMINDERS_2026-09-13.json"], "blocker": "No physical device acceptance for permission, token, time zone, reboot or Focus."},
+    "NOTES": {"status": "partial", "evidence": ["docs/isg/evidence/P13_PERSONAL_NOTES_2026-09-14.json"], "blocker": "The offline mutation queue and a second-device conflict run on real hardware are missing."},
+    "BILLING": {"status": "partial", "evidence": ["docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"], "blocker": "No RevenueCat or webhook adapter writes evidence, and the access authority is still the legacy helper."},
+    "CAMPAIGN": {"status": "partial", "evidence": ["docs/isg/evidence/P15_CAMPAIGN_CORE_2026-09-14.json"], "blocker": "No qualification producer, no real send, and no approved commercial values."},
+    "OBSERVABILITY": {"status": "partial", "evidence": ["docs/isg/evidence/P16_OBSERVABILITY_ADMIN_2026-09-14.json"], "blocker": "No client telemetry producer exists, so no real technical event has ever been recorded."},
+    "NETWORK_PRIVACY": {"status": "partial", "evidence": ["docs/isg/evidence/P16_OBSERVABILITY_ADMIN_2026-09-14.json"], "blocker": "The rules are enforced in the database, but no network inspection of a real install has been done."},
+    "DESIGN": {"status": "partial", "evidence": ["docs/isg/evidence/P18_NOVA_LOCALIZATION_2026-09-14.json", "docs/isg/evidence/P18_HOSTED_SHELL_2026-09-13.json"], "blocker": "No English pass on a real device, no VoiceOver run, and the app root has not moved to the new shell."},
+    "NATIVE_E2E": {"status": "partial", "evidence": ["docs/isg/evidence/P05_NATIVE_ACCEPTANCE_2026-09-13.json"], "blocker": "Only the P05 personnel and directory flows have a real native end-to-end run; every other domain has none."},
+    "DELETION": {"status": "none", "evidence": [], "blocker": "Account deletion across the new domains was never designed or built."},
+    "COMPATIBILITY": {"status": "none", "evidence": [], "blocker": "The sixteen old binary and new backend combinations have never been run."},
+    "STORE_QA": {"status": "none", "evidence": [], "blocker": "No store spike on either store; no sandbox or production purchase, offer signature or offer token has ever been exercised."},
+    "ADMIN": {"status": "none", "evidence": [], "blocker": "The operations panel repository was deliberately not touched; no scoped page or Playwright flow exists."},
+    "OPERATIONS": {"status": "none", "evidence": [], "blocker": "The support chain has no client producer and the panel has no diagnosis surface, so the operator story was never walked."},
+    "CROSS_LAYER_ACCEPTANCE": {"status": "none", "evidence": [], "blocker": "No scenario has been walked from a real client through the server to a visible user outcome in one run."}
+  }
+}

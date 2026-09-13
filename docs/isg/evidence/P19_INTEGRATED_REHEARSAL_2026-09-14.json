@@ -1,0 +1,102 @@
+{
+  "phase": "P19",
+  "slice": "acceptance ledger and the integrated kill switch rehearsal",
+  "date": "2026-09-14",
+  "branch": "codex/isg-transition-foundation",
+  "acceptance_ids_covered": [
+    "X58 (server side)"
+  ],
+  "acceptance_ledger": {
+    "total": 263,
+    "source": 203,
+    "transition": 60,
+    "counts": {
+      "covered": 0,
+      "partial": 20,
+      "blocked": 166,
+      "unclaimed": 77
+    },
+    "release_ready": false,
+    "layers_with_nothing": [
+      "ADMIN",
+      "COMPATIBILITY",
+      "CROSS_LAYER_ACCEPTANCE",
+      "DELETION",
+      "OPERATIONS",
+      "STORE_QA"
+    ],
+    "note": "These counts include this file's own X58 claim; the ledger is regenerated from the evidence directory, so a claim cannot exist without an artefact."
+  },
+  "rehearsal": {
+    "checks": 10,
+    "ids": [
+      "integrated_rehearsal_every_new_feature_refuses_while_its_switch_is_closed",
+      "integrated_rehearsal_the_phase_switch_closes_a_module_even_when_the_module_switch_is_open",
+      "integrated_rehearsal_the_shipped_posture_closes_every_module_switch_as_well",
+      "integrated_rehearsal_the_legacy_plan_helper_still_answers",
+      "integrated_rehearsal_the_legacy_company_rule_still_refuses_an_over_limit_write",
+      "integrated_rehearsal_the_legacy_rows_and_helpers_are_untouched_after_every_phase",
+      "integrated_rehearsal_the_whole_new_schema_keeps_one_posture",
+      "integrated_rehearsal_only_the_known_client_rpc_boundary_runs_as_a_definer",
+      "integrated_rehearsal_opening_one_switch_opens_exactly_one_feature",
+      "integrated_rehearsal_closing_again_is_immediate"
+    ],
+    "features_exercised": 17,
+    "legacy_rows_unchanged": true,
+    "legacy_helpers_unchanged": true
+  },
+  "runs": {
+    "synthetic_session": {
+      "evidence_directory": "output/isg/runs/synthetic-auth-RCSUxl",
+      "checks": 1007,
+      "unique_check_ids": 1006,
+      "all_pass": true,
+      "cleanup": "PASS"
+    },
+    "isolated_copy_p05_upgrade": {
+      "evidence_directory": "backups/isg-auth-service-restore-20260912-gKt1rR",
+      "checks": 32,
+      "all_pass": true,
+      "cleanup": "PASS"
+    },
+    "offline_foundation": {
+      "tests": 424,
+      "fail": 0,
+      "previous": 412
+    }
+  },
+  "defects_found_and_fixed": [
+    {
+      "what": "DEL-01 exists under two plan sections and the ledger key collapsed them",
+      "fix": "the ledger keys every case by its full manifest id and matches the registry on section plus test id"
+    },
+    {
+      "what": "module_gate takes a module key before the write flag, so the rehearsal dispatcher raised 42883",
+      "fix": "the module branch passes a real module key and the dispatcher reports any other SQLSTATE instead of dying"
+    },
+    {
+      "what": "the rehearsal asserted that no private_isg function is SECURITY DEFINER",
+      "fix": "fifteen definer functions are the deliberate client RPC boundary; the check now pins that exact set and proves no gate is among them"
+    },
+    {
+      "what": "the rehearsal expected the module switches to be closed by the phase switch",
+      "fix": "they are independent; the rehearsal now proves the phase switch refuses even with a module open, then closes both"
+    }
+  ],
+  "production_defects_found": 0,
+  "not_proven": [
+    "any of the 263 acceptance cases end to end",
+    "the sixteen old binary and new backend combinations (X03)",
+    "account deletion across the new domains (X56)",
+    "a restore drill measured for RPO and RTO in this slice (X57)",
+    "any store, panel, device or cross layer user journey",
+    "a security or load run"
+  ],
+  "source_sha256": {
+    "scripts/isg/acceptance_ledger.mjs": "18d5112ede49d508f8ea4758729cba56b8ac731aa895ee384cec63162aaf0fe5",
+    "scripts/isg/integrated_rehearsal_probe.mjs": "1b80f3b97126133b12a619e82cca075c5be0fa207c3815c45b12ec3fa7355e03",
+    "scripts/isg/acceptance_ledger.test.mjs": "75b916fa1fddedfc0958c8599c2eded3c6a4f2551aa706339136c635ce663ad9",
+    "scripts/isg/integrated_rehearsal_guard.test.mjs": "02628ea56442bfc33765a309ff74ecc2884f055732439e276ebb9ac40021e084",
+    "docs/isg/acceptance/layer-evidence.json": "b752483f4c6920dcde1c8c06a44e1a989910e59d6e22a92e8411956c3220d56b"
+  }
+}

@@ -1,6 +1,8 @@
 # Devir notu — İSG geçişinde sunucu dilimlerini sürdürmek
 
-> **Güncel devam:** [P18 NOVA dil ve erişilebilirlik kataloğu](P18_NOVA_LOCALIZATION_2026-09-14.md): 261 anahtar TR/EN, iOS Debug build PASS, foundation 412/412. **Uyarı:** `migrate_swift_localization_catalogs.mjs --apply` katalogları yeniden yazıp mevcut çevirileri siliyor — o dokümandaki yöntemi okumadan çalıştırma.
+> **Güncel devam:** [P19 kabul defteri ve bütünleşik prova](P19_INTEGRATED_REHEARSAL_2026-09-14.md): 263 kabulün fail-closed defteri (`covered 0, partial 20, blocked 166, unclaimed 77`, `release_ready=false`), 1007 sentetik PASS, 424 foundation PASS. **Yayın kapısı burada.** `node scripts/isg/acceptance_ledger.mjs` her zaman güncel cevabı verir.
+
+> **Önceki devam:** [P18 NOVA dil ve erişilebilirlik kataloğu](P18_NOVA_LOCALIZATION_2026-09-14.md): 261 anahtar TR/EN, iOS Debug build PASS, foundation 412/412. **Uyarı:** `migrate_swift_localization_catalogs.mjs --apply` katalogları yeniden yazıp mevcut çevirileri siliyor — o dokümandaki yöntemi okumadan çalıştırma.
 
 > **Önceki devam:** [P17 skor ve portföy çekirdeği](P17_SCORE_PORTFOLIO_2026-09-14.md): 997 sentetik PASS / 996 tekil, 32 upgrade PASS / 26 migration, 408 foundation PASS. `private_isg` 154 tablo, skor rollout'u kapalı, ağırlıklar onaysız, oracle elle hesaplanmış.
 
@@ -39,6 +41,7 @@ P05 (firma/işyeri/personel) daha önce kapanmıştı. 13–14 Eylül'de eklenen
 | P16 | Teknik olay zarfı, teşhis zinciri, MFA/scope'lu admin ve audit | `20260914130000` | [P16](P16_OBSERVABILITY_ADMIN_2026-09-14.md) |
 | P17 | Sürümlü skor politikası, açıklanabilir katkı, elle hesaplanmış oracle, portföy | `20260914150000` | [P17](P17_SCORE_PORTFOLIO_2026-09-14.md) |
 | P18 | NOVA yüzeyinin TR/EN kataloğu ve erişilebilir kontrol adları | — (native, migration yok) | [P18](P18_NOVA_LOCALIZATION_2026-09-14.md) |
+| P19 | Kabul defteri (263 senaryo) ve bütünleşik kill switch provası | — (probe, migration yok) | [P19](P19_INTEGRATED_REHEARSAL_2026-09-14.md) |
 
 Toplam: `private_isg` şemasında **154 tablo**, hepsinde RLS açık, istemciye **sıfır** GRANT. Sentetik kabul koşusu **997/997 PASS** (996 tekil), tam legacy kopya upgrade **32/32 PASS** (26 migration), offline foundation **408 PASS**. Bu tablo yalnız sunucu dilimlerini sayar; araya giren P12 sertleştirme ve P13 sync/reminder API paketleri kendi dokümanlarındadır.
 
@@ -118,6 +121,7 @@ deno test --allow-read=contracts/isg/v1/fixtures supabase/functions/_shared/isg/
 6. **P16'nın ikinci dilimi:** iOS/Android telemetri üreticisi ve ATT ekranı, ayrı repodaki operasyon paneli sayfaları ve Playwright kabulleri (K22 — panelin kendi AGENTS.md sınırları ve kullanıcı değişiklikleri korunarak ayrı görevde), domain mutation'larının teknik olay yazması, retention/silme kararı (K16).
 7. **P17'nin ikinci dilimi:** ağırlık/tavan onayı (K15), P06–P10 üreticilerinin `score_subject_states` yazması, kritik uyarı üreticisi, firma/portföy ekranları ve gerçek veri üzerinde shadow projection.
 8. **P18'in kalanı:** Android `strings.xml` TR/EN kabulü, 261 anahtarın dil incelemesi, gerçek cihazda İngilizce tur + VoiceOver/Dynamic Type, ana uygulamanın yeni köke geçişi, modüllerin gerçek servisleri, final marka/asset. Ayrıca migration aracının yıkıcı `--apply` davranışı düzeltilmeli.
-9. **P19/P20:** bütünleşik prova ve mağaza güncellemesi. Bunlar insan onayı ve gerçek cihaz kanıtı isteyen kapılar.
+9. **P19'un kalanı:** defterin `covered` sayısını sıfırdan yukarı taşımak. Sırayla en çok senaryoyu açan katmanlar: CROSS_LAYER_ACCEPTANCE (48), STORE_QA (67 ile örtüşüyor), COMPATIBILITY/X03 (16 kombinasyon), DELETION/X56, OPERATIONS+ADMIN, X57 RPO/RTO ölçümü, güvenlik ve yük koşusu. Ardından 77 `unclaimed` senaryoyu adlandırılmış kontrollere bağla.
+10. **P20/P21:** mağaza güncellemesi ve stabilizasyon. İnsan onayı ve gerçek cihaz kanıtı isteyen kapılar.
 
 Her fazın kendi dokümanında "Açık kalanlar" bölümü vardır; bir fazı kapatmadan önce oradaki maddeleri kontrol et. Hiçbir faz, kendi dokümanı "kapandı" demeden kapalı sayılmaz.
