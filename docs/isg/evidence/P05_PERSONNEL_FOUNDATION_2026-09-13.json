@@ -1,0 +1,376 @@
+{
+  "schema_version": 1,
+  "run_id": "889ea545-2bd2-4d9d-b107-a61e28069a02",
+  "started_at": "2026-09-13T06:15:20.943Z",
+  "image": "public.ecr.aws/supabase/postgres@sha256:3866d94d8426927e8db3f1c5d790752292bfbe27b5f1f46e199ae1b7d3c1710b",
+  "suite": "synthetic_postgres_transaction_prototype",
+  "production_contract_implemented": false,
+  "acceptance_complete": false,
+  "seed": "fixed_uuid_counter_v1",
+  "node_version": "v26.7.0",
+  "source_sha256": {
+    "scripts/isg/run_database_contract.mjs": "ff62f2c2ff1b7f8bd390ef9b45286a92919de4b33ab64b358028483760fa1cda",
+    "scripts/isg/sql/transaction_fixture.sql": "87eafb27e40d6db096a6e10837655a3f7e823e75e0aaaaed4b978e2ae8f52b18",
+    "scripts/isg/sql/workplace_fixture.sql": "81bb64bcbef8690582a6c70086dafc3194e47dfce63cb1025bb0ef43395236f7",
+    "scripts/isg/workplace_probe.mjs": "f5f29014f79c0f8b0c81483c9ddfd5ef24f35b141186319a91b82a0d2ca58b04",
+    "scripts/isg/sql/personnel_fixture.sql": "b244c04e7c6b113eb5a57fb0f16b5071f517350e809fa0c3da12f90ebc93c9eb",
+    "scripts/isg/personnel_probe.mjs": "d681188ca252732549ce2f5bab4c829dda334183f2172ee2258a7994f1e63609",
+    "scripts/isg/legacy_capacity_oracle.mjs": "cd67398fca914972c3deec14575c9087c3db67c77127103256a1c6c63f3b5f53",
+    "scripts/isg/verify_environment.mjs": "c6a223fef8c8ea6d34046893674cdedcb01114562b63a7acac564e3ff546e446",
+    "contracts/isg/v1/safety-policy.json": "66cb1eb088bafb97f0ea7a9b78041695c2462e54a39eddc269960e8324d5f8ba"
+  },
+  "cases": [
+    {
+      "id": "TX-01_private_tables_and_workers_not_callable_by_client",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-02_missing_actor_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-03_foreign_and_missing_company_indistinguishable",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-04_cross_company_entity_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-05_invalid_delta_rejected_without_side_effect",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-06_domain_audit_outbox_receipt_commit_together",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-07_identical_retry_returns_original_no_extra_writes",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-08_same_key_different_payload_conflict",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-09_stale_version_no_receipt_or_side_effect",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-10_audit_failure_rolls_back_every_write",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-11_outbox_failure_rolls_back_every_write",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-12_failed_request_can_retry_successfully",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-13_revoked_actor_cannot_replay_cached_success",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-14_twenty_identical_parallel_retries_apply_once",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-15_twenty_competing_versions_have_one_winner",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-16_lease_prevents_parallel_and_out_of_order_claim",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-17_expiry_reclaims_same_event_with_new_fence",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-18_old_worker_cannot_ack_after_lease_loss",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-19_consumer_failure_rolls_back_receipt_and_projection",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-20_commit_then_lost_ack_does_not_repeat_projection",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-21_ordered_events_apply_exactly_once_per_receipt",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-22_expired_lease_cannot_complete_at_boundary",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-23_retry_budget_dead_letters_and_blocks_later_version",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-24_composite_foreign_key_rejects_wrong_scope_even_for_owner",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-25_mutation_key_is_scoped_to_actor",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-26_former_company_owner_cannot_replay_cached_result",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-27_parallel_workers_one_lease_other_company_not_blocked",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-28_null_test_clock_fails_closed",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-29_connection_killed_before_commit_rolls_back_domain_and_all_side_effects",
+      "status": "PASS"
+    },
+    {
+      "id": "TX-30_worker_connection_killed_before_commit_can_retry_without_partial_projection",
+      "status": "PASS"
+    },
+    {
+      "id": "LEGACY-01_original_company_tier_and_limit_truth_table",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-01_private_invoker_initializer_not_client_api",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-02_default_copies_known_context_without_legal_inference",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-03_repeated_initializer_has_no_extra_side_effects",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-04_twenty_parallel_backfill_catchup_calls_create_once",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-05_unknown_hazard_stays_null_needs_review",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-06_archived_legacy_company_remains_archived",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-07_owner_read_isolation_same_owner_multiple_companies",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-08_reader_has_no_direct_writes_or_private_journal_access",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-09_composite_owner_fk_rejects_foreign_owner_even_for_worker",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-10_same_owner_cross_company_department_link_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-11_same_name_second_workplace_is_distinct_and_does_not_replace_default",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-12_archived_default_still_dedupes_and_does_not_unarchive",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-13_duplicate_default_and_wrong_marker_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-14_missing_company_and_null_cannot_create_orphan",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-15_audit_failure_rolls_back_and_retry_succeeds",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-16_outbox_failure_rolls_back_and_retry_succeeds",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-17_old_client_company_after_backfill_is_caught_up",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-18_retries_preserve_new_workplace_context_and_legacy_rows",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-19_invalid_context_cannot_claim_review_complete",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-20_referenced_workplace_and_owner_transfer_require_explicit_workflow",
+      "status": "PASS"
+    },
+    {
+      "id": "WP-21_connection_loss_before_commit_rolls_back_initializer_and_journals",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-01_explicit_read_grants_rls_and_no_client_functions",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-02_same_names_distinct_and_codes_scoped",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-03_wrong_owner_and_workplace_fks_reject",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-04_assignment_captures_server_labels_not_input",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-05_same_owner_foreign_company_employee_job_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-06_wrong_department_workplace_pair_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-07_overlap_any_workplace_or_department_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-08_adjacent_half_open_intervals_and_leap_day",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-09_zero_reversed_and_infinite_dates_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-10_before_hire_and_after_end_rejected",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-11_employment_edit_cannot_strand_existing_assignments",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-12_secondary_kind_fails_closed_until_policy_defined",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-13_open_ended_assignment_blocks_future_overlap",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-14_twenty_parallel_overlaps_have_one_winner",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-15_different_employees_parallel_assignments_independent",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-16_rename_preserves_history_and_snapshot_cannot_be_forged",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-17_referenced_people_departments_jobs_cannot_be_deleted",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-18_archived_parents_reject_new_assignment_keep_history",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-19_close_old_assignment_then_open_new_in_one_transaction",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-20_failed_transition_rolls_back_old_interval_close",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-21_archived_employee_can_close_existing_interval_without_deleting_it",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-22_owner_reader_cannot_see_foreign_assignment_or_mutate_history",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-23_connection_loss_rolls_back_transition_and_allows_retry",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-24_non_health_schema_has_no_generic_payload_or_identity_number",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-25_closed_assignment_cannot_be_reopened_or_extended_silently",
+      "status": "PASS"
+    },
+    {
+      "id": "PER-26_ten_employment_end_vs_assignment_races_preserve_containment",
+      "status": "PASS"
+    }
+  ],
+  "cleanup": "PASS",
+  "postgres_version": "17.6",
+  "legacy_capacity": {
+    "passed": 329,
+    "failures": [],
+    "case_count": 329,
+    "source_definitions": [
+      {
+        "name": "private.user_plan_tier",
+        "path": "supabase/migrations/20260513223911_fix_subscription_quota_review_findings.sql",
+        "sha256": "fe214cb67f451eda43e70701e63b41004fac7d84942e6debde96adcb9d21d4d2"
+      },
+      {
+        "name": "private.company_limit_for_user",
+        "path": "supabase/migrations/20260520154818_add_companies.sql",
+        "sha256": "a3af9a461a103b8386a0e5ec589270bc1f0f546aceaf826ad75571934925ed8a"
+      }
+    ]
+  },
+  "personnel_btree_gist_version": "1.7",
+  "ok": true,
+  "finished_at": "2026-09-13T06:15:39.646Z",
+  "passed": 78,
+  "prior_runs": [
+    {
+      "run_id": "c96c2820-cd92-47cf-b6b9-8cbae0784e6f",
+      "result": "PER-09 expected CHECK but employment guard rejected -infinity first",
+      "passed": 60,
+      "cleanup": "PASS"
+    },
+    {
+      "run_id": "bb314b66-804a-4495-b7dd-1b4960278e0a",
+      "result": "77/77 before final race group",
+      "cleanup": "PASS"
+    }
+  ],
+  "foundation_passed": 117,
+  "nova_design_passed": 24,
+  "production_changes": false,
+  "scope_note": "Isolated relational candidate only. No live JWT/capability, domain mutation journal, production schema/API or native personnel CRUD activation."
+}

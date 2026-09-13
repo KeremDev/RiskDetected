@@ -8,6 +8,7 @@ import { ROOT } from './lib.mjs';
 import { validateEnvironment, validateContainerInspection } from './verify_environment.mjs';
 import { legacyCapacityOracle } from './legacy_capacity_oracle.mjs';
 import { runWorkplaceProbe } from './workplace_probe.mjs';
+import { runPersonnelProbe } from './personnel_probe.mjs';
 
 // This lane creates and removes ONLY its own new synthetic container. No TCP, API,
 // Supabase credentials, host mounts, migrations, existing container reuse or image pulls.
@@ -16,7 +17,7 @@ const runId = randomUUID(); let config, containerId, interrupted = false;
 const report = { schema_version: 1, run_id: runId, started_at: new Date().toISOString(), image,
   suite: 'synthetic_postgres_transaction_prototype', production_contract_implemented: false,
   acceptance_complete: false, seed: 'fixed_uuid_counter_v1', node_version: process.version,
-  source_sha256: Object.fromEntries(['scripts/isg/run_database_contract.mjs', 'scripts/isg/sql/transaction_fixture.sql', 'scripts/isg/sql/workplace_fixture.sql', 'scripts/isg/workplace_probe.mjs', 'scripts/isg/legacy_capacity_oracle.mjs', 'scripts/isg/verify_environment.mjs', 'contracts/isg/v1/safety-policy.json']
+  source_sha256: Object.fromEntries(['scripts/isg/run_database_contract.mjs', 'scripts/isg/sql/transaction_fixture.sql', 'scripts/isg/sql/workplace_fixture.sql', 'scripts/isg/workplace_probe.mjs', 'scripts/isg/sql/personnel_fixture.sql', 'scripts/isg/personnel_probe.mjs', 'scripts/isg/legacy_capacity_oracle.mjs', 'scripts/isg/verify_environment.mjs', 'contracts/isg/v1/safety-policy.json']
     .map(path => [path, createHash('sha256').update(readFileSync(resolve(ROOT, path))).digest('hex')])),
   cases: [], cleanup: 'NOT_NEEDED' };
 const childEnv = { PATH: process.env.PATH ?? '', HOME: process.env.HOME ?? '', DOCKER_CONFIG: process.env.DOCKER_CONFIG ?? '', LANG: 'C.UTF-8' };
@@ -58,7 +59,7 @@ async function concurrent(sql) {
     let stdout = '', stderr = '';
     child.stdout.on('data', data => { stdout += data; }); child.stderr.on('data', data => { stderr += data; });
     child.on('error', () => resolve({ ok: false, error: 'CHILD_ERROR' }));
-    child.on('close', code => resolve({ ok: code === 0, output: stdout.trim(), error: stderr.includes('VERSION_CONFLICT') ? 'VERSION_CONFLICT' : 'DB_CONCURRENT_FAILURE' }));
+    child.on('close', code => resolve({ ok: code === 0, output: stdout.trim(), error: stderr.includes('VERSION_CONFLICT') ? 'VERSION_CONFLICT' : stderr.includes('exclusion constraint') ? 'EXCLUSION_CONFLICT' : stderr.includes('EMPLOYMENT_INTERVAL_INVALID') ? 'EMPLOYMENT_INTERVAL_INVALID' : 'DB_CONCURRENT_FAILURE' }));
     child.stdin.on('error', () => {});
     child.stdin.end(`SET statement_timeout='8s'; SET lock_timeout='5s';\n${sql}`);
   });
@@ -245,6 +246,9 @@ try {
   });
   query(readFileSync(resolve(ROOT, 'scripts/isg/sql/workplace_fixture.sql'), 'utf8'));
   await runWorkplaceProbe({ query, concurrent, check, killSleepingTransaction });
+  query(readFileSync(resolve(ROOT, 'scripts/isg/sql/personnel_fixture.sql'), 'utf8'));
+  report.personnel_btree_gist_version = query("SELECT extversion FROM pg_extension WHERE extname='btree_gist';");
+  await runPersonnelProbe({ query, concurrent, check, killSleepingTransaction });
   report.ok = true;
 } catch (error) {
   report.ok = false; report.error_code = /^DB_/.test(error.message) ? error.message : 'DB_CONTRACT_ASSERTION_FAILED';
