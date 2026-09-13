@@ -4,6 +4,22 @@ import Supabase
 @MainActor final class NotebookRepository {
     private let sdk: SupabaseClient
     init(sdk: SupabaseClient) { self.sdk = sdk }
+    private struct ReadPayload: Encodable {
+        let after: UUID?
+        enum CodingKeys: String, CodingKey { case p_note, p_after }
+        func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encodeNil(forKey: .p_note)
+            if let after { try c.encode(after, forKey: .p_after) } else { try c.encodeNil(forKey: .p_after) }
+        }
+    }
+    lazy var reader = NotebookReader(current: { [weak self] in self?.identity() }, read: { [weak self] after in
+        guard let self else { throw NotebookFailure.unavailable }
+        return try await self.sdk.rpc("isg_notebook_read_v1", params: ReadPayload(after: after)).execute().data
+    })
+    func snapshot(_ identity: NotebookIdentity) throws -> NotebookReader.Snapshot {
+        try reader.snapshot(identity, drafts: queue.pending(identity))
+    }
     func identity() -> NotebookIdentity? {
         guard let session = sdk.auth.currentSession else { return nil }
         let parts = session.accessToken.split(separator: "."); guard parts.count == 3 else { return nil }

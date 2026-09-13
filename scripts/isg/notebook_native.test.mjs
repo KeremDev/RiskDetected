@@ -17,3 +17,14 @@ test('Swift production notebook queue: retry, identity isolation and conflict pr
   assert.equal(executed.status, 0, executed.stderr);
   assert.match(executed.stdout, /28 checks PASS/);
 });
+
+test('Swift production notebook reader rejects stale and cross-session responses', { skip: process.platform !== 'darwin' }, t => {
+  const directory = mkdtempSync(join(tmpdir(), 'isg-notebook-reader-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const binary = join(directory, 'check');
+  const compiled = spawnSync('swiftc', ['-parse-as-library', 'App/Services/Notebook/NotebookQueue.swift', 'App/Services/Notebook/NotebookReader.swift', 'scripts/isg/NotebookReaderCheck.swift', '-o', binary], { cwd: ROOT, encoding: 'utf8', timeout: 60000 });
+  assert.equal(compiled.status, 0, compiled.stderr);
+  const executed = spawnSync(binary, [], { encoding: 'utf8', timeout: 10000 });
+  assert.equal(executed.status, 0, executed.stderr);
+  assert.match(executed.stdout, /NotebookReader: PASS/);
+});

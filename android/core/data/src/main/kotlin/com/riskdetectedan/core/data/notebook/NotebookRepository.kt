@@ -16,6 +16,12 @@ import javax.inject.Singleton
 
 @Singleton
 class NotebookRepository @Inject constructor(private val client: SupabaseClient, storage: NotebookEncryptedStorage) {
+    val reader = NotebookReader({ identity() }) { after ->
+        client.postgrest.rpc("isg_notebook_read_v1", buildJsonObject {
+            put("p_note", JsonNull); put("p_after", after?.let(::JsonPrimitive) ?: JsonNull)
+        }).data
+    }
+    suspend fun snapshot(identity: NotebookIdentity): NotebookReader.Snapshot = reader.snapshot(identity, queue.pending(identity))
     fun identity(): NotebookIdentity? = runCatching {
         val session = client.auth.currentSessionOrNull() ?: return null
         val owner = client.auth.currentUserOrNull()?.id ?: return null
