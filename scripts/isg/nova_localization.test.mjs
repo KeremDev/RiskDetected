@@ -14,6 +14,7 @@ const NOVA_FILES=[
   'App/DesignSystem/ISG/NovaDirectoryScreens.swift','App/DesignSystem/ISG/NovaExpertShell.swift',
   'App/DesignSystem/ISG/NovaNavigation.swift','App/DesignSystem/ISG/NovaPersonnel.swift',
   'App/DesignSystem/ISG/NovaNonconformity.swift','App/DesignSystem/ISG/NovaNonconformityScreens.swift',
+  'App/DesignSystem/ISG/NovaFindingBridge.swift',
   'App/DesignSystem/ISG/NovaPersonnelScreens.swift','App/DesignSystem/ISG/NovaSessionHost.swift',
   'App/DesignSystem/ISG/NovaTokens.swift','App/DesignSystem/ISG/NovaWorkspaceCapability.swift',
   'App/Views/Components/NotebookDestination.swift','App/Views/Components/NovaCompanyManagementGate.swift',

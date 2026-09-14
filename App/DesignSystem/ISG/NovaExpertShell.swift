@@ -755,7 +755,7 @@ struct NovaCompaniesScreen: View {
                         Button(action: onCreate) {
                             HStack(spacing: 5) {
                                 Image(systemName: "plus").font(.system(size: 12, weight: .medium))
-                                NovaSizedText(text: "Firma Ekle", size: 11.5, weight: "Medium")
+                                NovaSizedText(text: RDLocalization.string("localizable.nova.expert.shell.firma.ekle.09e0dac1", table: .localizable, fallback: "Firma Ekle"), size: 11.5, weight: "Medium")
                             }.padding(.horizontal, 15).frame(minWidth: 116, minHeight: 34)
                                 .background(NovaColorToken.accent.color(in: scheme), in: Capsule())
                                 .foregroundStyle(NovaColorToken.onAccent.color(in: scheme))

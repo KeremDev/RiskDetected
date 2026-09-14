@@ -17,7 +17,15 @@ import Foundation
 
     private struct ListEnvelope: Decodable { let rows: [NovaNonconformityRow] }
     private struct WorkplaceEnvelope: Decodable { let rows: [NovaNonconformityWorkplace] }
-    private struct MutationEnvelope: Decodable { let row: NovaNonconformityRow; let replayed: Bool }
+    private struct Outcome: Decodable { let replayed: Bool? }
+    private struct MutationEnvelope: Decodable {
+        let row: NovaNonconformityRow
+        let replayed: Bool
+        let outcome: Outcome?
+    }
+    /// `alreadyOpen` is the server saying this finding already had a record, which
+    /// is a different sentence from "your retry replayed".
+    struct OpenResult: Equatable { let row: NovaNonconformityRow; let alreadyOpen: Bool }
 
     func list(_ scope: NovaPersonnelScope, state: NovaNonconformityState? = nil,
               query: String = "") async throws -> [NovaNonconformityRow] {
@@ -42,7 +50,7 @@ import Foundation
     /// The operation and mutation identifiers travel with the request, so a retry
     /// returns the first answer instead of opening a second record.
     func open(_ scope: NovaPersonnelScope, intent: NovaNonconformityIntent,
-              operationID: UUID = UUID(), mutationID: UUID = UUID()) async throws -> NovaNonconformityRow {
+              operationID: UUID = UUID(), mutationID: UUID = UUID()) async throws -> OpenResult {
         try check(scope)
         var payload: [String: PersonnelRPCValue] = [
             "workplace_id": .id(intent.workplaceID), "title": .string(intent.title)]
@@ -67,7 +75,8 @@ import Foundation
             "p_operation": .id(operationID), "p_mutation": .id(mutationID),
             "p_payload": .object(payload)])
         try check(scope)
-        return try JSONDecoder().decode(MutationEnvelope.self, from: data).row
+        let envelope = try JSONDecoder().decode(MutationEnvelope.self, from: data)
+        return .init(row: envelope.row, alreadyOpen: envelope.outcome?.replayed ?? false)
     }
 
     func transition(_ scope: NovaPersonnelScope, id: UUID, to state: NovaNonconformityState,
@@ -83,3 +92,4 @@ import Foundation
         return try JSONDecoder().decode(MutationEnvelope.self, from: data).row
     }
 }
+

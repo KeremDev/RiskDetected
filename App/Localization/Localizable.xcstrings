@@ -6967,6 +6967,276 @@
         }
       }
     },
+    "localizable.nova.bridge.alert.ok": {
+      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamam"
+          }
+        }
+      }
+    },
+    "localizable.nova.bridge.band.unknown": {
+      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bilinmiyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.bridge.band.unreadable": {
+      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This finding's risk band could not be read. Choose the severity yourself."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu bulgunun risk bandı okunamadı. Önem derecesini siz seçin."
+          }
+        }
+      }
+    },
+    "localizable.nova.bridge.detail": {
+      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The analysis record stays as it is. A separate nonconformity is opened for each finding you choose."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz kaydı olduğu gibi kalır. Seçtiğiniz bulgular için ayrı uygunsuzluk açılır."
+          }
+        }
+      }
+    },
+    "localizable.nova.bridge.done": {
+      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to the list"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listeye dön"
+          }
+        }
+      }
+    },
+    "localizable.nova.bridge.finished": {
+      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done. Each finding's result is written on its own row."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşlem bitti. Her bulgunun sonucu kendi satırında yazıyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.bridge.no.findings": {
+      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This analysis has no finding to turn into a nonconformity."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu analizde uygunsuzluğa dönüştürülecek bulgu yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.bridge.no.workplace": {
+      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This company has no workplace to open a record against."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu firmada kayıt açılacak bir işyeri yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.bridge.open.selected": {
+      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the selected ones"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçilenleri aç"
+          }
+        }
+      }
+    },
+    "localizable.nova.bridge.outcome.existing": {
+      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This finding already had a nonconformity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu bulgunun uygunsuzluğu zaten vardı"
+          }
+        }
+      }
+    },
+    "localizable.nova.bridge.outcome.failed": {
+      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No record could be opened for this finding. Retry the same operation."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu bulgu için kayıt açılamadı. Aynı işlemi tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.bridge.outcome.opened": {
+      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nonconformity opened"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygunsuzluk açıldı"
+          }
+        }
+      }
+    },
+    "localizable.nova.bridge.outcome.severity": {
+      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The risk band could not be read; choose a severity and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk bandı okunamadı; önem derecesini seçip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.bridge.photo.unreadable": {
+      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The chosen photos could not be read. Try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçilen fotoğraflar okunamadı. Tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.bridge.title": {
+      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nonconformities from findings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulgulardan uygunsuzluk"
+          }
+        }
+      }
+    },
     "localizable.nova.company.detail.title": {
       "extractionState": "manual",
       "localizations": {
@@ -7016,6 +7286,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Personel ve işyeri yönetimine dön"
+          }
+        }
+      }
+    },
+    "localizable.nova.company.management.gate.dosya.ekle.b9bb8c93": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaCompanyManagementGate.swift:80; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add File"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya Ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.company.management.gate.evrak.ekle.386b7009": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaCompanyManagementGate.swift:81; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Document"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evrak Ekle"
           }
         }
       }
@@ -8687,6 +8993,24 @@
         }
       }
     },
+    "localizable.nova.expert.shell.firma.ekle.09e0dac1": {
+      "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:758; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma Ekle"
+          }
+        }
+      }
+    },
     "localizable.nova.expert.shell.firma.personeline.egitim.kaydi.olustur.17b5c3df": {
       "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:426; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -9377,6 +9701,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Evrak Takibi"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.firma.ekle.b4073323": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:22; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma Ekle"
           }
         }
       }
@@ -11246,6 +11588,852 @@
           "stringUnit": {
             "state": "translated",
             "value": "Eğitim · —"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.ad.soyad.54b1adca": {
+      "comment": "swift_ui_helper_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:71; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full name"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ad soyad"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.ayni.kaydi.tekrar.dene.26e3002b": {
+      "comment": "swift_user_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:89; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry the same record"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aynı kaydı tekrar dene"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.bekleyen.islemi.ayni.bilgilerle.tekrar.kontrol.e.1b29313f": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:79; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check the pending operation again with the same information. A second company is not created."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekleyen işlemi aynı bilgilerle tekrar kontrol edin. İkinci bir firma oluşturulmaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.bekleyen.islemin.icerigi.uyusmuyor.yeni.kayit.ac.1a4f9f92": {
+      "comment": "computed_ui_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:158; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The pending operation's content does not match. No new record was created; support needs to check it."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekleyen işlemin içeriği uyuşmuyor. Yeni kayıt açılmadı; destek kontrolü gerekiyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.bekleyen.kayit.guvenle.okunamadi.kaydi.cogaltmam.534e3ba3": {
+      "comment": "swift_user_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:116; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The pending record could not be read safely. The operation was stopped so the record is not duplicated."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekleyen kayıt güvenle okunamadı. Kaydı çoğaltmamak için işlem durduruldu."
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.bu.kisi.firmanin.personel.listesine.de.eklenir.196763c7": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:72; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This person is also added to the company's personnel list."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kişi firmanın personel listesine de eklenir."
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.calisan.sayisi.4465d142": {
+      "comment": "swift_ui_helper_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:63; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Employee count"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çalışan sayısı"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.ek.bilgiler.istege.bagli.a207edd5": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:60; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Additional information · optional"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ek bilgiler · isteğe bağlı"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.firma.adi.15090427": {
+      "comment": "swift_ui_helper_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:42; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company name *"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma adı *"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.firma.adi.ve.sektor.zorunludur.e.posta.calisan.s.0900e170": {
+      "comment": "swift_user_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:93; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The company name and the sector are required. Check the email, the employee count and the responsible person."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma adı ve sektör zorunludur. E-posta, çalışan sayısı ve sorumlu personel bilgilerini kontrol edin."
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.firma.e.posta.b818798f": {
+      "comment": "swift_ui_helper_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:61; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company email"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma e-posta"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.firma.limitinize.ulastiniz.mevcut.firmalariniz.d.2ea1357c": {
+      "comment": "computed_ui_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:155; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have reached your company limit. Your existing companies count towards it."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma limitinize ulaştınız. Mevcut firmalarınız da bu limite dahildir."
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.firma.olusturmak.icin.aktif.plus.veya.pro.abonel.1f6b8652": {
+      "comment": "computed_ui_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:156; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creating a company requires an active Plus or Pro subscription."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma oluşturmak için aktif Plus veya Pro aboneliği gerekiyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.firmaniz.basariyla.eklendi.72430314": {
+      "comment": "swift_user_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:128; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your company was added."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmanız başarıyla eklendi!"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.firmayi.kaydet.f24d4369": {
+      "comment": "swift_user_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:89; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save the company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmayı kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.islemin.sonucu.dogrulanamadi.baglantinizi.kontro.b20e85af": {
+      "comment": "computed_ui_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:162; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The result of the operation could not be verified. Check your connection and retry the same record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşlemin sonucu doğrulanamadı. Bağlantınızı kontrol edip aynı kaydı tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.pilot.yazma.erisimi.acik.degil.veya.suresi.dolmu.05b49924": {
+      "comment": "computed_ui_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:157; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pilot write access is closed or has expired. Once it is open you can retry the same record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pilot yazma erişimi açık değil veya süresi dolmuş. Erişim açıldıktan sonra aynı kaydı tekrar deneyebilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.sektor.a0de4868": {
+      "comment": "swift_ui_helper_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:52; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sector *"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sektör *"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.sicil.no.dc1d6d14": {
+      "comment": "swift_ui_helper_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:65; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registry number"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sicil No"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.sorumlu.personel.ekle.779d3a3d": {
+      "comment": "swiftui_text; App/Views/Components/NovaPilotCompanyCreateView.swift:68; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a responsible person"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorumlu personel ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.tehlike.sinifi.837c3a63": {
+      "comment": "swiftui_text; App/Views/Components/NovaPilotCompanyCreateView.swift:47; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hazard class *"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tehlike sınıfı *"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.yalnizca.pilot.kapsamina.eklenir.mevcut.firmalar.b99c355c": {
+      "comment": "swiftui_text; App/Views/Components/NovaPilotCompanyCreateView.swift:76; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It is added to the pilot scope only. Your existing companies do not change and your company limit still applies."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yalnızca pilot kapsamına eklenir. Mevcut firmalarınız değişmez; firma limitiniz geçerlidir."
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.yeni.firma.458e4f36": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:39; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni Firma"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.company.create.view.zorunlu.alanlar.ile.isaretlidir.f93191fc": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaPilotCompanyCreateView.swift:39; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Required fields are marked with *"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zorunlu alanlar * ile işaretlidir"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.aktif.kayit.0f6ad151": {
+      "comment": "swift_user_copy; App/Views/Components/NovaPilotMainGate.swift:60; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active records"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktif kayıt"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.aktif.kayit.c051f94b": {
+      "comment": "swift_user_copy; App/Views/Components/NovaPilotMainGate.swift:59; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active records"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktif kayıt"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.aktif.kayit.f0e78da1": {
+      "comment": "swift_user_copy; App/Views/Components/NovaPilotMainGate.swift:58; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active records"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktif kayıt"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.aktif.pilot.1a73541a": {
+      "comment": "swift_user_copy; App/Views/Components/NovaPilotMainGate.swift:57; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active pilot"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktif pilot"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.ana.sayfaya.don.0eb70db3": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaPilotMainGate.swift:322; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to home"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ana sayfaya dön"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.bu.modul.hazirlaniyor.bu.build.de.henuz.canli.is.cdb9ea95": {
+      "comment": "swift_user_copy; App/Views/Components/NovaPilotMainGate.swift:332; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This module is being prepared. It does not perform any live operation in this build yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu modül hazırlanıyor. Bu build’de henüz canlı işlem yapmıyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.bu.modul.hazirlaniyor.henuz.canli.islem.yapmiyor.b652656a": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaPilotMainGate.swift:112; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This module is being prepared; it does not perform any live operation yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu modül hazırlanıyor; henüz canlı işlem yapmıyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07": {
+      "comment": "swift_user_copy; App/Views/Components/NovaPilotMainGate.swift:69; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live pilot access is not available yet"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Canlı pilot erişimi henüz kullanılamıyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.canli.pilot.yalnizca.pilot.firmalar.eac5bab4": {
+      "comment": "swift_user_copy; App/Views/Components/NovaPilotMainGate.swift:69; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live pilot · pilot companies only"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Canlı pilot · yalnızca pilot firmalar"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.cikis.yap.485ab15e": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaPilotMainGate.swift:108; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign out"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çıkış yap"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.egitim.modulu.henuz.kullanima.acik.degil.e21b7bc6": {
+      "comment": "swift_user_copy; App/Views/Components/NovaPilotMainGate.swift:88; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The training module is not available yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitim modülü henüz kullanıma açık değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.hesabim.3b621d08": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaPilotMainGate.swift:101; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My Account"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hesabım"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.isyerleri.40b87276": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaPilotMainGate.swift:59; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workplaces"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyerleri"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.nova.ozel.pilot.build.96665a0c": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaPilotMainGate.swift:104; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NOVA · private pilot build"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NOVA · özel pilot build"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.nova.pilot.d20fb7f1": {
+      "comment": "swiftui_modifier; App/Views/Components/NovaPilotMainGate.swift:132; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NOVA pilot"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NOVA pilot"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.ozet.alinamadi.yenileyerek.tekrar.deneyin.9b6a6077": {
+      "comment": "swift_user_copy; App/Views/Components/NovaPilotMainGate.swift:89; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The summary could not be loaded. Refresh and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Özet alınamadı. Yenileyerek tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.ozet.verileri.henuz.bagli.degil.4508136e": {
+      "comment": "swift_user_copy; App/Views/Components/NovaPilotMainGate.swift:89; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The summary data is not connected yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Özet verileri henüz bağlı değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.pilot.erisimi.kontrol.ediliyor.6a965311": {
+      "comment": "computed_ui_copy; App/Views/Components/NovaPilotMainGate.swift:68; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checking pilot access…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pilot erişimi kontrol ediliyor…"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.pilot.erisimini.tekrar.kontrol.et.bfce533e": {
+      "comment": "swiftui_modifier; App/Views/Components/NovaPilotMainGate.swift:163; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check pilot access again"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pilot erişimini tekrar kontrol et"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.pilot.firmalarinizin.guncel.kayitlari.01d48da7": {
+      "comment": "swift_user_copy; App/Views/Components/NovaPilotMainGate.swift:89; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The current records of your pilot companies."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pilot firmalarınızın güncel kayıtları."
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.profil.duzenleme.ve.abonelik.islemleri.bu.pilot..efb31ef3": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaPilotMainGate.swift:107; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile editing and subscription actions are not wired to this pilot interface yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profil düzenleme ve abonelik işlemleri bu pilot arayüzüne henüz bağlanmadı."
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.tasarim.kontrolu.canli.veri.kullanilmiyor.d6b551c8": {
+      "comment": "computed_ui_copy; App/Views/Components/NovaPilotMainGate.swift:67; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Design check · no live data is used"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tasarım kontrolü · canlı veri kullanılmıyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.main.gate.yeni.tasarim.hazir.firma.islemleri.icin.canli.pi.92495baa": {
+      "comment": "custom_ui_copy; App/Views/Components/NovaPilotMainGate.swift:319; placeholders: none; review: machine_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The new design is ready. Company actions need the live pilot service and access for your account to be opened. Your existing companies are not migrated automatically."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni tasarım hazır. Firma işlemleri için canlı pilot servisinin ve hesabınıza ait erişimin açılması gerekiyor. Mevcut firmalarınız otomatik taşınmaz."
           }
         }
       }
