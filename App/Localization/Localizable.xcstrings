@@ -12961,6 +12961,60 @@
         }
       }
     },
+    "localizable.nova.equipment.due.auto": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: default periods, the editable next date and the İSG-KATİP declaration; placeholders: %d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filled from the %d-month period; you can change it."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d aylık süreden otomatik dolduruldu; değiştirebilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.due.expert": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: default periods, the editable next date and the İSG-KATİP declaration; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Changed by the expert"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzman tarafından değiştirildi"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.due.period": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: default periods, the editable next date and the İSG-KATİP declaration; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Worked out from the period"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süreden hesaplandı"
+          }
+        }
+      }
+    },
     "localizable.nova.equipment.edit.title": {
       "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -13112,13 +13166,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No check period is defined for this type, so no next check date was worked out."
+            "value": "No check period is defined for this type, so no next check date was worked out. You can define one from Periods."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bu tür için kontrol süresi tanımlı değil; sonraki kontrol tarihi hesaplanmadı."
+            "value": "Bu tür için kontrol süresi tanımlı değil; sonraki kontrol tarihi hesaplanmadı. Süreler ekranından tanımlayabilirsiniz."
           }
         }
       }
@@ -13209,6 +13263,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bu firmanın ekipman kayıtlarına erişim yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.failure.due.before": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: default periods, the editable next date and the İSG-KATİP declaration; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The next check date has to be later than the check date."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sonraki kontrol tarihi, kontrol tarihinden sonra olmalı."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.failure.due.failed": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: default periods, the editable next date and the İSG-KATİP declaration; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A check that came back negative cannot be given a next date."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Olumsuz sonuçlanan kontrole sonraki tarih verilemez."
           }
         }
       }
@@ -13778,13 +13868,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The check period is defined per equipment type; with no period defined, no next date is produced. The page warns %d days ahead."
+            "value": "Every type starts at a default check period and the next date is worked out from the report; you can change either. The page warns %d days ahead."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kontrol süresi ekipman türüne göre tanımlanır; süre tanımlı değilse sonraki tarih üretilmez. Sayfa, tarihi %d gün önceden uyarır."
+            "value": "Her tür bir varsayılan kontrol süresiyle başlar ve sonraki tarih rapordan otomatik hesaplanır; süreyi de tarihi de değiştirebilirsiniz. Sayfa, tarihi %d gün önceden uyarır."
           }
         }
       }
@@ -13803,6 +13893,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kontrol geçmişi"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.katip.hint": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: default periods, the editable next date and the İSG-KATİP declaration; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This mark is the expert's own declaration. The app makes no query or transaction in İSG-KATİP."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu işaret uzmanın kendi beyanıdır. Uygulama İSG-KATİP üzerinde sorgulama veya işlem yapmaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.katip.mark": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: default periods, the editable next date and the İSG-KATİP declaration; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSG-KATİP assignment was made"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSG-KATİP ataması yapıldı"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.katip.note": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: default periods, the editable next date and the İSG-KATİP declaration; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assignment note"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atama notu"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.katip.tag": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: default periods, the editable next date and the İSG-KATİP declaration; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KATİP declaration"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KATİP beyanı"
           }
         }
       }
@@ -13915,6 +14077,24 @@
         }
       }
     },
+    "localizable.nova.equipment.period.default.review": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: default periods, the editable next date and the İSG-KATİP declaration; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is the general period the product starts this type at; it has not been confirmed for this company. Confirm or change it from Periods."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu, ürünün bu tür için başlattığı genel süredir; bu firma için henüz onaylanmadı. Süreler ekranından onaylayın veya değiştirin."
+          }
+        }
+      }
+    },
     "localizable.nova.equipment.period.missing": {
       "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -13965,6 +14145,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bu süre uzmanın kendi kararıdır; doğrulanmış bir mevzuat kaynağına bağlanmadı."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.period.starts": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: default periods, the editable next date and the İSG-KATİP declaration; placeholders: %1$d, %2$@; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This type starts at %1$d months · %2$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu tür %1$d ay ile başlar · %2$@"
           }
         }
       }
@@ -14307,6 +14505,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Periyodik kontrolleri aç"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.source.default": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: default periods, the editable next date and the İSG-KATİP declaration; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General annex period · product default"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mevzuat eki genel süresi · ürün varsayılanı"
           }
         }
       }

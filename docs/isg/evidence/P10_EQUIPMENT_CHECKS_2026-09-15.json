@@ -3,7 +3,10 @@
  "slice": "the client surface behind Periyodik Kontroller: equipment inventory, per-type periods and inspection records",
  "date": "2026-09-15",
  "branch": "codex/isg-transition-foundation",
- "migration": "supabase/migrations/20260915030000_isg_equipment_checks.sql",
+ "migration": [
+  "supabase/migrations/20260915030000_isg_equipment_checks.sql",
+  "supabase/migrations/20260915050000_isg_equipment_periods.sql"
+ ],
  "own_rollout_feature_added": false,
  "module_left_disabled": true,
  "needs_two_switches": [
@@ -11,15 +14,16 @@
   "equipment"
  ],
  "synthetic_run": {
-  "directory": "output/isg/runs/synthetic-auth-tIftDy",
+  "directory": "output/isg/runs/synthetic-auth-N3g8jI",
   "ok": true,
-  "checks_total": 1287,
+  "checks_total": 1298,
   "checks_failed": 0,
-  "equipment_checks": 39,
+  "equipment_checks": 50,
   "ids": [
    "equipment_checks_the_slice_adds_no_switch_of_its_own",
    "equipment_checks_every_new_table_is_private_and_row_secured",
-   "equipment_checks_the_type_catalogue_carries_names_and_no_periods",
+   "equipment_checks_every_type_starts_at_a_period_and_every_default_carries_its_basis",
+   "equipment_checks_the_schema_refuses_an_unconfirmed_default_that_hides_its_flag",
    "equipment_checks_no_suggested_type_is_a_health_record",
    "equipment_checks_the_schema_itself_refuses_a_health_type",
    "equipment_checks_no_column_stores_a_state_a_stale_row_could_claim",
@@ -27,15 +31,25 @@
    "equipment_checks_the_boundary_exposes_exactly_two_functions_to_a_signed_in_account",
    "equipment_checks_the_phase_switch_alone_closes_the_module",
    "equipment_checks_the_module_switch_alone_closes_the_module",
-   "equipment_checks_the_catalogue_offers_names_and_refuses_to_offer_a_period",
+   "equipment_checks_the_catalogue_offers_a_default_period_and_says_what_it_is",
    "equipment_checks_an_item_with_no_inspection_reads_as_never_inspected",
-   "equipment_checks_an_inspection_with_no_type_rule_never_invents_a_due_date",
+   "equipment_checks_registering_an_item_starts_its_type_at_the_default_period",
+   "equipment_checks_a_report_produces_the_next_date_by_itself_and_says_it_came_from_the_period",
+   "equipment_checks_a_type_with_no_default_still_never_invents_a_due_date",
    "equipment_checks_a_period_belongs_to_the_type_and_carries_where_it_came_from",
    "equipment_checks_an_unapproved_period_is_flagged_for_review_and_cannot_hide_it",
    "equipment_checks_two_types_inspected_the_same_day_are_not_due_the_same_day",
    "equipment_checks_a_failed_check_produces_no_due_date_and_says_so",
    "equipment_checks_a_check_that_ran_out_reads_as_overdue",
    "equipment_checks_a_check_inside_the_notice_window_reads_as_due_soon",
+   "equipment_checks_a_next_date_the_expert_wrote_is_recorded_as_theirs_not_as_the_periods",
+   "equipment_checks_a_date_that_matches_the_period_is_still_the_periods_answer",
+   "equipment_checks_a_next_date_that_is_not_after_the_report_is_refused",
+   "equipment_checks_a_failed_check_cannot_be_given_a_next_date_by_hand",
+   "equipment_checks_the_katip_mark_is_the_experts_own_declaration_and_never_a_verification",
+   "equipment_checks_the_katip_mark_is_optional_and_defaults_to_not_declared",
+   "equipment_checks_no_row_can_ever_claim_the_official_system_was_checked",
+   "equipment_checks_a_katip_note_without_the_mark_is_refused",
    "equipment_checks_a_report_dated_after_today_is_refused",
    "equipment_checks_another_owners_company_is_refused_on_every_action",
    "equipment_checks_another_owners_equipment_cannot_be_inspected_through_this_company",
@@ -64,13 +78,24 @@
   "due_date_invented_without_a_rule": false,
   "period_unknown_reads_as_valid": false,
   "failed_inspection_produces_a_due_date": false,
-  "period_defaults_offered": false,
+  "period_defaults_offered": true,
   "period_shown_without_its_source": false,
   "unapproved_period_can_hide_its_review_flag": false,
   "rule_added_later_rewrites_an_existing_report": false,
   "report_can_be_dated_in_the_future": false,
   "health_records_tracked": false,
-  "compliance_verdict_returned": false
+  "compliance_verdict_returned": false,
+  "period_default_months": 12,
+  "period_default_source": "regulation_default",
+  "period_default_forced_to_need_review": true,
+  "expert_can_claim_the_default_source": false,
+  "default_carries_a_basis_note": true,
+  "type_without_a_default_gets_a_date": false,
+  "next_date_editable_by_the_expert": true,
+  "changed_date_can_read_as_derived": false,
+  "katip_declaration_optional": true,
+  "katip_official_verification_possible": false,
+  "katip_note_without_the_mark": false
  },
  "boundary": {
   "authenticated_entries": [
@@ -93,12 +118,12 @@
   ],
   "design_tests": {
    "file": "scripts/isg/nova_equipment_checks.test.mjs",
-   "total": 12,
+   "total": 15,
    "failed": 0
   },
   "guard_tests": {
    "file": "scripts/isg/equipment_checks_guard.test.mjs",
-   "total": 16,
+   "total": 21,
    "failed": 0
   },
   "connected_to": [
@@ -114,12 +139,12 @@
  },
  "suites": {
   "foundation": {
-   "total": 551,
+   "total": 556,
    "failed": 1,
    "failure_owner": "the concurrent session's education copy, not this slice"
   },
   "nova_design": {
-   "total": 79,
+   "total": 82,
    "failed": 0
   },
   "l10n": {
@@ -135,5 +160,5 @@
   "nova_pilot_build": "SUCCEEDED"
  },
  "production_deployed": false,
- "limitation": "No approved period catalogue exists, so the module offers no period for any type and every period the expert enters is carried with its own attribution. No notification is produced for an approaching date."
+ "limitation": "The default period is one general value (12 months) carried as the product's own, flagged for the expert's confirmation and replaceable per type once §10.2's approved catalogue exists. There is no İSG-KATİP integration and none is planned: the mark is the expert's declaration. No notification is produced for an approaching date."
 }

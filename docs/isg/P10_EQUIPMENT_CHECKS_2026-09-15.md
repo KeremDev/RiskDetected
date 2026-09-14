@@ -1,7 +1,8 @@
 # Periyodik Kontroller — P10 istemci dilimi
 
-15 Eylül 2026. Yeni migration `20260915030000_isg_equipment_checks.sql`.
-**Kendi rollout satırını eklemiyor ve hiçbir anahtarı açmıyor.**
+15 Eylül 2026. İki migration: `20260915030000_isg_equipment_checks.sql` ve
+`20260915050000_isg_equipment_periods.sql`. **İkisi de kendi rollout satırını
+eklemiyor ve hiçbir anahtarı açmıyor.**
 
 Sol menüdeki **Periyodik Kontroller** girişi artık gerçek bir sayfaya iniyor,
 firma detay sayfasındaki aynı başlık ve ana sayfadaki özet kartı bağlandı.
@@ -29,9 +30,9 @@ Eksik olan iki şeydi:
    **`valid` değil**. Sonraki tarihi bilmemek kayıttaki bir boşluktur, "bir yıl
    daha iyidir" demek değildir.
 2. **Süre, kaynağı söylenmeden mevzuat gereği gibi sunulmuyor.**
-   `unapproved_fixture` kaynağı `needs_review`'u zorluyor; okuma her satırda
-   süreyi ve bu bayrağı birlikte taşıyor, ekran da **"Uzman tarafından
-   belirlenen"** diye yazıyor.
+   `unapproved_fixture` ve `regulation_default` kaynakları `needs_review`'u
+   zorluyor; okuma her satırda süreyi ve bu bayrağı birlikte taşıyor, ekran da
+   **"Uzman tarafından belirlenen"** veya **"ürün varsayılanı"** diye yazıyor.
 3. **Başka sahibin ekipmanına erişilemiyor.** Kontrollü giriş, domain
    fonksiyonuna devretmeden önce firmayı oturum açmış aktöre karşı doğruluyor.
 4. **Bu bir insan sağlık kontrolü değil.** Tür öneri kataloğu şemada sabit bir
@@ -69,12 +70,63 @@ filtre değerleri.
 Uyarı penceresi (30 gün) sunucunun; her okumada `notice_days` olarak dönüyor ve
 ekran onu yazıyor, kendi uydurmuyor.
 
-## 5. Tür önerileri süresiz gelir
+## 5. Varsayılan süreler — ikinci migration `20260915050000`
 
-`equipment_type_suggestions` yalnızca **ad** taşır; içinde period/month/interval
-diye bir kolon **yoktur**. Katalog okuması `period_defaults_offered: false`
-diyor. Bir tür seçmek, o türe süre atanmış olmasına yol açmaz — süreyi uzman
-girer ve kaynağını söyler.
+**Sahibin kararıyla değişti.** İlk dilim hiçbir tür için süre sunmuyordu (§10.2'de
+onaylanmış kural kataloğu olmadığı gerekçesiyle). Sahip modülün sürelerle
+gelmesi gerektiğini söyledi; bu yüzden artık **her tür bir süreyle başlıyor** ve
+dürüstlüğün tamamını **atıf** taşıyor:
+
+| | |
+|---|---|
+| Nereden geliyor | `equipment_default_periods` — her satırda `basis_note` **zorunlu** (20–500 karakter) |
+| Değer | Tür ayrımı yapılmadan **12 ay**; yönetmelik ekinin kendi kuralı "aksi belirtilmedikçe yılda bir" olduğu için uydurma bir tür ayrımı yapılmadı |
+| Kaynak etiketi | `regulation_default` → **"Mevzuat eki genel süresi · ürün varsayılanı"** |
+| Onay | Şema **needs_review'u zorluyor**: `CHECK(period_source<>'regulation_default' OR needs_review)` |
+| Uzman bunu seçebilir mi | **Hayır.** P10 fonksiyonu yalnız `manufacturer`, `rule_version`, `unapproved_fixture` kabul ediyor; `regulation_default` yalnızca sunucunun kendi yazdığı etikettir |
+
+Varsayılan, ekipman kaydedilirken **gerçek, görünür, düzenlenebilir bir firma
+kuralı olarak yazılıyor** — gizli bir sabit değil. Süreler ekranında kaynağıyla
+ve onay bayrağıyla listeleniyor, popup şunu yazıyor:
+
+> Bu, ürünün bu tür için başlattığı genel süredir; bu firma için henüz
+> onaylanmadı. Süreler ekranından onaylayın veya değiştirin.
+
+Ürünün varsayılanı olmayan bir tür hâlâ **hiç tarih üretmiyor**; probe bunu
+`welding_set` üzerinden gerçekten deniyor.
+
+## 5.1. Sonraki tarih otomatik, ama uzmanın
+
+Rapor tarihi girilince sonraki tarih **süreden otomatik hesaplanıp forma
+dolduruluyor** ("12 aylık süreden otomatik dolduruldu; değiştirebilirsiniz").
+Uzman değiştirebilir.
+
+Kaydedilen tarihin **ne anlama geldiği sunucunun kararı**: gönderilen tarih
+sürenin ürettiğiyle aynıysa `due_source='period'`, farklıysa `'expert'`. Detay
+kartı bunu tarihin altında yazıyor ("Süreden hesaplandı" / "Uzman tarafından
+değiştirildi"), geçmişte de etiketleniyor. İstemcinin doldurduğu değer bir form
+varsayılanıdır; sınıflandırma istemcinin değil.
+
+Rapor tarihinden önceki bir tarih ve olumsuz sonuca elle verilen tarih
+reddediliyor (`DUE_BEFORE_REPORT`, `DUE_ON_A_FAILED_CHECK`).
+
+## 5.2. İSG-KATİP ataması — uzmanın beyanı
+
+Kontrol kaydederken opsiyonel bir işaret: **"İSG-KATİP ataması yapıldı"** ve
+isteğe bağlı bir atama notu.
+
+Bu bir **doğrulama değil**. Plan §10'un İSG-KATİP satırı zaten "resmî sistemde
+işlem yapılmış olduğu iddia edilmez" diyor ve `katip_contracts` tablosu bunu
+`official_integration boolean CHECK(NOT official_integration)` ile yapısal
+kılmış. Aynı kalıp buraya taşındı: `katip_official_verification` kolonu **yalnız
+false olabilir**, probe `true` yazmayı gerçekten deniyor ve reddedildiğini
+doğruluyor. İşaretin altında ekranda yazıyor:
+
+> Bu işaret uzmanın kendi beyanıdır. Uygulama İSG-KATİP üzerinde sorgulama veya
+> işlem yapmaz.
+
+İşaretlenmemiş bir kayda not yazılamıyor (`CHECK(katip_assignment_declared OR
+katip_declared_note IS NULL)`): boş bir kutunun açıklaması olmaz.
 
 ## 6. Sunucu sınırı
 
@@ -82,8 +134,9 @@ girer ve kaynağını söyler.
 → `private_isg.read_equipment_checks` / `private_isg.mutate_equipment_checks`
 SECURITY DEFINER kontrollü girişleri. Mutasyon makbuzu
 `PRIMARY KEY(actor_id, mutation_id)` + `request_hash`, eylem başına payload
-allowlist'i. `next_due_on`, `state` ve `needs_review` hiçbir eylemin payload'ında
-yok: onlar sunucunun.
+allowlist'i. `next_due_on` uzmanın (bkz. §5.1); `due_source`, `state`,
+`needs_review` ve `katip_official_verification` hiçbir eylemin payload'ında yok:
+bir tarihin **ne anlama geldiği** sunucunun.
 
 Her yazma, kuralı elinde tutan P10 fonksiyonuna devrediliyor; bu dilim tarih
 hesaplamıyor ve `equipment_inspections`'a doğrudan INSERT yapmıyor.
@@ -123,18 +176,22 @@ yokluğu bilginin kendisi.
 
 | Kapı | Sonuç |
 |---|---|
-| `run_auth_restore.mjs --synthetic-session` | **ok: true, 1287 kontrol, 0 hata**, 39'u `equipment_checks` (`output/isg/runs/synthetic-auth-tIftDy`) |
-| `run_suite.mjs foundation` | 550/551 — tek hata eşzamanlı oturumun eğitim metinleri |
-| `run_suite.mjs nova-design` | 79/79 |
-| `equipment_checks_guard.test.mjs` | 16/16 |
-| `nova_equipment_checks.test.mjs` | 12/12 |
+| `run_auth_restore.mjs --synthetic-session` | **ok: true, 1298 kontrol, 0 hata**, 50'si `equipment_checks` (`output/isg/runs/synthetic-auth-N3g8jI`) |
+| `run_suite.mjs foundation` | 555/556 — tek hata eşzamanlı oturumun eğitim metinleri |
+| `run_suite.mjs nova-design` | 82/82 |
+| `equipment_checks_guard.test.mjs` | 21/21 |
+| `nova_equipment_checks.test.mjs` | 15/15 |
 | `localization_catalog_tests.mjs` | L10N-001/002/003 PASS; L10N-004 borcundan bu dilime düşen **0** |
 | `migrate_swift_localization_catalogs.mjs --check` | PASS, bekleyen 0 |
 | iOS Debug + `NOVA_PILOT_BUILD` | SUCCEEDED |
 
-Simülatörde firma seçimi, envanter listesi (altı durumun tamamı), süre özeti ve
-ekipman popup'ı yürütüldü. Tek düzeltme: başlık, ekleme butonuyla yan yanayken
-iki satıra kırılıyordu; ölçekleniyor.
+Simülatörde firma seçimi, envanter listesi (altı durumun tamamı), süre özeti,
+ekipman popup'ı ve kontrol kaydetme paneli yürütüldü: rapor tarihi seçilince
+sonraki tarih kendiliğinden doldu, "Süreden hesaplandı" satırı göründü ve
+İSG-KATİP işareti ile beyan uyarısı çalıştı. İki düzeltme: başlık, ekleme
+butonuyla yan yanayken iki satıra kırılıyordu (ölçekleniyor); yeni katalog
+anahtarları eklendikten sonra **yeniden derlemeden** bakıldığı için ekranda
+`⟦EKSİK:…⟧` görünüyordu — `RDLocalization` fallback'i değil kataloğu okuyor.
 
 ## 10. Açık kalanlar
 
@@ -143,9 +200,12 @@ iki satıra kırılıyordu; ölçekleniyor.
   UPDATE private_isg.rollout SET read_enabled=true, write_enabled=true WHERE feature='modules';
   UPDATE private_isg.module_registry SET read_enabled=true, write_enabled=true WHERE module='equipment';
   ~~~
-- **Onaylanmış süre kataloğu yok.** Plan §10.2'nin istediği üretim kural
-  kataloğu hazırlanmadı; bu yüzden hiçbir tür için hazır süre sunulmuyor ve
-  uzmanın girdiği süre kaynağıyla birlikte işaretleniyor.
+- **Onaylanmış, tür bazlı süre kataloğu hâlâ yok.** Plan §10.2'nin istediği
+  üretim kural kataloğu hazırlanmadı. Şu an gelen varsayılan **tek bir genel
+  süredir** (12 ay) ve `regulation_default` etiketiyle, onay bekleyen olarak
+  geliyor. Tür/standart/sektör bazlı doğrulanmış süreler bu katalog
+  hazırlandığında `equipment_default_periods` tablosuna girer — kod değişmez.
+- **İSG-KATİP ile entegrasyon yok ve planlanmadı.** İşaret uzmanın beyanıdır.
 - Süresi yaklaşan kontrol için **bildirim üretilmiyor**.
 - Android'de karşılığı yok.
 - Modül firma tamamlanma skoruna bağlanmadı.

@@ -47,6 +47,12 @@ struct NovaPilotReviewHarness: View {
               personnel_count: 1, workplace_count: 1, department_count: 0, finding_count: nil, document_count: nil, completion_score: nil)
     }
     var body: some View {
+        Group {
+        if CommandLine.arguments.contains("RD_UI_TEST_AUDIT_ANALYSIS") {
+            analysisReview(.analyses)
+        } else if CommandLine.arguments.contains("RD_UI_TEST_AUDIT_FINDING") {
+            analysisReview(.findings)
+        } else {
         NovaExpertShell(navigation: $navigation, userName: "Tasarım Provası", connectionLabel: "Sentetik veriler · canlı bağlantı yok",
             onCompanyCreate: { create = true },
             onDestination: { destination in if destination == .companies { selected = false } }) { destination in
@@ -66,6 +72,8 @@ struct NovaPilotReviewHarness: View {
                 NovaCompaniesScreen(companies: [.init(id: Self.company.uuidString, name: summary.name, detail: "Metal sanayi · Çok tehlikeli")],
                     isOwnedList: true, onSelect: { _ in selected = true }, onBack: {}, onRetry: {}, onCreate: { create = true })
             }
+            }
+        }
         }
         .fullScreenCover(isPresented: $create) {
             NovaPopup {
@@ -79,6 +87,10 @@ struct NovaPilotReviewHarness: View {
         .onAppear {
             if CommandLine.arguments.contains("RD_UI_TEST_STATISTICS") {
                 navigation.apply(.navigate(.statistics), from: navigation.epoch)
+            } else if CommandLine.arguments.contains("RD_UI_TEST_AUDIT_ANALYSIS") {
+                navigation.apply(.navigate(.analyses), from: navigation.epoch)
+            } else if CommandLine.arguments.contains("RD_UI_TEST_AUDIT_FINDING") {
+                navigation.apply(.navigate(.findings), from: navigation.epoch)
             }
         }
     }
@@ -288,15 +300,22 @@ struct NovaPilotReviewHarness: View {
               filedReports: { _ in [] })
     }
 
-    private var reviewEquipmentTypes: [String] {
+    /// Every type starts at the product's own general period, exactly as the
+    /// server ships it.
+    private var reviewEquipmentTypes: [NovaEquipmentCheckService.Suggestion] {
         ["lifting_equipment", "crane", "forklift", "pressure_vessel", "compressor",
          "electrical_installation", "fire_extinguisher", "ladder", "power_tool", "other_equipment"]
+            .map { .init(code: $0, defaultPeriodMonths: 12,
+                         defaultBasisNote: "Yönetmelik ekinde aksi belirtilmedikçe genel periyot bir yıldır.") }
     }
     private var reviewEquipmentRules: [NovaEquipmentRule] {
         [.init(equipmentType: "crane", periodMonths: 12, source: .manufacturer,
                needsReview: false, exceptionNote: nil),
          .init(equipmentType: "compressor", periodMonths: 6, source: .unapprovedFixture,
-               needsReview: true, exceptionNote: "Uzmanın kendi belirlediği süre; kaynak onaylanmadı.")]
+               needsReview: true, exceptionNote: "Uzmanın kendi belirlediği süre; kaynak onaylanmadı."),
+         .init(equipmentType: "electrical_installation", periodMonths: 12, source: .regulationDefault,
+               needsReview: true,
+               exceptionNote: "Yönetmelik ekinde aksi belirtilmedikçe genel periyot bir yıldır.")]
     }
 
     private var reviewEquipmentRows: [NovaEquipmentItem] {
@@ -311,10 +330,15 @@ struct NovaPilotReviewHarness: View {
                   periodExceptionNote: nil, periodDefinedAfterReport: late,
                   lastPerformedOn: last, lastResult: result, lastInspector: last == nil ? nil : "TSE yetkili kuruluş",
                   lastExternalRef: last == nil ? nil : "RPT-2026-0114", nextDueOn: due,
+                  dueSource: due == nil ? nil : .period,
+                  katipDeclared: last != nil, katipNote: last == nil ? nil : "Atama yapıldı.",
+                  katipOfficialVerification: false,
                   evidenceAssetID: nil,
                   inspections: last == nil ? [] : [.init(id: UUID(), performedOn: last!, result: result ?? "pass",
                       nextDueOn: due, periodMonths: months, inspector: "TSE yetkili kuruluş",
-                      externalRef: "RPT-2026-0114", note: nil, evidenceAssetID: nil)])
+                      externalRef: "RPT-2026-0114", note: nil, evidenceAssetID: nil,
+                      dueSource: due == nil ? nil : .period, katipDeclared: true,
+                      katipNote: "Atama yapıldı.")])
         }
         return [
             item(Self.analysis, "crane", "KRN-001", .overdue, months: 12, source: .manufacturer,
@@ -328,7 +352,7 @@ struct NovaPilotReviewHarness: View {
             item(Self.owner, "crane", "KRN-002", .valid, months: 12, source: .manufacturer,
                  review: false, last: "2026-06-01", result: "pass", due: "2027-06-01"),
             item(Self.session, "electrical_installation", "ELK-001", .dueSoon, months: 12,
-                 source: .ruleVersion, review: false, last: "2025-10-05", result: "conditional",
+                 source: .regulationDefault, review: true, last: "2025-10-05", result: "conditional",
                  due: "2026-10-05")]
     }
 

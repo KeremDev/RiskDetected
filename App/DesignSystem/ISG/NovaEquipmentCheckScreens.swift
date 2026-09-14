@@ -5,7 +5,8 @@ import SwiftUI
 struct NovaEquipmentCheckClient {
     /// The type names to offer, the periods this company has set, its
     /// workplaces and the warning window the server owns.
-    let catalogue: (UUID?) async throws -> (suggestions: [String], rules: [NovaEquipmentRule],
+    let catalogue: (UUID?) async throws -> (suggestions: [NovaEquipmentCheckService.Suggestion],
+                                            rules: [NovaEquipmentRule],
                                             workplaces: [NovaDocumentWorkplace], noticeDays: Int)
     /// The whole account in one answer: the tally, the per-company summary, the
     /// per-type tally and one page of rows.
@@ -82,7 +83,7 @@ struct NovaEquipmentCheckScreen: View {
     var headingOverride: String?
     @Environment(\.colorScheme) private var scheme
     @State private var board: NovaEquipmentBoard?
-    @State private var suggestions: [String] = []
+    @State private var suggestions: [NovaEquipmentCheckService.Suggestion] = []
     @State private var rules: [NovaEquipmentRule] = []
     @State private var workplaces: [NovaDocumentWorkplace] = []
     @State private var noticeDays = 30
@@ -354,7 +355,7 @@ struct NovaEquipmentCheckScreen: View {
     /// What the module does and does not decide, said out loud.
     private var hint: some View {
         NovaHelpHint(text: String(format: RDLocalization.string("localizable.nova.equipment.hint", table: .localizable,
-            fallback: "Kontrol süresi ekipman türüne göre tanımlanır; süre tanımlı değilse sonraki tarih üretilmez. Sayfa, tarihi %d gün önceden uyarır."), noticeDays))
+            fallback: "Her tür bir varsayılan kontrol süresiyle başlar ve sonraki tarih rapordan otomatik hesaplanır; süreyi de tarihi de değiştirebilirsiniz. Sayfa, tarihi %d gün önceden uyarır."), noticeDays))
     }
 
     /// How many types have a period on file, and the way into setting them.
@@ -441,7 +442,7 @@ struct NovaEquipmentCheckScreen: View {
     private var typeOptions: [NovaFileChooserOption] {
         let held = { (code: String) in (board?.typeCounts[code] ?? [:]).values.reduce(0, +) }
         return [.init(id: nil, title: allTypes, count: trackedHere, symbol: "square.grid.2x2")] +
-            suggestions.filter { held($0) > 0 || equipmentType == $0 }
+            suggestions.map(\.code).filter { held($0) > 0 || equipmentType == $0 }
                 .map { .init(id: $0, title: NovaEquipmentWords.type($0), count: held($0), symbol: "shippingbox") }
     }
 

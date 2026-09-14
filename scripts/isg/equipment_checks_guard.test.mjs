@@ -6,7 +6,8 @@ import {ROOT} from './lib.mjs';
 import {beginEquipmentChecksProbe,equipmentChecksFiles} from './equipment_checks_probe.mjs';
 
 const migration=readFileSync(resolve(ROOT,equipmentChecksFiles[0]),'utf8');
-const probe=readFileSync(resolve(ROOT,equipmentChecksFiles[1]),'utf8');
+const periods=readFileSync(resolve(ROOT,equipmentChecksFiles[1]),'utf8');
+const probe=readFileSync(resolve(ROOT,equipmentChecksFiles[2]),'utf8');
 const runner=readFileSync(resolve(ROOT,'scripts/isg/run_auth_restore.mjs'),'utf8');
 const core=readFileSync(resolve(ROOT,'supabase/migrations/20260913230000_isg_module_core.sql'),'utf8');
 /** Comments explain the rule; they are not evidence that the rule is there. */
@@ -46,13 +47,55 @@ test('only the two client entries and their wrappers are granted',()=>{
   assert.doesNotMatch(migration,/TO service_role/);
 });
 
-test('a suggested type name never arrives with a suggested period',()=>{
-  const table=migration.slice(migration.indexOf('CREATE TABLE private_isg.equipment_type_suggestions'),
-    migration.indexOf('INSERT INTO private_isg.equipment_type_suggestions'));
-  assert.doesNotMatch(table,/period|month|interval|days/i);
-  // The catalogue read says so in the answer as well.
-  assert.match(code(migration),/'period_defaults_offered',false/);
-  assert.match(probe,/the_type_catalogue_carries_names_and_no_periods/);
+test('every default period carries the basis it rests on',()=>{
+  const table=periods.slice(periods.indexOf('CREATE TABLE private_isg.equipment_default_periods'),
+    periods.indexOf('INSERT INTO private_isg.equipment_default_periods'));
+  // A period with no story behind it cannot be stored at all.
+  assert.match(table,/basis_note text NOT NULL CHECK\(length\(basis_note\) BETWEEN 20 AND 500\)/);
+  assert.match(code(periods),/'period_defaults_offered',true/);
+  assert.match(code(periods),/'period_default_source','regulation_default'/);
+  assert.match(code(periods),/'period_default_needs_review',true/);
+  assert.match(probe,/every_type_starts_at_a_period_and_every_default_carries_its_basis/);
+});
+
+test('a default is the product’s and is never the expert’s own determination',()=>{
+  // The schema forces the flag, so no function can store an unconfirmed
+  // default that looks confirmed.
+  assert.match(code(periods),/CHECK\(period_source<>'regulation_default' OR needs_review\)/);
+  // And the expert cannot claim that source: the P10 function takes only the
+  // three they stand behind.
+  assert.match(code(core),/p_source NOT IN \('manufacturer','rule_version','unapproved_fixture'\)/);
+  assert.doesNotMatch(code(periods),/CREATE OR REPLACE FUNCTION private_isg\.set_equipment_inspection_rule/);
+  assert.match(probe,/the_schema_refuses_an_unconfirmed_default_that_hides_its_flag/);
+});
+
+test('a type the product has no default for still gets no date',()=>{
+  const ensure=periods.slice(periods.indexOf('CREATE FUNCTION private_isg.ensure_equipment_period'),
+    periods.indexOf('CREATE FUNCTION private_isg.equipment_period_due'));
+  assert.match(code(ensure),/IF NOT FOUND THEN RETURN; END IF;/);
+  assert.match(probe,/a_type_with_no_default_still_never_invents_a_due_date/);
+});
+
+test('the next date is the period’s until the expert changes it',()=>{
+  assert.match(code(periods),/WHEN chosen IS NULL OR chosen=derived THEN 'period' ELSE 'expert' END/);
+  assert.match(code(periods),/ADD COLUMN due_source text CHECK\(due_source IS NULL OR due_source IN \('period','expert'\)\)/);
+  // A date that cannot be true is refused rather than stored.
+  assert.match(code(periods),/MESSAGE='DUE_BEFORE_REPORT'/);
+  assert.match(code(periods),/MESSAGE='DUE_ON_A_FAILED_CHECK'/);
+  assert.match(probe,/a_next_date_the_expert_wrote_is_recorded_as_theirs_not_as_the_periods/);
+  assert.match(probe,/a_date_that_matches_the_period_is_still_the_periods_answer/);
+});
+
+test('the İSG-KATİP mark is a declaration and can never be a verification',()=>{
+  // The same structural guarantee the KATİP contract table already carries.
+  assert.match(code(periods),/ADD COLUMN katip_official_verification boolean NOT NULL DEFAULT false\s*\n\s*CHECK\(NOT katip_official_verification\)/);
+  assert.match(code(periods),/'katip_official_verification',false/);
+  // A note is only storable alongside the mark it explains.
+  assert.match(code(periods),/CHECK\(katip_assignment_declared OR katip_declared_note IS NULL\)/);
+  // Nothing here reaches the official system.
+  assert.doesNotMatch(periods,/https?:|isgkatip|csgb\.gov/i);
+  assert.match(probe,/the_katip_mark_is_the_experts_own_declaration_and_never_a_verification/);
+  assert.match(probe,/no_row_can_ever_claim_the_official_system_was_checked/);
 });
 
 test('this module is not a human health check',()=>{
@@ -61,6 +104,14 @@ test('this module is not a human health check',()=>{
   assert.doesNotMatch(check,/health|medical|saglik|sağlık|muayene|person|employee/i);
   assert.match(code(migration),/'health_records_tracked',false/);
   assert.match(code(migration),/'health_record',false/);
+});
+
+test('the second migration opens no switch either',()=>{
+  assert.doesNotMatch(periods,/UPDATE private_isg\.rollout SET/);
+  assert.doesNotMatch(periods,/INSERT INTO private_isg\.rollout/);
+  assert.doesNotMatch(periods,/UPDATE private_isg\.module_registry SET/);
+  assert.match(periods,/REVOKE ALL ON ALL TABLES IN SCHEMA private_isg FROM PUBLIC,anon,authenticated,service_role;/);
+  assert.match(periods,/ALTER TABLE private_isg\.equipment_default_periods ENABLE ROW LEVEL SECURITY;/);
 });
 
 test('a due date is never invented and never quietly reads as valid',()=>{
@@ -73,7 +124,7 @@ test('a due date is never invented and never quietly reads as valid',()=>{
   assert.match(code(status),/IF p_next_due IS NULL THEN RETURN 'period_unknown'; END IF;/);
   // The period itself still lives in the P10 slice, which refuses to guess one.
   assert.match(code(core),/IF FOUND AND p_result<>'fail' THEN\s*\n\s*due:=\(p_performed_on\+make_interval\(months=>rule\.period_months\)\)::date; END IF;/);
-  assert.match(probe,/an_inspection_with_no_type_rule_never_invents_a_due_date/);
+  assert.match(probe,/a_type_with_no_default_still_never_invents_a_due_date/);
   assert.match(probe,/a_failed_check_produces_no_due_date_and_says_so/);
 });
 
@@ -112,11 +163,14 @@ test('every write goes through the P10 function that owns the rule',()=>{
   assert.doesNotMatch(code(mutate),/next_due_on\s*=/);
 });
 
-test('no client action can name a date or a state the server owns',()=>{
-  const allowlist=migration.slice(migration.indexOf("allowed:=CASE p_action"),migration.indexOf("ELSE NULL END;"));
+test('no client action can name the meaning of a date or a state',()=>{
+  // The live allowlist is the one the newest migration replaced the entry with.
+  const allowlist=periods.slice(periods.indexOf("allowed:=CASE p_action"),periods.indexOf("ELSE NULL END;"));
   for(const action of ['set_rule','register_equipment','update_equipment','archive_equipment','record_inspection'])
     assert.match(allowlist,new RegExp(`'${action}'`),action);
-  for(const forbidden of ['next_due_on','state','needs_review','period_needs_review','status'])
+  // next_due_on is the expert's to set; what it MEANS is still the server's.
+  for(const forbidden of ['due_source','state','needs_review','period_needs_review','status',
+    'katip_official_verification'])
     assert.doesNotMatch(allowlist,new RegExp(`'${forbidden}'`),forbidden);
 });
 
@@ -147,7 +201,8 @@ test('the probe runs last and reports what it left closed',()=>{
   assert.ok(runner.indexOf("stage = 'equipment-checks';")<runner.indexOf("stage = 'integrated-rehearsal';"));
   assert.match(probe,/module_left_disabled:true/);
   assert.match(probe,/own_rollout_feature_added:false/);
-  assert.match(probe,/period_defaults_offered:false/);
+  assert.match(probe,/period_defaults_offered:true/);
   assert.match(probe,/due_date_invented_without_a_rule:false/);
+  assert.match(probe,/katip_official_verification:false/);
   assert.match(probe,/production_deployed:false/);
 });

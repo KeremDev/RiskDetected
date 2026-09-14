@@ -73,9 +73,22 @@ enum NovaEquipmentPeriodSource: String, CaseIterable, Identifiable, Equatable {
     case manufacturer
     case ruleVersion = "rule_version"
     case unapprovedFixture = "unapproved_fixture"
+    /// The product's own starting period for a type. The expert cannot choose
+    /// this: the server only ever writes it itself, and it always carries the
+    /// review flag until the expert replaces it with a source of their own.
+    case regulationDefault = "regulation_default"
     var id: String { rawValue }
-    /// An unapproved period is always flagged; the server forces this too.
-    var needsReview: Bool { self == .unapprovedFixture }
+    /// A default and an unapproved fixture are both flagged; the server forces
+    /// both, so this can never disagree with what is stored.
+    var needsReview: Bool { self == .unapprovedFixture || self == .regulationDefault }
+    /// What the expert may pick for themselves.
+    static var choosable: [NovaEquipmentPeriodSource] { [.manufacturer, .ruleVersion, .unapprovedFixture] }
+}
+
+/// Whose answer the stored next date is. A date the expert wrote never reads as
+/// one the period produced.
+enum NovaEquipmentDueSource: String, Equatable {
+    case period, expert
 }
 
 /// One inspection period, for one equipment type, in one company.
@@ -100,6 +113,11 @@ struct NovaEquipmentInspection: Identifiable, Equatable {
     let externalRef: String?
     let note: String?
     let evidenceAssetID: UUID?
+    var dueSource: NovaEquipmentDueSource?
+    /// The expert's own note that an assignment was made in İSG-KATİP. Never a
+    /// verification: nothing in this product reads the official system.
+    var katipDeclared = false
+    var katipNote: String?
 }
 
 struct NovaEquipmentItem: Identifiable, Equatable {
@@ -128,6 +146,12 @@ struct NovaEquipmentItem: Identifiable, Equatable {
     var lastInspector: String?
     var lastExternalRef: String?
     var nextDueOn: String?
+    /// Whose answer that date is. Read, never decided here.
+    var dueSource: NovaEquipmentDueSource?
+    var katipDeclared = false
+    var katipNote: String?
+    /// Structurally false. The server can only ever send false.
+    var katipOfficialVerification = false
     var evidenceAssetID: UUID?
     var inspections: [NovaEquipmentInspection] = []
 
@@ -235,9 +259,16 @@ struct NovaEquipmentRuleDraft: Equatable {
 struct NovaEquipmentInspectionDraft: Equatable {
     var performedOn = ""
     var result = "pass"
+    /// Filled from the type's period as a suggestion the expert may change.
+    /// Whether it counts as the period's answer or theirs is the server's call.
+    var nextDueOn = ""
     var inspector = ""
     var externalRef = ""
     var note = ""
+    /// Optional. The expert's own declaration that an İSG-KATİP assignment was
+    /// made for this check; the product verifies nothing.
+    var katipDeclared = false
+    var katipNote = ""
     /// A report filed in the archive. The server refuses an asset that was
     /// never cleared, so this can only ever be a file that really exists.
     var evidenceAssetID: UUID?
@@ -251,7 +282,7 @@ struct NovaEquipmentInspectionDraft: Equatable {
 
 enum NovaEquipmentFailure: Error, Equatable {
     case denied, validation, unavailable, moduleUnavailable, planRequired, conflict
-    case futureReport, duplicateSerial
+    case futureReport, duplicateSerial, dueBeforeReport, dueOnFailedCheck
 }
 
 /// The words the module uses, in one place, so a state never reads as more than
@@ -279,7 +310,7 @@ enum NovaEquipmentWords {
                 fallback: "Rapor kaydedildiğinde bu tür için süre tanımlı değildi; sonraki tarih hesaplanmadı. Süre sonradan tanımlandı, eski rapor değiştirilmedi.")
         case .periodUnknown:
             return RDLocalization.string("localizable.nova.equipment.explain.unknown", table: .localizable,
-                fallback: "Bu tür için kontrol süresi tanımlı değil; sonraki kontrol tarihi hesaplanmadı.")
+                fallback: "Bu tür için kontrol süresi tanımlı değil; sonraki kontrol tarihi hesaplanmadı. Süreler ekranından tanımlayabilirsiniz.")
         case .failed:
             return RDLocalization.string("localizable.nova.equipment.explain.failed", table: .localizable,
                 fallback: "Son kontrol olumsuz sonuçlandı; sonraki tarih üretilmedi.")
@@ -312,7 +343,17 @@ enum NovaEquipmentWords {
         case .manufacturer: return RDLocalization.string("localizable.nova.equipment.source.manufacturer", table: .localizable, fallback: "Üretici/kullanma kılavuzu")
         case .ruleVersion: return RDLocalization.string("localizable.nova.equipment.source.rule", table: .localizable, fallback: "Uzmanın dayandığı mevzuat")
         case .unapprovedFixture: return RDLocalization.string("localizable.nova.equipment.source.expert", table: .localizable, fallback: "Uzman tarafından belirlenen")
+        case .regulationDefault: return RDLocalization.string("localizable.nova.equipment.source.default", table: .localizable, fallback: "Mevzuat eki genel süresi · ürün varsayılanı")
         case nil: return RDLocalization.string("localizable.nova.equipment.source.none", table: .localizable, fallback: "Tanımlı değil")
+        }
+    }
+
+    /// Whose answer the next date is, stated rather than left to look derived.
+    static func due(_ value: NovaEquipmentDueSource?) -> String {
+        switch value {
+        case .period: return RDLocalization.string("localizable.nova.equipment.due.period", table: .localizable, fallback: "Süreden hesaplandı")
+        case .expert: return RDLocalization.string("localizable.nova.equipment.due.expert", table: .localizable, fallback: "Uzman tarafından değiştirildi")
+        case nil: return ""
         }
     }
 
@@ -351,6 +392,8 @@ enum NovaEquipmentWords {
         case .validation: return RDLocalization.string("localizable.nova.equipment.failure.validation", table: .localizable, fallback: "Bilgiler eksik veya geçersiz.")
         case .futureReport: return RDLocalization.string("localizable.nova.equipment.failure.future", table: .localizable, fallback: "Kontrol tarihi bugünden ileri olamaz.")
         case .duplicateSerial: return RDLocalization.string("localizable.nova.equipment.failure.serial", table: .localizable, fallback: "Bu seri/kod bu firmada zaten kayıtlı.")
+        case .dueBeforeReport: return RDLocalization.string("localizable.nova.equipment.failure.due.before", table: .localizable, fallback: "Sonraki kontrol tarihi, kontrol tarihinden sonra olmalı.")
+        case .dueOnFailedCheck: return RDLocalization.string("localizable.nova.equipment.failure.due.failed", table: .localizable, fallback: "Olumsuz sonuçlanan kontrole sonraki tarih verilemez.")
         case .unavailable: return RDLocalization.string("localizable.nova.equipment.failure.unavailable", table: .localizable, fallback: "Ekipman servisi şu anda kullanılamıyor.")
         }
     }

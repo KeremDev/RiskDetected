@@ -109,7 +109,9 @@ struct NovaEquipmentItemSheet: View {
                 cell("checkmark.seal", RDLocalization.string("localizable.nova.equipment.field.result", table: .localizable, fallback: "Sonuç"),
                      NovaEquipmentWords.result(row.lastResult))
                 cell("calendar.badge.clock", RDLocalization.string("localizable.nova.equipment.field.next", table: .localizable, fallback: "Sonraki kontrol"),
-                     row.nextDueOn ?? RDLocalization.string("localizable.nova.equipment.no.due", table: .localizable, fallback: "Tarih yok"))
+                     row.nextDueOn ?? RDLocalization.string("localizable.nova.equipment.no.due", table: .localizable, fallback: "Tarih yok"),
+                     // Whose answer that date is, said rather than assumed.
+                     detail: NovaEquipmentWords.due(row.dueSource))
                 cell("person", RDLocalization.string("localizable.nova.equipment.field.inspector", table: .localizable, fallback: "Kontrolü yapan"),
                      row.lastInspector ?? "—")
                 cell("building.2", RDLocalization.string("localizable.nova.document.field.scope", table: .localizable, fallback: "Kapsam"),
@@ -135,8 +137,11 @@ struct NovaEquipmentItemSheet: View {
                     NovaText(text: String(format: RDLocalization.string("localizable.nova.equipment.period.value", table: .localizable,
                         fallback: "%1$d ay · %2$@"), months, NovaEquipmentWords.source(row.periodSource)), style: .meta)
                     if row.periodNeedsReview == true {
-                        NovaText(text: RDLocalization.string("localizable.nova.equipment.period.review", table: .localizable,
-                            fallback: "Bu süre uzmanın kendi kararıdır; doğrulanmış bir mevzuat kaynağına bağlanmadı."),
+                        NovaText(text: row.periodSource == .regulationDefault
+                            ? RDLocalization.string("localizable.nova.equipment.period.default.review", table: .localizable,
+                                fallback: "Bu, ürünün bu tür için başlattığı genel süredir; bu firma için henüz onaylanmadı. Süreler ekranından onaylayın veya değiştirin.")
+                            : RDLocalization.string("localizable.nova.equipment.period.review", table: .localizable,
+                                fallback: "Bu süre uzmanın kendi kararıdır; doğrulanmış bir mevzuat kaynağına bağlanmadı."),
                             style: .micro, color: NovaColorToken.statusWarningInk.color(in: scheme))
                     }
                     if let note = row.periodExceptionNote, !note.isEmpty {
@@ -159,18 +164,15 @@ struct NovaEquipmentItemSheet: View {
                 NovaDayField(label: RDLocalization.string("localizable.nova.equipment.field.performed", table: .localizable, fallback: "Kontrol tarihi"),
                     value: $draft.performedOn, identifier: "equipment.inspection.performed")
                 resultPicker
+                nextDueField
                 field(RDLocalization.string("localizable.nova.equipment.field.inspector", table: .localizable, fallback: "Kontrolü yapan"),
                       $draft.inspector, id: "inspector")
+                katipField
                 field(RDLocalization.string("localizable.nova.equipment.field.ref", table: .localizable, fallback: "Rapor no"),
                       $draft.externalRef, id: "ref")
                 reportPicker
                 field(RDLocalization.string("localizable.nova.document.field.note", table: .localizable, fallback: "Not"),
                       $draft.note, id: "note")
-                if draft.result == "fail" {
-                    NovaText(text: RDLocalization.string("localizable.nova.equipment.fail.hint", table: .localizable,
-                        fallback: "Olumsuz sonuç için sonraki kontrol tarihi üretilmez."),
-                        style: .micro, color: NovaColorToken.statusWarningInk.color(in: scheme))
-                }
                 HStack(spacing: 8) {
                     NovaButton(label: RDLocalization.string("localizable.nova.document.cancel", table: .localizable, fallback: "Vazgeç"),
                         symbol: "xmark", variant: .surface) { recording = false }
@@ -181,12 +183,60 @@ struct NovaEquipmentItemSheet: View {
             }
             .padding(10)
             .background(NovaColorToken.statusSuccessBg.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
-            .onAppear { if draft.performedOn.isEmpty { draft.performedOn = NovaDayField.text(Date()) } }
+            .onAppear {
+            if draft.performedOn.isEmpty { draft.performedOn = NovaDayField.text(Date()) }
+            fillNextDue()
+        }
+        .onChange(of: draft.performedOn) { _ in fillNextDue() }
+        .onChange(of: draft.result) { value in if value == "fail" { draft.nextDueOn = "" } else { fillNextDue() } }
         } else {
             NovaButton(label: RDLocalization.string("localizable.nova.equipment.record", table: .localizable, fallback: "Kontrol kaydet"),
                 symbol: "plus.circle") { recording = true }
                 .accessibilityIdentifier("equipment.record.open")
         }
+    }
+
+    /// The next date, filled from the type's period as soon as a report date is
+    /// picked, and editable. Whether what is saved counts as the period's answer
+    /// or the expert's is the server's call, not this field's.
+    @ViewBuilder private var nextDueField: some View {
+        if draft.result == "fail" {
+            NovaText(text: RDLocalization.string("localizable.nova.equipment.fail.hint", table: .localizable,
+                fallback: "Olumsuz sonuç için sonraki kontrol tarihi üretilmez."),
+                style: .micro, color: NovaColorToken.statusWarningInk.color(in: scheme))
+        } else {
+            NovaDayField(label: RDLocalization.string("localizable.nova.equipment.field.next", table: .localizable, fallback: "Sonraki kontrol"),
+                value: $draft.nextDueOn, identifier: "equipment.inspection.due", isClearable: true)
+            if let months = row.periodMonths {
+                NovaText(text: String(format: RDLocalization.string("localizable.nova.equipment.due.auto", table: .localizable,
+                    fallback: "%d aylık süreden otomatik dolduruldu; değiştirebilirsiniz."), months),
+                    style: .micro, color: NovaColorToken.textTertiary.color(in: scheme))
+            }
+        }
+    }
+
+    /// Optional, and never a verification: the product does not reach İSG-KATİP.
+    @ViewBuilder private var katipField: some View {
+        Button { draft.katipDeclared.toggle() } label: {
+            HStack(spacing: 8) {
+                Image(systemName: draft.katipDeclared ? "checkmark.square.fill" : "square")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+                NovaSizedText(text: RDLocalization.string("localizable.nova.equipment.katip.mark", table: .localizable,
+                    fallback: "İSG-KATİP ataması yapıldı"), size: 12.5,
+                    weight: draft.katipDeclared ? "Bold" : "Medium")
+                Spacer(minLength: 0)
+            }.frame(minHeight: 40)
+        }.buttonStyle(.plain)
+            .accessibilityIdentifier("equipment.inspection.katip")
+            .accessibilityAddTraits(draft.katipDeclared ? .isSelected : [])
+        if draft.katipDeclared {
+            field(RDLocalization.string("localizable.nova.equipment.katip.note", table: .localizable, fallback: "Atama notu"),
+                  $draft.katipNote, id: "katip")
+        }
+        NovaText(text: RDLocalization.string("localizable.nova.equipment.katip.hint", table: .localizable,
+            fallback: "Bu işaret uzmanın kendi beyanıdır. Uygulama İSG-KATİP üzerinde sorgulama veya işlem yapmaz."),
+            style: .micro, color: NovaColorToken.textTertiary.color(in: scheme))
     }
 
     private var resultPicker: some View {
@@ -267,6 +317,17 @@ struct NovaEquipmentItemSheet: View {
                     NovaText(text: reference, style: .metaQuiet)
                 }
                 if let note = entry.note, !note.isEmpty { NovaText(text: note, style: .metaQuiet) }
+                HStack(spacing: 5) {
+                    if entry.dueSource == .expert {
+                        NovaAnalysisTag(symbol: "pencil", text: NovaEquipmentWords.due(.expert), status: .neutral)
+                    }
+                    if entry.katipDeclared {
+                        NovaAnalysisTag(symbol: "checkmark.seal",
+                            text: RDLocalization.string("localizable.nova.equipment.katip.tag", table: .localizable, fallback: "KATİP beyanı"),
+                            status: .neutral)
+                    }
+                    Spacer(minLength: 0)
+                }
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(9)
@@ -292,11 +353,23 @@ struct NovaEquipmentItemSheet: View {
         }
     }
 
+    /// Fills the field from the type's period so the expert sees the date the
+    /// server would produce, and can change it before saving. This is a form
+    /// default; the server recomputes and decides what the saved date means.
+    private func fillNextDue() {
+        guard draft.result != "fail", let months = row.periodMonths,
+              let performed = NovaDayField.date(draft.performedOn) else { return }
+        guard let next = Calendar(identifier: .gregorian).date(byAdding: .month, value: months, to: performed)
+        else { return }
+        draft.nextDueOn = NovaDayField.text(next)
+    }
+
     private func save() {
         run {
             current = try await client.recordInspection(row, draft)
             draft = NovaEquipmentInspectionDraft()
             draft.performedOn = NovaDayField.text(Date())
+            fillNextDue()
             recording = false
             onChanged()
         }
@@ -327,7 +400,8 @@ struct NovaEquipmentItemSheet: View {
             .accessibilityIdentifier("equipment.\(id)")
     }
 
-    private func cell(_ symbol: String, _ label: String, _ value: String) -> some View {
+    private func cell(_ symbol: String, _ label: String, _ value: String,
+                      detail: String = "") -> some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 5) {
                 Image(systemName: symbol).font(.system(size: 10, weight: .semibold))
@@ -335,6 +409,10 @@ struct NovaEquipmentItemSheet: View {
                 NovaText(text: label, style: .micro, color: NovaColorToken.textTertiary.color(in: scheme))
             }
             NovaText(text: value, style: .meta).lineLimit(2)
+            if !detail.isEmpty {
+                NovaText(text: detail, style: .micro, color: NovaColorToken.textMuted.color(in: scheme))
+                    .lineLimit(1).minimumScaleFactor(0.8)
+            }
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -352,7 +430,7 @@ struct NovaEquipmentItemSheet: View {
 struct NovaEquipmentAddSheet: View {
     let companies: [NovaAnalysisCompanyOption]
     var preselected: UUID?
-    let suggestions: [String]
+    let suggestions: [NovaEquipmentCheckService.Suggestion]
     let rules: [NovaEquipmentRule]
     let workplaces: [NovaDocumentWorkplace]
     let client: NovaEquipmentCheckClient
@@ -405,7 +483,10 @@ struct NovaEquipmentAddSheet: View {
             identifier: "equipment.add.type") { choosing = choosing == "type" ? nil : "type" }
         if choosing == "type" {
             NovaFileChooserPanel(
-                options: suggestions.map { .init(id: $0, title: NovaEquipmentWords.type($0), symbol: "shippingbox") },
+                options: suggestions.map { entry in
+                    .init(id: entry.code, title: NovaEquipmentWords.type(entry.code),
+                          count: entry.defaultPeriodMonths, symbol: "shippingbox")
+                },
                 selected: draft.equipmentType, identifier: "equipment.add.type") { picked in
                     draft.equipmentType = picked
                     choosing = nil
@@ -422,6 +503,11 @@ struct NovaEquipmentAddSheet: View {
                     fallback: "%1$d ay · %2$@"), rule.periodMonths, NovaEquipmentWords.source(rule.source)),
                     style: .micro, color: rule.needsReview ? NovaColorToken.statusWarningInk.color(in: scheme)
                                                            : NovaColorToken.textTertiary.color(in: scheme))
+            } else if let months = suggestions.first(where: { $0.code == draft.equipmentType })?.defaultPeriodMonths {
+                NovaText(text: String(format: RDLocalization.string("localizable.nova.equipment.period.starts", table: .localizable,
+                    fallback: "Bu tür %1$d ay ile başlar · %2$@"), months,
+                    NovaEquipmentWords.source(.regulationDefault)),
+                    style: .micro, color: NovaColorToken.statusWarningInk.color(in: scheme))
             } else {
                 NovaText(text: RDLocalization.string("localizable.nova.equipment.period.missing", table: .localizable,
                     fallback: "Bu tür için süre tanımlı değil. Süre tanımlanmadan sonraki kontrol tarihi hesaplanmaz."),
@@ -547,7 +633,7 @@ struct NovaEquipmentEditSheet: View {
 /// their own decision on every screen that shows it.
 struct NovaEquipmentPeriodSheet: View {
     let company: UUID?
-    let suggestions: [String]
+    let suggestions: [NovaEquipmentCheckService.Suggestion]
     let rules: [NovaEquipmentRule]
     let client: NovaEquipmentCheckClient
     let onDone: () -> Void
@@ -604,16 +690,24 @@ struct NovaEquipmentPeriodSheet: View {
             identifier: "equipment.period.type") { choosing = choosing == "type" ? nil : "type" }
         if choosing == "type" {
             NovaFileChooserPanel(
-                options: suggestions.map { code in
-                    .init(id: code, title: NovaEquipmentWords.type(code),
-                          count: current.first { $0.equipmentType == code }?.periodMonths, symbol: "shippingbox")
+                options: suggestions.map { entry in
+                    .init(id: entry.code, title: NovaEquipmentWords.type(entry.code),
+                          count: current.first { $0.equipmentType == entry.code }?.periodMonths
+                              ?? entry.defaultPeriodMonths,
+                          symbol: "shippingbox")
                 },
                 selected: draft.equipmentType, identifier: "equipment.period.type") { picked in
                     draft.equipmentType = picked
-                    if let picked, let existing = current.first(where: { $0.equipmentType == picked }) {
-                        draft.periodMonths = String(existing.periodMonths)
-                        draft.source = existing.source
-                        draft.exceptionNote = existing.exceptionNote ?? ""
+                    // Pre-fill from what is already on file, or from the
+                    // product's own starting period when nothing is.
+                    if let picked {
+                        if let existing = current.first(where: { $0.equipmentType == picked }) {
+                            draft.periodMonths = String(existing.periodMonths)
+                            draft.source = existing.source.needsReview ? .manufacturer : existing.source
+                            draft.exceptionNote = existing.exceptionNote ?? ""
+                        } else if let months = suggestions.first(where: { $0.code == picked })?.defaultPeriodMonths {
+                            draft.periodMonths = String(months)
+                        }
                     }
                     choosing = nil
                 }
@@ -625,7 +719,9 @@ struct NovaEquipmentPeriodSheet: View {
             NovaText(text: RDLocalization.string("localizable.nova.equipment.field.source", table: .localizable, fallback: "Sürenin kaynağı"),
                 style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
             VStack(spacing: 6) {
-                ForEach(NovaEquipmentPeriodSource.allCases) { value in
+                // 'regulation_default' is the product's own label and is not
+                // offered: choosing a source means standing behind it.
+                ForEach(NovaEquipmentPeriodSource.choosable) { value in
                     Button { draft.source = value } label: {
                         HStack(spacing: 8) {
                             Image(systemName: draft.source == value ? "largecircle.fill.circle" : "circle")

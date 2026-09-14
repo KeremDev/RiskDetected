@@ -99,7 +99,7 @@ export async function beginIntegratedRehearsalProbe({synthetic,sql:rawSql,compan
     "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='private_isg' AND NOT (coalesce(array_to_string(p.proconfig,','),'') LIKE '%search_path=%');",
     "SELECT count(*) FROM private_isg.rollout WHERE read_enabled OR write_enabled;",
   ].join('\n')).split('\n');
-  mark('the_whole_new_schema_keeps_one_posture',posture[0]==='166'&&posture[1]==='0'&&posture[2]==='0'&&
+  mark('the_whole_new_schema_keeps_one_posture',posture[0]==='167'&&posture[1]==='0'&&posture[2]==='0'&&
     posture[4]==='0'&&posture[5]==='0');
   // A definer function is the client RPC boundary and nothing else. The server
   // only ledgers of P14 to P17 must not have quietly added one.

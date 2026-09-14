@@ -27,6 +27,9 @@ import Foundation
         let external_ref: String?
         let note: String?
         let evidence_asset_id: UUID?
+        let due_source: String?
+        let katip_assignment_declared: Bool?
+        let katip_declared_note: String?
     }
     private struct ItemRow: Decodable {
         let id: UUID
@@ -49,10 +52,19 @@ import Foundation
         let last_inspector: String?
         let last_external_ref: String?
         let next_due_on: String?
+        let due_source: String?
+        let katip_assignment_declared: Bool?
+        let katip_declared_note: String?
+        let katip_official_verification: Bool?
         let evidence_asset_id: UUID?
         let inspections: [InspectionRow]?
     }
-    private struct SuggestionRow: Decodable { let code: String; let ordinal: Int }
+    private struct SuggestionRow: Decodable {
+        let code: String
+        let ordinal: Int
+        let default_period_months: Int?
+        let default_basis_note: String?
+    }
     private struct RuleRow: Decodable {
         let equipment_type: String
         let period_months: Int
@@ -67,6 +79,14 @@ import Foundation
         let workplaces: [WorkplaceRow]
         let notice_days: Int
         let period_defaults_offered: Bool
+    }
+    /// What a type starts at before anyone confirms it. Read from the server so
+    /// the form never prints a period the server does not actually hold.
+    struct Suggestion: Identifiable, Equatable {
+        let code: String
+        let defaultPeriodMonths: Int?
+        let defaultBasisNote: String?
+        var id: String { code }
     }
     private struct CompanyRow: Decodable { let id: UUID; let name: String; let total: Int; let counts: [String: Int] }
     private struct ListEnvelope: Decodable {
@@ -101,12 +121,21 @@ import Foundation
               periodDefinedAfterReport: row.period_defined_after_report,
               lastPerformedOn: row.last_performed_on, lastResult: row.last_result,
               lastInspector: row.last_inspector, lastExternalRef: row.last_external_ref,
-              nextDueOn: row.next_due_on, evidenceAssetID: row.evidence_asset_id,
+              nextDueOn: row.next_due_on,
+              dueSource: row.due_source.flatMap(NovaEquipmentDueSource.init(rawValue:)),
+              katipDeclared: row.katip_assignment_declared ?? false,
+              katipNote: row.katip_declared_note,
+              // The server can only ever send false; nothing here can raise it.
+              katipOfficialVerification: row.katip_official_verification ?? false,
+              evidenceAssetID: row.evidence_asset_id,
               inspections: (row.inspections ?? []).map { entry in
                   .init(id: entry.id, performedOn: entry.performed_on, result: entry.result,
                         nextDueOn: entry.next_due_on, periodMonths: entry.period_months,
                         inspector: entry.inspector, externalRef: entry.external_ref,
-                        note: entry.note, evidenceAssetID: entry.evidence_asset_id)
+                        note: entry.note, evidenceAssetID: entry.evidence_asset_id,
+                        dueSource: entry.due_source.flatMap(NovaEquipmentDueSource.init(rawValue:)),
+                        katipDeclared: entry.katip_assignment_declared ?? false,
+                        katipNote: entry.katip_declared_note)
               })
     }
 
@@ -129,10 +158,11 @@ import Foundation
 
     // MARK: reads
 
-    /// The type names the client may offer, the periods this company has set and
-    /// its workplaces. The names arrive without periods on purpose.
+    /// The type names the client may offer with the period each one starts at,
+    /// the periods this company has already set, and its workplaces. A default
+    /// is the product's own starting point and always arrives flagged.
     func catalogue(_ identity: NovaSessionIdentity,
-                   company: UUID?) async throws -> (suggestions: [String],
+                   company: UUID?) async throws -> (suggestions: [Suggestion],
                                                     rules: [NovaEquipmentRule],
                                                     workplaces: [NovaDocumentWorkplace],
                                                     noticeDays: Int) {
@@ -141,7 +171,10 @@ import Foundation
                                    "p_kind": .string("catalog")])
         try check(identity)
         let envelope = try JSONDecoder().decode(CatalogEnvelope.self, from: data)
-        return (envelope.suggestions.sorted { $0.ordinal < $1.ordinal }.map(\.code),
+        return (envelope.suggestions.sorted { $0.ordinal < $1.ordinal }.map {
+                    .init(code: $0.code, defaultPeriodMonths: $0.default_period_months,
+                          defaultBasisNote: $0.default_basis_note)
+                },
                 envelope.rules.map { rule in
                     .init(equipmentType: rule.equipment_type, periodMonths: rule.period_months,
                           source: NovaEquipmentPeriodSource(rawValue: rule.period_source) ?? .unapprovedFixture,
@@ -278,6 +311,12 @@ import Foundation
         payload["external_ref"] = Self.trimmed(draft.externalRef).map { .string($0) } ?? .null
         payload["note"] = Self.trimmed(draft.note).map { .string($0) } ?? .null
         payload["evidence_asset_id"] = draft.evidenceAssetID.map { .id($0) } ?? .null
+        // Sent only when the expert actually set one. Left out, the server uses
+        // the period's own answer.
+        payload["next_due_on"] = Self.trimmed(draft.nextDueOn).map { .string($0) } ?? .null
+        payload["katip_declared"] = .bool(draft.katipDeclared)
+        payload["katip_note"] = draft.katipDeclared
+            ? (Self.trimmed(draft.katipNote).map { .string($0) } ?? .null) : .null
         let data = try await mutate(company: company, action: "record_inspection",
                                     payload: payload, mutationID: mutationID)
         try check(identity)

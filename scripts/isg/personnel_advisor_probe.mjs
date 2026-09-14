@@ -81,7 +81,7 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'portfolio_entries',
       'document_obligation_kinds','document_obligations','document_obligation_records','document_tracking_receipts',
       'file_scanners','file_library_categories','file_library_entries','file_library_receipts',
-      'equipment_type_suggestions','equipment_check_receipts']);
+      'equipment_type_suggestions','equipment_check_receipts','equipment_default_periods']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([

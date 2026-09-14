@@ -5,8 +5,11 @@ import {ROOT} from './lib.mjs';
 
 export const equipmentChecksFiles=[
   'supabase/migrations/20260915030000_isg_equipment_checks.sql',
+  'supabase/migrations/20260915050000_isg_equipment_periods.sql',
   'scripts/isg/equipment_checks_probe.mjs',
 ];
+// The general period the product now starts every type at.
+const DEFAULT_PERIOD_MONTHS=12;
 const read=p=>readFileSync(resolve(ROOT,p),'utf8');
 const quote=v=>"'"+String(v).replaceAll("'","''")+"'";
 
@@ -35,6 +38,7 @@ export async function beginEquipmentChecksProbe({synthetic,sql,request,companyID
   if(!companyID||!ownerID||typeof request!=='function')throw Error('AUTH_RESTORE_EQUIPMENT_CHECKS_SCOPE_REQUIRED');
   const mark=(name,ok)=>pass('equipment_checks_'+name,ok);
   sql(read(equipmentChecksFiles[0]));
+  sql(read(equipmentChecksFiles[1]));
 
   mark('the_slice_adds_no_switch_of_its_own',
     // It rides on the switches P10 already created rather than inventing a
@@ -44,11 +48,21 @@ export async function beginEquipmentChecksProbe({synthetic,sql,request,companyID
   mark('every_new_table_is_private_and_row_secured',
     sql("SELECT count(*) FROM pg_tables WHERE schemaname='private_isg' AND rowsecurity AND tablename IN ('equipment_type_suggestions','equipment_check_receipts');")==='2'&&
     sql("SELECT count(*) FROM information_schema.role_table_grants WHERE table_schema='private_isg' AND grantee IN ('anon','authenticated','service_role','PUBLIC');")==='0');
-  // A suggested name never arrives with a suggested duration: there is no
-  // column here that could carry one.
-  mark('the_type_catalogue_carries_names_and_no_periods',
-    sql("SELECT count(*) FROM information_schema.columns WHERE table_schema='private_isg' AND table_name='equipment_type_suggestions' AND (column_name LIKE '%period%' OR column_name LIKE '%month%' OR column_name LIKE '%interval%');")==='0'&&
-    sql("SELECT count(*) FROM private_isg.equipment_type_suggestions;")==='20');
+  // Every type now starts at a period, and every one of those defaults carries
+  // the basis it rests on. A period with no story behind it cannot be seeded.
+  mark('every_type_starts_at_a_period_and_every_default_carries_its_basis',
+    sql("SELECT count(*) FROM private_isg.equipment_type_suggestions;")==='20'&&
+    sql("SELECT count(*) FROM private_isg.equipment_default_periods;")==='20'&&
+    sql("SELECT count(*) FROM private_isg.equipment_default_periods WHERE period_months<>"+DEFAULT_PERIOD_MONTHS+";")==='0'&&
+    sql("SELECT count(*) FROM private_isg.equipment_default_periods WHERE length(btrim(basis_note))<20;")==='0');
+  // A default is the product's, never the expert's own determination: the
+  // schema refuses to store one that is not flagged for their confirmation.
+  sql(`DO $$ BEGIN
+    INSERT INTO private_isg.equipment_inspection_rules(company_id,equipment_type,period_months,
+      period_source,needs_review) VALUES(gen_random_uuid(),'crane',12,'regulation_default',false);
+  EXCEPTION WHEN check_violation THEN NULL; END $$;`);
+  mark('the_schema_refuses_an_unconfirmed_default_that_hides_its_flag',
+    sql("SELECT count(*) FROM private_isg.equipment_inspection_rules WHERE period_source='regulation_default' AND NOT needs_review;")==='0');
   // This module is not a human health check, and the schema has no code for one.
   mark('no_suggested_type_is_a_health_record',
     sql("SELECT count(*) FROM private_isg.equipment_type_suggestions WHERE equipment_type ~ '(health|medical|saglik|muayene|person|employee)';")==='0');
@@ -96,12 +110,16 @@ export async function beginEquipmentChecksProbe({synthetic,sql,request,companyID
   sql("UPDATE private_isg.module_registry SET read_enabled=true,write_enabled=true WHERE module='equipment';");
 
   const catalogue=readCall({p_kind:'catalog'});
-  mark('the_catalogue_offers_names_and_refuses_to_offer_a_period',
+  mark('the_catalogue_offers_a_default_period_and_says_what_it_is',
     catalogue.status===200&&catalogue.body.suggestions.length===20&&
-    catalogue.body.period_defaults_offered===false&&
+    catalogue.body.period_defaults_offered===true&&
+    catalogue.body.period_default_source==='regulation_default'&&
+    catalogue.body.period_default_needs_review===true&&
+    catalogue.body.katip_official_verification===false&&
     catalogue.body.health_records_tracked===false&&
     catalogue.body.notice_days===NOTICE_DAYS&&
-    catalogue.body.suggestions.every(entry=>Object.keys(entry).join(',')==='code,ordinal'));
+    catalogue.body.suggestions.every(entry=>entry.default_period_months===DEFAULT_PERIOD_MONTHS&&
+      typeof entry.default_basis_note==='string'&&entry.default_basis_note.length>=20));
   const workplace=catalogue.body.workplaces?.[0]?.id;
   if(!workplace)throw Error('AUTH_RESTORE_EQUIPMENT_CHECKS_WORKPLACE_MISSING');
 
@@ -114,18 +132,37 @@ export async function beginEquipmentChecksProbe({synthetic,sql,request,companyID
   mark('an_item_with_no_inspection_reads_as_never_inspected',fresh.status===200&&
     fresh.body.row.state==='never_inspected'&&fresh.body.row.state_group==='untracked'&&
     fresh.body.row.state_authority==='computed_at_read'&&
-    fresh.body.row.next_due_on===null&&fresh.body.row.period_months===null&&
+    fresh.body.row.next_due_on===null&&
     fresh.body.row.location_note==='Montaj hattı · 2. göz'&&
     fresh.body.row.health_record===false);
+  // Registering the item materialised the type's default as a real, visible,
+  // editable company rule that is flagged for the expert's confirmation.
+  mark('registering_an_item_starts_its_type_at_the_default_period',
+    fresh.body.row.period_months===DEFAULT_PERIOD_MONTHS&&
+    fresh.body.row.period_source==='regulation_default'&&
+    fresh.body.row.period_needs_review===true&&
+    typeof fresh.body.row.period_exception_note==='string');
 
-  // An inspection with no type rule: the period is unknown, not a year.
+  // The first report now produces a date on its own.
   const unruled=mutate('record_inspection',{equipment_id:fresh.body.equipment_id,
     performed_on:day(anchor,-30),result:'pass',inspector:'Dış kuruluş · A. Yılmaz',
     external_ref:'RPT-2026-0011'});
-  mark('an_inspection_with_no_type_rule_never_invents_a_due_date',unruled.status===200&&
-    unruled.body.row.state==='period_unknown'&&unruled.body.row.state_group==='untracked'&&
-    unruled.body.row.next_due_on===null&&unruled.body.row.period_months===null&&
+  mark('a_report_produces_the_next_date_by_itself_and_says_it_came_from_the_period',
+    unruled.status===200&&
+    unruled.body.row.next_due_on===addMonths({y:Number(day(anchor,-30).slice(0,4)),
+      m:Number(day(anchor,-30).slice(5,7)),d:Number(day(anchor,-30).slice(8,10))},DEFAULT_PERIOD_MONTHS)&&
+    unruled.body.row.due_source==='period'&&
     unruled.body.row.last_inspector==='Dış kuruluş · A. Yılmaz');
+  // And a type the product has no default for still gets no date at all.
+  sql("DELETE FROM private_isg.equipment_default_periods WHERE equipment_type='welding_set';");
+  const undefaulted=mutate('register_equipment',{workplace_id:workplace,equipment_type:'welding_set',
+    serial_tag:'KYN-001'});
+  const noDefault=mutate('record_inspection',{equipment_id:undefaulted.body.equipment_id,
+    performed_on:day(anchor,-5),result:'pass'});
+  mark('a_type_with_no_default_still_never_invents_a_due_date',
+    undefaulted.body.row.period_months===null&&
+    noDefault.body.row.next_due_on===null&&noDefault.body.row.state==='period_unknown'&&
+    noDefault.body.row.due_source===null);
 
   // The period belongs to the type, and the source travels with it.
   const rule=mutate('set_rule',{equipment_type:'crane',period_months:CRANE_PERIOD_MONTHS,
@@ -183,6 +220,53 @@ export async function beginEquipmentChecksProbe({synthetic,sql,request,companyID
   })());
   void soonCheck; void OVERDUE_BY;
 
+  // The row always reports the latest report, so each of these gets its own
+  // item rather than filing an older report under one that already has a newer.
+  const own=name=>mutate('register_equipment',{workplace_id:workplace,equipment_type:'crane',
+    serial_tag:name}).body.equipment_id;
+  // The expert can change the next date, and the record says whose it is.
+  const overridden=mutate('record_inspection',{equipment_id:own('KRN-101'),
+    performed_on:day(anchor,-2),result:'pass',next_due_on:day(anchor,200)});
+  mark('a_next_date_the_expert_wrote_is_recorded_as_theirs_not_as_the_periods',
+    overridden.status===200&&overridden.body.row.next_due_on===day(anchor,200)&&
+    overridden.body.row.due_source==='expert');
+  // Writing exactly what the period produces is still the period's answer.
+  const twin=mutate('register_equipment',{workplace_id:workplace,equipment_type:'compressor',
+    serial_tag:'KMP-101'});
+  const matching=mutate('record_inspection',{equipment_id:twin.body.equipment_id,
+    performed_on:day(anchor,-4),result:'pass',
+    next_due_on:addMonths({y:Number(day(anchor,-4).slice(0,4)),m:Number(day(anchor,-4).slice(5,7)),
+      d:Number(day(anchor,-4).slice(8,10))},COMPRESSOR_PERIOD_MONTHS)});
+  mark('a_date_that_matches_the_period_is_still_the_periods_answer',
+    matching.status===200&&matching.body.row.due_source==='period');
+  mark('a_next_date_that_is_not_after_the_report_is_refused',
+    mutate('record_inspection',{equipment_id:own('KRN-102'),performed_on:day(anchor,-6),
+      result:'pass',next_due_on:day(anchor,-6)}).body?.message==='DUE_BEFORE_REPORT');
+  mark('a_failed_check_cannot_be_given_a_next_date_by_hand',
+    mutate('record_inspection',{equipment_id:own('KRN-103'),performed_on:day(anchor,-7),
+      result:'fail',next_due_on:day(anchor,300)}).body?.message==='DUE_ON_A_FAILED_CHECK');
+
+  // The İSG-KATİP mark is the expert's own declaration and nothing else.
+  const katip=mutate('record_inspection',{equipment_id:own('KRN-104'),
+    performed_on:day(anchor,-8),result:'pass',katip_declared:true,
+    katip_note:'Atama 2026-09-01 tarihinde yapıldı.'});
+  mark('the_katip_mark_is_the_experts_own_declaration_and_never_a_verification',
+    katip.status===200&&katip.body.row.katip_assignment_declared===true&&
+    katip.body.row.katip_declared_note==='Atama 2026-09-01 tarihinde yapıldı.'&&
+    katip.body.row.katip_official_verification===false);
+  mark('the_katip_mark_is_optional_and_defaults_to_not_declared',
+    mutate('record_inspection',{equipment_id:own('KRN-105'),performed_on:day(anchor,-9),
+      result:'pass'}).body.row.katip_assignment_declared===false);
+  // No row anywhere can claim this product checked the official system.
+  sql(`DO $$ BEGIN
+    UPDATE private_isg.equipment_inspections SET katip_official_verification=true;
+  EXCEPTION WHEN check_violation THEN NULL; END $$;`);
+  mark('no_row_can_ever_claim_the_official_system_was_checked',
+    sql("SELECT count(*) FROM private_isg.equipment_inspections WHERE katip_official_verification;")==='0');
+  // A note without the mark is not storable: an unticked box explains nothing.
+  mark('a_katip_note_without_the_mark_is_refused',
+    sql("SELECT count(*) FROM private_isg.equipment_inspections WHERE NOT katip_assignment_declared AND katip_declared_note IS NOT NULL;")==='0');
+
   // A report cannot be dated in the future.
   mark('a_report_dated_after_today_is_refused',
     mutate('record_inspection',{equipment_id:crane.body.equipment_id,
@@ -203,8 +287,11 @@ export async function beginEquipmentChecksProbe({synthetic,sql,request,companyID
   mark('a_field_the_server_never_agreed_to_read_is_refused',
     mutate('register_equipment',{workplace_id:workplace,equipment_type:'crane',serial_tag:'KRN-009',
       state:'valid'}).body?.message==='PAYLOAD_NOT_ALLOWED'&&
+    // next_due_on is the expert's to set now; due_source and the state are not.
     mutate('record_inspection',{equipment_id:crane.body.equipment_id,performed_on:day(anchor,0),
-      result:'pass',next_due_on:day(anchor,900)}).body?.message==='PAYLOAD_NOT_ALLOWED');
+      result:'pass',due_source:'period'}).body?.message==='PAYLOAD_NOT_ALLOWED'&&
+    mutate('record_inspection',{equipment_id:crane.body.equipment_id,performed_on:day(anchor,0),
+      result:'pass',katip_official_verification:true}).body?.message==='PAYLOAD_NOT_ALLOWED');
 
   for(let index=0;index<FILLER_ROWS;index++){
     mutate('register_equipment',{workplace_id:workplace,equipment_type:'power_tool',
@@ -261,10 +348,12 @@ export async function beginEquipmentChecksProbe({synthetic,sql,request,companyID
       p_workplace:null,p_type:null,p_id:null,p_limit:PAGE_SIZE,p_offset:0}).body.companies
       .every(entry=>entry.id===companyID));
 
-  // Setting a rule later must not rewrite a report that was already filed.
-  const lateRule=mutate('set_rule',{equipment_type:'lifting_equipment',period_months:24,
+  // Setting a rule later must not rewrite a report that was already filed. The
+  // welding set is the one type with no default, so its report really was
+  // written before any period existed.
+  const lateRule=mutate('set_rule',{equipment_type:'welding_set',period_months:24,
     period_source:'manufacturer'});
-  const unchanged=readCall({p_kind:'detail',p_id:fresh.body.equipment_id});
+  const unchanged=readCall({p_kind:'detail',p_id:undefaulted.body.equipment_id});
   mark('a_rule_added_later_never_rewrites_a_report_that_was_already_filed',
     lateRule.status===200&&unchanged.body.row.next_due_on===null&&
     unchanged.body.row.state==='period_unknown'&&
@@ -278,7 +367,9 @@ export async function beginEquipmentChecksProbe({synthetic,sql,request,companyID
     detail.status===200&&Array.isArray(detail.body.row.inspections)&&
     detail.body.row.inspections.length===1&&
     detail.body.row.inspections[0].inspector==='Dış kuruluş · A. Yılmaz'&&
-    detail.body.row.period_needs_review===false);
+    // Still sitting on the product's default, still flagged for confirmation.
+    detail.body.row.period_source==='regulation_default'&&
+    detail.body.row.period_needs_review===true);
 
   const replayIDs={operation:randomUUID(),mutation:randomUUID()};
   const first=mutate('record_inspection',{equipment_id:compressor.body.equipment_id,
@@ -306,7 +397,9 @@ export async function beginEquipmentChecksProbe({synthetic,sql,request,companyID
     return {migration_file:equipmentChecksFiles[0],exact_migration_executed:true,
       own_rollout_feature_added:false,module_left_disabled:true,
       needs_two_switches:['modules','equipment'],
-      period_defaults_offered:false,due_date_invented_without_a_rule:false,
+      period_defaults_offered:true,period_default_source:'regulation_default',
+      period_default_needs_review:true,due_date_invented_without_a_rule:false,
+      next_date_editable_by_the_expert:true,katip_official_verification:false,
       state_stored:false,health_records_tracked:false,compliance_verdict_returned:false,
       legacy_tables_written:false,production_deployed:false};
   }};

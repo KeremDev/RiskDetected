@@ -6,6 +6,7 @@ import {ROOT} from './lib.mjs';
 
 const read=path=>readFileSync(join(ROOT,path),'utf8');
 const migration=read('supabase/migrations/20260915030000_isg_equipment_checks.sql');
+const periods=read('supabase/migrations/20260915050000_isg_equipment_periods.sql');
 const model=read('App/DesignSystem/ISG/NovaEquipmentChecks.swift');
 const screen=read('App/DesignSystem/ISG/NovaEquipmentCheckScreens.swift');
 const sheets=read('App/DesignSystem/ISG/NovaEquipmentCheckSheets.swift');
@@ -35,6 +36,51 @@ test('the client reads the state and never works one out for itself',()=>{
   }
   // An unknown word reads as untracked, never as the calmest answer.
   assert.match(service,/\?\? \.neverInspected/);
+});
+
+test('a default period is never dressed up as a confirmed one',()=>{
+  // The expert cannot pick the product's own label from the source list.
+  assert.match(model,/static var choosable: \[NovaEquipmentPeriodSource\] \{ \[\.manufacturer, \.ruleVersion, \.unapprovedFixture\] \}/);
+  assert.match(sheets,/ForEach\(NovaEquipmentPeriodSource\.choosable\)/);
+  // A default says it is one, in its own words rather than the expert's.
+  assert.match(sheets,/localizable\.nova\.equipment\.period\.default\.review/);
+  const label=catalogue.strings['localizable.nova.equipment.source.default'];
+  assert.match(label.localizations.tr.stringUnit.value,/ürün varsayılanı/);
+  // And the flag on it is the server's, not something this side decides.
+  assert.match(model,/self == \.unapprovedFixture \|\| self == \.regulationDefault/);
+  assert.match(code(periods),/CHECK\(period_source<>'regulation_default' OR needs_review\)/);
+});
+
+test('the next date is filled from the period and stays the expert’s to change',()=>{
+  // The form prints the date the server would produce, as a default.
+  assert.match(sheets,/private func fillNextDue\(\)/);
+  assert.match(sheets,/localizable\.nova\.equipment\.due\.auto/);
+  assert.match(sheets,/\.onChange\(of: draft\.performedOn\) \{ _ in fillNextDue\(\) \}/);
+  // What the saved date MEANS is still the server's call, and the popup shows
+  // that answer rather than assuming the field it came from.
+  assert.match(service,/dueSource: row\.due_source\.flatMap\(NovaEquipmentDueSource\.init\(rawValue:\)\)/);
+  assert.match(sheets,/detail: NovaEquipmentWords\.due\(row\.dueSource\)/);
+  assert.match(code(periods),/WHEN chosen IS NULL OR chosen=derived THEN 'period' ELSE 'expert' END/);
+  // A failed check has no next date to fill.
+  assert.match(sheets,/if draft\.result == "fail" \{/);
+});
+
+test('the İSG-KATİP mark is optional and never claims a verification',()=>{
+  assert.match(model,/var katipDeclared = false/);
+  assert.match(sheets,/localizable\.nova\.equipment\.katip\.mark/);
+  assert.match(sheets,/localizable\.nova\.equipment\.katip\.hint/);
+  // The sentence beside it says what the product does not do.
+  const hint=catalogue.strings['localizable.nova.equipment.katip.hint'];
+  assert.match(hint.localizations.tr.stringUnit.value,/sorgulama veya işlem yapmaz/);
+  assert.match(hint.localizations.en.stringUnit.value,/no query or transaction/);
+  // Nothing on this side can raise the verification flag, and nothing reaches
+  // the official system.
+  for(const [path,source] of [['model',model],['screen',screen],['sheets',sheets],['service',service],
+    ['adapter',adapter],['gate',gate]]){
+    assert.doesNotMatch(code(source),/katipOfficialVerification\s*=\s*true/,path);
+    assert.doesNotMatch(code(source),/isgkatip|csgb\.gov/i,path);
+  }
+  assert.match(code(periods),/CHECK\(NOT katip_official_verification\)/);
 });
 
 test('no period is ever shown without where it came from',()=>{
