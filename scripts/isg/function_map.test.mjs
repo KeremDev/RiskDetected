@@ -7,8 +7,8 @@ import { runtimeFiles, validateFunctionMap, verifyFunctionMap } from './verify_f
 
 const original = JSON.parse(readFileSync(resolve(ROOT, 'contracts/isg/v1/function-test-map.json'), 'utf8'));
 const read = path => readFileSync(resolve(ROOT, path), 'utf8');
-test('all ten context/outcome and notification sources map to reviewed harnesses without claiming release readiness', () => {
-  const result = verifyFunctionMap(); assert.equal(result.ok, true); assert.equal(result.runtime_files, 10);
+test('all eleven context/outcome, notification and file sources map to reviewed harnesses without claiming release readiness', () => {
+  const result = verifyFunctionMap(); assert.equal(result.ok, true); assert.equal(result.runtime_files, 11);
   assert.equal(result.tests_executed, false); assert.equal(result.release_ready, false);
 });
 test('an added private function, changed parser, or changed test harness invalidates prior mapping', () => {

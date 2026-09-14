@@ -65,6 +65,13 @@ struct NovaCompanyWorkspace: View {
     @State private var documents: NovaDocumentPortfolio?
     @State private var documentsLoading = false
     @State private var documentSection: NovaCompanySection?
+    /// The archive's own counts for this company, so a heading and the archive
+    /// can never disagree about which files are on it.
+    @State private var files: NovaFileLibrary?
+    @State private var fileCategories: [NovaFileCategory] = []
+    @State private var filesLoading = false
+    @State private var fileSection: NovaCompanySection?
+    @State private var addingFile = false
     private var documentIdentity: NovaSessionIdentity { .init(userID: scope.ownerID, sessionID: scope.sessionID) }
     private enum Sheet: Identifiable {
         case personnel, addPersonnel, editCompany, deleteCompany, training, directory(NovaDirectoryKind)
@@ -85,8 +92,8 @@ struct NovaCompanyWorkspace: View {
                         NovaPageHeading(title: RDLocalization.string("localizable.nova.company.detail.title", table: .localizable, fallback: "Firma Detayı"), onBack: onBack)
                         companyCard
                         HStack(spacing: 10) {
-                            NovaButton(label: RDLocalization.string("localizable.nova.company.management.gate.dosya.ekle.b9bb8c93", table: .localizable, fallback: "Dosya Ekle"), symbol: "folder.badge.plus", isEnabled: false) {}
-                            NovaButton(label: RDLocalization.string("localizable.nova.company.management.gate.evrak.ekle.386b7009", table: .localizable, fallback: "Evrak Ekle"), symbol: "doc.badge.plus", isEnabled: false) {}
+                            NovaButton(label: RDLocalization.string("localizable.nova.company.management.gate.dosya.ekle.b9bb8c93", table: .localizable, fallback: "Dosya Ekle"), symbol: "folder.badge.plus", isEnabled: canWrite) { addingFile = true }
+                            NovaButton(label: RDLocalization.string("localizable.nova.company.management.gate.evrak.ekle.386b7009", table: .localizable, fallback: "Evrak Ekle"), symbol: "doc.badge.plus", isEnabled: canWrite) { documentSection = .files }
                         }
                         if !canWrite { NovaCard(padding: 16) { Label(RDLocalization.string("localizable.nova.company.management.gate.salt.okunur.kayitlariniz.korunuyor.2cc72e1b", table: .localizable, fallback: "Salt okunur · kayıtlarınız korunuyor"), systemImage: "lock"); NovaText(text: RDLocalization.string("localizable.nova.company.management.gate.yeni.kayit.ve.duzenleme.su.anda.kullanilamiyor.d83e8253", table: .localizable, fallback: "Yeni kayıt ve düzenleme şu anda kullanılamıyor."), style: .metaQuiet) } }
                         NovaCompanyAccordion(title: RDLocalization.string("localizable.nova.workspace.company.info", table: .localizable, fallback: "Firma Bilgileri"), symbol: "building.2", expanded: $companyExpanded) {
@@ -119,6 +126,27 @@ struct NovaCompanyWorkspace: View {
             defer { documentsLoading = false }
             let service = NovaDocumentTrackingService.live(currentScope: { scope })
             documents = try? await service.portfolio(documentIdentity, company: scope.companyID, limit: 1)
+        }
+        .task(id: summaryRevision) {
+            filesLoading = true
+            defer { filesLoading = false }
+            let service = NovaFileLibraryService.live()
+            if let answer = try? await service.catalogue(documentIdentity) { fileCategories = answer.categories }
+            files = try? await service.library(documentIdentity,
+                query: .init(company: scope.companyID, limit: 1))
+        }
+        .fullScreenCover(item: $fileSection, onDismiss: { summaryRevision = UUID() }) { section in
+            NovaPilotFileGate(identity: documentIdentity, canWrite: canWrite,
+                initialCompany: scope.companyID,
+                initialCategories: NovaFileSectionMap.categories(for: section, in: fileCategories),
+                headingOverride: section.title,
+                onBack: { fileSection = nil })
+        }
+        .fullScreenCover(isPresented: $addingFile, onDismiss: { summaryRevision = UUID() }) {
+            NovaPilotFileGate(identity: documentIdentity, canWrite: canWrite,
+                initialCompany: scope.companyID,
+                headingOverride: NovaCompanySection.files.title,
+                onBack: { addingFile = false })
         }
         .fullScreenCover(item: $documentSection) { section in
             NovaPilotDocumentGate(identity: documentIdentity, scope: scope, canWrite: canWrite,
@@ -172,10 +200,21 @@ struct NovaCompanyWorkspace: View {
                 } else if section == .training {
                     NovaHelpHint(text: "Gerçekleşen eğitimleri personel seçerek kaydedin ve eğitim geçmişini görüntüleyin.")
                     NovaButton(label: "Eğitimleri aç", symbol: "graduationcap", variant: .surface) { sheet = .training }
-                } else if let kinds = NovaDocumentSectionMap.kinds(for: section) {
+                }
+                if let kinds = NovaDocumentSectionMap.kinds(for: section) {
                     NovaDocumentSectionStrip(counts: documents?.counts(forKinds: kinds) ?? [:],
                         isLoading: documents == nil && documentsLoading) { documentSection = section }
-                } else {
+                }
+                // The archive is a second, separate thing from the tracker: the
+                // tracker says what is owed, the archive holds the files that
+                // were actually filed under this heading.
+                let categories = NovaFileSectionMap.categories(for: section, in: fileCategories)
+                if !categories.isEmpty {
+                    NovaFileSectionStrip(counts: files?.counts(forCategories: categories) ?? [:],
+                        isLoading: files == nil && filesLoading) { fileSection = section }
+                }
+                if NovaDocumentSectionMap.kinds(for: section) == nil && categories.isEmpty
+                    && section != .personnel && section != .training {
                     NovaHelpHint(text: RDLocalization.string("localizable.nova.workspace.section.pending", table: .localizable, fallback: "Bu bölümün kayıt servisi henüz bağlanmadı. Eksik veya tamamlandı bilgisi doğrulanamıyor."))
                 }
             }

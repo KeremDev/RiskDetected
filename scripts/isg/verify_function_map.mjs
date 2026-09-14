@@ -19,6 +19,7 @@ const runners = {
   'node-notification': 'scripts/isg/notification_worker.test.mjs',
   'node-notification-repository': 'scripts/isg/notification_repository.test.mjs',
   'node-notification-journal': 'scripts/isg/notification_journal.test.mjs',
+  'node-file-inspector': 'scripts/isg/file_format_inspector.test.mjs',
 };
 const digest = value => createHash('sha256').update(value).digest('hex');
 export function runtimeFiles(root = ROOT) {
@@ -45,7 +46,7 @@ export function validateFunctionMap(map, files, read) {
     const mapped = new Set(), ids = new Set();
     for (const binding of map.bindings) {
       if (!isRecord(binding) || !files.includes(binding.source) || !Object.hasOwn(runners, binding.runner) ||
-          binding.harness !== runners[binding.runner] || binding.coverage !== (binding.runner.startsWith('node-notification') ? 'targeted_behavior_tests' : 'shared_corpus_all_cases') ||
+          binding.harness !== runners[binding.runner] || binding.coverage !== (binding.runner.startsWith('node-') ? 'targeted_behavior_tests' : 'shared_corpus_all_cases') ||
           !Array.isArray(binding.symbols) || !binding.symbols.length || binding.symbols.some(s => typeof s !== 'string' || !s)) throw new Error('FUNCTION_MAP_BINDING_INVALID');
       if (mapped.has(binding.source) || ids.has(binding.id)) errors.push('DUPLICATE_BINDING');
       mapped.add(binding.source); ids.add(binding.id);

@@ -79,7 +79,8 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'score_policy_versions','score_processes','score_subject_states','score_snapshots','score_contributions',
       'score_critical_findings','score_oracle_fixtures','score_simulations','portfolio_projections',
       'portfolio_entries',
-      'document_obligation_kinds','document_obligations','document_obligation_records','document_tracking_receipts']);
+      'document_obligation_kinds','document_obligations','document_obligation_records','document_tracking_receipts',
+      'file_scanners','file_library_categories','file_library_entries','file_library_receipts']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([
@@ -173,6 +174,12 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'document_obligation_records_document_obligation_record_owner_idx',
       'document_obligation_records_document_obligation_record_author_idx',
       'document_tracking_receipts_document_tracking_receipt_company_idx',
+      'file_library_entries_file_library_entry_company_idx',
+      'file_library_entries_file_library_entry_category_idx',
+      'file_library_entries_file_library_entry_intent_idx',
+      'file_library_entries_file_library_entry_asset_idx',
+      'file_library_receipts_file_library_receipt_company_idx',
+      'file_assets_file_asset_owner_digest_idx',
       'document_obligations_document_obligation_company_scope_idx',
       'document_obligations_document_obligation_workplace_scope_idx',
     ].map(key=>'unused_index_private_isg_'+key));

@@ -115,10 +115,15 @@ test('the switch answers the rehearsal the same way every other feature does',()
   assert.match(migration,/CREATE FUNCTION private_isg\.document_tracking_gate\(p_write boolean\) RETURNS void/);
   assert.match(migration,/PERFORM private_isg\.document_tracking_gate\(p_write\);/);
   const rehearsal=readFileSync(resolve(ROOT,'scripts/isg/integrated_rehearsal_probe.mjs'),'utf8');
-  assert.match(rehearsal,/'document_tracking'\];/);
+  assert.match(rehearsal,/'document_tracking'/);
   assert.match(rehearsal,/private_isg\.document_tracking_gate\(true\)/);
-  assert.match(rehearsal,/refusals\.length===17/);
-  assert.match(rehearsal,/count\(\*\)=18 AND bool_and\(NOT read_enabled AND NOT write_enabled\)/);
+  // The counts belong to whichever slice is newest, so they are read from the
+  // rehearsal's own feature list rather than pinned here and bumped every time.
+  const gated=[...rehearsal.slice(rehearsal.indexOf('const GATED_FEATURES='),
+    rehearsal.indexOf('];',rehearsal.indexOf('const GATED_FEATURES='))).matchAll(/'([a-z_]+)'/g)].map(m=>m[1]);
+  assert.ok(gated.includes('document_tracking'));
+  assert.match(rehearsal,new RegExp(`refusals\\.length===${gated.length}`));
+  assert.match(rehearsal,new RegExp(`count\\(\\*\\)=${gated.length+1} AND bool_and\\(NOT read_enabled AND NOT write_enabled\\)`));
   // The two checked entries are definers, and the rehearsal knows them by name.
   assert.match(rehearsal,/'read_document_tracking','mutate_document_tracking',/);
   const definers=[...migration.matchAll(/CREATE FUNCTION private_isg\.([a-z_]+)\([^)]*\)[\s\S]{0,200}?SECURITY DEFINER/g)].map(m=>m[1]);
@@ -149,6 +154,10 @@ test('the new tables are on the advisor deny list and in the schema counts',()=>
   for(const table of ['document_obligation_kinds','document_obligations',
     'document_obligation_records','document_tracking_receipts'])
     assert.ok(advisor.includes(`'${table}'`),table);
-  assert.match(readFileSync(resolve(ROOT,'scripts/isg/p05_upgrade_probe.mjs'),'utf8'),/count\(\*\)=163/);
-  assert.match(readFileSync(resolve(ROOT,'scripts/isg/integrated_rehearsal_probe.mjs'),'utf8'),/posture\[0\]==='160'/);
+  // The absolute table counts move with the newest slice; what this guard owns
+  // is that both probes still assert one, and that they stay three apart.
+  const upgrade=/count\(\*\)=(\d+) AND bool_and\(rowsecurity\) FROM pg_tables WHERE schemaname='private_isg'/
+    .exec(readFileSync(resolve(ROOT,'scripts/isg/p05_upgrade_probe.mjs'),'utf8'))[1];
+  const rehearsed=/posture\[0\]==='(\d+)'/.exec(readFileSync(resolve(ROOT,'scripts/isg/integrated_rehearsal_probe.mjs'),'utf8'))[1];
+  assert.equal(Number(upgrade)-Number(rehearsed),3);
 });

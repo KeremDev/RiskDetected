@@ -11233,6 +11233,24 @@
         }
       }
     },
+    "localizable.nova.document.close": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapat"
+          }
+        }
+      }
+    },
     "localizable.nova.document.company.all": {
       "comment": "nova_document_tracking; document portfolio page, company-page heading and add flow; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -13389,6 +13407,1950 @@
           "stringUnit": {
             "state": "translated",
             "value": "Yeni saha ziyareti planla"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.accepts": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: %1$@, %2$@; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accepted types: %1$@. Upper limit %2$@ (a candidate limit, not yet approved)."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kabul edilen türler: %1$@. Üst sınır %2$@ (henüz onaylanmamış aday sınır)."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.add.no.malware": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file goes through a format inspection; no virus scan is run."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya biçim denetiminden geçirilir; virüs taraması yapılmaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.add.save": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upload and inspect"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yükle ve denetle"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.add.short": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.add.title": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a file"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.add.working": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file is being inspected. You can follow it from its entry in the list and run the inspection again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya denetimde. Listedeki kaydından durumu izleyebilir, denetimi tekrar çalıştırabilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.archive": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from the list"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listeden kaldır"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.archive.confirm": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The entry leaves the list. The file itself stays in the archive."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt listeden çıkar. Arşivdeki dosyanın kendisi silinmez."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.assurance.format": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Format inspection: real type, size, digest and macro/active content were checked."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Biçim denetimi: gerçek tür, boyut, özet ve makro/çalışan içerik kontrol edildi."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.assurance.no.malware": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No virus scan was run."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Virüs taraması yapılmadı."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.assurance.none": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This file has not been inspected yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu dosya henüz denetlenmedi."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.assurance.other": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file was cleared by an inspection this product does not recognise."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya, tanımlı olmayan bir denetimden geçti."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.assurance.title": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspection"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denetim"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.cancel": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel the upload"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yüklemeyi iptal et"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.category.accident": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accident record"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İş kazası kaydı"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.category.all": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All headings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm başlıklar"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.category.board": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Board document"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kurul belgesi"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.category.contract": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contract"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sözleşme"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.category.contractor": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contractor document"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taşeron belgesi"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.category.emergency": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emergency plan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acil durum planı"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.category.handover": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Handover form"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zimmet formu"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.category.inspection": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Periodic inspection report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Periyodik kontrol raporu"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.category.measurement": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workplace measurement report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ortam ölçüm raporu"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.category.other": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diğer"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.category.permit": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Work permit form"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çalışma izni formu"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.category.personnel": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personnel document"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personel belgesi"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.category.risk": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk assessment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk değerlendirmesi"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.category.training": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training document"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitim belgesi"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.company.empty": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a company before using the file archive."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya arşivi için önce bir firma ekleyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.company.nomatch": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No company matches this search."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu aramaya uyan firma yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.company.search": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search for a company or pick one below"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma ara veya listeden seçin"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.company.untracked": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No files"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.company.waiting": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not archived"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşive alınmadı"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.empty": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No file is archived for this company yet. Add the document you want to keep."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu firmada arşivlenmiş dosya yok. Saklamak istediğiniz belgeyi ekleyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.empty.filtered": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No file matches this filter."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu filtreye uyan dosya yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.failed": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The files could not be loaded. Check your connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosyalar alınamadı. Bağlantınızı kontrol edip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.failure.cancel": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This file is already in the archive and cannot be cancelled. Remove it from the list instead."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu dosya arşive alınmış; iptal edilemez. Kaldırmak için arşivden çıkarın."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.failure.conflict": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This action was already saved with different content."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu işlem farklı bir içerikle zaten kaydedilmiş."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.failure.denied": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You do not have access to this company's files."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu firmanın dosyalarına erişim yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.failure.format": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This file type is not accepted."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu dosya türü kabul edilmiyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.failure.inspection": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The inspection could not be run just now. The file was not archived; you can try again from its entry."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denetim şu anda çalıştırılamadı. Dosya arşive alınmadı; kaydın üzerinden tekrar deneyebilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.failure.plan": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adding files needs a Plus or Pro plan."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya eklemek için Plus veya Pro plan gerekiyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.failure.size": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file size is outside the limit."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya boyutu sınırın dışında."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.failure.unavailable": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file service is unavailable right now."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya servisi şu anda kullanılamıyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.failure.upload": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file could not be sent. Check your connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya gönderilemedi. Bağlantınızı kontrol edip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.failure.validation": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The details are missing or invalid."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bilgiler eksik veya geçersiz."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.failure.version": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The entry changed elsewhere. Refresh the page and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt başka bir yerden değişmiş. Sayfayı yenileyip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.field.added": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eklendi"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.field.category": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File under"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlık altında sakla"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.field.company": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.field.detected": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detected type"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saptanan tür"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.field.size": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boyut"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.field.title": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Title"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlık"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.field.type": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tür"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.field.unknown": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not determined yet"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz belirlenmedi"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.finding.active": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The document carries active content."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belgede çalışan içerik var."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.finding.bomb": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file expands far past the limits when opened."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya, açıldığında sınırların çok üstüne çıkıyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.finding.broken": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file could not be read."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya okunamadı."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.finding.embedded": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another file is embedded in the document."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belgeye başka bir dosya gömülü."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.finding.encrypted": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file is encrypted and cannot be inspected. Upload an unlocked copy."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya şifreli; içeriği denetlenemiyor. Şifresiz nüsha yükleyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.finding.entity": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The document carries an unsafe XML declaration."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belgede güvenli olmayan XML tanımı var."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.finding.external": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The document pulls content from outside."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belge dışarıdan içerik çağırıyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.finding.macro": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The document carries a macro."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belgede makro var."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.finding.mismatch": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file's real type does not match its extension."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosyanın gerçek türü uzantısıyla uyuşmuyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.finding.path": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The document package carries an invalid file path."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belge paketinde geçersiz dosya yolu var."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.finding.pixels": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The image resolution is above the limit."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görselin çözünürlüğü sınırın üstünde."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.footer.expired": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "time ran out"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "süresi geçti"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.footer.filed": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in the archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "arşivde"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.footer.rejected": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "because of content"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "içerik nedeniyle"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.footer.unchecked": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "inspection unfinished"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "denetim bitmedi"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.footer.working": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in progress"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "işleniyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.group.filed": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On file"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosyada"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.group.filed.footer": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in the archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "arşivde"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.group.rejected": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not accepted"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kabul edilmedi"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.group.rejected.footer": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "because of content"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "içerik nedeniyle"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.group.unchecked": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not inspected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denetlenemedi"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.group.unchecked.footer": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "inspection unfinished"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "denetim bitmedi"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.group.working": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In progress"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşleniyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.group.working.footer": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "being inspected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "denetimde"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.hint": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A file is archived after a format inspection; this is not a virus scan."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosyalar biçim denetiminden geçtikten sonra arşive alınır; bu bir virüs taraması değildir."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.hint.scanned": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A file is archived after a format inspection and a virus scan."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosyalar biçim denetiminden ve virüs taramasından geçtikten sonra arşive alınır."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.loading": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading files…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosyalar yükleniyor…"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.open": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the file"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosyayı aç"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.page": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: %1$d, %2$d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d of %2$d files"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d / %2$d dosya"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.pick": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a file from the device"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cihazdan dosya seçin"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.pick.company": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a company first. Its file archive opens right below."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlk önce firma seçimi yapın. Seçtiğiniz firmanın dosya arşivi hemen aşağıda açılır."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.pick.hint": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF, Word, Excel or a photo"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF, Word, Excel veya fotoğraf"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.reason.changed": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file that arrived is not the file that was sent."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ulaşan dosya, gönderilen dosyayla aynı değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.reason.content": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file did not pass the format inspection."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya, biçim denetiminden geçmedi."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.reason.expired": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The upload window closed."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yükleme süresi doldu."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.reason.format": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This file type is not accepted."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu dosya türü kabul edilmiyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.reason.size": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file size is outside the limit."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya boyutu sınırın dışında."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.reason.type": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file's real type does not match its name."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosyanın gerçek türü adıyla uyuşmuyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.reason.unavailable": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The inspection could not finish. The file was not archived."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denetim tamamlanamadı. Dosya arşive alınmadı."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.reason.unknown": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file was not accepted."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya kabul edilmedi."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.recheck": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run the inspection again"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denetimi tekrar çalıştır"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.rename.title": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit the file entry"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya kaydını düzenle"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.search": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search files"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya ara"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.section.empty": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No file is archived under this heading."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu başlık için arşivlenmiş dosya yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.file.section.open": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the files"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosyaları aç"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.state.checking": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Being inspected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denetleniyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.state.expired": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time ran out"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süre doldu"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.state.filed": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On file"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosyada"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.state.filing": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Being archived"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivleniyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.state.pending": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uploading"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yükleniyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.state.rejected": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not accepted"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kabul edilmedi"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.state.unchecked": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not inspected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denetlenemedi"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.unchecked.explain": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file was not archived because the inspection could not finish. That does not mean the file is harmful; you can add it again to try once more."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denetim tamamlanamadığı için dosya arşive alınmadı. Bu, dosyanın zararlı olduğu anlamına gelmez; dosyayı yeniden ekleyerek tekrar deneyebilirsiniz."
           }
         }
       }

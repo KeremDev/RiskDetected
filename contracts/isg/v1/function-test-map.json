@@ -151,7 +151,29 @@
       "harness": "scripts/isg/notification_journal.test.mjs",
       "harness_sha256": "cb8ed92dc0abd47accefa97e356e17645314812ede4051633aa9b5a0c5772f5a",
       "coverage": "targeted_behavior_tests",
-      "symbols": ["canonical", "openNotificationJournal", "reconcileNotificationJournal", "runNotificationBatch"]
+      "symbols": [
+        "canonical",
+        "openNotificationJournal",
+        "reconcileNotificationJournal",
+        "runNotificationBatch"
+      ]
+    },
+    {
+      "id": "ISG.FILE.INSPECTOR",
+      "source": "supabase/functions/_shared/isg/file-format-inspector.ts",
+      "source_sha256": "8433646cf197f4bc2a8ef2b3ae476d93c792f30b49562be6ba6d9d9dd97ff34b",
+      "symbols": [
+        "inspect",
+        "detectType",
+        "readZipDirectory",
+        "readOleDirectoryNames",
+        "rasterPixels",
+        "storedContentType"
+      ],
+      "harness": "scripts/isg/file_format_inspector.test.mjs",
+      "harness_sha256": "a6ab2462cc0946257c628517dbb8cbc7770338f13b33570748de69b4fcb2bd7b",
+      "runner": "node-file-inspector",
+      "coverage": "targeted_behavior_tests"
     }
   ]
 }

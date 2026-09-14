@@ -101,8 +101,9 @@ test('the menu entry lands on the tracker and on nothing else',()=>{
   assert.match(main,/NovaPilotDocumentGate\(identity: identity/);
   const navigation=read('App/DesignSystem/ISG/NovaNavigation.swift');
   assert.ok(navigation.includes('.documentChecklist,'));
-  // The destination is offered rather than left disabled in the drawer.
-  assert.match(main,/available: \[[^\]]*\.documentChecklist\]/);
+  // The destination is offered rather than left disabled in the drawer. Its
+  // position in that list belongs to whichever slice added the newest entry.
+  assert.match(main,/available: \[[^\]]*\.documentChecklist[,\]]/);
 });
 
 test('the portfolio page reads the account once and shows ten at a time',()=>{

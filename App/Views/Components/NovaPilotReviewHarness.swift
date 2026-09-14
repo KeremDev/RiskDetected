@@ -16,7 +16,7 @@ struct NovaPilotReviewHarness: View {
     private static let employee = UUID(uuidString: "00000000-0000-4000-8000-000000000004")!
     @State private var selected = false
     @State private var create = false
-    @State private var navigation = NovaNavigationState(epoch: "review-only", available: [.companies, .findings, .newFinding, .analyses, .newAnalysis, .documentChecklist])
+    @State private var navigation = NovaNavigationState(epoch: "review-only", available: [.companies, .findings, .newFinding, .analyses, .newAnalysis, .documentChecklist, .documents])
     @State private var draft = NovaAnalysisIntakeDraft()
     @State private var showingReviewReports = false
     @State private var reviewImages: [UIImage] = []
@@ -50,7 +50,7 @@ struct NovaPilotReviewHarness: View {
         NovaExpertShell(navigation: $navigation, userName: "Tasarım Provası", connectionLabel: "Sentetik veriler · canlı bağlantı yok",
             onCompanyCreate: { create = true },
             onDestination: { destination in if destination == .companies { selected = false } }) { destination in
-            if [.findings, .newFinding, .analyses, .newAnalysis, .documentChecklist].contains(destination) {
+            if [.findings, .newFinding, .analyses, .newAnalysis, .documentChecklist, .documents].contains(destination) {
                 analysisReview(destination)
             } else if selected {
                 NovaCompanyWorkspace(scope: scope, companyName: summary.name, canWrite: true, personnel: personnel, directory: directory,
@@ -116,6 +116,8 @@ struct NovaPilotReviewHarness: View {
                 workplaces: { _ in reviewWorkplaces }, save: { _ in nil }, onBack: {})
         case .documentChecklist:
             NovaDocumentTrackingScreen(client: reviewDocumentClient, onBack: {})
+        case .documents:
+            NovaFileLibraryScreen(client: reviewFileClient, onBack: {})
         default:
             NovaAnalysisDetailScreen(analysisID: Self.analysis, client: reviewDetailClient, onBack: {})
         }
@@ -252,6 +254,94 @@ struct NovaPilotReviewHarness: View {
     // MARK: synthetic document tracking
 
     /// One obligation of every status, so all four answers can be seen at once.
+    /// Drawn fixtures for the archive, so the design can be reviewed without a
+    /// live pilot. Nothing here uploads, inspects or promotes anything: every
+    /// row is a state the server could genuinely return.
+    private var reviewFileClient: NovaFileLibraryClient {
+        .init(catalogue: { (reviewFileCategories, reviewFileAccepts,
+                            .init(scanners: ["isg_format_inspector"], malwareScanningAvailable: false)) },
+              library: { request in reviewFileLibrary(request) },
+              companies: { reviewCompanies },
+              file: { _, _, _ in reviewFileRows[0] },
+              rename: { entry, _, _, _ in entry },
+              archive: { _ in },
+              cancel: { _ in },
+              recheck: { entry in entry },
+              contents: { _ in Data() })
+    }
+
+    private var reviewFileCategories: [NovaFileCategory] {
+        [.init(code: "risk_assessment", ordinal: 1, section: "risk"),
+         .init(code: "emergency_plan", ordinal: 2, section: "emergency"),
+         .init(code: "training_material", ordinal: 3, section: "training"),
+         .init(code: "inspection_report", ordinal: 4, section: "inspections"),
+         .init(code: "contract", ordinal: 10, section: "files"),
+         .init(code: "other", ordinal: 13, section: "files")]
+    }
+    private var reviewFileAccepts: [NovaFileAcceptance] {
+        [.init(purpose: "company_document", extensions: ["pdf", "doc", "docx", "xls", "xlsx"],
+               maxBytes: 52_428_800, limitApproved: false),
+         .init(purpose: "evidence_photo", extensions: ["jpg", "jpeg", "png", "heic", "heif", "webp", "avif"],
+               maxBytes: 52_428_800, limitApproved: false)]
+    }
+
+    private var reviewFileRows: [NovaFileEntry] {
+        [.init(id: Self.analysis, companyID: Self.company, companyName: summary.name,
+               category: "risk_assessment", section: "risk", title: "Risk değerlendirmesi 2026",
+               fileName: "risk-degerlendirmesi-2026.pdf", note: "İşveren nüshası imzalı", version: 2,
+               state: .promoted, rejectionCode: nil, fileExtension: "pdf", declaredBytes: 1_842_311,
+               receivedBytes: 1_842_311, detectedType: "application/pdf",
+               uploadBucket: nil, uploadPath: nil, downloadBucket: "isg-documents",
+               downloadPath: "assets/preview/preview", scanner: "isg_format_inspector",
+               scanFinding: nil, assurance: "format_inspection", malwareScanned: false,
+               createdAt: "2026-09-12T08:14:00Z"),
+         .init(id: Self.employee, companyID: Self.company, companyName: summary.name,
+               category: "inspection_report", section: "inspections", title: "Vinç periyodik kontrol",
+               fileName: "vinc-kontrol.docx", note: nil, version: 1,
+               state: .rejected, rejectionCode: "SCAN_REJECTED", fileExtension: "docx",
+               declaredBytes: 412_004, receivedBytes: 412_004, detectedType: "application/zip",
+               uploadBucket: nil, uploadPath: nil, downloadBucket: nil, downloadPath: nil,
+               scanner: "isg_format_inspector", scanFinding: "MACRO_PRESENT",
+               assurance: "format_inspection", malwareScanned: false, createdAt: "2026-09-13T15:02:00Z"),
+         .init(id: Self.workplace, companyID: Self.company, companyName: summary.name,
+               category: "contract", section: "files", title: "İSG hizmet sözleşmesi",
+               fileName: "sozlesme.pdf", note: nil, version: 1,
+               state: .pending, rejectionCode: nil, fileExtension: "pdf", declaredBytes: 96_500,
+               receivedBytes: nil, detectedType: nil, uploadBucket: "isg-quarantine",
+               uploadPath: "quarantine/preview/preview", downloadBucket: nil, downloadPath: nil,
+               scanner: nil, scanFinding: nil, assurance: nil, malwareScanned: false,
+               createdAt: "2026-09-14T09:41:00Z"),
+         .init(id: Self.company, companyID: Self.company, companyName: summary.name,
+               category: "emergency_plan", section: "emergency", title: "Acil durum planı taslağı",
+               fileName: "acil-durum.pdf", note: nil, version: 1,
+               state: .scanFailed, rejectionCode: "SCAN_UNAVAILABLE", fileExtension: "pdf",
+               declaredBytes: 204_800, receivedBytes: 204_800, detectedType: "application/pdf",
+               uploadBucket: nil, uploadPath: nil, downloadBucket: nil, downloadPath: nil,
+               scanner: "isg_format_inspector", scanFinding: nil, assurance: "format_inspection",
+               malwareScanned: false, createdAt: "2026-09-14T10:05:00Z")]
+    }
+
+    private func reviewFileLibrary(_ request: NovaFileQuery) -> NovaFileLibrary {
+        let all = reviewFileRows
+        let group = NovaFileGroup(rawValue: request.state ?? "")
+        let matching = all.filter { row in
+            guard request.category == nil || row.category == request.category else { return false }
+            guard group == nil || group?.states.contains(row.state) == true else { return false }
+            return row.matches(request.query)
+        }
+        var counts: [NovaFileState: Int] = [:]
+        var categoryCounts: [String: [NovaFileState: Int]] = [:]
+        for row in all {
+            counts[row.state, default: 0] += 1
+            categoryCounts[row.category, default: [:]][row.state, default: 0] += 1
+        }
+        return .init(counts: counts,
+                     companies: [.init(id: Self.company, name: summary.name, total: all.count, counts: counts)],
+                     categoryCounts: categoryCounts, rows: matching, total: matching.count,
+                     hasMore: false, limit: request.limit, offset: 0,
+                     assurance: .init(scanners: ["isg_format_inspector"], malwareScanningAvailable: false))
+    }
+
     private var reviewDocumentClient: NovaDocumentTrackingClient {
         .init(portfolio: { request in reviewDocumentPortfolio(request) },
               companies: { reviewCompanies },

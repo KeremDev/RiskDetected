@@ -1,0 +1,165 @@
+{
+ "phase": "P04",
+ "slice": "the client surface behind Diger Dosyalar: buckets, storage policies, the format inspector and the file library",
+ "date": "2026-09-14",
+ "branch": "codex/isg-transition-foundation",
+ "migration": "supabase/migrations/20260915010000_isg_file_library.sql",
+ "rollout_opened": false,
+ "rollout_needs_two_switches": [
+  "file_core",
+  "file_library"
+ ],
+ "synthetic_run": {
+  "directory": "output/isg/runs/synthetic-auth-J5B1Fe",
+  "ok": true,
+  "checks_total": 1248,
+  "checks_failed": 0,
+  "file_library_checks": 48,
+  "ids": [
+   "file_library_migration_applied_without_opening_the_switch",
+   "file_library_every_new_table_is_private_and_row_secured",
+   "file_library_neither_new_bucket_is_public",
+   "file_library_the_client_can_only_put_into_quarantine_never_read_or_replace_it",
+   "file_library_the_client_can_only_read_out_of_the_final_bucket",
+   "file_library_the_legacy_storage_rows_and_policies_are_byte_identical_afterwards",
+   "file_library_the_three_legacy_buckets_are_still_there",
+   "file_library_the_eleven_legacy_storage_policies_are_still_there",
+   "file_library_the_inspection_entry_is_out_of_reach_of_a_signed_in_account",
+   "file_library_the_worker_identity_reaches_the_inspector_and_nothing_else",
+   "file_library_the_boundary_exposes_exactly_two_functions_to_a_signed_in_account",
+   "file_library_a_closed_switch_refuses_both_directions",
+   "file_library_the_library_cannot_accept_an_upload_while_the_file_core_switch_is_closed",
+   "file_library_the_catalogue_never_claims_a_malware_scan_ran",
+   "file_library_every_category_reaches_the_company_heading_it_belongs_under",
+   "file_library_the_server_declares_what_it_will_accept_and_says_the_limits_are_unapproved",
+   "file_library_an_opened_upload_hands_back_a_path_under_the_callers_own_prefix",
+   "file_library_the_purpose_is_chosen_by_the_server_from_the_real_extension",
+   "file_library_an_extension_the_product_never_accepts_is_refused_before_an_intent_exists",
+   "file_library_a_category_the_company_page_has_no_heading_for_is_refused",
+   "file_library_no_client_action_can_declare_a_verdict",
+   "file_library_the_inspector_is_handed_the_owner_by_the_row_and_never_by_its_caller",
+   "file_library_bytes_that_are_not_the_bytes_announced_are_refused_not_scanned",
+   "file_library_a_cleared_file_is_still_not_a_file_until_it_is_promoted",
+   "file_library_promoting_different_bytes_than_the_ones_inspected_is_refused",
+   "file_library_a_cleared_upload_becomes_a_file_at_a_path_named_by_its_own_digest",
+   "file_library_the_promoted_row_says_what_cleared_it_and_does_not_claim_more",
+   "file_library_filing_the_same_document_twice_links_to_one_object_instead_of_overwriting_it",
+   "file_library_a_refused_file_never_becomes_a_file",
+   "file_library_an_inspection_that_could_not_finish_is_never_read_as_clean",
+   "file_library_an_unregistered_scanner_is_never_reported_as_a_malware_scan",
+   "file_library_the_page_is_bounded_and_the_tally_counts_the_same_rows_it_pages",
+   "file_library_the_page_puts_what_needs_attention_first",
+   "file_library_the_answer_is_a_tally_and_never_a_compliance_verdict",
+   "file_library_a_state_filter_returns_only_that_state",
+   "file_library_tapping_a_counter_filters_exactly_what_that_counter_counted",
+   "file_library_a_state_word_the_server_never_agreed_to_is_refused",
+   "file_library_a_category_filter_answers_one_heading_of_the_company_page",
+   "file_library_the_per_category_tally_answers_every_heading_in_one_call",
+   "file_library_the_whole_account_reads_in_one_call_without_naming_a_company",
+   "file_library_a_search_narrows_the_page_without_changing_the_account_tally",
+   "file_library_renaming_and_refiling_move_the_version_and_keep_the_file",
+   "file_library_a_stale_version_is_refused_instead_of_overwriting",
+   "file_library_cancelling_only_abandons_an_upload_that_never_became_a_file",
+   "file_library_a_retry_returns_the_first_answer_instead_of_opening_a_second_upload",
+   "file_library_another_owners_company_is_refused",
+   "file_library_the_legacy_analysis_and_report_tables_were_never_written",
+   "file_library_the_kill_switch_stops_the_library_and_the_inspector_together"
+  ]
+ },
+ "storage": {
+  "buckets": [
+   "isg-quarantine",
+   "isg-documents"
+  ],
+  "both_private": true,
+  "client_policies": {
+   "isg-quarantine": "INSERT only, own prefix",
+   "isg-documents": "SELECT only, own prefix"
+  },
+  "legacy_buckets_touched": false,
+  "legacy_storage_fingerprint_before": "11:3:157c71de76a502d7e437592dd638146b",
+  "legacy_storage_fingerprint_after": "11:3:157c71de76a502d7e437592dd638146b",
+  "schema_under_test": "synthetic_stand_in",
+  "storage_service_exercised": false,
+  "bytes_uploaded_or_promoted": false
+ },
+ "inspector": {
+  "name": "isg_format_inspector",
+  "assurance": "format_inspection",
+  "detects_malware": false,
+  "malware_scanning_available": false,
+  "unit_tests": {
+   "file": "scripts/isg/file_format_inspector.test.mjs",
+   "total": 37,
+   "failed": 0
+  },
+  "deployed_function_exercised_against_live_storage": false,
+  "plan_wide_format_release_gate_satisfied": false
+ },
+ "boundary": {
+  "authenticated_entries": [
+   "public.isg_file_library_read_v1",
+   "public.isg_file_library_mutate_v1"
+  ],
+  "service_role_entries": [
+   "public.isg_file_inspection_v1"
+  ],
+  "inspection_entry_takes_an_actor_argument": false,
+  "client_can_declare_a_verdict": false,
+  "table_grants_to_client_roles": 0
+ },
+ "invariants": {
+  "state_stored": false,
+  "state_authority": "computed_at_read",
+  "download_path_without_an_asset": false,
+  "compliance_verdict_returned": false,
+  "promoted_path_content_addressed": true,
+  "second_filing_creates_a_second_object": false
+ },
+ "client": {
+  "screens": [
+   "App/DesignSystem/ISG/NovaFileLibraryScreens.swift",
+   "App/DesignSystem/ISG/NovaFileLibrarySheets.swift"
+  ],
+  "design_tests": {
+   "file": "scripts/isg/nova_file_library.test.mjs",
+   "total": 13,
+   "failed": 0
+  },
+  "guard_tests": {
+   "file": "scripts/isg/file_library_guard.test.mjs",
+   "total": 15,
+   "failed": 0
+  },
+  "connected_to": [
+   "drawer: Diger Dosyalar",
+   "company page: Dosya Ekle",
+   "company page headings via file_library_categories.section"
+  ],
+  "android_parity": false
+ },
+ "suites": {
+  "foundation": {
+   "total": 535,
+   "failed": 1,
+   "failure_owner": "the concurrent session's education copy, not this slice"
+  },
+  "nova_design": {
+   "total": 65,
+   "failed": 0
+  },
+  "l10n": {
+   "L10N-001": "PASS",
+   "L10N-002": "PASS",
+   "L10N-003": "PASS",
+   "L10N-004": "FAIL",
+   "L10N-004_debt_from_this_slice": 0
+  }
+ },
+ "builds": {
+  "ios_debug": "SUCCEEDED",
+  "nova_pilot_build": "SUCCEEDED"
+ },
+ "production_deployed": false,
+ "limitation": "The schema, the boundary and the inspector's logic are exercised. The deployed Edge Function was never run against real Supabase Storage, and no antivirus exists."
+}

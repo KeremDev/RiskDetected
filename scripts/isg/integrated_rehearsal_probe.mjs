@@ -9,7 +9,7 @@ const quote=v=>"'"+String(v).replaceAll("'","''")+"'";
 // Every rollout feature this transition has introduced, in the order it arrived.
 const GATED_FEATURES=['event_dispatch','quota_ledger','file_core','rule_engine','training','risk',
   'nonconformity','modules','documents','imports','notifications','personal_notes','billing_lifecycle',
-  'campaigns','observability','score','document_tracking'];
+  'campaigns','observability','score','document_tracking','file_library'];
 
 export async function beginIntegratedRehearsalProbe({synthetic,sql:rawSql,companyID,ownerID,pass}) {
   let step='start';
@@ -39,6 +39,7 @@ export async function beginIntegratedRehearsalProbe({synthetic,sql:rawSql,compan
     "ELSIF p_feature='observability' THEN PERFORM private_isg.observability_gate(true);",
     "ELSIF p_feature='score' THEN PERFORM private_isg.score_gate(true);",
     "ELSIF p_feature='document_tracking' THEN PERFORM private_isg.document_tracking_gate(true);",
+    "ELSIF p_feature='file_library' THEN PERFORM private_isg.file_library_gate(true);",
     "ELSE RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='UNKNOWN_FEATURE'; END IF;",
     "RETURN 'open';",
     "EXCEPTION WHEN SQLSTATE 'P0001' THEN GET STACKED DIAGNOSTICS err_code=MESSAGE_TEXT; RETURN err_code;",
@@ -60,8 +61,8 @@ export async function beginIntegratedRehearsalProbe({synthetic,sql:rawSql,compan
   sql("UPDATE private_isg.rollout SET read_enabled=false,write_enabled=false;");
   const refusals=GATED_FEATURES.map(feature=>[feature,gate(feature)]);
   mark('every_new_feature_refuses_while_its_switch_is_closed',
-    refusals.length===17&&refusals.every(([,answer])=>answer==='FEATURE_UNAVAILABLE')&&
-    sql("SELECT count(*)=18 AND bool_and(NOT read_enabled AND NOT write_enabled) FROM private_isg.rollout;")==='t');
+    refusals.length===18&&refusals.every(([,answer])=>answer==='FEATURE_UNAVAILABLE')&&
+    sql("SELECT count(*)=19 AND bool_and(NOT read_enabled AND NOT write_enabled) FROM private_isg.rollout;")==='t');
   step='module_registry';
   // The phase switch answers before the module switch, so closing the phase is
   // enough even if an earlier probe left a module open. Then both are closed.
@@ -98,7 +99,7 @@ export async function beginIntegratedRehearsalProbe({synthetic,sql:rawSql,compan
     "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='private_isg' AND NOT (coalesce(array_to_string(p.proconfig,','),'') LIKE '%search_path=%');",
     "SELECT count(*) FROM private_isg.rollout WHERE read_enabled OR write_enabled;",
   ].join('\n')).split('\n');
-  mark('the_whole_new_schema_keeps_one_posture',posture[0]==='160'&&posture[1]==='0'&&posture[2]==='0'&&
+  mark('the_whole_new_schema_keeps_one_posture',posture[0]==='164'&&posture[1]==='0'&&posture[2]==='0'&&
     posture[4]==='0'&&posture[5]==='0');
   // A definer function is the client RPC boundary and nothing else. The server
   // only ledgers of P14 to P17 must not have quietly added one.
@@ -107,6 +108,7 @@ export async function beginIntegratedRehearsalProbe({synthetic,sql:rawSql,compan
     'mutate_notebook','mutate_notebook_reminder','mutate_personnel','organize_notebook','read_notebook',
     'read_nonconformities','mutate_nonconformity',
     'read_document_tracking','mutate_document_tracking','read_document_portfolio',
+    'read_file_library','mutate_file_library','inspect_file_upload',
     'read_notebook_organization','read_notebook_reminders','read_personnel','record_device_permission',
     'workspace_availability'];
   const actual=definers?definers.split(','):[];

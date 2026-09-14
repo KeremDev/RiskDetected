@@ -38,6 +38,7 @@ import { beginIntegratedRehearsalProbe, integratedRehearsalFiles } from './integ
 import { beginNonconformityHTTPProbe, nonconformityHTTPFiles } from './nonconformity_http_probe.mjs';
 import { beginNonconformityDetailProbe, nonconformityDetailFiles } from './nonconformity_detail_probe.mjs';
 import { beginDocumentTrackingProbe, documentTrackingFiles } from './document_tracking_probe.mjs';
+import { beginFileLibraryProbe, fileLibraryFiles } from './file_library_probe.mjs';
 import { beginNotificationDispatchProbe, notificationDispatchFiles } from './notification_dispatch_probe.mjs';
 import { beginNotificationRepositoryProbe, notificationRepositoryFiles } from './notification_repository_probe.mjs';
 import { beginNotificationDeviceProbe, notificationDeviceFiles } from './notification_device_probe.mjs';
@@ -226,6 +227,7 @@ function sourceFingerprints(mode) {
     .concat(mode.synthetic ? nonconformityHTTPFiles : [])
     .concat(mode.synthetic ? nonconformityDetailFiles : [])
     .concat(mode.synthetic ? documentTrackingFiles : [])
+    .concat(mode.synthetic ? fileLibraryFiles : [])
     .concat(mode.synthetic ? notificationDispatchFiles : [])
     .concat(mode.synthetic ? notificationRepositoryFiles : [])
     .concat(mode.synthetic ? notificationDeviceFiles : [])
@@ -386,6 +388,7 @@ try {
   let nonconformityHTTPProbe;
   let nonconformityDetailProbe;
   let documentTrackingProbe;
+  let fileLibraryProbe;
   let notificationDispatchProbe;
   let notificationRepositoryProbe;
   let notebookAPIProbe;
@@ -453,6 +456,10 @@ try {
     // row this one inserted first would fail that constraint.
     stage = 'document-tracking';
     documentTrackingProbe=await beginDocumentTrackingProbe({synthetic:true,sql,request:personnelHTTPProbe.request,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
+    // Newer still than the tracker, so it follows it for the same reason: an
+    // older slice re-adds the rollout CHECK with its own feature list.
+    stage = 'file-library';
+    fileLibraryProbe=await beginFileLibraryProbe({synthetic:true,sql,request:personnelHTTPProbe.request,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'integrated-rehearsal';
     rehearsalProbe=await beginIntegratedRehearsalProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
   }
@@ -517,6 +524,7 @@ try {
   if (nonconformityHTTPProbe) report.nonconformity_http = nonconformityHTTPProbe.afterLogout();
   if (nonconformityDetailProbe) report.nonconformity_detail = nonconformityDetailProbe.afterLogout();
   if (documentTrackingProbe) report.document_tracking = documentTrackingProbe.afterLogout();
+  if (fileLibraryProbe) report.file_library = fileLibraryProbe.afterLogout();
   if (notificationDispatchProbe) report.notification_dispatch = notificationDispatchProbe.afterLogout();
   if (notificationRepositoryProbe) report.notification_repository = notificationRepositoryProbe.afterLogout();
   if (notebookAPIProbe) report.notebook_api = notebookAPIProbe.afterLogout();
