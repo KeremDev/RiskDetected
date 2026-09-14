@@ -28,18 +28,62 @@ struct NovaAnalysisFocusOption: Identifiable, Equatable {
     let lockLabel: String
 }
 
-/// Photo → company → sector → focus, in that order. Every step can be revisited
-/// with the back control; nothing is decided for the expert without being shown.
-struct NovaAnalysisIntakeScreen: View {
+/// Company → sector → focus, asked in one centred popup once the photos are
+/// already chosen. Every step can be revisited; nothing is decided unseen.
+struct NovaAnalysisIntakePopup: View {
     let companies: [NovaAnalysisCompanyOption]
     let sectors: [NovaAnalysisSectorOption]
     let focuses: [NovaAnalysisFocusOption]
     @Binding var draft: NovaAnalysisIntakeDraft
     var isStarting = false
-    let onCancel: () -> Void
     let onStart: () -> Void
     @State private var step: NovaAnalysisIntakeStep = .owner
+    @State private var query = ""
     @Environment(\.colorScheme) private var scheme
+
+    private var catalog: [NovaSectorCandidate] {
+        sectors.map { .init(id: $0.id, labels: [$0.label]) }
+    }
+    private var matches: [NovaAnalysisCompanyOption] {
+        let needle = NovaSectorMatch.normalize(query)
+        guard !needle.isEmpty else { return companies }
+        return companies.filter { NovaSectorMatch.normalize($0.name).contains(needle) }
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                header
+                steps
+                switch step {
+                case .owner: ownerStep
+                case .sector: sectorStep
+                case .focus: focusStep
+                }
+                footer
+            }.padding(20).novaPopupContentSize()
+        }.background(NovaKeyboardDismissArea())
+    }
+
+    private var header: some View {
+        HStack(alignment: .top, spacing: 10) {
+            if step != .owner {
+                Button { back() } label: {
+                    Image(systemName: "chevron.left").font(.system(size: 14, weight: .semibold))
+                        .frame(width: 40, height: 40)
+                        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 13))
+                }.buttonStyle(.plain).disabled(isStarting)
+                    .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.shell.back", table: .localizable, fallback: "Geri")))
+                    .accessibilityIdentifier("analysis.intake.back")
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                NovaText(text: stepTitle, style: .sheetTitle)
+                NovaText(text: String(format: RDLocalization.string("localizable.nova.intake.photo.count.short", table: .localizable,
+                    fallback: "%d fotoğraf seçildi"), draft.photoCount), style: .metaQuiet)
+            }
+            Spacer(minLength: 0)
+        }
+    }
 
     private var stepTitle: String {
         switch step {
@@ -56,38 +100,6 @@ struct NovaAnalysisIntakeScreen: View {
             fallback: "Risk öncelikleri ve öneriler seçtiğiniz sektöre göre uyarlanır.")
         case .focus: return RDLocalization.string("localizable.nova.intake.hint.focus", table: .localizable,
             fallback: "En az bir odak seçin. Odak sayısı analizin kapsamını belirler.")
-        }
-    }
-
-    var body: some View {
-        NovaPageSurface {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    header
-                    NovaHelpHint(text: stepHint)
-                    switch step {
-                    case .owner: ownerStep
-                    case .sector: sectorStep
-                    case .focus: focusStep
-                    }
-                    footer
-                }.padding(20).padding(.bottom, novaTabBarInset)
-            }
-        }
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                NovaBackButton(isEnabled: !isStarting) { back() }
-                VStack(alignment: .leading, spacing: 2) {
-                    NovaText(text: RDLocalization.string("localizable.nova.intake.title", table: .localizable, fallback: "Fotoğraf Analizi"), style: .screenTitle)
-                    NovaText(text: String(format: RDLocalization.string("localizable.nova.intake.photo.count", table: .localizable,
-                        fallback: "%d fotoğraf · %@"), draft.photoCount, stepTitle), style: .metaQuiet)
-                }
-                Spacer(minLength: 0)
-            }
-            steps
         }
     }
 
@@ -112,27 +124,40 @@ struct NovaAnalysisIntakeScreen: View {
     // MARK: company
 
     @ViewBuilder private var ownerStep: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ownerRow(title: RDLocalization.string("localizable.nova.intake.owner.none", table: .localizable, fallback: "Firmasız devam et"),
-                     detail: RDLocalization.string("localizable.nova.intake.owner.none.detail", table: .localizable,
-                        fallback: "Analiz hesabınızda kalır; sonradan bir firmaya atayabilirsiniz."),
-                     symbol: "person", isSelected: draft.owner == .unassigned,
-                     identifier: "analysis.intake.owner.none") {
-                draft.choose(owner: .unassigned, catalog: catalog)
+        NovaHelpHint(text: stepHint)
+        if companies.count > 4 {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass").font(.system(size: 13))
+                    .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme)).accessibilityHidden(true)
+                TextField(RDLocalization.string("localizable.nova.intake.owner.search", table: .localizable, fallback: "Firma ara"), text: $query)
+                    .font(.custom("PlusJakartaSans-Medium", size: 14)).submitLabel(.done)
+                    .accessibilityIdentifier("analysis.intake.owner.search")
+            }.padding(.horizontal, 12).frame(minHeight: 42)
+                .background(NovaColorToken.surface.color(in: scheme), in: Capsule())
+        }
+        ownerRow(title: RDLocalization.string("localizable.nova.intake.owner.none", table: .localizable, fallback: "Firmasız devam et"),
+                 detail: RDLocalization.string("localizable.nova.intake.owner.none.detail", table: .localizable,
+                    fallback: "Analiz hesabınızda kalır; sonradan bir firmaya atayabilirsiniz."),
+                 symbol: "person", isSelected: draft.owner == .unassigned,
+                 identifier: "analysis.intake.owner.none") {
+            draft.choose(owner: .unassigned, catalog: catalog)
+        }
+        if companies.isEmpty {
+            NovaCard(padding: 14) {
+                NovaText(text: RDLocalization.string("localizable.nova.intake.owner.empty", table: .localizable,
+                    fallback: "Bu hesapta pilot firma yok. Firmasız devam edebilirsiniz."), style: .metaQuiet)
             }
-            if companies.isEmpty {
-                NovaCard(padding: 16) {
-                    NovaText(text: RDLocalization.string("localizable.nova.intake.owner.empty", table: .localizable,
-                        fallback: "Bu hesapta pilot firma yok. Firmasız devam edebilirsiniz."), style: .metaQuiet)
-                }
+        } else if matches.isEmpty {
+            NovaCard(padding: 14) {
+                NovaText(text: RDLocalization.string("localizable.nova.intake.owner.no.match", table: .localizable,
+                    fallback: "Aramayla eşleşen firma yok."), style: .metaQuiet)
             }
-            ForEach(companies) { company in
-                ownerRow(title: company.name, detail: companyDetail(company), symbol: "building.2",
-                         isSelected: draft.owner.companyID == company.id,
-                         identifier: "analysis.intake.owner.\(company.id.uuidString.lowercased())") {
-                    draft.choose(owner: .company(id: company.id, name: company.name, sector: company.sector),
-                                 catalog: catalog)
-                }
+        }
+        ForEach(matches) { company in
+            ownerRow(title: company.name, detail: companyDetail(company), symbol: "building.2",
+                     isSelected: draft.owner.companyID == company.id,
+                     identifier: "analysis.intake.owner.\(company.id.uuidString.lowercased())") {
+                draft.choose(owner: .company(id: company.id, name: company.name, sector: company.sector), catalog: catalog)
             }
         }
     }
@@ -151,9 +176,9 @@ struct NovaAnalysisIntakeScreen: View {
     private func ownerRow(title: String, detail: String, symbol: String, isSelected: Bool,
                           identifier: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            NovaCard(padding: 14, border: isSelected ? NovaColorToken.accentInk.color(in: scheme) : .clear) {
+            NovaCard(padding: 12, border: isSelected ? NovaColorToken.accentInk.color(in: scheme) : .clear) {
                 HStack(spacing: 10) {
-                    NovaIcon(symbol: symbol, size: 18)
+                    NovaIcon(symbol: symbol, size: 17)
                         .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
                     VStack(alignment: .leading, spacing: 2) {
                         NovaText(text: title, style: .cardTitle)
@@ -169,45 +194,38 @@ struct NovaAnalysisIntakeScreen: View {
             .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    private var catalog: [NovaSectorCandidate] {
-        sectors.map { .init(id: $0.id, labels: [$0.label]) }
-    }
-
     // MARK: sector
 
     @ViewBuilder private var sectorStep: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // The note only stands while the pre-selection is still untouched.
-            if draft.sectorCameFromCompany, let name = draft.owner.companyName {
-                NovaCard(padding: 12, tint: NovaColorToken.statusInfoBg.color(in: scheme)) {
-                    HStack(alignment: .top, spacing: 8) {
-                        NovaIcon(symbol: "sparkle", size: 15)
-                            .foregroundStyle(NovaColorToken.statusInfoInk.color(in: scheme))
-                        NovaText(text: String(format: RDLocalization.string("localizable.nova.intake.sector.auto", table: .localizable,
-                            fallback: "%@ firmasının sektörü otomatik seçildi. İsterseniz değiştirebilirsiniz."), name),
-                            style: .metaQuiet, color: NovaColorToken.statusInfoInk.color(in: scheme))
-                    }.frame(maxWidth: .infinity, alignment: .leading)
-                }.accessibilityIdentifier("analysis.intake.sector.auto")
-            }
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2), spacing: 8) {
-                ForEach(sectors) { sector in
-                    sectorChip(sector)
-                }
-            }
+        NovaHelpHint(text: stepHint)
+        // The note only stands while the pre-selection is still untouched.
+        if draft.sectorCameFromCompany, let name = draft.owner.companyName {
+            NovaCard(padding: 11, tint: NovaColorToken.statusInfoBg.color(in: scheme)) {
+                HStack(alignment: .top, spacing: 8) {
+                    NovaIcon(symbol: "sparkle", size: 14)
+                        .foregroundStyle(NovaColorToken.statusInfoInk.color(in: scheme))
+                    NovaText(text: String(format: RDLocalization.string("localizable.nova.intake.sector.auto", table: .localizable,
+                        fallback: "%@ firmasının sektörü otomatik seçildi. İsterseniz değiştirebilirsiniz."), name),
+                        style: .metaQuiet, color: NovaColorToken.statusInfoInk.color(in: scheme))
+                }.frame(maxWidth: .infinity, alignment: .leading)
+            }.accessibilityIdentifier("analysis.intake.sector.auto")
+        }
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 7), count: 2), spacing: 7) {
+            ForEach(sectors) { sector in sectorChip(sector) }
         }
     }
 
     private func sectorChip(_ sector: NovaAnalysisSectorOption) -> some View {
         let isSelected = draft.sectorID == sector.id
         return Button { draft.choose(sector: sector.id) } label: {
-            NovaCard(padding: 12, border: isSelected ? NovaColorToken.accentInk.color(in: scheme) : .clear,
+            NovaCard(padding: 10, border: isSelected ? NovaColorToken.accentInk.color(in: scheme) : .clear,
                      tint: isSelected ? NovaColorToken.statusSuccessBg.color(in: scheme) : nil) {
                 VStack(alignment: .leading, spacing: 4) {
-                    NovaIcon(symbol: sector.symbol, size: 17)
+                    NovaIcon(symbol: sector.symbol, size: 16)
                         .foregroundStyle(isSelected ? NovaColorToken.accentInk.color(in: scheme)
                                                     : NovaColorToken.textSecondary.color(in: scheme))
                     NovaText(text: sector.label, style: .cardTitle)
-                }.frame(maxWidth: .infinity, minHeight: 54, alignment: .topLeading)
+                }.frame(maxWidth: .infinity, minHeight: 50, alignment: .topLeading)
             }
         }.buttonStyle(.plain)
             .accessibilityIdentifier("analysis.intake.sector.\(sector.id)")
@@ -217,11 +235,8 @@ struct NovaAnalysisIntakeScreen: View {
     // MARK: focus
 
     @ViewBuilder private var focusStep: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ForEach(focuses) { focus in
-                focusRow(focus)
-            }
-        }
+        NovaHelpHint(text: stepHint)
+        ForEach(focuses) { focus in focusRow(focus) }
     }
 
     private func focusRow(_ focus: NovaAnalysisFocusOption) -> some View {
@@ -230,16 +245,16 @@ struct NovaAnalysisIntakeScreen: View {
             guard !focus.isLocked else { return }
             draft.toggle(focus: focus.id)
         } label: {
-            NovaCard(padding: 12, border: isSelected ? NovaColorToken.accentInk.color(in: scheme) : .clear) {
-                HStack(alignment: .top, spacing: 10) {
-                    NovaIcon(symbol: focus.symbol, size: 18)
+            NovaCard(padding: 11, border: isSelected ? NovaColorToken.accentInk.color(in: scheme) : .clear) {
+                HStack(alignment: .top, spacing: 9) {
+                    NovaIcon(symbol: focus.symbol, size: 17)
                         .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 6) {
                             NovaText(text: focus.title, style: .cardTitle)
                             if focus.isLocked { NovaStatusPill(label: focus.lockLabel, status: .neutral, showsDot: false) }
                         }
-                        NovaText(text: focus.detail, style: .metaQuiet)
+                        NovaText(text: focus.detail, style: .metaQuiet).lineLimit(2)
                     }
                     Spacer(minLength: 0)
                     Image(systemName: isSelected ? "checkmark.square.fill" : "square")
@@ -266,7 +281,7 @@ struct NovaAnalysisIntakeScreen: View {
                 symbol: "chevron.right", isEnabled: draft.sectorID != nil) { step = .focus }
                 .accessibilityIdentifier("analysis.intake.continue.sector")
         case .focus:
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 7) {
                 NovaButton(label: RDLocalization.string("localizable.nova.intake.start", table: .localizable, fallback: "Analizi başlat"),
                     symbol: "sparkles", isEnabled: draft.isReady, isLoading: isStarting) { onStart() }
                     .accessibilityIdentifier("analysis.intake.start")
@@ -280,7 +295,7 @@ struct NovaAnalysisIntakeScreen: View {
 
     private func back() {
         switch step {
-        case .owner: onCancel()
+        case .owner: break
         case .sector: step = .owner
         case .focus: step = .sector
         }

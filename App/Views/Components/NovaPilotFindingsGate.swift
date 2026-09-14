@@ -1,68 +1,62 @@
 import SwiftUI
-import PhotosUI
 
-/// The Uygunsuzluklar tab, end to end: a photo analysis that may or may not
-/// belong to a company, its detail screen, the records it produces, and the
-/// hand-entered form. The analysis engine, the report renderer and the
-/// nonconformity boundary are the ones the product already ships.
+/// The Uygunsuzluklar tab, end to end: the record board across companies, one
+/// record's own page, a photo analysis that may or may not belong to a company,
+/// its detail page, and the hand-entered form. The analysis engine, the report
+/// renderer and the nonconformity boundary are the ones already shipping.
 struct NovaPilotFindingsGate: View {
     let identity: NovaSessionIdentity
     /// The company workspace currently in scope, or nil when none is selected.
     let scope: NovaPersonnelScope?
     let canWrite: Bool
     /// Selecting a company here is the same selection the Firmalar tab uses;
-    /// the workspace follows the analysis rather than keeping two scopes.
+    /// the workspace follows the record rather than keeping two scopes.
     let select: (UUID?) -> Void
     let currentScope: () -> NovaPersonnelScope?
-    let companyName: String?
-    var startOnNew = false
+    var startMode: NovaFindingsStart = .board
     let onCompanies: () -> Void
     let onHome: () -> Void
     @EnvironmentObject private var app: AppState
     @Environment(\.colorScheme) private var scheme
 
     private enum Route: Equatable {
-        case hub, chooser, intake, manual, analyses
+        case board, chooser, photo, manual, analyses
+        case record(NovaNonconformityEntry)
         case detail(UUID)
     }
-    @State private var route: Route = .hub
+    @State private var route: Route = .board
     @State private var started = false
-    @State private var rows: [NovaNonconformityRow] = []
-    @State private var filter: NovaNonconformityState?
-    @State private var kindFilter: NovaNonconformityRecordKind?
-    @State private var listError: String?
-    @State private var listLoading = false
-    @State private var listRevision = UUID()
-    @State private var picking = false
-    @State private var photos: [PhotosPickerItem] = []
+    @State private var companies: [NovaAnalysisCompanyOption] = []
     @State private var images: [UIImage] = []
     @State private var draft = NovaAnalysisIntakeDraft()
-    @State private var companies: [NovaAnalysisCompanyOption] = []
+    @State private var intakeOpen = false
     @State private var job: NovaPhotoBridgeJob?
     @State private var manualWorkplaces: [NovaNonconformityWorkplace] = []
     @State private var notice: String?
+    @State private var boardRevision = UUID()
 
     private var service: NovaNonconformityService { .live(currentScope: currentScope) }
+    private var today: String { NovaAnalysisWorkspace.todayISO() }
 
     var body: some View {
         Group {
             switch route {
-            case .hub: hub
+            case .board: board
             case .chooser: chooser
-            case .intake: intake
+            case .photo: photo
             case .manual: manual
             case .analyses: analyses
+            case .record(let entry): record(entry)
             case .detail(let id): detail(id)
             }
         }
-        .photosPicker(isPresented: $picking, selection: $photos, maxSelectionCount: 3, matching: .images)
-        .onChange(of: photos) { _ in Task { await loadPhotos() } }
         .fullScreenCover(item: $job) { work in
             AnalyzingView(isPresented: Binding(get: { job != nil }, set: { if !$0 { job = nil } }),
                 asyncWork: work.work, previewImage: work.preview, photoCount: work.photoCount,
                 onComplete: { bundle in
                     job = nil
                     guard let bundle else { return }
+                    images = []
                     route = .detail(bundle.analysis.id)
                 },
                 onError: { message in job = nil; notice = message })
@@ -70,148 +64,79 @@ struct NovaPilotFindingsGate: View {
         .alert(notice ?? "", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
             Button(RDLocalization.string("localizable.nova.bridge.alert.ok", table: .localizable, fallback: "Tamam")) { notice = nil }
         }
-        .task(id: ListKey(state: filter?.rawValue, revision: listRevision, company: scope?.companyID)) { await loadList() }
-        .onAppear { if startOnNew && !started { started = true; route = .chooser } }
-    }
-
-    private struct ListKey: Equatable { let state: String?; let revision: UUID; let company: UUID? }
-
-    // MARK: hub
-
-    private var visibleRows: [NovaNonconformityRow] {
-        guard let kindFilter else { return rows }
-        return rows.filter { $0.kind == kindFilter }
-    }
-
-    private var hub: some View {
-        NovaPageSurface {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    HStack(spacing: 10) {
-                        NovaBackButton { onHome() }
-                        NovaText(text: RDLocalization.string("localizable.nova.navigation.uygunsuzluklar", table: .localizable, fallback: "Uygunsuzluklar"), style: .screenTitle)
-                        Spacer(minLength: 0)
-                    }
-                    NovaHelpHint(text: RDLocalization.string("localizable.nova.findings.hint", table: .localizable,
-                        fallback: "Fotoğraftan analiz firmasız da yapılabilir; kayıt açmak için bir firma gerekir."))
-                    NovaButton(label: RDLocalization.string("localizable.nova.nonconformity.new", table: .localizable, fallback: "Yeni Uygunsuzluk"),
-                        symbol: "plus", isEnabled: canWrite || scope == nil) { route = .chooser }
-                        .accessibilityIdentifier("nonconformity.new")
-                    NovaButton(label: RDLocalization.string("localizable.nova.analysis.list.title", table: .localizable, fallback: "Analizlerim"),
-                        symbol: "list.bullet", variant: .surface) { route = .analyses }
-                        .accessibilityIdentifier("nonconformity.analyses")
-                    if scope == nil {
-                        NovaCard(padding: 16) {
-                            VStack(alignment: .leading, spacing: 10) {
-                                NovaText(text: RDLocalization.string("localizable.nova.pilot.nonconformity.needs.company", table: .localizable,
-                                    fallback: "Uygunsuzluk kaydı bir firmaya bağlıdır. Önce Firmalar'dan bir firma seçin."), style: .metaQuiet)
-                                NovaButton(label: NovaDestination.companies.title, symbol: "building.2", variant: .surface) { onCompanies() }
-                                    .accessibilityIdentifier("nonconformity.pick.company")
-                            }.frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    } else {
-                        listFilters
-                        listBody
-                    }
-                }.padding(20).padding(.bottom, novaTabBarInset)
+        .task { await loadCompanies() }
+        .onAppear {
+            guard !started else { return }
+            started = true
+            switch startMode {
+            case .board: break
+            case .chooser: route = .chooser
+            case .photo: route = .photo
             }
         }
     }
 
-    private var listFilters: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    stateChip(nil, RDLocalization.string("localizable.nova.nonconformity.filter.all", table: .localizable, fallback: "Tümü"))
-                    stateChip(.draft, RDLocalization.string("localizable.nova.nonconformity.filter.draft", table: .localizable, fallback: "Taslak"))
-                    stateChip(.open, RDLocalization.string("localizable.nova.nonconformity.filter.open", table: .localizable, fallback: "Açık"))
-                    stateChip(.closed, RDLocalization.string("localizable.nova.nonconformity.filter.closed", table: .localizable, fallback: "Kapalı"))
-                }
-            }
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    kindChip(nil, RDLocalization.string("localizable.nova.nonconformity.filter.all", table: .localizable, fallback: "Tümü"))
-                    kindChip(.nonconformity, NovaNonconformityWords.recordKind(.nonconformity))
-                    kindChip(.improvement, NovaNonconformityWords.recordKind(.improvement))
-                }
-            }
+    private func loadCompanies() async {
+        companies = (try? await NovaAnalysisWorkspace.companyOptions(identity: identity)) ?? []
+    }
+
+    // MARK: board
+
+    private var board: some View {
+        NovaNonconformityListScreen(
+            client: .init(
+                load: { try await NovaAnalysisWorkspace.board(identity: identity) },
+                open: { entry in select(entry.companyID); route = .record(entry) },
+                create: canWriteSomewhere ? { route = .chooser } : nil),
+            companies: companies, today: today, onBack: onHome)
+            .id(boardRevision)
+    }
+
+    /// The board lists every company, so the create control is offered as long
+    /// as the account can write anywhere; the server checks the company itself.
+    private var canWriteSomewhere: Bool { canWrite || !companies.isEmpty }
+
+    private func record(_ entry: NovaNonconformityEntry) -> some View {
+        NovaNonconformityRecordScreen(entry: entry, client: recordClient(entry),
+            onBack: { route = .board; boardRevision = UUID() }, canWrite: canWrite)
+    }
+
+    private func recordClient(_ entry: NovaNonconformityEntry) -> NovaNonconformityRecordClient {
+        func scoped() async throws -> NovaPersonnelScope {
+            try await waitForScope(entry.companyID)
         }
+        return .init(
+            load: { try await service.detail(scoped(), id: entry.id) },
+            transition: { state, reason, assignee in
+                let current = try await service.detail(scoped(), id: entry.id)
+                return try await service.transition(try await scoped(), id: entry.id, to: state,
+                    expectedVersion: current.version, reason: reason, assignee: assignee)
+            },
+            addAction: { description, assignee, due in
+                try await service.addAction(try await scoped(), id: entry.id, description: description,
+                    assignee: assignee, dueOn: due)
+            },
+            verify: { accepted, note in
+                try await service.verify(try await scoped(), id: entry.id, accepted: accepted, note: note)
+            },
+            saveDetail: { draft in
+                try await service.setDetail(try await scoped(), id: entry.id, description: draft.description,
+                    measure: draft.measure, legislation: draft.legislation, responsible: draft.responsible,
+                    score: draft.score)
+            })
     }
 
-    private func stateChip(_ value: NovaNonconformityState?, _ title: String) -> some View {
-        chip(title: title, isSelected: filter == value, identifier: "nonconformity.filter.\(value?.rawValue ?? "all")") { filter = value }
-    }
-    private func kindChip(_ value: NovaNonconformityRecordKind?, _ title: String) -> some View {
-        chip(title: title, isSelected: kindFilter == value, identifier: "nonconformity.kind.\(value?.rawValue ?? "all")") { kindFilter = value }
-    }
-    private func chip(title: String, isSelected: Bool, identifier: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            NovaText(text: title, style: .meta,
-                color: isSelected ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.textSecondary.color(in: scheme))
-                .padding(.horizontal, 12).frame(minHeight: 40)
-                .background(isSelected ? NovaColorToken.statusSuccessBg.color(in: scheme) : .clear, in: Capsule())
-        }.buttonStyle(.plain).accessibilityIdentifier(identifier)
-            .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-
-    @ViewBuilder private var listBody: some View {
-        if let listError {
-            NovaCard(padding: 16) { NovaText(text: listError, style: .metaQuiet) }
-        } else if listLoading && rows.isEmpty {
-            NovaCard(padding: 16) {
-                NovaText(text: RDLocalization.string("localizable.nova.nonconformity.loading", table: .localizable, fallback: "Kayıtlar yükleniyor"), style: .metaQuiet)
-            }
-        } else if visibleRows.isEmpty {
-            NovaCard(padding: 16) {
-                NovaText(text: RDLocalization.string("localizable.nova.nonconformity.empty", table: .localizable, fallback: "Henüz uygunsuzluk kaydı yok."), style: .metaQuiet)
-            }
-        } else {
-            ForEach(visibleRows) { row in card(row) }
+    /// Selecting a company runs the workspace availability check again, so the
+    /// scope arrives a moment later. Waiting for it is waiting for a real
+    /// verification, not working around one.
+    private func waitForScope(_ company: UUID) async throws -> NovaPersonnelScope {
+        if let ready = currentScope(), ready.companyID == company { return ready }
+        select(company)
+        for _ in 0..<40 {
+            try await Task.sleep(nanoseconds: 100_000_000)
+            if let ready = currentScope(), ready.companyID == company { return ready }
         }
-    }
-
-    private func card(_ row: NovaNonconformityRow) -> some View {
-        NovaCard(padding: 14) {
-            VStack(alignment: .leading, spacing: 6) {
-                NovaText(text: row.title, style: .cardTitle)
-                HStack(spacing: 8) {
-                    NovaStatusPill(label: NovaNonconformityWords.band(row.severity), status: NovaNonconformityWords.tone(row.severity))
-                    if row.kind == .improvement {
-                        NovaStatusPill(label: NovaNonconformityWords.recordKind(.improvement), status: .info, showsDot: false)
-                    }
-                    NovaText(text: NovaNonconformityWords.state(row.state), style: .metaQuiet)
-                }
-                if let band = row.risk_band {
-                    NovaText(text: String(format: RDLocalization.string("localizable.nova.nonconformity.scored", table: .localizable,
-                        fallback: "Skorlandı · %@"), NovaNonconformityWords.band(band)), style: .metaQuiet)
-                }
-                if row.camefromFinding {
-                    NovaText(text: RDLocalization.string("localizable.nova.nonconformity.from.analysis", table: .localizable,
-                        fallback: "Fotoğraf analizinden geldi"), style: .metaQuiet)
-                } else if row.camefromExpertItem {
-                    NovaText(text: RDLocalization.string("localizable.nova.nonconformity.from.expert", table: .localizable,
-                        fallback: "Uzman görüşü maddesinden geldi"), style: .metaQuiet)
-                }
-                NovaText(text: row.opened_on, style: .metaQuiet)
-            }.frame(maxWidth: .infinity, alignment: .leading)
-        }.accessibilityIdentifier("nonconformity.row.\(row.id.uuidString.lowercased())")
-    }
-
-    private func loadList() async {
-        guard let scope else { rows = []; return }
-        listLoading = true; listError = nil
-        do {
-            let loaded = try await service.list(scope, state: filter)
-            try Task.checkCancellation()
-            rows = loaded
-        } catch is CancellationError {
-        } catch let failure as NovaNonconformityFailure {
-            listError = NovaNonconformityWords.failure(failure)
-        } catch {
-            listError = RDLocalization.string("localizable.nova.nonconformity.error.list", table: .localizable,
-                fallback: "Uygunsuzluklar yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin.")
-        }
-        listLoading = false
+        throw NovaNonconformityFailure.denied
     }
 
     // MARK: chooser
@@ -221,7 +146,7 @@ struct NovaPilotFindingsGate: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack(spacing: 10) {
-                        NovaBackButton { route = .hub }
+                        NovaBackButton { route = .board }
                         NovaText(text: RDLocalization.string("localizable.nova.navigation.yeni.uygunsuzluk.0f9172a3", table: .localizable, fallback: "Yeni Uygunsuzluk"), style: .screenTitle)
                         Spacer(minLength: 0)
                     }
@@ -234,7 +159,7 @@ struct NovaPilotFindingsGate: View {
                             NovaText(text: RDLocalization.string("localizable.nova.nonconformity.choose.photo.detail", table: .localizable,
                                 fallback: "Mevcut analiz motoru çalışır; seçtiğiniz bulgulardan uygunsuzluk açılır."), style: .metaQuiet)
                             NovaButton(label: RDLocalization.string("localizable.nova.nonconformity.choose.photo.action", table: .localizable, fallback: "Fotoğraf seç"),
-                                symbol: "camera") { photos = []; images = []; picking = true }
+                                symbol: "camera") { route = .photo }
                                 .accessibilityIdentifier("nonconformity.choose.photo")
                         }.frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -250,20 +175,39 @@ struct NovaPilotFindingsGate: View {
                             if scope == nil {
                                 NovaText(text: RDLocalization.string("localizable.nova.manual.needs.company", table: .localizable,
                                     fallback: "Elle kayıt için önce bir firma seçmelisiniz."), style: .metaQuiet)
+                                NovaButton(label: NovaDestination.companies.title, symbol: "building.2", variant: .surface) { onCompanies() }
+                                    .accessibilityIdentifier("nonconformity.pick.company")
                             }
                         }.frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    NovaButton(label: RDLocalization.string("localizable.nova.analysis.list.title", table: .localizable, fallback: "Analizlerim"),
+                        symbol: "list.bullet", variant: .surface) { route = .analyses }
+                        .accessibilityIdentifier("nonconformity.analyses")
                 }.padding(20).padding(.bottom, novaTabBarInset)
             }
         }
     }
 
-    // MARK: intake
+    // MARK: photo
 
-    private var intake: some View {
-        NovaAnalysisIntakeScreen(companies: companies, sectors: Self.sectorOptions,
-            focuses: focusOptions, draft: $draft, isStarting: job != nil,
-            onCancel: { route = .chooser }, onStart: { start() })
+    private var photo: some View {
+        NovaPhotoIntakeScreen(images: $images, onStart: {
+            draft = NovaAnalysisIntakeDraft()
+            draft.photoCount = images.count
+            // The workspace already has a company selected: offer it as the
+            // answer rather than making the expert pick it again.
+            if let current = scope?.companyID, let match = companies.first(where: { $0.id == current }) {
+                draft.choose(owner: .company(id: match.id, name: match.name, sector: match.sector),
+                    catalog: Self.sectorOptions.map { .init(id: $0.id, labels: [$0.label]) })
+            }
+            intakeOpen = true
+        }, onBack: { route = .board })
+        .fullScreenCover(isPresented: $intakeOpen) {
+            NovaPopup {
+                NovaAnalysisIntakePopup(companies: companies, sectors: Self.sectorOptions, focuses: focusOptions,
+                    draft: $draft, isStarting: job != nil, onStart: { intakeOpen = false; start() })
+            }
+        }
     }
 
     static var sectorOptions: [NovaAnalysisSectorOption] {
@@ -278,35 +222,6 @@ struct NovaPilotFindingsGate: View {
                   isLocked: !app.currentTier.includes(canvas.minTier),
                   lockLabel: canvas.minTier.title)
         }
-    }
-
-    private func loadPhotos() async {
-        picking = false
-        let items = photos
-        guard !items.isEmpty else { return }
-        var loaded: [UIImage] = []
-        for item in items {
-            if let data = try? await item.loadTransferable(type: Data.self), let image = UIImage(data: data) {
-                loaded.append(image)
-            }
-        }
-        photos = []
-        guard !loaded.isEmpty else {
-            notice = RDLocalization.string("localizable.nova.bridge.photo.unreadable", table: .localizable,
-                fallback: "Seçilen fotoğraflar okunamadı. Tekrar deneyin.")
-            return
-        }
-        images = loaded
-        draft = NovaAnalysisIntakeDraft()
-        draft.photoCount = loaded.count
-        companies = (try? await NovaAnalysisWorkspace.companyOptions(identity: identity)) ?? []
-        // The workspace already has a company selected: offer it as the answer
-        // rather than making the expert pick it again.
-        if let current = scope?.companyID, let match = companies.first(where: { $0.id == current }) {
-            draft.choose(owner: .company(id: match.id, name: match.name, sector: match.sector),
-                catalog: Self.sectorOptions.map { .init(id: $0.id, labels: [$0.label]) })
-        }
-        route = .intake
     }
 
     /// Hands the existing pipeline the work. The company, sector and focus are
@@ -341,14 +256,18 @@ struct NovaPilotFindingsGate: View {
     // MARK: analyses and detail
 
     private var analyses: some View {
-        NovaAnalysisListScreen(load: { try await NovaAnalysisWorkspace.summaries(identity: identity) },
-            onOpen: { route = .detail($0) }, onBack: { route = .hub },
-            onNewPhotoAnalysis: { photos = []; images = []; picking = true })
+        NovaAnalysisListScreen(load: {
+                try await NovaAnalysisWorkspace.summaries(identity: identity,
+                    method: app.profile?.preferredMethod?.domain ?? .fineKinney)
+            },
+            thumbnail: { await NovaAnalysisWorkspace.thumbnail(analysisID: $0) },
+            onOpen: { route = .detail($0) }, onBack: { route = .board },
+            onNewPhotoAnalysis: { images = []; route = .photo })
     }
 
     private func detail(_ analysisID: UUID) -> some View {
         NovaAnalysisDetailScreen(analysisID: analysisID, client: detailClient(analysisID),
-            onBack: { route = .hub; listRevision = UUID() }, canWrite: true)
+            onBack: { route = .board; boardRevision = UUID() }, canWrite: true)
     }
 
     private func detailClient(_ analysisID: UUID) -> NovaAnalysisDetailClient {
@@ -356,19 +275,22 @@ struct NovaPilotFindingsGate: View {
         return .init(
             load: { try await NovaAnalysisWorkspace.detail(analysisID: analysisID, identity: identity,
                 method: method, methodLabel: method.label) },
+            photos: { await NovaAnalysisWorkspace.photos(analysisID: analysisID) },
             companies: { try await NovaAnalysisWorkspace.companyOptions(identity: identity) },
             assign: { company in
                 try await NovaAnalysisWorkspace.assign(analysisID: analysisID, companyID: company)
                 select(company)
             },
             workplaces: { company in
-                guard let current = currentScope(), current.companyID == company else {
-                    throw NovaNonconformityFailure.denied
-                }
-                return try await service.workplaces(current)
+                try await service.workplaces(try await waitForScope(company))
             },
             file: { request in await file(request) },
             edit: { try await NovaAnalysisWorkspace.edit($0) },
+            remove: { try await NovaAnalysisWorkspace.remove(analysisID: analysisID, findingID: $0.id) },
+            react: { item, section, reaction in
+                try await NovaAnalysisWorkspace.react(analysisID: analysisID, itemID: item.id,
+                    section: section, reaction: reaction)
+            },
             report: { request in
                 try await NovaAnalysisWorkspace.report(request, profile: app.profile, userID: identity.userID,
                     company: nil)
@@ -394,7 +316,7 @@ struct NovaPilotFindingsGate: View {
         }
         do {
             let result = try await service.open(current, intent: intent, mutationID: request.item.id)
-            listRevision = UUID()
+            boardRevision = UUID()
             return result.alreadyOpen ? .alreadyOpen : .opened
         } catch let failure as NovaNonconformityFailure {
             return .failed(NovaNonconformityWords.failure(failure))
@@ -419,7 +341,7 @@ struct NovaPilotFindingsGate: View {
 
     private var manual: some View {
         NovaManualNonconformityScreen(workplaces: manualWorkplaces, save: { draft in await saveManual(draft) },
-            onBack: { route = .hub })
+            onBack: { route = .board })
     }
 
     /// Returns nil when the record was opened, and the reason otherwise.
@@ -436,8 +358,8 @@ struct NovaPilotFindingsGate: View {
         intent.score = value.score
         do {
             _ = try await service.open(scope, intent: intent)
-            listRevision = UUID()
-            route = .hub
+            boardRevision = UUID()
+            route = .board
             return nil
         } catch let failure as NovaNonconformityFailure {
             return NovaNonconformityWords.failure(failure)
@@ -447,3 +369,7 @@ struct NovaPilotFindingsGate: View {
         }
     }
 }
+
+/// Where the Uygunsuzluklar surface opens. The home card goes straight to the
+/// picture; the drawer entry asks how to start.
+enum NovaFindingsStart: Equatable { case board, chooser, photo }

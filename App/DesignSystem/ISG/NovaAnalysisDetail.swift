@@ -55,19 +55,31 @@ struct NovaAnalysisDetailData: Equatable {
     /// The server said the section projection is not available for this
     /// analysis. The screen says so instead of showing four empty sections.
     let isProjectionMissing: Bool
+    /// How many photos the analysis was run on. The pictures themselves are
+    /// fetched separately so this model stays free of image data.
+    var photoCount: Int = 0
+    /// The sector the analysis actually ran under, when one was chosen.
+    var sectorLabel: String?
+    /// The focuses the analysis ran with, in the order they were chosen.
+    var focusLabels: [String] = []
 
     func section(_ kind: NovaAnalysisSectionKind) -> NovaAnalysisSection? {
         sections.first { $0.kind == kind }
     }
 }
 
-/// One analysis in the account's list.
+/// One analysis in the account's list, with the labels that tell it apart.
 struct NovaAnalysisSummary: Equatable, Identifiable {
     let id: UUID
     let title: String
     let createdOn: String
     let companyName: String?
     let findingCount: Int?
+    var photoCount: Int = 0
+    var sectorLabel: String?
+    /// The worst band the analysis produced under the expert's own method, or
+    /// nil when the analysis produced no band at all.
+    var highestBand: String?
     var isUnassigned: Bool { companyName == nil }
 }
 
@@ -93,6 +105,11 @@ struct NovaAnalysisFileRequest: Equatable {
     /// Set when the expert chose it. For a scored finding with a readable band
     /// this stays nil and the server maps the band itself.
     let severity: NovaNonconformitySeverity?
+}
+
+/// What the expert said about one item. `none` withdraws an earlier answer.
+enum NovaAnalysisReaction: String, Equatable {
+    case none, like, dislike
 }
 
 enum NovaAnalysisReportFormat: String, CaseIterable, Identifiable, Equatable {

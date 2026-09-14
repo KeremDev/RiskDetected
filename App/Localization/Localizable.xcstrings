@@ -7075,6 +7075,78 @@
         }
       }
     },
+    "localizable.nova.analysis.caption.expert": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d unscored recommendations · you choose the severity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d skorsuz öneri · önem derecesini siz seçersiniz"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.caption.notebook": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d log entries · not transferred to a company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d defter kaydı · firmaya aktarılmaz"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.caption.risk": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d scored findings · can become nonconformities"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d skorlu bulgu · uygunsuzluğa dönüştürülebilir"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.caption.training": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d training recommendations · unscored"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d eğitim önerisi · skorsuz"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.company.detail": {
       "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
       "extractionState": "manual",
@@ -7435,6 +7507,186 @@
         }
       }
     },
+    "localizable.nova.analysis.item.cancel": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.item.delete": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the finding"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulguyu sil"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.item.delete.confirm": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This finding will be permanently removed from the analysis."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu bulgu analizden kalıcı olarak silinecek."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.item.delete.failed": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The finding could not be deleted. Try the same action again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulgu silinemedi. Aynı işlemi tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.item.delete.yes": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes, delete it"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evet, sil"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.item.dislike": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not useful"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faydasız"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.item.like": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Useful"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faydalı"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.item.more": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read the rest"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devamını incele"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.item.reaction.failed": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The feedback could not be saved. Try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri bildirim kaydedilemedi. Tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.item.unscored": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unscored"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skorsuz"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.list.empty": {
       "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
       "extractionState": "manual",
@@ -7647,6 +7899,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Güvenlik terminolojisi profili tamamlanmadan analiz başlatılamaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.photo.open": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the analysis photo"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz fotoğrafını büyüt"
           }
         }
       }
@@ -7899,6 +8169,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Eğitim Önerileri"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.tag.photos": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d photos"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d fotoğraf"
           }
         }
       }
@@ -10695,6 +10983,24 @@
         }
       }
     },
+    "localizable.nova.intake.owner.no.match": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No company matches the search."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aramayla eşleşen firma yok."
+          }
+        }
+      }
+    },
     "localizable.nova.intake.owner.none": {
       "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
       "extractionState": "manual",
@@ -10731,6 +11037,24 @@
         }
       }
     },
+    "localizable.nova.intake.owner.search": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search a company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma ara"
+          }
+        }
+      }
+    },
     "localizable.nova.intake.owner.sector.unknown": {
       "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
       "extractionState": "manual",
@@ -10763,6 +11087,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "%d fotoğraf · %@"
+          }
+        }
+      }
+    },
+    "localizable.nova.intake.photo.count.short": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d photos chosen"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d fotoğraf seçildi"
           }
         }
       }
@@ -11019,6 +11361,24 @@
         }
       }
     },
+    "localizable.nova.manual.photo.not.stored": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The photo is not attached to the record yet: the evidence file store is not open. What you add here is only visible while this form is open."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf şu an kayda eklenmiyor: kanıt dosyası deposu henüz açık değil. Buraya eklediğiniz görsel yalnız bu form açıkken görünür."
+          }
+        }
+      }
+    },
     "localizable.nova.manual.progress": {
       "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
       "extractionState": "manual",
@@ -11177,6 +11537,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mevzuat bilgisi"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.step.photo": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf"
           }
         }
       }
@@ -11558,6 +11936,114 @@
         }
       }
     },
+    "localizable.nova.nonconformity.actions.add": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.actions.assignee": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Responsible"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorumlu"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.actions.description": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What will be done"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yapılacak iş"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.actions.empty": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No corrective action yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz düzeltici aksiyon yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.actions.hint": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The person responsible for an action is not an app user; they only appear on the record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aksiyonun sorumlusu bir uygulama kullanıcısı değildir; yalnız kayıtta görünür."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.actions.title": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corrective actions"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düzeltici aksiyonlar"
+          }
+        }
+      }
+    },
     "localizable.nova.nonconformity.choose.manual.action": {
       "comment": "nova_manual; nonconformity screens; review: human_draft",
       "extractionState": "manual",
@@ -11702,6 +12188,132 @@
         }
       }
     },
+    "localizable.nova.nonconformity.closed.on": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closed %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapanış %@"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.count": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d / %2$d records"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d / %2$d kayıt"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.detail.edit": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düzenle"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.detail.empty": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This record has no detail yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kayıtta henüz detay yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.detail.hint": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The whole detail you see is saved; a field you clear is cleared on the record too."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekranda gördüğünüz detayın tamamı kaydedilir; boşalttığınız alan kayıttan da silinir."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.detail.title": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record detail"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt detayı"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.due.on": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Due %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Termin %@"
+          }
+        }
+      }
+    },
     "localizable.nova.nonconformity.empty": {
       "comment": "nova_manual; nonconformity screens; review: human_draft",
       "extractionState": "manual",
@@ -11716,6 +12328,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Henüz uygunsuzluk kaydı yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.empty.filtered": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No record matches these filters."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu filtrelerle eşleşen kayıt yok."
           }
         }
       }
@@ -11752,6 +12382,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bu firma için uygunsuzluk kaydına erişiminiz yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.error.detail": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record could not be loaded. Try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt yüklenemedi. Tekrar deneyin."
           }
         }
       }
@@ -11990,6 +12638,24 @@
         }
       }
     },
+    "localizable.nova.nonconformity.filter.company": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma"
+          }
+        }
+      }
+    },
     "localizable.nova.nonconformity.filter.draft": {
       "comment": "nova_manual; nonconformity screens; review: human_draft",
       "extractionState": "manual",
@@ -12022,6 +12688,60 @@
           "stringUnit": {
             "state": "translated",
             "value": "Açık"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.filter.overdue": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overdue · %d"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Termini geçen · %d"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.filter.reset": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear the filters"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Filtreleri temizle"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.filter.state": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "State"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durum"
           }
         }
       }
@@ -12152,6 +12872,132 @@
         }
       }
     },
+    "localizable.nova.nonconformity.move.action": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save the move"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçişi kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.move.assignee": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assigned person"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atanan kişi"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.move.reason": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reason"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gerekçe"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.move.reason.hint": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This move is not recorded without a reason; write at least five characters."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu geçiş gerekçesiz kaydedilmez; en az beş karakter yazın."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.move.reason.required": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reason *"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gerekçe *"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.move.title": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move the state to %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durumu %@ yap"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.needs.verification": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closing needs a verification that was accepted."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapatmadan önce kabul edilmiş bir doğrulama gerekiyor."
+          }
+        }
+      }
+    },
     "localizable.nova.nonconformity.new": {
       "comment": "nova_manual; nonconformity screens; review: human_draft",
       "extractionState": "manual",
@@ -12166,6 +13012,60 @@
           "stringUnit": {
             "state": "translated",
             "value": "Yeni Uygunsuzluk"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.new.short": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.opened.on": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opened %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açılış %@"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.overdue": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Past its due date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Termini geçti"
           }
         }
       }
@@ -12188,6 +13088,24 @@
         }
       }
     },
+    "localizable.nova.nonconformity.refresh": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh the list"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listeyi yenile"
+          }
+        }
+      }
+    },
     "localizable.nova.nonconformity.scored": {
       "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
       "extractionState": "manual",
@@ -12202,6 +13120,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Skorlandı · %@"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.search": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search a title, company or workplace"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlık, firma veya işyeri ara"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.search.clear": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear the search"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aramayı temizle"
           }
         }
       }
@@ -12418,6 +13372,168 @@
           "stringUnit": {
             "state": "translated",
             "value": "Yeniden açıldı"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.state.terminal": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There is no further state move for this record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kayıt için başka bir durum geçişi yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.state.title": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "State"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durum"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.verification.accepted": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accepted"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kabul"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.verification.add": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doğrula"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.verification.empty": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No verification recorded yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz doğrulama kaydı yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.verification.hint": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A rejected verification closes nothing; it starts a new cycle."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reddedilen doğrulama kaydı kapatmaz; yeni bir döngü başlatır."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.verification.note": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.verification.rejected": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rejected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ret"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.verification.title": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expert verification"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzman doğrulaması"
           }
         }
       }
@@ -13370,6 +14486,204 @@
           "stringUnit": {
             "state": "translated",
             "value": "Eğitim · —"
+          }
+        }
+      }
+    },
+    "localizable.nova.photo.intake.add": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a photo"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.photo.intake.camera": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Camera"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kamera"
+          }
+        }
+      }
+    },
+    "localizable.nova.photo.intake.cancel": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
+          }
+        }
+      }
+    },
+    "localizable.nova.photo.intake.count": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d / %2$d photos"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d / %2$d fotoğraf"
+          }
+        }
+      }
+    },
+    "localizable.nova.photo.intake.full": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At most %d photos can be added."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En fazla %d fotoğraf eklenebilir."
+          }
+        }
+      }
+    },
+    "localizable.nova.photo.intake.gallery": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gallery"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Galeri"
+          }
+        }
+      }
+    },
+    "localizable.nova.photo.intake.hint": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to three photos. Company, sector and focus are asked when you start the analysis."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En fazla üç fotoğraf. Firma, sektör ve odak seçimini analizi başlatırken soracağız."
+          }
+        }
+      }
+    },
+    "localizable.nova.photo.intake.remove": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove the photo"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğrafı çıkar"
+          }
+        }
+      }
+    },
+    "localizable.nova.photo.intake.required": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add at least one photo to start."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlatmak için en az bir fotoğraf ekleyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.photo.intake.source": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where should the photo come from?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğrafı nereden ekleyelim?"
+          }
+        }
+      }
+    },
+    "localizable.nova.photo.viewer": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis photo"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz fotoğrafı"
           }
         }
       }

@@ -45,6 +45,9 @@ struct NovaPilotRoot: View {
     @State private var overview: [NovaPilotCompanySummary]?
     @State private var overviewFailed = false
     @State private var sceneRevalidation = NovaSceneRevalidation()
+    /// The home picture card goes straight to the camera; the drawer entry and
+    /// the quick-add sheet ask how to start.
+    @State private var pendingStart: NovaFindingsStart = .chooser
     private var overviewKey: String { "\(controller.host.navigation.epoch):\(ready):\(listRevision):\(navigation.selected)" }
     private var activeCompanies: [NovaPilotCompanySummary]? { ready ? overview?.filter { !$0.is_archived } : nil }
     private var metrics: [NovaMetricItem] {
@@ -72,6 +75,7 @@ struct NovaPilotRoot: View {
                 // than in NavigationStack's path. Selecting Firmalar from the
                 // drawer/tab therefore must clear that feature-local scope.
                 if destination == .companies { controller.select(nil) }
+                if destination == .newFinding { pendingStart = .chooser }
             },
             onLogout: { app.signOut() }) { destination in
             switch destination {
@@ -82,14 +86,18 @@ struct NovaPilotRoot: View {
                         openCount: nil, metrics: metrics, activity: nil,
                         trainingMessage: RDLocalization.string("localizable.nova.pilot.main.gate.egitim.modulu.henuz.kullanima.acik.degil.e21b7bc6", table: .localizable, fallback: "Eğitim modülü henüz kullanıma açık değil."),
                         summaryMessage: activeCompanies != nil ? RDLocalization.string("localizable.nova.pilot.main.gate.pilot.firmalarinizin.guncel.kayitlari.01d48da7", table: .localizable, fallback: "Pilot firmalarınızın güncel kayıtları.") : overviewFailed ? RDLocalization.string("localizable.nova.pilot.main.gate.ozet.alinamadi.yenileyerek.tekrar.deneyin.9b6a6077", table: .localizable, fallback: "Özet alınamadı. Yenileyerek tekrar deneyin.") : RDLocalization.string("localizable.nova.pilot.main.gate.ozet.verileri.henuz.bagli.degil.4508136e", table: .localizable, fallback: "Özet verileri henüz bağlı değil.")),
-                        onNavigate: navigate, onPhoto: { navigate(.newFinding) }, onAssistant: unavailable)
+                        onNavigate: { destination in
+                            pendingStart = destination == .newFinding ? .chooser : pendingStart
+                            navigate(destination)
+                        },
+                        onPhoto: { pendingStart = .photo; navigate(.newFinding) }, onAssistant: unavailable)
                 }
             case .companies:
                 companies
             case .findings:
-                nonconformities(startOnNew: false)
+                nonconformities(start: .board)
             case .newFinding:
-                nonconformities(startOnNew: true)
+                nonconformities(start: pendingStart)
             case .profile:
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
@@ -163,13 +171,12 @@ struct NovaPilotRoot: View {
 
     /// The Uygunsuzluklar surface owns the whole analysis route: a photo
     /// analysis may start without a company, while records still need one.
-    @ViewBuilder private func nonconformities(startOnNew: Bool) -> some View {
+    @ViewBuilder private func nonconformities(start: NovaFindingsStart) -> some View {
         if ready {
             NovaPilotFindingsGate(identity: identity, scope: controller.scope, canWrite: controller.canWrite,
-                select: controller.select, currentScope: { controller.scope },
-                companyName: controller.capability?.company_name, startOnNew: startOnNew,
+                select: controller.select, currentScope: { controller.scope }, startMode: start,
                 onCompanies: { navigate(.companies) }, onHome: { navigate(.home) })
-                .id(controller.scope?.epoch ?? controller.host.navigation.epoch)
+                .id("\(controller.host.navigation.epoch):\(start)")
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {

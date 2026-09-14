@@ -180,15 +180,20 @@ import Foundation
         }
     }
 
+    /// The expected version travels with the move, so a record someone else
+    /// advanced in the meantime refuses instead of jumping two states.
     func transition(_ scope: NovaPersonnelScope, id: UUID, to state: NovaNonconformityState,
-                    expectedVersion: Int64, reason: String,
+                    expectedVersion: Int64, reason: String, assignee: String = "",
                     operationID: UUID = UUID(), mutationID: UUID = UUID()) async throws -> NovaNonconformityRow {
         try check(scope)
+        var payload: [String: PersonnelRPCValue] = ["nonconformity_id": .id(id),
+            "expected_version": .number(expectedVersion), "to_state": .string(state.rawValue)]
+        if let value = Self.text(reason) { payload["reason"] = .string(value) }
+        if let value = Self.text(assignee) { payload["assignee"] = .string(value) }
         let data = try await rpc("isg_nonconformity_mutate_v1", [
             "p_company": .id(scope.companyID), "p_action": .string("transition"),
             "p_operation": .id(operationID), "p_mutation": .id(mutationID),
-            "p_payload": .object(["nonconformity_id": .id(id), "expected_version": .number(expectedVersion),
-                                  "to_state": .string(state.rawValue), "reason": .string(reason)])])
+            "p_payload": .object(payload)])
         try check(scope)
         return try JSONDecoder().decode(MutationEnvelope.self, from: data).row
     }

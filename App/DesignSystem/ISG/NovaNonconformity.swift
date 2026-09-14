@@ -30,6 +30,8 @@ struct NovaNonconformityRow: Equatable, Identifiable, Codable {
     var closed_on: String? = nil
     var assignee_contact: String? = nil
     var detail: NovaNonconformityDetail? = nil
+    var actions: [NovaCorrectiveAction]? = nil
+    var verifications: [NovaVerificationRecord]? = nil
     /// A record that came from a photo analysis keeps pointing at that finding;
     /// the finding itself is never rewritten.
     var camefromFinding: Bool { source_kind == "legacy_finding" }
@@ -39,6 +41,22 @@ struct NovaNonconformityRow: Equatable, Identifiable, Codable {
     var kind: NovaNonconformityRecordKind {
         NovaNonconformityRecordKind(rawValue: record_kind ?? "") ?? .nonconformity
     }
+}
+
+/// One corrective action recorded against a record.
+struct NovaCorrectiveAction: Equatable, Identifiable, Codable {
+    let id: UUID
+    let description: String
+    let assignee: String?
+    let due_on: String?
+    let state: String
+}
+
+/// One expert verification cycle. A rejected verification closes nothing.
+struct NovaVerificationRecord: Equatable, Identifiable, Codable {
+    let id: UUID
+    let outcome: String
+    let verified_on: String
 }
 
 struct NovaNonconformityWorkplace: Equatable, Identifiable, Codable {
@@ -188,13 +206,16 @@ struct NovaNonconformityDetail: Equatable, Codable {
 
 /// The steps of the hand-entered flow, in the order they are asked.
 enum NovaManualStep: String, CaseIterable, Identifiable {
-    case company, hazard, scoring, legislation, responsible
+    case photo, company, hazard, scoring, legislation, responsible
     var id: String { rawValue }
 }
 
 /// One draft of a hand-entered record, and which of its steps are finished.
 /// Pure: the screen reads `completion` for the ticks and the progress bar.
 struct NovaManualDraft: Equatable {
+    /// How many site photos the expert attached. The pictures live in the
+    /// screen; the draft only counts them so this model stays free of images.
+    var photoCount = 0
     var workplaceID: UUID?
     var title = ""
     var hazardDescription = ""
@@ -213,6 +234,7 @@ struct NovaManualDraft: Equatable {
     /// and an untouched optional step is simply not finished — never a tick.
     func isComplete(_ step: NovaManualStep) -> Bool {
         switch step {
+        case .photo: return photoCount > 0
         case .company: return workplaceID != nil
         case .hazard: return filled(title) && filled(hazardDescription) && filled(controlMeasure)
         case .scoring: return score.isComplete

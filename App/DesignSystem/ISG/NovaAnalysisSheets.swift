@@ -11,56 +11,181 @@ struct NovaFindingEditValues: Equatable {
     var score = NovaRiskScoreInput()
 }
 
-/// Every detail of a scored finding, editable. The score is re-entered on the
-/// published scales, never typed as a free number.
-struct NovaFindingEditSheet: View {
+/// One item, in full. Reading, reacting, editing and deleting all happen here
+/// so the list underneath can stay short.
+struct NovaAnalysisItemSheet: View {
     let item: NovaAnalysisItem
+    let section: NovaAnalysisSectionKind
     let method: NovaRiskMethod
+    let reaction: NovaAnalysisReaction
+    var canWrite = true
+    let react: (NovaAnalysisReaction) async throws -> Void
     let save: (NovaFindingEditValues) async throws -> Void
+    let remove: () async throws -> Void
     @Environment(\.colorScheme) private var scheme
+    @State private var editing = false
+    @State private var confirmingDelete = false
+    @State private var chosen: NovaAnalysisReaction = .none
     @State private var title = ""
     @State private var category = ""
     @State private var body_ = ""
     @State private var measure = ""
     @State private var references = ""
     @State private var score = NovaRiskScoreInput()
-    @State private var saving = false
+    @State private var busy = false
     @State private var error: String?
     @State private var loaded = false
+
+    /// Only the scored findings are real analysis findings; the judgement
+    /// sections have no editable record behind them.
+    private var isEditable: Bool { canWrite && section.isScored }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                NovaText(text: RDLocalization.string("localizable.nova.analysis.edit.title", table: .localizable, fallback: "Bulguyu düzenle"), style: .sheetTitle)
-                NovaHelpHint(text: RDLocalization.string("localizable.nova.analysis.edit.hint", table: .localizable,
-                    fallback: "Değişiklikleriniz bulguya işlenir; skoru yeniden girerseniz bandı sunucu hesaplar."))
-                NovaCard(padding: 14) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        field(RDLocalization.string("localizable.nova.analysis.field.title", table: .localizable, fallback: "Başlık"), $title, id: "title")
-                        field(RDLocalization.string("localizable.nova.analysis.field.category", table: .localizable, fallback: "Kategori"), $category, id: "category")
-                        area(RDLocalization.string("localizable.nova.analysis.field.body", table: .localizable, fallback: "Açıklama"), $body_, id: "body")
-                        area(RDLocalization.string("localizable.nova.analysis.field.measure", table: .localizable, fallback: "Önlem"), $measure, id: "measure")
-                        area(RDLocalization.string("localizable.nova.analysis.field.references", table: .localizable, fallback: "Mevzuat"), $references, id: "references")
-                    }
+                heading
+                if editing { form } else { reading }
+                if let error {
+                    NovaText(text: error, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme))
                 }
-                NovaRiskScoreEditor(score: $score, allowsClearing: false)
-                if let error { NovaText(text: error, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme)) }
-                NovaButton(label: RDLocalization.string("localizable.nova.analysis.edit.save", table: .localizable, fallback: "Değişiklikleri kaydet"),
-                    symbol: "checkmark", isEnabled: !saving && !title.trimmingCharacters(in: .whitespaces).isEmpty,
-                    isLoading: saving) { Task { await submit() } }
-                    .accessibilityIdentifier("analysis.edit.save")
+                controls
             }.padding(20).novaPopupContentSize()
         }
         .background(NovaKeyboardDismissArea())
         .onAppear {
             guard !loaded else { return }
             loaded = true
+            chosen = reaction
             title = item.title
             category = item.category ?? ""
             body_ = item.body
             measure = item.measure ?? ""
             references = item.references ?? ""
             score = NovaRiskScoreInput(method: method)
+        }
+    }
+
+    private var heading: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            NovaText(text: "\(item.ordinal). \(item.title)", style: .sheetTitle)
+            HStack(spacing: 6) {
+                if let band = item.band {
+                    NovaStatusPill(label: NovaNonconformityWords.band(band), status: NovaNonconformityWords.tone(band))
+                    if let value = item.score {
+                        NovaText(text: NovaNonconformityWords.score(value) + " · " + NovaNonconformityWords.method(method), style: .metaQuiet)
+                    }
+                } else {
+                    NovaStatusPill(label: RDLocalization.string("localizable.nova.analysis.item.unscored", table: .localizable, fallback: "Skorsuz"),
+                        status: .info, showsDot: false)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var reading: some View {
+        NovaCard(padding: 14) {
+            VStack(alignment: .leading, spacing: 10) {
+                if let category = item.category, !category.isEmpty {
+                    detail(RDLocalization.string("localizable.nova.analysis.field.category", table: .localizable, fallback: "Kategori"), category)
+                }
+                detail(RDLocalization.string("localizable.nova.analysis.field.body", table: .localizable, fallback: "Açıklama"), item.body)
+                detail(RDLocalization.string("localizable.nova.analysis.field.measure", table: .localizable, fallback: "Önlem"), item.measure)
+                detail(RDLocalization.string("localizable.nova.analysis.field.references", table: .localizable, fallback: "Mevzuat"), item.references)
+            }.frame(maxWidth: .infinity, alignment: .leading)
+        }
+        feedback
+    }
+
+    @ViewBuilder private func detail(_ label: String, _ value: String?) -> some View {
+        if let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            VStack(alignment: .leading, spacing: 2) {
+                NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
+                NovaText(text: value)
+            }.frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// Two answers and a way back out of both: pressing the same one again
+    /// withdraws it rather than leaving an opinion the expert changed.
+    private var feedback: some View {
+        HStack(spacing: 8) {
+            reactionButton(.like, "hand.thumbsup.fill",
+                RDLocalization.string("localizable.nova.analysis.item.like", table: .localizable, fallback: "Faydalı"))
+            reactionButton(.dislike, "hand.thumbsdown.fill",
+                RDLocalization.string("localizable.nova.analysis.item.dislike", table: .localizable, fallback: "Faydasız"))
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func reactionButton(_ value: NovaAnalysisReaction, _ symbol: String, _ label: String) -> some View {
+        let isOn = chosen == value
+        return Button {
+            let next: NovaAnalysisReaction = isOn ? .none : value
+            Task {
+                busy = true; error = nil
+                do { try await react(next); chosen = next }
+                catch {
+                    self.error = RDLocalization.string("localizable.nova.analysis.item.reaction.failed", table: .localizable,
+                        fallback: "Geri bildirim kaydedilemedi. Tekrar deneyin.")
+                }
+                busy = false
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: symbol).font(.system(size: 13))
+                NovaText(text: label, style: .meta,
+                    color: isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.textSecondary.color(in: scheme))
+            }
+            .foregroundStyle(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.textSecondary.color(in: scheme))
+            .padding(.horizontal, 14).frame(minHeight: 42)
+            .background(isOn ? NovaColorToken.statusSuccessBg.color(in: scheme) : NovaColorToken.surface.color(in: scheme), in: Capsule())
+        }.buttonStyle(.plain).disabled(busy)
+            .accessibilityIdentifier("analysis.item.\(value.rawValue)")
+            .accessibilityAddTraits(isOn ? .isSelected : [])
+    }
+
+    @ViewBuilder private var form: some View {
+        NovaCard(padding: 14) {
+            VStack(alignment: .leading, spacing: 10) {
+                field(RDLocalization.string("localizable.nova.analysis.field.title", table: .localizable, fallback: "Başlık"), $title, id: "title")
+                field(RDLocalization.string("localizable.nova.analysis.field.category", table: .localizable, fallback: "Kategori"), $category, id: "category")
+                area(RDLocalization.string("localizable.nova.analysis.field.body", table: .localizable, fallback: "Açıklama"), $body_, id: "body")
+                area(RDLocalization.string("localizable.nova.analysis.field.measure", table: .localizable, fallback: "Önlem"), $measure, id: "measure")
+                area(RDLocalization.string("localizable.nova.analysis.field.references", table: .localizable, fallback: "Mevzuat"), $references, id: "references")
+            }
+        }
+        NovaRiskScoreEditor(score: $score, allowsClearing: false)
+        NovaText(text: RDLocalization.string("localizable.nova.analysis.edit.hint", table: .localizable,
+            fallback: "Değişiklikleriniz bulguya işlenir; skoru yeniden girerseniz bandı sunucu hesaplar."), style: .metaQuiet)
+    }
+
+    @ViewBuilder private var controls: some View {
+        if editing {
+            NovaButton(label: RDLocalization.string("localizable.nova.analysis.edit.save", table: .localizable, fallback: "Değişiklikleri kaydet"),
+                symbol: "checkmark", isEnabled: !busy && !title.trimmingCharacters(in: .whitespaces).isEmpty,
+                isLoading: busy) { Task { await submit() } }
+                .accessibilityIdentifier("analysis.item.save")
+            NovaButton(label: RDLocalization.string("localizable.nova.analysis.item.cancel", table: .localizable, fallback: "Vazgeç"),
+                symbol: "xmark", variant: .surface, isEnabled: !busy) { editing = false }
+                .accessibilityIdentifier("analysis.item.cancel")
+        } else if isEditable {
+            NovaButton(label: RDLocalization.string("localizable.nova.analysis.edit", table: .localizable, fallback: "Bulguyu düzenle"),
+                symbol: "square.and.pencil", variant: .surface) { editing = true }
+                .accessibilityIdentifier("analysis.item.edit")
+            if confirmingDelete {
+                NovaText(text: RDLocalization.string("localizable.nova.analysis.item.delete.confirm", table: .localizable,
+                    fallback: "Bu bulgu analizden kalıcı olarak silinecek."), style: .metaQuiet,
+                    color: NovaColorToken.statusDangerInk.color(in: scheme))
+                NovaButton(label: RDLocalization.string("localizable.nova.analysis.item.delete.yes", table: .localizable, fallback: "Evet, sil"),
+                    symbol: "trash", variant: .danger, isEnabled: !busy, isLoading: busy) { Task { await drop() } }
+                    .accessibilityIdentifier("analysis.item.delete.confirm")
+                NovaButton(label: RDLocalization.string("localizable.nova.analysis.item.cancel", table: .localizable, fallback: "Vazgeç"),
+                    symbol: "xmark", variant: .surface, isEnabled: !busy) { confirmingDelete = false }
+            } else {
+                NovaButton(label: RDLocalization.string("localizable.nova.analysis.item.delete", table: .localizable, fallback: "Bulguyu sil"),
+                    symbol: "trash", variant: .danger) { confirmingDelete = true }
+                    .accessibilityIdentifier("analysis.item.delete")
+            }
         }
     }
 
@@ -75,14 +200,14 @@ struct NovaFindingEditSheet: View {
         VStack(alignment: .leading, spacing: 3) {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
             TextEditor(text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
-                .frame(minHeight: 72).scrollContentBackground(.hidden)
+                .frame(minHeight: 70).scrollContentBackground(.hidden)
                 .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 10))
                 .accessibilityIdentifier("analysis.edit.\(id)")
         }
     }
 
     private func submit() async {
-        saving = true; error = nil
+        busy = true; error = nil
         var values = NovaFindingEditValues()
         values.title = title
         values.category = category
@@ -98,7 +223,17 @@ struct NovaFindingEditSheet: View {
             self.error = RDLocalization.string("localizable.nova.analysis.edit.failed", table: .localizable,
                 fallback: "Bulgu güncellenemedi. Aynı işlemi tekrar deneyin.")
         }
-        saving = false
+        busy = false
+    }
+
+    private func drop() async {
+        busy = true; error = nil
+        do { try await remove() }
+        catch {
+            self.error = RDLocalization.string("localizable.nova.analysis.item.delete.failed", table: .localizable,
+                fallback: "Bulgu silinemedi. Aynı işlemi tekrar deneyin.")
+        }
+        busy = false
     }
 }
 

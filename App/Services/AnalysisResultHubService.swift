@@ -84,6 +84,56 @@ final class AnalysisResultHubService {
         throw ReadinessError.exhausted
     }
 
+    /// Same call, addressed by item identifier. The NOVA screens carry their
+    /// own item model and never hold the decoded hub row.
+    func setFeedback(
+        analysisID: UUID,
+        language: RDLanguage,
+        section: AnalysisResultSectionID,
+        itemID: UUID,
+        reaction: AnalysisItemReaction
+    ) async throws {
+        #if DEBUG
+        if CommandLine.arguments.contains("RD_UI_TEST_RESULT_HUB") ||
+            ProcessInfo.processInfo.environment["RD_UI_TEST_RESULT_HUB"] == "1" {
+            return
+        }
+        #endif
+        struct Body: Encodable {
+            let action = "feedback"
+            let analysis_id: String
+            let language: String
+            let client_capabilities: [String: Bool]
+            let client_platform: String
+            let client_app_version: String
+            let client_app_build: String
+            let target_kind: String
+            let target_key: String
+            let section: String
+            let rating: Int
+            let reason_code: String?
+            let note: String?
+        }
+        let body = Body(
+            analysis_id: analysisID.uuidString.lowercased(),
+            language: language.rawValue,
+            client_capabilities: AppClientMetadata.capabilities,
+            client_platform: AppClientMetadata.platform,
+            client_app_version: AppClientMetadata.appVersion,
+            client_app_build: AppClientMetadata.appBuild,
+            target_kind: section == .approvedNotebook ? "notebook_entry" : "finding",
+            target_key: itemID.uuidString.lowercased(),
+            section: section.rawValue,
+            rating: reaction == .like ? 1 : reaction == .dislike ? -1 : 0,
+            reason_code: nil,
+            note: nil
+        )
+        let _: EmptyResponse = try await functions.invoke(
+            "analysis-result-sections",
+            options: FunctionInvokeOptions(body: body)
+        )
+    }
+
     func setFeedback(
         analysisID: UUID,
         language: RDLanguage,

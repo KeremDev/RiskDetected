@@ -89,7 +89,11 @@ test('the design layer stays free of the SDK and of legacy writes', () => {
     'App/DesignSystem/ISG/NovaAnalysisDetailScreens.swift',
     'App/DesignSystem/ISG/NovaAnalysisSheets.swift',
     'App/DesignSystem/ISG/NovaAnalysisListScreen.swift',
-    'App/DesignSystem/ISG/NovaManualNonconformityScreen.swift']) {
+    'App/DesignSystem/ISG/NovaManualNonconformityScreen.swift',
+    'App/DesignSystem/ISG/NovaNonconformityTransitions.swift',
+    'App/DesignSystem/ISG/NovaNonconformityListScreen.swift',
+    'App/DesignSystem/ISG/NovaNonconformityRecordScreen.swift',
+    'App/DesignSystem/ISG/NovaNonconformitySheets.swift']) {
     const source = read(path);
     assert.doesNotMatch(source, /import (Supabase|RevenueCat)|https?:|access_token|refresh_token|UserDefaults|Keychain/, path);
     assert.doesNotMatch(source, /AnalysisService|SupabaseService|PDFReportService/, path);
@@ -97,18 +101,54 @@ test('the design layer stays free of the SDK and of legacy writes', () => {
 });
 
 test('the manual flow asks every step the expert was promised', () => {
-  assert.match(model, /case company, hazard, scoring, legislation, responsible/);
+  assert.match(model, /case photo, company, hazard, scoring, legislation, responsible/);
   // Only the two steps the server refuses without are required to save.
   assert.match(model, /static let requiredSteps: \[NovaManualStep\] = \[\.company, \.hazard\]/);
   assert.match(model, /score\.isEmpty \|\| score\.isComplete/);
   const screen = read('App/DesignSystem/ISG/NovaManualNonconformityScreen.swift');
-  for (const key of ['manual.step.company', 'manual.step.hazard', 'manual.step.scoring',
+  for (const key of ['manual.step.photo', 'manual.step.company', 'manual.step.hazard', 'manual.step.scoring',
     'manual.step.legislation', 'manual.step.responsible']) {
     assert.ok(screen.includes(key), `manual step missing: ${key}`);
   }
   // The progress bar counts finished steps, never opened ones.
   assert.match(model, /var completedCount: Int \{ NovaManualStep\.allCases\.filter \{ isComplete\(\$0\) \}\.count \}/);
   assert.match(screen, /width: max\(0, proxy\.size\.width \* draft\.progress\)/);
+});
+
+test('the state machine on screen is the state machine in the database', () => {
+  const core = read('supabase/migrations/20260913210000_isg_nonconformity_core.sql');
+  const block = core.slice(core.indexOf("INSERT INTO private_isg.nonconformity_state_edges"),
+    core.indexOf("CREATE TABLE private_isg.nonconformities"));
+  const server = [...block.matchAll(/\('([a-z_]+)','([a-z_]+)',(true|false),(true|false),(true|false)\)/g)]
+    .map(m => `${m[1]}>${m[2]}:${m[3]}:${m[4]}:${m[5]}`);
+  const swift = read('App/DesignSystem/ISG/NovaNonconformityTransitions.swift');
+  const client = [...swift.matchAll(
+    /\.init\(from: \.([a-z_]+), to: \.([a-z_]+), requiresReason: (true|false), requiresAssignee: (true|false), requiresVerification: (true|false)\)/g)]
+    .map(m => `${m[1]}>${m[2]}:${m[3]}:${m[4]}:${m[5]}`);
+  assert.equal(server.length, 16);
+  // Offering a move the server refuses, or hiding one it accepts, is the same
+  // defect. Both directions are compared.
+  assert.deepEqual([...client].sort(), [...server].sort());
+});
+
+test('the record screen only offers what the server will accept', () => {
+  const screen = read('App/DesignSystem/ISG/NovaNonconformityRecordScreen.swift');
+  // Closing asks for the verification first instead of failing at the server.
+  assert.match(screen, /edge\.requiresVerification && !hasAcceptedVerification/);
+  assert.match(screen, /contains \{ \$0\.outcome == "accepted" \}/);
+  const sheets = read('App/DesignSystem/ISG/NovaNonconformitySheets.swift');
+  // The server refuses a reason under five characters; so does the popup.
+  assert.match(sheets, /trimmedReason\.count < 5/);
+  const core = read('supabase/migrations/20260913210000_isg_nonconformity_core.sql');
+  assert.match(core, /length\(reason\) BETWEEN 5 AND 2000/);
+});
+
+test('the board reads every company through its own availability check', () => {
+  const service = read('App/Services/Company/NovaAnalysisWorkspaceService.swift');
+  assert.match(service, /static func board\(identity: NovaSessionIdentity\)/);
+  assert.match(service, /guard novaCurrentSessionIdentity\(\) == identity else \{ throw NovaNonconformityFailure\.denied \}/);
+  // A company whose own read fails is left out of the board, never faked.
+  assert.match(service, /else \{ continue \}/);
 });
 
 test('filing an item is keyed by that item, so a second press replays', () => {

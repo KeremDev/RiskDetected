@@ -70,10 +70,12 @@ struct NovaPilotReviewHarness: View {
     // MARK: synthetic analysis surface
 
     enum AnalysisReviewRoute: String, CaseIterable, Identifiable {
-        case intake, detail, manual, list
+        case board, record, intake, detail, manual, list
         var id: String { rawValue }
         var title: String {
             switch self {
+            case .board: return "Uygunsuzluklar"
+            case .record: return "Kayıt"
             case .intake: return "Fotoğraf akışı"
             case .detail: return "Analiz detayı"
             case .manual: return "Elle giriş"
@@ -83,6 +85,18 @@ struct NovaPilotReviewHarness: View {
     }
 
     private static let workplace = UUID(uuidString: "00000000-0000-4000-8000-000000000005")!
+    /// A drawn placeholder, never a real site photo.
+    private static let fixturePhoto: UIImage = {
+        let size = CGSize(width: 400, height: 300)
+        return UIGraphicsImageRenderer(size: size).image { context in
+            UIColor(red: 0.82, green: 0.86, blue: 0.88, alpha: 1).setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+            UIColor(red: 0.35, green: 0.42, blue: 0.46, alpha: 1).setFill()
+            context.fill(CGRect(x: 40, y: 170, width: 320, height: 20))
+            context.fill(CGRect(x: 60, y: 90, width: 16, height: 100))
+            context.fill(CGRect(x: 300, y: 90, width: 16, height: 100))
+        }
+    }()
     private static let analysis = UUID(uuidString: "00000000-0000-4000-8000-000000000006")!
 
     @ViewBuilder private var analysisReview: some View {
@@ -92,15 +106,25 @@ struct NovaPilotReviewHarness: View {
             }.pickerStyle(.segmented).padding(.horizontal, 20).padding(.bottom, 8)
             switch analysisRoute {
             case .intake:
-                NovaAnalysisIntakeScreen(companies: reviewCompanies, sectors: NovaPilotFindingsGate.sectorOptions,
-                    focuses: reviewFocuses, draft: $draft, onCancel: {}, onStart: {})
+                NovaAnalysisIntakePopup(companies: reviewCompanies, sectors: NovaPilotFindingsGate.sectorOptions,
+                    focuses: reviewFocuses, draft: $draft, onStart: {})
                     .onAppear { if draft.photoCount == 0 { draft.photoCount = 2 } }
             case .detail:
                 NovaAnalysisDetailScreen(analysisID: Self.analysis, client: reviewDetailClient, onBack: {})
             case .manual:
                 NovaManualNonconformityScreen(workplaces: reviewWorkplaces, save: { _ in nil }, onBack: {})
             case .list:
-                NovaAnalysisListScreen(load: { reviewSummaries }, onOpen: { _ in analysisRoute = .detail }, onBack: {})
+                NovaAnalysisListScreen(load: { reviewSummaries }, thumbnail: { _ in nil },
+                    onOpen: { _ in analysisRoute = .detail }, onBack: {})
+            case .board:
+                NovaNonconformityListScreen(client: .init(load: { reviewEntries },
+                    open: { _ in }, create: { analysisRoute = .manual }),
+                    companies: reviewCompanies, today: "2026-09-14", onBack: {})
+            case .record:
+                NovaNonconformityRecordScreen(entry: reviewEntries[0], client: .init(
+                    load: { reviewEntries[0].row }, transition: { _, _, _ in reviewEntries[0].row },
+                    addAction: { _, _, _ in reviewEntries[0].row }, verify: { _, _ in reviewEntries[0].row },
+                    saveDetail: { _ in reviewEntries[0].row }), onBack: {})
             }
         }
     }
@@ -118,15 +142,37 @@ struct NovaPilotReviewHarness: View {
     private var reviewWorkplaces: [NovaNonconformityWorkplace] {
         [.init(id: Self.workplace, name: "Merkez tesis", needs_review: false)]
     }
+    private var reviewEntries: [NovaNonconformityEntry] {
+        [.init(row: .init(id: Self.analysis, workplace_id: Self.workplace, title: "Korkuluk eksik",
+                severity: "high", state: "open", version: 1, opened_on: "2026-09-10", due_on: "2026-09-12",
+                source_kind: "legacy_finding", source_ref: Self.analysis.uuidString,
+                record_kind: "nonconformity", risk_band: "high", closed_on: nil, assignee_contact: "Saha şefi",
+                detail: .init(description: "Platform kenarında korkuluk yok.", control_measure: "Montaj yapılacak.",
+                    legislation_ref: "6331 sayılı Kanun md.4", responsible_contact: "Saha şefi",
+                    risk_method: "fine_kinney", fk_probability: 6, fk_frequency: 3, fk_severity: 15,
+                    m5_probability: nil, m5_severity: nil, risk_score: 270, risk_band: "high"),
+                actions: [.init(id: UUID(), description: "Korkuluk montajı", assignee: "Saha şefi",
+                    due_on: "2026-09-20", state: "planned")],
+                verifications: []),
+               companyID: Self.company, companyName: summary.name, workplaceName: "Merkez tesis"),
+         .init(row: .init(id: Self.employee, workplace_id: Self.workplace, title: "Saha turu sıklığı artırılmalı",
+                severity: "low", state: "draft", version: 0, opened_on: "2026-09-13", due_on: nil,
+                source_kind: "legacy_expert_item", source_ref: Self.employee.uuidString,
+                record_kind: "improvement", risk_band: nil, closed_on: nil, assignee_contact: nil,
+                detail: nil, actions: [], verifications: []),
+               companyID: Self.company, companyName: summary.name, workplaceName: "Merkez tesis")]
+    }
+
     private var reviewSummaries: [NovaAnalysisSummary] {
         [.init(id: Self.analysis, title: "Saha turu · 2 fotoğraf", createdOn: "14 Eylül 2026 · 10:20",
-               companyName: nil, findingCount: 3),
+               companyName: nil, findingCount: 3, photoCount: 2, sectorLabel: "İmalat / Fabrika", highestBand: "critical"),
          .init(id: Self.employee, title: "Depo kontrolü", createdOn: "13 Eylül 2026 · 16:05",
-               companyName: summary.name, findingCount: 5)]
+               companyName: summary.name, findingCount: 5, photoCount: 1, sectorLabel: "Depo / Lojistik", highestBand: "medium")]
     }
     private var reviewDetailClient: NovaAnalysisDetailClient {
-        .init(load: { reviewDetail }, companies: { reviewCompanies }, assign: { _ in reviewAssigned = true },
-              workplaces: { _ in reviewWorkplaces }, file: { _ in .opened }, edit: { _ in },
+        .init(load: { reviewDetail }, photos: { [Self.fixturePhoto] }, companies: { reviewCompanies },
+              assign: { _ in reviewAssigned = true }, workplaces: { _ in reviewWorkplaces },
+              file: { _ in .opened }, edit: { _ in }, remove: { _ in }, react: { _, _, _ in },
               report: { _ in "ornek-rapor.pdf" })
     }
     /// A synthetic analysis that deliberately carries one unreadable band and

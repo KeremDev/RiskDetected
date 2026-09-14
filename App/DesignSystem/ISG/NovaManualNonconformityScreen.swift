@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 /// The hand-entered record, asked one step at a time. Every step is revisitable,
 /// a finished step carries a green tick, and the bar counts exactly the steps
@@ -13,6 +14,12 @@ struct NovaManualNonconformityScreen: View {
     @State private var open: NovaManualStep? = nil
     @State private var saving = false
     @State private var error: String?
+    @State private var photos: [UIImage] = []
+    @State private var choosing = false
+    @State private var camera = false
+    @State private var galleryOpen = false
+    @State private var gallery: [PhotosPickerItem] = []
+    @State private var preview: NovaPreviewImage?
 
     var body: some View {
         NovaPageSurface {
@@ -31,7 +38,36 @@ struct NovaManualNonconformityScreen: View {
                     saveButton
                 }.padding(20).padding(.bottom, novaTabBarInset)
             }
-        }.background(NovaKeyboardDismissArea())
+        }
+        .background(NovaKeyboardDismissArea())
+        .confirmationDialog(RDLocalization.string("localizable.nova.photo.intake.source", table: .localizable, fallback: "Fotoğrafı nereden ekleyelim?"),
+            isPresented: $choosing, titleVisibility: .visible) {
+            Button(RDLocalization.string("localizable.nova.photo.intake.camera", table: .localizable, fallback: "Kamera")) { camera = true }
+            Button(RDLocalization.string("localizable.nova.photo.intake.gallery", table: .localizable, fallback: "Galeri")) { galleryOpen = true }
+            Button(RDLocalization.string("localizable.nova.photo.intake.cancel", table: .localizable, fallback: "Vazgeç"), role: .cancel) { }
+        }
+        .fullScreenCover(isPresented: $camera) {
+            CameraPicker { image in
+                if let image { photos.append(image); draft.photoCount = photos.count }
+                camera = false
+            }.ignoresSafeArea()
+        }
+        .photosPicker(isPresented: $galleryOpen, selection: $gallery, maxSelectionCount: 3, matching: .images)
+        .onChange(of: gallery) { _ in Task { await loadGallery() } }
+        .fullScreenCover(item: $preview) { item in
+            NovaPopup { NovaImageViewer(image: item.image) }
+        }
+    }
+
+    private func loadGallery() async {
+        let items = gallery
+        gallery = []
+        for item in items {
+            if let data = try? await item.loadTransferable(type: Data.self), let image = UIImage(data: data) {
+                photos.append(image)
+            }
+        }
+        draft.photoCount = photos.count
     }
 
     private var header: some View {
@@ -67,7 +103,7 @@ struct NovaManualNonconformityScreen: View {
                     }
                 }.frame(height: 6)
                 NovaText(text: RDLocalization.string("localizable.nova.manual.progress.hint", table: .localizable,
-                    fallback: "Mevzuat, sorumlu ve skorlama isteğe bağlıdır; girildiğinde tamamlandı sayılır."), style: .metaQuiet)
+                    fallback: "Fotoğraf, mevzuat, sorumlu ve skorlama isteğe bağlıdır; girildiğinde tamamlandı sayılır."), style: .metaQuiet)
             }.frame(maxWidth: .infinity, alignment: .leading)
         }.accessibilityElement(children: .combine)
             .accessibilityIdentifier("manual.progress")
@@ -80,6 +116,7 @@ struct NovaManualNonconformityScreen: View {
             expanded: Binding(get: { open == step }, set: { open = $0 ? step : nil })) {
             VStack(alignment: .leading, spacing: 10) {
                 switch step {
+                case .photo: photoStep
                 case .company: companyStep
                 case .hazard: hazardStep
                 case .scoring: NovaRiskScoreEditor(score: $draft.score)
@@ -105,6 +142,58 @@ struct NovaManualNonconformityScreen: View {
                 fallback: "Sıradaki: %@"), title(next)), symbol: "chevron.down", variant: .surface) { open = next }
                 .accessibilityIdentifier("manual.next.\(step.rawValue)")
         }
+    }
+
+    /// The site photo is asked for first because that is how the expert works.
+    /// It is not sent to the record yet, and the step says so rather than
+    /// implying a picture was filed.
+    @ViewBuilder private var photoStep: some View {
+        if photos.isEmpty {
+            Button { choosing = true } label: {
+                VStack(spacing: 7) {
+                    NovaIcon(symbol: "camera", size: 22)
+                        .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
+                    NovaText(text: RDLocalization.string("localizable.nova.expert.shell.fotograf.cek.veya.galeriden.sec.bea08bcc", table: .localizable, fallback: "Fotoğraf çek veya galeriden seç"),
+                        style: .meta, color: NovaColorToken.textTertiary.color(in: scheme))
+                }.frame(maxWidth: .infinity, minHeight: 104)
+                    .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 16))
+                    .overlay(RoundedRectangle(cornerRadius: 16)
+                        .strokeBorder(NovaColorToken.borderStrong.color(in: scheme), style: StrokeStyle(lineWidth: 1.4, dash: [5, 4])))
+            }.buttonStyle(.plain).accessibilityIdentifier("manual.photo.add")
+        } else {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+                ForEach(Array(photos.enumerated()), id: \.offset) { index, image in
+                    Button { preview = .init(image: image) } label: {
+                        Image(uiImage: image).resizable().scaledToFill()
+                            .frame(maxWidth: .infinity).frame(height: 92)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay(alignment: .topTrailing) {
+                                Button {
+                                    photos.remove(at: index); draft.photoCount = photos.count
+                                } label: {
+                                    Image(systemName: "xmark").font(.system(size: 10, weight: .bold))
+                                        .foregroundStyle(NovaColorToken.onInverse.color(in: scheme))
+                                        .frame(width: 26, height: 26)
+                                        .background(NovaColorToken.inverse.color(in: scheme).opacity(0.75), in: Circle())
+                                }.buttonStyle(.plain).padding(4)
+                                    .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.photo.intake.remove", table: .localizable, fallback: "Fotoğrafı çıkar")))
+                            }
+                    }.buttonStyle(.plain).accessibilityIdentifier("manual.photo.thumbnail.\(index)")
+                }
+                if photos.count < 3 {
+                    Button { choosing = true } label: {
+                        Image(systemName: "plus").font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
+                            .frame(maxWidth: .infinity).frame(height: 92)
+                            .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
+                    }.buttonStyle(.plain).accessibilityIdentifier("manual.photo.add")
+                        .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.photo.intake.add", table: .localizable, fallback: "Fotoğraf ekle")))
+                }
+            }
+        }
+        NovaText(text: RDLocalization.string("localizable.nova.manual.photo.not.stored", table: .localizable,
+            fallback: "Fotoğraf şu an kayda eklenmiyor: kanıt dosyası deposu henüz açık değil. Buraya eklediğiniz görsel yalnız bu form açıkken görünür."),
+            style: .metaQuiet, color: NovaColorToken.statusWarningInk.color(in: scheme))
     }
 
     @ViewBuilder private var companyStep: some View {
@@ -183,6 +272,7 @@ struct NovaManualNonconformityScreen: View {
 
     private func title(_ step: NovaManualStep) -> String {
         switch step {
+        case .photo: return RDLocalization.string("localizable.nova.manual.step.photo", table: .localizable, fallback: "Fotoğraf")
         case .company: return RDLocalization.string("localizable.nova.manual.step.company", table: .localizable, fallback: "İşyeri")
         case .hazard: return RDLocalization.string("localizable.nova.manual.step.hazard", table: .localizable, fallback: "Uygunsuzluk")
         case .scoring: return RDLocalization.string("localizable.nova.manual.step.scoring", table: .localizable, fallback: "Risk metodu ve skorlama")
@@ -192,6 +282,7 @@ struct NovaManualNonconformityScreen: View {
     }
     private func symbol(_ step: NovaManualStep) -> String {
         switch step {
+        case .photo: return "camera"
         case .company: return "building.2"
         case .hazard: return "exclamationmark.triangle"
         case .scoring: return "chart.bar"

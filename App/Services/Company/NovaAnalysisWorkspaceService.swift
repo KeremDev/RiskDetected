@@ -26,7 +26,8 @@ enum NovaAnalysisWorkspace {
     /// Every completed analysis on the account, with the company name resolved
     /// from the pilot list. An id we cannot name stays unnamed rather than
     /// being shown as if it had no company.
-    static func summaries(identity: NovaSessionIdentity, limit: Int = 30) async throws -> [NovaAnalysisSummary] {
+    static func summaries(identity: NovaSessionIdentity, method: RiskMethod,
+                          limit: Int = 30) async throws -> [NovaAnalysisSummary] {
         let rows = try await AnalysisService.shared.listRecent(limit: limit)
         let companies = (try? await loadNovaPilotOverview(identity: identity)) ?? []
         let names = Dictionary(uniqueKeysWithValues: companies.map { ($0.id, $0.name) })
@@ -35,8 +36,89 @@ enum NovaAnalysisWorkspace {
                 companyName: row.companyID.flatMap { names[$0] }
                     ?? row.companyID.map { _ in RDLocalization.string("localizable.nova.analysis.company.unnamed",
                         table: .localizable, fallback: "Bağlı firma") },
-                findingCount: row.findingCount)
+                findingCount: row.findingCount,
+                photoCount: row.photoCount ?? 0,
+                sectorLabel: row.analysisSectorID?.label(),
+                // The band of the expert's own method, never the other one's.
+                highestBand: method == .fineKinney ? row.highestBandFK : row.highestBandM5)
         }
+    }
+
+    /// Today in the expert's own time zone, as an ISO day string. Overdue is a
+    /// calendar question, so it is answered once here rather than in a view.
+    static func todayISO() -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "Europe/Istanbul")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: Date())
+    }
+
+    /// The first picture of an analysis, for the list. A missing or unreadable
+    /// picture is simply absent; the row still renders.
+    static func thumbnail(analysisID: UUID) async -> UIImage? {
+        guard let path = try? await AnalysisService.shared.firstPhotoPaths(analysisIDs: [analysisID])[analysisID],
+              let data = try? await AnalysisService.shared.photoData(path: path) else { return nil }
+        return UIImage(data: data)
+    }
+
+    /// Every picture of one analysis, in order.
+    static func photos(analysisID: UUID) async -> [UIImage] {
+        guard let bundle = try? await AnalysisService.shared.result(analysisID: analysisID) else { return [] }
+        return await photos(bundle)
+    }
+
+    static func remove(analysisID: UUID, findingID: UUID) async throws {
+        _ = try await AnalysisService.shared.deleteFinding(analysisID: analysisID, findingID: findingID,
+            expectedVersion: nil)
+    }
+
+    static func react(analysisID: UUID, itemID: UUID, section: NovaAnalysisSectionKind,
+                      reaction: NovaAnalysisReaction) async throws {
+        guard let target = AnalysisResultSectionID(rawValue: section.rawValue) else { return }
+        let value: AnalysisItemReaction = reaction == .like ? .like : reaction == .dislike ? .dislike : .none
+        try await AnalysisResultHubService.shared.setFeedback(analysisID: analysisID, language: .current,
+            section: target, itemID: itemID, reaction: value)
+    }
+
+    /// The record board reads every company the account can still read, one at
+    /// a time, re-checking the session between calls exactly as the company
+    /// loader does. A company that fails its own check is left out, not faked.
+    static func board(identity: NovaSessionIdentity) async throws -> [NovaNonconformityEntry] {
+        func check() throws {
+            try Task.checkCancellation()
+            guard novaCurrentSessionIdentity() == identity else { throw NovaNonconformityFailure.denied }
+        }
+        try check()
+        let companies = try await loadNovaPilotOverview(identity: identity).filter { !$0.is_archived }
+        var result: [NovaNonconformityEntry] = []
+        for company in companies {
+            try check()
+            guard let places = try? await read(company: company.id, kind: "workplaces", decoding: WorkplaceEnvelope.self),
+                  let list = try? await read(company: company.id, kind: "list", decoding: ListEnvelope.self) else { continue }
+            try check()
+            let names = Dictionary(uniqueKeysWithValues: places.rows.map { ($0.id, $0.name) })
+            result.append(contentsOf: list.rows.map { row in
+                .init(row: row, companyID: company.id, companyName: company.name,
+                      workplaceName: names[row.workplace_id])
+            })
+        }
+        // Newest first, and stable when two records share a day.
+        return result.sorted {
+            $0.row.opened_on == $1.row.opened_on
+                ? $0.row.title.localizedCaseInsensitiveCompare($1.row.title) == .orderedAscending
+                : $0.row.opened_on > $1.row.opened_on
+        }
+    }
+
+    private struct ListEnvelope: Decodable { let rows: [NovaNonconformityRow] }
+    private struct WorkplaceEnvelope: Decodable { let rows: [NovaNonconformityWorkplace] }
+
+    private static func read<T: Decodable>(company: UUID, kind: String, decoding: T.Type) async throws -> T {
+        let data = try await SupabaseService.shared.client.rpc("isg_nonconformity_read_v1", params: [
+            "p_company": PersonnelRPCValue.id(company), "p_kind": .string(kind),
+            "p_query": .null, "p_state": .null, "p_after": .null, "p_id": .null]).execute().data
+        return try JSONDecoder().decode(T.self, from: data)
     }
 
     static func companyOptions(identity: NovaSessionIdentity) async throws -> [NovaAnalysisCompanyOption] {
@@ -57,10 +139,15 @@ enum NovaAnalysisWorkspace {
         let companies = (try? await loadNovaPilotOverview(identity: identity)) ?? []
         let name = bundle.analysis.companyID.flatMap { id in companies.first { $0.id == id }?.name }
         let sections = self.sections(hub: hub, bundle: bundle, method: method)
+        let focuses = bundle.analysis.canvas.split(separator: ",").map(String.init)
+            .compactMap { id in AnalysisCanvas.all.first { $0.id == id.trimmingCharacters(in: .whitespaces) }?.title }
         return .init(analysisID: analysisID, title: bundle.analysis.title, createdOn: day(bundle.analysis.createdAt),
             methodLabel: methodLabel, method: method == .fineKinney ? .fineKinney : .matrix5x5,
             companyID: bundle.analysis.companyID, companyName: name, sections: sections,
-            isProjectionMissing: hub?.enabled != true)
+            isProjectionMissing: hub?.enabled != true,
+            photoCount: bundle.photos.count,
+            sectorLabel: bundle.analysis.analysisSectorID?.label(),
+            focusLabels: focuses)
     }
 
     /// The hub is the product's own projection. When it is not available the
