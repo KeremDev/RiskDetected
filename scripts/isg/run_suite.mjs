@@ -6,7 +6,7 @@ import { ROOT } from './lib.mjs';
 const suites = {
   foundation: ['--test', 'scripts/isg/foundation.test.mjs', 'scripts/isg/function_map.test.mjs', 'scripts/isg/ios_contract_inventory.test.mjs', 'scripts/isg/backup_crypto.test.mjs', 'scripts/isg/auth_restore_guard.test.mjs', 'scripts/isg/storage_restore_probe.test.mjs', 'scripts/isg/auth_session_probe.test.mjs', 'scripts/isg/auth_mutation_probe.test.mjs', 'scripts/isg/android_contract_guard.test.mjs', 'scripts/client_flow_contract_test.mjs', 'scripts/isg/workplace_probe.test.mjs', 'scripts/isg/personnel_probe.test.mjs', 'scripts/isg/assignment_move.test.mjs'],
   'capacity-shadow': ['--test', 'scripts/isg/company_capacity_shadow.test.mjs'],
-  'nova-design': ['--test', 'scripts/isg/nova_tokens.test.mjs', 'scripts/isg/nova_icons.test.mjs', 'scripts/isg/nova_session_host.test.mjs', 'scripts/isg/nova_company_list.test.mjs', 'scripts/isg/nova_analysis_flow.test.mjs', 'scripts/isg/nova_document_tracking.test.mjs', 'scripts/isg/nova_file_library.test.mjs', 'scripts/isg/nova_equipment_checks.test.mjs', 'scripts/isg/nova_risk_assessments.test.mjs'],
+  'nova-design': ['--test', 'scripts/isg/nova_tokens.test.mjs', 'scripts/isg/nova_icons.test.mjs', 'scripts/isg/nova_session_host.test.mjs', 'scripts/isg/nova_company_list.test.mjs', 'scripts/isg/nova_analysis_flow.test.mjs', 'scripts/isg/nova_document_tracking.test.mjs', 'scripts/isg/nova_file_library.test.mjs', 'scripts/isg/nova_equipment_checks.test.mjs', 'scripts/isg/nova_risk_assessments.test.mjs', 'scripts/isg/nova_checklists.test.mjs'],
   'password-auth': ['--test', 'scripts/isg/password_auth_probe.test.mjs'],
 };
 const [suite, ...extra] = process.argv.slice(2);
@@ -19,6 +19,7 @@ suites.foundation.push('scripts/isg/rule_core_guard.test.mjs');
 suites.foundation.push('scripts/isg/training_core_guard.test.mjs');
 suites.foundation.push('scripts/isg/risk_core_guard.test.mjs');
 suites.foundation.push('scripts/isg/risk_versions_guard.test.mjs');
+suites.foundation.push('scripts/isg/checklist_runs_guard.test.mjs');
 suites.foundation.push('scripts/isg/nonconformity_core_guard.test.mjs');
 suites.foundation.push('scripts/isg/module_core_guard.test.mjs');
 suites.foundation.push('scripts/isg/module_second_guard.test.mjs');

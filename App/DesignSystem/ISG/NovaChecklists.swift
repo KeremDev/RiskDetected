@@ -1,0 +1,264 @@
+import Foundation
+
+/// Where a run is. The value is always the server's; nothing on this side
+/// decides that a run is finished.
+enum NovaChecklistRunState: String, CaseIterable, Identifiable, Equatable {
+    case open, submitted, cancelled
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .open: return RDLocalization.string("localizable.nova.checklist.state.open", table: .localizable, fallback: "Sürüyor")
+        case .submitted: return RDLocalization.string("localizable.nova.checklist.state.submitted", table: .localizable, fallback: "Tamamlandı")
+        case .cancelled: return RDLocalization.string("localizable.nova.checklist.state.cancelled", table: .localizable, fallback: "İptal edildi")
+        }
+    }
+    var footer: String {
+        switch self {
+        case .open: return RDLocalization.string("localizable.nova.checklist.state.open.footer", table: .localizable, fallback: "yanıt bekliyor")
+        case .submitted: return RDLocalization.string("localizable.nova.checklist.state.submitted.footer", table: .localizable, fallback: "kayıtlı")
+        case .cancelled: return RDLocalization.string("localizable.nova.checklist.state.cancelled.footer", table: .localizable, fallback: "vazgeçildi")
+        }
+    }
+    var symbol: String {
+        switch self {
+        case .open: return "square.and.pencil"
+        case .submitted: return "checkmark.circle"
+        case .cancelled: return "xmark.circle"
+        }
+    }
+}
+
+/// What one question was answered with. `notApplicable` is only offered where
+/// the list itself allows it, because the server refuses it elsewhere.
+enum NovaChecklistResult: String, CaseIterable, Identifiable, Equatable {
+    case conform, nonconform
+    case notApplicable = "not_applicable"
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .conform: return RDLocalization.string("localizable.nova.checklist.result.conform", table: .localizable, fallback: "Uygun")
+        case .nonconform: return RDLocalization.string("localizable.nova.checklist.result.nonconform", table: .localizable, fallback: "Uygun değil")
+        case .notApplicable: return RDLocalization.string("localizable.nova.checklist.result.na", table: .localizable, fallback: "Uygulanamaz")
+        }
+    }
+    var symbol: String {
+        switch self {
+        case .conform: return "checkmark.circle"
+        case .nonconform: return "exclamationmark.triangle"
+        case .notApplicable: return "minus.circle"
+        }
+    }
+}
+
+/// The severities the nonconformity record accepts. Offered only when the
+/// expert has already asked to open one.
+enum NovaChecklistSeverity: String, CaseIterable, Identifiable, Equatable {
+    case low, medium, high, critical
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .low: return RDLocalization.string("localizable.nova.checklist.severity.low", table: .localizable, fallback: "Düşük")
+        case .medium: return RDLocalization.string("localizable.nova.checklist.severity.medium", table: .localizable, fallback: "Orta")
+        case .high: return RDLocalization.string("localizable.nova.checklist.severity.high", table: .localizable, fallback: "Yüksek")
+        case .critical: return RDLocalization.string("localizable.nova.checklist.severity.critical", table: .localizable, fallback: "Kritik")
+        }
+    }
+}
+
+/// One question as the run shows it: the prompt the pinned version asked, and
+/// the answer if there is one.
+struct NovaChecklistAnswer: Identifiable, Equatable {
+    var id: String { itemCode }
+    let itemCode: String
+    let prompt: String
+    let position: Int
+    let allowsNotApplicable: Bool
+    let result: NovaChecklistResult?
+    let note: String?
+    let nonconformityID: UUID?
+    var isAnswered: Bool { result != nil }
+}
+
+/// One run: what it was filled against, and what it found.
+struct NovaChecklistRun: Identifiable, Equatable {
+    let id: UUID
+    let companyID: UUID?
+    let companyName: String?
+    let workplaceID: UUID?
+    let workplaceName: String?
+    let templateCode: String
+    let templateTitle: String?
+    /// The version pinned when the run started. Publishing a newer list later
+    /// never changes what this run asked.
+    let templateVersion: Int
+    let state: NovaChecklistRunState
+    let startedOn: String
+    let submittedAt: Date?
+    let expected: Int
+    let answered: Int
+    let remaining: Int
+    let conform: Int
+    let nonconform: Int
+    let notApplicable: Int
+    /// How many failing answers the expert chose to turn into a record. Never
+    /// all of them by default, because nothing converts on its own.
+    let nonconformitiesOpened: Int
+    let answers: [NovaChecklistAnswer]
+}
+
+/// One question in a template the expert is editing.
+struct NovaChecklistTemplateItem: Identifiable, Equatable {
+    var id: String { itemCode }
+    let itemCode: String
+    let prompt: String
+    let position: Int
+    let allowsNotApplicable: Bool
+}
+
+/// One version of a list. Only a draft is editable.
+struct NovaChecklistTemplateVersion: Identifiable, Equatable {
+    var id: Int { version }
+    let version: Int
+    let status: String
+    let publishedAt: Date?
+    let approvalNote: String?
+    let items: [NovaChecklistTemplateItem]
+    var isDraft: Bool { status == "draft" }
+    var isPublished: Bool { status == "published" }
+    var statusTitle: String {
+        switch status {
+        case "draft": return RDLocalization.string("localizable.nova.checklist.version.draft", table: .localizable, fallback: "Taslak")
+        case "published": return RDLocalization.string("localizable.nova.checklist.version.published", table: .localizable, fallback: "Yayımda")
+        default: return RDLocalization.string("localizable.nova.checklist.version.superseded", table: .localizable, fallback: "Geçmiş")
+        }
+    }
+}
+
+/// One list the expert wrote, with all its versions.
+struct NovaChecklistTemplate: Identifiable, Equatable {
+    var id: String { templateCode }
+    let templateCode: String
+    let title: String
+    /// A product template is readable but never editable. None ships today.
+    let isProduct: Bool
+    let isArchived: Bool
+    let versions: [NovaChecklistTemplateVersion]
+    var draft: NovaChecklistTemplateVersion? { versions.first(where: \.isDraft) }
+    var published: NovaChecklistTemplateVersion? { versions.first(where: \.isPublished) }
+}
+
+/// A list a run may be started from: published only.
+struct NovaChecklistStarter: Identifiable, Equatable {
+    var id: String { templateCode }
+    let templateCode: String
+    let title: String
+    let version: Int
+    let items: Int
+    let isProduct: Bool
+}
+
+struct NovaChecklistCatalogue: Equatable {
+    struct Workplace: Identifiable, Equatable { let id: UUID; let name: String; let needsReview: Bool }
+    let workplaces: [Workplace]
+    let starters: [NovaChecklistStarter]
+    /// Said plainly rather than implied by an empty list.
+    let productTemplatesOffered: Bool
+}
+
+struct NovaChecklistBoard: Equatable {
+    struct CompanyTally: Identifiable, Equatable {
+        let id: UUID
+        let name: String
+        let total: Int
+        let counts: [String: Int]
+    }
+    let rows: [NovaChecklistRun]
+    let counts: [String: Int]
+    let companies: [CompanyTally]
+    let total: Int
+    let hasMore: Bool
+    let offset: Int
+    func count(_ state: NovaChecklistRunState) -> Int { counts[state.rawValue] ?? 0 }
+    var needsAttention: Int { count(.open) }
+}
+
+struct NovaChecklistQuery: Equatable {
+    var company: UUID?
+    var state: String?
+    var workplace: UUID?
+    var template: String?
+    var search: String = ""
+    var limit: Int = 10
+    var offset: Int = 0
+}
+
+/// What the expert fills in to answer one question. The record toggle is its
+/// own field on purpose: a failing answer is not a finding until it is asked
+/// for.
+struct NovaChecklistAnswerDraft: Equatable {
+    var runID: UUID?
+    var itemCode: String = ""
+    var prompt: String = ""
+    var allowsNotApplicable: Bool = true
+    var result: NovaChecklistResult = .conform
+    var note: String = ""
+    var openNonconformity: Bool = false
+    var severity: NovaChecklistSeverity = .medium
+    var dueOn: String = ""
+}
+
+enum NovaChecklistFailure: Error, Equatable {
+    case denied, planRequired, moduleUnavailable, validation, conflict
+    case runSubmitted, runIncomplete, templatePublished
+    case unavailable
+    var message: String {
+        switch self {
+        case .denied: return RDLocalization.string("localizable.nova.checklist.error.denied", table: .localizable,
+            fallback: "Bu kayda erişim yok.")
+        case .planRequired: return RDLocalization.string("localizable.nova.checklist.error.plan", table: .localizable,
+            fallback: "Bu işlem için Plus veya Pro aboneliği gerekiyor.")
+        case .moduleUnavailable: return RDLocalization.string("localizable.nova.checklist.error.module", table: .localizable,
+            fallback: "Kontrol listeleri modülü henüz açık değil.")
+        case .validation: return RDLocalization.string("localizable.nova.checklist.error.validation", table: .localizable,
+            fallback: "Girilen bilgiler eksik veya birbiriyle uyumsuz.")
+        case .conflict: return RDLocalization.string("localizable.nova.checklist.error.conflict", table: .localizable,
+            fallback: "Kayıt bu sırada başka bir yerden değişti. Yenileyip tekrar deneyin.")
+        case .runSubmitted: return RDLocalization.string("localizable.nova.checklist.error.submitted", table: .localizable,
+            fallback: "Tamamlanmış kontrol değiştirilemez.")
+        case .runIncomplete: return RDLocalization.string("localizable.nova.checklist.error.incomplete", table: .localizable,
+            fallback: "Yanıtlanmamış soru var. Tamamlamak için hepsini yanıtlayın.")
+        case .templatePublished: return RDLocalization.string("localizable.nova.checklist.error.published", table: .localizable,
+            fallback: "Yayımlanmış liste değiştirilemez. Değişiklik için yeni sürüm açın.")
+        case .unavailable: return RDLocalization.string("localizable.nova.checklist.error.unavailable", table: .localizable,
+            fallback: "Kayıt alınamadı. Bağlantıyı kontrol edip tekrar deneyin.")
+        }
+    }
+}
+
+/// The words the screens use, in one place so the same thing never gets two
+/// names on two surfaces.
+enum NovaChecklistWords {
+    /// The sentence the screen carries wherever a failing answer is shown.
+    static let neverAutomatic = RDLocalization.string("localizable.nova.checklist.auto.note", table: .localizable,
+        fallback: "Olumsuz yanıt kendiliğinden uygunsuzluk kaydı açmaz. Kayıt açmak sizin seçiminizdir.")
+    /// The sentence the templates screen carries at the top.
+    static let noProductList = RDLocalization.string("localizable.nova.checklist.product.note", table: .localizable,
+        fallback: "Ürün hazır kontrol listesi göndermez. Onaylanmış bir soru kataloğu yok; listeyi siz yazarsınız.")
+    /// The sentence beside a published version.
+    static let selfApproved = RDLocalization.string("localizable.nova.checklist.approval.note", table: .localizable,
+        fallback: "Yayımlamak listenin sizin onayınızdan geçtiği anlamına gelir; mevzuat onayı değildir.")
+    /// Why a run reads the way it does.
+    static func explain(_ run: NovaChecklistRun) -> String {
+        switch run.state {
+        case .open:
+            return String(format: RDLocalization.string("localizable.nova.checklist.explain.open", table: .localizable,
+                fallback: "%d sorudan %d tanesi yanıtlandı."), run.expected, run.answered)
+        case .submitted:
+            return String(format: RDLocalization.string("localizable.nova.checklist.explain.submitted", table: .localizable,
+                fallback: "%d uygun, %d uygun değil, %d uygulanamaz."), run.conform, run.nonconform, run.notApplicable)
+        case .cancelled:
+            return RDLocalization.string("localizable.nova.checklist.explain.cancelled", table: .localizable,
+                fallback: "Bu kontrolden vazgeçildi; yanıtları kayıtta kaldı.")
+        }
+    }
+}

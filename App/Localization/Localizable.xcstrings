@@ -9523,6 +9523,1356 @@
         }
       }
     },
+    "localizable.nova.checklist.answer.due": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deadline"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Termin"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.answer.nona": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"Not applicable\" was left switched off for this question in the list."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu soru için \"Uygulanamaz\" seçeneği listede kapalı bırakılmış."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.answer.note": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.answer.open": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open a nonconformity record for this item"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu madde için uygunsuzluk kaydı aç"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.answer.save": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save the answer"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yanıtı kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.answer.severity": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Severity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önem"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.approval.note": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Publishing means the list passed your own approval; it is not a regulatory approval."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yayımlamak listenin sizin onayınızdan geçtiği anlamına gelir; mevzuat onayı değildir."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.auto.note": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A negative answer does not open a nonconformity record on its own. Opening one is your choice."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Olumsuz yanıt kendiliğinden uygunsuzluk kaydı açmaz. Kayıt açmak sizin seçiminizdir."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.back": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.cancel": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.close": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapat"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.count": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d / %d records"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d / %d kayıt"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.empty.body": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Write and publish a list first, then start a check for a workplace."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önce bir liste yazıp yayımlayın, sonra bir işyeri için kontrol başlatın."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.empty.title": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No checks recorded"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrol kaydı yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.error.conflict": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record changed elsewhere meanwhile. Refresh and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt bu sırada başka bir yerden değişti. Yenileyip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.error.denied": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No access to this record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kayda erişim yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.error.incomplete": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A question is unanswered. Answer them all to complete the check."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yanıtlanmamış soru var. Tamamlamak için hepsini yanıtlayın."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.error.module": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The checklists module is not open yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrol listeleri modülü henüz açık değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.error.plan": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This action needs a Plus or Pro subscription."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu işlem için Plus veya Pro aboneliği gerekiyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.error.published": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A published list cannot be changed. Open a new version to change it."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yayımlanmış liste değiştirilemez. Değişiklik için yeni sürüm açın."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.error.submitted": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A completed check cannot be changed."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamamlanmış kontrol değiştirilemez."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.error.unavailable": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record could not be loaded. Check the connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt alınamadı. Bağlantıyı kontrol edip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.error.validation": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The entered details are incomplete or inconsistent."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Girilen bilgiler eksik veya birbiriyle uyumsuz."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.explain.cancelled": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This check was abandoned; its answers stayed on record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kontrolden vazgeçildi; yanıtları kayıtta kaldı."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.explain.open": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d of %d questions answered."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d sorudan %d tanesi yanıtlandı."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.explain.submitted": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d conform, %d nonconform, %d not applicable."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d uygun, %d uygun değil, %d uygulanamaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.filter.companies": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All companies"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm firmalar"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.filter.company": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.filter.state": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durum"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.filter.states": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All statuses"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm durumlar"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.more": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show more"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha fazla göster"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.product.note": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The product ships no ready-made checklist. No approved question catalogue exists; you write the list."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ürün hazır kontrol listesi göndermez. Onaylanmış bir soru kataloğu yok; listeyi siz yazarsınız."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.result.conform": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conform"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygun"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.result.na": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not applicable"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygulanamaz"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.result.nonconform": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nonconform"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygun değil"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.row.opened": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d nonconformity records opened"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d uygunsuzluk kaydı açıldı"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.row.started": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Started"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlangıç"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.row.version": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List version"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liste sürümü"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.run.cancel": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abandon"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.run.opened": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nonconformity record opened"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygunsuzluk kaydı açıldı"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.run.pinned": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This check was filled with version %d of the list. A version published later does not change this record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kontrol listenin %d. sürümüyle dolduruldu. Sonradan yayımlanan sürüm bu kaydı değiştirmez."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.run.questions": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questions"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorular"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.run.remaining": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d questions unanswered. It cannot be completed until they all are."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d soru yanıtsız. Hepsi yanıtlanmadan tamamlanamaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.run.submit": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Complete the check"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrolü tamamla"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.run.unanswered": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unanswered"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yanıtsız"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.search": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search list, workplace or company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liste, işyeri veya firma ara"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.severity.critical": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Critical"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kritik"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.severity.high": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "High"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yüksek"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.severity.low": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Low"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düşük"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.severity.medium": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medium"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orta"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.start.items": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d questions"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d soru"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.start.none": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No published list. Write and publish one from My lists."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yayımlanmış liste yok. Listelerim'den bir liste yazıp yayımlayın."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.start.noplace": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This company has no workplace on record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu firmada işyeri kaydı yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.start.title": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start a check"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrol başlat"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.state.cancelled": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abandoned"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İptal edildi"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.state.cancelled.footer": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "given up"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "vazgeçildi"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.state.open": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In progress"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sürüyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.state.open.footer": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "awaiting answers"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yanıt bekliyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.state.submitted": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Completed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamamlandı"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.state.submitted.footer": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "on record"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kayıtlı"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.templates": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My lists"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listelerim"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.templates.add": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a question"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Soru ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.templates.allowna": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow a \"not applicable\" answer"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "\"Uygulanamaz\" yanıtına izin ver"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.templates.create": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a draft"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taslak oluştur"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.templates.items": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d questions"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d soru"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.templates.name": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "List name"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liste adı"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.templates.new": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New list"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni liste"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.templates.note": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Publishing note"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yayımlama notu"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.templates.product": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Product list"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ürün listesi"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.templates.prompt": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Question text"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Soru metni"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.templates.publish": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Publish"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yayımla"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.templates.title": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My checklists"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrol listelerim"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.version.draft": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draft"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taslak"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.version.published": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Published"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yayımda"
+          }
+        }
+      }
+    },
+    "localizable.nova.checklist.version.superseded": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Past"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçmiş"
+          }
+        }
+      }
+    },
     "localizable.nova.company.detail.title": {
       "extractionState": "manual",
       "localizations": {
@@ -19023,6 +20373,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bildirim Merkezi"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.checklists": {
+      "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checklists"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrol Listeleri"
           }
         }
       }
