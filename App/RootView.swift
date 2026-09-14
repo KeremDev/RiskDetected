@@ -44,7 +44,7 @@ struct RootView: View {
                 AuthView()
                     .transition(.opacity)
             case .main:
-                MainTabView()
+                NovaPilotMainGate(auth: app.auth)
                     .transition(.opacity)
             }
 

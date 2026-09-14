@@ -13,6 +13,8 @@ struct NovaEmployeeRow: Equatable, Identifiable {
     let name: String
     let departmentID: UUID?
     let departmentName: String?
+    /// Optional until the assignment endpoint is wired; the pilot UI can still preview it.
+    var jobTitle: String? = nil
     let version: Int64
     let isArchived: Bool
 }

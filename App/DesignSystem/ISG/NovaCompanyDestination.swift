@@ -8,6 +8,7 @@ struct NovaCompanyDestination: View {
     var includeArchived = false
     let onSelect: (UUID) -> Void
     let onBack: () -> Void
+    var onCreate: (() -> Void)? = nil
     @State private var state = NovaCompanyListState()
     @State private var refresh = UUID()
 
@@ -23,7 +24,7 @@ struct NovaCompanyDestination: View {
                 guard let id = UUID(uuidString: raw), let selected = state.select(id, requestID: current.requestID, host: host, includeArchived: includeArchived) else { return }
                 onSelect(selected.id)
             }, onBack: { if host.isCurrent(epoch) { onBack() } },
-            onRetry: { if host.isCurrent(epoch) { refresh = UUID() } })
+            onRetry: { if host.isCurrent(epoch) { refresh = UUID() } }, onCreate: onCreate)
         .id(epoch) // The previous account's search text/focus must not survive the host boundary.
         .task(id: LoadKey(epoch: epoch, archived: includeArchived, refresh: refresh)) {
             guard let ticket = state.begin(host: host, includeArchived: includeArchived) else { return }

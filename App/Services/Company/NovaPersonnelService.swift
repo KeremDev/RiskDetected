@@ -170,11 +170,11 @@ enum PersonnelRPCValue: Encodable, Equatable {
         }
     }
     private struct Employee: Decodable {
-        let id: UUID; let owner_id: UUID; let company_id: UUID; let name: String; let department_id: UUID?; let department_name: String?; let version: Int64; let is_archived: Bool
+        let id: UUID; let owner_id: UUID; let company_id: UUID; let name: String; let department_id: UUID?; let department_name: String?; let job_title: String?; let version: Int64; let is_archived: Bool
         func row(_ scope: NovaPersonnelScope) throws -> NovaEmployeeRow {
             guard owner_id == scope.ownerID, company_id == scope.companyID, (0...9007199254740991).contains(version),
                   (department_id == nil) == (department_name == nil) else { throw NovaPersonnelFailure.unavailable }
-            return .init(id: id, ownerID: owner_id, companyID: company_id, name: name, departmentID: department_id, departmentName: department_name, version: version, isArchived: is_archived)
+            return .init(id: id, ownerID: owner_id, companyID: company_id, name: name, departmentID: department_id, departmentName: department_name, jobTitle: job_title, version: version, isArchived: is_archived)
         }
     }
     private struct Commit: Decodable { let schema_version: Int; let operation_id: UUID; let employee_id: UUID; let owner_id: UUID; let company_id: UUID; let version: Int64; let is_archived: Bool }

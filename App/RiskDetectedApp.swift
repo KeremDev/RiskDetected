@@ -47,7 +47,7 @@ struct RiskDetectedApp: App {
                 .font(RDTypography.font(17, .regular))
                 .environmentObject(appState)
                 .environmentObject(networkMonitor)
-                .preferredColorScheme(appState.themePreference.colorScheme)
+                .preferredColorScheme(buildColorScheme)
                 .onOpenURL { url in
                     MetaAppEventsService.shared.handle(url)
                     if !GoogleSignInService.handle(url) {
@@ -64,6 +64,14 @@ struct RiskDetectedApp: App {
                     }
                 }
         }
+    }
+
+    private var buildColorScheme: ColorScheme? {
+        #if DEBUG && NOVA_PILOT_BUILD
+        return .light
+        #else
+        return appState.themePreference.colorScheme
+        #endif
     }
 
     #if DEBUG

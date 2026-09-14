@@ -16,8 +16,11 @@ enum NovaTab: String, CaseIterable, Hashable {
 
 enum NovaDestination: String, CaseIterable, Hashable {
     case home, newFinding, findings, companies, memory, documentChecklist, documents, visits, statistics, training, reports, reportArchive, notifications, profile, newDocument, newVisit, newTraining
+    case periodicChecks, newCompany
     var title: String {
         switch self {
+        case .newCompany: return "Firma Ekle"
+        case .periodicChecks: return RDLocalization.string("localizable.nova.navigation.periodic.checks", table: .localizable, fallback: "Periyodik Kontroller")
         case .home: return RDLocalization.string("localizable.nova.navigation.ana.sayfa.1fc29356", table: .localizable, fallback: "Ana Sayfa")
         case .newFinding: return RDLocalization.string("localizable.nova.navigation.yeni.uygunsuzluk.0f9172a3", table: .localizable, fallback: "Yeni Uygunsuzluk")
         case .findings: return "Uygunsuzluklar"
@@ -39,6 +42,8 @@ enum NovaDestination: String, CaseIterable, Hashable {
     }
     var tab: NovaTab {
         switch self {
+        case .newCompany: return .companies
+        case .periodicChecks: return .home
         case .home: return .home
         case .newFinding: return .findings
         case .findings: return .findings
@@ -60,6 +65,8 @@ enum NovaDestination: String, CaseIterable, Hashable {
     }
     var symbol: String {
         switch self {
+        case .newCompany: return "building.2"
+        case .periodicChecks: return "checkmark.shield"
         case .home: return "house"
         case .newFinding: return "camera"
         case .findings: return "list.bullet"
@@ -79,8 +86,9 @@ enum NovaDestination: String, CaseIterable, Hashable {
         case .newTraining: return "graduationcap"
         }
     }
-    static let drawer: [Self] = [.home, .newFinding, .findings, .companies, .memory, .documentChecklist, .documents, .visits, .statistics, .training, .reports, .reportArchive, .notifications]
-    static let quickAdd: [Self] = [.newFinding, .newDocument, .newVisit, .newTraining]
+    // Historical route values remain decodable; removed product features are not offered.
+    static let drawer: [Self] = [.home, .newFinding, .findings, .companies, .periodicChecks, .documentChecklist, .documents, .statistics, .training, .reports, .reportArchive, .notifications]
+    static let quickAdd: [Self] = [.newCompany, .newFinding, .newDocument, .newTraining]
 }
 
 enum NovaOverlay: String, CaseIterable { case drawer, quickAdd, notifications }
@@ -112,7 +120,10 @@ struct NovaNavigationState: Equatable {
     }
     var canGoBack: Bool { overlay != nil || !(paths[selected] ?? []).isEmpty || selected != .home }
     func canOpen(_ destination: NovaDestination) -> Bool {
-        available.contains(destination) && available.contains(destination.tab.root)
+        // Creating a company is presented by the companies host; it does not
+        // require a separate server capability flag beyond the companies tab.
+        let availableDestination = destination == .newCompany ? available.contains(.companies) : available.contains(destination)
+        return availableDestination && available.contains(destination.tab.root)
     }
     mutating func select(_ tab: NovaTab, from expectedEpoch: String) {
         guard expectedEpoch == epoch, canOpen(tab.root) else { return }

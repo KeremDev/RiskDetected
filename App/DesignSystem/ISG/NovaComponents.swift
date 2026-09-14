@@ -1,5 +1,52 @@
 import SwiftUI
 
+private struct NovaSuccessKey: EnvironmentKey {
+    static let defaultValue: (String) -> Void = { _ in }
+}
+
+extension EnvironmentValues {
+    var novaCelebrate: (String) -> Void {
+        get { self[NovaSuccessKey.self] }
+        set { self[NovaSuccessKey.self] = newValue }
+    }
+}
+
+/// Dismiss on a non-input tap inside this form, including its empty scroll area.
+/// Does not consume button taps or steal focus from text fields / the keyboard.
+struct NovaKeyboardDismissArea: UIViewRepresentable {
+    func makeUIView(context: Context) -> Surface { Surface() }
+    func updateUIView(_ uiView: Surface, context: Context) {}
+    static func dismantleUIView(_ uiView: Surface, coordinator: ()) { uiView.detach() }
+
+    final class Surface: UIView, UIGestureRecognizerDelegate {
+        private weak var attachedWindow: UIWindow?
+        private lazy var tap = UITapGestureRecognizer(target: self, action: #selector(endInput))
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            detach()
+            guard let window else { return }
+            isUserInteractionEnabled = false
+            tap.cancelsTouchesInView = false
+            tap.delegate = self
+            window.addGestureRecognizer(tap)
+            attachedWindow = window
+        }
+        func detach() { attachedWindow?.removeGestureRecognizer(tap); attachedWindow = nil }
+        @objc private func endInput() { attachedWindow?.endEditing(true) }
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            guard bounds.contains(touch.location(in: self)) else { return false }
+            var candidate = touch.view
+            while let view = candidate {
+                if view is UITextField || view is UITextView { return false }
+                candidate = view.superview
+            }
+            return true
+        }
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool { true }
+    }
+}
+
 // Additive expert-only primitives. No global appearance, services or app route changes.
 extension NovaRGBA {
     var color: Color {
@@ -34,6 +81,7 @@ struct NovaText: View {
 struct NovaCard<Content: View>: View {
     var padding: CGFloat = 11
     var border: Color = .clear
+    var tint: Color? = nil
     @ViewBuilder let content: () -> Content
     @Environment(\.colorScheme) private var scheme
 
@@ -42,7 +90,7 @@ struct NovaCard<Content: View>: View {
             .padding(padding)
             .background {
                 RoundedRectangle(cornerRadius: NovaDimensionToken.radiusCard.value)
-                    .fill(NovaColorToken.surface.color(in: scheme))
+                    .fill(tint ?? NovaColorToken.surface.color(in: scheme))
                     .shadow(color: .black.opacity(0.04), radius: 10, x: 0, y: 2)
             }
             .overlay(RoundedRectangle(cornerRadius: NovaDimensionToken.radiusCard.value)
@@ -55,13 +103,64 @@ struct NovaCard<Content: View>: View {
 struct NovaPageSurface<Content: View>: View {
     @ViewBuilder let content: () -> Content
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.isNovaPopup) private var isNovaPopup
 
     var body: some View {
         content()
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .frame(maxWidth: .infinity, maxHeight: isNovaPopup ? nil : .infinity, alignment: .topLeading)
             .scrollContentBackground(.hidden)
             .background(NovaColorToken.canvas.color(in: scheme).ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar, .tabBar)
+    }
+}
+
+/// Consistent 44-point hit target with a compact, theme-aware icon.
+struct NovaBackButton: View {
+    var isEnabled = true
+    let action: () -> Void
+    @Environment(\.colorScheme) private var scheme
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "chevron.left").font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(NovaColorToken.text.color(in: scheme))
+                .frame(width: 44, height: 44)
+                .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
+        }.buttonStyle(.plain).disabled(!isEnabled)
+            .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.shell.back", table: .localizable, fallback: "Geri")))
+    }
+}
+
+/// Brief purpose copy: outline icon, never a decorative icon tile.
+struct NovaHelpHint: View {
+    let text: String
+    @Environment(\.colorScheme) private var scheme
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            NovaIcon(symbol: "lightbulb", size: 15)
+                .foregroundStyle(NovaColorToken.statusWarningInk.color(in: scheme))
+                .accessibilityHidden(true)
+            NovaText(text: text, style: .metaQuiet,
+                color: NovaColorToken.textSecondary.color(in: scheme))
+        }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 4)
+    }
+}
+
+struct NovaPageHeading: View {
+    let title: String
+    var subtitle = ""
+    var isBackEnabled = true
+    let onBack: () -> Void
+    @Environment(\.isNovaPopup) private var isNovaPopup
+    var body: some View {
+        HStack(spacing: 12) {
+            if !isNovaPopup { NovaBackButton(isEnabled: isBackEnabled, action: onBack) }
+            VStack(alignment: .leading, spacing: 3) {
+                NovaText(text: title, style: .sectionTitle)
+                if !subtitle.isEmpty { NovaText(text: subtitle, style: .metaQuiet) }
+            }
+            Spacer(minLength: 0)
+        }
     }
 }
 

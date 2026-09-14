@@ -1,5 +1,36 @@
 import SwiftUI
 
+/// Direct company-page entry keeps the same pending-operation gate as the personnel list.
+struct NovaPersonnelCreateSheet: View {
+    let scope: NovaPersonnelScope
+    let companyName: String
+    let client: NovaPersonnelClient
+    @Environment(\.dismiss) private var dismiss
+    @State private var checked = false
+    @State private var blocked = false
+    var body: some View {
+        NovaPageSurface {
+            if checked && !blocked {
+                NovaEmployeeEditor(scope: scope, companyName: companyName, client: client, original: nil,
+                    onBack: { dismiss() }, onSaved: { _ in dismiss() })
+            } else {
+                VStack(alignment: .leading, spacing: 14) {
+                    NovaPageHeading(title: RDLocalization.string("localizable.nova.personnel.screens.personel.ekle.565c83dd", table: .localizable, fallback: "Personel Ekle"), onBack: { dismiss() })
+                    if checked {
+                        NovaHelpHint(text: RDLocalization.string("localizable.nova.personnel.error.pending.unverified", table: .localizable, fallback: "Bekleyen işlem doğrulanamadı. Yeni kayıt açmadan tekrar kontrol edin."))
+                    } else { ProgressView() }
+                }.padding(18)
+            }
+        }.task {
+            do {
+                let pending = try await client.pending(scope)
+                try Task.checkCancellation()
+                blocked = pending != nil; checked = true
+            } catch { if !Task.isCancelled { blocked = true; checked = true } }
+        }
+    }
+}
+
 /// Scope identity owns all list, search, form and pending-request state.
 struct NovaPersonnelDestination: View {
     let scope: NovaPersonnelScope
@@ -8,7 +39,10 @@ struct NovaPersonnelDestination: View {
     let onBack: () -> Void
     var directory: NovaDirectoryClient? = nil
     var canWrite = true
-    var body: some View { PersonnelContent(scope: scope, companyName: companyName, client: client, onBack: onBack, directory: directory, canWrite: canWrite).id(scope).id(canWrite) }
+    /// Preview mode is used in the company accordion: five rows and a Tümü action.
+    var preview = false
+    var onShowAll: (() -> Void)? = nil
+    var body: some View { PersonnelContent(scope: scope, companyName: companyName, client: client, onBack: onBack, directory: directory, canWrite: canWrite, preview: preview, onShowAll: onShowAll).id(scope).id(canWrite).id(preview) }
 }
 
 private struct PersonnelContent: View {
@@ -18,6 +52,9 @@ private struct PersonnelContent: View {
     let onBack: () -> Void
     let directory: NovaDirectoryClient?
     let canWrite: Bool
+    let preview: Bool
+    let onShowAll: (() -> Void)?
+    @Environment(\.colorScheme) private var scheme
     @State private var rows: [NovaEmployeeRow] = []
     @State private var query = ""
     @State private var archived = false
@@ -30,7 +67,8 @@ private struct PersonnelContent: View {
     @State private var pending: NovaEmployeeIntent?
     @State private var pendingChecked = false
     @State private var reconciling = false
-    private enum Route: Equatable { case list, create, detail(UUID), edit(NovaEmployeeRow), advanced(UUID, NovaDirectoryKind) }
+    @State private var showingCreate = false
+    private enum Route: Equatable { case list, create, detail(UUID), edit(NovaEmployeeRow), archive(NovaEmployeeRow), advanced(UUID, NovaDirectoryKind) }
     private struct Key: Equatable { let query: String; let archived: Bool; let generation: UUID; let page: UUID? }
     var body: some View {
         NovaPageSurface {
@@ -45,8 +83,13 @@ private struct PersonnelContent: View {
                     .id("edit-\(row.id)-\(row.version)")
             case .detail(let id):
                 NovaEmployeeDetail(scope: scope, employeeID: id, client: client,
-                    onBack: { route = .list }, onEdit: { route = .edit($0) }, canWrite: canWrite,
+                    companyName: companyName, onBack: { route = .list }, onEdit: { route = .edit($0) }, onArchive: { route = .archive($0) }, canWrite: canWrite,
                     onDirectory: directory == nil ? nil : { route = .advanced(id, $0) })
+            case .archive(let row):
+                NovaEmployeeEditor(scope: scope, companyName: companyName, client: client, original: row,
+                    onBack: { route = .detail(row.id) }, onSaved: { _ in requestedPage = nil; generation = UUID(); route = .list },
+                    archiveOnOpen: true)
+                    .id("archive-\(row.id)-\(row.version)")
             case .advanced(let id, let kind):
                 if let directory {
                     NovaDirectoryDestination(scope: scope, kind: kind, parent: id, client: directory,
@@ -54,16 +97,33 @@ private struct PersonnelContent: View {
                 }
             }
         }
+        .fullScreenCover(isPresented: $showingCreate) {
+            NovaPopup {
+            NavigationStack {
+                NovaPageSurface {
+                    NovaEmployeeEditor(scope: scope, companyName: companyName, client: client, original: nil,
+                        onBack: { showingCreate = false }, onSaved: { row in
+                            showingCreate = false; requestedPage = nil; generation = UUID(); route = .detail(row.id)
+                        })
+                }
+            }
+            }
+        }
     }
     private var list: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 14) {
-                PersonnelHeading(title: "Personeller", subtitle: companyName, onBack: onBack)
+                PersonnelHeading(title: "Personeller", subtitle: companyName,
+                    trailingTitle: "Ekle", trailingAction: { showingCreate = true }, onBack: onBack)
                 NovaCard(padding: 14) {
                     HStack { NovaIcon(symbol: "magnifyingglass", size: 18); TextField(RDLocalization.string("localizable.nova.personnel.screens.personel.ara.6695c740", table: .localizable, fallback: "Personel ara…"), text: $query).font(.custom("PlusJakartaSans-Medium", size: 15)).accessibilityIdentifier("personnel.search") }
                 }
-                Toggle(RDLocalization.string("localizable.nova.personnel.screens.arsivdekileri.de.goster.1c9e4bc7", table: .localizable, fallback: "Arşivdekileri de göster"), isOn: $archived).font(.subheadline)
-                    .accessibilityIdentifier("personnel.archived")
+                HStack(spacing: 8) {
+                    NovaIcon(symbol: "archivebox", size: 13)
+                    NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.arsivdekileri.de.goster.1c9e4bc7", table: .localizable, fallback: "Arşivdekileri de göster"), style: .metaQuiet)
+                    Spacer()
+                    Toggle("", isOn: $archived).labelsHidden().scaleEffect(0.72).frame(width: 42, height: 24)
+                }.frame(minHeight: 28).accessibilityElement(children: .combine).accessibilityIdentifier("personnel.archived")
                 if let pending {
                     NovaCard(padding: 18) {
                         VStack(alignment: .leading, spacing: 12) {
@@ -76,17 +136,16 @@ private struct PersonnelContent: View {
                     }
                 }
                 if !canWrite { NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.salt.okunur.yeni.kayit.ve.duzenleme.kullanilamiy.7c6bdf36", table: .localizable, fallback: "Salt okunur · yeni kayıt ve düzenleme kullanılamıyor."), style: .metaQuiet) }
-                NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.personel.ekle.565c83dd", table: .localizable, fallback: "Personel Ekle"), symbol: "plus", isEnabled: canWrite && pendingChecked && pending == nil && !reconciling, action: { route = .create }).accessibilityIdentifier("personnel.add")
                 if let error { NovaCard(padding: 16) { NovaText(text: error); NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.tekrar.dene.c2d238eb", table: .localizable, fallback: "Tekrar dene"), symbol: "arrow.clockwise", variant: .surface, action: { generation = UUID() }) } }
                 if !loading && error == nil && rows.isEmpty { NovaCard(padding: 18) { NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.henuz.personel.yok.d4c4f866", table: .localizable, fallback: "Henüz personel yok.")) } }
-                ForEach(rows) { row in
+                ForEach(preview ? Array(rows.prefix(5)) : rows) { row in
                     Button { route = .detail(row.id) } label: {
                         NovaCard(padding: 16) {
                             HStack(spacing: 12) {
                                 NovaIcon(symbol: "person", size: 24)
                                 VStack(alignment: .leading, spacing: 5) {
                                     NovaText(text: row.name, style: .cardTitle)
-                                    NovaText(text: row.departmentName ?? RDLocalization.string("localizable.nova.personnel.no.department.selected", table: .localizable, fallback: "Departman seçilmedi"), style: .metaQuiet)
+                                    NovaText(text: [row.departmentName, row.jobTitle].compactMap { $0 }.joined(separator: " · ").isEmpty ? RDLocalization.string("localizable.nova.personnel.no.department.selected", table: .localizable, fallback: "Departman seçilmedi") : [row.departmentName, row.jobTitle].compactMap { $0 }.joined(separator: " · "), style: .metaQuiet)
                                     if row.isArchived { NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.arsivde.b15e4fa0", table: .localizable, fallback: "Arşivde"), style: .metaQuiet) }
                                 }
                                 Spacer(); NovaIcon(symbol: "chevron.right", size: 16)
@@ -95,8 +154,16 @@ private struct PersonnelContent: View {
                     }.buttonStyle(.plain).disabled(pending != nil || reconciling).accessibilityIdentifier("personnel.row.\(row.id.uuidString.lowercased())")
                 }
                 if loading { ProgressView().frame(maxWidth: .infinity).accessibilityIdentifier("personnel.loading") }
-                if let next, !loading { NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.daha.fazla.goster.3e8d6c6b", table: .localizable, fallback: "Daha fazla göster"), symbol: "chevron.down", variant: .surface, action: { requestedPage = next }) }
-            }.padding(18).padding(.bottom, 24)
+                if preview, (!rows.isEmpty || next != nil), let onShowAll {
+                    Button(action: onShowAll) {
+                        HStack { NovaText(text: "Tümünü gör", style: .meta, color: NovaColorToken.accentInk.color(in: scheme)); Spacer(); NovaIcon(symbol: "chevron.right", size: 13) }
+                            .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
+                    }.buttonStyle(.plain).accessibilityIdentifier("personnel.show.all")
+                } else if let next, !loading {
+                    NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.daha.fazla.goster.3e8d6c6b", table: .localizable, fallback: "Daha fazla göster"), symbol: "chevron.down", variant: .surface, action: { requestedPage = next })
+                }
+            }.padding(.horizontal, 18).padding(.top, 4).padding(.bottom, 24)
+                .novaPopupContentSize()
         }
         .task(id: Key(query: query, archived: archived, generation: generation, page: requestedPage)) {
             let requestedQuery = query, requestedArchive = archived, page = requestedPage
@@ -138,12 +205,25 @@ private struct PersonnelHeading: View {
     let title: String
     var subtitle: String = ""
     var isBackEnabled = true
+    var backIdentifier = "personnel.back"
+    var trailingTitle: String? = nil
+    var trailingAction: (() -> Void)? = nil
     let onBack: () -> Void
+    @Environment(\.isNovaPopup) private var isNovaPopup
+    @Environment(\.colorScheme) private var scheme
     var body: some View {
         HStack(spacing: 12) {
-            Button(action: onBack) { NovaIcon(symbol: "chevron.left", size: 22).frame(width: 44, height: 44).background(.white, in: RoundedRectangle(cornerRadius: 16)) }.accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.shell.back", table: .localizable, fallback: "Geri")))
-                .buttonStyle(.plain).disabled(!isBackEnabled).accessibilityLabel("Geri").accessibilityIdentifier("personnel.back")
-            VStack(alignment: .leading, spacing: 4) { NovaText(text: title, style: .screenTitle); if !subtitle.isEmpty { NovaText(text: subtitle, style: .metaQuiet) } }
+            if !isNovaPopup { NovaBackButton(isEnabled: isBackEnabled, action: onBack).accessibilityIdentifier(backIdentifier) }
+            VStack(alignment: .leading, spacing: 4) { NovaText(text: title, style: .sectionTitle); if !subtitle.isEmpty { HStack(spacing: 6) { NovaIcon(symbol: "building.2", size: 13); NovaText(text: subtitle, style: .metaQuiet) } } }
+            Spacer(minLength: 0)
+            if let trailingAction {
+                Button(action: trailingAction) {
+                    HStack(spacing: 4) { Image(systemName: "plus").font(.system(size: 11, weight: .medium)); NovaSizedText(text: trailingTitle ?? "Ekle", size: 11.5, weight: "Medium") }
+                        .padding(.horizontal, 15).frame(minWidth: 108, minHeight: 32)
+                        .background(NovaColorToken.accent.color(in: scheme), in: Capsule())
+                        .foregroundStyle(NovaColorToken.onAccent.color(in: scheme))
+                }.buttonStyle(.plain).disabled(!isBackEnabled).accessibilityIdentifier("personnel.add")
+            }
         }
     }
 }
@@ -152,23 +232,37 @@ private struct NovaEmployeeDetail: View {
     let scope: NovaPersonnelScope
     let employeeID: UUID
     let client: NovaPersonnelClient
+    let companyName: String
     let onBack: () -> Void
     let onEdit: (NovaEmployeeRow) -> Void
+    let onArchive: (NovaEmployeeRow) -> Void
     let canWrite: Bool
     let onDirectory: ((NovaDirectoryKind) -> Void)?
     @State private var row: NovaEmployeeRow?
     @State private var error = false
     @State private var refresh = UUID()
+    @Environment(\.colorScheme) private var scheme
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 PersonnelHeading(title: RDLocalization.string("localizable.nova.personnel.screens.personel.detayi.93b8adba", table: .localizable, fallback: "Personel Detayı"), onBack: onBack)
                 if let row {
-                    NovaCard(padding: 18) {
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack { NovaIcon(symbol: "person", size: 24); NovaText(text: row.name, style: .cardTitle) }
-                            HStack { NovaIcon(symbol: "building.2", size: 20); NovaText(text: row.departmentName ?? RDLocalization.string("localizable.nova.personnel.no.department.selected", table: .localizable, fallback: "Departman seçilmedi")) }
-                            NovaText(text: row.isArchived ? RDLocalization.string("localizable.nova.personnel.archived", table: .localizable, fallback: "Arşivde") : RDLocalization.string("localizable.nova.personnel.active", table: .localizable, fallback: "Aktif"), style: .metaQuiet)
+                    NovaCard(padding: 16) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack(spacing: 8) {
+                                NovaIcon(symbol: "person", size: 23)
+                                NovaSizedText(text: row.name, size: 16, weight: "Bold")
+                                Spacer(minLength: 0)
+                                Circle().fill(row.isArchived ? NovaColorToken.statusDangerDot.color(in: scheme) : NovaColorToken.statusSuccessDot.color(in: scheme)).frame(width: 9, height: 9)
+                            }
+                            let placement = [row.departmentName, row.jobTitle].compactMap { $0 }.joined(separator: " · ")
+                            HStack(spacing: 7) { NovaIcon(symbol: "building.2", size: 18); NovaText(text: placement.isEmpty ? RDLocalization.string("localizable.nova.personnel.no.department.selected", table: .localizable, fallback: "Departman seçilmedi") : placement, style: .metaQuiet) }
+                            HStack(spacing: 7) { NovaIcon(symbol: "building.2", size: 15).foregroundStyle(NovaColorToken.accentInk.color(in: scheme)); NovaText(text: companyName, style: .metaQuiet) }
+                            HStack(spacing: 7) {
+                                employeeTag("graduationcap", "Eğitim · —", tone: .statusInfoInk)
+                                employeeTag("person.crop.rectangle", "Temsilci · Hayır", tone: .statusWarningInk)
+                                employeeTag("person.3", "Destek · Hayır", tone: .accentInk)
+                            }
                         }.frame(maxWidth: .infinity, alignment: .leading)
                     }.accessibilityIdentifier("personnel.detail")
                     if canWrite { NovaButton(label: row.isArchived ? RDLocalization.string("localizable.nova.personnel.reactivate", table: .localizable, fallback: "Yeniden etkinleştir") : RDLocalization.string("localizable.nova.personnel.edit", table: .localizable, fallback: "Düzenle"), symbol: row.isArchived ? "arrow.uturn.backward" : "pencil", action: { onEdit(row) }).accessibilityIdentifier(row.isArchived ? "personnel.restore" : "personnel.edit") }
@@ -176,9 +270,14 @@ private struct NovaEmployeeDetail: View {
                         NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.gorevlendirme.gecmisi.b56428ce", table: .localizable, fallback: "Görevlendirme geçmişi"), symbol: "clock.arrow.circlepath", variant: .surface) { onDirectory(.assignments) }.accessibilityIdentifier("personnel.assignments")
                         NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.isveren.iliskisi.9ad2bc6f", table: .localizable, fallback: "İşveren ilişkisi"), symbol: "building.2", variant: .surface) { onDirectory(.employers) }.accessibilityIdentifier("personnel.employers")
                     }
+                    if canWrite && !row.isArchived {
+                        NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.personeli.arsivle.715aa012", table: .localizable, fallback: "Personeli arşivle"), symbol: "trash", variant: .danger) { onArchive(row) }
+                            .accessibilityIdentifier("personnel.detail.archive")
+                    }
                 } else if error { NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.personel.yuklenemedi.9398cf6a", table: .localizable, fallback: "Personel yüklenemedi.")); NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.tekrar.dene.d6e62bf1", table: .localizable, fallback: "Tekrar dene"), symbol: "arrow.clockwise", action: { refresh = UUID() }) }
                 else { ProgressView() }
-            }.padding(18)
+            }.padding(.horizontal, 18).padding(.top, 4).padding(.bottom, 18)
+                .novaPopupContentSize()
         }.task(id: refresh) {
             row = nil; error = false
             do {
@@ -187,6 +286,10 @@ private struct NovaEmployeeDetail: View {
                 row = result
             } catch { if !Task.isCancelled { self.error = true } }
         }
+    }
+    private func employeeTag(_ symbol: String, _ title: String, tone: NovaColorToken) -> some View {
+        HStack(spacing: 3) { NovaIcon(symbol: symbol, size: 12); NovaText(text: title, style: .micro, color: tone.color(in: scheme)) }
+            .accessibilityLabel(title)
     }
 }
 
@@ -197,6 +300,7 @@ private struct NovaEmployeeEditor: View {
     let original: NovaEmployeeRow?
     let onBack: () -> Void
     let onSaved: (NovaEmployeeCommit) -> Void
+    var archiveOnOpen = false
     @State private var state = NovaEmployeeEditorState()
     @State private var departments: [NovaDepartmentRow] = []
     @State private var departmentsError = false
@@ -205,13 +309,16 @@ private struct NovaEmployeeEditor: View {
     @State private var message: String?
     @State private var taskID = UUID()
     @State private var confirmation = false
+    @State private var jobDraft = ""
+    @Environment(\.novaCelebrate) private var celebrate
+    @FocusState private var focusedField: String?
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     private struct SearchKey: Equatable { let query: String; let page: UUID? }
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 PersonnelHeading(title: original?.isArchived == true ? RDLocalization.string("localizable.nova.personnel.reactivate.title", table: .localizable, fallback: "Personeli Etkinleştir") : original == nil ? "Personel Ekle" : RDLocalization.string("localizable.nova.personnel.edit.title", table: .localizable, fallback: "Personeli Düzenle"), subtitle: companyName,
-                    isBackEnabled: state.phase != .submitting && state.phase != .uncertain, onBack: onBack)
+                    isBackEnabled: state.phase != .submitting && state.phase != .uncertain, backIdentifier: "personnel.editor.back", onBack: onBack)
                 if original?.isArchived == true {
                     NovaCard(padding: 18) { VStack(alignment: .leading, spacing: 12) {
                         HStack { NovaIcon(symbol: "person", size: 24); NovaText(text: original?.name ?? "Personel", style: .cardTitle) }
@@ -219,9 +326,10 @@ private struct NovaEmployeeEditor: View {
                     } }
                 } else {
                 NovaCard(padding: 18) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack { NovaIcon(symbol: "person", size: 20); NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.ad.soyad.afff790d", table: .localizable, fallback: "Ad soyad"), style: .cardTitle) }
+                    HStack(spacing: 10) {
+                        NovaIcon(symbol: "person", size: 18)
                         TextField(RDLocalization.string("localizable.nova.personnel.screens.ad.soyad.9ca817b1", table: .localizable, fallback: "Ad soyad"), text: $state.name).font(.custom("PlusJakartaSans-Medium", size: 15)).textContentType(.name).disabled(!state.canEdit).accessibilityIdentifier("personnel.name")
+                            .focused($focusedField, equals: "name").submitLabel(.done).onSubmit { focusedField = nil }
                     }
                 }
                 NovaCard(padding: 18) {
@@ -231,7 +339,7 @@ private struct NovaEmployeeEditor: View {
                             HStack { NovaText(text: selected.name); Spacer(); Button(RDLocalization.string("localizable.nova.personnel.screens.kaldir.f6bad754", table: .localizable, fallback: "Kaldır")) { state.selectedDepartment = nil; state.departmentText = "" }.disabled(!state.canEdit) }
                         } else {
                             TextField(RDLocalization.string("localizable.nova.personnel.screens.departman.sec.veya.yeni.ad.yaz.70373e55", table: .localizable, fallback: "Departman seç veya yeni ad yaz"), text: $state.departmentText).font(.custom("PlusJakartaSans-Medium", size: 15)).disabled(!state.canEdit).accessibilityIdentifier("personnel.department")
-                            NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.bos.birakabilirsiniz.yeni.ad.personelle.birlikte.7e36904d", table: .localizable, fallback: "Boş bırakabilirsiniz. Yeni ad, personelle birlikte kaydedilir."), style: .metaQuiet)
+                                .focused($focusedField, equals: "department").submitLabel(.done).onSubmit { focusedField = nil }
                             ForEach(departments) { d in
                                 Button { state.selectedDepartment = d; state.departmentText = "" } label: { HStack { NovaIcon(symbol: "building.2", size: 18); NovaText(text: d.name); Spacer(); NovaIcon(symbol: "plus", size: 16) }.frame(minHeight: 44) }
                                     .buttonStyle(.plain).disabled(!state.canEdit).accessibilityIdentifier("personnel.department.\(d.id.uuidString.lowercased())")
@@ -242,21 +350,44 @@ private struct NovaEmployeeEditor: View {
                     }
                 }
                 }
+                if original?.isArchived != true {
+                    NovaCard(padding: 18) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "briefcase")
+                            TextField(RDLocalization.string("localizable.nova.visual.0", table: .localizable, fallback: "Görev · isteğe bağlı"), text: $jobDraft)
+                                .font(.custom("PlusJakartaSans-Medium", size: 15))
+                                .accessibilityIdentifier("personnel.job")
+                                .focused($focusedField, equals: "job").submitLabel(.done)
+                                .onSubmit { focusedField = nil }
+                        }
+                    }
+                    if !jobDraft.isEmpty { NovaText(text: RDLocalization.string("localizable.nova.visual.1", table: .localizable, fallback: "Görev alanı tasarım önizlemesidir; henüz kaydedilmez."), style: .metaQuiet) }
+                }
                 if let message { NovaText(text: message).accessibilityIdentifier("personnel.message") }
                 if state.phase == .uncertain {
                     NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.kayit.sonucu.dogrulanamadi.yeni.kayit.acmadan.ay.b06ff69b", table: .localizable, fallback: "Kayıt sonucu doğrulanamadı. Yeni kayıt açmadan aynı işlemi kontrol edin."))
                     NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.ayni.islemi.tekrar.kontrol.et.e7b5d522", table: .localizable, fallback: "Aynı işlemi tekrar kontrol et"), symbol: "arrow.clockwise", action: { if state.retry(scope: scope) != nil { taskID = UUID() } }).accessibilityIdentifier("personnel.retry")
                 } else {
-                    NovaButton(label: original?.isArchived == true ? RDLocalization.string("localizable.nova.personnel.reactivate", table: .localizable, fallback: "Yeniden etkinleştir") : original == nil ? RDLocalization.string("localizable.nova.personnel.save", table: .localizable, fallback: "Personeli kaydet") : RDLocalization.string("localizable.nova.personnel.save.changes", table: .localizable, fallback: "Değişiklikleri kaydet"), symbol: "checkmark", isEnabled: state.canSubmit,
-                        isLoading: state.phase == .submitting, action: { if state.begin(scope: scope, original: original, restore: original?.isArchived == true) != nil { taskID = UUID() } }).accessibilityIdentifier("personnel.save")
+                    NovaButton(label: original?.isArchived == true ? RDLocalization.string("localizable.nova.personnel.reactivate", table: .localizable, fallback: "Yeniden etkinleştir") : original == nil ? RDLocalization.string("localizable.nova.personnel.save", table: .localizable, fallback: "Personeli kaydet") : RDLocalization.string("localizable.nova.personnel.save.changes", table: .localizable, fallback: "Değişiklikleri kaydet"), symbol: "checkmark", isEnabled: state.canEdit,
+                        isLoading: state.phase == .submitting, action: {
+                            focusedField = nil
+                            if state.begin(scope: scope, original: original, restore: original?.isArchived == true) != nil { taskID = UUID() }
+                            else { message = RDLocalization.string("localizable.nova.personnel.name.required", table: .localizable, fallback: "Ad soyad alanını kontrol edin.") }
+                        }).accessibilityIdentifier("personnel.save")
                     if original != nil && original?.isArchived == false { NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.personeli.arsivle.715aa012", table: .localizable, fallback: "Personeli arşivle"), symbol: "archivebox", variant: .danger, isEnabled: state.canEdit, action: { confirmation = true }).accessibilityIdentifier("personnel.archive") }
                 }
-            }.padding(18).padding(.bottom, 24)
+            }.padding(.horizontal, 18).padding(.top, 4).padding(.bottom, 24)
+                .novaPopupContentSize()
+                .background { Color.clear.contentShape(Rectangle()).onTapGesture { focusedField = nil } }
         }
+        .scrollDismissesKeyboard(.interactively)
+        .background(NovaKeyboardDismissArea())
+        .interactiveDismissDisabled(state.phase == .submitting || state.phase == .uncertain)
         .onAppear {
             if let original, state.name.isEmpty {
                 state.name = original.name
                 if let id = original.departmentID, let name = original.departmentName { state.selectedDepartment = .init(id: id, ownerID: scope.ownerID, companyID: scope.companyID, name: name) }
+                if archiveOnOpen { confirmation = true }
             }
         }
         .fullScreenCover(isPresented: $confirmation) {
@@ -294,7 +425,12 @@ private struct NovaEmployeeEditor: View {
             message = nil
             do {
                 let result = try await client.save(intent); try Task.checkCancellation()
-                if state.complete(intent, row: result, scope: scope) { onSaved(result) }
+                if state.complete(intent, row: result, scope: scope) {
+                    if intent.action == .create {
+                        celebrate(RDLocalization.string("localizable.nova.personnel.created.success", table: .localizable, fallback: "Personel başarıyla eklendi!"))
+                    }
+                    onSaved(result)
+                }
                 else { state.uncertain(intent, scope: scope) }
             } catch {
                 guard !Task.isCancelled else { return }

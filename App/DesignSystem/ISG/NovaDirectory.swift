@@ -26,6 +26,18 @@ enum NovaDirectoryKind: String, CaseIterable, Codable {
         }
     }
     var isCatalog: Bool { [.workplaces, .departments, .jobs, .contractors].contains(self) }
+    var help: String {
+        switch self {
+        case .workplaces: return RDLocalization.string("localizable.nova.help.workplaces", table: .localizable, fallback: "Firmanın şube ve çalışma alanlarını yönetin. Bilgi geçmişi, geçmiş tarihlerde geçerli işyeri bilgilerini korur.")
+        case .departments: return RDLocalization.string("localizable.nova.help.departments", table: .localizable, fallback: "Personelleri üretim, ofis gibi birimlere ayırın.")
+        case .jobs: return RDLocalization.string("localizable.nova.help.jobs", table: .localizable, fallback: "Personellere atanabilecek görev ve unvanları tanımlayın.")
+        case .contractors: return RDLocalization.string("localizable.nova.help.contractors", table: .localizable, fallback: "Birlikte çalıştığınız yüklenici ve tedarikçileri yönetin.")
+        case .engagements: return RDLocalization.string("localizable.nova.help.engagements", table: .localizable, fallback: "Dış firmanın hangi işyerinde, hangi dönemde çalıştığını kaydedin.")
+        case .contexts: return RDLocalization.string("localizable.nova.help.contexts", table: .localizable, fallback: "Tehlike sınıfı gibi bilgilerin geçerli olduğu dönemleri kaydedin; eski kayıtlar değişmez.")
+        case .assignments: return RDLocalization.string("localizable.nova.help.assignments", table: .localizable, fallback: "Personelin işyeri, departman ve görev değişikliklerini tarihleriyle izleyin.")
+        case .employers: return RDLocalization.string("localizable.nova.help.employers", table: .localizable, fallback: "Personelin ana firma veya dış firma ile işveren ilişkisini belirleyin.")
+        }
+    }
 }
 enum NovaDirectoryValue: Codable, Equatable {
     case string(String), number(Int64), bool(Bool), null

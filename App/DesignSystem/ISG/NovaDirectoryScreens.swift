@@ -9,6 +9,7 @@ struct NovaDirectoryDestination: View {
     var onBack: (() -> Void)? = nil
     var canWrite = true
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.isNovaPopup) private var isNovaPopup
     @State private var rows: [NovaDirectoryRow] = []
     @State private var next: UUID?
     @State private var page: UUID?
@@ -20,6 +21,11 @@ struct NovaDirectoryDestination: View {
     @State private var editor: Editor?
     @State private var pending: NovaDirectoryIntent?
     @State private var recovering = false
+    @State private var query = ""
+    private var filteredRows: [NovaDirectoryRow] {
+        let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        return term.isEmpty ? rows : rows.filter { $0.title.localizedStandardContains(term) }
+    }
     private struct Editor: Identifiable { let id = UUID(); let row: NovaDirectoryRow? }
     private struct Key: Equatable { let scope: NovaPersonnelScope; let kind: NovaDirectoryKind; let parent: UUID?; let page: UUID?; let archived: Bool; let refresh: UUID }
     var body: some View {
@@ -30,8 +36,26 @@ struct NovaDirectoryDestination: View {
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 14) {
-                        HStack { Button { if let onBack { onBack() } else { dismiss() } } label: { NovaIcon(symbol: "chevron.left", size: 24).frame(width: 44, height: 44) }.accessibilityLabel("Geri").accessibilityIdentifier("directory.back"); NovaText(text: kind.title, style: .screenTitle) }
-                        if kind.isCatalog { Toggle(RDLocalization.string("localizable.nova.directory.screens.arsivdekileri.goster.885b965a", table: .localizable, fallback: "Arşivdekileri göster"), isOn: $archived).onChange(of: archived) { _ in page = nil } }
+                        HStack(spacing: 12) {
+                            if !isNovaPopup { NovaBackButton { if let onBack { onBack() } else { dismiss() } }.accessibilityIdentifier("directory.back") }
+                            NovaText(text: kind.title, style: .sectionTitle)
+                        }
+                        NovaHelpHint(text: kind.help)
+                        HStack(spacing: 10) {
+                            NovaCard(padding: 12) {
+                                HStack(spacing: 8) {
+                                    NovaIcon(symbol: "magnifyingglass", size: 16)
+                                    TextField(RDLocalization.string("localizable.nova.directory.search", table: .localizable, fallback: "Kayıt ara…"), text: $query)
+                                        .font(.custom("PlusJakartaSans-Medium", size: 14)).accessibilityIdentifier("directory.search")
+                                }
+                            }
+                            if kind.isCatalog {
+                                Toggle(isOn: $archived) { Image(systemName: "archivebox") }
+                                    .toggleStyle(.button).buttonStyle(.bordered).frame(minHeight: 44)
+                                    .accessibilityLabel(RDLocalization.string("localizable.nova.directory.screens.arsivdekileri.goster.885b965a", table: .localizable, fallback: "Arşivdekileri göster"))
+                                    .onChange(of: archived) { _ in page = nil }
+                            }
+                        }
                         if let pending {
                             NovaCard(padding: 18) {
                                 VStack(alignment: .leading, spacing: 10) {
@@ -44,27 +68,29 @@ struct NovaDirectoryDestination: View {
                         if !canWrite { NovaText(text: RDLocalization.string("localizable.nova.directory.screens.salt.okunur.kayit.gecmisiniz.korunuyor.2fdb9d4d", table: .localizable, fallback: "Salt okunur · kayıt geçmişiniz korunuyor."), style: .metaQuiet) }
                         NovaButton(label: kind == .employers ? RDLocalization.string("localizable.nova.directory.edit.employer.relationship", table: .localizable, fallback: "İşveren ilişkisini düzenle") : RDLocalization.string("localizable.nova.directory.new.record", table: .localizable, fallback: "Yeni kayıt"), symbol: "plus", isEnabled: canWrite && !loading && pending == nil && error == nil) { editor = Editor(row: kind == .employers ? rows.first : nil) }.accessibilityIdentifier("directory.add")
                         if let error { NovaCard(padding: 16) { VStack(alignment: .leading) { NovaText(text: error); NovaButton(label: RDLocalization.string("localizable.nova.directory.screens.tekrar.yukle.68942254", table: .localizable, fallback: "Tekrar yükle"), symbol: "arrow.clockwise", variant: .surface) { refresh = UUID() } } } }
-                        ForEach(rows) { row in
-                            NovaCard(padding: 18) {
+                        ForEach(filteredRows) { row in
+                            NovaCard(padding: 14) {
                                 VStack(alignment: .leading, spacing: 10) {
                                     HStack { NovaIcon(symbol: kind.symbol, size: 24); NovaText(text: row.title, style: .cardTitle); Spacer(); if row.isArchived { NovaText(text: RDLocalization.string("localizable.nova.directory.screens.arsivde.65ab5741", table: .localizable, fallback: "Arşivde"), style: .metaQuiet) } }
-                                    if let code = row.fields["code"]?.text { NovaText(text: code, style: .metaQuiet) }
                                     if let start = row.fields["starts_on"]?.text { NovaText(text: "\(start) → \(row.fields["ends_before"]?.text ?? RDLocalization.string("localizable.nova.directory.engagement.ongoing", table: .localizable, fallback: "Devam ediyor"))", style: .metaQuiet) }
                                     if let job = row.fields["department_name_snapshot"]?.text { NovaText(text: job, style: .metaQuiet) }
-                                    if canWrite && (kind.isCatalog || kind == .engagements) { NovaButton(label: RDLocalization.string("localizable.nova.directory.screens.duzenle.7e356212", table: .localizable, fallback: "Düzenle"), symbol: "pencil", variant: .surface, isEnabled: !loading && error == nil && pending == nil) { editor = Editor(row: row) }.accessibilityIdentifier("directory.edit.\(row.id.uuidString.lowercased())") }
+                                    HStack(spacing: 10) {
+                                    if canWrite && (kind.isCatalog || kind == .engagements) { NovaButton(label: RDLocalization.string("localizable.nova.directory.screens.duzenle.7e356212", table: .localizable, fallback: "Düzenle"), symbol: "pencil", variant: .muted, isEnabled: !loading && error == nil && pending == nil) { editor = Editor(row: row) }.accessibilityIdentifier("directory.edit.\(row.id.uuidString.lowercased())") }
                                     if kind == .workplaces {
-                                        NavigationLink { NovaDirectoryDestination(scope: scope, kind: .contexts, parent: row.id, client: client, canWrite: canWrite) } label: { Label(RDLocalization.string("localizable.nova.directory.screens.tarihli.baglam.1cc36fca", table: .localizable, fallback: "Tarihli bağlam"), systemImage: "clock.arrow.circlepath") }
+                                        NavigationLink { NovaDirectoryDestination(scope: scope, kind: .contexts, parent: row.id, client: client, canWrite: canWrite) } label: { Label(RDLocalization.string("localizable.nova.directory.history.short", table: .localizable, fallback: "Bilgi geçmişi"), systemImage: "clock.arrow.circlepath").font(.custom("PlusJakartaSans-Medium", size: 13)).frame(maxWidth: .infinity, minHeight: 44) }
                                     }
                                     if kind == .contractors {
                                         NavigationLink { NovaDirectoryDestination(scope: scope, kind: .engagements, parent: row.id, client: client, canWrite: canWrite) } label: { Label(RDLocalization.string("localizable.nova.directory.screens.calisilan.isyerleri.ab67bdf8", table: .localizable, fallback: "Çalışılan işyerleri"), systemImage: "building.2") }
+                                    }
                                     }
                                 }
                             }
                         }
                         if loading { ProgressView().frame(maxWidth: .infinity) }
-                        if !loading && rows.isEmpty && error == nil { NovaCard(padding: 18) { NovaText(text: RDLocalization.string("localizable.nova.directory.screens.henuz.kayit.yok.282330e3", table: .localizable, fallback: "Henüz kayıt yok.")) } }
+                        if !loading && filteredRows.isEmpty && error == nil { NovaCard(padding: 14) { NovaText(text: query.isEmpty ? RDLocalization.string("localizable.nova.directory.screens.henuz.kayit.yok.282330e3", table: .localizable, fallback: "Henüz kayıt yok.") : RDLocalization.string("localizable.nova.directory.search.empty", table: .localizable, fallback: "Aramanızla eşleşen kayıt yok.")).frame(maxWidth: .infinity, minHeight: 24, alignment: .leading) } }
                         if let next { NovaButton(label: RDLocalization.string("localizable.nova.directory.screens.daha.fazla.f2dbe624", table: .localizable, fallback: "Daha fazla"), symbol: "chevron.down", variant: .surface, isEnabled: !loading) { page = next } }
-                    }.padding(18)
+                    }.padding(.horizontal, 18).padding(.top, 4).padding(.bottom, 18)
+                        .novaPopupContentSize()
                 }
                 .task(id: Key(scope: scope, kind: kind, parent: parent, page: page, archived: archived, refresh: refresh)) {
                     loading = true; error = nil; next = nil
@@ -74,7 +100,11 @@ struct NovaDirectoryDestination: View {
                         let result = try await client.read(scope, kind, parent, page, archived); try Task.checkCancellation()
                         rows = page == nil ? result.rows : rows + result.rows.filter { new in !rows.contains { $0.id == new.id } }
                         next = result.next; parentVersion = result.parentVersion ?? 0; loading = false
+                        if !query.isEmpty, let cursor = result.next, cursor != page { page = cursor }
                     } catch { if !Task.isCancelled { loading = false; self.error = RDLocalization.string("localizable.nova.directory.error.records.not.loaded", table: .localizable, fallback: "Kayıtlar yüklenemedi. Erişiminizi ve bağlantınızı kontrol edin.") } }
+                }
+                .onChange(of: query) { value in
+                    if !value.isEmpty, !loading, let next, next != page { page = next }
                 }
                 .task(id: recovering) {
                     guard canWrite, recovering, let pending else { return }
@@ -106,6 +136,7 @@ private struct NovaDirectoryEditor: View {
     @State private var optionsRefresh = UUID()
     @State private var loadingMore: String?
     @FocusState private var focusedField: String?
+    @Environment(\.isNovaPopup) private var isNovaPopup
     private var definition: [DirectoryField] {
         let name = DirectoryField(id: "name", label: RDLocalization.string("localizable.nova.directory.screens.ad.unvan.409140cb", table: .localizable, fallback: "Ad / unvan")), code = DirectoryField(id: "code", label: "Kod")
         let workplace = DirectoryField(id: "workplace_id", label: RDLocalization.string("localizable.nova.directory.screens.isyeri.dad72a5a", table: .localizable, fallback: "İşyeri"), choices: .workplaces)
@@ -125,7 +156,10 @@ private struct NovaDirectoryEditor: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                HStack { Button(action: onBack) { NovaIcon(symbol: "chevron.left", size: 24).frame(width: 44, height: 44) }.disabled(submitting).accessibilityLabel("Geri").accessibilityIdentifier("directory.editor.back"); NovaText(text: kind.title, style: .screenTitle) }
+                HStack(spacing: 12) {
+                    if !isNovaPopup { NovaBackButton(isEnabled: !submitting, action: onBack).accessibilityIdentifier("directory.editor.back") }
+                    NovaText(text: kind.title, style: .sectionTitle)
+                }
                 if [.contexts, .assignments].contains(kind) { NovaCard(padding: 16) { NovaText(text: RDLocalization.string("localizable.nova.directory.screens.onceki.donemi.secerseniz.bu.kayit.baslangic.tari.aa072143", table: .localizable, fallback: "Önceki dönemi seçerseniz bu kayıt başlangıç tarihinde bölünür; eski bilgiler korunur. Bitiş günü döneme dahil değildir."), style: .metaQuiet) } }
                 if kind == .engagements && original != nil { NovaText(text: RDLocalization.string("localizable.nova.directory.screens.firma.isyeri.ve.baslangic.degismez.bitisi.ve.aci.5e2c5767", table: .localizable, fallback: "Firma, işyeri ve başlangıç değişmez. Bitişi ve açıklamayı düzenleyebilirsiniz."), style: .metaQuiet) }
                 ForEach(definition) { field in
@@ -159,9 +193,11 @@ private struct NovaDirectoryEditor: View {
                 if optionsFailed { NovaButton(label: RDLocalization.string("localizable.nova.directory.screens.secenekleri.tekrar.yukle.df9dc016", table: .localizable, fallback: "Seçenekleri tekrar yükle"), symbol: "arrow.clockwise", variant: .surface, isEnabled: !optionsLoading && pending == nil) { optionsRefresh = UUID() }.accessibilityIdentifier("directory.options.retry") }
                 if let message { NovaText(text: message).accessibilityIdentifier("directory.error") }
                 NovaButton(label: pending == nil ? RDLocalization.string("localizable.nova.directory.save", table: .localizable, fallback: "Kaydet") : RDLocalization.string("localizable.nova.directory.recheck.same.operation", table: .localizable, fallback: "Aynı işlemi tekrar kontrol et"), symbol: pending == nil ? "checkmark" : "arrow.clockwise", isEnabled: pending != nil || (!optionsLoading && !optionsFailed && loadingMore == nil), isLoading: submitting) { begin() }.accessibilityIdentifier("directory.save")
-            }.padding(18)
+            }.padding(.horizontal, 18).padding(.top, 4).padding(.bottom, 18)
+                .novaPopupContentSize()
         }
         .scrollDismissesKeyboard(.interactively)
+        .background(NovaKeyboardDismissArea())
         .task {
             fields = original?.fields.reduce(into: [:]) { result, entry in result[entry.key] = entry.value.text ?? "" } ?? [:]
             if kind == .jobs { fields["name"] = original?.fields["title"]?.text ?? "" }
