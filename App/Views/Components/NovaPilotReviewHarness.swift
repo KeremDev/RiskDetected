@@ -16,7 +16,7 @@ struct NovaPilotReviewHarness: View {
     private static let employee = UUID(uuidString: "00000000-0000-4000-8000-000000000004")!
     @State private var selected = false
     @State private var create = false
-    @State private var navigation = NovaNavigationState(epoch: "review-only", available: [.companies, .findings, .newFinding, .analyses, .newAnalysis, .documentChecklist, .documents])
+    @State private var navigation = NovaNavigationState(epoch: "review-only", available: [.statistics, .companies, .findings, .newFinding, .analyses, .newAnalysis, .documentChecklist, .documents, .periodicChecks])
     @State private var draft = NovaAnalysisIntakeDraft()
     @State private var showingReviewReports = false
     @State private var reviewImages: [UIImage] = []
@@ -50,7 +50,14 @@ struct NovaPilotReviewHarness: View {
         NovaExpertShell(navigation: $navigation, userName: "Tasarım Provası", connectionLabel: "Sentetik veriler · canlı bağlantı yok",
             onCompanyCreate: { create = true },
             onDestination: { destination in if destination == .companies { selected = false } }) { destination in
-            if [.findings, .newFinding, .analyses, .newAnalysis, .documentChecklist, .documents].contains(destination) {
+            if destination == .statistics {
+                NovaStatisticsScreen(load: { company, months in
+                    if CommandLine.arguments.contains("RD_UI_TEST_STATISTICS_ERROR") { throw NovaPersonnelFailure.unavailable }
+                    return NovaStatisticsReview.snapshot(owner: Self.owner, company: company, months: months,
+                        empty: CommandLine.arguments.contains("RD_UI_TEST_STATISTICS_EMPTY"))
+                }, onBack: { navigation.apply(.navigate(.home), from: navigation.epoch) },
+                    onNavigate: { navigation.apply(.navigate($0), from: navigation.epoch) })
+            } else if [.findings, .newFinding, .analyses, .newAnalysis, .documentChecklist, .documents, .periodicChecks].contains(destination) {
                 analysisReview(destination)
             } else if selected {
                 NovaCompanyWorkspace(scope: scope, companyName: summary.name, canWrite: true, personnel: personnel, directory: directory,
@@ -69,6 +76,11 @@ struct NovaPilotReviewHarness: View {
             }
         }
         .modifier(NovaSuccessPresentation())
+        .onAppear {
+            if CommandLine.arguments.contains("RD_UI_TEST_STATISTICS") {
+                navigation.apply(.navigate(.statistics), from: navigation.epoch)
+            }
+        }
     }
 
     // MARK: synthetic analysis surface
@@ -118,6 +130,8 @@ struct NovaPilotReviewHarness: View {
             NovaDocumentTrackingScreen(client: reviewDocumentClient, onBack: {})
         case .documents:
             NovaFileLibraryScreen(client: reviewFileClient, onBack: {})
+        case .periodicChecks:
+            NovaEquipmentCheckScreen(client: reviewEquipmentClient, onBack: {})
         default:
             NovaAnalysisDetailScreen(analysisID: Self.analysis, client: reviewDetailClient, onBack: {})
         }
@@ -254,6 +268,91 @@ struct NovaPilotReviewHarness: View {
     // MARK: synthetic document tracking
 
     /// One obligation of every status, so all four answers can be seen at once.
+    /// Drawn fixtures for the equipment module. Every row is a state the server
+    /// could genuinely return, including the two that carry no date at all.
+    private var reviewEquipmentClient: NovaEquipmentCheckClient {
+        .init(catalogue: { _ in (reviewEquipmentTypes, reviewEquipmentRules,
+                                 reviewWorkplaces.map { .init(id: $0.id, name: $0.name) }, 30) },
+              board: { request in reviewEquipmentBoard(request) },
+              companies: { reviewCompanies },
+              detail: { id in reviewEquipmentRows.first { $0.id == id } ?? reviewEquipmentRows[0] },
+              register: { _, _ in reviewEquipmentRows[0] },
+              update: { item, _ in item },
+              archive: { _ in },
+              setRule: { _, draft in
+                  .init(equipmentType: draft.equipmentType ?? "crane",
+                        periodMonths: draft.monthsValue ?? 12, source: draft.source,
+                        needsReview: draft.source.needsReview, exceptionNote: nil)
+              },
+              recordInspection: { item, _ in item },
+              filedReports: { _ in [] })
+    }
+
+    private var reviewEquipmentTypes: [String] {
+        ["lifting_equipment", "crane", "forklift", "pressure_vessel", "compressor",
+         "electrical_installation", "fire_extinguisher", "ladder", "power_tool", "other_equipment"]
+    }
+    private var reviewEquipmentRules: [NovaEquipmentRule] {
+        [.init(equipmentType: "crane", periodMonths: 12, source: .manufacturer,
+               needsReview: false, exceptionNote: nil),
+         .init(equipmentType: "compressor", periodMonths: 6, source: .unapprovedFixture,
+               needsReview: true, exceptionNote: "Uzmanın kendi belirlediği süre; kaynak onaylanmadı.")]
+    }
+
+    private var reviewEquipmentRows: [NovaEquipmentItem] {
+        func item(_ id: UUID, _ type: String, _ serial: String, _ state: NovaEquipmentState,
+                  months: Int?, source: NovaEquipmentPeriodSource?, review: Bool?,
+                  last: String?, result: String?, due: String?, late: Bool = false) -> NovaEquipmentItem {
+            .init(id: id, companyID: Self.company, companyName: summary.name,
+                  workplaceID: Self.workplace, workplaceName: "Merkez tesis",
+                  equipmentType: type, serialTag: serial, acquiredOn: "2024-03-01",
+                  locationNote: "Montaj hattı", isArchived: false, state: state,
+                  periodMonths: months, periodSource: source, periodNeedsReview: review,
+                  periodExceptionNote: nil, periodDefinedAfterReport: late,
+                  lastPerformedOn: last, lastResult: result, lastInspector: last == nil ? nil : "TSE yetkili kuruluş",
+                  lastExternalRef: last == nil ? nil : "RPT-2026-0114", nextDueOn: due,
+                  evidenceAssetID: nil,
+                  inspections: last == nil ? [] : [.init(id: UUID(), performedOn: last!, result: result ?? "pass",
+                      nextDueOn: due, periodMonths: months, inspector: "TSE yetkili kuruluş",
+                      externalRef: "RPT-2026-0114", note: nil, evidenceAssetID: nil)])
+        }
+        return [
+            item(Self.analysis, "crane", "KRN-001", .overdue, months: 12, source: .manufacturer,
+                 review: false, last: "2025-02-10", result: "pass", due: "2026-02-10"),
+            item(Self.employee, "compressor", "KMP-004", .failed, months: 6, source: .unapprovedFixture,
+                 review: true, last: "2026-09-11", result: "fail", due: nil),
+            item(Self.workplace, "lifting_equipment", "VNC-002", .periodUnknown, months: nil,
+                 source: nil, review: nil, last: "2026-08-20", result: "pass", due: nil),
+            item(Self.company, "ladder", "MRD-007", .neverInspected, months: nil, source: nil,
+                 review: nil, last: nil, result: nil, due: nil),
+            item(Self.owner, "crane", "KRN-002", .valid, months: 12, source: .manufacturer,
+                 review: false, last: "2026-06-01", result: "pass", due: "2027-06-01"),
+            item(Self.session, "electrical_installation", "ELK-001", .dueSoon, months: 12,
+                 source: .ruleVersion, review: false, last: "2025-10-05", result: "conditional",
+                 due: "2026-10-05")]
+    }
+
+    private func reviewEquipmentBoard(_ request: NovaEquipmentQuery) -> NovaEquipmentBoard {
+        let all = reviewEquipmentRows
+        let group = NovaEquipmentGroup(rawValue: request.state ?? "")
+        let matching = all.filter { row in
+            guard request.equipmentType == nil || row.equipmentType == request.equipmentType else { return false }
+            guard group == nil || group?.states.contains(row.state) == true else { return false }
+            return row.matches(request.query)
+        }
+        var counts: [NovaEquipmentState: Int] = [:]
+        var typeCounts: [String: [NovaEquipmentState: Int]] = [:]
+        for row in all {
+            counts[row.state, default: 0] += 1
+            typeCounts[row.equipmentType, default: [:]][row.state, default: 0] += 1
+        }
+        return .init(counts: counts,
+                     companies: [.init(id: Self.company, name: summary.name, total: all.count, counts: counts)],
+                     typeCounts: typeCounts, rows: matching, total: matching.count,
+                     hasMore: false, limit: request.limit, offset: 0,
+                     today: "2026-09-15", noticeDays: 30)
+    }
+
     /// Drawn fixtures for the archive, so the design can be reviewed without a
     /// live pilot. Nothing here uploads, inspects or promotes anything: every
     /// row is a state the server could genuinely return.

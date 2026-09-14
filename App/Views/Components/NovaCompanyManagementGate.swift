@@ -72,6 +72,11 @@ struct NovaCompanyWorkspace: View {
     @State private var filesLoading = false
     @State private var fileSection: NovaCompanySection?
     @State private var addingFile = false
+    /// The module's own counts for this company, so the Periyodik Kontroller
+    /// heading and the module can never disagree about what is on record.
+    @State private var equipment: NovaEquipmentBoard?
+    @State private var equipmentLoading = false
+    @State private var equipmentSection: NovaCompanySection?
     private var documentIdentity: NovaSessionIdentity { .init(userID: scope.ownerID, sessionID: scope.sessionID) }
     private enum Sheet: Identifiable {
         case personnel, addPersonnel, editCompany, deleteCompany, training, directory(NovaDirectoryKind)
@@ -134,6 +139,17 @@ struct NovaCompanyWorkspace: View {
             if let answer = try? await service.catalogue(documentIdentity) { fileCategories = answer.categories }
             files = try? await service.library(documentIdentity,
                 query: .init(company: scope.companyID, limit: 1))
+        }
+        .task(id: summaryRevision) {
+            equipmentLoading = true
+            defer { equipmentLoading = false }
+            equipment = try? await NovaEquipmentCheckService.live().board(documentIdentity,
+                query: .init(company: scope.companyID, limit: 1))
+        }
+        .fullScreenCover(item: $equipmentSection, onDismiss: { summaryRevision = UUID() }) { section in
+            NovaPilotEquipmentGate(identity: documentIdentity, canWrite: canWrite,
+                initialCompany: scope.companyID, headingOverride: section.title,
+                onBack: { equipmentSection = nil })
         }
         .fullScreenCover(item: $fileSection, onDismiss: { summaryRevision = UUID() }) { section in
             NovaPilotFileGate(identity: documentIdentity, canWrite: canWrite,
@@ -201,6 +217,13 @@ struct NovaCompanyWorkspace: View {
                     NovaHelpHint(text: "Gerçekleşen eğitimleri personel seçerek kaydedin ve eğitim geçmişini görüntüleyin.")
                     NovaButton(label: "Eğitimleri aç", symbol: "graduationcap", variant: .surface) { sheet = .training }
                 }
+                // Periodic checks are the whole of this heading, so the
+                // inventory comes first and the obligation and file strips
+                // follow it.
+                if section == .inspections {
+                    NovaEquipmentSectionStrip(counts: equipment?.counts ?? [:],
+                        isLoading: equipment == nil && equipmentLoading) { equipmentSection = section }
+                }
                 if let kinds = NovaDocumentSectionMap.kinds(for: section) {
                     NovaDocumentSectionStrip(counts: documents?.counts(forKinds: kinds) ?? [:],
                         isLoading: documents == nil && documentsLoading) { documentSection = section }
@@ -214,7 +237,7 @@ struct NovaCompanyWorkspace: View {
                         isLoading: files == nil && filesLoading) { fileSection = section }
                 }
                 if NovaDocumentSectionMap.kinds(for: section) == nil && categories.isEmpty
-                    && section != .personnel && section != .training {
+                    && section != .personnel && section != .training && section != .inspections {
                     NovaHelpHint(text: RDLocalization.string("localizable.nova.workspace.section.pending", table: .localizable, fallback: "Bu bölümün kayıt servisi henüz bağlanmadı. Eksik veya tamamlandı bilgisi doğrulanamıyor."))
                 }
             }

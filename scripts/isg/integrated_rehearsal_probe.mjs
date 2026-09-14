@@ -99,7 +99,7 @@ export async function beginIntegratedRehearsalProbe({synthetic,sql:rawSql,compan
     "SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='private_isg' AND NOT (coalesce(array_to_string(p.proconfig,','),'') LIKE '%search_path=%');",
     "SELECT count(*) FROM private_isg.rollout WHERE read_enabled OR write_enabled;",
   ].join('\n')).split('\n');
-  mark('the_whole_new_schema_keeps_one_posture',posture[0]==='164'&&posture[1]==='0'&&posture[2]==='0'&&
+  mark('the_whole_new_schema_keeps_one_posture',posture[0]==='166'&&posture[1]==='0'&&posture[2]==='0'&&
     posture[4]==='0'&&posture[5]==='0');
   // A definer function is the client RPC boundary and nothing else. The server
   // only ledgers of P14 to P17 must not have quietly added one.
@@ -109,6 +109,7 @@ export async function beginIntegratedRehearsalProbe({synthetic,sql:rawSql,compan
     'read_nonconformities','mutate_nonconformity',
     'read_document_tracking','mutate_document_tracking','read_document_portfolio',
     'read_file_library','mutate_file_library','inspect_file_upload',
+    'read_equipment_checks','mutate_equipment_checks',
     'read_notebook_organization','read_notebook_reminders','read_personnel','record_device_permission',
     'workspace_availability'];
   const actual=definers?definers.split(','):[];

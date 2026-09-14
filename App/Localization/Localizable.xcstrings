@@ -11233,6 +11233,24 @@
         }
       }
     },
+    "localizable.nova.document.cancel": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
+          }
+        }
+      }
+    },
     "localizable.nova.document.close": {
       "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -12777,6 +12795,2112 @@
           "stringUnit": {
             "state": "translated",
             "value": "Süresiz"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.add.save": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to the inventory"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envantere ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.add.short": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Equipment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekipman"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.add.title": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add equipment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekipman ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.archive": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from the inventory"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envanterden çıkar"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.archive.confirm": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The item leaves the list. The inspection reports on file are not deleted."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekipman listeden çıkar; kayıtlı kontrol raporları silinmez."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.company.attention": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: %d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d need attention"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d ilgi bekliyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.company.empty": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a company before using periodic checks."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Periyodik kontroller için önce bir firma ekleyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.company.total": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: %d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d items"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d ekipman"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.company.untracked": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No inventory"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envanter yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.edit.title": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit the equipment record"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekipman kaydını düzenle"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.empty": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No equipment is on record for this company. Add the items that go through periodic checks."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu firmada kayıtlı ekipman yok. Periyodik kontrole giren ekipmanları ekleyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.empty.filtered": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No equipment matches this filter."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu filtreye uyan ekipman yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.explain.due": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The next check date on record is coming up."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlı sonraki kontrol tarihi yaklaşıyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.explain.failed": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The last check came back negative; no next date was produced."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Son kontrol olumsuz sonuçlandı; sonraki tarih üretilmedi."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.explain.late.rule": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No period was defined for this type when the report was filed, so no next date was worked out. The period was defined later and the earlier report was not rewritten."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor kaydedildiğinde bu tür için süre tanımlı değildi; sonraki tarih hesaplanmadı. Süre sonradan tanımlandı, eski rapor değiştirilmedi."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.explain.never": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No inspection report is on record for this item."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu ekipman için kayıtlı kontrol raporu yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.explain.overdue": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The next check date on record has passed."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlı sonraki kontrol tarihi geçmiş."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.explain.unknown": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No check period is defined for this type, so no next check date was worked out."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu tür için kontrol süresi tanımlı değil; sonraki kontrol tarihi hesaplanmadı."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.explain.valid": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The next check date on record has not arrived yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlı sonraki kontrol tarihi henüz gelmedi."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.fail.hint": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A negative result produces no next check date."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Olumsuz sonuç için sonraki kontrol tarihi üretilmez."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.failed": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The equipment records could not be loaded. Check your connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekipman kayıtları alınamadı. Bağlantınızı kontrol edip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.failure.conflict": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This action was already saved with different content."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu işlem farklı bir içerikle zaten kaydedilmiş."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.failure.denied": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You do not have access to this company's equipment records."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu firmanın ekipman kayıtlarına erişim yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.failure.future": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A check cannot be dated later than today."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrol tarihi bugünden ileri olamaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.failure.module": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The periodic checks module is not open right now."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Periyodik kontroller modülü şu anda açık değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.failure.plan": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adding records needs a Plus or Pro plan."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt eklemek için Plus veya Pro plan gerekiyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.failure.serial": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This serial or code is already on file for this company."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu seri/kod bu firmada zaten kayıtlı."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.failure.unavailable": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The equipment service is unavailable right now."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekipman servisi şu anda kullanılamıyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.failure.validation": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The details are missing or invalid."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bilgiler eksik veya geçersiz."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.field.acquired": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acquired on"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ediniliş tarihi"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.field.exception": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reason"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gerekçe"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.field.inspector": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checked by"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrolü yapan"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.field.last": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last check"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Son kontrol"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.field.location": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location (optional)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeri (isteğe bağlı)"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.field.months": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Period (months)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süre (ay)"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.field.next": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next check"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sonraki kontrol"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.field.performed": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrol tarihi"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.field.ref": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report number"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor no"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.field.report": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report in the archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivdeki rapor"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.field.result": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Result"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sonuç"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.field.serial": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serial / code"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seri / kod"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.field.source": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where the period comes from"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sürenin kaynağı"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.field.type": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Equipment type"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekipman türü"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.filter.type": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tür"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.group.current": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güncel"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.group.current.footer": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "reported"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "raporlu"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.group.due": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coming up"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yaklaşıyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.group.due.footer": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "approaching"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yaklaşan"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.group.failed": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Negative"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Olumsuz"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.group.failed.footer": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "last report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "son rapor"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.group.overdue": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date passed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süresi geçti"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.group.overdue.footer": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "date passed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tarih geçti"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.group.untracked": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untracked"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takipsiz"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.group.untracked.footer": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "no date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tarih yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.hint": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: %d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The check period is defined per equipment type; with no period defined, no next date is produced. The page warns %d days ahead."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrol süresi ekipman türüne göre tanımlanır; süre tanımlı değilse sonraki tarih üretilmez. Sayfa, tarihi %d gün önceden uyarır."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.history": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check history"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrol geçmişi"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.loading": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading equipment records…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekipman kayıtları yükleniyor…"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.metric.footer": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "need attention"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ilgi bekleyen"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.metric.label": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Checks"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrol"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.months": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: %d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d months"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d ay"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.no.due": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarih yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.page": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: %1$d, %2$d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d of %2$d items"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d / %2$d ekipman"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.period.missing": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No period is defined for this type. Without one, no next check date is worked out."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu tür için süre tanımlı değil. Süre tanımlanmadan sonraki kontrol tarihi hesaplanmaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.period.none": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No period is defined for this type. Until one is, no next check date is produced."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu tür için süre tanımlı değil. Süre tanımlanana kadar sonraki kontrol tarihi üretilmez."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.period.review": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This period is the expert's own decision; it is not tied to a verified legal source."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu süre uzmanın kendi kararıdır; doğrulanmış bir mevzuat kaynağına bağlanmadı."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.period.title": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check period"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrol süresi"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.period.value": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: %1$d, %2$@; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d months · %2$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d ay · %2$@"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.periods.count": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: %d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d types have a period"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d tür için süre tanımlı"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.periods.existing": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Defined periods"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tanımlı süreler"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.periods.hint": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The period is defined per equipment type and is never pre-filled for any of them. A period that is not backed by a verified source is marked as the expert's own decision."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süre ekipman türüne göre tanımlanır ve hiçbir tür için önceden doldurulmaz. Doğrulanmış bir kaynağa dayanmayan süre, uzman kararı olarak işaretlenir."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.periods.open": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Periods"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süreler"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.periods.save": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save the period"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süreyi kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.periods.title": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check periods"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrol süreleri"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.periods.unreviewed": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: %d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d set by the expert"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d tanesi uzman tarafından belirlenen süre"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.pick.company": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a company first. Its equipment inventory opens right below."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlk önce firma seçimi yapın. Seçtiğiniz firmanın ekipman envanteri hemen aşağıda açılır."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.record": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record a check"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrol kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.report.empty": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No inspection report is archived for this company. You can add one from Other Files."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu firmada arşivlenmiş kontrol raporu yok. Diğer Dosyalar'dan ekleyebilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.report.none": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not chosen"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçilmedi"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.result.conditional": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conditional"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şartlı uygun"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.result.fail": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Negative"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Olumsuz"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.result.pass": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygun"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.search": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search a serial, code or type"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seri/kod veya tür ara"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.section.empty": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No equipment is on record for this company."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu firmada kayıtlı ekipman yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.section.open": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open periodic checks"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Periyodik kontrolleri aç"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.source.expert": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set by the expert"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzman tarafından belirlenen"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.source.manufacturer": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manufacturer / manual"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Üretici/kullanma kılavuzu"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.source.none": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not defined"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tanımlı değil"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.source.rule": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The legislation the expert relies on"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzmanın dayandığı mevzuat"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.state.due": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coming up"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yaklaşıyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.state.failed": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Negative"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Olumsuz"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.state.never": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No check on record"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrol kaydı yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.state.overdue": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date passed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süresi geçti"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.state.unknown": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Period undefined"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süre belirsiz"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.state.valid": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güncel"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.all": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All types"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm türler"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.boiler": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boiler"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kazan"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.choose": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a type"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tür seçin"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.compressor": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compressor"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kompresör"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.conveyor": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conveyor"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konveyör"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.crane": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crane"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vinç"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.detection": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fire detection"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yangın algılama"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.earthing": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Earthing"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Topraklama"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.electrical": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Electrical installation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elektrik tesisatı"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.extinguisher": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fire extinguisher"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yangın söndürücü"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.forklift": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forklift"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forklift"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.ladder": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ladder"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merdiven"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.lathe": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lathe"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torna"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.lift": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lift"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asansör"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.lifting": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lifting equipment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaldırma ekipmanı"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.other": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other equipment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diğer ekipman"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.press": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pres"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.pressure": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pressure vessel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basınçlı kap"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.scaffold": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scaffold"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İskele"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.tool": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Power tool"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El aleti"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.ventilation": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ventilation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Havalandırma"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.type.welding": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welding set"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaynak makinesi"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.workplace.choose": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a workplace"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri seçin"
           }
         }
       }

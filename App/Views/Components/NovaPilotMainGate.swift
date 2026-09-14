@@ -38,13 +38,16 @@ struct NovaPilotRoot: View {
     @EnvironmentObject private var app: AppState
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var controller = NovaWorkspaceController()
-    @State private var navigation = NovaNavigationState(epoch: UUID().uuidString, available: [.companies, .newCompany, .findings, .newFinding, .analyses, .newAnalysis, .training, .newTraining, .documentChecklist, .documents])
+    @State private var navigation = NovaNavigationState(epoch: UUID().uuidString, available: [.statistics, .companies, .newCompany, .findings, .newFinding, .analyses, .newAnalysis, .training, .newTraining, .documentChecklist, .documents, .periodicChecks])
     @State private var showingCreate = false
     @State private var notice: String?
     @State private var listRevision = UUID()
     @State private var overview: [NovaPilotCompanySummary]?
     @State private var overviewFailed = false
     @State private var sceneRevalidation = NovaSceneRevalidation()
+    /// The account's equipment standing, for the home page's own summary. One
+    /// read, and the card says nothing until it answers.
+    @State private var equipmentBoard: NovaEquipmentBoard?
     private var overviewKey: String { "\(controller.host.navigation.epoch):\(ready):\(listRevision):\(navigation.selected)" }
     private var activeCompanies: [NovaPilotCompanySummary]? { ready ? overview?.filter { !$0.is_archived } : nil }
     private var metrics: [NovaMetricItem] {
@@ -52,7 +55,13 @@ struct NovaPilotRoot: View {
             .init(id: "companies", value: activeCompanies.map { String($0.count) } ?? "—", label: "Firmalar", footer: RDLocalization.string("localizable.nova.pilot.main.gate.aktif.pilot.1a73541a", table: .localizable, fallback: "Aktif pilot"), symbol: "building.2", tone: .accent, destination: .companies),
             .init(id: "personnel", value: activeCompanies.map { String($0.reduce(0) { $0 + $1.personnel_count }) } ?? "—", label: "Personel", footer: RDLocalization.string("localizable.nova.pilot.main.gate.aktif.kayit.f0e78da1", table: .localizable, fallback: "Aktif kayıt"), symbol: "person.2", tone: .accent, destination: .companies),
             .init(id: "workplaces", value: activeCompanies.map { String($0.reduce(0) { $0 + $1.workplace_count }) } ?? "—", label: RDLocalization.string("localizable.nova.pilot.main.gate.isyerleri.40b87276", table: .localizable, fallback: "İşyerleri"), footer: RDLocalization.string("localizable.nova.pilot.main.gate.aktif.kayit.c051f94b", table: .localizable, fallback: "Aktif kayıt"), symbol: "building.2", tone: .accent, destination: .companies),
-            .init(id: "departments", value: activeCompanies.map { String($0.reduce(0) { $0 + $1.department_count }) } ?? "—", label: "Departman", footer: RDLocalization.string("localizable.nova.pilot.main.gate.aktif.kayit.0f6ad151", table: .localizable, fallback: "Aktif kayıt"), symbol: "square.grid.2x2", tone: .accent, destination: .companies)
+            .init(id: "departments", value: activeCompanies.map { String($0.reduce(0) { $0 + $1.department_count }) } ?? "—", label: "Departman", footer: RDLocalization.string("localizable.nova.pilot.main.gate.aktif.kayit.0f6ad151", table: .localizable, fallback: "Aktif kayıt"), symbol: "square.grid.2x2", tone: .accent, destination: .companies),
+            // Equipment whose recorded date has passed or whose last report was
+            // negative. A count of records, never a verdict about a company.
+            .init(id: "equipment", value: equipmentBoard.map { String($0.needsAttention) } ?? "—",
+                  label: RDLocalization.string("localizable.nova.equipment.metric.label", table: .localizable, fallback: "Kontrol"),
+                  footer: RDLocalization.string("localizable.nova.equipment.metric.footer", table: .localizable, fallback: "ilgi bekleyen"),
+                  symbol: "checkmark.shield", tone: .accent, destination: .periodicChecks)
         ]
     }
 
@@ -85,6 +94,13 @@ struct NovaPilotRoot: View {
                         onNavigate: navigate,
                         onPhoto: { navigate(.newAnalysis) }, onAssistant: unavailable)
                 }
+            case .statistics:
+                if ready {
+                    NovaStatisticsScreen(load: { company, months in
+                        try await NovaStatisticsService(identity: identity).load(company: company, months: months)
+                    }, onBack: { navigate(.home) }, onNavigate: navigate)
+                    .id("\(identity.userID):\(identity.sessionID)")
+                } else { statusCard }
             case .companies:
                 companies
             case .training, .newTraining:
@@ -104,6 +120,8 @@ struct NovaPilotRoot: View {
                 documents
             case .documents:
                 files
+            case .periodicChecks:
+                equipment
             case .profile:
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
@@ -148,6 +166,11 @@ struct NovaPilotRoot: View {
             do { overview = try await loadNovaPilotOverview(identity: identity) }
             catch { if !Task.isCancelled { overviewFailed = true } }
         }
+        .task(id: overviewKey) {
+            equipmentBoard = nil
+            guard ready else { return }
+            equipmentBoard = try? await NovaEquipmentCheckService.live().board(identity, query: .init(limit: 1))
+        }
         .onChange(of: scenePhase) { phase in
             // Screenshots, permission prompts and Control Center can cause inactive → active.
             // They are not a new session and must not destroy a sheet or its draft.
@@ -181,6 +204,17 @@ struct NovaPilotRoot: View {
             NovaPilotDocumentGate(identity: identity, scope: controller.scope, canWrite: controller.canWrite,
                 select: { controller.select($0) }, currentScope: { controller.scope },
                 onBack: { navigate(.home) }, onCompanies: { navigate(.companies) })
+        } else {
+            NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
+        }
+    }
+
+    /// Periyodik Kontroller reads the whole account and narrows to one company
+    /// when the expert picks one.
+    @ViewBuilder private var equipment: some View {
+        if ready {
+            NovaPilotEquipmentGate(identity: identity, canWrite: controller.canWrite,
+                onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
         }

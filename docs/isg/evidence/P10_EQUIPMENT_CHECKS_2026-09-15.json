@@ -1,0 +1,139 @@
+{
+ "phase": "P10",
+ "slice": "the client surface behind Periyodik Kontroller: equipment inventory, per-type periods and inspection records",
+ "date": "2026-09-15",
+ "branch": "codex/isg-transition-foundation",
+ "migration": "supabase/migrations/20260915030000_isg_equipment_checks.sql",
+ "own_rollout_feature_added": false,
+ "module_left_disabled": true,
+ "needs_two_switches": [
+  "modules",
+  "equipment"
+ ],
+ "synthetic_run": {
+  "directory": "output/isg/runs/synthetic-auth-tIftDy",
+  "ok": true,
+  "checks_total": 1287,
+  "checks_failed": 0,
+  "equipment_checks": 39,
+  "ids": [
+   "equipment_checks_the_slice_adds_no_switch_of_its_own",
+   "equipment_checks_every_new_table_is_private_and_row_secured",
+   "equipment_checks_the_type_catalogue_carries_names_and_no_periods",
+   "equipment_checks_no_suggested_type_is_a_health_record",
+   "equipment_checks_the_schema_itself_refuses_a_health_type",
+   "equipment_checks_no_column_stores_a_state_a_stale_row_could_claim",
+   "equipment_checks_the_slice_adds_no_index_that_duplicates_one_already_there",
+   "equipment_checks_the_boundary_exposes_exactly_two_functions_to_a_signed_in_account",
+   "equipment_checks_the_phase_switch_alone_closes_the_module",
+   "equipment_checks_the_module_switch_alone_closes_the_module",
+   "equipment_checks_the_catalogue_offers_names_and_refuses_to_offer_a_period",
+   "equipment_checks_an_item_with_no_inspection_reads_as_never_inspected",
+   "equipment_checks_an_inspection_with_no_type_rule_never_invents_a_due_date",
+   "equipment_checks_a_period_belongs_to_the_type_and_carries_where_it_came_from",
+   "equipment_checks_an_unapproved_period_is_flagged_for_review_and_cannot_hide_it",
+   "equipment_checks_two_types_inspected_the_same_day_are_not_due_the_same_day",
+   "equipment_checks_a_failed_check_produces_no_due_date_and_says_so",
+   "equipment_checks_a_check_that_ran_out_reads_as_overdue",
+   "equipment_checks_a_check_inside_the_notice_window_reads_as_due_soon",
+   "equipment_checks_a_report_dated_after_today_is_refused",
+   "equipment_checks_another_owners_company_is_refused_on_every_action",
+   "equipment_checks_another_owners_equipment_cannot_be_inspected_through_this_company",
+   "equipment_checks_a_field_the_server_never_agreed_to_read_is_refused",
+   "equipment_checks_the_page_is_bounded_and_the_tally_counts_the_same_rows_it_pages",
+   "equipment_checks_the_page_puts_what_ran_out_first",
+   "equipment_checks_the_answer_is_a_tally_and_never_a_compliance_verdict",
+   "equipment_checks_tapping_a_counter_filters_exactly_what_that_counter_counted",
+   "equipment_checks_a_state_word_the_server_never_agreed_to_is_refused",
+   "equipment_checks_the_per_type_tally_answers_the_whole_inventory_in_one_call",
+   "equipment_checks_a_type_filter_returns_only_that_type",
+   "equipment_checks_the_type_filter_counts_what_the_inventory_really_holds",
+   "equipment_checks_a_workplace_filter_returns_only_that_workplace",
+   "equipment_checks_the_whole_account_reads_in_one_call_without_naming_a_company",
+   "equipment_checks_a_rule_added_later_never_rewrites_a_report_that_was_already_filed",
+   "equipment_checks_the_detail_carries_the_history_and_the_period_it_was_worked_out_from",
+   "equipment_checks_a_retry_returns_the_first_answer_instead_of_filing_a_second_report",
+   "equipment_checks_archiving_takes_the_item_off_the_list_and_keeps_its_history",
+   "equipment_checks_the_legacy_analysis_and_report_tables_were_never_written",
+   "equipment_checks_the_kill_switch_stops_the_module_in_both_directions"
+  ]
+ },
+ "invariants": {
+  "state_stored": false,
+  "state_authority": "computed_at_read",
+  "due_date_invented_without_a_rule": false,
+  "period_unknown_reads_as_valid": false,
+  "failed_inspection_produces_a_due_date": false,
+  "period_defaults_offered": false,
+  "period_shown_without_its_source": false,
+  "unapproved_period_can_hide_its_review_flag": false,
+  "rule_added_later_rewrites_an_existing_report": false,
+  "report_can_be_dated_in_the_future": false,
+  "health_records_tracked": false,
+  "compliance_verdict_returned": false
+ },
+ "boundary": {
+  "authenticated_entries": [
+   "public.isg_equipment_checks_read_v1",
+   "public.isg_equipment_checks_mutate_v1"
+  ],
+  "service_role_entries": [],
+  "ownership_check_added_by_this_slice": true,
+  "writes_delegate_to": [
+   "private_isg.set_equipment_inspection_rule",
+   "private_isg.register_equipment",
+   "private_isg.record_equipment_inspection"
+  ],
+  "table_grants_to_client_roles": 0
+ },
+ "client": {
+  "screens": [
+   "App/DesignSystem/ISG/NovaEquipmentCheckScreens.swift",
+   "App/DesignSystem/ISG/NovaEquipmentCheckSheets.swift"
+  ],
+  "design_tests": {
+   "file": "scripts/isg/nova_equipment_checks.test.mjs",
+   "total": 12,
+   "failed": 0
+  },
+  "guard_tests": {
+   "file": "scripts/isg/equipment_checks_guard.test.mjs",
+   "total": 16,
+   "failed": 0
+  },
+  "connected_to": [
+   "drawer: Periyodik Kontroller",
+   "company page: inspections heading",
+   "home page summary card",
+   "Diğer Dosyalar: filed inspection reports"
+  ],
+  "counters": 5,
+  "states": 6,
+  "page_limit": 10,
+  "android_parity": false
+ },
+ "suites": {
+  "foundation": {
+   "total": 551,
+   "failed": 1,
+   "failure_owner": "the concurrent session's education copy, not this slice"
+  },
+  "nova_design": {
+   "total": 79,
+   "failed": 0
+  },
+  "l10n": {
+   "L10N-001": "PASS",
+   "L10N-002": "PASS",
+   "L10N-003": "PASS",
+   "L10N-004": "FAIL",
+   "L10N-004_debt_from_this_slice": 0
+  }
+ },
+ "builds": {
+  "ios_debug": "SUCCEEDED",
+  "nova_pilot_build": "SUCCEEDED"
+ },
+ "production_deployed": false,
+ "limitation": "No approved period catalogue exists, so the module offers no period for any type and every period the expert enters is carried with its own attribution. No notification is produced for an approaching date."
+}

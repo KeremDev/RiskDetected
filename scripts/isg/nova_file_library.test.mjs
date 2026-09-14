@@ -126,7 +126,9 @@ test('the company page reads the archive from the same tally the archive uses',(
 test('Diğer Dosyalar is reachable from the menu and from the company page',()=>{
   assert.match(main,/case \.documents:\n\s*files/);
   assert.match(main,/NovaPilotFileGate\(identity: identity, canWrite: controller\.canWrite/);
-  assert.match(main,/\.documentChecklist, \.documents\]\)/);
+  // Its position in the drawer list belongs to whichever slice added the
+  // newest entry, so only its presence is pinned here.
+  assert.match(main,/available: \[[^\]]*\.documents[,\]]/);
   // The company page's own Dosya Ekle button is live and scoped to that company.
   assert.match(company,/fallback: "Dosya Ekle"\), symbol: "folder\.badge\.plus", isEnabled: canWrite\) \{ addingFile = true \}/);
   assert.match(company,/initialCompany: scope\.companyID,/);

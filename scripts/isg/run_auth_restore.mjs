@@ -39,6 +39,7 @@ import { beginNonconformityHTTPProbe, nonconformityHTTPFiles } from './nonconfor
 import { beginNonconformityDetailProbe, nonconformityDetailFiles } from './nonconformity_detail_probe.mjs';
 import { beginDocumentTrackingProbe, documentTrackingFiles } from './document_tracking_probe.mjs';
 import { beginFileLibraryProbe, fileLibraryFiles } from './file_library_probe.mjs';
+import { beginEquipmentChecksProbe, equipmentChecksFiles } from './equipment_checks_probe.mjs';
 import { beginNotificationDispatchProbe, notificationDispatchFiles } from './notification_dispatch_probe.mjs';
 import { beginNotificationRepositoryProbe, notificationRepositoryFiles } from './notification_repository_probe.mjs';
 import { beginNotificationDeviceProbe, notificationDeviceFiles } from './notification_device_probe.mjs';
@@ -228,6 +229,7 @@ function sourceFingerprints(mode) {
     .concat(mode.synthetic ? nonconformityDetailFiles : [])
     .concat(mode.synthetic ? documentTrackingFiles : [])
     .concat(mode.synthetic ? fileLibraryFiles : [])
+    .concat(mode.synthetic ? equipmentChecksFiles : [])
     .concat(mode.synthetic ? notificationDispatchFiles : [])
     .concat(mode.synthetic ? notificationRepositoryFiles : [])
     .concat(mode.synthetic ? notificationDeviceFiles : [])
@@ -389,6 +391,7 @@ try {
   let nonconformityDetailProbe;
   let documentTrackingProbe;
   let fileLibraryProbe;
+  let equipmentChecksProbe;
   let notificationDispatchProbe;
   let notificationRepositoryProbe;
   let notebookAPIProbe;
@@ -460,6 +463,10 @@ try {
     // older slice re-adds the rollout CHECK with its own feature list.
     stage = 'file-library';
     fileLibraryProbe=await beginFileLibraryProbe({synthetic:true,sql,request:personnelHTTPProbe.request,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
+    // Newest timestamp again, and it reopens the module switches the
+    // rehearsal expects to find closed, so it runs immediately before it.
+    stage = 'equipment-checks';
+    equipmentChecksProbe=await beginEquipmentChecksProbe({synthetic:true,sql,request:personnelHTTPProbe.request,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'integrated-rehearsal';
     rehearsalProbe=await beginIntegratedRehearsalProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
   }
@@ -525,6 +532,7 @@ try {
   if (nonconformityDetailProbe) report.nonconformity_detail = nonconformityDetailProbe.afterLogout();
   if (documentTrackingProbe) report.document_tracking = documentTrackingProbe.afterLogout();
   if (fileLibraryProbe) report.file_library = fileLibraryProbe.afterLogout();
+  if (equipmentChecksProbe) report.equipment_checks = equipmentChecksProbe.afterLogout();
   if (notificationDispatchProbe) report.notification_dispatch = notificationDispatchProbe.afterLogout();
   if (notificationRepositoryProbe) report.notification_repository = notificationRepositoryProbe.afterLogout();
   if (notebookAPIProbe) report.notebook_api = notebookAPIProbe.afterLogout();
