@@ -11071,6 +11071,42 @@
         }
       }
     },
+    "localizable.nova.document.add.change.company": {
+      "comment": "nova_document_tracking; document portfolio page, company-page heading and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change the company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmayı değiştir"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.add.company": {
+      "comment": "nova_document_tracking; document portfolio page, company-page heading and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which company is this for?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hangi firma için?"
+          }
+        }
+      }
+    },
     "localizable.nova.document.add.title": {
       "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -11197,6 +11233,24 @@
         }
       }
     },
+    "localizable.nova.document.company.all": {
+      "comment": "nova_document_tracking; document portfolio page, company-page heading and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All companies"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm firmalar"
+          }
+        }
+      }
+    },
     "localizable.nova.document.company.empty": {
       "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -11229,6 +11283,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Firma listesi alınamadı. Tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.company.total": {
+      "comment": "nova_document_tracking; document portfolio page, company-page heading and add flow; placeholders: %d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d entries"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d kayıt"
           }
         }
       }
@@ -11337,6 +11409,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Temizle"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.date.unset": {
+      "comment": "nova_document_tracking; optional day field before a date is picked; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not set"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belirtilmedi"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.edit.short": {
+      "comment": "nova_document_tracking; document portfolio page, company-page heading and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düzenle"
           }
         }
       }
@@ -12079,6 +12187,42 @@
         }
       }
     },
+    "localizable.nova.document.more": {
+      "comment": "nova_document_tracking; document portfolio page, company-page heading and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show more"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha fazla göster"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.overview.attention": {
+      "comment": "nova_document_tracking; document portfolio page, company-page heading and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "need attention"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ilgi bekliyor"
+          }
+        }
+      }
+    },
     "localizable.nova.document.overview.detail": {
       "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -12093,6 +12237,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Takibe aldığınız evrakların hangisi dosyada, hangisi süresi dolmuş, tek yerden görün."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.overview.detail.portfolio": {
+      "comment": "nova_document_tracking; document portfolio page, company-page heading and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See the missing, expired and upcoming documents across all your companies in one place."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm firmalarınızda eksik, süresi dolmuş ve yaklaşan evrakları tek yerden görün."
           }
         }
       }
@@ -12129,6 +12291,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "kayıt"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.page": {
+      "comment": "nova_document_tracking; document portfolio page, company-page heading and add flow; placeholders: %1$d, %2$d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d of %2$d entries"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d / %2$d kayıt"
           }
         }
       }
@@ -12205,6 +12385,42 @@
         }
       }
     },
+    "localizable.nova.document.section.empty": {
+      "comment": "nova_document_tracking; document portfolio page, company-page heading and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing is tracked under this heading yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu başlık için takibe alınmış evrak yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.section.open": {
+      "comment": "nova_document_tracking; document portfolio page, company-page heading and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open document tracking"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evrak takibini aç"
+          }
+        }
+      }
+    },
     "localizable.nova.document.status.due.soon": {
       "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -12273,6 +12489,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Güncel"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.subtitle": {
+      "comment": "nova_document_tracking; document portfolio page, company-page heading and add flow; placeholders: %1$d, %2$d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d companies · %2$d entries"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d firma · %2$d kayıt"
           }
         }
       }

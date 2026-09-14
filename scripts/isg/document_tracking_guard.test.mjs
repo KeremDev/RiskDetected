@@ -6,7 +6,8 @@ import {ROOT} from './lib.mjs';
 import {beginDocumentTrackingProbe,documentTrackingFiles} from './document_tracking_probe.mjs';
 
 const migration=readFileSync(resolve(ROOT,documentTrackingFiles[0]),'utf8');
-const probe=readFileSync(resolve(ROOT,documentTrackingFiles[1]),'utf8');
+const portfolio=readFileSync(resolve(ROOT,documentTrackingFiles[1]),'utf8');
+const probe=readFileSync(resolve(ROOT,documentTrackingFiles[2]),'utf8');
 const runner=readFileSync(resolve(ROOT,'scripts/isg/run_auth_restore.mjs'),'utf8');
 
 test('the probe refuses any other mode before touching SQL',async()=>{
@@ -122,6 +123,25 @@ test('the switch answers the rehearsal the same way every other feature does',()
   assert.match(rehearsal,/'read_document_tracking','mutate_document_tracking',/);
   const definers=[...migration.matchAll(/CREATE FUNCTION private_isg\.([a-z_]+)\([^)]*\)[\s\S]{0,200}?SECURITY DEFINER/g)].map(m=>m[1]);
   assert.deepEqual(definers.sort(),['mutate_document_tracking','read_document_tracking']);
+});
+
+test('the portfolio is one aggregate, not one read per company',()=>{
+  // The plan forbids sweeping thirty companies on every open, so the tally,
+  // the per-company summary and the page all come from one CTE.
+  assert.doesNotMatch(portfolio,/CREATE TEMP TABLE|FOR .* IN SELECT .* LOOP/);
+  assert.match(portfolio,/WITH scope AS \(/);
+  assert.match(portfolio,/\), page AS \(/);
+  assert.match(portfolio,/\), filtered AS \(/);
+  assert.match(portfolio,/INTO tally_all,tally_companies,tally_kinds,matching_rows,tally_rows;/);
+  // The headline counts every tracked row, before any filter is applied.
+  assert.match(portfolio,/FROM \(SELECT state,count\(\*\) AS total FROM page GROUP BY state\) tally/);
+  // The page is bounded by the server, whatever the client asks for.
+  assert.match(portfolio,/page_limit:=least\(greatest\(coalesce\(p_limit,10\),1\),100\);/);
+  // It ships closed and adds no table grant of its own.
+  assert.doesNotMatch(portfolio,/UPDATE private_isg\.rollout SET/);
+  assert.doesNotMatch(portfolio,/GRANT (SELECT|INSERT|UPDATE|DELETE|ALL) ON/);
+  assert.match(portfolio,/PERFORM private_isg\.document_tracking_gate\(false\);/);
+  assert.match(portfolio,/'compliance_verdict',NULL,'file_storage_available',false/);
 });
 
 test('the new tables are on the advisor deny list and in the schema counts',()=>{

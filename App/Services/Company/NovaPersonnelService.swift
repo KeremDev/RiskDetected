@@ -7,6 +7,9 @@ enum PersonnelRPCValue: Encodable, Equatable {
     /// A jsonb argument. The server validates its keys against a per-action
     /// allowlist, so this is a transport shape and never a free-form escape.
     indirect case object([String: PersonnelRPCValue])
+    /// A text[] argument. Like the object case this is a transport shape: the
+    /// server still checks every element against its own allowlist.
+    indirect case array([PersonnelRPCValue])
     func encode(to encoder: Encoder) throws {
         var c = encoder.singleValueContainer()
         switch self {
@@ -14,6 +17,7 @@ enum PersonnelRPCValue: Encodable, Equatable {
         case .number(let v): try c.encode(v)
         case .bool(let v): try c.encode(v)
         case .object(let v): try c.encode(v)
+        case .array(let v): try c.encode(v)
         case .null: try c.encodeNil()
         }
     }

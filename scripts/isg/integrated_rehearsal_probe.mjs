@@ -106,7 +106,7 @@ export async function beginIntegratedRehearsalProbe({synthetic,sql:rawSql,compan
   const allowed=['company_default_after_insert','context_at','directory_mutate','directory_read','employee_row',
     'mutate_notebook','mutate_notebook_reminder','mutate_personnel','organize_notebook','read_notebook',
     'read_nonconformities','mutate_nonconformity',
-    'read_document_tracking','mutate_document_tracking',
+    'read_document_tracking','mutate_document_tracking','read_document_portfolio',
     'read_notebook_organization','read_notebook_reminders','read_personnel','record_device_permission',
     'workspace_availability'];
   const actual=definers?definers.split(','):[];

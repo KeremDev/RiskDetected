@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The Evrak Takibi surface. Obligations belong to one company, so the page
-/// works on one company at a time and says which one it is reading.
+/// The Evrak Takibi surface. The page answers the whole account in one read and
+/// narrows to one company only when the expert asks it to.
 struct NovaPilotDocumentGate: View {
     let identity: NovaSessionIdentity
     let scope: NovaPersonnelScope?
@@ -10,98 +10,17 @@ struct NovaPilotDocumentGate: View {
     let currentScope: () -> NovaPersonnelScope?
     let onBack: () -> Void
     let onCompanies: () -> Void
-    @Environment(\.colorScheme) private var scheme
-    @State private var companies: [NovaAnalysisCompanyOption] = []
-    @State private var company: UUID?
-    @State private var loadFailed = false
+    /// Opened from a company page: the tracker starts on that company, and on
+    /// that heading's own document kinds when one was named.
+    var initialCompany: UUID?
+    var initialKinds: [String]?
+    var headingOverride: String?
 
     private var service: NovaDocumentTrackingService { .live(currentScope: currentScope) }
-    private var selected: NovaAnalysisCompanyOption? { companies.first { $0.id == company } }
 
     var body: some View {
-        Group {
-            if let company, selected != nil {
-                NovaDocumentTrackingScreen(client: client(company), onBack: onBack, canWrite: canWrite,
-                    companyName: selected?.name)
-                    .id(company)
-                    .safeAreaInset(edge: .top) { switcher }
-            } else {
-                placeholder
-            }
-        }
-        .task { await load() }
-    }
-
-    /// Which company the page is reading, and the one control that changes it.
-    @ViewBuilder private var switcher: some View {
-        if companies.count > 1 {
-            Menu {
-                ForEach(companies) { option in
-                    Button(option.name) { company = option.id; select(option.id) }
-                }
-            } label: {
-                HStack(spacing: 7) {
-                    Image(systemName: "building.2").font(.system(size: 12, weight: .semibold))
-                    NovaText(text: selected?.name ?? "", style: .meta)
-                    Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold))
-                    Spacer(minLength: 0)
-                }
-                .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
-                .padding(.horizontal, 12).frame(minHeight: 40)
-                .background(NovaColorToken.surface.color(in: scheme), in: Capsule())
-                .overlay(Capsule().strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
-                .padding(.horizontal, 16).padding(.bottom, 6)
-            }.accessibilityIdentifier("document.tracking.company")
-        }
-    }
-
-    private var placeholder: some View {
-        NovaPageSurface {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 10) {
-                        NovaBackButton { onBack() }
-                        NovaText(text: NovaDestination.documentChecklist.title, style: .screenTitle)
-                        Spacer(minLength: 0)
-                    }
-                    NovaCard(padding: 16) {
-                        VStack(alignment: .leading, spacing: 10) {
-                            NovaText(text: loadFailed
-                                ? RDLocalization.string("localizable.nova.document.company.failed", table: .localizable,
-                                    fallback: "Firma listesi alınamadı. Tekrar deneyin.")
-                                : companies.isEmpty
-                                    ? RDLocalization.string("localizable.nova.document.company.empty", table: .localizable,
-                                        fallback: "Evrak takibi için önce bir firma ekleyin.")
-                                    : RDLocalization.string("localizable.nova.document.loading", table: .localizable,
-                                        fallback: "Evrak takibi yükleniyor…"), style: .metaQuiet)
-                            if companies.isEmpty && !loadFailed {
-                                NovaButton(label: NovaDestination.companies.title, symbol: "building.2",
-                                    variant: .surface) { onCompanies() }
-                                    .accessibilityIdentifier("document.tracking.companies")
-                            }
-                        }.frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }.padding(20).padding(.bottom, novaTabBarInset)
-            }
-        }
-    }
-
-    private func load() async {
-        do {
-            companies = try await NovaAnalysisWorkspace.companyOptions(identity: identity)
-            loadFailed = false
-        } catch {
-            loadFailed = true
-            return
-        }
-        // The workspace already has a company in scope; read that one rather
-        // than making the expert choose again.
-        if let current = scope?.companyID, companies.contains(where: { $0.id == current }) {
-            company = current
-        } else if let first = companies.first?.id {
-            company = first
-            select(first)
-        }
+        NovaDocumentTrackingScreen(client: client, onBack: onBack, canWrite: canWrite,
+            initialCompany: initialCompany, initialKinds: initialKinds, headingOverride: headingOverride)
     }
 
     /// Selecting a company runs the workspace availability check again, so the
@@ -117,20 +36,31 @@ struct NovaPilotDocumentGate: View {
         throw NovaDocumentFailure.denied
     }
 
-    private func client(_ target: UUID) -> NovaDocumentTrackingClient {
-        func scoped() async throws -> NovaPersonnelScope { try await waitForScope(target) }
-        return .init(
-            load: { try await service.board(try await scoped()) },
-            kinds: { try await service.kinds(try await scoped()) },
-            workplaces: { try await service.workplaces(try await scoped()) },
-            add: { draft in try await service.add(try await scoped(), draft: draft) },
-            update: { entry, draft in try await service.update(try await scoped(), obligation: entry, draft: draft) },
-            archive: { entry in try await service.archive(try await scoped(), obligation: entry) },
-            recordCopy: { entry, draft in
-                try await service.recordCopy(try await scoped(), obligation: entry, draft: draft)
+    /// Every write is scoped to the company the row itself names, so the page
+    /// can hold rows from several companies without borrowing one scope.
+    private func scoped(_ row: NovaDocumentObligation) async throws -> NovaPersonnelScope {
+        guard let company = row.companyID else { throw NovaDocumentFailure.denied }
+        return try await waitForScope(company)
+    }
+
+    private var client: NovaDocumentTrackingClient {
+        .init(
+            portfolio: { request in
+                try await service.portfolio(identity, query: request.query, status: request.status,
+                    company: request.company, kinds: request.kinds,
+                    limit: request.limit, offset: request.offset)
             },
-            removeCopy: { entry, copy in
-                try await service.removeCopy(try await scoped(), obligation: entry, copy: copy)
+            companies: { try await NovaAnalysisWorkspace.companyOptions(identity: identity) },
+            kinds: { company in try await service.kinds(try await waitForScope(company)) },
+            workplaces: { company in try await service.workplaces(try await waitForScope(company)) },
+            add: { company, draft in try await service.add(try await waitForScope(company), draft: draft) },
+            update: { row, draft in try await service.update(try await scoped(row), obligation: row, draft: draft) },
+            archive: { row in try await service.archive(try await scoped(row), obligation: row) },
+            recordCopy: { row, draft in
+                try await service.recordCopy(try await scoped(row), obligation: row, draft: draft)
+            },
+            removeCopy: { row, copy in
+                try await service.removeCopy(try await scoped(row), obligation: row, copy: copy)
             })
     }
 }

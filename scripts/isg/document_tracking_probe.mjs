@@ -5,6 +5,7 @@ import {ROOT} from './lib.mjs';
 
 export const documentTrackingFiles=[
   'supabase/migrations/20260914210000_isg_document_tracking.sql',
+  'supabase/migrations/20260914230000_isg_document_portfolio.sql',
   'scripts/isg/document_tracking_probe.mjs',
 ];
 const read=p=>readFileSync(resolve(ROOT,p),'utf8');
@@ -17,6 +18,8 @@ const NOTICE_DAYS=30,DUE_SOON_IN=10,EXPIRED_BY=1,STILL_VALID_IN=200;
 // A drill record is good for a year, so a copy issued today runs out 365 days
 // later. 365 is added here by hand rather than read back from the server.
 const DRILL_VALIDITY_DAYS=365;
+// The page shows ten rows at a time, so the fixture has to carry more than ten.
+const PAGE_SIZE=10,FILLER_ROWS=8;
 const day=(anchor,offset)=>{
   const value=new Date(Date.UTC(anchor.y,anchor.m-1,anchor.d));
   value.setUTCDate(value.getUTCDate()+offset);
@@ -28,6 +31,7 @@ export async function beginDocumentTrackingProbe({synthetic,sql,request,companyI
   if(!companyID||!ownerID||typeof request!=='function')throw Error('AUTH_RESTORE_DOCUMENT_TRACKING_SCOPE_REQUIRED');
   const mark=(name,ok)=>pass('document_tracking_'+name,ok);
   sql(read(documentTrackingFiles[0]));
+  sql(read(documentTrackingFiles[1]));
 
   mark('migration_applied_without_opening_the_switch',
     sql("SELECT NOT read_enabled AND NOT write_enabled FROM private_isg.rollout WHERE feature='document_tracking';")==='t');
@@ -53,8 +57,8 @@ export async function beginDocumentTrackingProbe({synthetic,sql,request,companyI
   // There is no asset column at all, so the tracker cannot claim a stored file.
   mark('no_column_can_claim_a_stored_file',
     sql("SELECT count(*) FROM information_schema.columns WHERE table_schema='private_isg' AND table_name IN ('document_obligations','document_obligation_records') AND column_name IN ('asset_id','storage_path','file_sha256','derivative_id');")==='0');
-  mark('the_boundary_exposes_exactly_two_callable_functions',
-    sql("SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname LIKE 'isg_document_tracking%' AND has_function_privilege('authenticated',p.oid,'EXECUTE');")==='2');
+  mark('the_boundary_exposes_exactly_three_callable_functions',
+    sql("SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.proname LIKE 'isg_document%' AND has_function_privilege('authenticated',p.oid,'EXECUTE');")==='3');
 
   const post=(path,body,options={})=>request('/rpc/'+path,{method:'POST',body,...options});
   const readCall=(args,options={})=>post('isg_document_tracking_read_v1',
@@ -74,6 +78,8 @@ export async function beginDocumentTrackingProbe({synthetic,sql,request,companyI
   if(closed===null)throw Error('AUTH_RESTORE_DOCUMENT_TRACKING_BOUNDARY_UNREACHABLE');
   mark('a_closed_switch_refuses_both_directions',
     closed.body?.message==='FEATURE_UNAVAILABLE'&&
+    post('isg_document_portfolio_v1',{p_query:null,p_status:null,p_company:null,p_kinds:null,
+      p_limit:10,p_offset:0}).body?.message==='FEATURE_UNAVAILABLE'&&
     mutate('add_obligation',{kind_code:'risk_assessment',title:'Kapalı'}).body?.message==='FEATURE_UNAVAILABLE');
   sql("UPDATE private_isg.rollout SET read_enabled=true,write_enabled=true WHERE feature='document_tracking';");
 
@@ -192,7 +198,70 @@ export async function beginDocumentTrackingProbe({synthetic,sql,request,companyI
   mark('removing_the_newest_copy_falls_back_to_the_one_before_it',removal.status===200&&
     removal.body.row.latest_valid_until===day(anchor,DRILL_VALIDITY_DAYS));
 
+  // ---- portfolio: the whole account in one aggregate, not one read per company.
+  const portfolio=(args={},options={})=>post('isg_document_portfolio_v1',
+    {p_query:null,p_status:null,p_company:null,p_kinds:null,p_limit:PAGE_SIZE,p_offset:0,...args},options);
+  // Enough rows that the first page has to stop short of the whole list. The
+  // earlier expired record was archived above, so this block files its own.
+  for(let extra=0;extra<FILLER_ROWS;extra++){
+    mutate('add_obligation',{kind_code:'other',title:'Ek evrak '+extra,notice_days:NOTICE_DAYS});
+  }
+  const lapsed=mutate('add_obligation',{kind_code:'measurement_report',title:'Ortam ölçümü',
+    notice_days:NOTICE_DAYS});
+  mutate('record_copy',{obligation_id:lapsed.body.row.id,issued_on:day(anchor,-500),
+    valid_until:day(anchor,-EXPIRED_BY)});
+  const pageOne=portfolio();
+  mark('the_portfolio_answers_the_whole_account_at_once',pageOne.status===200&&
+    pageOne.body.kind==='portfolio'&&pageOne.body.compliance_verdict===null&&
+    pageOne.body.file_storage_available===false&&
+    Array.isArray(pageOne.body.companies)&&pageOne.body.companies.length>=1&&
+    // The tally and the per-company summary are two views of one set of rows.
+    ['missing','due_soon','expired','valid'].every(state=>
+      Number(pageOne.body.counts[state]??0)===pageOne.body.companies.reduce(
+        (running,entry)=>running+Number(entry.counts[state]??0),0)));
+  mark('the_first_page_stops_at_ten_and_says_there_is_more',
+    pageOne.body.returned===PAGE_SIZE&&pageOne.body.rows.length===PAGE_SIZE&&
+    pageOne.body.total>PAGE_SIZE&&pageOne.body.has_more===true);
+  const pageTwo=portfolio({p_offset:PAGE_SIZE});
+  const firstIDs=new Set(pageOne.body.rows.map(entry=>entry.id));
+  mark('the_next_page_continues_without_repeating_a_row',pageTwo.status===200&&
+    pageTwo.body.rows.length>0&&pageTwo.body.rows.every(entry=>!firstIDs.has(entry.id))&&
+    pageTwo.body.total===pageOne.body.total);
+  // Worst first: what ran out, then what was never filed, then what is due.
+  const rank={expired:0,missing:1,due_soon:2,valid:3};
+  const order=pageOne.body.rows.map(entry=>rank[entry.status]);
+  mark('the_page_puts_the_worst_rows_first',
+    order.every((value,at)=>at===0||order[at-1]<=value)&&order[0]===rank.expired);
+  const narrowed=portfolio({p_status:'expired'});
+  mark('a_status_filter_narrows_the_rows_but_not_the_headline',
+    narrowed.body.rows.every(entry=>entry.status==='expired')&&
+    narrowed.body.total===Number(pageOne.body.counts.expired)&&
+    JSON.stringify(narrowed.body.counts)===JSON.stringify(pageOne.body.counts));
+  const byCompany=portfolio({p_company:companyID});
+  mark('a_company_filter_narrows_the_rows_but_not_the_headline',
+    byCompany.body.rows.every(entry=>entry.company_id===companyID)&&
+    JSON.stringify(byCompany.body.counts)===JSON.stringify(pageOne.body.counts));
+  const byKind=portfolio({p_kinds:['measurement_report']});
+  mark('a_kind_filter_answers_one_section_of_the_company_page',
+    byKind.body.rows.every(entry=>entry.kind_code==='measurement_report')&&
+    byKind.body.total===1&&byKind.body.rows[0].id===lapsed.body.row.id);
+  mark('the_portfolio_never_reaches_another_owners_company',
+    portfolio({p_company:randomUUID()}).body.rows.length===0&&
+    pageOne.body.companies.every(entry=>entry.id===companyID));
+  const sum=states=>Object.values(states).reduce((running,value)=>running+Number(value),0);
+  mark('the_per_kind_tally_answers_every_company_page_heading_at_once',
+    // One call, one tally per kind: the company page never asks per heading.
+    typeof pageOne.body.kind_counts==='object'&&
+    Number(pageOne.body.kind_counts?.measurement_report?.expired??0)===1&&
+    // Summed over every kind it is the same set of rows as the account tally.
+    Object.values(pageOne.body.kind_counts).reduce((running,states)=>running+sum(states),0)===
+      sum(pageOne.body.counts));
+  mark('the_portfolio_carries_no_file_and_no_stored_status',
+    pageOne.body.rows.every(entry=>entry.file_stored===false&&entry.status_authority==='computed_at_read'));
+
   sql("UPDATE private_isg.rollout SET read_enabled=false,write_enabled=false WHERE feature='document_tracking';");
+  mark('the_kill_switch_stops_the_portfolio_too',
+    portfolio().body?.message==='FEATURE_UNAVAILABLE');
   mark('the_kill_switch_stops_the_tracker_in_both_directions',
     readCall({}).body?.message==='FEATURE_UNAVAILABLE'&&
     mutate('record_copy',{obligation_id:drill.body.row.id,
@@ -200,6 +269,7 @@ export async function beginDocumentTrackingProbe({synthetic,sql,request,companyI
 
   return {afterLogout(){
     return {migration_file:documentTrackingFiles[0],exact_migration_executed:true,rollout_left_disabled:true,
+      portfolio_migration_file:documentTrackingFiles[1],portfolio_is_one_aggregate:true,
       health_records_trackable:false,status_stored:false,file_stored:false,
       compliance_verdict_returned:false,legacy_tables_written:false,production_deployed:false};
   }};

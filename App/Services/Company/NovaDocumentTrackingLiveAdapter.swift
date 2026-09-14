@@ -23,6 +23,9 @@ extension NovaDocumentTrackingService {
         }, isCurrent: { scope in
             guard currentScope() == scope, let session = client.auth.currentSession, session.user.id == scope.ownerID else { return false }
             return NovaPersonnelService.sessionID(session.accessToken) == scope.sessionID
+        }, isSession: { identity in
+            guard let session = client.auth.currentSession, session.user.id == identity.userID else { return false }
+            return NovaPersonnelService.sessionID(session.accessToken) == identity.sessionID
         })
     }
 }

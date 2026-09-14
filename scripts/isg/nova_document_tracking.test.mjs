@@ -11,6 +11,7 @@ const screen=read('App/DesignSystem/ISG/NovaDocumentTrackingScreens.swift');
 const sheets=read('App/DesignSystem/ISG/NovaDocumentTrackingSheets.swift');
 const service=read('App/Services/Company/NovaDocumentTrackingService.swift');
 const gate=read('App/Views/Components/NovaPilotDocumentGate.swift');
+const portfolio=read('supabase/migrations/20260914230000_isg_document_portfolio.sql');
 // The ban is on what the product says and does, not on the word appearing in a
 // comment that explains why it is banned.
 const code=source=>source.split('\n').filter(line=>!/^\s*\/\//.test(line)).join('\n');
@@ -53,8 +54,9 @@ test('a legal basis is never offered without the reference it relies on',()=>{
 
 test('the kinds on screen are the server catalogue, not a list of their own',()=>{
   // The picker walks what the read returned; it never invents a code.
-  assert.match(sheets,/ForEach\(kinds\) \{ kind in/);
-  assert.match(screen,/let kinds: \(\) async throws -> \[NovaDocumentKind\]/);
+  assert.match(sheets,/ForEach\(kinds\) \{ kind in kindCell\(kind\) \}/);
+  // The catalogue is read for the company the obligation will belong to.
+  assert.match(screen,/let kinds: \(UUID\) async throws -> \[NovaDocumentKind\]/);
   // Every code the words file names is one the schema allows.
   const allowed=new Set([...migration.slice(migration.indexOf('kind_code text PRIMARY KEY CHECK'),
     migration.indexOf('ordinal integer NOT NULL')).matchAll(/'([a-z_]+)'/g)].map(m=>m[1]));
@@ -101,6 +103,42 @@ test('the menu entry lands on the tracker and on nothing else',()=>{
   assert.ok(navigation.includes('.documentChecklist,'));
   // The destination is offered rather than left disabled in the drawer.
   assert.match(main,/available: \[[^\]]*\.documentChecklist\]/);
+});
+
+test('the portfolio page reads the account once and shows ten at a time',()=>{
+  const model=read('App/DesignSystem/ISG/NovaDocumentTracking.swift');
+  assert.match(model,/struct NovaDocumentQuery[\s\S]{0,400}?var limit = 10/);
+  // One call per page, never one per company.
+  assert.match(gate,/portfolio: \{ request in[\s\S]{0,300}?service\.portfolio\(identity/);
+  assert.doesNotMatch(gate,/for .* in companies|companies\.map \{[^}]*await/);
+  // Asking for more re-reads the page rather than trimming what is on screen.
+  assert.match(screen,/shown \+= NovaDocumentQuery\(\)\.limit/);
+  assert.match(screen,/\.onChange\(of: status\)[\s\S]{0,120}?reload = UUID\(\)/);
+  assert.match(screen,/\.onChange\(of: company\)[\s\S]{0,120}?reload = UUID\(\)/);
+  // The headline counts the account, not the page that happens to be loaded.
+  assert.match(portfolio,/FROM \(SELECT state,count\(\*\) AS total FROM page GROUP BY state\) tally/);
+});
+
+test('a company page heading reads the tracker, not a second list',()=>{
+  const model=read('App/DesignSystem/ISG/NovaDocumentTracking.swift');
+  const migration=read('supabase/migrations/20260914210000_isg_document_tracking.sql');
+  // Every kind a heading claims is a kind the schema allows.
+  const allowed=new Set([...migration.slice(migration.indexOf('kind_code text PRIMARY KEY CHECK'),
+    migration.indexOf('ordinal integer NOT NULL')).matchAll(/'([a-z_]+)'/g)].map(m=>m[1]));
+  const mapped=[...model.slice(model.indexOf('enum NovaDocumentSectionMap'),
+    model.indexOf('/// What the portfolio page is asking for')).matchAll(/"([a-z_]+)"/g)].map(m=>m[1]);
+  assert.ok(mapped.length>0);
+  for(const kind of mapped) assert.ok(allowed.has(kind),kind);
+  // Training documents stay with the training module, and the headings that are
+  // not document obligations claim none.
+  assert.match(model,/case \.training, \.logo, \.personnel, \.support, \.accidents: return nil/);
+  // The company page reads one tally for every heading, not one call each.
+  const company=read('App/Views/Components/NovaCompanyManagementGate.swift');
+  assert.match(company,/service\.portfolio\(documentIdentity, company: scope\.companyID, limit: 1\)/);
+  assert.match(company,/NovaDocumentSectionMap\.kinds\(for: section\)/);
+  assert.match(company,/documents\?\.counts\(forKinds: kinds\)/);
+  assert.match(portfolio,/\), scoped AS \(/);
+  assert.match(portfolio,/'kind_counts',tally_kinds/);
 });
 
 test('a retry files one copy, not two',()=>{

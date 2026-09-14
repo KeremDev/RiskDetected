@@ -60,6 +60,12 @@ struct NovaCompanyWorkspace: View {
     @State private var companyExpanded = false
     @State private var completedTrainings = 0
     @State private var expandedSections = Set<NovaCompanySection>()
+    /// The tracker's own counts for this company, so a heading and the tracker
+    /// can never disagree about what is on file.
+    @State private var documents: NovaDocumentPortfolio?
+    @State private var documentsLoading = false
+    @State private var documentSection: NovaCompanySection?
+    private var documentIdentity: NovaSessionIdentity { .init(userID: scope.ownerID, sessionID: scope.sessionID) }
     private enum Sheet: Identifiable {
         case personnel, addPersonnel, editCompany, deleteCompany, training, directory(NovaDirectoryKind)
         var id: String { switch self { case .personnel: return "personnel"; case .addPersonnel: return "add-personnel"; case .editCompany: return "edit-company"; case .deleteCompany: return "delete-company"; case .training: return "training"; case .directory(let kind): return kind.rawValue } }
@@ -108,6 +114,20 @@ struct NovaCompanyWorkspace: View {
             let service = NovaTrainingService(identity: .init(userID: scope.ownerID, sessionID: scope.sessionID))
             if let page = try? await service.list(scope.companyID), !Task.isCancelled { completedTrainings = page.completed ?? 0 }
         }
+        .task(id: summaryRevision) {
+            documentsLoading = true
+            defer { documentsLoading = false }
+            let service = NovaDocumentTrackingService.live(currentScope: { scope })
+            documents = try? await service.portfolio(documentIdentity, company: scope.companyID, limit: 1)
+        }
+        .fullScreenCover(item: $documentSection) { section in
+            NovaPilotDocumentGate(identity: documentIdentity, scope: scope, canWrite: canWrite,
+                select: { _ in }, currentScope: { scope },
+                onBack: { documentSection = nil }, onCompanies: { documentSection = nil },
+                initialCompany: scope.companyID,
+                initialKinds: NovaDocumentSectionMap.kinds(for: section),
+                headingOverride: section.title)
+        }
         .navigationDestination(isPresented: $personnelPage) {
             NovaPersonnelDestination(scope: scope, companyName: companyName, client: personnel,
                 onBack: { personnelPage = false }, directory: directory, canWrite: canWrite, preview: false)
@@ -152,6 +172,9 @@ struct NovaCompanyWorkspace: View {
                 } else if section == .training {
                     NovaHelpHint(text: "Gerçekleşen eğitimleri personel seçerek kaydedin ve eğitim geçmişini görüntüleyin.")
                     NovaButton(label: "Eğitimleri aç", symbol: "graduationcap", variant: .surface) { sheet = .training }
+                } else if let kinds = NovaDocumentSectionMap.kinds(for: section) {
+                    NovaDocumentSectionStrip(counts: documents?.counts(forKinds: kinds) ?? [:],
+                        isLoading: documents == nil && documentsLoading) { documentSection = section }
                 } else {
                     NovaHelpHint(text: RDLocalization.string("localizable.nova.workspace.section.pending", table: .localizable, fallback: "Bu bölümün kayıt servisi henüz bağlanmadı. Eksik veya tamamlandı bilgisi doğrulanamıyor."))
                 }

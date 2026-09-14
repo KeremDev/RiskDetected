@@ -38,6 +38,10 @@ struct NovaDocumentCopy: Identifiable, Equatable {
 
 struct NovaDocumentObligation: Identifiable, Equatable {
     let id: UUID
+    /// The company the row belongs to. The portfolio spans several, so every
+    /// row carries its own rather than inheriting the page's.
+    var companyID: UUID?
+    var companyName: String?
     var workplaceID: UUID?
     var kindCode: String
     var title: String
@@ -62,7 +66,7 @@ struct NovaDocumentObligation: Identifiable, Equatable {
     func matches(_ query: String) -> Bool {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !needle.isEmpty else { return true }
-        return [title, kindCode, workplaceName ?? "", responsibleContact ?? "", legalRef ?? ""]
+        return [title, kindCode, companyName ?? "", workplaceName ?? "", responsibleContact ?? "", legalRef ?? ""]
             .contains { $0.lowercased().contains(needle) }
     }
 }
@@ -80,6 +84,81 @@ struct NovaDocumentBoard: Equatable {
 
     func count(_ status: NovaDocumentStatus) -> Int { counts[status] ?? 0 }
     var total: Int { rows.count }
+}
+
+/// One company's share of the portfolio, as the server counted it.
+struct NovaDocumentCompanySummary: Identifiable, Equatable {
+    let id: UUID
+    let name: String
+    let total: Int
+    let counts: [NovaDocumentStatus: Int]
+    func count(_ status: NovaDocumentStatus) -> Int { counts[status] ?? 0 }
+    /// The worst thing this company is carrying, for the row's own pill.
+    var worst: NovaDocumentStatus? {
+        [NovaDocumentStatus.expired, .missing, .dueSoon].first { count($0) > 0 }
+    }
+}
+
+/// The whole account in one answer: the tally, the per-company summary and one
+/// page of rows. The tally covers everything tracked, before any filter, so
+/// picking a chip never makes the account look smaller than it is.
+struct NovaDocumentPortfolio: Equatable {
+    var counts: [NovaDocumentStatus: Int] = [:]
+    var companies: [NovaDocumentCompanySummary] = []
+    /// Per document kind, following the company filter alone. The company page
+    /// reads every heading from this instead of asking once per heading.
+    var kindCounts: [String: [NovaDocumentStatus: Int]] = [:]
+    var rows: [NovaDocumentObligation] = []
+    /// How many rows match the filter in force, across every page.
+    var total = 0
+    var hasMore = false
+    var today = ""
+    var fileStorageAvailable = false
+
+    func count(_ status: NovaDocumentStatus) -> Int { counts[status] ?? 0 }
+    /// Everything the account tracks, however it is filtered right now.
+    var tracked: Int { NovaDocumentStatus.allCases.reduce(0) { $0 + count($1) } }
+    var needsAttention: Int { count(.missing) + count(.expired) + count(.dueSoon) }
+
+    /// What one company-page heading is carrying, summed over its own kinds.
+    func counts(forKinds kinds: [String]) -> [NovaDocumentStatus: Int] {
+        var result: [NovaDocumentStatus: Int] = [:]
+        for kind in kinds {
+            for (status, value) in kindCounts[kind] ?? [:] { result[status, default: 0] += value }
+        }
+        return result
+    }
+}
+
+/// Which company sections a document kind belongs under, so the company page
+/// can show the same records the tracker holds instead of a second list.
+enum NovaDocumentSectionMap {
+    static func kinds(for section: NovaCompanySection) -> [String]? {
+        switch section {
+        case .risk: return ["risk_assessment"]
+        case .emergency: return ["emergency_plan", "drill_record"]
+        case .inspections: return ["equipment_inspection", "measurement_report"]
+        case .board: return ["board_minutes"]
+        case .handover: return ["ppe_handover"]
+        case .representative: return ["appointment_letter"]
+        case .files: return ["service_contract", "annual_work_plan", "permit_form",
+                             "contractor_file", "approved_notebook", "other"]
+        // Training documents are the training module's own record, and the logo,
+        // personnel, support and accident headings are not document obligations.
+        case .training, .logo, .personnel, .support, .accidents: return nil
+        }
+    }
+}
+
+/// What the portfolio page is asking for right now.
+struct NovaDocumentQuery: Equatable {
+    var query = ""
+    var status: NovaDocumentStatus?
+    var company: UUID?
+    var kinds: [String]?
+    /// The page shows ten rows at a time and asks for more on request.
+    var limit = 10
+    var offset = 0
 }
 
 /// What the add and edit forms collect.

@@ -98,7 +98,76 @@ düşürülmüyor; `missing` olarak gösteriliyor ki uzman satıra baksın.
   iki kontrollü giriş definer listesine eklendi
 - Advisor deny listesine dört yeni tablo, FK kapsayan dokuz indeks eklendi
 
-## 8. Eşzamanlı çalışma
+## 8. Portföy turu — ikinci dilim
+
+İkinci migration `20260914230000_isg_document_portfolio.sql`.
+
+### Sayfa artık hesabın tamamını açıyor
+
+Evrak Takibi'ne girince tek bir firma değil, **uzmanın bütün firmaları** geliyor:
+üstte kaç kayıt ilgi bekliyor, altında Eksik / Süresi doldu / Yaklaşıyor
+sayaçları. Durum çipleri kendi sayılarını taşıyor (Eksik 1 · Yaklaşıyor 1 …).
+
+**Tek toplulaştırma, firma başına sorgu değil.** Plan otuz firmaya N+1 sweep
+yapılmasını yasaklıyor; sayım, firma özeti ve sayfa aynı CTE'den okunuyor, yani
+sayaç saydığı listeyle çelişemez. `p05` panosundaki firma-başına açılım burada
+tekrarlanmadı.
+
+### Filtreler
+
+- **Firma** açılır listesi — her firma kendi kayıt sayısıyla
+- **Durum** çipleri — Eksik · Yaklaşıyor · Süresi doldu · Güncel
+- **Arama** — başlık, tür, firma adı
+
+Bir firma seçilince başlığın altına **o firmanın kendi kartı** çıkıyor: dört
+durumun sayısı. Yani firma detayı sayfadan çıkmadan görülüyor.
+
+Önemli davranış: **filtre başlıktaki sayımı küçültmez.** `counts` her zaman
+hesabın tamamını sayar; filtre yalnız listeyi ve `total`'ı daraltır.
+
+### Sayfalama
+
+İlk açılışta **10 kayıt**. Altta `n / m kayıt` ve **Daha fazla göster**. Sayfayı
+büyütmek ekrandakini kırpmak değil, sunucuya yeniden sormak demek — böylece
+görünen satır sayısı her zaman sunucunun kendi cevabı.
+
+Sıralama en kötüden başlıyor: süresi dolan, sonra eksik, sonra yaklaşan, sonra
+güncel; eşitlikte bitiş tarihi, firma adı, başlık.
+
+### Popup kompaktlaştı
+
+Kayıt detayı tek popup'ta: başlık, durum + firma + dayanak rozetleri, uzmanın
+dayandığı mevzuat, ikonlu 2×2 bilgi kılavuzu (Kapsam · Geçerlilik · Uyarı
+penceresi · Sorumlu), kopyalar ve **yerinde kopya kaydetme paneli** — iki tarih
+seçici, belge no ve aslının yeri, hepsi aynı popup'ta. Altta iki düğme:
+**Düzenle** ve **Takipten çıkar**.
+
+Boş bırakılmış bitiş tarihi **"Belirtilmedi"** diye görünüyor; bugünü seçili
+göstermek uzmanın seçmediği bir tarihi seçmiş gibi okutur.
+
+### Firma detay sayfasına bağlandı
+
+Firma çalışma alanındaki başlıklar artık takip kaydını kendisi gösteriyor:
+
+| Başlık | Takip ettiği evrak türleri |
+|---|---|
+| Risk Analizi | Risk değerlendirmesi |
+| Acil Durum Eylem Planı | Acil durum planı · Tatbikat kaydı |
+| Periyodik Kontroller | Periyodik kontrol raporu · Ortam ölçüm raporu |
+| İSG Kurulu | Kurul tutanağı |
+| Zimmet Formları | KKD zimmet formu |
+| Temsilci | Görevlendirme yazısı |
+| Diğer Dosyalar | Sözleşme · Yıllık plan · İzin formu · Taşeron · Onaylı defter · Diğer |
+
+Her başlık dört sayacı ve **Evrak takibini aç** düğmesini gösteriyor; düğme
+tracker'ı o firma ve o başlığın türleriyle açıyor. Eğitim belgeleri eğitim
+modülünün kendi kaydı olduğu için buraya bağlanmadı; logo, personel, destek ve
+iş kazası başlıkları evrak yükümlülüğü değil.
+
+Firma sayfası bunu **tek çağrıyla** okuyor: portföy cevabı `kind_counts` ile
+tür başına sayım döndürüyor, sayfa her başlık için ayrı sorgu atmıyor.
+
+## 9. Eşzamanlı çalışma
 
 Bu dilim yazılırken aynı çalışma ağacında başka bir oturum eğitim modülünü
 yazıyordu. Commit yalnız bu dilimin yollarını içerir; `NovaPilotMainGate.swift`,
@@ -108,14 +177,12 @@ bırakıldı. Bu tur foundation'da kalan tek hata (`NovaCompanyManagementGate.sw
 ham metinleri), sabit metin borcundaki artış ve ana ağacın derleme hatası
 (`NovaTrainingSessionService.swift`) o çalışmaya aittir.
 
-## 9. Açık kalan
+## 10. Açık kalan
 
 - **Rollout kapalı.** `UPDATE private_isg.rollout SET read_enabled=true,
   write_enabled=true WHERE feature='document_tracking';` — ayrı bir insan kararı.
 - Dosyanın kendisi hâlâ yüklenemiyor; P04 ikinci dilimi (tarayıcı, bucket
   politikası, imzalı URL) bunun kapısı.
-- Sayfa tek firma okuyor. Otuz firmanın tek listede toplanması sunucu tarafında
-  bir projeksiyon ister; N+1 okuma yapılmadı.
 - Yaklaşan evrak için bildirim üretilmiyor; bildirim motoruna bağlanmadı.
 - Android'de karşılığı yok.
 - Evrak türü kataloğu sabit; uzmanın kendi türünü tanımlaması yok ("Diğer belge"

@@ -6,13 +6,20 @@ import Foundation
     typealias RPC = (String, [String: PersonnelRPCValue]) async throws -> Data
     private let rpc: RPC
     private let isCurrent: (NovaPersonnelScope) -> Bool
+    /// The portfolio spans every company, so it has no workspace scope to check.
+    /// It verifies the signed-in session itself instead, on both sides of the call.
+    private let isSession: (NovaSessionIdentity) -> Bool
 
-    init(rpc: @escaping RPC, isCurrent: @escaping (NovaPersonnelScope) -> Bool) {
-        self.rpc = rpc; self.isCurrent = isCurrent
+    init(rpc: @escaping RPC, isCurrent: @escaping (NovaPersonnelScope) -> Bool,
+         isSession: @escaping (NovaSessionIdentity) -> Bool) {
+        self.rpc = rpc; self.isCurrent = isCurrent; self.isSession = isSession
     }
 
     private func check(_ scope: NovaPersonnelScope) throws {
         guard isCurrent(scope) else { throw NovaDocumentFailure.denied }
+    }
+    private func check(_ identity: NovaSessionIdentity) throws {
+        guard isSession(identity) else { throw NovaDocumentFailure.denied }
     }
 
     // MARK: transport rows
@@ -27,6 +34,8 @@ import Foundation
     }
     private struct ObligationRow: Decodable {
         let id: UUID
+        var company_id: UUID?
+        var company_name: String?
         let workplace_id: UUID?
         let kind_code: String
         let title: String
@@ -60,7 +69,8 @@ import Foundation
     /// silently downgraded to a calm one: it is reported as missing so the
     /// expert looks at the row rather than trusting a guess.
     private func obligation(_ row: ObligationRow) -> NovaDocumentObligation {
-        .init(id: row.id, workplaceID: row.workplace_id, kindCode: row.kind_code, title: row.title,
+        .init(id: row.id, companyID: row.company_id, companyName: row.company_name,
+              workplaceID: row.workplace_id, kindCode: row.kind_code, title: row.title,
               basis: NovaDocumentBasis(rawValue: row.basis) ?? .expert, legalRef: row.legal_ref,
               validityDays: row.validity_days, noticeDays: row.notice_days,
               responsibleContact: row.responsible_contact, note: row.note,
@@ -75,7 +85,54 @@ import Foundation
               fileStored: row.file_stored)
     }
 
+    private struct CompanyRow: Decodable { let id: UUID; let name: String; let total: Int; let counts: [String: Int] }
+    private struct PortfolioEnvelope: Decodable {
+        let rows: [ObligationRow]
+        let companies: [CompanyRow]
+        let counts: [String: Int]
+        let kind_counts: [String: [String: Int]]
+        let total: Int
+        let has_more: Bool
+        let today: String
+        let file_storage_available: Bool
+    }
+
+    private static func statuses(_ raw: [String: Int]) -> [NovaDocumentStatus: Int] {
+        var result: [NovaDocumentStatus: Int] = [:]
+        for (key, value) in raw {
+            guard let status = NovaDocumentStatus(rawValue: key) else { continue }
+            result[status] = value
+        }
+        return result
+    }
+
     // MARK: reads
+
+    /// The whole account in one call. This read is not scoped to a company, so
+    /// it checks the session identity itself rather than a workspace scope.
+    func portfolio(_ identity: NovaSessionIdentity, query: String = "", status: NovaDocumentStatus? = nil,
+                   company: UUID? = nil, kinds: [String]? = nil,
+                   limit: Int = 10, offset: Int = 0) async throws -> NovaDocumentPortfolio {
+        try check(identity)
+        var args: [String: PersonnelRPCValue] = [
+            "p_query": query.isEmpty ? .null : .string(query),
+            "p_status": status.map { .string($0.rawValue) } ?? .null,
+            "p_company": company.map { .id($0) } ?? .null,
+            "p_limit": .number(Int64(limit)), "p_offset": .number(Int64(offset))]
+        args["p_kinds"] = kinds.map { .array($0.map { value in .string(value) }) } ?? .null
+        let data = try await rpc("isg_document_portfolio_v1", args)
+        try check(identity)
+        let envelope = try JSONDecoder().decode(PortfolioEnvelope.self, from: data)
+        return .init(counts: Self.statuses(envelope.counts),
+                     companies: envelope.companies.map { entry in
+                         .init(id: entry.id, name: entry.name, total: entry.total,
+                               counts: Self.statuses(entry.counts))
+                     },
+                     kindCounts: envelope.kind_counts.mapValues(Self.statuses),
+                     rows: envelope.rows.map(obligation),
+                     total: envelope.total, hasMore: envelope.has_more, today: envelope.today,
+                     fileStorageAvailable: envelope.file_storage_available)
+    }
 
     func board(_ scope: NovaPersonnelScope, query: String = "") async throws -> NovaDocumentBoard {
         try check(scope)

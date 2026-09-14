@@ -115,8 +115,7 @@ struct NovaPilotReviewHarness: View {
             NovaManualNonconformityScreen(companies: reviewCompanies,
                 workplaces: { _ in reviewWorkplaces }, save: { _ in nil }, onBack: {})
         case .documentChecklist:
-            NovaDocumentTrackingScreen(client: reviewDocumentClient, onBack: {},
-                companyName: summary.name)
+            NovaDocumentTrackingScreen(client: reviewDocumentClient, onBack: {})
         default:
             NovaAnalysisDetailScreen(analysisID: Self.analysis, client: reviewDetailClient, onBack: {})
         }
@@ -254,10 +253,11 @@ struct NovaPilotReviewHarness: View {
 
     /// One obligation of every status, so all four answers can be seen at once.
     private var reviewDocumentClient: NovaDocumentTrackingClient {
-        .init(load: { reviewDocumentBoard },
-              kinds: { reviewDocumentKinds },
-              workplaces: { reviewWorkplaces.map { .init(id: $0.id, name: $0.name) } },
-              add: { _ in reviewDocumentBoard.rows[0] },
+        .init(portfolio: { request in reviewDocumentPortfolio(request) },
+              companies: { reviewCompanies },
+              kinds: { _ in reviewDocumentKinds },
+              workplaces: { _ in reviewWorkplaces.map { .init(id: $0.id, name: $0.name) } },
+              add: { _, _ in reviewDocumentRows[0] },
               update: { entry, _ in entry },
               archive: { _ in },
               recordCopy: { entry, _ in entry },
@@ -272,8 +272,29 @@ struct NovaPilotReviewHarness: View {
          .init(code: "annual_work_plan", ordinal: 11, defaultValidityDays: 365)]
     }
 
-    private var reviewDocumentBoard: NovaDocumentBoard {
-        let rows: [NovaDocumentObligation] = [
+    private func reviewDocumentPortfolio(_ request: NovaDocumentQuery) -> NovaDocumentPortfolio {
+        let all = reviewDocumentRows
+        let matching = all.filter { row in
+            guard request.status == nil || row.status == request.status else { return false }
+            guard request.kinds == nil || request.kinds?.contains(row.kindCode) == true else { return false }
+            return row.matches(request.query)
+        }
+        var counts: [NovaDocumentStatus: Int] = [:]
+        var kindCounts: [String: [NovaDocumentStatus: Int]] = [:]
+        for row in all {
+            counts[row.status, default: 0] += 1
+            kindCounts[row.kindCode, default: [:]][row.status, default: 0] += 1
+        }
+        return .init(counts: counts,
+                     companies: [.init(id: Self.company, name: summary.name, total: all.count, counts: counts)],
+                     kindCounts: kindCounts,
+                     rows: Array(matching.prefix(request.limit)),
+                     total: matching.count, hasMore: matching.count > request.limit,
+                     today: "2026-09-14", fileStorageAvailable: false)
+    }
+
+    private var reviewDocumentRows: [NovaDocumentObligation] {
+        [
             document("Risk değerlendirmesi", kind: "risk_assessment", status: .missing,
                      basis: .legal, legalRef: "6331 sayılı Kanun md.10", copies: []),
             document("Periyodik kontrol raporu", kind: "equipment_inspection", status: .expired,
@@ -290,15 +311,13 @@ struct NovaPilotReviewHarness: View {
                      copies: [.init(id: UUID(), issuedOn: "2026-06-12", validUntil: "2027-06-12",
                                     documentNo: "TAT-2026-004", locationNote: nil, recordedAt: nil)]),
         ]
-        return .init(rows: rows,
-                     counts: [.missing: 1, .expired: 1, .dueSoon: 1, .valid: 1],
-                     today: "2026-09-14", fileStorageAvailable: false)
     }
 
     private func document(_ title: String, kind: String, status: NovaDocumentStatus,
                           basis: NovaDocumentBasis, legalRef: String?,
                           copies: [NovaDocumentCopy]) -> NovaDocumentObligation {
-        .init(id: UUID(), workplaceID: nil, kindCode: kind, title: title, basis: basis,
+        .init(id: UUID(), companyID: Self.company, companyName: summary.name,
+              workplaceID: nil, kindCode: kind, title: title, basis: basis,
               legalRef: legalRef, validityDays: copies.isEmpty ? nil : 365, noticeDays: 30,
               responsibleContact: "İşveren vekili", note: nil, isArchived: false, version: 1,
               status: status, latestIssuedOn: copies.first?.issuedOn,
