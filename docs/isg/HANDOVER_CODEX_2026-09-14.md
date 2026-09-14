@@ -1,5 +1,7 @@
 # Devir notu — İSG geçişinde sunucu dilimlerini sürdürmek
 
+> **Canlı pilot ilerleme yöntemi:** [NOVA firma akışı rollout kaydı](NOVA_LIVE_PILOT_ROLLOUT_2026-09-14.md). İlk doğrulama fiziksel iOS cihazındaki dar pilot firma yüzeyinde; cihaz/scope/read-back kanıtı olmadan canlı mutation veya genel rollout yapılmıyor.
+
 > **Güncel cihaz teslimi:** [NOVA 2.0.3 (98)](NOVA_DEVICE_BUILD_98_2026-09-14.md) yeni akordeon/popup düzeltmeleriyle iPhone Kerem’e kuruldu ve açıldı. Test koşusu kullanıcı isteğiyle çalıştırılmadı; canlı veriler değişmedi.
 
 > **Güncel cihaz teslimi:** [NOVA 2.0.3 (97)](NOVA_DEVICE_BUILD_97_2026-09-14.md) yeni tasarım düzeltmeleriyle iPhone Kerem'e kuruldu ve açıldı. Test koşusu kullanıcı isteğiyle çalıştırılmadı; canlı veriler değişmedi.

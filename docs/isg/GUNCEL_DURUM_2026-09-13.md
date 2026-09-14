@@ -5,6 +5,8 @@ Kapsam: V5 geçiş planı, bu tarihe kadar mevcut kaynak kodu ve yerel doğrulam
 
 ## 1. Kısa ve açık sonuç
 
+**14 Eylül — canlı pilot ilerleme yöntemi:** [NOVA firma akışı rollout kaydı](NOVA_LIVE_PILOT_ROLLOUT_2026-09-14.md). İlk doğrulama yüzeyi fiziksel iOS cihazındaki dar pilot firma akışı; mevcut firmalar korunuyor ve gerçek yeni firma mutation kabulü ayrı kullanıcı denemesi olarak bekletiliyor.
+
 **14 Eylül — güncel cihaz teslimi:** [NOVA 2.0.3 (98)](NOVA_DEVICE_BUILD_98_2026-09-14.md) ana akordeon yüksekliği, üst seviye koyu gri çerçeve ve popup başlık/X hizası düzeltmeleriyle iPhone Kerem'e kuruldu ve açıldı. Test koşusu kullanıcı isteğiyle çalıştırılmadı; canlı veriler değiştirilmedi.
 
 **14 Eylül — güncel cihaz teslimi:** [NOVA 2.0.3 (97)](NOVA_DEVICE_BUILD_97_2026-09-14.md) yeni tasarım düzeltmeleriyle iPhone Kerem'e kuruldu ve açıldı. Test koşusu kullanıcı isteğiyle çalıştırılmadı; canlı mevcut veriler değiştirilmedi.
