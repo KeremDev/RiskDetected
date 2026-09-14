@@ -37,6 +37,7 @@ import { beginScorePortfolioProbe, scorePortfolioFiles } from './score_portfolio
 import { beginIntegratedRehearsalProbe, integratedRehearsalFiles } from './integrated_rehearsal_probe.mjs';
 import { beginNonconformityHTTPProbe, nonconformityHTTPFiles } from './nonconformity_http_probe.mjs';
 import { beginNonconformityDetailProbe, nonconformityDetailFiles } from './nonconformity_detail_probe.mjs';
+import { beginDocumentTrackingProbe, documentTrackingFiles } from './document_tracking_probe.mjs';
 import { beginNotificationDispatchProbe, notificationDispatchFiles } from './notification_dispatch_probe.mjs';
 import { beginNotificationRepositoryProbe, notificationRepositoryFiles } from './notification_repository_probe.mjs';
 import { beginNotificationDeviceProbe, notificationDeviceFiles } from './notification_device_probe.mjs';
@@ -224,6 +225,7 @@ function sourceFingerprints(mode) {
     .concat(mode.synthetic ? integratedRehearsalFiles : [])
     .concat(mode.synthetic ? nonconformityHTTPFiles : [])
     .concat(mode.synthetic ? nonconformityDetailFiles : [])
+    .concat(mode.synthetic ? documentTrackingFiles : [])
     .concat(mode.synthetic ? notificationDispatchFiles : [])
     .concat(mode.synthetic ? notificationRepositoryFiles : [])
     .concat(mode.synthetic ? notificationDeviceFiles : [])
@@ -383,6 +385,7 @@ try {
   let rehearsalProbe;
   let nonconformityHTTPProbe;
   let nonconformityDetailProbe;
+  let documentTrackingProbe;
   let notificationDispatchProbe;
   let notificationRepositoryProbe;
   let notebookAPIProbe;
@@ -445,6 +448,11 @@ try {
     observabilityProbe=await beginObservabilityAdminProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'score-portfolio';
     scoreProbe=await beginScorePortfolioProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
+    // This migration carries the newest timestamp, so it is applied last: the
+    // older slices re-add the rollout CHECK with their own feature list and a
+    // row this one inserted first would fail that constraint.
+    stage = 'document-tracking';
+    documentTrackingProbe=await beginDocumentTrackingProbe({synthetic:true,sql,request:personnelHTTPProbe.request,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'integrated-rehearsal';
     rehearsalProbe=await beginIntegratedRehearsalProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
   }
@@ -508,6 +516,7 @@ try {
   if (rehearsalProbe) report.integrated_rehearsal = rehearsalProbe.afterLogout();
   if (nonconformityHTTPProbe) report.nonconformity_http = nonconformityHTTPProbe.afterLogout();
   if (nonconformityDetailProbe) report.nonconformity_detail = nonconformityDetailProbe.afterLogout();
+  if (documentTrackingProbe) report.document_tracking = documentTrackingProbe.afterLogout();
   if (notificationDispatchProbe) report.notification_dispatch = notificationDispatchProbe.afterLogout();
   if (notificationRepositoryProbe) report.notification_repository = notificationRepositoryProbe.afterLogout();
   if (notebookAPIProbe) report.notebook_api = notebookAPIProbe.afterLogout();

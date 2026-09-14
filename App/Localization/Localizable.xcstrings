@@ -11071,6 +11071,1302 @@
         }
       }
     },
+    "localizable.nova.document.add.title": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Track a document"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takibe evrak ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.archive": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop tracking"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takipten çıkar"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.archive.confirm": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The entry leaves the list; the copies you recorded are not deleted."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt listeden çıkar; kaydedilmiş kopyalar silinmez."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.archive.yes": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes, archive it"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evet, arşivle"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.basis.expert": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your own decision"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzman kararı"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.basis.legal": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legal basis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mevzuat dayanağı"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.basis.legal.hint": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This basis is your own statement; the app does not determine a legal duty by itself."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu dayanak sizin beyanınızdır; uygulama kendi başına bir yasal yükümlülük tespit etmez."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.company.empty": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a company before tracking documents."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evrak takibi için önce bir firma ekleyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.company.failed": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The company list could not be loaded. Try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma listesi alınamadı. Tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.copies": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copies on file"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosyadaki kopyalar"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.copies.empty": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No copy has been recorded yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz kopya kaydedilmedi."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.copies.hint": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file itself is not stored here; what is kept is your note of where the original is."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosyanın kendisi burada saklanmaz; aslının nerede olduğuna dair kaydınız tutulur."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.copy.add": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record a copy"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopya kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.copy.remove": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete the copy"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopyayı sil"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.date.clear": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temizle"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.edit.title": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit the tracked entry"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takip kaydını düzenle"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.empty": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing is tracked for this company yet. Add the document you want to follow."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu firmada takibe alınmış evrak yok. Takip etmek istediğiniz evrakı ekleyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.empty.filtered": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No entry matches this filter."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu filtreye uyan kayıt yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.error.archived": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A copy cannot be added to an archived entry."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivlenmiş bir takip kaydına yeni kopya eklenemez."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.error.conflict": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The entry changed in the meantime. Refresh the list and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt bu sırada değişti. Listeyi yenileyip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.error.denied": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You do not have access to this company's document tracking."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu firmanın evrak takibine erişiminiz yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.error.plan": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document tracking needs a Plus or Pro plan."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evrak takibi için Plus veya Pro plan gerekir."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.error.unavailable": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document tracking is unavailable right now."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evrak takibi şu anda kullanılamıyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.error.validation": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The submitted details were not accepted. Check the fields."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gönderilen bilgiler kabul edilmedi. Alanları kontrol edin."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.failed": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document tracking could not be loaded. Check your connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evrak takibi alınamadı. Bağlantınızı kontrol edip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.field.basis": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dayanak"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.field.issued": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Issued on"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düzenlenme tarihi"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.field.kind": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document kind"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evrak türü"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.field.legal.ref": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The legislation you are relying on"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzmanın dayandığı mevzuat"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.field.location": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where the original is"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aslı nerede"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.field.no": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document no"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belge no"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.field.note": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.field.notice": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notice window"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uyarı penceresi"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.field.responsible": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Responsible"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorumlu"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.field.scope": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scope"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapsam"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.field.title": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entry name"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt adı"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.field.valid.until": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valid until"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçerlilik bitişi"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.field.validity": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Validity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçerlilik"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.hint": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This list is a tally of the documents you track; it is not a decision about the company or anyone in it. Health records are not kept in this list, and the file itself is not stored here."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu liste takip ettiğiniz evrakların sayımıdır; firmanın veya bir kişinin uygunluğuna dair karar değildir. Sağlık evrakı bu listede tutulmaz ve dosyanın kendisi burada saklanmaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.kind.appointment": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appointment letter"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görevlendirme yazısı"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.kind.board": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Board minutes"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kurul tutanağı"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.kind.contract": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OSH service contract"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSG hizmet sözleşmesi"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.kind.contractor": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contractor document file"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taşeron evrak dosyası"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.kind.drill": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drill record"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tatbikat kaydı"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.kind.emergency.plan": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emergency plan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acil durum planı"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.kind.inspection": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Periodic inspection report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Periyodik kontrol raporu"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.kind.measurement": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workplace measurement report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ortam ölçüm raporu"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.kind.notebook": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Approved notebook"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onaylı defter"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.kind.other": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other document"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diğer belge"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.kind.permit": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Work permit form"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çalışma izni formu"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.kind.ppe": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PPE handover form"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KKD zimmet formu"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.kind.risk.assessment": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk assessment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk değerlendirmesi"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.kind.training": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training record"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitim kaydı"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.kind.training.plan": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annual training plan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık eğitim planı"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.kind.work.plan": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annual work plan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık çalışma planı"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.loading": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading document tracking…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evrak takibi yükleniyor…"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.overview.detail": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See which of the documents you track are on file and which have run out, in one place."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takibe aldığınız evrakların hangisi dosyada, hangisi süresi dolmuş, tek yerden görün."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.overview.title": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document tracking"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evrak takibi"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.overview.unit": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "entries"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kayıt"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.save": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.save.failed": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The entry could not be saved. Check the details and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt tamamlanamadı. Bilgileri kontrol edip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.scope.company": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Whole company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm firma"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.search": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search documents"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evrak ara"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.status.due.soon": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Due soon"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yaklaşıyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.status.expired": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expired"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süresi doldu"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.status.missing": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Missing"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eksik"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.status.valid": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güncel"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.valid.until.derived": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: %d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Left empty, %d days are added to the issue date."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boş bırakırsanız düzenlenme tarihine %d gün eklenir."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.valid.until.explicit": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The end date you entered is used."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Girdiğiniz bitiş tarihi kullanılır."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.valid.until.open": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This entry has no period; left empty, the copy does not expire."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kayıt süresiz; boş bırakırsanız kopya süresiz sayılır."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.validity.days": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: %d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d days"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d gün"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.validity.none": {
+      "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No expiry"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süresiz"
+          }
+        }
+      }
+    },
     "localizable.nova.expert.shell.ai.asistan.fd9d94db": {
       "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:608; placeholders: none; review: human_draft",
       "extractionState": "manual",

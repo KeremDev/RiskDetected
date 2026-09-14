@@ -1,0 +1,76 @@
+{
+  "phase": "P11-document-tracking",
+  "slice": "document obligation tracker: server boundary, NOVA screens, Evrak Takibi menu entry",
+  "date": "2026-09-14",
+  "migration": "supabase/migrations/20260914210000_isg_document_tracking.sql",
+  "runs": {
+    "synthetic_session": {
+      "ok": true,
+      "checks": 1189,
+      "failed": 0,
+      "document_tracking_checks": 31,
+      "document_tracking_failed": 0,
+      "evidence_directory": "output/isg/runs/synthetic-auth-7yNfp8"
+    },
+    "foundation": {
+      "checks": 482,
+      "failed": 1
+    },
+    "nova_design": {
+      "checks": 50,
+      "failed": 0
+    },
+    "localization_migrate_check": "pass",
+    "localization_catalog_tests": {
+      "passed_through": "L10N-003",
+      "failed": [
+        "L10N-004",
+        "L10N-018"
+      ]
+    },
+    "localization_keys_total": 1450,
+    "ios_debug_build": "succeeded in an isolated worktree of HEAD plus this slice",
+    "nova_pilot_simulator_build": "succeeded in an isolated worktree of HEAD plus this slice",
+    "simulator_review": "Evrak Takibi list and obligation popup rendered from the review harness"
+  },
+  "posture": {
+    "rollout_open": false,
+    "health_records_trackable": false,
+    "status_stored": false,
+    "status_authority": "computed_at_read",
+    "file_stored": false,
+    "file_storage_available": false,
+    "compliance_verdict_returned": false,
+    "legal_basis_requires_expert_reference": true,
+    "legacy_tables_written": false,
+    "client_computes_a_status": false,
+    "production_deployed": false
+  },
+  "schema_counts": {
+    "p05_full_replay_tables": 163,
+    "integrated_rehearsal_tables": 160,
+    "rollout_features": 18
+  },
+  "concurrent_session": {
+    "observed": true,
+    "detail": "Another session is writing the training module into the same working tree (NovaTraining*.swift, NovaTrainingSessionEditor.swift, pilot_training_*.sql, 20260914112522_isg_pilot_training_register.sql, NOVA_TRAINING_*.md) and is also editing NovaExpertShell.swift, NovaCompanyManagementGate.swift, NovaPilotMainGate.swift and HANDOVER_CODEX_2026-09-14.md.",
+    "consequence": "Only this slice's paths were committed. NovaPilotMainGate.swift, Localizable.xcstrings, GUNCEL_DURUM_2026-09-13.md and HANDOVER_CODEX_2026-09-14.md were staged as HEAD plus this slice's own lines, so the training work stayed in the working tree.",
+    "failures_owned_by_that_work": [
+      "foundation: no shipped NOVA copy is left as a raw literal (NovaCompanyManagementGate.swift:153-154)",
+      "L10N-004: hard-coded literal debt rose from 14 to 70, all in NovaTrainingScreens.swift and NovaTrainingSessionEditor.swift",
+      "the main working tree's iOS build fails on NovaTrainingSessionService.swift:64 (class has no initializers)"
+    ]
+  },
+  "known_local_infrastructure_faults": {
+    "session_guard": "AUTH_RESTORE_LOCAL_TOKEN_INVALID_CLAIMS; the Docker VM clock runs about one second ahead of the host, so verifyLocalSessionToken sees iat > now. Documented in P12_DISPATCH_SAFETY_2026-09-13.md. The auth check was not loosened; the run was repeated with the same code until the race was won.",
+    "notification_device": "device observation ordering checks flake from the same clock lead"
+  },
+  "open": [
+    "rollout for feature 'document_tracking' remains closed; a separate human decision",
+    "the document file itself is still not stored; the P04 second slice gates it",
+    "the page reads one company at a time; a portfolio-wide view needs a server projection",
+    "no notification is produced for a document that is about to run out",
+    "Android has no counterpart",
+    "L10N-018 catalogue lock remains stale and was not re-sealed"
+  ]
+}

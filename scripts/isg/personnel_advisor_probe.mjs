@@ -78,7 +78,8 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'admin_exports','admin_operation_state','funnel_progress',
       'score_policy_versions','score_processes','score_subject_states','score_snapshots','score_contributions',
       'score_critical_findings','score_oracle_fixtures','score_simulations','portfolio_projections',
-      'portfolio_entries']);
+      'portfolio_entries',
+      'document_obligation_kinds','document_obligations','document_obligation_records','document_tracking_receipts']);
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([
@@ -165,6 +166,15 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'p05_company_profiles_p05_company_profile_responsible','p05_company_profiles_p05_company_profile_owner',
       'personal_reminders_reminder_owner_idx','personal_reminders_reminder_note_idx',
       'reminder_occurrences_occurrence_due_idx',
+      'document_obligations_document_obligation_owner_idx',
+      'document_obligations_document_obligation_workplace_idx',
+      'document_obligations_document_obligation_kind_idx',
+      'document_obligation_records_document_obligation_record_scope_idx',
+      'document_obligation_records_document_obligation_record_owner_idx',
+      'document_obligation_records_document_obligation_record_author_idx',
+      'document_tracking_receipts_document_tracking_receipt_company_idx',
+      'document_obligations_document_obligation_company_scope_idx',
+      'document_obligations_document_obligation_workplace_scope_idx',
     ].map(key=>'unused_index_private_isg_'+key));
     pass('personnel_advisor_no_unreviewed_findings',relevant.every(f=>f.level==='INFO'&&f.metadata?.schema==='private_isg'&&
       ((f.name==='rls_enabled_no_policy'&&denyTables.has(f.metadata?.name))||(f.name==='unused_index'&&reviewedFKIndexes.has(f.cache_key)))));

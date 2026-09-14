@@ -24,6 +24,8 @@ const NOVA_FILES=[
   'App/DesignSystem/ISG/NovaNonconformityListScreen.swift',
   'App/DesignSystem/ISG/NovaNonconformityRecordScreen.swift',
   'App/DesignSystem/ISG/NovaFolderTabs.swift',
+  'App/DesignSystem/ISG/NovaDocumentTracking.swift','App/DesignSystem/ISG/NovaDocumentTrackingScreens.swift',
+  'App/DesignSystem/ISG/NovaDocumentTrackingSheets.swift','App/Views/Components/NovaPilotDocumentGate.swift',
   'App/Views/Components/NovaPilotFindingsGate.swift',
   'App/Views/Components/NovaPhotoIntakeScreen.swift',
   'App/DesignSystem/ISG/NovaPersonnelScreens.swift','App/DesignSystem/ISG/NovaSessionHost.swift',

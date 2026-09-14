@@ -38,7 +38,7 @@ struct NovaPilotRoot: View {
     @EnvironmentObject private var app: AppState
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var controller = NovaWorkspaceController()
-    @State private var navigation = NovaNavigationState(epoch: UUID().uuidString, available: [.companies, .newCompany, .findings, .newFinding, .analyses, .newAnalysis])
+    @State private var navigation = NovaNavigationState(epoch: UUID().uuidString, available: [.companies, .newCompany, .findings, .newFinding, .analyses, .newAnalysis, .documentChecklist])
     @State private var showingCreate = false
     @State private var notice: String?
     @State private var listRevision = UUID()
@@ -95,6 +95,8 @@ struct NovaPilotRoot: View {
                 nonconformities(.newAnalysis)
             case .newFinding:
                 nonconformities(.addFinding)
+            case .documentChecklist:
+                documents
             case .profile:
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
@@ -164,6 +166,17 @@ struct NovaPilotRoot: View {
                 }
             }
         }.padding(.horizontal, 20).padding(.bottom, 10)
+    }
+
+    /// Evrak takibi reads one company at a time and says which one.
+    @ViewBuilder private var documents: some View {
+        if ready {
+            NovaPilotDocumentGate(identity: identity, scope: controller.scope, canWrite: controller.canWrite,
+                select: { controller.select($0) }, currentScope: { controller.scope },
+                onBack: { navigate(.home) }, onCompanies: { navigate(.companies) })
+        } else {
+            NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
+        }
     }
 
     /// Each menu entry lands on exactly one page; the surface says which.

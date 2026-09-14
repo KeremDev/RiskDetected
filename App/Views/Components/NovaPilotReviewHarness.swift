@@ -16,7 +16,7 @@ struct NovaPilotReviewHarness: View {
     private static let employee = UUID(uuidString: "00000000-0000-4000-8000-000000000004")!
     @State private var selected = false
     @State private var create = false
-    @State private var navigation = NovaNavigationState(epoch: "review-only", available: [.companies, .findings, .newFinding, .analyses, .newAnalysis])
+    @State private var navigation = NovaNavigationState(epoch: "review-only", available: [.companies, .findings, .newFinding, .analyses, .newAnalysis, .documentChecklist])
     @State private var draft = NovaAnalysisIntakeDraft()
     @State private var showingReviewReports = false
     @State private var reviewImages: [UIImage] = []
@@ -50,7 +50,7 @@ struct NovaPilotReviewHarness: View {
         NovaExpertShell(navigation: $navigation, userName: "Tasarım Provası", connectionLabel: "Sentetik veriler · canlı bağlantı yok",
             onCompanyCreate: { create = true },
             onDestination: { destination in if destination == .companies { selected = false } }) { destination in
-            if [.findings, .newFinding, .analyses, .newAnalysis].contains(destination) {
+            if [.findings, .newFinding, .analyses, .newAnalysis, .documentChecklist].contains(destination) {
                 analysisReview(destination)
             } else if selected {
                 NovaCompanyWorkspace(scope: scope, companyName: summary.name, canWrite: true, personnel: personnel, directory: directory,
@@ -114,6 +114,9 @@ struct NovaPilotReviewHarness: View {
         case .newFinding:
             NovaManualNonconformityScreen(companies: reviewCompanies,
                 workplaces: { _ in reviewWorkplaces }, save: { _ in nil }, onBack: {})
+        case .documentChecklist:
+            NovaDocumentTrackingScreen(client: reviewDocumentClient, onBack: {},
+                companyName: summary.name)
         default:
             NovaAnalysisDetailScreen(analysisID: Self.analysis, client: reviewDetailClient, onBack: {})
         }
@@ -246,6 +249,61 @@ struct NovaPilotReviewHarness: View {
         item.audience = audience
         item.photoIndices = [1]
         return item
+    }
+    // MARK: synthetic document tracking
+
+    /// One obligation of every status, so all four answers can be seen at once.
+    private var reviewDocumentClient: NovaDocumentTrackingClient {
+        .init(load: { reviewDocumentBoard },
+              kinds: { reviewDocumentKinds },
+              workplaces: { reviewWorkplaces.map { .init(id: $0.id, name: $0.name) } },
+              add: { _ in reviewDocumentBoard.rows[0] },
+              update: { entry, _ in entry },
+              archive: { _ in },
+              recordCopy: { entry, _ in entry },
+              removeCopy: { entry, _ in entry })
+    }
+
+    private var reviewDocumentKinds: [NovaDocumentKind] {
+        [.init(code: "risk_assessment", ordinal: 1, defaultValidityDays: nil),
+         .init(code: "emergency_plan", ordinal: 2, defaultValidityDays: nil),
+         .init(code: "drill_record", ordinal: 3, defaultValidityDays: 365),
+         .init(code: "equipment_inspection", ordinal: 8, defaultValidityDays: 365),
+         .init(code: "annual_work_plan", ordinal: 11, defaultValidityDays: 365)]
+    }
+
+    private var reviewDocumentBoard: NovaDocumentBoard {
+        let rows: [NovaDocumentObligation] = [
+            document("Risk değerlendirmesi", kind: "risk_assessment", status: .missing,
+                     basis: .legal, legalRef: "6331 sayılı Kanun md.10", copies: []),
+            document("Periyodik kontrol raporu", kind: "equipment_inspection", status: .expired,
+                     basis: .expert, legalRef: nil,
+                     copies: [.init(id: UUID(), issuedOn: "2024-08-01", validUntil: "2025-08-01",
+                                    documentNo: "PK-2024-017", locationNote: "İşveren dosyası · klasör 2",
+                                    recordedAt: nil)]),
+            document("Yıllık çalışma planı", kind: "annual_work_plan", status: .dueSoon,
+                     basis: .expert, legalRef: nil,
+                     copies: [.init(id: UUID(), issuedOn: "2025-10-01", validUntil: "2026-10-01",
+                                    documentNo: nil, locationNote: "Ortak sürücü", recordedAt: nil)]),
+            document("Tatbikat kaydı", kind: "drill_record", status: .valid,
+                     basis: .expert, legalRef: nil,
+                     copies: [.init(id: UUID(), issuedOn: "2026-06-12", validUntil: "2027-06-12",
+                                    documentNo: "TAT-2026-004", locationNote: nil, recordedAt: nil)]),
+        ]
+        return .init(rows: rows,
+                     counts: [.missing: 1, .expired: 1, .dueSoon: 1, .valid: 1],
+                     today: "2026-09-14", fileStorageAvailable: false)
+    }
+
+    private func document(_ title: String, kind: String, status: NovaDocumentStatus,
+                          basis: NovaDocumentBasis, legalRef: String?,
+                          copies: [NovaDocumentCopy]) -> NovaDocumentObligation {
+        .init(id: UUID(), workplaceID: nil, kindCode: kind, title: title, basis: basis,
+              legalRef: legalRef, validityDays: copies.isEmpty ? nil : 365, noticeDays: 30,
+              responsibleContact: "İşveren vekili", note: nil, isArchived: false, version: 1,
+              status: status, latestIssuedOn: copies.first?.issuedOn,
+              latestValidUntil: copies.first?.validUntil, copies: copies,
+              fileStored: false, workplaceName: nil)
     }
 }
 #endif

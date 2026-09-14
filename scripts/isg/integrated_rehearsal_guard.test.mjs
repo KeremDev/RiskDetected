@@ -17,14 +17,14 @@ test('the probe refuses any other mode before touching SQL',async()=>{
 
 test('the rehearsal covers every gated feature this transition added',()=>{
   const listed=[...probe.matchAll(/p_feature='([a-z_]+)'/g)].map(m=>m[1]);
-  const migrations=readFileSync(resolve(ROOT,'supabase/migrations/20260914150000_isg_score_portfolio.sql'),'utf8');
+  const migrations=readFileSync(resolve(ROOT,'supabase/migrations/20260914210000_isg_document_tracking.sql'),'utf8');
   const features=[...migrations.matchAll(/'([a-z_]+)'/g)].map(m=>m[1]);
   // The newest migration carries the whole feature list in its CHECK constraint.
   const declared=features.filter(name=>listed.includes(name));
-  assert.ok(listed.length>=16,`only ${listed.length} features are exercised`);
-  assert.ok(declared.length>=16,'the probe drifted from the rollout feature list');
+  assert.ok(listed.length>=17,`only ${listed.length} features are exercised`);
+  assert.ok(declared.length>=17,'the probe drifted from the rollout feature list');
   // personnel is gated inside its own checked entry, so it is asserted on the row.
-  assert.match(probe,/count\(\*\)=17 AND bool_and\(NOT read_enabled AND NOT write_enabled\) FROM private_isg\.rollout/);
+  assert.match(probe,/count\(\*\)=18 AND bool_and\(NOT read_enabled AND NOT write_enabled\) FROM private_isg\.rollout/);
 });
 
 test('the rehearsal proves the legacy product survives a full kill switch',()=>{
