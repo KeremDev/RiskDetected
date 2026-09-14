@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {ROOT} from './lib.mjs';
-import {buildLedger,collectClaims} from './acceptance_ledger.mjs';
+import {buildLedger,collectClaims,verifyScenarioEvidence} from './acceptance_ledger.mjs';
 
 const read=path=>readFileSync(resolve(ROOT,path),'utf8');
 const ledger=buildLedger();
@@ -24,9 +24,37 @@ test('a case is covered only when every required layer is full',()=>{
     assert.ok(entry.required_layers.length>0,`${entry.id} requires no layer`);
     if(entry.status==='covered'){
       assert.equal(entry.blocking_layers.length,0,`${entry.id} is covered with ${entry.blocking_layers}`);
-      assert.ok(entry.claimed_by.length>0,`${entry.id} is covered with no evidence behind it`);
+      assert.equal(entry.missing_proof_layers.length,0,`${entry.id} is covered with no scenario evidence`);
     }
-    if(entry.claimed_by.length===0)assert.notEqual(entry.status,'covered');
+    if(entry.missing_proof_layers.length)assert.notEqual(entry.status,'covered');
+  }
+});
+
+const caseID='V5:section-a:DEL-01';
+const binding={case_id:caseID,layer:'API',evidence_file:'proof.json',check_ids:['roundtrip'],required_sources:['api.ts']};
+const artifact={ok:true,checks:[{id:'roundtrip',result:'PASS'}],source_sha256:{'api.ts':'current'},
+  acceptance_checks:[{case_id:caseID,layer:'API',check_ids:['roundtrip']}]};
+const verify=(a=artifact,b=[binding],id=caseID)=>verifyScenarioEvidence({caseID:id,requiredLayers:['API'],bindings:b,
+  readArtifact:()=>a,hashSource:()=> 'current'});
+test('exact scenario, passing check and current source can prove a layer',()=>{
+  assert.deepEqual(verify().missing_layers,[]);
+});
+test('failed, stale, unbound or duplicate-check evidence never proves acceptance',()=>{
+  for(const bad of [ {...artifact,ok:false}, {...artifact,source_sha256:{'api.ts':'old'}},
+    {...artifact,source_sha256:{'api.ts':'current','omitted-dependency.ts':'old'}},
+    {...artifact,acceptance_checks:[]}, {...artifact,checks:[{id:'roundtrip',result:'FAIL'}]},
+    {...artifact,checks:[...artifact.checks,...artifact.checks]}, {...artifact,checks:[]} ]){
+    assert.deepEqual(verify(bad).missing_layers,['API']);
+    assert.ok(verify(bad).failures.length);
+  }
+});
+test('same short DEL-01 in another section cannot borrow the proof',()=>{
+  assert.deepEqual(verify(artifact,[binding],'V5:section-b:DEL-01').missing_layers,['API']);
+  assert.deepEqual(verify(artifact,[{...binding,case_id:'DEL-01'}]).missing_layers,['API']);
+});
+test('unrelated layer and empty dependency declarations fail closed',()=>{
+  for(const bad of [{...binding,layer:'DB'},{...binding,required_sources:[]},{...binding,check_ids:[]}]){
+    assert.deepEqual(verify(artifact,[bad]).missing_layers,['API']);
   }
 });
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { exactKeys, policy } from './lib.mjs';
+import { exactKeys, policy, isRecord } from './lib.mjs';
 
 const fields = ['schema_version', 'environment', 'project_id', 'supabase_url', 'database_host',
   'database_port', 'database_container', 'outbound_mode', 'data_class', 'store_mode', 'push_mode', 'email_mode', 'ai_mode'];
@@ -33,6 +33,9 @@ export function validateEnvironment(config, safety = policy) {
 export function validateContainerInspection(info, config, networks = []) {
   const errors = [];
   if (!validateEnvironment(config).ok) return { ok: false, errors: ['ENVIRONMENT_INVALID'] };
+  if (!isRecord(info?.HostConfig) || !isRecord(info?.NetworkSettings?.Networks) ||
+      !isRecord(info?.NetworkSettings?.Ports) || !isRecord(info?.HostConfig?.PortBindings) ||
+      !Array.isArray(info?.Mounts)) return {ok:false,errors:['CONTAINER_INSPECTION_INCOMPLETE']};
   if (info?.Name !== `/${config.database_container}`) errors.push('CONTAINER_NAME_MISMATCH');
   if (info?.Config?.Labels?.['com.riskdetected.isg-test-project'] !== config.project_id) errors.push('CONTAINER_LABEL_MISMATCH');
   if (info?.State?.Running !== true) errors.push('CONTAINER_NOT_RUNNING');
@@ -42,9 +45,15 @@ export function validateContainerInspection(info, config, networks = []) {
     attached.every(name => networks.some(n => n.Name === name && n.Internal === true && n.Labels?.['com.riskdetected.isg-test-project'] === config.project_id));
   if (!isolated || mode === 'host') errors.push('CONTAINER_EGRESS_NOT_ISOLATED');
   if (Object.values(info?.HostConfig?.PortBindings ?? {}).some(bindings => (bindings ?? []).some(b => b.HostIp !== '127.0.0.1' || !policy.local_database_ports.includes(Number(b.HostPort))))) errors.push('CONTAINER_PORT_NOT_APPROVED');
-  if (info?.HostConfig?.Privileged || info?.HostConfig?.PidMode === 'host') errors.push('CONTAINER_PRIVILEGE_FORBIDDEN');
+  if (info.HostConfig.Privileged !== false || info.HostConfig.PidMode ||
+      ['host'].includes(info.HostConfig.IpcMode) || String(info.HostConfig.IpcMode).startsWith('container:') ||
+      (info.HostConfig.CapAdd?.length ?? 0)>0 || (info.HostConfig.Devices?.length ?? 0)>0 ||
+      (info.HostConfig.SecurityOpt?.length ?? 0)>0) errors.push('CONTAINER_PRIVILEGE_FORBIDDEN');
+  if (Object.values(info.NetworkSettings.Ports).some(bindings => bindings !== null &&
+      (!Array.isArray(bindings) || bindings.some(b=>b.HostIp!=='127.0.0.1'||Number(b.HostPort)!==config.database_port))))
+    errors.push('CONTAINER_RUNTIME_PORT_NOT_APPROVED');
   // No user's host folders, Docker socket, or old stack volumes in a test database.
-  if ((info?.Mounts ?? []).some(m => m.Type !== 'volume' || !m.Name?.startsWith(`${config.project_id}_`))) errors.push('CONTAINER_MOUNT_NOT_APPROVED');
+  if (info.Mounts.length) errors.push('CONTAINER_MOUNT_NOT_APPROVED');
   return { ok: errors.length === 0, errors };
 }
 

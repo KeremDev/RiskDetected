@@ -1,8 +1,10 @@
 # RiskDetected → İSG Adası — ayrıntılı geçiş ve doğrulama planı
 
-Tarih: 12 Eylül 2026 · Durum: planlama tamamlandı, uygulama/yayın başlamadı · Dil: Türkçe
+Plan başlangıcı: 12 Eylül 2026 · Güncel durum: yerel uygulama P19 paketine kadar ilerledi, birçok faz kısmi; canlı yayın başlamadı · Dil: Türkçe
 
 ## 0. Bu dosya nasıl kullanılacak?
+
+**13 Eylül P00'dan güncele denetim:** [Faz bazlı eksikler, düzeltilen hatalar ve devam sırası](PHASE_ZERO_AUDIT_2026-09-13.md). Bu dokümandaki tarihli ilk plan ve teslim notları başlangıç/tarihsel kapsamı anlatır; güncel tamamlanma iddiası değildir. UI iterasyonu açık, rollout kapalıdır.
 
 **13 Eylül son durum — P05 kapandı:** P05'e ait geliştirme ve katmanlı yerel kabul (iki gerçek native SDK→DB zinciri, tarihli/hiyerarşik ekranlar, restart/foreground ve bağımsız SQL doğrulaması) tamamlandı. Canlı migration/rollout ve mağaza yayını yapılmadı. [Kapanış ve fazlar arası kabul sınırları](P05_CLOSURE_2026-09-13.md). Aşağıdaki önceki tarihli paket açıklamaları tarihsel kayıttır.
 

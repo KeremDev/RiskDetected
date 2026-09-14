@@ -1,0 +1,192 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-09-13T19:23:04.677Z",
+  "production_changed": false,
+  "production_read_only_inspection": true,
+  "phone_installed": false,
+  "deployment_ready": false,
+  "release_ready": false,
+  "acceptance_ids_covered": [],
+  "scope": "P05 read-only pilot server preparation",
+  "live_observation": {
+    "project": "ppcrzemgiztzcgddbins",
+    "status": "ACTIVE_HEALTHY",
+    "postgres": "17.6.1.111",
+    "latest_migration": "20260908134026",
+    "isg_schema": false,
+    "availability_rpc": false,
+    "legacy_plan_helper": true,
+    "companies": 8,
+    "isg_company_trigger": false,
+    "public_named_personnel_tables": 0,
+    "limitations": "Metadata and counts only; no user/company row data collected. Table-name search is not a complete legacy data inventory."
+  },
+  "runs": {
+    "synthetic": {
+      "path": "output/isg/runs/synthetic-auth-6Mxe6p/REPORT.json",
+      "sha256": "87676596cd2b3311b914cc014ed196d413468bdaabc36710344e60360dd46862",
+      "run_id": "c9ad18c6-1d91-4452-976d-08ac076d2ed7",
+      "started_at": "2026-09-13T19:19:58.738Z",
+      "finished_at": "2026-09-13T19:22:26.521Z",
+      "ok": true,
+      "checks": 1071,
+      "unique_checks": 1071,
+      "cleanup": "PASS",
+      "source_drift": [],
+      "pilot_checks": [
+        {
+          "id": "p05_pilot_ships_disabled_with_empty_roster",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_disabled_hides_global_and_company",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_generic_flags_cannot_bypass_roster",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_client_claims_cannot_add_grant",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_allowlisted_owner_discovers_read_only_pilot",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_allowlisted_owner_reads_existing_personnel_and_directory",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_allowlisted_context_read_reaches_domain",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_write_create_denied_even_with_generic_write_flag",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_write_edit_denied_even_with_generic_write_flag",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_write_archive_denied_even_with_generic_write_flag",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_write_restore_denied_even_with_generic_write_flag",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_directory_write_denied",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_foreign_company_fixture_exists",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_nonallowlisted_company_hidden",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_grant_cannot_override_company_ownership",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_revocation_takes_effect_without_token_refresh",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_expired_grant_denied_without_token_refresh",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_valid_grant_restores_read_only",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_kill_switch_denies_cached_allowlisted_session",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_private_roster_and_helper_have_no_client_grants",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_roster_rls_enabled",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_anonymous_availability_denied",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_no_legacy_personnel_subscription_or_outbox_writes",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_leaves_empty_roster_and_closed_rollout",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_pilot_revoked_auth_session_still_rejected",
+          "result": "PASS"
+        }
+      ],
+      "advisor_levels": {
+        "INFO": 291
+      }
+    },
+    "legacy_upgrade": {
+      "path": "backups/isg-auth-service-restore-20260912-uSRYG5/REPORT.json",
+      "sha256": "ca3fc3d7c34ec7fdba2974f3dfb47b459b25569d501ca169c341734aba18e52d",
+      "run_id": "35862ab7-7e0d-4af1-b134-f8864e6c226e",
+      "started_at": "2026-09-13T19:19:59.868Z",
+      "finished_at": "2026-09-13T19:20:14.176Z",
+      "ok": true,
+      "checks": 33,
+      "unique_checks": 33,
+      "cleanup": "PASS",
+      "source_drift": [],
+      "pilot_checks": []
+    }
+  },
+  "suites": [
+    {
+      "suite": "foundation",
+      "pass": 442,
+      "fail": 0,
+      "stdout_sha256": "896505cfac941fe5a6b80aa8b15a2fc7df2ba3893ea860c0fd037d069b9271c9"
+    },
+    {
+      "suite": "all_isg_scripts",
+      "pass": 488,
+      "fail": 0,
+      "stdout_sha256": "0cdc321e972e2cfef656caa958a1cfef1ec7991e3f3d37d8d44bcae3450a897c"
+    }
+  ],
+  "suite_counts_overlap": true,
+  "source_sha256": {
+    "supabase/migrations/20260913191226_isg_p05_readonly_pilot.sql": "83896ca627115314037ef82fa642d75d85601cfa4285c4c254a87475039f2764",
+    "scripts/isg/p05_pilot_probe.mjs": "01a6df70b0d7ecc0042d8a4927e859a61301be12b190e0d8bda371ef810060f4",
+    "scripts/isg/p05_pilot_guard.test.mjs": "32846e29e22d4aeb34aa189d397d815df9841db5dc87c221b2e2c5b48f52ccf3",
+    "scripts/isg/integrated_rehearsal_guard.test.mjs": "c8744194759cac969a703349ef02ce5d7525324651ee4f6d3ed0d6e32c1248ee",
+    "scripts/isg/personnel_advisor_probe.mjs": "21bf12ca6a21d2a29f06257dc2c0f6d22f80276bc43a8171769ce421730fc399",
+    "scripts/isg/run_auth_restore.mjs": "da6b6dbcbd3f6fc5c1c579834b20ea913f27ad2e1ec63aa323b5093d639f069e",
+    "scripts/isg/p05_upgrade_probe.mjs": "688c35ca11ed03a38571a257c6033b1a7f9ad5f8379e755767aa85921343a2a6"
+  },
+  "remaining_blockers": [
+    "Named account and company UUID approval",
+    "Scoped bootstrap instead of broad candidate backfill/trigger",
+    "P05-only atomic deployment package and clone rehearsal",
+    "Native read-only pilot route, cache/fallback and physical-device acceptance",
+    "Explicit production deployment and activation approval"
+  ],
+  "notes": [
+    "Initial synthetic run 9rrUgO passed pilot checks but failed because the advisor role was created twice. Advisor now runs once after pilot installation.",
+    "Upgrade ordering and advisor-stage string source guards were corrected; final suites passed.",
+    "All live SQL was BEGIN READ ONLY with 5-second statement timeout. No production DDL/DML or deployment."
+  ]
+}

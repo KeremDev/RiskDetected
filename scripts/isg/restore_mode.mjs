@@ -1,5 +1,8 @@
 // Parse before Docker, backup access, output writes, Keychain or remote action.
 export function parseRestoreMode(args) {
+  if (Array.isArray(args) && args.length === 2 && args[0] === '--isolated-copy' && args[1] === '--p05-pilot-upgrade') {
+    return { storage:false, sessionGuard:false, synthetic:false, p05PilotUpgrade:true };
+  }
   if (Array.isArray(args) && args.length === 2 && args[0] === '--synthetic-session' && args[1] === '--native-e2e') {
     return { storage:false, sessionGuard:true, synthetic:true, nativeE2E:true };
   }

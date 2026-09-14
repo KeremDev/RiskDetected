@@ -45,7 +45,7 @@ for (const [name, config] of invalid) test(`fail closed: ${name}`, () => {
 
 function inspection() {
   return { Name: `/${fixture.database_container}`, Config: { Labels: { 'com.riskdetected.isg-test-project': fixture.project_id } },
-    State: { Running: true }, HostConfig: { NetworkMode: 'none', PortBindings: {} }, NetworkSettings: { Networks: { none: {} } }, Mounts: [] };
+    State: { Running: true }, HostConfig: { NetworkMode: 'none', PortBindings: {}, Privileged:false }, NetworkSettings: { Networks: { none: {} }, Ports:{} }, Mounts: [] };
 }
 test('no-network scoped database passes live-inspection guard', () => assert.equal(validateContainerInspection(inspection(), fixture).ok, true));
 test('ordinary Docker bridge is not test isolation', () => {
@@ -67,6 +67,14 @@ test('container ownership, network, ports and host mounts cannot be bypassed', (
     i => { i.HostConfig.PortBindings = { '5432/tcp': [{ HostIp: '0.0.0.0', HostPort: '61322' }] }; },
     i => { i.Mounts = [{ Type: 'bind', Source: '/var/run/docker.sock' }]; },
     i => { i.Mounts = [{ Type: 'volume', Name: 'existing_user_database' }]; },
+    i => { delete i.Mounts; }, i => { delete i.NetworkSettings.Networks; },
+    i => { delete i.NetworkSettings.Ports; }, i => { delete i.HostConfig.PortBindings; },
+    i => { delete i.HostConfig.Privileged; }, i => { i.HostConfig.CapAdd=['SYS_ADMIN']; },
+    i => { i.HostConfig.SecurityOpt=['seccomp=unconfined']; },
+    i => { i.HostConfig.Devices=[{PathOnHost:'/dev/sda'}]; },
+    i => { i.HostConfig.IpcMode='host'; },
+    i => { i.NetworkSettings.Ports={'5432/tcp':[{HostIp:'0.0.0.0',HostPort:'61322'}]}; },
+    i => { i.Mounts=[{Type:'volume',Name:fixture.project_id+'_not_proof_of_ownership'}]; },
   ];
   for (const mutate of mutations) { const i = inspection(); mutate(i); assert.equal(validateContainerInspection(i, fixture).ok, false); }
 });

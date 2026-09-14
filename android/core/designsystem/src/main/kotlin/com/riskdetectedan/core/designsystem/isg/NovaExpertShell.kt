@@ -357,6 +357,7 @@ private fun NovaDestination.icon(): ImageVector = when (this) {
     NovaDestination.newDocument -> Icons.AutoMirrored.Outlined.NoteAdd
     NovaDestination.newVisit -> Icons.Outlined.Event
     NovaDestination.newTraining -> Icons.Outlined.School
+    NovaDestination.periodicChecks -> Icons.Outlined.Assessment
 }
 
 @Composable

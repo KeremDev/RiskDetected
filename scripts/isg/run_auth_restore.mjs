@@ -36,6 +36,7 @@ import { beginObservabilityAdminProbe, observabilityAdminFiles } from './observa
 import { beginScorePortfolioProbe, scorePortfolioFiles } from './score_portfolio_probe.mjs';
 import { beginIntegratedRehearsalProbe, integratedRehearsalFiles } from './integrated_rehearsal_probe.mjs';
 import { beginNonconformityHTTPProbe, nonconformityHTTPFiles } from './nonconformity_http_probe.mjs';
+import { beginNonconformityDetailProbe, nonconformityDetailFiles } from './nonconformity_detail_probe.mjs';
 import { beginNotificationDispatchProbe, notificationDispatchFiles } from './notification_dispatch_probe.mjs';
 import { beginNotificationRepositoryProbe, notificationRepositoryFiles } from './notification_repository_probe.mjs';
 import { beginNotificationDeviceProbe, notificationDeviceFiles } from './notification_device_probe.mjs';
@@ -222,6 +223,7 @@ function sourceFingerprints(mode) {
     .concat(mode.synthetic ? scorePortfolioFiles : [])
     .concat(mode.synthetic ? integratedRehearsalFiles : [])
     .concat(mode.synthetic ? nonconformityHTTPFiles : [])
+    .concat(mode.synthetic ? nonconformityDetailFiles : [])
     .concat(mode.synthetic ? notificationDispatchFiles : [])
     .concat(mode.synthetic ? notificationRepositoryFiles : [])
     .concat(mode.synthetic ? notificationDeviceFiles : [])
@@ -380,6 +382,7 @@ try {
   let scoreProbe;
   let rehearsalProbe;
   let nonconformityHTTPProbe;
+  let nonconformityDetailProbe;
   let notificationDispatchProbe;
   let notificationRepositoryProbe;
   let notebookAPIProbe;
@@ -432,6 +435,8 @@ try {
     notebookAPIProbe=await beginNotebookAPIProbe({synthetic:true,sql,concurrentSql,token:refresh.body.access_token,secret,request:personnelHTTPProbe.request,waitReady,pass});
     stage = 'nonconformity-http';
     nonconformityHTTPProbe=await beginNonconformityHTTPProbe({synthetic:true,sql,request:personnelHTTPProbe.request,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
+    stage = 'nonconformity-detail';
+    nonconformityDetailProbe=await beginNonconformityDetailProbe({synthetic:true,sql,request:personnelHTTPProbe.request,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'billing-lifecycle';
     billingProbe=await beginBillingLifecycleProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'campaign-core';
@@ -502,6 +507,7 @@ try {
   if (scoreProbe) report.score_portfolio = scoreProbe.afterLogout();
   if (rehearsalProbe) report.integrated_rehearsal = rehearsalProbe.afterLogout();
   if (nonconformityHTTPProbe) report.nonconformity_http = nonconformityHTTPProbe.afterLogout();
+  if (nonconformityDetailProbe) report.nonconformity_detail = nonconformityDetailProbe.afterLogout();
   if (notificationDispatchProbe) report.notification_dispatch = notificationDispatchProbe.afterLogout();
   if (notificationRepositoryProbe) report.notification_repository = notificationRepositoryProbe.afterLogout();
   if (notebookAPIProbe) report.notebook_api = notebookAPIProbe.afterLogout();

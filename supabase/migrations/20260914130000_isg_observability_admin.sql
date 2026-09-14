@@ -369,7 +369,8 @@ DECLARE unknown_scope text; created uuid;
 BEGIN
   PERFORM private_isg.observability_gate(true);
   IF p_admin IS NULL OR p_aal IS NULL OR p_scopes IS NULL OR p_expires IS NULL OR p_now IS NULL OR
-     p_expires<=p_now THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
+     p_expires<=p_now OR array_position(p_scopes,NULL) IS NOT NULL THEN
+    RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   SELECT key INTO unknown_scope FROM unnest(p_scopes) AS keys(key)
     WHERE NOT EXISTS(SELECT 1 FROM private_isg.admin_scopes WHERE scope_key=keys.key) LIMIT 1;
   IF unknown_scope IS NOT NULL THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
@@ -392,7 +393,7 @@ BEGIN
   SELECT requires_aal2 INTO needs_mfa FROM private_isg.admin_scopes WHERE scope_key=p_scope;
   IF needs_mfa IS NULL THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   IF needs_mfa AND entry.assurance_level<>'aal2' THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='MFA_REQUIRED'; END IF;
-  IF NOT (p_scope=ANY(entry.granted_scopes)) THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='SCOPE_DENIED'; END IF;
+  IF (p_scope=ANY(entry.granted_scopes)) IS NOT TRUE THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='SCOPE_DENIED'; END IF;
   IF p_write THEN
     SELECT writes_paused INTO paused FROM private_isg.admin_operation_state WHERE singleton;
     IF paused THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ADMIN_WRITES_PAUSED'; END IF; END IF;

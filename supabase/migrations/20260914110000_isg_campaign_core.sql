@@ -73,12 +73,15 @@ CREATE TABLE private_isg.referral_claims (
   inviter_branch text CHECK(inviter_branch IS NULL OR inviter_branch IN ('free','paid_monthly','paid_annual','unknown')),
   claimed_at timestamptz NOT NULL,
   qualified_at timestamptz, rewarded_at timestamptz,
+  qualified_version_id uuid REFERENCES private_isg.campaign_versions(version_id),
+  qualification_snapshot jsonb,
   version bigint NOT NULL DEFAULT 1 CHECK(version>=1),
   CHECK(inviter_owner_id<>invitee_owner_id),
   CHECK(state<>'rejected' OR reject_code IS NOT NULL)
 );
 -- An invitee belongs to one campaign family exactly once, whoever invited them.
 CREATE UNIQUE INDEX referral_claim_invitee_once_idx ON private_isg.referral_claims(campaign_id,invitee_owner_id);
+CREATE INDEX referral_claim_qualified_version_idx ON private_isg.referral_claims(qualified_version_id);
 -- Only real, server-observed work that a Free account can actually perform.
 -- A heartbeat, a screen view, a personal note or a failed analysis is not here
 -- and has no row shape to become one.
@@ -122,6 +125,7 @@ CREATE TABLE private_isg.winback_episodes (
   version_id uuid NOT NULL REFERENCES private_isg.campaign_versions(version_id),
   campaign_id uuid NOT NULL REFERENCES private_isg.campaign_definitions(campaign_id),
   lifecycle_state_at_open text NOT NULL,
+  plan_period_at_open text NOT NULL CHECK(plan_period_at_open IN ('monthly','annual','unknown')),
   became_eligible_at timestamptz NOT NULL,
   contactable_from timestamptz NOT NULL,
   accept_until timestamptz NOT NULL,
@@ -310,17 +314,22 @@ BEGIN
   RETURN jsonb_build_object('schema_version',1,'event_id',created,'replayed',false,'proof_source','server_mutation');
 END $$;
 -- Distinct days of real work inside the campaign window; nothing else counts.
-CREATE FUNCTION private_isg.evaluate_referral_qualification(p_claim uuid,p_version uuid,p_now timestamptz) RETURNS jsonb
+CREATE FUNCTION private_isg.evaluate_referral_qualification(p_claim uuid,p_version uuid,p_now timestamptz,
+  p_plan_period text DEFAULT 'unknown') RETURNS jsonb
 LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $$
 DECLARE claim_row private_isg.referral_claims; version_row private_isg.campaign_versions; days integer; verdict boolean;
+  snapshot jsonb; uncertain boolean; active_paid boolean; branch text;
 BEGIN
   PERFORM private_isg.campaign_gate(true);
-  IF p_claim IS NULL OR p_version IS NULL OR p_now IS NULL THEN
+  IF p_claim IS NULL OR p_version IS NULL OR p_now IS NULL OR p_plan_period IS NULL OR
+     p_plan_period NOT IN ('monthly','annual','unknown') THEN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   SELECT * INTO claim_row FROM private_isg.referral_claims WHERE claim_id=p_claim FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
   SELECT * INTO version_row FROM private_isg.campaign_versions WHERE version_id=p_version;
   IF NOT FOUND OR version_row.campaign_id<>claim_row.campaign_id THEN
+    RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
+  IF claim_row.qualified_version_id IS NOT NULL AND claim_row.qualified_version_id<>p_version THEN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   IF version_row.status<>'published' THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='CAMPAIGN_UNAVAILABLE'; END IF;
   IF claim_row.state IN ('qualified','rewarded') THEN
@@ -336,7 +345,24 @@ BEGIN
   IF NOT verdict THEN
     RETURN jsonb_build_object('schema_version',1,'claim_id',p_claim,'state','claimed','qualified',false,
       'distinct_days',days,'required_days',version_row.qualification_days,'reason','NOT_QUALIFIED'); END IF;
-  UPDATE private_isg.referral_claims SET state='qualified',qualified_at=p_now,version=version+1 WHERE claim_id=p_claim;
+  -- Read ALL stores in one statement. The private server caller must resolve the
+  -- catalogue period before qualification; award-time hints can never change it.
+  SELECT coalesce(jsonb_agg(jsonb_build_object('store',store,'product_id',product_id,
+      'state',lifecycle_state,'evidence_id',evidence_id)), '[]'::jsonb),
+    coalesce(bool_or(needs_review OR lifecycle_state IN ('unknown','grace','on_hold','paused','refunded','revoked')),true),
+    coalesce(bool_or(lifecycle_state='active'),false)
+    INTO snapshot,uncertain,active_paid
+    FROM private_isg.billing_lifecycle_projection
+    WHERE owner_id=claim_row.inviter_owner_id AND environment='production';
+  branch:=CASE WHEN uncertain THEN 'unknown'
+    WHEN active_paid AND p_plan_period='monthly' THEN 'paid_monthly'
+    WHEN active_paid AND p_plan_period='annual' THEN 'paid_annual'
+    WHEN active_paid THEN 'unknown' ELSE 'free' END;
+  UPDATE private_isg.referral_claims SET state='qualified',qualified_at=p_now,
+    qualified_version_id=p_version,inviter_branch=branch,
+    qualification_snapshot=jsonb_build_object('projections',snapshot,'plan_period',p_plan_period,
+      'inviter_reward_code',version_row.inviter_reward_code,'invitee_reward_code',version_row.invitee_reward_code),
+    version=version+1 WHERE claim_id=p_claim;
   RETURN jsonb_build_object('schema_version',1,'claim_id',p_claim,'state','qualified','qualified',true,
     'distinct_days',days,'required_days',version_row.qualification_days,'marketing_consent_required',false);
 END $$;
@@ -375,14 +401,14 @@ BEGIN
   UPDATE private_isg.budget_reservations SET state=target_state,settled_at=p_now WHERE reservation_id=p_reservation;
   RETURN jsonb_build_object('schema_version',1,'reservation_id',p_reservation,'state',target_state,'replayed',false);
 END $$;
--- The paid/not-paid fact comes from the P14 projection; the plan period comes
--- from the caller's store catalogue. An annual or unreadable inviter takes no
--- branch at all: it is refused and written down, never silently treated as Free.
+-- Earning uses the qualification snapshot, never an award-time plan hint.
+-- Annual policy and unreadable billing remain pending, never silently Free
+-- and never a permanent rejection. Store redemption stays a separate gate.
 CREATE FUNCTION private_isg.award_referral_reward(p_claim uuid,p_version uuid,p_period text,p_plan_period text,
   p_now timestamptz) RETURNS jsonb
 LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $$
 DECLARE claim_row private_isg.referral_claims; version_row private_isg.campaign_versions;
-  paid_state text; branch text; reserved jsonb; inviter_gift jsonb; invitee_gift jsonb;
+  branch text; reserved jsonb; inviter_gift jsonb; invitee_gift jsonb;
 BEGIN
   PERFORM private_isg.campaign_gate(true);
   IF p_claim IS NULL OR p_version IS NULL OR p_period IS NULL OR p_plan_period IS NULL OR p_now IS NULL OR
@@ -390,35 +416,26 @@ BEGIN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   SELECT * INTO claim_row FROM private_isg.referral_claims WHERE claim_id=p_claim FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
+  SELECT * INTO version_row FROM private_isg.campaign_versions WHERE version_id=p_version;
+  IF NOT FOUND OR version_row.campaign_id<>claim_row.campaign_id OR
+     claim_row.qualified_version_id IS DISTINCT FROM p_version THEN
+    RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   IF claim_row.state='rewarded' THEN
     RETURN jsonb_build_object('schema_version',1,'claim_id',p_claim,'state','rewarded','replayed',true); END IF;
   IF claim_row.state<>'qualified' THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='NOT_QUALIFIED'; END IF;
-  SELECT * INTO version_row FROM private_isg.campaign_versions WHERE version_id=p_version;
   IF version_row.status<>'published' THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='CAMPAIGN_PAUSED'; END IF;
-  SELECT lifecycle_state INTO paid_state FROM private_isg.billing_lifecycle_projection
-    WHERE owner_id=claim_row.inviter_owner_id AND environment='production'
-    ORDER BY applied_event_at DESC,applied_sequence_no DESC LIMIT 1;
-  branch:=CASE
-    WHEN paid_state IS NULL THEN 'free'
-    WHEN paid_state='unknown' THEN 'unknown'
-    WHEN paid_state IN ('active','in_trial','grace') AND p_plan_period='monthly' THEN 'paid_monthly'
-    WHEN paid_state IN ('active','in_trial','grace') THEN 'paid_annual'
-    ELSE 'free' END;
+  branch:=coalesce(claim_row.inviter_branch,'unknown');
   IF branch IN ('paid_annual','unknown') THEN
-    UPDATE private_isg.referral_claims SET state='rejected',reject_code='UNSUPPORTED_BRANCH',
-      inviter_branch=branch,version=version+1 WHERE claim_id=p_claim;
-    INSERT INTO private_isg.suppression_records(owner_id,campaign_id,reason,decided_at_stage,detail,decided_at)
-      VALUES(claim_row.inviter_owner_id,claim_row.campaign_id,'not_eligible','reward',
-        jsonb_build_object('branch',branch,'lifecycle_state',coalesce(paid_state,'none'),
-          'auto_plan_conversion',false),p_now);
-    RETURN jsonb_build_object('schema_version',1,'claim_id',p_claim,'state','rejected',
-      'reject_code','UNSUPPORTED_BRANCH','inviter_branch',branch,'auto_plan_conversion',false,
+    RETURN jsonb_build_object('schema_version',1,'claim_id',p_claim,'state','qualified',
+      'pending_reason',CASE WHEN branch='paid_annual' THEN 'ANNUAL_POLICY_PENDING' ELSE 'BILLING_REVIEW_REQUIRED' END,
+      'inviter_branch',branch,'auto_plan_conversion',false,
       'treated_as_free',false); END IF;
   reserved:=private_isg.reserve_campaign_budget(p_version,p_period,claim_row.inviter_owner_id,1,p_now);
-  invitee_gift:=private_isg.grant_benefit(claim_row.invitee_owner_id,version_row.invitee_reward_code,
+  invitee_gift:=private_isg.grant_benefit(claim_row.invitee_owner_id,claim_row.qualification_snapshot->>'invitee_reward_code',
     'referral-invitee:'||p_claim::text,'davet qualification doğrulandı',p_now);
   inviter_gift:=private_isg.grant_benefit(claim_row.inviter_owner_id,
-    CASE WHEN branch='paid_monthly' THEN version_row.inviter_reward_code ELSE version_row.invitee_reward_code END,
+    CASE WHEN branch='paid_monthly' THEN claim_row.qualification_snapshot->>'inviter_reward_code'
+      ELSE claim_row.qualification_snapshot->>'invitee_reward_code' END,
     'referral-inviter:'||p_claim::text,'davetçi ödülü',p_now);
   PERFORM private_isg.settle_campaign_budget((reserved->>'reservation_id')::uuid,true,p_now);
   UPDATE private_isg.referral_claims SET state='rewarded',rewarded_at=p_now,inviter_branch=branch,version=version+1
@@ -438,9 +455,13 @@ BEGIN
   IF p_owner IS NULL OR p_campaign IS NULL OR p_plan_period IS NULL OR p_now IS NULL OR
      p_plan_period NOT IN ('monthly','annual','unknown') THEN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
-  SELECT lifecycle_state INTO paid_state FROM private_isg.billing_lifecycle_projection
+  SELECT CASE WHEN needs_review THEN 'unknown' ELSE lifecycle_state END INTO paid_state FROM private_isg.billing_lifecycle_projection
     WHERE owner_id=p_owner AND environment='production'
-    ORDER BY applied_event_at DESC,applied_sequence_no DESC LIMIT 1;
+    ORDER BY CASE WHEN needs_review OR lifecycle_state='unknown' THEN 0
+      WHEN lifecycle_state IN ('active','in_trial','grace') THEN 1
+      WHEN lifecycle_state IN ('on_hold','paused') THEN 2
+      WHEN lifecycle_state IN ('refunded','revoked') THEN 3 ELSE 4 END,
+      applied_event_at DESC,applied_sequence_no DESC LIMIT 1;
   SELECT EXISTS(SELECT 1 FROM private_isg.billing_lifecycle_evidence WHERE owner_id=p_owner
     AND environment='production' AND event_kind IN ('purchase','renewal') AND lifecycle_state='active') INTO paid_before;
   SELECT EXISTS(SELECT 1 FROM private_isg.billing_lifecycle_projection WHERE owner_id=p_owner
@@ -493,9 +514,9 @@ BEGIN
       'lifecycle_state',verdict->>'lifecycle_state','episode_id',NULL); END IF;
   contact_from:=p_now+make_interval(hours=>version_row.wait_hours);
   accept_end:=contact_from+make_interval(days=>version_row.accept_days);
-  INSERT INTO private_isg.winback_episodes(owner_id,version_id,campaign_id,lifecycle_state_at_open,
+  INSERT INTO private_isg.winback_episodes(owner_id,version_id,campaign_id,lifecycle_state_at_open,plan_period_at_open,
       became_eligible_at,contactable_from,accept_until)
-    VALUES(p_owner,p_version,version_row.campaign_id,verdict->>'lifecycle_state',p_now,contact_from,accept_end)
+    VALUES(p_owner,p_version,version_row.campaign_id,verdict->>'lifecycle_state',p_plan_period,p_now,contact_from,accept_end)
     RETURNING episode_id INTO created;
   RETURN jsonb_build_object('schema_version',1,'opened',true,'episode_id',created,'state','waiting',
     'contactable_from',contact_from,'accept_until',accept_end,'max_contacts',version_row.max_contacts,
@@ -506,7 +527,7 @@ END $$;
 CREATE FUNCTION private_isg.record_winback_contact(p_episode uuid,p_channel text,p_now timestamptz) RETURNS jsonb
 LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $$
 DECLARE entry private_isg.winback_episodes; version_row private_isg.campaign_versions; consent_at timestamptz;
-  next_no integer; paid_now text; refusal text;
+  next_no integer; eligibility jsonb; refusal text;
 BEGIN
   PERFORM private_isg.campaign_gate(true);
   IF p_episode IS NULL OR p_channel IS NULL OR p_now IS NULL OR p_channel NOT IN ('push','email') THEN
@@ -530,14 +551,15 @@ BEGIN
       WHERE owner_id=entry.owner_id AND purpose='marketing' AND channel=p_channel AND granted;
     IF consent_at IS NULL THEN refusal:='consent_missing'; END IF; END IF;
   IF refusal IS NULL THEN
-    SELECT lifecycle_state INTO paid_now FROM private_isg.billing_lifecycle_projection
-      WHERE owner_id=entry.owner_id AND environment='production'
-      ORDER BY applied_event_at DESC,applied_sequence_no DESC LIMIT 1;
-    IF paid_now IN ('active','in_trial','grace') THEN refusal:='resubscribed'; END IF; END IF;
+    eligibility:=private_isg.winback_eligibility(entry.owner_id,entry.campaign_id,entry.plan_period_at_open,p_now);
+    IF NOT (eligibility->>'eligible')::boolean THEN
+      refusal:=CASE eligibility->>'reason_code' WHEN 'OTHER_STORE_ACTIVE' THEN 'resubscribed'
+        WHEN 'GIFT_ACTIVE' THEN 'gift_active' ELSE 'not_eligible' END;
+    END IF; END IF;
   IF refusal IS NOT NULL THEN
     INSERT INTO private_isg.suppression_records(owner_id,campaign_id,episode_id,reason,decided_at_stage,detail,decided_at)
       VALUES(entry.owner_id,entry.campaign_id,p_episode,refusal,'contact',
-        jsonb_build_object('channel',p_channel,'accept_until',entry.accept_until),p_now);
+        jsonb_build_object('channel',p_channel,'accept_until',entry.accept_until,'eligibility',eligibility),p_now);
     -- A missing consent is this channel's answer today, not the end of the
     -- episode; everything else really closes it. Neither resets the clock.
     IF refusal<>'consent_missing' THEN
@@ -577,7 +599,7 @@ REVOKE ALL ON FUNCTION private_isg.campaign_gate(boolean),
   private_isg.issue_referral_code(uuid,uuid,text,timestamptz),
   private_isg.claim_referral(text,uuid,timestamptz),
   private_isg.record_qualification_event(uuid,text,uuid,date,text,timestamptz),
-  private_isg.evaluate_referral_qualification(uuid,uuid,timestamptz),
+  private_isg.evaluate_referral_qualification(uuid,uuid,timestamptz,text),
   private_isg.reserve_campaign_budget(uuid,text,uuid,bigint,timestamptz),
   private_isg.settle_campaign_budget(uuid,boolean,timestamptz),
   private_isg.award_referral_reward(uuid,uuid,text,text,timestamptz),

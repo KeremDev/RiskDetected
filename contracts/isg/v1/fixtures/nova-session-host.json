@@ -11323,6 +11323,482 @@
           }
         }
       ]
+    },
+    {
+      "id": "destination-periodicChecks-allowed",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "periodicChecks",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "periodicChecks",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "periodicChecks",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "periodicChecks",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "periodicChecks",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "periodicChecks",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-periodicChecks-unimplemented",
+      "implemented": [],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "periodicChecks",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "periodicChecks",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-periodicChecks-disabled",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "periodicChecks",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "periodicChecks",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-periodicChecks-stale",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "periodicChecks",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "r1",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "r1",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "periodicChecks",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "periodicChecks",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "periodicChecks",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "periodicChecks",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
     }
   ]
 }

@@ -75,9 +75,12 @@ test('expert navigation corpus covers every destination across availability and 
   const ids = fixtures.map(c => c.id);
   assert.equal(new Set(ids).size, ids.length);
   assert.deepEqual(catalog.tabs.map(t => t.id), ['home', 'findings', 'companies', 'profile']);
-  assert.equal(catalog.drawer.length, 13);
-  assert.equal(catalog.quickAdd.length, 4);
-  assert.equal(catalog.destinations.length, 17);
+  assert.equal(catalog.drawer.length, 12);
+  assert.equal(catalog.quickAdd.length, 3);
+  assert.equal(catalog.destinations.length, 18);
+  assert.ok(catalog.drawer.includes('periodicChecks'));
+  assert.ok(!catalog.drawer.includes('memory') && !catalog.drawer.includes('visits'));
+  assert.ok(!catalog.quickAdd.includes('newVisit'));
   for (const d of catalog.destinations) for (const availability of ['enabled', 'locked']) for (const epoch of ['fresh', 'stale']) {
     assert.ok(ids.includes(`route-${d.id}-${availability}-${epoch}`));
   }

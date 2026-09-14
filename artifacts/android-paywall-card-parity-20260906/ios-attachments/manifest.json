@@ -1,0 +1,53 @@
+[
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D961FE19-785D-4CF8-A0CB-3F5B3CD5F979",
+        "deviceName" : "RD QA iPhone 16 Pro",
+        "exportedFileName" : "E9A79F38-EFEB-4475-97F5-32659038FB5F.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "dark-paywall-pro-monthly_0_14117F4B-93A2-42C0-8903-931447CA1B13.png",
+        "timestamp" : 1788688358.899
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D961FE19-785D-4CF8-A0CB-3F5B3CD5F979",
+        "deviceName" : "RD QA iPhone 16 Pro",
+        "exportedFileName" : "49564FC4-1E30-4379-9416-E7D86E72817D.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "dark-paywall-pro-yearly_0_30CB4175-641F-41AC-8C96-9D392568D7D2.png",
+        "timestamp" : 1788688357.275
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D961FE19-785D-4CF8-A0CB-3F5B3CD5F979",
+        "deviceName" : "RD QA iPhone 16 Pro",
+        "exportedFileName" : "F210D9B2-8810-4F62-A9C3-A440033DA5F3.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "dark-paywall-plus-monthly_0_A53D0B6E-6347-4E4B-8A9A-1C597EDEF3C9.png",
+        "timestamp" : 1788688355.436
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D961FE19-785D-4CF8-A0CB-3F5B3CD5F979",
+        "deviceName" : "RD QA iPhone 16 Pro",
+        "exportedFileName" : "5B5341FB-AFA7-461E-A12B-8A13BD9F10CF.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "dark-paywall-comparison_0_5FDDE790-8BF3-467C-B10E-573D3EA30799.png",
+        "timestamp" : 1788688352.959
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D961FE19-785D-4CF8-A0CB-3F5B3CD5F979",
+        "deviceName" : "RD QA iPhone 16 Pro",
+        "exportedFileName" : "B506202B-5329-4A25-B978-377E75C99580.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "dark-paywall-plus-yearly_0_6836EA78-0552-46F2-BDAD-823CF9B86274.png",
+        "timestamp" : 1788688350.697
+      }
+    ],
+    "testIdentifier" : "RiskDetectedUITests/testDarkPaywallPricesComparisonAndAllVariants()",
+    "testIdentifierURL" : "test://com.apple.xcode/RiskDetected/RiskDetectedUITests/RiskDetectedUITests/testDarkPaywallPricesComparisonAndAllVariants"
+  }
+]

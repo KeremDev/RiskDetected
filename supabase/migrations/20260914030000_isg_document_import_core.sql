@@ -165,8 +165,9 @@ CREATE FUNCTION private_isg.import_column_allowed(p_column text) RETURNS boolean
 LANGUAGE sql IMMUTABLE SECURITY INVOKER SET search_path='' AS $$
   -- Health and clinical columns are out of scope and are refused at the door,
   -- not quietly stored inside a raw JSON blob.
-  SELECT p_column IS NOT NULL AND lower(p_column) !~
-    '(health|saglik|sağlık|medical|muayene|diagnos|teshis|teşhis|vaccin|asi|aşı|blood|kan_grubu|rapor_saglik)'
+  -- Only fields with a implemented employee mapping may reach raw storage.
+  -- A denylist alone permits hidden content under arbitrary metadata keys.
+  SELECT p_column IS NOT NULL AND p_column IN ('employee_code','full_name','hired_on')
 $$;
 CREATE FUNCTION private_isg.import_cell_value(p_kind text,p_raw text,p_date_system text,p_decimal text) RETURNS jsonb
 LANGUAGE plpgsql IMMUTABLE SECURITY INVOKER SET search_path='' AS $$
@@ -320,10 +321,18 @@ BEGIN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   SELECT * INTO entry FROM private_isg.export_jobs WHERE job_id=p_job FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
-  IF entry.state=p_state THEN RETURN jsonb_build_object('schema_version',1,'job_id',p_job,'state',p_state,'replayed',true); END IF;
+  IF entry.state=p_state THEN
+    IF entry.asset_id IS DISTINCT FROM p_asset OR entry.error_code IS DISTINCT FROM p_error THEN
+      RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='IDEMPOTENCY_CONFLICT'; END IF;
+    RETURN jsonb_build_object('schema_version',1,'job_id',p_job,'state',p_state,'replayed',true); END IF;
   IF entry.state='ready' THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   IF p_asset IS NOT NULL THEN
-    PERFORM 1 FROM private_isg.file_assets WHERE asset_id=p_asset AND scan_status='clean' FOR SHARE;
+    PERFORM 1 FROM private_isg.file_assets AS a
+      JOIN private_isg.documents AS d ON d.document_id=entry.document_id
+      JOIN public.companies AS c ON c.id=d.company_id
+      WHERE a.asset_id=p_asset AND a.scan_status='clean' AND a.company_id=d.company_id
+        AND a.owner_id=c.user_id AND a.purpose='company_document' AND a.extension=entry.format
+      FOR SHARE OF a,d,c;
     IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
   END IF;
   UPDATE private_isg.export_jobs SET state=p_state,asset_id=p_asset,error_code=p_error,updated_at=p_now WHERE job_id=p_job;
@@ -340,15 +349,20 @@ BEGIN
      p_target NOT IN ('employee','equipment') OR p_columns IS NULL OR jsonb_typeof(p_columns)<>'array' OR
      jsonb_array_length(p_columns) NOT BETWEEN 1 AND 200 THEN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
+  -- Equipment has no writer yet; never route it into the employee writer.
+  IF p_target<>'employee' THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='FEATURE_UNAVAILABLE'; END IF;
   SELECT user_id INTO owner FROM public.companies WHERE id=p_company FOR SHARE;
   IF owner IS NULL THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
-  PERFORM 1 FROM private_isg.file_assets WHERE asset_id=p_asset AND scan_status='clean' FOR SHARE;
+  PERFORM 1 FROM private_isg.file_assets WHERE asset_id=p_asset AND scan_status='clean'
+    AND owner_id=owner AND company_id=p_company AND purpose='structured_import' AND sha256=p_file_sha256 FOR SHARE;
   IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
   FOR column_name IN SELECT value FROM jsonb_array_elements_text(p_columns) AS t(value) LOOP
     IF NOT private_isg.import_column_allowed(column_name) THEN
       RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='HEALTH_COLUMN_REFUSED'; END IF;
   END LOOP;
-  fingerprint:=sha256(convert_to(jsonb_build_array(p_company,p_target,encode(p_file_sha256,'hex'),p_mapping_version)::text,'UTF8'));
+  fingerprint:=sha256(convert_to(jsonb_build_array(p_company,p_target,p_asset,encode(p_file_sha256,'hex'),p_mapping_version,
+    coalesce(p_date_system,'1900'),coalesce(p_decimal,','),p_columns)::text,'UTF8'));
+  PERFORM pg_advisory_xact_lock(hashtextextended(p_company::text||':isg-import:'||p_mutation::text,0));
   SELECT * INTO prior FROM private_isg.import_batches WHERE company_id=p_company AND mutation_id=p_mutation;
   IF FOUND THEN
     IF prior.request_hash IS DISTINCT FROM fingerprint THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='IDEMPOTENCY_CONFLICT'; END IF;
@@ -376,6 +390,8 @@ BEGIN
   IF batch.state NOT IN ('draft','previewed') THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='BATCH_COMMITTED'; END IF;
   IF EXISTS(SELECT 1 FROM jsonb_object_keys(p_raw) AS t(key) WHERE NOT private_isg.import_column_allowed(key)) THEN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='HEALTH_COLUMN_REFUSED'; END IF;
+  IF EXISTS(SELECT 1 FROM jsonb_each(p_raw) WHERE jsonb_typeof(value) NOT IN ('string','null')) THEN
+    RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   code:=private_isg.import_cell_value('code',p_raw->>'employee_code',batch.date_system,batch.decimal_separator);
   name:=private_isg.import_cell_value('text',p_raw->>'full_name',batch.date_system,batch.decimal_separator);
   hired:=private_isg.import_cell_value('date',p_raw->>'hired_on',batch.date_system,batch.decimal_separator);
@@ -411,8 +427,9 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
   IF batch.state='committed' THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='BATCH_COMMITTED'; END IF;
   -- The preview hash covers every row's status and the target versions it saw.
-  SELECT sha256(convert_to(coalesce(string_agg(row_no::text||':'||status||':'||coalesce(error_code,'-')||':'||
-    coalesce(target_ref::text,'-')||':'||coalesce(target_version::text,'-'),'|' ORDER BY row_no),''),'UTF8')),
+  SELECT sha256(convert_to(coalesce(jsonb_agg(jsonb_build_object('row_no',row_no,'status',status,
+    'error_code',error_code,'target_ref',target_ref,'target_version',target_version,
+    'raw',raw,'normalised',normalised) ORDER BY row_no),'[]'::jsonb)::text,'UTF8')),
     jsonb_build_object('rows',count(*),'ok',count(*) FILTER (WHERE status='ok'),
       'error',count(*) FILTER (WHERE status='error'),'duplicate',count(*) FILTER (WHERE status='duplicate'),
       'review',count(*) FILTER (WHERE status='review'))

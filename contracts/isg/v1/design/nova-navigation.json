@@ -138,6 +138,13 @@
       "tab": "home",
       "iosSymbol": "graduationcap",
       "androidIcon": "School"
+    },
+    {
+      "id": "periodicChecks",
+      "title": "Periyodik Kontroller",
+      "tab": "home",
+      "iosSymbol": "checkmark.shield",
+      "androidIcon": "Assessment"
     }
   ],
   "drawer": [
@@ -145,10 +152,9 @@
     "newFinding",
     "findings",
     "companies",
-    "memory",
+    "periodicChecks",
     "documentChecklist",
     "documents",
-    "visits",
     "statistics",
     "training",
     "reports",
@@ -158,7 +164,6 @@
   "quickAdd": [
     "newFinding",
     "newDocument",
-    "newVisit",
     "newTraining"
   ],
   "reference": "OSGBTakip/apps/mobile/src/components/MobileShell.tsx"

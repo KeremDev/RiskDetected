@@ -31,7 +31,7 @@ export async function beginCampaignCoreProbe({synthetic,sql,companyID,ownerID,pa
     "ELSIF kind='claim' THEN r:=private_isg.claim_referral(a->>'code',(a->>'invitee')::uuid,(a->>'now')::timestamptz);",
     "ELSIF kind='event' THEN r:=private_isg.record_qualification_event((a->>'owner')::uuid,a->>'event_kind',(a->>'operation')::uuid,",
     "  (a->>'occurred_on')::date,a->>'timezone',(a->>'now')::timestamptz);",
-    "ELSIF kind='evaluate' THEN r:=private_isg.evaluate_referral_qualification((a->>'claim')::uuid,(a->>'version')::uuid,(a->>'now')::timestamptz);",
+    "ELSIF kind='evaluate' THEN r:=private_isg.evaluate_referral_qualification((a->>'claim')::uuid,(a->>'version')::uuid,(a->>'now')::timestamptz,coalesce(a->>'plan_period','monthly'));",
     "ELSIF kind='award' THEN r:=private_isg.award_referral_reward((a->>'claim')::uuid,(a->>'version')::uuid,a->>'period',a->>'plan_period',(a->>'now')::timestamptz);",
     "ELSIF kind='budget' THEN r:=private_isg.reserve_campaign_budget((a->>'version')::uuid,a->>'period',(a->>'owner')::uuid,(a->>'amount')::bigint,(a->>'now')::timestamptz);",
     "ELSIF kind='eligibility' THEN r:=private_isg.winback_eligibility((a->>'owner')::uuid,(a->>'campaign')::uuid,a->>'plan_period',(a->>'now')::timestamptz);",
@@ -125,6 +125,28 @@ export async function beginCampaignCoreProbe({synthetic,sql,companyID,ownerID,pa
     ok('evaluate',{claim:claim.claim_id,version:referralVersion,now:now(days(2)+hours(2))}).replayed===true);
   mark('a_client_can_not_relabel_its_own_proof',call('force_client_proof',{}).error==='CHECK_VIOLATION');
 
+  mark('reward_rejects_another_campaign_and_nonexistent_version',
+    [winbackVersion,randomUUID()].every(version=>call('award',{claim:claim.claim_id,version,
+      period:'2026-09',plan_period:'monthly',now:now(days(2)+hours(3))}).error==='VALIDATION_ERROR'));
+  // Mutate fixtures inside one rollback-only transaction; no previous probe's
+  // data or production state is changed by these negative scenarios.
+  const isolated=(setup,kind,args)=>JSON.parse(sql('BEGIN;'+setup+
+    'SELECT isg_campaign_test.observe('+quote(kind)+','+json(args)+');ROLLBACK;').split('\n').at(-1));
+  const awardArgs={claim:claim.claim_id,version:referralVersion,period:'2026-09',plan_period:'annual',now:now(days(3))};
+  const budgetSQL="INSERT INTO private_isg.campaign_budgets(version_id,period_key,cap_amount) VALUES("+quote(referralVersion)+",'2026-09',10);";
+  const foreignCampaign=randomUUID(),foreignVersion=randomUUID();
+  const foreign=isolated("INSERT INTO private_isg.campaign_definitions(campaign_id,code,family) VALUES("+quote(foreignCampaign)+",'foreign_referral','referral');"+
+    "INSERT INTO private_isg.campaign_versions(version_id,campaign_id,revision,qualification_days,qualification_window_days,inviter_reward_code,invitee_reward_code,status,approved_by,approval_note,published_at) VALUES("+
+    quote(foreignVersion)+","+quote(foreignCampaign)+",1,2,30,'monthly_discount_one_period','sponsor_gift_plus_7d','published',"+quote(approver)+",'synthetic approval',"+quote(now(0))+");"+
+    "INSERT INTO private_isg.campaign_budgets(version_id,period_key,cap_amount) VALUES("+quote(foreignVersion)+",'2026-09',10);",
+    'award',{...awardArgs,version:foreignVersion,plan_period:'monthly'});
+  mark('fully_funded_foreign_campaign_cannot_reward_this_claim',foreign.error==='VALIDATION_ERROR');
+  const switched=isolated(budgetSQL+"UPDATE private_isg.billing_lifecycle_projection SET lifecycle_state='expired' WHERE owner_id="+quote(ownerID)+";",'award',awardArgs);
+  mark('qualification_snapshot_survives_plan_change_and_award_hint',
+    switched.result?.inviter_branch==='paid_monthly'&&switched.result?.inviter_reward_kind==='discount_coupon');
+  mark('same_campaign_revision_cannot_replace_qualification_version',
+    call('evaluate',{claim:claim.claim_id,version:draftVersion,now:now(days(3))}).error==='VALIDATION_ERROR');
+
   mark('no_reward_without_a_budget_row',
     call('award',{claim:claim.claim_id,version:referralVersion,period:'2026-09',plan_period:'monthly',
       now:now(days(2)+hours(3))}).error==='VALIDATION_ERROR');
@@ -145,13 +167,34 @@ export async function beginCampaignCoreProbe({synthetic,sql,companyID,ownerID,pa
   const annualInvitee=leaver;
   const annualClaim=ok('claim',{code:'ABC123',invitee:annualInvitee,now:now(days(3))});
   day2(sql,quote,randomUUID,ok,annualInvitee,now,days);
-  ok('evaluate',{claim:annualClaim.claim_id,version:referralVersion,now:now(days(6))});
+  // Re-evaluate a still-unqualified fixture under uncertain and mixed store states.
+  const evaluateArgs={claim:annualClaim.claim_id,version:referralVersion,now:now(days(6)),plan_period:'monthly'};
+  const freeThenPaid=sql('BEGIN;'+"UPDATE private_isg.billing_lifecycle_projection SET lifecycle_state='expired',needs_review=false WHERE owner_id="+quote(ownerID)+";"+
+    "SELECT isg_campaign_test.observe('evaluate',"+json(evaluateArgs)+');'+
+    "UPDATE private_isg.billing_lifecycle_projection SET lifecycle_state='active' WHERE owner_id="+quote(ownerID)+";"+
+    "SELECT isg_campaign_test.observe('award',"+json({...awardArgs,claim:annualClaim.claim_id,plan_period:'monthly',now:now(days(6)+hours(1))})+');ROLLBACK;').split('\n').at(-1);
+  mark('free_qualification_does_not_turn_into_discount_after_purchase',JSON.parse(freeThenPaid).result?.inviter_reward_kind==='gift_access');
+  const noProjection=sql('BEGIN;'+"DELETE FROM private_isg.billing_lifecycle_projection WHERE owner_id="+quote(ownerID)+";"+
+    "SELECT isg_campaign_test.observe('evaluate',"+json(evaluateArgs)+');'+
+    'SELECT inviter_branch FROM private_isg.referral_claims WHERE claim_id='+quote(annualClaim.claim_id)+';ROLLBACK;').split('\n').at(-1);
+  mark('missing_billing_evidence_is_pending_not_silent_free',noProjection==='unknown');
+  for(const state of ['grace','unknown']) {
+    const check=sql('BEGIN;'+"UPDATE private_isg.billing_lifecycle_projection SET lifecycle_state="+quote(state)+",needs_review=true WHERE owner_id="+quote(ownerID)+";"+
+      'SELECT isg_campaign_test.observe(\'evaluate\','+json(evaluateArgs)+');'+
+      "SELECT inviter_branch FROM private_isg.referral_claims WHERE claim_id="+quote(annualClaim.claim_id)+';ROLLBACK;').split('\n').at(-1);
+    mark(state+'_qualification_is_pending_not_free_or_paid',check==='unknown');
+  }
+  const mixed=sql('BEGIN;'+"INSERT INTO private_isg.billing_lifecycle_projection SELECT owner_id,'apple',environment,product_id,'expired',state_since,applied_event_at+interval '1 day',applied_sequence_no,evidence_id,auto_renew_enabled,expires_at,false,access_authority,version,updated_at FROM private_isg.billing_lifecycle_projection WHERE owner_id="+quote(ownerID)+" AND store='google';"+
+    "SELECT isg_campaign_test.observe('evaluate',"+json(evaluateArgs)+');'+
+    'SELECT inviter_branch FROM private_isg.referral_claims WHERE claim_id='+quote(annualClaim.claim_id)+';ROLLBACK;').split('\n').at(-1);
+  mark('newer_expired_store_does_not_mask_active_inviter',mixed==='paid_monthly');
+  ok('evaluate',{claim:annualClaim.claim_id,version:referralVersion,now:now(days(6)),plan_period:'annual'});
   const annual=ok('award',{claim:annualClaim.claim_id,version:referralVersion,period:'2026-09',plan_period:'annual',
     now:now(days(6)+hours(1))});
   // An annual inviter is never converted to monthly and never read as Free.
-  mark('an_annual_inviter_takes_no_branch_and_is_not_treated_as_free',annual.state==='rejected'&&
-    annual.reject_code==='UNSUPPORTED_BRANCH'&&annual.auto_plan_conversion===false&&annual.treated_as_free===false&&
-    sql("SELECT count(*) FROM private_isg.suppression_records WHERE decided_at_stage='reward' AND reason='not_eligible';")==='1');
+  mark('an_annual_inviter_is_preserved_for_policy_review_not_rejected',annual.state==='qualified'&&
+    annual.pending_reason==='ANNUAL_POLICY_PENDING'&&annual.auto_plan_conversion===false&&annual.treated_as_free===false&&
+    sql("SELECT reject_code IS NULL FROM private_isg.referral_claims WHERE claim_id="+quote(annualClaim.claim_id)+";")==='t');
 
   // Winback: never subscribed, unreadable, still paying, and really left.
   const never=ok('eligibility',{owner:latecomer,campaign:winbackID,plan_period:'monthly',now:now(days(7))});
@@ -189,6 +232,17 @@ export async function beginCampaignCoreProbe({synthetic,sql,companyID,ownerID,pa
     sql("SELECT count(*) FROM private_isg.winback_contacts;")==='0'&&
     sql("SELECT state FROM private_isg.winback_episodes WHERE episode_id="+quote(episode.episode_id)+";")==='waiting');
   sql("INSERT INTO private_isg.notification_consents(owner_id,purpose,channel,granted,source,captured_at) VALUES("+quote(leaver)+",'marketing','push',true,'onboarding',"+quote(now(days(12)))+");");
+  const contactArgs={episode:episode.episode_id,channel:'push',now:now(days(13)+hours(2))};
+  for(const state of ['paused','on_hold','refunded','revoked','unknown']) {
+    const check=isolated("UPDATE private_isg.billing_lifecycle_projection SET lifecycle_state="+quote(state)+",needs_review="+(state==='unknown'?'true':'false')+" WHERE owner_id="+quote(leaver)+";",'contact',contactArgs);
+    mark('send_time_'+state+'_is_suppressed',check.result?.contacted===false&&check.result?.reason==='not_eligible');
+  }
+  const otherStore=isolated("INSERT INTO private_isg.billing_lifecycle_projection SELECT owner_id,'apple',environment,product_id,'active',state_since,applied_event_at-interval '1 day',applied_sequence_no,evidence_id,auto_renew_enabled,expires_at,false,access_authority,version,updated_at FROM private_isg.billing_lifecycle_projection WHERE owner_id="+quote(leaver)+" AND store='google';",'contact',contactArgs);
+  mark('send_time_older_active_other_store_is_suppressed',otherStore.result?.contacted===false&&otherStore.result?.reason==='resubscribed');
+  const gift=isolated("INSERT INTO private_isg.benefit_instances(owner_id,definition_id,state,reason,earned_at,activated_at,expires_at) SELECT "+quote(leaver)+",definition_id,'active','synthetic review test',"+quote(now(days(12)))+","+quote(now(days(12)))+","+quote(now(days(19)))+" FROM private_isg.benefit_definitions WHERE code='sponsor_gift_plus_7d';",'contact',contactArgs);
+  mark('send_time_new_active_gift_is_suppressed',gift.result?.contacted===false&&gift.result?.reason==='gift_active');
+  const review=isolated("UPDATE private_isg.billing_lifecycle_projection SET needs_review=true WHERE owner_id="+quote(leaver)+";",'contact',contactArgs);
+  mark('send_time_review_flag_is_not_treated_as_expired',review.result?.contacted===false&&review.result?.reason==='not_eligible');
   const contacted=ok('contact',{episode:episode.episode_id,channel:'push',now:now(days(13)+hours(2))});
   mark('a_consented_contact_is_an_attempt_and_not_a_delivery',contacted.contacted===true&&
     contacted.ordinal===1&&contacted.delivery_claimed===false&&

@@ -1,0 +1,184 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-09-13T19:05:18.966Z",
+  "scope": "P00-P21 plan/evidence review and selected local boundary fixes A01-A10",
+  "production_changed": false,
+  "ui_finalized": false,
+  "mobile_e2e_repeated": false,
+  "release_ready": false,
+  "acceptance_ids_covered": [],
+  "runs": {
+    "synthetic": {
+      "path": "output/isg/runs/synthetic-auth-luSod4/REPORT.json",
+      "sha256": "7cad5f0a4aa13b91762abdf588c1f0993eb6b41c963d25e4d77dbfca8d017bfb",
+      "run_id": "920b0cbd-22ec-4bcb-8629-c1bfbc6946dd",
+      "started_at": "2026-09-13T19:01:05.816Z",
+      "finished_at": "2026-09-13T19:03:33.877Z",
+      "ok": true,
+      "checks": 1046,
+      "unique_checks": 1046,
+      "cleanup": "PASS",
+      "source_fingerprints": 82,
+      "source_drift": [],
+      "source_unchanged_during_run": true
+    },
+    "legacy_upgrade": {
+      "path": "backups/isg-auth-service-restore-20260912-v54pyZ/REPORT.json",
+      "sha256": "64bb7606c287390059569f7c13d5bc1e852c577b4f9b90957b861889c1b210f8",
+      "run_id": "f7724685-b76d-43e9-bff0-18d839697c45",
+      "started_at": "2026-09-13T19:01:06.967Z",
+      "finished_at": "2026-09-13T19:01:20.567Z",
+      "ok": true,
+      "checks": 33,
+      "unique_checks": 33,
+      "cleanup": "PASS",
+      "source_fingerprints": 58,
+      "source_drift": [],
+      "source_unchanged_during_run": true
+    },
+    "transaction": {
+      "path": "output/isg/runs/6d55739e-c84e-4fe9-b7c7-67ab98bcab3e/database-contract.json",
+      "sha256": "7fd6a51891b96e4d964c3fdde60b693d5d2e7daddec2614a6954f7b62c1b25f9",
+      "run_id": "6d55739e-c84e-4fe9-b7c7-67ab98bcab3e",
+      "started_at": "2026-09-13T18:57:54.071Z",
+      "finished_at": "2026-09-13T18:58:27.891Z",
+      "ok": true,
+      "checks": 135,
+      "unique_checks": 135,
+      "cleanup": "PASS",
+      "source_fingerprints": 21,
+      "source_drift": [],
+      "source_unchanged_during_run": false
+    }
+  },
+  "suites": [
+    {
+      "suite": "foundation",
+      "command": "node scripts/isg/run_suite.mjs foundation",
+      "tests": 436,
+      "pass": 436,
+      "fail": 0,
+      "stdout_sha256": "49e3edc186665b5e89a96ab856505031d4088499dd7759a84d085849de6d7c1f"
+    },
+    {
+      "suite": "isg_scripts",
+      "command": "node --test scripts/isg/*.test.mjs",
+      "tests": 482,
+      "pass": 482,
+      "fail": 0,
+      "stdout_sha256": "1823cb0a2967e10499edf82ce399882347a41f92c3722e50add4f3e5bcb73ab0"
+    },
+    {
+      "suite": "nova",
+      "command": "node scripts/isg/run_suite.mjs nova-design",
+      "tests": 24,
+      "pass": 24,
+      "fail": 0,
+      "stdout_sha256": "69939e2b7948c8387626319c763092abc79548f429de05c330e3b72bc3e63a0c"
+    }
+  ],
+  "suite_counts_overlap": true,
+  "backup": {
+    "schema_version": 1,
+    "captured_at": "2026-09-13T19:01:39.572Z",
+    "checks": [
+      {
+        "kind": "sha256",
+        "manifest": "SHA256SUMS",
+        "count": 31
+      },
+      {
+        "kind": "sha256",
+        "manifest": "storage-file-sha256sums.txt",
+        "count": 588
+      },
+      {
+        "kind": "sql_copy_inventory",
+        "tables": 131,
+        "auth_users": 208,
+        "auth_identities": 210,
+        "storage_objects": 588
+      },
+      {
+        "kind": "archive_integrity",
+        "file": "android-source-snapshot.tar.zst",
+        "ok": true
+      },
+      {
+        "kind": "archive_integrity",
+        "file": "ios-source-snapshot.tar.zst",
+        "ok": true
+      },
+      {
+        "kind": "archive_integrity",
+        "file": "repository-source-snapshot.tar.zst",
+        "ok": true
+      },
+      {
+        "kind": "archive_integrity",
+        "file": "supabase-source-snapshot.tar.zst",
+        "ok": true
+      },
+      {
+        "kind": "archive_integrity",
+        "file": "supabase-storage-files.tar.zst",
+        "ok": true
+      },
+      {
+        "kind": "archive_integrity",
+        "file": "workspace-artifacts-snapshot.tar.zst",
+        "ok": true
+      },
+      {
+        "kind": "git_bundle",
+        "ok": true
+      }
+    ],
+    "failures": [],
+    "restore_proven": false,
+    "backup_root": "backups/riskdetected-change-point-20260912-182850",
+    "ok": true
+  },
+  "identity": {
+    "ok": true,
+    "errors": [],
+    "checked": [
+      "ios_bundle",
+      "android_application_id",
+      "android_namespace",
+      "auth_callback",
+      "entitlements"
+    ],
+    "limitation": "Source assertion; signed binary, store record and keychain continuity require separate release evidence."
+  },
+  "function_map": {
+    "ok": true,
+    "errors": [],
+    "scope": "isg_transport_only",
+    "runtime_files": 10,
+    "mapping_only": true,
+    "tests_executed": false,
+    "release_ready": false,
+    "limitation": "File fingerprints and reviewed symbol labels; not complete AST coverage, legacy inventory, domain acceptance or execution evidence."
+  },
+  "advisors": {
+    "total_findings": 340,
+    "relevant_finding_count": 290,
+    "relevant_levels": { "INFO": 290, "WARN": 0, "ERROR": 0 },
+    "limitation": "Fresh synthetic database; INFO findings are not production performance evidence. Retain FK indexes."
+  },
+  "acceptance": {
+    "total": 263,
+    "covered": 0,
+    "partial": 20,
+    "blocked": 166,
+    "unclaimed": 77
+  },
+  "limits": [
+    "No new native, real provider or store acceptance",
+    "Backup integrity is not measured full-system recovery",
+    "Candidate migration edits require clean disposable rebuild or a separate forward migration for previously migrated local DBs",
+    "Interim synthetic-auth-7C8ots overlapped source edits and is not final evidence",
+    "Source drift guards cover inventoried files, not a whole-repository immutable snapshot"
+  ]
+}

@@ -1,0 +1,35 @@
+[
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "F1959276-90DF-4F82-BF54-D3C0621D3F47",
+        "deviceName" : "iPhone 17 Pro Max",
+        "exportedFileName" : "444E58E9-E123-4599-8F31-AE570C67F644",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "UI Snapshot 2026-09-07 at 06.24.02 ÖÖ",
+        "timestamp" : 1788751442.56
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "F1959276-90DF-4F82-BF54-D3C0621D3F47",
+        "deviceName" : "iPhone 17 Pro Max",
+        "exportedFileName" : "783562C3-FD75-413B-8251-151796443116",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2026-09-07 at 06.24.02 ÖÖ",
+        "timestamp" : 1788751442.955
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "F1959276-90DF-4F82-BF54-D3C0621D3F47",
+        "deviceName" : "iPhone 17 Pro Max",
+        "exportedFileName" : "33AA4AF7-25A7-4624-9DF4-3992CC1C6BF2.mp4",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Screen Recording 2026-09-07 at 06.23.58 ÖÖ.mp4",
+        "timestamp" : 1788751438.605
+      }
+    ],
+    "testIdentifier" : "RiskDetectedUITests/testIOSSheetsFitContentAtExtraLargeText()",
+    "testIdentifierURL" : "test://com.apple.xcode/RiskDetected/RiskDetectedUITests/RiskDetectedUITests/testIOSSheetsFitContentAtExtraLargeText"
+  }
+]

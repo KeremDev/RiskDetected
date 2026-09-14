@@ -30,7 +30,7 @@
     {
       "layer": "CAMPAIGN",
       "status": "partial",
-      "blocker": "No qualification producer, no real send, and no approved commercial values."
+      "blocker": "No real qualification producer, catalogue adapter or send. V5 fixes 7-day gifts and 20% discounts; annual banking, collision, limits, timing and store publication decisions remain open."
     },
     {
       "layer": "COMPATIBILITY",
@@ -40,7 +40,7 @@
     {
       "layer": "CROSS_LAYER_ACCEPTANCE",
       "status": "none",
-      "blocker": "No scenario has been walked from a real client through the server to a visible user outcome in one run."
+      "blocker": "The integrated cross-domain acceptance layer has no scoped proof yet. P05 native-to-server acceptance exists under NATIVE_E2E and must not be erased or extrapolated to all domains."
     },
     {
       "layer": "DELETION",
@@ -80,7 +80,7 @@
     {
       "layer": "NOTES",
       "status": "partial",
-      "blocker": "The offline mutation queue and a second-device conflict run on real hardware are missing."
+      "blocker": "Encrypted native note queues exist. Offline reminder mutations and second-device conflict acceptance on real hardware remain open."
     },
     {
       "layer": "NOTIFICATION",
@@ -105,7 +105,7 @@
     {
       "layer": "STORAGE",
       "status": "partial",
-      "blocker": "Bucket policy, signed URLs and a byte-level restore of real objects are untested."
+      "blocker": "P00 restored and hash-checked 588 objects, including signed downloads. New domain bucket policies and measured RPO/RTO acceptance remain open."
     },
     {
       "layer": "STORE_QA",
@@ -128,6 +128,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -144,6 +151,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -160,6 +174,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -176,6 +197,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -192,6 +220,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -208,6 +243,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -224,6 +266,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -240,6 +289,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -256,6 +312,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -272,6 +335,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -288,6 +358,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -304,6 +381,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -320,6 +404,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -336,6 +427,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -352,6 +450,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -368,6 +473,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -384,6 +496,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -400,6 +519,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -416,6 +542,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -432,6 +565,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -448,6 +588,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -464,6 +611,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -480,6 +634,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -496,6 +657,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -510,6 +678,13 @@
       ],
       "blocking_layers": [],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "SECURITY",
+        "DB",
+        "API"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -524,6 +699,13 @@
       ],
       "blocking_layers": [],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "SECURITY",
+        "DB",
+        "API"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -538,6 +720,13 @@
       ],
       "blocking_layers": [],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "SECURITY",
+        "DB",
+        "API"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -552,6 +741,13 @@
       ],
       "blocking_layers": [],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "SECURITY",
+        "DB",
+        "API"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -566,6 +762,13 @@
       ],
       "blocking_layers": [],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "SECURITY",
+        "DB",
+        "API"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -579,6 +782,12 @@
       ],
       "blocking_layers": [],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DB",
+        "FAULT_INJECTION"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -592,6 +801,12 @@
       ],
       "blocking_layers": [],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DB",
+        "FAULT_INJECTION"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -605,6 +820,12 @@
       ],
       "blocking_layers": [],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DB",
+        "FAULT_INJECTION"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -618,6 +839,12 @@
       ],
       "blocking_layers": [],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DB",
+        "FAULT_INJECTION"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -631,6 +858,12 @@
       ],
       "blocking_layers": [],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DB",
+        "FAULT_INJECTION"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -648,6 +881,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "IMPORT",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -665,6 +905,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "IMPORT",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -682,6 +929,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "IMPORT",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -698,6 +952,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOCUMENT",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -714,6 +974,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOCUMENT",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -730,6 +996,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOCUMENT",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -746,6 +1018,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOCUMENT",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -759,6 +1037,12 @@
       ],
       "blocking_layers": [],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -772,6 +1056,12 @@
       ],
       "blocking_layers": [],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -785,6 +1075,12 @@
       ],
       "blocking_layers": [],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DOMAIN",
+        "DB"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -802,6 +1098,13 @@
         "STORAGE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DELETION",
+        "DB",
+        "STORAGE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -819,6 +1122,13 @@
         "STORAGE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DELETION",
+        "DB",
+        "STORAGE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -835,6 +1145,12 @@
         "COMPATIBILITY"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "OPERATIONS",
+        "COMPATIBILITY"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -851,6 +1167,12 @@
         "COMPATIBILITY"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "OPERATIONS",
+        "COMPATIBILITY"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -867,6 +1189,12 @@
         "COMPATIBILITY"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "OPERATIONS",
+        "COMPATIBILITY"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -883,6 +1211,12 @@
         "COMPATIBILITY"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "OPERATIONS",
+        "COMPATIBILITY"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -899,6 +1233,12 @@
         "COMPATIBILITY"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "OPERATIONS",
+        "COMPATIBILITY"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -915,6 +1255,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -931,6 +1277,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -947,6 +1299,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -963,6 +1321,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -979,6 +1343,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -995,6 +1365,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1011,6 +1387,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1027,6 +1409,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "AUTH",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1043,6 +1431,12 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1059,6 +1453,12 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1075,6 +1475,12 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1091,6 +1497,12 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1107,6 +1519,12 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1123,6 +1541,12 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1139,6 +1563,12 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1155,6 +1585,12 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1168,6 +1604,12 @@
       ],
       "blocking_layers": [],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DB",
+        "CONCURRENCY"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1181,6 +1623,12 @@
       ],
       "blocking_layers": [],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DB",
+        "CONCURRENCY"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1194,6 +1642,12 @@
       ],
       "blocking_layers": [],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DB",
+        "CONCURRENCY"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1207,6 +1661,12 @@
       ],
       "blocking_layers": [],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DB",
+        "CONCURRENCY"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1223,6 +1683,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "NETWORK_PRIVACY",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1239,6 +1705,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "NETWORK_PRIVACY",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1255,6 +1727,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "NETWORK_PRIVACY",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1271,6 +1749,12 @@
         "ADMIN"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "OBSERVABILITY",
+        "ADMIN"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1287,6 +1771,12 @@
         "ADMIN"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "OBSERVABILITY",
+        "ADMIN"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1303,6 +1793,12 @@
         "ADMIN"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "OBSERVABILITY",
+        "ADMIN"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1319,6 +1815,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "FILE_SECURITY",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1335,6 +1837,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "FILE_SECURITY",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1351,6 +1859,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "FILE_SECURITY",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1367,6 +1881,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "FILE_SECURITY",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1383,6 +1903,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "FILE_SECURITY",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1399,6 +1925,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "FILE_SECURITY",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1415,6 +1947,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "NOTIFICATION",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1431,6 +1969,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "NOTIFICATION",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1447,6 +1991,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "NOTIFICATION",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1463,6 +2013,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "NOTIFICATION",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1479,6 +2035,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "NOTIFICATION",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1495,6 +2057,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "NOTIFICATION",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1512,6 +2080,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "DB",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1529,6 +2104,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "DB",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1546,6 +2128,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "DB",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1563,6 +2152,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "NOTES",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1580,6 +2176,13 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "NOTES",
+        "DB",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1596,6 +2199,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "REMINDER",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1612,6 +2221,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "REMINDER",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1628,6 +2243,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "REMINDER",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1644,6 +2265,12 @@
         "NATIVE_E2E"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DESIGN",
+        "NATIVE_E2E"
+      ],
+      "evidence_failures": [],
       "status": "unclaimed",
       "reason": "the required layers have evidence, but no phase has mapped this scenario to a named check"
     },
@@ -1661,6 +2288,13 @@
         "STORAGE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "DELETION",
+        "DB",
+        "STORAGE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1675,6 +2309,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1689,6 +2328,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1703,6 +2347,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1717,6 +2366,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1731,6 +2385,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1745,6 +2404,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1759,6 +2423,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1773,6 +2442,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1787,6 +2461,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1801,6 +2480,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1815,6 +2499,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1829,6 +2518,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1843,6 +2537,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1857,6 +2556,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1871,6 +2575,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1885,6 +2594,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1899,6 +2613,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1913,6 +2632,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1927,6 +2651,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1941,6 +2670,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1955,6 +2689,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1969,6 +2708,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1983,6 +2727,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -1997,6 +2746,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2011,6 +2765,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2025,6 +2784,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2039,6 +2803,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2053,6 +2822,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2067,6 +2841,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2081,6 +2860,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2095,6 +2879,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2109,6 +2898,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2123,6 +2917,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2137,6 +2936,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2151,6 +2955,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2165,6 +2974,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2179,6 +2993,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2193,6 +3012,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2207,6 +3031,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2221,6 +3050,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2235,6 +3069,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2249,6 +3088,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2263,6 +3107,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2277,6 +3126,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2291,6 +3145,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2305,6 +3164,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2319,6 +3183,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2333,6 +3202,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2351,6 +3225,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2369,6 +3250,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2387,6 +3275,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2405,6 +3300,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2423,6 +3325,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2441,6 +3350,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2459,6 +3375,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2477,6 +3400,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2495,6 +3425,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2513,6 +3450,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2531,6 +3475,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2549,6 +3500,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2567,6 +3525,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2585,6 +3550,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2603,6 +3575,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2621,6 +3600,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2639,6 +3625,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2657,6 +3650,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2675,6 +3675,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2693,6 +3700,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2711,6 +3725,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2729,6 +3750,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2747,6 +3775,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2765,6 +3800,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2783,6 +3825,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2801,6 +3850,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2819,6 +3875,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2837,6 +3900,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2855,6 +3925,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2873,6 +3950,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2891,6 +3975,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2909,6 +4000,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2927,6 +4025,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2945,6 +4050,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2963,6 +4075,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2981,6 +4100,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -2999,6 +4125,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3017,6 +4150,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3035,6 +4175,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3053,6 +4200,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3071,6 +4225,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3089,6 +4250,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3107,6 +4275,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3125,6 +4300,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3143,6 +4325,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3161,6 +4350,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3179,6 +4375,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3197,6 +4400,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3215,6 +4425,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3233,6 +4450,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3251,6 +4475,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3269,6 +4500,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3287,6 +4525,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3305,6 +4550,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3323,6 +4575,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3341,6 +4600,13 @@
         "STORE_QA"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CAMPAIGN",
+        "BILLING",
+        "STORE_QA"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3355,6 +4621,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3369,6 +4640,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3383,6 +4659,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3397,6 +4678,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3411,6 +4697,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3425,6 +4716,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3439,6 +4735,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3453,6 +4754,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3467,6 +4773,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3481,6 +4792,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3495,6 +4811,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3509,6 +4830,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3523,6 +4849,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3537,6 +4868,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3551,6 +4887,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3565,6 +4906,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3579,6 +4925,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3593,6 +4944,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3607,6 +4963,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3623,8 +4984,13 @@
       "claimed_by": [
         "docs/isg/evidence/P17_SCORE_PORTFOLIO_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X21",
@@ -3637,6 +5003,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3651,6 +5022,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3665,6 +5041,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3679,6 +5060,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3693,6 +5079,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3707,6 +5098,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3721,6 +5117,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3735,6 +5136,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3749,6 +5155,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3763,6 +5174,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3777,6 +5193,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -3793,8 +5214,13 @@
       "claimed_by": [
         "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X33",
@@ -3809,8 +5235,13 @@
       "claimed_by": [
         "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X34",
@@ -3825,8 +5256,13 @@
       "claimed_by": [
         "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X35",
@@ -3841,8 +5277,13 @@
       "claimed_by": [
         "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X36",
@@ -3857,8 +5298,13 @@
       "claimed_by": [
         "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X37",
@@ -3873,8 +5319,13 @@
       "claimed_by": [
         "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X38",
@@ -3889,8 +5340,13 @@
       "claimed_by": [
         "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X39",
@@ -3905,8 +5361,13 @@
       "claimed_by": [
         "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X40",
@@ -3921,8 +5382,13 @@
       "claimed_by": [
         "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X41",
@@ -3937,8 +5403,13 @@
       "claimed_by": [
         "docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X42",
@@ -3953,8 +5424,13 @@
       "claimed_by": [
         "docs/isg/evidence/P15_CAMPAIGN_CORE_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X43",
@@ -3969,8 +5445,13 @@
       "claimed_by": [
         "docs/isg/evidence/P15_CAMPAIGN_CORE_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X44",
@@ -3985,8 +5466,13 @@
       "claimed_by": [
         "docs/isg/evidence/P15_CAMPAIGN_CORE_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X45",
@@ -4001,8 +5487,13 @@
       "claimed_by": [
         "docs/isg/evidence/P15_CAMPAIGN_CORE_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X46",
@@ -4017,8 +5508,13 @@
       "claimed_by": [
         "docs/isg/evidence/P15_CAMPAIGN_CORE_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X47",
@@ -4031,6 +5527,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -4045,6 +5546,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -4059,6 +5565,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -4073,6 +5584,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -4087,6 +5603,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -4101,6 +5622,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -4117,8 +5643,13 @@
       "claimed_by": [
         "docs/isg/evidence/P16_OBSERVABILITY_ADMIN_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X54",
@@ -4133,8 +5664,13 @@
       "claimed_by": [
         "docs/isg/evidence/P16_OBSERVABILITY_ADMIN_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X55",
@@ -4149,8 +5685,13 @@
       "claimed_by": [
         "docs/isg/evidence/P16_OBSERVABILITY_ADMIN_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X56",
@@ -4163,6 +5704,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -4177,6 +5723,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -4193,8 +5744,13 @@
       "claimed_by": [
         "docs/isg/evidence/P19_INTEGRATED_REHEARSAL_2026-09-14.json"
       ],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "partial",
-      "reason": "claimed, but a required layer is not full yet"
+      "reason": "claimed, but current scenario-bound proof or required layer coverage is incomplete"
     },
     {
       "id": "TRANSITION:X59",
@@ -4207,6 +5763,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     },
@@ -4221,6 +5782,11 @@
         "CROSS_LAYER_ACCEPTANCE"
       ],
       "claimed_by": [],
+      "verified_layers": [],
+      "missing_proof_layers": [
+        "CROSS_LAYER_ACCEPTANCE"
+      ],
+      "evidence_failures": [],
       "status": "blocked",
       "reason": "a required layer has produced nothing at all"
     }

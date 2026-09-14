@@ -52,8 +52,9 @@ export function beginNotificationDeviceProbe({synthetic,sql,ownerID,companyID,pa
   const job=JSON.parse(sql(`SELECT private_isg.enqueue_notification(${q(episode)},'push','home','home',100,clock_timestamp(),'Europe/Istanbul',clock_timestamp());`)).job_id;
   const read=()=>JSON.parse(sql(`SELECT private_isg.notification_registered_device(${q(job)},clock_timestamp(),3600);`));
   mark('trusted_read_uses_recorded_device',read().device?.token_id===tokenID&&read().device?.app_build===120);
-  record('synthetic-device-token','fcm',121,false);
-  mark('revocation_and_build_are_device_scoped',read().device?.os_authorized===false&&read().device?.app_build===121);
+  mark('revocation_write_recorded',record('synthetic-device-token','fcm',121,false).recorded===true);
+  const revoked=read();
+  mark('revocation_and_build_are_device_scoped',revoked.device?.os_authorized===false&&revoked.device?.app_build===121);
   sql(`UPDATE private_isg.notification_device_permissions SET observed_at=clock_timestamp()-interval '2 hours' WHERE token_id=${q(tokenID)};`);
   mark('stale_permission_not_eligible',read().device===null);
   record('synthetic-device-token');

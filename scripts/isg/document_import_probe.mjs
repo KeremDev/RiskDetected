@@ -120,23 +120,50 @@ export async function beginDocumentImportProbe({synthetic,sql,concurrentSql,comp
   mark('a_scanned_original_never_becomes_a_structured_spreadsheet',
     ok('export',{document:scanned.document_id,version:1,format:'xlsx',now:now(25)}).content_kind==='metadata_index'&&
     ok('export',{document:scanned.document_id,version:1,format:'pdf',now:now(26)}).content_kind==='structured');
+  for (const [name, change] of [
+    ['company', 'company_id=NULL'], ['owner', 'owner_id=(SELECT id FROM public.profiles WHERE id<>'+quote(ownerID)+' ORDER BY id LIMIT 1)'],
+    ['purpose', "purpose='structured_import'"], ['format', "extension='xlsx'"]]) {
+    const result=sql("BEGIN;UPDATE private_isg.file_assets SET "+change+" WHERE asset_id="+quote(asset)+
+      ";SELECT isg_doc_test.observe('export_settle',"+json({job:pdf.job_id,state:'ready',asset,error:null,now:now(27)})+");ROLLBACK;");
+    mark('export_rejects_wrong_asset_'+name,JSON.parse(result.split('\n').at(-1)).error==='ACCESS_DENIED');
+  }
   mark('a_render_failure_is_separate_from_a_ready_document',
     ok('export_settle',{job:pdf.job_id,state:'ready',asset,error:null,now:now(27)}).state==='ready'&&
     ok('export_settle',{job:xlsx.job_id,state:'failed',asset:null,error:'RENDER_FAILED',now:now(28)}).state==='failed'&&
     sql("SELECT count(*) FROM private_isg.document_versions WHERE document_id="+quote(document.document_id)+";")==='1');
   mark('a_ready_export_is_not_overwritten',call('export_settle',{job:pdf.job_id,state:'failed',asset:null,
     error:'RENDER_FAILED',now:now(29)}).error==='VALIDATION_ERROR');
+  mark('ready_export_replay_cannot_substitute_another_asset',call('export_settle',{
+    job:pdf.job_id,state:'ready',asset:randomUUID(),error:null,now:now(29)}).error==='IDEMPOTENCY_CONFLICT'&&
+    ok('export_settle',{job:pdf.job_id,state:'ready',asset,error:null,now:now(29)}).replayed===true);
 
-  const batchArgs=(over={})=>({company:companyID,target:'employee',asset,file_sha256:hex('personel.xlsx'),
+  // Import proof must come from the actual P04 structured-import lifecycle,
+  // not a convenient PDF asset plus an unrelated caller-supplied hash.
+  sql("UPDATE private_isg.rollout SET read_enabled=true,write_enabled=true WHERE feature='file_core';");
+  const importHash=hex('personel.xlsx');
+  const intent=JSON.parse(sql("SELECT private_isg.open_upload_intent("+quote(ownerID)+","+quote(companyID)+",'structured_import','xlsx',12,decode("+quote(importHash)+",'hex'),gen_random_uuid(),gen_random_uuid(),NULL,true,3600,"+quote(now(30))+");")).intent_id;
+  sql("SELECT private_isg.mark_upload_received("+quote(intent)+",12,decode("+quote(importHash)+",'hex'),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',"+quote(now(31))+");"+
+    "SELECT private_isg.record_scan_result("+quote(intent)+",'synthetic','1','clean',NULL,decode("+quote(importHash)+",'hex'),'{}'::jsonb,"+quote(now(32))+");");
+  const importAsset=JSON.parse(sql("SELECT private_isg.promote_clean_upload("+quote(intent)+",'isg-private',decode("+quote(importHash)+",'hex'),12,"+quote(now(33))+");")).asset_id;
+  sql("UPDATE private_isg.rollout SET read_enabled=false,write_enabled=false WHERE feature='file_core';");
+  const batchArgs=(over={})=>({company:companyID,target:'employee',asset:importAsset,file_sha256:importHash,
     mapping_version:1,mutation:randomUUID(),date_system:'1900',decimal:',',
     columns:['employee_code','full_name','hired_on'],now:now(40),...over});
   mark('a_health_column_stops_the_batch_before_it_opens',call('batch',batchArgs({columns:['full_name','saglik_raporu']})).error==='HEALTH_COLUMN_REFUSED');
   const batchMutation=randomUUID();
   const batch=ok('batch',batchArgs({mutation:batchMutation}));
+  mark('unimplemented_equipment_import_fails_closed',call('batch',batchArgs({target:'equipment'})).error==='FEATURE_UNAVAILABLE');
+  mark('import_rejects_wrong_asset_purpose_and_hash',call('batch',batchArgs({asset})).error==='ACCESS_DENIED'&&
+    call('batch',batchArgs({file_sha256:hex('wrong')})).error==='ACCESS_DENIED');
+  const scoped=sql("BEGIN;UPDATE private_isg.file_assets SET company_id=NULL WHERE asset_id="+quote(importAsset)+";SELECT isg_doc_test.observe('batch',"+json(batchArgs())+");ROLLBACK;");
+  mark('import_asset_must_belong_to_the_target_company',JSON.parse(scoped.split('\n').at(-1)).error==='ACCESS_DENIED');
   mark('a_batch_is_idempotent_per_company_and_mutation',ok('batch',batchArgs({mutation:batchMutation})).replayed===true&&
     sql("SELECT count(*) FROM private_isg.import_batches;")==='1');
   mark('the_same_file_for_another_purpose_is_an_explicit_conflict',
     call('batch',batchArgs({mutation:batchMutation,mapping_version:2})).error==='IDEMPOTENCY_CONFLICT');
+  mark('import_replay_checks_date_decimal_and_column_mapping',[
+    {date_system:'1904'},{decimal:'.'},{columns:['employee_code','full_name']}].every(over=>
+      call('batch',batchArgs({mutation:batchMutation,...over})).error==='IDEMPOTENCY_CONFLICT'));
   const existingCode=sql("SELECT employee_code FROM private_isg.employees WHERE company_id="+quote(companyID)+" ORDER BY id LIMIT 1;");
   const rows=[
     [1,{employee_code:'IMP-001',full_name:'İthal Personel A',hired_on:'2026-01-15'}],
@@ -154,8 +181,14 @@ export async function beginDocumentImportProbe({synthetic,sql,concurrentSql,comp
     staged[1].normalised.hired_on==='2023-03-15');
   mark('a_health_column_in_a_row_is_refused_too',call('row',{batch:batch.batch_id,row_no:7,
     raw:{employee_code:'IMP-007',full_name:'X',kan_grubu:'A'},now:now(42)}).error==='HEALTH_COLUMN_REFUSED');
+  mark('unknown_metadata_and_nested_values_cannot_enter_import_raw_rows',
+    call('row',{batch:batch.batch_id,row_no:7,raw:{employee_code:'IMP-007',full_name:'X',extra:{health:'not stored'}},now:now(42)}).error==='HEALTH_COLUMN_REFUSED'&&
+    call('row',{batch:batch.batch_id,row_no:7,raw:{employee_code:'IMP-007',full_name:{arbitrary:'content'}},now:now(42)}).error==='VALIDATION_ERROR');
   mark('a_commit_without_a_preview_is_refused',call('commit',{batch:batch.batch_id,preview:hex('none'),allow_partial:false,now:now(43)}).error==='PREVIEW_REQUIRED');
   const preview=ok('preview',{batch:batch.batch_id,now:now(44)});
+  const revised=sql("BEGIN;SELECT isg_doc_test.observe('row',"+json({batch:batch.batch_id,row_no:1,raw:{...rows[0][1],full_name:'Changed after review'},now:now(44)})+");"+
+    "SELECT isg_doc_test.observe('preview',"+json({batch:batch.batch_id,now:now(44)})+");ROLLBACK;");
+  mark('preview_hash_changes_when_only_row_content_changes',JSON.parse(revised.split('\n').at(-1)).result?.preview_sha256!==preview.preview_sha256);
   mark('the_preview_lists_every_outcome',preview.summary.rows===6&&preview.summary.ok===2&&preview.summary.error===2&&
     preview.summary.duplicate===1&&preview.summary.review===1);
   mark('a_stale_preview_hash_can_not_commit',call('commit',{batch:batch.batch_id,preview:hex('other'),allow_partial:true,now:now(45)}).error==='PREVIEW_STALE');

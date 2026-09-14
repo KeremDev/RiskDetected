@@ -2,6 +2,7 @@ import {readFileSync,writeFileSync,readdirSync,existsSync} from 'node:fs';
 import {resolve,join} from 'node:path';
 import {ROOT} from './lib.mjs';
 import {buildTestManifest} from './build_test_manifest.mjs';
+import {createHash} from 'node:crypto';
 
 const LAYERS_PATH='docs/isg/acceptance/layer-evidence.json';
 const REGISTRY_PATH='docs/isg/V5_ACCEPTANCE_TEST_REGISTRY.csv';
@@ -9,6 +10,40 @@ const REPORT_PATH='docs/isg/acceptance/coverage-report.json';
 const EVIDENCE_DIR='docs/isg/evidence';
 
 const read=path=>readFileSync(resolve(ROOT,path),'utf8');
+
+// A legacy short-id claim remains useful inventory, but never proves a case.
+// A successful run must itself bind exact scenario + layer + executed checks,
+// and fingerprint every source dependency declared by the binding.
+export function verifyScenarioEvidence({caseID,requiredLayers,bindings,readArtifact,hashSource}){
+  const verified=new Set(), failures=[];
+  for(const binding of bindings.filter(b=>b.case_id===caseID)){
+    try {
+      if(!requiredLayers.includes(binding.layer))throw Error('UNRELATED_LAYER');
+      if(!Array.isArray(binding.check_ids)||binding.check_ids.length===0 ||
+         new Set(binding.check_ids).size!==binding.check_ids.length)throw Error('MISSING_CHECKS');
+      if(!Array.isArray(binding.required_sources)||binding.required_sources.length===0)throw Error('MISSING_SOURCES');
+      const artifact=readArtifact(binding.evidence_file);
+      if(artifact.ok!==true)throw Error('RUN_NOT_PASS');
+      const checks=artifact.checks??[];
+      if(binding.check_ids.some(id=>checks.filter(c=>c.id===id).length!==1 ||
+          checks.find(c=>c.id===id)?.result!=='PASS'))throw Error('CHECK_NOT_PASS');
+      const proof=(artifact.acceptance_checks??[]).find(p=>p.case_id===caseID&&p.layer===binding.layer&&
+        binding.check_ids.every(id=>p.check_ids?.includes(id)));
+      if(!proof)throw Error('NO_SCENARIO_PROOF');
+      for(const path of new Set([...binding.required_sources,...Object.keys(artifact.source_sha256??{})])){
+        const expected=artifact.source_sha256?.[path];
+        if(!expected||expected!==hashSource(path))throw Error('STALE_SOURCE');
+      }
+      verified.add(binding.layer);
+    }catch(error){ failures.push({layer:binding.layer,evidence_file:binding.evidence_file,reason:error.message}); }
+  }
+  return {verified_layers:[...verified].sort(),missing_layers:requiredLayers.filter(l=>!verified.has(l)),failures};
+}
+
+function safeEvidencePath(path){
+  if(typeof path!=='string'||path.startsWith('/')||path.split(/[\\/]/).includes('..'))throw Error('INVALID_EVIDENCE_PATH');
+  return resolve(ROOT,path);
+}
 
 function parseCSV(text){
   const rows=[];let row=[],field='',quoted=false;
@@ -70,6 +105,7 @@ export function buildLedger(){
   const manifest=buildTestManifest(ROOT);
   const registry=parseCSV(read(REGISTRY_PATH));
   const claims=collectClaims();
+  const bindings=JSON.parse(read('docs/isg/acceptance/scenario-evidence.json')).bindings;
   const problems=[];
 
   for(const [name,entry] of Object.entries(layers)){
@@ -97,18 +133,23 @@ export function buildLedger(){
     const unknown=required.filter(layer=>!layers[layer]);
     if(unknown.length)problems.push(`${id} requires unknown layer(s) ${unknown.join(',')}`);
     const blocking=required.filter(layer=>layers[layer]?.status!=='full');
-    const claimed=claims.get(short)??[];
+    const sameShort=manifest.cases.filter(c=>(c.kind==='transition'?c.id.replace('TRANSITION:',''):c.id.split(':').at(-1))===short);
+    const claimed=claims.get(id)??(sameShort.length===1?claims.get(short)??[]:[]);
+    const proof=verifyScenarioEvidence({caseID:id,requiredLayers:required,bindings,
+      readArtifact:path=>JSON.parse(readFileSync(safeEvidencePath(path),'utf8')),
+      hashSource:path=>createHash('sha256').update(readFileSync(safeEvidencePath(path))).digest('hex')});
     let status;
-    if(claimed.length&&blocking.length===0)status='covered';
+    if(proof.missing_layers.length===0&&blocking.length===0)status='covered';
     else if(claimed.length)status='partial';
     else if(blocking.some(layer=>layers[layer]?.status==='none'))status='blocked';
     else status='unclaimed';
-    const reason=status==='covered'?'every required layer is full and a phase claimed it'
-      :status==='partial'?'claimed, but a required layer is not full yet'
+    const reason=status==='covered'?'every required layer has current, passing, scenario-bound evidence'
+      :status==='partial'?'claimed, but current scenario-bound proof or required layer coverage is incomplete'
       :status==='blocked'?'a required layer has produced nothing at all'
       :'the required layers have evidence, but no phase has mapped this scenario to a named check';
     cases.push({id,short,kind:isTransition?'transition':'source',required_layers:required,
-      blocking_layers:blocking,claimed_by:claimed,status,reason});
+      blocking_layers:blocking,claimed_by:claimed,verified_layers:proof.verified_layers,
+      missing_proof_layers:proof.missing_layers,evidence_failures:proof.failures,status,reason});
   }
 
   const counts=cases.reduce((acc,entry)=>{acc[entry.status]=(acc[entry.status]??0)+1;return acc;},{});

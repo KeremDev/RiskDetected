@@ -52,7 +52,7 @@ test('abuse guards are canonical account only',()=>{
 });
 
 test('an annual or unreadable inviter takes no branch and is not read as Free',()=>{
-  assert.match(migration,/WHEN paid_state='unknown' THEN 'unknown'/);
+  assert.match(migration,/WHEN uncertain THEN 'unknown'/);
   assert.match(migration,/'UNSUPPORTED_BRANCH'/);
   assert.match(migration,/'auto_plan_conversion',false/);
   assert.match(migration,/'treated_as_free',false/);
@@ -75,7 +75,7 @@ test('a suppression never resets the clock and a contact claims no delivery',()=
   assert.match(migration,/'ttl_reset',false/);
   // The send-time re-read: consent for this exact channel, then the lifecycle.
   assert.match(migration,/purpose='marketing' AND channel=p_channel AND granted/);
-  assert.match(migration,/IF paid_now IN \('active','in_trial','grace'\) THEN refusal:='resubscribed'/);
+  assert.match(migration,/eligibility:=private_isg.winback_eligibility\(entry.owner_id,entry.campaign_id,entry.plan_period_at_open,p_now\)/);
 });
 
 test('a pause stops production without revoking anything earned',()=>{

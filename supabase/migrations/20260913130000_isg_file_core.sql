@@ -238,6 +238,7 @@ BEGIN
   SELECT * INTO entry FROM private_isg.upload_intents WHERE intent_id=p_intent FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
   IF entry.state NOT IN ('uploaded','scanning') THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
+  IF entry.expires_at<=p_now THEN RETURN private_isg.reject_upload_intent(p_intent,'EXPIRED',p_now); END IF;
   -- The scanner must have read the same bytes the upload recorded.
   IF p_scanned_sha256<>entry.received_sha256 THEN RETURN private_isg.reject_upload_intent(p_intent,'HASH_MISMATCH',p_now); END IF;
   INSERT INTO private_isg.file_scan_results(intent_id,scanner,scan_version,verdict,finding_code,scanned_sha256,evidence,scanned_at)
@@ -263,6 +264,7 @@ BEGIN
     RETURN jsonb_build_object('schema_version',1,'intent_id',p_intent,'asset_id',asset,'immutable_path',path,'replayed',true);
   END IF;
   IF entry.state<>'clean' THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
+  IF entry.expires_at<=p_now THEN RETURN private_isg.reject_upload_intent(p_intent,'EXPIRED',p_now); END IF;
   SELECT * INTO scan FROM private_isg.file_scan_results WHERE intent_id=p_intent FOR SHARE;
   IF NOT FOUND OR scan.verdict<>'clean' THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   -- Anti-TOCTOU: the bytes promoted must still be the bytes that were scanned.
@@ -287,7 +289,7 @@ BEGIN
   PERFORM private_isg.file_gate(true);
   IF p_now IS NULL THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   FOR stale IN SELECT intent_id FROM private_isg.upload_intents
-    WHERE state IN ('pending','uploaded','scanning') AND expires_at<=p_now ORDER BY intent_id LOOP
+    WHERE state IN ('pending','uploaded','scanning','clean') AND expires_at<=p_now ORDER BY intent_id LOOP
     PERFORM private_isg.reject_upload_intent(stale,'EXPIRED',p_now); expired:=expired+1;
   END LOOP;
   RETURN expired;

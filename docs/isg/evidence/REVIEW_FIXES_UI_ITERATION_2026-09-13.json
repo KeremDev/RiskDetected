@@ -1,0 +1,335 @@
+{
+  "schema_version": 1,
+  "scope": "Local review fixes; not release acceptance",
+  "ok": true,
+  "run_id": "1d4574fc-e010-445a-a30a-d18f23b215d1",
+  "report_path": "output/isg/runs/synthetic-auth-0i8hMm/REPORT.json",
+  "report_sha256": "0bde0c9d1ea517fdf48787100a4674e474673fe36da8194a350951cd0c7286bc",
+  "started_at": "2026-09-13T18:39:45.140Z",
+  "finished_at": "2026-09-13T18:42:08.230Z",
+  "full_run_check_count": 1025,
+  "full_run_unique_count": 1024,
+  "check_list_scope": "campaign regression checks only",
+  "checks": [
+    {
+      "id": "campaign_core_migration_applied_with_closed_rollout",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_gate_blocks_the_campaign_ledger_while_rollout_off",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_campaign_tables_have_rls_and_no_client_grant",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_no_address_network_or_device_column_exists",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_a_campaign_version_can_not_publish_itself_without_a_human",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_publication_records_the_human_and_keeps_the_values_unapproved",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_a_code_belongs_to_one_canonical_account",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_nobody_invites_themselves",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_one_invitee_belongs_to_one_family_once",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_an_invited_account_can_not_invite_its_own_inviter_back",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_a_screen_view_has_no_row_shape_and_a_client_claim_is_refused",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_one_day_of_work_is_not_enough",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_the_same_operation_is_never_counted_twice",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_an_unpublished_revision_qualifies_nobody",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_two_distinct_days_of_real_work_qualify_without_marketing_consent",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_a_client_can_not_relabel_its_own_proof",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_reward_rejects_another_campaign_and_nonexistent_version",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_fully_funded_foreign_campaign_cannot_reward_this_claim",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_qualification_snapshot_survives_plan_change_and_award_hint",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_same_campaign_revision_cannot_replace_qualification_version",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_no_reward_without_a_budget_row",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_an_approved_looking_cap_is_impossible",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_a_paid_monthly_inviter_gets_a_discount_and_the_invitee_a_gift",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_the_reward_is_committed_against_the_budget",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_free_qualification_does_not_turn_into_discount_after_purchase",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_missing_billing_evidence_is_pending_not_silent_free",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_grace_qualification_is_pending_not_free_or_paid",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_unknown_qualification_is_pending_not_free_or_paid",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_newer_expired_store_does_not_mask_active_inviter",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_an_annual_inviter_is_preserved_for_policy_review_not_rejected",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_an_account_that_never_paid_or_can_not_be_read_is_no_candidate",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_an_active_subscriber_is_not_a_winback_candidate",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_a_real_expired_monthly_payer_is_eligible",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_an_annual_or_unknown_plan_period_is_refused_with_its_own_reason",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_a_refused_episode_is_written_down_instead_of_disappearing",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_an_episode_waits_the_candidate_seventy_two_hours",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_a_family_opens_one_episode_for_a_lifetime",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_nothing_is_sent_before_the_waiting_time",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_an_os_permission_is_not_a_marketing_consent",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_send_time_paused_is_suppressed",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_send_time_on_hold_is_suppressed",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_send_time_refunded_is_suppressed",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_send_time_revoked_is_suppressed",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_send_time_unknown_is_suppressed",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_send_time_older_active_other_store_is_suppressed",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_send_time_new_active_gift_is_suppressed",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_send_time_review_flag_is_not_treated_as_expired",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_a_consented_contact_is_an_attempt_and_not_a_delivery",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_a_second_contact_waits_its_own_gap",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_resubscribing_during_the_send_suppresses_without_resetting_the_clock",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_a_suppressed_episode_accepts_no_further_contact",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_a_pause_stops_new_production_and_keeps_what_was_earned",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_a_paused_campaign_rewards_nobody_new_even_when_qualified",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_the_budget_refuses_the_third_reward_of_a_two_reward_period",
+      "result": "PASS"
+    },
+    {
+      "id": "campaign_core_kill_switch_stops_every_campaign_producer",
+      "result": "PASS"
+    }
+  ],
+  "source_sha256": {
+    "scripts/isg/run_auth_restore.mjs": "e8e82f21a9ad293772c50221e1b09a14944449bf6fc4adda4fa6beacfbcb591a",
+    "scripts/isg/password_auth_probe.mjs": "a019d47f0bddd2d4f6b6b179e62503d0fc17aadd90f735263bad4ea86ad5d7cc",
+    "scripts/isg/signup_recovery_probe.mjs": "bbcd21630df79e5fc2095dc354e90d7b5b0e410d3f3b1caf270e877c53099c1d",
+    "scripts/isg/auth_mail_sink.cjs": "07e7e5b6e34cbe08c664b1948b9c6f99b1ebe3f4735d79bb2dbb60c70c6cc275",
+    "scripts/isg/auth_session_probe.mjs": "1c858ffda4550d4b019c08192dfc67c4a4dafbf691ab973caf1968aca37faebe",
+    "scripts/isg/auth_mutation_probe.mjs": "ac64fae84161e4af3f6a761b187ff09df2916cef106bf32dcddb8ee17b9aece9",
+    "scripts/isg/sql/auth_mutation_fixture.sql": "0ed052d6edb148743bfaa6014ac030748a11acf1b41db65ebfad5be399f6d03c",
+    "scripts/isg/sql/transaction_fixture.sql": "87eafb27e40d6db096a6e10837655a3f7e823e75e0aaaaed4b978e2ae8f52b18",
+    "scripts/isg/restore_mode.mjs": "981587b8559f14d58e771563a0921a1ea8c6290d66aa2ff07bc4c752f990136f",
+    "scripts/isg/sql/auth_session_fixture.sql": "bc5deff6efae02be4c0afe88c07101820c338861676f39879e96a136c3ed751d",
+    "scripts/isg/auth_restore_guard.mjs": "8d1bfa75f4036bae891fc827c9f104244628a0973151435622bcf993a61d7845",
+    "scripts/isg/sql/workplace_fixture.sql": "81bb64bcbef8690582a6c70086dafc3194e47dfce63cb1025bb0ef43395236f7",
+    "scripts/isg/sql/personnel_fixture.sql": "b244c04e7c6b113eb5a57fb0f16b5071f517350e809fa0c3da12f90ebc93c9eb",
+    "scripts/isg/sql/personnel_mutation_fixture.sql": "2883d334e4ece4428c1499cedce5e14ac3f08a05fecf4982fb12d1769fc04d21",
+    "scripts/isg/sql/employee_intake_fixture.sql": "7b505578674a737f6c756c80c9515c3ea5e4a40e0965743d6c79a9f3c7b7b453",
+    "scripts/isg/sql/employee_directory_fixture.sql": "093325cfafccc3b8e5e79e2c0543199e536b02dc01aa79b95b41f434fba2e1e8",
+    "scripts/isg/sql/auth_personnel_fixture.sql": "c26b4c51b8b3a9b681c6a6808a4d7ecb801883e5a4e52e5c0e146aa531d135de",
+    "scripts/isg/auth_personnel_probe.mjs": "05e584e85e5e453ab79564bbc0d77245dc63d1fed2e7a4bc1518e7009bbbb9a0",
+    "supabase/functions/_shared/personnel/directory-request.ts": "338aefc2f7bb9198e68ccd3cfcb11b7f4902e706b782137ccbad096a712a4015",
+    "supabase/functions/_shared/personnel/employee-create.ts": "3f50549d7e4fe4319ee286359a1169e77308828fecfc2913215bb98e07ce5635",
+    "supabase/functions/_shared/isg/mutation-context.ts": "7e74a453c320be3fe3f61ae7abc084ccea36e17f3c8b3d480823ca67cdfa7e90",
+    "supabase/migrations/20260913074153_isg_personnel_owner_rpc.sql": "a04da9ebbe6e184776dda705e7110a28e8bbe676b4f57f53a9f5a704816729c7",
+    "supabase/migrations/20260520154818_add_companies.sql": "c7ce21b0c52833812ce1f6be895f2f95b4a149c31794b387b7e7e6dc793a080d",
+    "supabase/migrations/20260513101505_free_plus_pro_subscription_system.sql": "863be44ce77558396c70def1dbbcf6de159608f9894dd18886f39d27aa779c8a",
+    "supabase/migrations/20260513223911_fix_subscription_quota_review_findings.sql": "234b01e049eec7f4b3828549162be6a81843e7073f16db5c69561e63f14d59e1",
+    "scripts/isg/personnel_migration_probe.mjs": "d26f8791871978c5e2a5a2995f07cc7cf09e468799d6fc6b531b89716a45221c",
+    "scripts/isg/personnel_http_probe.mjs": "61339bf96df283a5abdac847a1bf90d0c9c17c063c9484e8232581372ef8d480",
+    "scripts/isg/personnel_advisor_probe.mjs": "670c531de00b819bbb8c7a0df2527bd63555253c400b0df3573ecdacfe9917f9",
+    "supabase/functions/_shared/personnel/rpc-request.ts": "e86d9015efc5a49c4e1208bdcca2a54122740bf8ec2eb5f8fa24917db59785b9",
+    "supabase/migrations/20260913081536_isg_workplace_context_assignments.sql": "69b44f626206dc5f5e2be147f4106f17016e030a86f2bd86e08e76dc043768a0",
+    "scripts/isg/directory_migration_probe.mjs": "2f23ce7e1ecfbead520406900cabc25383ab963d46fd0830aaaa6eabf8f74ad7",
+    "supabase/migrations/20260913084736_isg_workspace_availability.sql": "35c85511a890f0ec34570d29f17c017f7668c5c493c85e58798c07f2f1a5b68f",
+    "scripts/isg/workspace_availability_probe.mjs": "5ff596fcc7becdcdd973a8c21599e919df0262be0684abc48f9eac229af93917",
+    "supabase/migrations/20260913092642_isg_personnel_reactivation.sql": "350f2bfc96ac5866836fd51f8ce1ca8100e8b871121fdc1eb636c18735c11376",
+    "supabase/migrations/20260913110000_isg_event_dispatch.sql": "ed58daf6ea41b61d0cdf0926948867ff2e7c4106e42c5bcc1db5b755c7291c48",
+    "supabase/migrations/20260913113000_isg_quota_reservations.sql": "ad3bde2ce2144abb8ba5edc1fc6e782adc4461f28209b3a2787591c98c491756",
+    "scripts/isg/dispatch_quota_probe.mjs": "fc79fd792b2c6e53f8898e219b99c0c1e11793420273c5cbbe7978eccdb014ad",
+    "supabase/migrations/20260913130000_isg_file_core.sql": "374a8b0a8e1a41520a645bb28f1c0a1f722dc9882df604007365a32807374737",
+    "scripts/isg/file_core_probe.mjs": "0ab7557b7b4d095a249e71c5f296f2e080ce548ac45314dee1f1afa1f6af1148",
+    "supabase/migrations/20260913150000_isg_rule_core.sql": "4ce4c7608847e41cdf652188560052e24cf35f618834deb6e99ae945978bccc3",
+    "scripts/isg/rule_core_probe.mjs": "bef7d1832794566f2c858915c5749ba0dc0c030b0e566805cca8b3a160fcc12b",
+    "supabase/migrations/20260913170000_isg_training_core.sql": "bb4599ef74c1347bc07f4d9cea800734e3ab9de61fac9521e1e3956d5e86927d",
+    "scripts/isg/training_core_probe.mjs": "edfdc4a22af32cdbdb248288f68a9ad812e02bcfd9348916bd8630dc8cd246dd",
+    "supabase/migrations/20260913190000_isg_risk_versioning.sql": "7d1ea9540068e84aa4c1b71a0ee499c95f4d053f2bc3fc0d5bb73d3484dbda5c",
+    "scripts/isg/risk_core_probe.mjs": "131597b05833888529b1d61f30329cc0fc58468d85d86589669baffa191a0c58",
+    "supabase/migrations/20260913210000_isg_nonconformity_core.sql": "3f6ad79a032e222abecf1a65a589e188867b100a84690795c8a1bf35925140db",
+    "scripts/isg/nonconformity_core_probe.mjs": "703e852698a2ab758cee885accdd7573c61f63b6e306b0b3a9a40867b3bcdd1b",
+    "supabase/migrations/20260913230000_isg_module_core.sql": "b587dce412758fb1c3ebe117570f7cc0ae3499fb3a95bca736c3de64318a4bc0",
+    "scripts/isg/module_core_probe.mjs": "56f95d9c814877675731852826a004c9f4d83bcb0db40b3ac6f34192c939851e",
+    "supabase/migrations/20260914010000_isg_module_core_second.sql": "f436594595a7080af1d66e057063b56d0144efedf6f88e78ff773d9fb3aaeeaf",
+    "scripts/isg/module_second_probe.mjs": "6e3ddc7d82559c20e90ea531267c779703520683ec0fc3d8c645e78fb0772bce",
+    "supabase/migrations/20260914030000_isg_document_import_core.sql": "83587399e19583d479098ffa4acb54f99b209b01eac9ee4891da5358cfb0b748",
+    "scripts/isg/document_import_probe.mjs": "e34984964909b733b6b697a60c6ad60c9083600d0ee525379a6c085fe9ceb963",
+    "supabase/migrations/20260914050000_isg_notification_core.sql": "fb85c6dbb191c4ac248e61a258ade506864ea0c897675cddc1c7687e6c2dfc5d",
+    "scripts/isg/notification_core_probe.mjs": "bf04d49f5856f52939276b7395b44f732f75ffb2b6f1d31810b656897d839aac",
+    "supabase/migrations/20260914070000_isg_personal_notes.sql": "a4f753d937fef910ee8c1872d2427282b77d3eb0230343c332cf5c758e2c826e",
+    "scripts/isg/personal_notes_probe.mjs": "07c58c1a59550e6b54a4de857cfb2c46764329678877aa247f31645d91b69406",
+    "supabase/migrations/20260914090000_isg_billing_lifecycle.sql": "18e95b83fe0631bcd5887207d185bcb2e91607d7437981311234f871250eedf4",
+    "scripts/isg/billing_lifecycle_probe.mjs": "4764141febe2b082b237091219ae134d07bd74e81a16e366b2e76332d78cb852",
+    "supabase/migrations/20260914110000_isg_campaign_core.sql": "7e110f1e28b3be0a3442ae249100cfc1a85c895f9c1ce03d98504cad7f07256d",
+    "scripts/isg/campaign_core_probe.mjs": "1c4d2328e7f0a64ef95920a1cafdee562dca95138021cf5cf404f97f8eaf6cc8",
+    "supabase/migrations/20260914130000_isg_observability_admin.sql": "991c1ce8635daa21e0975c3dfe3aa3ca590393a72bbe011b859213c41ba0523e",
+    "scripts/isg/observability_admin_probe.mjs": "d3be5c1c14d1fcb211b24f6d331ca8bc8064b3c5fc38570eb1a17470867ed211",
+    "supabase/migrations/20260914150000_isg_score_portfolio.sql": "d8983384fed517edf871231dc510965878108dc67176fb291f93aee17379b798",
+    "scripts/isg/score_portfolio_probe.mjs": "b35df487ca00a7045b169150cb867dd6c9a7b89eb5be1d1cbaea16c0e42c0821",
+    "scripts/isg/integrated_rehearsal_probe.mjs": "1b80f3b97126133b12a619e82cca075c5be0fa207c3815c45b12ec3fa7355e03",
+    "supabase/migrations/20260914070001_isg_notification_dispatch_safety.sql": "e8e38371fc9d4fbf4bb1aa7946c93d4e0ab4d48dc11a01b82d48a82911434bfc",
+    "scripts/isg/notification_dispatch_probe.mjs": "4fcc575794bb9996f8ea9ff248c3005322e4bcc1d4086d0c948467e45d4e1f48",
+    "supabase/migrations/20260914070002_isg_notification_provider_wait.sql": "ddcbc298912d8a8170bdc1505ddcb690c82f7ac99dc1fe948bf4a32f28924ae7",
+    "scripts/isg/notification_repository_probe.mjs": "d2cad156c053926b16ee6b716dc42ff319438a3da527023b66d60c48b13d5b2d",
+    "supabase/functions/_shared/isg/notification-repository.ts": "74ebeaa6a121bb9cbb41c66027b668490fafc500e7d3b45d3e45e35c60190d9e",
+    "supabase/functions/_shared/isg/notification-worker.ts": "c38db2a1c719c9e203df59e1fe42f3c1467c437fba4555d23347cb04efb38a72",
+    "supabase/functions/_shared/isg/notification-transport.ts": "02908573c8ba5c540d2dc515e3d229e35c8fc012547f062d78658b9f5b459df0",
+    "supabase/migrations/20260914070005_isg_notebook_reminder_api.sql": "5fd430cd2df328baddb15c872869f17b4f6396797f2348afc1bc87dc6508657c",
+    "supabase/migrations/20260914070003_isg_device_notification_permission.sql": "3eb379c10f3c844fa1ba4a19b56e7c9682ec89e68fc83fd648ad7e8d2f824a9e",
+    "scripts/isg/notification_device_probe.mjs": "4731819a34b990cd5afd718a6239468f2fa692e19a356d4470951def6386e20e",
+    "supabase/migrations/20260914070004_isg_notebook_sync_api.sql": "ad7ab223e160bbee295a9a7388d143ce6e8af41c0452cd3feb5f7d718532cb1f",
+    "scripts/isg/notebook_api_probe.mjs": "192d147a5557b6c64cb86dc631e0453cea5b1411ff38b7ba20e7556d7688f146",
+    "supabase/migrations/20260913154113_isg_notebook_organization_api.sql": "799fafc63b305b0ae598efae4e55bbf07233dda9ca8de545e93b9e36af1fccf6",
+    "scripts/isg/notebook_organization_probe.mjs": "2ded6bd9a7ee29ff36abeea8cee7223e8fe98add084c6903967a8174193840e5",
+    "scripts/isg/notebook_reminder_probe.mjs": "a588fd019a4cef2e5733f8e4ba848c46ad65e0fa1371de7fdce93938fcd6b59f"
+  },
+  "foundation": {
+    "passed": 433,
+    "failed": 0
+  },
+  "nova": {
+    "passed": 24,
+    "failed": 0
+  },
+  "localization_writer": {
+    "passed": 5,
+    "shipping_catalogs_changed": false
+  },
+  "original_source_accessed": false,
+  "cleanup": "PASS",
+  "ui_changed": false,
+  "production_deployed": false,
+  "release_ready": false
+}

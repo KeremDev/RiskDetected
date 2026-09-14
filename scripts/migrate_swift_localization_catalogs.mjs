@@ -9,6 +9,8 @@ import {
   writeFileSync,
 } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
+import { mergeCatalog } from "./localization_catalog_merge.mjs";
+import { pathToFileURL } from "node:url";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const INVENTORY_PATH = join(
@@ -1852,7 +1854,7 @@ function pluralCatalogEntry(comment, tr, en) {
   };
 }
 
-function writeCatalogs(entries, store) {
+export function writeCatalogs(entries, store, { directory = LOCALIZATION_DIRECTORY } = {}) {
   const catalogStrings = Object.fromEntries(
     CATALOGS.map((catalog) => [catalog, {}]),
   );
@@ -1980,9 +1982,9 @@ function writeCatalogs(entries, store) {
     "RiskDetected",
   );
 
-  mkdirSync(LOCALIZATION_DIRECTORY, { recursive: true });
+  mkdirSync(directory, { recursive: true });
   for (const catalog of CATALOGS) {
-    const path = join(LOCALIZATION_DIRECTORY, `${catalog}.xcstrings`);
+    const path = join(directory, `${catalog}.xcstrings`);
     const content = {
       sourceLanguage: "tr",
       strings: Object.fromEntries(
@@ -1991,7 +1993,10 @@ function writeCatalogs(entries, store) {
       ),
       version: "1.0",
     };
-    writeFileSync(path, `${JSON.stringify(content, null, 2)}\n`);
+    const existing = existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : null;
+    const merged = mergeCatalog(existing, content);
+    const serialized = `${JSON.stringify(merged, null, 2)}\n`;
+    if (!existing || readFileSync(path, "utf8") !== serialized) writeFileSync(path, serialized);
   }
 }
 
@@ -2036,6 +2041,7 @@ function validate(entries, store) {
   console.log(`Localization migration validation passed: ${entries.length} entries.`);
 }
 
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
 const args = new Set(process.argv.slice(2));
 const entries = loadEntries();
 const interpolatedEntries = collectInterpolatedEntries();
@@ -2076,4 +2082,5 @@ if (args.size === 0) {
   console.log(
     "Usage: node scripts/migrate_swift_localization_catalogs.mjs --translate|--apply|--write-catalogs|--check",
   );
+}
 }

@@ -62,7 +62,7 @@ test('an admin needs a live session, a second factor and a real scope',()=>{
   assert.match(migration,/requires_aal2 boolean NOT NULL DEFAULT true CHECK\(requires_aal2\)/);
   assert.match(migration,/MESSAGE='MFA_REQUIRED'/);
   assert.match(migration,/MESSAGE='SCOPE_DENIED'/);
-  assert.match(migration,/IF NOT \(p_scope=ANY\(entry\.granted_scopes\)\)/);
+  assert.match(migration,/IF \(p_scope=ANY\(entry\.granted_scopes\)\) IS NOT TRUE/);
   assert.match(migration,/'scopes_verified_by','server'/);
 });
 

@@ -48,7 +48,7 @@ test('a cell is data and an ambiguous number is reviewed',()=>{
 test('identity is never guessed and health columns are refused',()=>{
   assert.match(migration,/IDENTITY_NOT_DERIVABLE/);
   assert.match(migration,/MESSAGE='HEALTH_COLUMN_REFUSED'/);
-  assert.match(migration,/kan_grubu/);
+  assert.match(migration,/p_column IN \('employee_code','full_name','hired_on'\)/);
 });
 
 test('commit needs a fresh preview and compensation never undoes a later edit',()=>{

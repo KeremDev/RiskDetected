@@ -37,3 +37,32 @@ Bir kaynak referansı (checklist maddesi, risk sürümü, eski bulgu) için **te
 ## Henüz olmayanlar
 
 Saha ekranları, fotoğraf/kanıt akışı, DÖF bildirimi (P12), skor katkısı (P17), belge/PDF üretimi ve risk sürümünden otomatik uygunsuzluk türetme bu dilimde yoktur. `nonconformity` rollout satırı kapalıdır ve istemciye GRANT verilmemiştir.
+
+---
+
+## İkinci dilim — detay, risk skoru ve kayıt türü
+
+14 Eylül 2026. Migration: [20260914190000_isg_nonconformity_detail.sql](../../../supabase/migrations/20260914190000_isg_nonconformity_detail.sql). Rollout hâlâ kapalı.
+
+### Kayıt türü
+
+`record_kind` iki değer alır: `nonconformity` (varsayılan) ve `improvement`. Bir geliştirme önerisi aynı yaşam döngüsünü kullanır ama **uygunsuzluk sayılmaz**. Anahtar yalnız `open_detailed` ve `open_from_expert_item` payload'larında bulunur; eski iki açma yolu bir öneri açamaz.
+
+### Detay ve skor
+
+`nonconformity_details` kayıt başına en fazla bir satırdır. `risk_score` ve `risk_band` **generated column**'dır: istemci de sunucu kodu da bu iki sütuna yazamaz.
+
+| Metot | Girdiler | Skor | Bantlar |
+|---|---|---|---|
+| `fine_kinney` | O ∈ {0.2, 0.5, 1, 3, 6, 10}, F ∈ {0.5, 1, 2, 3, 6, 10}, Ş ∈ {1, 3, 7, 15, 40, 100} | O × F × Ş | ≤70 düşük · ≤200 orta · ≤400 yüksek · üzeri kritik |
+| `matrix_5x5` | O ∈ 1–5, Ş ∈ 1–5 | O × Ş | ≤4 düşük · ≤9 orta · ≤19 yüksek · üzeri kritik |
+
+Yarım skor yoktur: metotsuz girdi, girdisiz metot ve iki metodun girdilerinin karışması `RISK_INPUT_INCOMPLETE` verir. Ölçek dışı bir değer CHECK ile reddedilir.
+
+### Uzman görüşü maddesi
+
+`source_kind` değerine `legacy_expert_item` eklendi. Uzman görüşü maddeleri **skorsuz** gelir; bu yüzden `open_from_expert_item` allowlist'inde `risk_band` anahtarı **hiç yoktur**. Önem derecesini kişi seçer. Madde referans olarak taşınır, kopyalanmaz.
+
+### Detay düzenleme
+
+`set_detail` kısmi güncelleme değildir: ekranın gösterdiği detayın tamamını gönderir, temizlenen alan gerçekten temizlenir. Detayın kendi sürüm alanı yoktur; son yazan kazanır. Kaydın `version` alanı yalnız durum geçişlerini korumaya devam eder.

@@ -1,114 +1,6 @@
 {
   "sourceLanguage": "tr",
   "strings": {
-    "paywall.dark.feature": {
-      "comment": "Dark paywall feature; placeholders: none",
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Özellik"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Feature"
-          }
-        }
-      }
-    },
-    "paywall.dark.expert": {
-      "comment": "Dark paywall expert; placeholders: none",
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uzman Görüşü"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Expert Opinion"
-          }
-        }
-      }
-    },
-    "paywall.dark.training": {
-      "comment": "Dark paywall training; placeholders: none",
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eğitim Önerileri"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Training Recommendations"
-          }
-        }
-      }
-    },
-    "paywall.dark.notebook": {
-      "comment": "Dark paywall notebook; placeholders: none",
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Onaylı Defter Önerisi"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Official Logbook Suggestions"
-          }
-        }
-      }
-    },
-    "paywall.dark.join": {
-      "comment": "Dark paywall join; placeholders: none",
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uzmanlar Arasına Katıl"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Join the Experts"
-          }
-        }
-      }
-    },
-    "paywall.dark.users": {
-      "comment": "Dark paywall users; placeholders: none",
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "10K+ Kullanıcı"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "10K+ Users"
-          }
-        }
-      }
-    },
     "paywall.dark.close": {
       "comment": "Dark paywall close; placeholders: none",
       "extractionState": "manual",
@@ -145,20 +37,38 @@
         }
       }
     },
-    "paywall.dark.no_charge": {
-      "comment": "Dark paywall no_charge; placeholders: none",
+    "paywall.dark.expert": {
+      "comment": "Dark paywall expert; placeholders: none",
       "extractionState": "manual",
       "localizations": {
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Şu An Ödeme Alınmaz"
+            "value": "Uzman Görüşü"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No Payment Now"
+            "value": "Expert Opinion"
+          }
+        }
+      }
+    },
+    "paywall.dark.feature": {
+      "comment": "Dark paywall feature; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Özellik"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Feature"
           }
         }
       }
@@ -181,56 +91,56 @@
         }
       }
     },
-    "paywall.dark.unavailable": {
-      "comment": "Dark paywall unavailable; placeholders: none",
+    "paywall.dark.join": {
+      "comment": "Dark paywall join; placeholders: none",
       "extractionState": "manual",
       "localizations": {
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dahil değil"
+            "value": "Uzmanlar Arasına Katıl"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Not included"
+            "value": "Join the Experts"
           }
         }
       }
     },
-    "paywall.dark.plus.headline": {
-      "comment": "Dark paywall plus.headline; placeholders: none",
+    "paywall.dark.no_charge": {
+      "comment": "Dark paywall no_charge; placeholders: none",
       "extractionState": "manual",
       "localizations": {
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "İş Güvenliğinde Güven"
+            "value": "Şu An Ödeme Alınmaz"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Confidence in Workplace Safety"
+            "value": "No Payment Now"
           }
         }
       }
     },
-    "paywall.dark.pro.headline": {
-      "comment": "Dark paywall pro.headline; placeholders: none",
+    "paywall.dark.notebook": {
+      "comment": "Dark paywall notebook; placeholders: none",
       "extractionState": "manual",
       "localizations": {
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "İş Güvenliğinde Hâkimiyet"
+            "value": "Onaylı Defter Önerisi"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Master Workplace Safety"
+            "value": "Official Logbook Suggestions"
           }
         }
       }
@@ -251,32 +161,6 @@
             "value": "Get PLUS"
           }
         }
-      }
-    },
-    "paywall.dark.pro.cta": {
-      "comment": "Dark paywall pro.cta; placeholders: none",
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PRO'ya Geç"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Get PRO"
-          }
-        }
-      }
-    },
-    "paywall.dark.reports": {
-      "comment": "Premium PDF/Excel report export row in the plan comparison; placeholders: none",
-      "extractionState": "manual",
-      "localizations": {
-        "tr": { "stringUnit": { "state": "translated", "value": "PDF/Excel Rapor" } },
-        "en": { "stringUnit": { "state": "translated", "value": "PDF/Excel Reports" } }
       }
     },
     "paywall.dark.plus.feature.1": {
@@ -351,6 +235,42 @@
         }
       }
     },
+    "paywall.dark.plus.headline": {
+      "comment": "Dark paywall plus.headline; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İş Güvenliğinde Güven"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confidence in Workplace Safety"
+          }
+        }
+      }
+    },
+    "paywall.dark.pro.cta": {
+      "comment": "Dark paywall pro.cta; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRO'ya Geç"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get PRO"
+          }
+        }
+      }
+    },
     "paywall.dark.pro.feature.1": {
       "comment": "Dark paywall pro.feature.1; placeholders: none",
       "extractionState": "manual",
@@ -419,6 +339,96 @@
           "stringUnit": {
             "state": "translated",
             "value": "Powerful AI model support"
+          }
+        }
+      }
+    },
+    "paywall.dark.pro.headline": {
+      "comment": "Dark paywall pro.headline; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İş Güvenliğinde Hâkimiyet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Master Workplace Safety"
+          }
+        }
+      }
+    },
+    "paywall.dark.reports": {
+      "comment": "Premium PDF/Excel report export row in the plan comparison; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF/Excel Rapor"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF/Excel Reports"
+          }
+        }
+      }
+    },
+    "paywall.dark.training": {
+      "comment": "Dark paywall training; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitim Önerileri"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training Recommendations"
+          }
+        }
+      }
+    },
+    "paywall.dark.unavailable": {
+      "comment": "Dark paywall unavailable; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dahil değil"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not included"
+          }
+        }
+      }
+    },
+    "paywall.dark.users": {
+      "comment": "Dark paywall users; placeholders: none",
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10K+ Kullanıcı"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10K+ Users"
           }
         }
       }
@@ -639,6 +649,24 @@
         }
       }
     },
+    "paywall.design.footer.cancellable_disclosure_format": {
+      "comment": "CTA disclosure for PLUS monthly and PRO monthly/yearly; placeholder: %1$@ is the localized store price with billing period. Do not translate or reformat the supplied price.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · You can cancel anytime."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · İstediğin zaman iptal edebilirsin."
+          }
+        }
+      }
+    },
     "paywall.design.footer.manage": {
       "comment": "paywall design footer App Store subscription management link; placeholders: none",
       "extractionState": "manual",
@@ -743,24 +771,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Koşullar"
-          }
-        }
-      }
-    },
-    "paywall.design.footer.cancellable_disclosure_format": {
-      "comment": "CTA disclosure for PLUS monthly and PRO monthly/yearly; placeholder: %1$@ is the localized store price with billing period. Do not translate or reformat the supplied price.",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ · You can cancel anytime."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ · İstediğin zaman iptal edebilirsin."
           }
         }
       }

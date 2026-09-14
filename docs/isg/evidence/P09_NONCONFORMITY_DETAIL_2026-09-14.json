@@ -1,0 +1,58 @@
+{
+  "phase": "P09-2",
+  "slice": "nonconformity detail, risk scoring and improvement records",
+  "date": "2026-09-14",
+  "migration": "supabase/migrations/20260914190000_isg_nonconformity_detail.sql",
+  "probe": "scripts/isg/nonconformity_detail_probe.mjs",
+  "guard": "scripts/isg/nonconformity_detail_guard.test.mjs",
+  "runs": {
+    "synthetic_session": {
+      "checks": 1158,
+      "failed": 0,
+      "new_checks": 24
+    },
+    "isolated_copy_p05_upgrade": {
+      "checks": 33,
+      "failed": 0,
+      "private_isg_tables": 159
+    },
+    "foundation": {
+      "checks": 470,
+      "failed": 0,
+      "new_checks": 10
+    }
+  },
+  "posture": {
+    "rollout_opened_by_migration": false,
+    "client_grants_added": 0,
+    "private_isg_tables_synthetic": 156,
+    "score_is_a_generated_column": true,
+    "band_is_a_generated_column": true,
+    "client_supplied_score_accepted": false,
+    "expert_item_has_risk_band_key": false,
+    "legacy_findings_written": false,
+    "legacy_analyses_written": false,
+    "production_deployed": false
+  },
+  "hand_computed_oracles": {
+    "fine_kinney": {
+      "probability": 6,
+      "frequency": 3,
+      "severity": 15,
+      "score": 270,
+      "band": "high"
+    },
+    "matrix_5x5": {
+      "probability": 4,
+      "severity": 5,
+      "score": 20,
+      "band": "critical"
+    }
+  },
+  "open": [
+    "rollout for the nonconformity feature is still closed",
+    "nonconformity detail screen (transition, corrective action, verification) not built",
+    "record_kind has no server-side list filter yet",
+    "set_detail has no optimistic lock of its own"
+  ]
+}

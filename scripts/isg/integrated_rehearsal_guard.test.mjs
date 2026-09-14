@@ -53,6 +53,6 @@ test('the runner wires the rehearsal after every phase probe',()=>{
   assert.match(runner,/rehearsalProbe\.afterLogout\(\)/);
   const rehearsal=runner.indexOf("stage = 'integrated-rehearsal'");
   const score=runner.indexOf("stage = 'score-portfolio'");
-  const advisors=runner.indexOf("stage = 'personnel-advisors'");
+  const advisors=runner.indexOf('report.personnel_advisors=await probePersonnelAdvisors(');
   assert.ok(score<rehearsal&&rehearsal<advisors,'the rehearsal must run after the phases and before the advisors');
 });

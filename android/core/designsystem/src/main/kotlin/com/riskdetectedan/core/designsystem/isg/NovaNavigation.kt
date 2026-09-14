@@ -25,10 +25,11 @@ enum class NovaDestination(val title: String, val tab: NovaTab) {
     profile("Profil", NovaTab.profile),
     newDocument("Dosya Ekle", NovaTab.home),
     newVisit("Ziyaret Ekle", NovaTab.home),
-    newTraining("Eğitim Ekle", NovaTab.home);
+    newTraining("Eğitim Ekle", NovaTab.home),
+    periodicChecks("Periyodik Kontroller", NovaTab.home);
     companion object {
-        val drawer = listOf(home, newFinding, findings, companies, memory, documentChecklist, documents, visits, statistics, training, reports, reportArchive, notifications)
-        val quickAdd = listOf(newFinding, newDocument, newVisit, newTraining)
+        val drawer = listOf(home, newFinding, findings, companies, periodicChecks, documentChecklist, documents, statistics, training, reports, reportArchive, notifications)
+        val quickAdd = listOf(newFinding, newDocument, newTraining)
     }
 }
 enum class NovaOverlay { drawer, quickAdd, notifications }

@@ -1,0 +1,4 @@
+• Üyelik ekranı, aylık ve yıllık planları daha açık karşılaştıracak şekilde yenilendi.
+• Analiz tekrar deneme ve fallback akışlarının güvenilirliği artırıldı.
+• FREE üyelik yönlendirmesi, analiz kaydı ve sonuç merkezi güçlendirildi.
+• PDF ve Excel raporlama kararlılığı iyileştirildi.

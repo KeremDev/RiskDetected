@@ -1,0 +1,4 @@
+• The membership screen now makes monthly and yearly plans easier to compare.
+• Analysis retry and fallback reliability has been improved.
+• FREE-tier routing, analysis persistence, and the results hub are more robust.
+• PDF and Excel report reliability has been improved.

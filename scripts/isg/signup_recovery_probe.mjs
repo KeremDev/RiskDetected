@@ -6,13 +6,13 @@ export function probeSignupRecovery({synthetic, request, mailbox, admin, pass}) 
   pass('signup_requires_confirmation',signup.status === 200 && !!signup.body.id && !signup.body.access_token && !signup.body.email_confirmed_at);
   const id = signup.body.id;
   pass('unconfirmed_password_login_rejected', request('/token?grant_type=password',{method:'POST',body:{email,password}}).status === 400);
-  const code = () => {
+  const code = purpose => {
     const messages = mailbox().filter(m=>m.recipient.includes(email));
     const token = messages.at(-1)?.body.match(/TEST-CODE:\s*(\d{6,10})/)?.[1];
-    pass('local_smtp_code_received',typeof token === 'string');
+    pass(`${purpose}_local_smtp_code_received`,typeof token === 'string');
     return token;
   };
-  const signupCode = code();
+  const signupCode = code('signup');
   pass('signup_code_wrong_purpose_rejected',request('/verify',{method:'POST',body:{email,token:signupCode,type:'recovery'}}).status >= 400);
   pass('signup_code_foreign_email_rejected',request('/verify',{method:'POST',body:{email:'foreign-contract@example.invalid',token:signupCode,type:'email'}}).status >= 400);
   pass('signup_bad_code_rejected',request('/verify',{method:'POST',body:{email,token:'0000000000',type:'email'}}).status >= 400);
@@ -22,7 +22,7 @@ export function probeSignupRecovery({synthetic, request, mailbox, admin, pass}) 
   pass('confirmed_password_login',request('/token?grant_type=password',{method:'POST',body:{email,password}}).body.user?.id === id);
   const recovered = request('/recover',{method:'POST',body:{email}});
   pass('recovery_request_accepted', recovered.status === 200);
-  const recoveryCode = code();
+  const recoveryCode = code('recovery');
   pass('recovery_code_is_not_signup_code',recoveryCode !== signupCode);
   pass('recovery_code_wrong_purpose_rejected',request('/verify',{method:'POST',body:{email,token:recoveryCode,type:'signup'}}).status >= 400);
   pass('recovery_code_foreign_email_rejected',request('/verify',{method:'POST',body:{email:'foreign-contract@example.invalid',token:recoveryCode,type:'recovery'}}).status >= 400);

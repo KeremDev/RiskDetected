@@ -169,6 +169,18 @@ export async function beginFileCoreProbe({synthetic,sql,companyID,ownerID,pass})
     return expired>=1&&sql("SELECT state||':'||rejection_code FROM private_isg.upload_intents WHERE intent_id="+quote(stale.intent_id)+";")==='expired:EXPIRED';})());
 
   // Storage ledger stays shadow: it records, it does not deny an upload.
+  for(const stage of ['scan','promote','sweep']) {
+    const body='expired-'+stage;
+    const expiring=ok('open',open({mutation:randomUUID(),sha256:digest(body),bytes:bytesOf(body),ttl:60,now:at(210)}));
+    ok('received',{intent:expiring.intent_id,bytes:bytesOf(body),sha256:digest(body),detected_type:'application/pdf',now:at(211)});
+    if(stage==='scan') {
+      mark('expired_upload_cannot_be_scanned_clean',ok('scan',{...scan,intent:expiring.intent_id,sha256:digest(body),now:at(270)}).state==='expired');
+    } else {
+      ok('scan',{...scan,intent:expiring.intent_id,sha256:digest(body),now:at(212)});
+      if(stage==='promote')mark('expired_clean_upload_cannot_be_promoted',ok('promote',{intent:expiring.intent_id,bucket:'isg-private',sha256:digest(body),bytes:bytesOf(body),now:at(270)}).state==='expired');
+      else { ok('expire',{now:at(270)});mark('expiry_sweeper_includes_unpromoted_clean_upload',sql("SELECT state FROM private_isg.upload_intents WHERE intent_id="+quote(expiring.intent_id)+";")==='expired'); }
+    }
+  }
   sql("UPDATE private_isg.rollout SET read_enabled=true,write_enabled=true WHERE feature='quota_ledger';");
   const metered=ok('open',open({mutation:randomUUID(),sha256:digest('metered'),bytes:bytesOf('metered'),storage_limit:1000000,storage_unlimited:false,now:at(300)}));
   mark('an_open_intent_reserves_storage_in_the_shadow_ledger',!!metered.reservation_id&&metered.storage_shadow_denied===false&&

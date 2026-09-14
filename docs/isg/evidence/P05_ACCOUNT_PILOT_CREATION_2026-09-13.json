@@ -1,0 +1,285 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-09-13T19:44:11.296Z",
+  "scope": "Account-bound pilot and app-created company provenance; minimal P05 bundle",
+  "production_changed": false,
+  "production_readonly_inspection": true,
+  "account_verified": true,
+  "account_or_email_seeded": false,
+  "live_account_observation": {
+    "email_confirmed": true,
+    "not_deleted": true,
+    "not_anonymous": true,
+    "not_banned": true,
+    "effective_tier": "plus",
+    "company_limit": 5,
+    "active_company_count": 2,
+    "paid_subscription_valid": true
+  },
+  "native_connected": false,
+  "phone_installed": false,
+  "deployment_authorized": false,
+  "deployment_ready": false,
+  "release_ready": false,
+  "acceptance_ids_covered": [],
+  "runs": {
+    "synthetic": {
+      "path": "output/isg/runs/synthetic-auth-TQoIhK/REPORT.json",
+      "sha256": "75e87488850ef27a6775264d558f9740d6e949c7c61538bc8f00de48dfcb5ec2",
+      "run_id": "f4aa6c2a-27d0-4745-b359-75684c905bad",
+      "started_at": "2026-09-13T19:40:47.002Z",
+      "finished_at": "2026-09-13T19:43:23.268Z",
+      "ok": true,
+      "checks": 1096,
+      "unique_checks": 1096,
+      "cleanup": "PASS",
+      "source_drift": [],
+      "account_pilot_checks": [
+        {
+          "id": "p05_account_pilot_empty_account_roster_and_closed_rollout",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_global_flags_do_not_admit_unlisted_account",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_account_can_enter_without_preselected_company",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_read_only_account_cannot_create",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_create_uses_authenticated_owner",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_new_company_origin_grant_default_are_atomic",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_same_mutation_returns_same_company",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_changed_retry_is_conflict",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_concurrent_retry_has_one_company",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_new_company_is_writable_old_company_hidden",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_manual_company_grant_cannot_adopt_old_company",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_personnel_create_commits_in_new_company",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_directory_create_commits_in_new_company",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_old_company_mutation_rejected",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_pilot_does_not_override_paid_plan",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_account_write_pause_blocks_new_writes_and_receipt_replay",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_account_revocation_is_immediate",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_expired_account_cannot_use_unexpired_company_grant",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_legacy_create_does_not_auto_enroll_or_bootstrap",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_client_cannot_choose_owner_or_existing_company",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_legacy_rows_and_write_rules_unchanged",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_private_tables_not_client_writable",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_new_rpc_public_invoker_private_checked_definer",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_global_kill_blocks_new_and_existing_pilot_work",
+          "result": "PASS"
+        },
+        {
+          "id": "p05_account_pilot_logged_out_account_cannot_create",
+          "result": "PASS"
+        }
+      ],
+      "pilot_only_checks": [],
+      "pilot_only": null,
+      "advisor_levels": {
+        "INFO": 293
+      }
+    },
+    "full_upgrade": {
+      "path": "backups/isg-auth-service-restore-20260912-nPKLaY/REPORT.json",
+      "sha256": "bf969e3e04aca5abb7871e92b36414158ee9480f1be192ac7820bbdd2e68d3a6",
+      "run_id": "8b343837-0a65-464f-8aff-11a024ffb11d",
+      "started_at": "2026-09-13T19:40:48.121Z",
+      "finished_at": "2026-09-13T19:41:02.847Z",
+      "ok": true,
+      "checks": 33,
+      "unique_checks": 33,
+      "cleanup": "PASS",
+      "source_drift": [],
+      "account_pilot_checks": [],
+      "pilot_only_checks": [],
+      "pilot_only": null
+    },
+    "pilot_only_upgrade": {
+      "path": "backups/isg-auth-service-restore-20260912-5FHicx/REPORT.json",
+      "sha256": "0a3a98e9b06d1587caf5064bc650b2b971a944a7cc6fdd8ae067a4fb040d6142",
+      "run_id": "7ee72d9d-e10a-417a-89e3-c53c37489f20",
+      "started_at": "2026-09-13T19:41:55.542Z",
+      "finished_at": "2026-09-13T19:42:08.122Z",
+      "ok": true,
+      "checks": 27,
+      "unique_checks": 27,
+      "cleanup": "PASS",
+      "source_drift": [],
+      "account_pilot_checks": [],
+      "pilot_only_checks": [
+        {
+          "id": "pilot_only_bundle_legacy_rows_preserved",
+          "result": "PASS"
+        },
+        {
+          "id": "pilot_only_bundle_legacy_quota_helpers_preserved",
+          "result": "PASS"
+        },
+        {
+          "id": "pilot_only_bundle_no_global_backfill",
+          "result": "PASS"
+        },
+        {
+          "id": "pilot_only_bundle_no_global_insert_hook",
+          "result": "PASS"
+        },
+        {
+          "id": "pilot_only_bundle_legacy_insert_guard_preserved",
+          "result": "PASS"
+        },
+        {
+          "id": "pilot_only_bundle_closed_empty_roster",
+          "result": "PASS"
+        },
+        {
+          "id": "pilot_only_bundle_exact_private_table_scope",
+          "result": "PASS"
+        },
+        {
+          "id": "pilot_only_bundle_client_dml_denied",
+          "result": "PASS"
+        },
+        {
+          "id": "pilot_only_bundle_no_other_phase_installed",
+          "result": "PASS"
+        }
+      ],
+      "pilot_only": {
+        "schema_version": 1,
+        "source_sha256": {
+          "supabase/migrations/20260913074153_isg_personnel_owner_rpc.sql": "a04da9ebbe6e184776dda705e7110a28e8bbe676b4f57f53a9f5a704816729c7",
+          "supabase/migrations/20260913081536_isg_workplace_context_assignments.sql": "69b44f626206dc5f5e2be147f4106f17016e030a86f2bd86e08e76dc043768a0",
+          "supabase/migrations/20260913084736_isg_workspace_availability.sql": "35c85511a890f0ec34570d29f17c017f7668c5c493c85e58798c07f2f1a5b68f",
+          "supabase/migrations/20260913092642_isg_personnel_reactivation.sql": "350f2bfc96ac5866836fd51f8ce1ca8100e8b871121fdc1eb636c18735c11376",
+          "supabase/migrations/20260913191226_isg_p05_readonly_pilot.sql": "83896ca627115314037ef82fa642d75d85601cfa4285c4c254a87475039f2764",
+          "supabase/migrations/20260913193231_isg_p05_account_pilot_creation.sql": "5a81fae3e109b378d4ed6d14b03585ab3b3b07cba560d818c2f9360495a91a22"
+        },
+        "bundle_sha256": "2b7063d865ece5c3d791732065c763b821f6f4cbc2ed303b6cb462dd8e1784aa",
+        "source_count": 6,
+        "tables": [
+          "contractor_engagements",
+          "contractor_organizations",
+          "departments",
+          "directory_events",
+          "directory_outbox",
+          "employee_assignments",
+          "employees",
+          "job_roles",
+          "p05_pilot_accounts",
+          "p05_pilot_company_origins",
+          "p05_pilot_grants",
+          "personnel_audit",
+          "personnel_outbox",
+          "personnel_receipts",
+          "rollout",
+          "workplace_context_versions",
+          "workplace_initializations",
+          "workplaces"
+        ],
+        "reviewed_transforms": [
+          "Remove per-source transaction boundaries; wrap all six candidates in one transaction",
+          "Omit first candidate global ensure_default backfill; last candidate drops the new ISG global company insert trigger"
+        ],
+        "production_changed": false,
+        "deployment_authorized": false,
+        "account_seeded": false,
+        "rollout_enabled": false,
+        "isolated_legacy_copy": true,
+        "execution_ms": 213,
+        "measured_production_lock_time": false,
+        "legacy_rows_unchanged": true,
+        "legacy_helpers_unchanged": true
+      }
+    }
+  },
+  "suites": [
+    {
+      "suite": "foundation",
+      "pass": 451,
+      "fail": 0,
+      "stdout_sha256": "5a88c068057a1c84638a4db85dfa7791feab454e73c0ccdb8dd1dea98de6b719"
+    },
+    {
+      "suite": "all_isg_scripts",
+      "pass": 497,
+      "fail": 0,
+      "stdout_sha256": "a44e1b649476d86fb71993bbb66d353ab89e594582f5f56e180b790e24c9c766"
+    }
+  ],
+  "suite_counts_overlap": true,
+  "bundle": {
+    "path": "output/isg/pilot/P05_REVIEW_BUNDLE.sql",
+    "manifest": "output/isg/pilot/P05_REVIEW_MANIFEST.json",
+    "sha256": "2b7063d865ece5c3d791732065c763b821f6f4cbc2ed303b6cb462dd8e1784aa"
+  },
+  "notes": [
+    "No firm names required; existing firms are excluded from pilot provenance",
+    "Only the new company-create RPC enrolls companies; the legacy insert API does not",
+    "First minimal-upgrade test caught a table-inventory regex that excluded digits; corrected and rerun",
+    "213 ms bundle execution is a local clone observation, not production lock/RPO/RTO evidence",
+    "Native routing, new RPC integration, legacy-writer race acceptance and explicit deployment approval remain open"
+  ]
+}

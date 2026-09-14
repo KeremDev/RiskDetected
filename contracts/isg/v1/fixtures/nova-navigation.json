@@ -4986,6 +4986,212 @@
           }
         }
       ]
+    },
+    {
+      "id": "route-periodicChecks-enabled-fresh",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "periodicChecks",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "periodicChecks",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": null,
+            "paths": {
+              "home": [
+                "periodicChecks"
+              ],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "periodicChecks",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-periodicChecks-enabled-stale",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "periodicChecks",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "periodicChecks",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-periodicChecks-locked-fresh",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "periodicChecks",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-periodicChecks-locked-stale",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "periodicChecks",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
     }
   ]
 }

@@ -71,7 +71,7 @@ Kalan 15 kapı bulgusu **bu dilimin işi değildir**: 14'ü 8 Eylül 2026 hukuk 
 
 ## Açık kalanlar
 
-1. **Migration aracı hâlâ yıkıcı.** `--apply` katalogları yeniden yazıyor; birleştirmeli hâle getirilmeli.
+1. **Takip paketinde writer düzeltildi:** mevcut anahtar/locale/metadata koruyan merge ve gerçek writer çift çalıştırma testi eklendi. Bu belgedeki kayıp anlatımı tarihsel hatadır; [güncel düzeltme ve sınırlar](REVIEW_FIXES_UI_ITERATION_2026-09-13.md). Literal tarayıcı kapsamı ve içerik kalite incelemesi ayrıca açıktır.
 2. **Android tarafı bu dilimde değişmedi.** NOVA Compose yüzeyinin `strings.xml` TR/EN kabulü açık.
 3. **Dil kalite incelemesi yapılmadı.** 261 yeni anahtarın hepsi `language_review: not_started`; İSG terminolojisi için uzman gözden geçirmesi gerekiyor.
 4. **Gerçek cihazda EN turu yok.** Uygulama İngilizce dilde açılıp ekran ekran gezilmedi; VoiceOver tam akışı, Dynamic Type AX3 ve RTL dışı metin taşması kabulü açık.

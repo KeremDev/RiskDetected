@@ -10,14 +10,14 @@
     "FAULT_INJECTION": {"status": "full", "evidence": ["docs/isg/evidence/P01_TRANSACTION_PROTOTYPE_2026-09-12.json", "docs/isg/evidence/P01_AUTH_MUTATION_COMPOSITION_2026-09-12.json"], "note": "Crash, lost response and retry paths on the isolated stack."},
     "IMPORT": {"status": "partial", "evidence": ["docs/isg/evidence/P11_DOCUMENT_IMPORT_2026-09-14.json"], "blocker": "No safe parser and no row-scale run; the equipment import target does not exist."},
     "DOCUMENT": {"status": "partial", "evidence": ["docs/isg/evidence/P11_DOCUMENT_IMPORT_2026-09-14.json"], "blocker": "No render worker, so no PDF or XLSX has ever been produced or compared."},
-    "STORAGE": {"status": "partial", "evidence": ["docs/isg/evidence/P00_STORAGE_SERVICE_RESTORE_2026-09-12.json"], "blocker": "Bucket policy, signed URLs and a byte-level restore of real objects are untested."},
+    "STORAGE": {"status": "partial", "evidence": ["docs/isg/evidence/P00_STORAGE_SERVICE_RESTORE_2026-09-12.json"], "blocker": "P00 restored and hash-checked 588 objects, including signed downloads. New domain bucket policies and measured RPO/RTO acceptance remain open."},
     "FILE_SECURITY": {"status": "partial", "evidence": ["docs/isg/evidence/P04_FILE_CORE_2026-09-13.json"], "blocker": "No antivirus or parser sandbox and no positive DOC or XLS security fixtures."},
     "AUTH": {"status": "partial", "evidence": ["docs/isg/evidence/P02_SYNTHETIC_PASSWORD_AUTH_2026-09-13.json", "docs/isg/evidence/P01_AUTH_SESSION_GUARD_2026-09-12.json"], "blocker": "The OTP and recovery purpose coordinator, account linking and MFA variations were never run."},
     "NOTIFICATION": {"status": "partial", "evidence": ["docs/isg/evidence/P12_NOTIFICATION_CORE_2026-09-14.json", "docs/isg/evidence/P12_REPOSITORY_WAIT_2026-09-13.json"], "blocker": "No real APNs, FCM or email provider has ever been called."},
     "REMINDER": {"status": "partial", "evidence": ["docs/isg/evidence/P13_SERVER_PUSH_REMINDERS_2026-09-13.json"], "blocker": "No physical device acceptance for permission, token, time zone, reboot or Focus."},
-    "NOTES": {"status": "partial", "evidence": ["docs/isg/evidence/P13_PERSONAL_NOTES_2026-09-14.json"], "blocker": "The offline mutation queue and a second-device conflict run on real hardware are missing."},
+    "NOTES": {"status": "partial", "evidence": ["docs/isg/evidence/P13_PERSONAL_NOTES_2026-09-14.json", "docs/isg/evidence/P13_SERVER_PUSH_REMINDERS_2026-09-13.json"], "blocker": "Encrypted native note queues exist. Offline reminder mutations and second-device conflict acceptance on real hardware remain open."},
     "BILLING": {"status": "partial", "evidence": ["docs/isg/evidence/P14_BILLING_LIFECYCLE_2026-09-14.json"], "blocker": "No RevenueCat or webhook adapter writes evidence, and the access authority is still the legacy helper."},
-    "CAMPAIGN": {"status": "partial", "evidence": ["docs/isg/evidence/P15_CAMPAIGN_CORE_2026-09-14.json"], "blocker": "No qualification producer, no real send, and no approved commercial values."},
+    "CAMPAIGN": {"status": "partial", "evidence": ["docs/isg/evidence/P15_CAMPAIGN_CORE_2026-09-14.json"], "blocker": "No real qualification producer, catalogue adapter or send. V5 fixes 7-day gifts and 20% discounts; annual banking, collision, limits, timing and store publication decisions remain open."},
     "OBSERVABILITY": {"status": "partial", "evidence": ["docs/isg/evidence/P16_OBSERVABILITY_ADMIN_2026-09-14.json"], "blocker": "No client telemetry producer exists, so no real technical event has ever been recorded."},
     "NETWORK_PRIVACY": {"status": "partial", "evidence": ["docs/isg/evidence/P16_OBSERVABILITY_ADMIN_2026-09-14.json"], "blocker": "The rules are enforced in the database, but no network inspection of a real install has been done."},
     "DESIGN": {"status": "partial", "evidence": ["docs/isg/evidence/P18_NOVA_LOCALIZATION_2026-09-14.json", "docs/isg/evidence/P18_HOSTED_SHELL_2026-09-13.json"], "blocker": "No English pass on a real device, no VoiceOver run, and the app root has not moved to the new shell."},
@@ -27,6 +27,6 @@
     "STORE_QA": {"status": "none", "evidence": [], "blocker": "No store spike on either store; no sandbox or production purchase, offer signature or offer token has ever been exercised."},
     "ADMIN": {"status": "none", "evidence": [], "blocker": "The operations panel repository was deliberately not touched; no scoped page or Playwright flow exists."},
     "OPERATIONS": {"status": "none", "evidence": [], "blocker": "The support chain has no client producer and the panel has no diagnosis surface, so the operator story was never walked."},
-    "CROSS_LAYER_ACCEPTANCE": {"status": "none", "evidence": [], "blocker": "No scenario has been walked from a real client through the server to a visible user outcome in one run."}
+    "CROSS_LAYER_ACCEPTANCE": {"status": "none", "evidence": [], "blocker": "The integrated cross-domain acceptance layer has no scoped proof yet. P05 native-to-server acceptance exists under NATIVE_E2E and must not be erased or extrapolated to all domains."}
   }
 }

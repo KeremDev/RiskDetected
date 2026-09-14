@@ -10,11 +10,12 @@ export const trainingCoreFiles=[
 const read=p=>readFileSync(resolve(ROOT,p),'utf8');
 const quote=v=>"'"+String(v).replaceAll("'","''")+"'";
 const json=v=>quote(JSON.stringify(v))+'::jsonb';
-const now=seconds=>new Date(Date.UTC(2026,8,13,17,0,0)+seconds*1000).toISOString();
+// Recording occurs after the fixed training day, never weeks before it.
+const now=seconds=>new Date(Date.UTC(2026,9,1,18,0,0)+seconds*1000).toISOString();
 // Fixed training day. All attendance assertions are in whole minutes.
 const clock=minutes=>new Date(Date.UTC(2026,9,1,9,0,0)+minutes*60000).toISOString();
 
-export async function beginTrainingCoreProbe({synthetic,sql,companyID,ownerID,pass}) {
+export async function beginTrainingCoreProbe({synthetic,sql,concurrentSql,companyID,ownerID,pass}) {
   if(synthetic!==true)throw Error('AUTH_RESTORE_TRAINING_SYNTHETIC_REQUIRED');
   if(!companyID||!ownerID)throw Error('AUTH_RESTORE_TRAINING_SCOPE_REQUIRED');
   const mark=(name,ok)=>pass('training_core_'+name,ok);
@@ -118,6 +119,7 @@ export async function beginTrainingCoreProbe({synthetic,sql,companyID,ownerID,pa
   mark('a_foreign_employee_can_not_be_enrolled',call('enrol',{session:session.session_id,employee:randomUUID(),now:now(32)}).error==='ACCESS_DENIED');
 
   mark('attendance_must_fall_inside_the_session',call('attend',{enrolment:enrolment.enrolment_id,starts:clock(-30),ends:clock(30),now:now(33)}).error==='VALIDATION_ERROR');
+  mark('future_attendance_cannot_be_recorded_as_completed_work',call('attend',{enrolment:enrolment.enrolment_id,starts:clock(0),ends:clock(60),now:clock(30)}).error==='VALIDATION_ERROR');
   const overlapping=[[0,60],[30,90]].map(([from,to])=>ok('attend',{enrolment:enrolment.enrolment_id,starts:clock(from),ends:clock(to),now:now(34)}));
   mark('overlapping_attendance_is_credited_as_a_union',overlapping.at(-1).credited_minutes===90);
   mark('adjacent_attendance_merges_into_one_block',ok('attend',{enrolment:enrolment.enrolment_id,starts:clock(90),ends:clock(150),now:now(35)}).credited_minutes===150);
@@ -129,6 +131,14 @@ export async function beginTrainingCoreProbe({synthetic,sql,companyID,ownerID,pa
   mark('one_minute_is_never_credited_to_two_courses',call('attend',{enrolment:parallelEnrolment.enrolment_id,starts:clock(120),ends:clock(180),now:now(40)}).error==='ATTENDANCE_OVERLAP');
   const otherEnrolment=ok('enrol',{session:parallelSession.session_id,employee:employees[1],now:now(41)});
   mark('another_person_may_attend_the_same_minute',ok('attend',{enrolment:otherEnrolment.enrolment_id,starts:clock(120),ends:clock(180),now:now(42)}).credited_minutes===60);
+  const raceEmployee=randomUUID();
+  sql("INSERT INTO private_isg.employees(id,company_id,owner_id,employee_code,full_name) VALUES("+quote(raceEmployee)+","+quote(companyID)+","+quote(ownerID)+",'RACE-'||"+quote(raceEmployee)+",'Synthetic attendance race');");
+  const raceSession=ok('session',{plan:parallelPlan.plan_id,method:'online_sync',starts:clock(0),ends:clock(480),lesson_minutes:45,break_minutes:15,now:now(42)});
+  const raceEnrolments=[parallelSession.session_id,raceSession.session_id].map(session=>ok('enrol',{session,employee:raceEmployee,now:now(42)}).enrolment_id);
+  const race=await Promise.all(raceEnrolments.map(enrolment=>concurrentSql("BEGIN;SELECT isg_training_test.observe('attend',"+
+    json({enrolment,starts:clock(200),ends:clock(260),now:now(43)})+");SELECT pg_sleep(0.2);COMMIT;")));
+  const results=race.filter(r=>r.ok).map(r=>JSON.parse(r.output.split('\n').filter(l=>l.startsWith('{')).at(-1)));
+  mark('concurrent_courses_cannot_double_credit_one_person',results.length===2&&results.filter(r=>r.result).length===1&&results.filter(r=>r.error==='ATTENDANCE_OVERLAP').length===1);
 
   const failing=ok('attempt',{enrolment:enrolment.enrolment_id,score:59,now:now(50)});
   mark('the_pass_threshold_is_exact',failing.passed===false&&failing.attempt_no===1&&
@@ -141,6 +151,9 @@ export async function beginTrainingCoreProbe({synthetic,sql,companyID,ownerID,pa
   mark('one_minute_short_is_still_short',call('complete',{enrolment:enrolment.enrolment_id,on:'2026-10-01',now:now(56)}).error==='ATTENDANCE_INSUFFICIENT'&&
     sql("SELECT private_isg.attendance_minutes("+quote(enrolment.enrolment_id)+");")==='359');
   ok('attend',{enrolment:enrolment.enrolment_id,starts:clock(359),ends:clock(360),now:now(57)});
+  mark('completion_date_cannot_precede_attendance_or_be_in_the_future',
+    call('complete',{enrolment:enrolment.enrolment_id,on:'2026-09-30',now:now(58)}).error==='VALIDATION_ERROR'&&
+    call('complete',{enrolment:enrolment.enrolment_id,on:'2026-10-02',now:now(58)}).error==='VALIDATION_ERROR');
   const completion=ok('complete',{enrolment:enrolment.enrolment_id,on:'2026-10-01',now:now(58)});
   mark('exactly_the_required_lesson_minutes_completes',completion.credited_minutes===360&&completion.required_minutes===360&&completion.score===60);
   mark('validity_uses_the_catalogue_repeat_period_in_calendar_years',completion.valid_until==='2027-10-01'&&completion.content_approved===false);
@@ -163,6 +176,9 @@ export async function beginTrainingCoreProbe({synthetic,sql,companyID,ownerID,pa
     sql("SELECT status FROM private_isg.requirement_instances WHERE requirement_id="+quote(requirement.requirement_id)+";")==='satisfied'&&
     sql("SELECT state FROM private_isg.requirement_schedules WHERE requirement_id="+quote(requirement.requirement_id)+" AND state='completed';")==='completed'&&
     sql("SELECT state FROM private_isg.training_plans WHERE plan_id="+quote(plan.plan_id)+";")==='closed');
+  mark('closed_plan_cannot_gain_an_unfinished_participant',
+    call('enrol',{session:session.session_id,employee:employees[1],now:now(68)}).error==='ACCESS_DENIED'&&
+    ok('enrol',{session:session.session_id,employee:employees[0],now:now(68)}).replayed===true);
 
   const credential=(over={})=>({company:companyID,employee:employees[0],issuer:'Dış Eğitim Kurumu',title:'İlk Yardım Sertifikası',
     issued_on:'2026-05-01',valid_until:'2029-05-01',asset:null,evidence:null,now:now(70),...over});

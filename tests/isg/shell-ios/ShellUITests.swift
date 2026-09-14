@@ -183,7 +183,7 @@ import UIKit
         launch(["--personnel", "--personnel-retry"])
         personnelAdd("Bakım")
         XCTAssertTrue(app.buttons["personnel.retry"].waitForExistence(timeout: 4))
-        XCTAssertFalse(app.buttons["personnel.back"].isEnabled)
+        XCTAssertFalse(app.buttons["personnel.editor.back"].isEnabled)
         tap("personnel.retry")
         XCTAssertTrue(app.staticTexts["Ada Kaya"].waitForExistence(timeout: 4))
         XCTAssertTrue(app.staticTexts["Bakım"].exists)

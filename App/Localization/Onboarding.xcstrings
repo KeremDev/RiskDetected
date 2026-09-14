@@ -397,6 +397,78 @@
         }
       }
     },
+    "onboarding.obloading.testimonial.burak.body.93b907c8": {
+      "comment": "Onboarding loading testimonial body; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seeing analysis results, required actions, and reports in one place makes coordination with my team much easier."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz sonuçlarını, alınacak önlemleri ve raporları tek yerde görmek ekibimle yürüttüğüm takibi çok kolaylaştırıyor."
+          }
+        }
+      }
+    },
+    "onboarding.obloading.testimonial.burak.headline.2720e7e9": {
+      "comment": "Onboarding loading testimonial headline; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The follow-up process is much more organized."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takip süreci çok daha düzenli."
+          }
+        }
+      }
+    },
+    "onboarding.obloading.testimonial.burak.name.32f1b793": {
+      "comment": "Onboarding loading testimonial display name; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Burak Aksoy"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Burak Aksoy"
+          }
+        }
+      }
+    },
+    "onboarding.obloading.testimonial.burak.role.02596e55": {
+      "comment": "Onboarding loading testimonial role; placeholders: none; review: human",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Class B Occupational Safety Specialist"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "B Sınıfı İş Güvenliği Uzmanı"
+          }
+        }
+      }
+    },
     "onboarding.obloading.testimonial.elif.body.77713b0d": {
       "comment": "Onboarding loading testimonial body; placeholders: none; review: human",
       "extractionState": "manual",
@@ -613,78 +685,6 @@
         }
       }
     },
-    "onboarding.obloading.testimonial.burak.body.93b907c8": {
-      "comment": "Onboarding loading testimonial body; placeholders: none; review: human",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Seeing analysis results, required actions, and reports in one place makes coordination with my team much easier."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Analiz sonuçlarını, alınacak önlemleri ve raporları tek yerde görmek ekibimle yürüttüğüm takibi çok kolaylaştırıyor."
-          }
-        }
-      }
-    },
-    "onboarding.obloading.testimonial.burak.headline.2720e7e9": {
-      "comment": "Onboarding loading testimonial headline; placeholders: none; review: human",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The follow-up process is much more organized."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Takip süreci çok daha düzenli."
-          }
-        }
-      }
-    },
-    "onboarding.obloading.testimonial.burak.name.32f1b793": {
-      "comment": "Onboarding loading testimonial display name; placeholders: none; review: human",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Burak Aksoy"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Burak Aksoy"
-          }
-        }
-      }
-    },
-    "onboarding.obloading.testimonial.burak.role.02596e55": {
-      "comment": "Onboarding loading testimonial role; placeholders: none; review: human",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Class B Occupational Safety Specialist"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "B Sınıfı İş Güvenliği Uzmanı"
-          }
-        }
-      }
-    },
     "onboarding.obloading.view.icin.rapor.formati.kisisellestiriliyor.34aea260": {
       "comment": "onboarding loading step; placeholders: %1$@ = certificate class label",
       "extractionState": "manual",
@@ -757,24 +757,6 @@
         }
       }
     },
-    "onboarding.obloading.view.sana.ozel.kurulum.hazirlaniyor.a7043077": {
-      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBLoadingView.swift:7; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preparing your personalised setup..."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sana özel kurulum hazırlanıyor…"
-          }
-        }
-      }
-    },
     "onboarding.obloading.view.sahadaki.profesyoneller.ne.diyor.9bf3d77a": {
       "comment": "Heading above onboarding loading testimonial carousel; placeholders: none; review: human",
       "extractionState": "manual",
@@ -789,6 +771,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sahadaki profesyoneller ne diyor?"
+          }
+        }
+      }
+    },
+    "onboarding.obloading.view.sana.ozel.kurulum.hazirlaniyor.a7043077": {
+      "comment": "swift_user_copy; App/Views/Onboarding/V2/Screens/OBLoadingView.swift:7; placeholders: none; review: machine_draft; review: deterministic_english_quality_override",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing your personalised setup..."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sana özel kurulum hazırlanıyor…"
           }
         }
       }

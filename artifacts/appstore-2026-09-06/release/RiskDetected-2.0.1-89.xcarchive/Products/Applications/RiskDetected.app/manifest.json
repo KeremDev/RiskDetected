@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "document_set_id": "en-global-v1",
+  "locale": "en",
+  "release_status": "approved",
+  "counsel_review_status": "approved",
+  "reviewed_by": "Kerem",
+  "reviewer_qualification": "Hukuk belgelerini inceleme ve onaylama yetkinliğine sahip.",
+  "reviewed_at": "2026-07-31T08:02:40Z",
+  "counsel_approval_record_path": "docs/localization/phase-5/LEGAL_COUNSEL_APPROVAL_2026-07-31_V2.json",
+  "counsel_approval_record_sha256": "54ade7d6aae5615bcd5a1ce2f3191c1fecb77d9080ff61edf88b948afe129161",
+  "public_urls_verified_at": "2026-07-31T08:08:29Z",
+  "public_urls": {
+    "terms": "https://riskdetected.com/legal-documents/en/Terms-of-Use.md",
+    "privacy": "https://riskdetected.com/legal-documents/en/Privacy-Policy.md",
+    "ai_data_processing_notice": "https://riskdetected.com/legal-documents/en/AI-and-Data-Processing-Notice.md"
+  },
+  "documents": [
+    {
+      "kind": "terms",
+      "title": "Terms of Use",
+      "version": "terms-en-2026-07-31.1",
+      "path": "en/Terms-of-Use.md",
+      "hash": "49a9b3f164b9dc8048453be930509aa334a854834c2abfa0cd8b11fd67ef6efa",
+      "updated_at": "2026-07-31T00:00:00Z",
+      "change_type": "material_terms"
+    },
+    {
+      "kind": "privacy",
+      "title": "Privacy Policy",
+      "version": "privacy-en-2026-07-31.1",
+      "path": "en/Privacy-Policy.md",
+      "hash": "ef3d7e01b2b3c09603ff79c7f14bac631493feece7c1a0d6b0bd9a5f0e76ece4",
+      "updated_at": "2026-07-31T00:00:00Z",
+      "change_type": "material_privacy"
+    },
+    {
+      "kind": "consent",
+      "title": "AI and Data Processing Notice",
+      "version": "ai-data-en-2026-07-31.1",
+      "path": "en/AI-and-Data-Processing-Notice.md",
+      "hash": "a8c9873f57228a36a4ede597e33648ff9251f9c814f1d1afc3e912c82ae08e1b",
+      "updated_at": "2026-07-31T00:00:00Z",
+      "change_type": "explicit_consent"
+    }
+  ]
+}

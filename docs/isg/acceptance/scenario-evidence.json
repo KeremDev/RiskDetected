@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "description": "Exact case_id, layer, evidence_file, check_ids and required_sources bindings. Legacy short-id claims are not execution proof. Backfill only from verified runs containing matching acceptance_checks and source_sha256.",
+  "bindings": []
+}

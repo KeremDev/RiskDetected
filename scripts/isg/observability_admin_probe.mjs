@@ -152,6 +152,11 @@ export async function beginObservabilityAdminProbe({synthetic,sql,companyID,owne
     expires:now(3600),now:now(42)});
   mark('the_server_never_trusts_a_scope_claimed_by_the_client',good.scopes_verified_by==='server'&&
     call('session',{admin:adminUser,aal:'aal2',scopes:['campaign.invent'],expires:now(3600),now:now(43)}).error==='VALIDATION_ERROR');
+  mark('null_scope_cannot_turn_unknown_membership_into_authorization',
+    call('session',{admin:adminUser,aal:'aal2',scopes:['telemetry.read',null],expires:now(3600),now:now(43)}).error==='VALIDATION_ERROR');
+  sql("UPDATE private_isg.admin_sessions SET granted_scopes=ARRAY['telemetry.read',NULL] WHERE session_id="+quote(wrongScope.session_id)+";");
+  mark('stored_null_scope_still_cannot_authorize_a_different_scope',
+    call('simulate',{session:wrongScope.session_id,action_kind:'campaign_pause',scope:'campaign.publish',target:'test',report:{},now:now(44)}).error==='SCOPE_DENIED');
   mark('an_admin_without_mfa_is_refused',
     call('simulate',{session:weak.session_id,action_kind:'campaign_pause',scope:'campaign.publish',
       target:'campaign:referral_v5',report:{would_pause:1},now:now(44)}).error==='MFA_REQUIRED');

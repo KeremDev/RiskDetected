@@ -320,6 +320,7 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
   SELECT enrolment_id INTO existing FROM private_isg.training_enrolments WHERE session_id=p_session AND employee_id=p_employee;
   IF FOUND THEN RETURN jsonb_build_object('schema_version',1,'enrolment_id',existing,'replayed',true); END IF;
+  IF plan.state NOT IN ('planned','running') THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
   INSERT INTO private_isg.training_enrolments(session_id,company_id,employee_id,created_at)
     VALUES(p_session,plan.company_id,p_employee,p_now) RETURNING enrolment_id INTO enrolment;
   RETURN jsonb_build_object('schema_version',1,'enrolment_id',enrolment,'replayed',false);
@@ -329,13 +330,17 @@ LANGUAGE plpgsql SECURITY INVOKER SET search_path='' AS $$
 DECLARE entry private_isg.training_enrolments; session private_isg.training_sessions; slot uuid;
 BEGIN
   PERFORM private_isg.training_gate(true);
-  IF p_enrolment IS NULL OR p_starts IS NULL OR p_ends IS NULL OR p_starts>=p_ends OR p_now IS NULL THEN
+  IF p_enrolment IS NULL OR p_starts IS NULL OR p_ends IS NULL OR p_starts>=p_ends OR p_now IS NULL OR
+     NOT isfinite(p_now) OR p_ends>p_now THEN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   SELECT * INTO entry FROM private_isg.training_enrolments WHERE enrolment_id=p_enrolment FOR UPDATE;
   IF NOT FOUND OR entry.state<>'enrolled' THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
   SELECT * INTO session FROM private_isg.training_sessions WHERE session_id=entry.session_id FOR SHARE;
   IF p_starts<session.starts_at OR p_ends>session.ends_at THEN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
+  -- Enrolments differ across courses. Serialize by person, not enrolment, so
+  -- concurrent overlap checks cannot both observe an empty attendance history.
+  PERFORM 1 FROM private_isg.employees WHERE company_id=entry.company_id AND id=entry.employee_id FOR UPDATE;
   -- The same minute cannot be credited to two courses for one person.
   PERFORM 1 FROM private_isg.attendance_intervals a
     JOIN private_isg.training_enrolments e ON e.enrolment_id=a.enrolment_id
@@ -407,6 +412,11 @@ BEGIN
   SELECT * INTO attempt FROM private_isg.assessment_attempts WHERE enrolment_id=p_enrolment AND passed
     ORDER BY attempt_no LIMIT 1;
   IF NOT FOUND THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ASSESSMENT_NOT_PASSED'; END IF;
+  IF NOT isfinite(p_now) OR p_on>(p_now AT TIME ZONE 'Europe/Istanbul')::date OR
+     p_on<(SELECT (max(ends_at) AT TIME ZONE 'Europe/Istanbul')::date
+       FROM private_isg.attendance_intervals WHERE enrolment_id=p_enrolment) OR
+     p_on<(attempt.attempted_at AT TIME ZONE 'Europe/Istanbul')::date THEN
+    RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   valid:=CASE WHEN plan.kind='special' THEN NULL
     ELSE private_isg.next_due_on(p_on,'years',rules.refresh_period_years) END;
   INSERT INTO private_isg.training_completions(enrolment_id,company_id,employee_id,workplace_id,catalog_code,
