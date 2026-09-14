@@ -1,0 +1,53 @@
+{
+  "phase": "P09-native-3",
+  "slice": "menu split, dropdown board, record popup, folder tabs, manual company step",
+  "date": "2026-09-14",
+  "runs": {
+    "foundation": {
+      "checks": 470,
+      "failed": 0
+    },
+    "nova_design": {
+      "checks": 36,
+      "failed": 0
+    },
+    "navigation_contract": {
+      "scenarios": 94,
+      "transitions": 230,
+      "status": "pass"
+    },
+    "session_host_contract": {
+      "cases": 104,
+      "transitions": 467,
+      "status": "pass"
+    },
+    "company_list_check": "pass",
+    "directory_check": "pass",
+    "localization_migrate_check": "pass",
+    "localization_hardcoded_debt": 15,
+    "localization_keys_total": 1325,
+    "ios_debug_build": "succeeded",
+    "nova_pilot_simulator_build": "succeeded"
+  },
+  "repairs": [
+    "NovaNavigationCheck, NovaSessionHostCorpus, NovaCompanyListCheck and NovaDirectoryCheck compiled again after the P18 localization migration broke them",
+    "newCompany existed in Swift but not in the catalogue or Kotlin",
+    "quickAdd had four entries in Swift and three in the catalogue and Kotlin"
+  ],
+  "posture": {
+    "one_page_per_menu_entry": true,
+    "record_detail_is_a_popup": true,
+    "record_card_photo_invented": false,
+    "manual_workplace_named_when_defaulted": true,
+    "state_machine_matches_migration_both_ways": true,
+    "manual_photo_stored_on_record": false,
+    "rollout_opened": false
+  },
+  "open": [
+    "rollout for the nonconformity feature is still closed",
+    "manual evidence photo needs the P04 second slice",
+    "Android has the navigation model only; the new screens have no Kotlin counterpart",
+    "board fans out one read per company",
+    "tests/isg/shell-ios harness still does not compile and needs the real RDLocalization"
+  ]
+}
