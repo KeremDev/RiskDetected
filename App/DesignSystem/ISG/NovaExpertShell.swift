@@ -462,7 +462,7 @@ extension NovaDestination {
         case .newFinding: return "exclamationmark.triangle"
         case .newDocument: return "doc.text"
         case .newVisit: return "mappin"
-        case .newTraining: return "hand.thumbsup.fill"
+        case .newTraining: return "graduationcap"
         default: return symbol
         }
     }

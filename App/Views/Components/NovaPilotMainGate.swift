@@ -38,7 +38,7 @@ struct NovaPilotRoot: View {
     @EnvironmentObject private var app: AppState
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var controller = NovaWorkspaceController()
-    @State private var navigation = NovaNavigationState(epoch: UUID().uuidString, available: [.companies, .newCompany, .findings, .newFinding, .analyses, .newAnalysis, .documentChecklist])
+    @State private var navigation = NovaNavigationState(epoch: UUID().uuidString, available: [.companies, .newCompany, .findings, .newFinding, .analyses, .newAnalysis, .training, .newTraining, .documentChecklist])
     @State private var showingCreate = false
     @State private var notice: String?
     @State private var listRevision = UUID()
@@ -80,13 +80,18 @@ struct NovaPilotRoot: View {
                     statusCard
                     NovaDashboardScreen(data: .init(firstName: name.split(separator: " ").first.map(String.init) ?? "",
                         openCount: nil, metrics: metrics, activity: nil,
-                        trainingMessage: RDLocalization.string("localizable.nova.pilot.main.gate.egitim.modulu.henuz.kullanima.acik.degil.e21b7bc6", table: .localizable, fallback: "Eğitim modülü henüz kullanıma açık değil."),
+                        trainingMessage: "Gerçekleşen eğitimler ve katılımcı kayıtları",
                         summaryMessage: activeCompanies != nil ? RDLocalization.string("localizable.nova.pilot.main.gate.pilot.firmalarinizin.guncel.kayitlari.01d48da7", table: .localizable, fallback: "Pilot firmalarınızın güncel kayıtları.") : overviewFailed ? RDLocalization.string("localizable.nova.pilot.main.gate.ozet.alinamadi.yenileyerek.tekrar.deneyin.9b6a6077", table: .localizable, fallback: "Özet alınamadı. Yenileyerek tekrar deneyin.") : RDLocalization.string("localizable.nova.pilot.main.gate.ozet.verileri.henuz.bagli.degil.4508136e", table: .localizable, fallback: "Özet verileri henüz bağlı değil.")),
                         onNavigate: navigate,
                         onPhoto: { navigate(.newAnalysis) }, onAssistant: unavailable)
                 }
             case .companies:
                 companies
+            case .training, .newTraining:
+                NovaTrainingHub(identity: identity, scope: controller.scope, personnel: controller.personnelClient,
+                    canWrite: ready, select: controller.select,
+                    onBack: { navigate(.home) }, createOnOpen: destination == .newTraining)
+                    .id(destination)
             case .findings:
                 nonconformities(.board)
             case .analyses:

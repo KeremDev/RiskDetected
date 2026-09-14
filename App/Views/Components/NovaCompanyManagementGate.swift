@@ -58,16 +58,18 @@ struct NovaCompanyWorkspace: View {
     @State private var sheet: Sheet?
     @State private var personnelPage = false
     @State private var companyExpanded = false
+    @State private var completedTrainings = 0
     @State private var expandedSections = Set<NovaCompanySection>()
     private enum Sheet: Identifiable {
-        case personnel, addPersonnel, editCompany, deleteCompany, directory(NovaDirectoryKind)
-        var id: String { switch self { case .personnel: return "personnel"; case .addPersonnel: return "add-personnel"; case .editCompany: return "edit-company"; case .deleteCompany: return "delete-company"; case .directory(let kind): return kind.rawValue } }
+        case personnel, addPersonnel, editCompany, deleteCompany, training, directory(NovaDirectoryKind)
+        var id: String { switch self { case .personnel: return "personnel"; case .addPersonnel: return "add-personnel"; case .editCompany: return "edit-company"; case .deleteCompany: return "delete-company"; case .training: return "training"; case .directory(let kind): return kind.rawValue } }
     }
     private var progress: NovaCompanyProgress {
         // Empty headings are visibly incomplete in the pilot preview. This keeps
         // the score and status pills useful before mutation endpoints are wired.
         var result = NovaCompanyProgress(states: Dictionary(uniqueKeysWithValues: NovaCompanySection.allCases.map { ($0, NovaCompletionState.missing) }))
         if let summary { result.states[.personnel] = summary.personnel_count > 0 ? .complete : .missing }
+        result.states[.training] = completedTrainings > 0 ? .complete : .missing
         return result
     }
     var body: some View {
@@ -101,6 +103,11 @@ struct NovaCompanyWorkspace: View {
                     catch { if !Task.isCancelled { summaryFailed = true } }
                 }
         }.navigationBarBackButtonHidden(true)
+        .task(id: summaryRevision) {
+            completedTrainings = 0
+            let service = NovaTrainingService(identity: .init(userID: scope.ownerID, sessionID: scope.sessionID))
+            if let page = try? await service.list(scope.companyID), !Task.isCancelled { completedTrainings = page.completed ?? 0 }
+        }
         .navigationDestination(isPresented: $personnelPage) {
             NovaPersonnelDestination(scope: scope, companyName: companyName, client: personnel,
                 onBack: { personnelPage = false }, directory: directory, canWrite: canWrite, preview: false)
@@ -109,6 +116,8 @@ struct NovaCompanyWorkspace: View {
             NovaPopup {
             NavigationStack {
                 switch destination {
+                case .training:
+                    NovaTrainingCompanyScreen(scope: scope, companyName: companyName, personnel: personnel, canWrite: canWrite)
                 case .editCompany:
                     NovaCompanyVisualEditor(name: summary?.name ?? companyName, sector: summary?.sector ?? "", email: summary?.email ?? "", hazard: summary?.hazard_class ?? "medium")
                 case .deleteCompany:
@@ -140,6 +149,9 @@ struct NovaCompanyWorkspace: View {
                         NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.personel.ekle.565c83dd", table: .localizable, fallback: "Personel Ekle"), symbol: "plus", isEnabled: canWrite) { sheet = .addPersonnel }
                             .accessibilityIdentifier("company.personnel.add")
                     }
+                } else if section == .training {
+                    NovaHelpHint(text: "Gerçekleşen eğitimleri personel seçerek kaydedin ve eğitim geçmişini görüntüleyin.")
+                    NovaButton(label: "Eğitimleri aç", symbol: "graduationcap", variant: .surface) { sheet = .training }
                 } else {
                     NovaHelpHint(text: RDLocalization.string("localizable.nova.workspace.section.pending", table: .localizable, fallback: "Bu bölümün kayıt servisi henüz bağlanmadı. Eksik veya tamamlandı bilgisi doğrulanamıyor."))
                 }
