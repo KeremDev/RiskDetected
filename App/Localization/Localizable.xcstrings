@@ -23113,6 +23113,24 @@
       },
       "comment": "placeholders: none"
     },
+    "localizable.nova.navigation.ppe": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PPE Issues"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KKD Zimmetleri"
+          }
+        }
+      }
+    },
     "localizable.nova.navigation.rapor.arsivi.67865663": {
       "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:32; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -26889,6 +26907,1266 @@
           "stringUnit": {
             "state": "translated",
             "value": "Uygunsuzluk modülü için canlı pilot erişimi gerekiyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.back": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.cancel": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.catalogue.note": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The product ships no ready-made PPE list; you name the equipment."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ürün hazır KKD listesi göndermez; ekipmanı siz adlandırırsınız."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.condition.damaged": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Damaged"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hasarlı"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.condition.lost": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lost"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıp"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.condition.reusable": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reusable"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kullanılabilir"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.condition.worn": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Worn"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıpranmış"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.count": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d / %d issues"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d / %d zimmet"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.detail.history": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Returns"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İadeler"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.detail.location": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signed form: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İmzalı form: %@"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.detail.noreturns": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No return recorded yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz iade kaydı yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.detail.outstanding": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Still out"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hâlâ zimmette"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.detail.remove": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take this return back"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu iadeyi geri al"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.detail.return": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record a return"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İade kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.detail.returned": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Returned"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İade edilen"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.empty.body": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a company and record the equipment issued to a person."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir firma seçip personele verilen ekipmanı kaydedin."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.empty.title": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing issued yet"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zimmet kaydı yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.error.before": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The return date cannot be earlier than the issue date."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İade tarihi zimmet tarihinden önce olamaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.error.conflict": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record changed elsewhere meanwhile. Refresh and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt bu sırada başka bir yerden değişti. Yenileyip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.error.denied": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No access to this record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kayda erişim yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.error.exceeds": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The returned amount cannot exceed what was issued."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İade miktarı zimmetten fazla olamaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.error.feature": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modules are not open yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modüller henüz açık değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.error.handed": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The issue date cannot be later than today."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zimmet tarihi bugünden ileri olamaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.error.module": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The PPE issues module is not open yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KKD zimmet modülü henüz açık değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.error.plan": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This action needs a Plus or Pro subscription."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu işlem için Plus veya Pro aboneliği gerekiyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.error.returned": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The return date cannot be later than today."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İade tarihi bugünden ileri olamaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.error.unavailable": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record could not be loaded. Check the connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt alınamadı. Bağlantıyı kontrol edip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.error.validation": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The entered details are incomplete or inconsistent."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Girilen bilgiler eksik veya birbiriyle uyumsuz."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.explain.closed": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything came back."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamamı iade edildi."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.explain.outstanding": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is still out."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ hâlâ zimmette."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.explain.partial": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ came back, %@ is still out."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ iade edildi, %@ hâlâ zimmette."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.filter.companies": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All companies"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm firmalar"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.filter.company": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.filter.state": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durum"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.filter.states": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All statuses"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm durumlar"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.form.item": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Equipment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekipman"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.form.location": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where the signed form is"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İmzalı form nerede"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.form.nopeople": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This company has no active personnel on record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu firmada aktif personel kaydı yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.form.person": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Person"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personel"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.form.pickperson": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a person"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personel seçin"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.form.quantity": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quantity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miktar"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.form.save": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.form.title": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Issue equipment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zimmet ver"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.form.unit": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unit"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Birim"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.more": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show more"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha fazla göster"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.new": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Issue equipment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zimmet ver"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.return.condition": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condition"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durum"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.return.date": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İade tarihi"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.return.note": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.return.outstanding": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Still out: %@. Nothing above that can be recorded."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hâlâ zimmette olan: %@. Bundan fazlası kaydedilemez."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.return.save": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save the return"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İadeyi kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.return.title": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record a return"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İade kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.row.archived": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The personnel record was archived"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personel kaydı arşivlendi"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.row.date": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarih"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.row.handed": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Issued"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zimmet"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.row.lost": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ recorded as lost"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ kayıp olarak kaydedildi"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.row.ref": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document no"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belge no"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.search": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search equipment, person or company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekipman, kişi veya firma ara"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.signed.note": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The signed issue form is not stored in the app. Here you only note where the original is kept."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İmzalı zimmet formu uygulamada saklanmaz. Burada yalnız aslının nerede tutulduğunu not edersiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.state.closed": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapandı"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.state.closed.footer": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "all returned"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tamamı iade"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.state.outstanding": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Out"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zimmette"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.state.outstanding.footer": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nothing returned"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hiç iade yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.state.partial": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partly returned"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kısmen iade"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.state.partial.footer": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "some still out"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bir kısmı dönmedi"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.unit.litre": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Litre"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Litre"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.unit.metre": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metre"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metre"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.unit.pair": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pair"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çift"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.unit.piece": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Piece"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adet"
+          }
+        }
+      }
+    },
+    "localizable.nova.ppe.unit.set": {
+      "comment": "isg_ppe_handovers; KKD Zimmetleri: issue board, return popup and correction; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takım"
           }
         }
       }
