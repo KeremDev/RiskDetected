@@ -174,11 +174,10 @@ import Foundation
         let note = draft.reviewNote.trimmingCharacters(in: .whitespacesAndNewlines)
         if !note.isEmpty { payload["review_note"] = .string(note) }
         try check(identity)
-        let data = try await rpc("isg_emergency_plans_mutate_v1", [
-            "p_company": .id(company), "p_action": .string("publish_plan"),
-            "p_operation": .id(UUID()), "p_mutation": .id(UUID()),
-            "p_payload": .object(payload)])
-        try check(identity)
-        return try JSONDecoder().decode(MutationEnvelope.self, from: data).row.map(plan)
+        return try await NovaModuleMutationJournal.run(function: "isg_emergency_plans_mutate_v1", identity: identity,
+            company: company, action: "publish_plan", payload: payload, rpc: rpc,
+            validate: { try check(identity) }, decode: { data in
+                return try JSONDecoder().decode(MutationEnvelope.self, from: data).row.map(plan)
+            })
     }
 }

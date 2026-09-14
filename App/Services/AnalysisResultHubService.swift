@@ -84,7 +84,7 @@ final class AnalysisResultHubService {
         throw ReadinessError.exhausted
     }
 
-    /// Same call, addressed by item identifier. The NOVA screens carry their
+    /// Same call, addressed by item identifier. The İSGADA screens carry their
     /// own item model and never hold the decoded hub row.
     func setFeedback(
         analysisID: UUID,

@@ -57,6 +57,8 @@ struct NovaCompanyWorkspace: View {
     @Environment(\.colorScheme) private var scheme
     @State private var sheet: Sheet?
     @State private var personnelPage = false
+    @State private var processKind: String?
+    @State private var processesExpanded = false
     @State private var companyExpanded = false
     @State private var completedTrainings = 0
     @State private var expandedSections = Set<NovaCompanySection>()
@@ -111,6 +113,11 @@ struct NovaCompanyWorkspace: View {
                             }
                             }
                         }
+                        NovaCompanyAccordion(title: "Firma süreçleri", symbol: "square.grid.2x2", identifier: "company.processes", expanded: $processesExpanded) {
+                            ForEach(["katip_contract", "annual_work_plan", "board", "site_visit", "work_permit", "contractor"], id: \.self) { kind in
+                                NovaButton(label: NovaProcessKind.get(kind).title, symbol: "chevron.right", variant: .surface) { processKind = kind }
+                            }
+                        }
                         ForEach(Array(NovaCompanySection.allCases.dropFirst(2))) { section in sectionView(section) }
                     }.padding(.horizontal, 18).padding(.top, 4).padding(.bottom, 18)
                 }
@@ -146,25 +153,25 @@ struct NovaCompanyWorkspace: View {
             equipment = try? await NovaEquipmentCheckService.live().board(documentIdentity,
                 query: .init(company: scope.companyID, limit: 1))
         }
-        .fullScreenCover(item: $equipmentSection, onDismiss: { summaryRevision = UUID() }) { section in
+        .novaFullScreenCover(item: $equipmentSection, onDismiss: { summaryRevision = UUID() }) { section in
             NovaPilotEquipmentGate(identity: documentIdentity, canWrite: canWrite,
                 initialCompany: scope.companyID, headingOverride: section.title,
                 onBack: { equipmentSection = nil })
         }
-        .fullScreenCover(item: $fileSection, onDismiss: { summaryRevision = UUID() }) { section in
+        .novaFullScreenCover(item: $fileSection, onDismiss: { summaryRevision = UUID() }) { section in
             NovaPilotFileGate(identity: documentIdentity, canWrite: canWrite,
                 initialCompany: scope.companyID,
                 initialCategories: NovaFileSectionMap.categories(for: section, in: fileCategories),
                 headingOverride: section.title,
                 onBack: { fileSection = nil })
         }
-        .fullScreenCover(isPresented: $addingFile, onDismiss: { summaryRevision = UUID() }) {
+        .novaFullScreenCover(isPresented: $addingFile, onDismiss: { summaryRevision = UUID() }) {
             NovaPilotFileGate(identity: documentIdentity, canWrite: canWrite,
                 initialCompany: scope.companyID,
                 headingOverride: NovaCompanySection.files.title,
                 onBack: { addingFile = false })
         }
-        .fullScreenCover(item: $documentSection) { section in
+        .novaFullScreenCover(item: $documentSection) { section in
             NovaPilotDocumentGate(identity: documentIdentity, scope: scope, canWrite: canWrite,
                 select: { _ in }, currentScope: { scope },
                 onBack: { documentSection = nil }, onCompanies: { documentSection = nil },
@@ -172,11 +179,18 @@ struct NovaCompanyWorkspace: View {
                 initialKinds: NovaDocumentSectionMap.kinds(for: section),
                 headingOverride: section.title)
         }
+        .novaFullScreenCover(isPresented: Binding(get: { processKind != nil }, set: { if !$0 { processKind = nil } })) {
+            if processKind == "risk" {
+                NovaPilotRiskGate(identity: documentIdentity, canWrite: canWrite, initialCompany: scope.companyID, onBack: { processKind = nil })
+            } else if let kind = processKind {
+                NovaPilotProcessGate(identity: documentIdentity, kind: kind, initialCompany: scope.companyID, canWrite: canWrite, onBack: { processKind = nil })
+            }
+        }
         .navigationDestination(isPresented: $personnelPage) {
             NovaPersonnelDestination(scope: scope, companyName: companyName, client: personnel,
                 onBack: { personnelPage = false }, directory: directory, canWrite: canWrite, preview: false)
         }
-        .fullScreenCover(item: $sheet, onDismiss: { summaryRevision = UUID() }) { destination in
+        .novaFullScreenCover(item: $sheet, onDismiss: { summaryRevision = UUID() }) { destination in
             NovaPopup {
             NavigationStack {
                 switch destination {
@@ -213,6 +227,8 @@ struct NovaCompanyWorkspace: View {
                         NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.personel.ekle.565c83dd", table: .localizable, fallback: "Personel Ekle"), symbol: "plus", isEnabled: canWrite) { sheet = .addPersonnel }
                             .accessibilityIdentifier("company.personnel.add")
                     }
+                } else if section == .risk {
+                    NovaButton(label: "Değerlendirmeleri aç", symbol: "shield", variant: .surface) { processKind = "risk" }
                 } else if section == .training {
                     NovaHelpHint(text: "Gerçekleşen eğitimleri personel seçerek kaydedin ve eğitim geçmişini görüntüleyin.")
                     NovaButton(label: "Eğitimleri aç", symbol: "graduationcap", variant: .surface) { sheet = .training }
@@ -237,7 +253,7 @@ struct NovaCompanyWorkspace: View {
                         isLoading: files == nil && filesLoading) { fileSection = section }
                 }
                 if NovaDocumentSectionMap.kinds(for: section) == nil && categories.isEmpty
-                    && section != .personnel && section != .training && section != .inspections {
+                    && section != .personnel && section != .training && section != .inspections && section != .risk {
                     NovaHelpHint(text: RDLocalization.string("localizable.nova.workspace.section.pending", table: .localizable, fallback: "Bu bölümün kayıt servisi henüz bağlanmadı. Eksik veya tamamlandı bilgisi doğrulanamıyor."))
                 }
             }
@@ -290,7 +306,7 @@ struct NovaCompanyWorkspace: View {
             NovaCard(padding: 9) {
                 HStack(spacing: 9) {
                     NovaIcon(symbol: icon, size: 19).foregroundStyle(tone.color(in: scheme))
-                    Text(title).font(.custom("PlusJakartaSans-SemiBold", size: 12))
+                    Text(title).font(NovaFont.font(.body))
                     Spacer(minLength: 0)
                     NovaIcon(symbol: "chevron.right", size: 12)
                 }.frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)

@@ -95,7 +95,7 @@ internal fun NovaShellTopBar(current: NovaDestination, userName: String, hasUnre
             send(if (canGoBack) NovaNavigationEvent.Back else NovaNavigationEvent.Open(NovaOverlay.drawer))
         }
         if (expanded) Spacer(Modifier.weight(1f)) else Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-            NovaText("NOVA", style = NovaTypeToken.brand)
+            NovaText("İSGADA", style = NovaTypeToken.brand)
             NovaText("Saha denetim asistanı", style = NovaTypeToken.meta, color = NovaColorToken.textMuted.color())
         }
         Box {
@@ -114,7 +114,7 @@ internal fun NovaShellTopBar(current: NovaDestination, userName: String, hasUnre
     }
     if (expanded) {
         Spacer(Modifier.height(8.dp))
-        NovaText("NOVA", style = NovaTypeToken.brand)
+        NovaText("İSGADA", style = NovaTypeToken.brand)
         NovaText("Saha denetim asistanı", style = NovaTypeToken.meta, color = NovaColorToken.textMuted.color())
     }
     }
@@ -343,7 +343,9 @@ private fun NovaDestination.icon(): ImageVector = when (this) {
     NovaDestination.home -> Icons.Outlined.Home
     NovaDestination.newFinding -> Icons.Outlined.PhotoCamera
     NovaDestination.findings -> Icons.AutoMirrored.Outlined.List
-    NovaDestination.companies -> Icons.Outlined.Business
+    NovaDestination.companies, NovaDestination.newCompany -> Icons.Outlined.Business
+    NovaDestination.analyses -> Icons.Outlined.Assessment
+    NovaDestination.newAnalysis -> Icons.Outlined.PhotoCamera
     NovaDestination.memory -> Icons.Outlined.History
     NovaDestination.documentChecklist -> Icons.Outlined.Description
     NovaDestination.documents -> Icons.Outlined.Folder

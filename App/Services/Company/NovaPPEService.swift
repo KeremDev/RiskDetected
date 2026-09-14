@@ -139,12 +139,11 @@ import Foundation
     private func mutate(_ identity: NovaSessionIdentity, company: UUID, action: String,
                         payload: [String: PersonnelRPCValue]) async throws -> NovaPPEHandover? {
         try check(identity)
-        let data = try await rpc("isg_ppe_mutate_v1", [
-            "p_company": .id(company), "p_action": .string(action),
-            "p_operation": .id(UUID()), "p_mutation": .id(UUID()),
-            "p_payload": .object(payload)])
-        try check(identity)
-        return try JSONDecoder().decode(MutationEnvelope.self, from: data).row.map(handover)
+        return try await NovaModuleMutationJournal.run(function: "isg_ppe_mutate_v1", identity: identity,
+            company: company, action: action, payload: payload, rpc: rpc,
+            validate: { try check(identity) }, decode: { data in
+                return try JSONDecoder().decode(MutationEnvelope.self, from: data).row.map(handover)
+            })
     }
 
     /// The signed copy flag is never sent: the product holds no file, so it
@@ -167,6 +166,18 @@ import Foundation
         let location = draft.signedCopyLocation.trimmingCharacters(in: .whitespacesAndNewlines)
         if !location.isEmpty { payload["signed_copy_location"] = .string(location) }
         return try await mutate(identity, company: company, action: "record_handover", payload: payload)
+    }
+
+    func createForm(_ identity: NovaSessionIdentity, company: UUID, employee: UUID, item: String, date: String) async throws {
+        _ = try await mutate(identity, company: company, action: "create_form", payload: [
+            "employee_id": .id(employee), "item": .string(item), "handed_on": .string(date)])
+    }
+
+    func form(_ identity: NovaSessionIdentity, id: UUID) async throws -> NovaPPEFormSnapshot {
+        try check(identity)
+        let data = try await rpc("isg_ppe_form_v1", ["p_id": .id(id)])
+        try check(identity)
+        return try JSONDecoder().decode(NovaPPEFormSnapshot.self, from: data)
     }
 
     func recordReturn(_ identity: NovaSessionIdentity, company: UUID,

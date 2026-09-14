@@ -38,7 +38,7 @@ struct NovaFileEntrySheet: View {
                 controls
             }.padding(16).novaPopupContentSize()
         }
-        .fullScreenCover(isPresented: $editing) {
+        .novaFullScreenCover(isPresented: $editing) {
             NovaPopup {
                 NovaFileRenameSheet(entry: row, catalogue: catalogue) { title, category, note in
                     current = try await client.rename(row, title, category, note)
@@ -56,7 +56,6 @@ struct NovaFileEntrySheet: View {
             NovaIcon(symbol: NovaFileWords.symbol(row.state), size: 19)
                 .foregroundStyle(tone.tokens.ink.color(in: scheme))
                 .frame(width: 44, height: 44)
-                .background(tone.tokens.background.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
             VStack(alignment: .leading, spacing: 3) {
                 NovaText(text: row.title, style: .sheetTitle).lineLimit(2)
                 if row.fileName != row.title { NovaText(text: row.fileName, style: .metaQuiet) }
@@ -309,7 +308,7 @@ struct NovaFileRenameSheet: View {
     private func field(_ label: String, _ text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            TextField(label, text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+            TextField(label, text: text).font(NovaFont.font(.body))
                 .frame(minHeight: 34).accessibilityIdentifier("file.rename.\(id)")
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -409,7 +408,6 @@ struct NovaFileAddSheet: View {
                 NovaIcon(symbol: payload == nil ? "folder.badge.plus" : "doc", size: 17)
                     .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
                     .frame(width: 42, height: 42)
-                    .background(NovaColorToken.statusSuccessBg.color(in: scheme), in: RoundedRectangle(cornerRadius: 13))
                 VStack(alignment: .leading, spacing: 2) {
                     NovaText(text: payload == nil
                         ? RDLocalization.string("localizable.nova.file.pick", table: .localizable, fallback: "Cihazdan dosya seçin")
@@ -459,7 +457,6 @@ struct NovaFileAddSheet: View {
                 NovaIcon(symbol: NovaFileWords.symbol(entry.state), size: 18)
                     .foregroundStyle(tone.tokens.ink.color(in: scheme))
                     .frame(width: 42, height: 42)
-                    .background(tone.tokens.background.color(in: scheme), in: RoundedRectangle(cornerRadius: 13))
                 VStack(alignment: .leading, spacing: 2) {
                     NovaText(text: entry.title, style: .cardTitle).lineLimit(2)
                     NovaText(text: NovaFileWords.state(entry.state), style: .metaQuiet)
@@ -532,7 +529,7 @@ struct NovaFileAddSheet: View {
     private func field(_ label: String, _ text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            TextField(label, text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+            TextField(label, text: text).font(NovaFont.font(.body))
                 .frame(minHeight: 34).accessibilityIdentifier("file.add.\(id)")
         }.frame(maxWidth: .infinity, alignment: .leading)
     }

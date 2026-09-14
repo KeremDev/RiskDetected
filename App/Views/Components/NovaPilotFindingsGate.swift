@@ -55,7 +55,7 @@ struct NovaPilotFindingsGate: View {
         }
         // The finished analysis is opened from the waiting screen's own
         // dismissal, so the two presentations never contend for the same slot.
-        .fullScreenCover(item: $job, onDismiss: {
+        .novaFullScreenCover(item: $job, onDismiss: {
             guard let id = pending else { return }
             pending = nil
             openAnalysis = .init(id: id)
@@ -70,8 +70,10 @@ struct NovaPilotFindingsGate: View {
                 },
                 onError: { message in job = nil; notice = message })
         }
-        .fullScreenCover(item: $openAnalysis) { target in detail(target.id) }
-        .fullScreenCover(item: $record) { entry in
+        .novaFullScreenCover(item: $openAnalysis) { target in
+            detail(target.id)
+        }
+        .novaFullScreenCover(item: $record) { entry in
             NovaPopup {
                 NovaNonconformityRecordSheet(entry: entry, client: recordClient(entry), canWrite: canWrite)
             }
@@ -217,7 +219,7 @@ struct NovaPilotFindingsGate: View {
             }
             intakeOpen = true
         }, onBack: { onNavigate(.findings) })
-        .fullScreenCover(isPresented: $intakeOpen) {
+        .novaFullScreenCover(isPresented: $intakeOpen) {
             NovaPopup {
                 NovaAnalysisIntakePopup(companies: companies, sectors: Self.sectorOptions, focuses: focusOptions,
                     draft: $draft, isStarting: job != nil, onStart: { intakeOpen = false; start() })

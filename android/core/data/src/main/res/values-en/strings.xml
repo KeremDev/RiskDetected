@@ -13,7 +13,7 @@
     <string name="rd_pdf_matrix_method">5x5 Risk Matrix</string>
     <string name="rd_pdf_fine_kinney_method">Fine-Kinney</string>
     <string name="rd_pdf_date">Date</string>
-    <string name="rd_pdf_finding_count">%1$d finding</string>
+    <string name="rd_pdf_finding_count">%1$d findings</string>
     <string name="rd_pdf_band_count">%1$s: %2$d</string>
     <string name="rd_pdf_finding_details">Finding Details</string>
     <string name="rd_pdf_finding_title">%1$d. %2$s</string>
@@ -44,5 +44,5 @@
     <string name="rd_pdf_band_high">High</string>
     <string name="rd_pdf_band_medium">Medium</string>
     <string name="rd_pdf_band_low">Low</string>
-    <string name="rd_pdf_band_unknown">unknown</string>
+    <string name="rd_pdf_band_unknown">Unknown</string>
 </resources>

@@ -1,0 +1,23 @@
+BEGIN;
+SELECT set_config('test.actor','20000000-0000-0000-0000-000000000001',true);
+UPDATE private_isg.rollout SET read_enabled=true,write_enabled=true WHERE feature='risk';
+DO $$ DECLARE co uuid:='10000000-0000-0000-0000-000000000001'; a uuid; r jsonb; p jsonb; op uuid; mut uuid; BEGIN
+r:=public.isg_risk_versions_mutate_v1(co,'open_assessment',gen_random_uuid(),gen_random_uuid(),'{"workplace_id":"40000000-0000-0000-0000-000000000001"}');a:=(r->>'assessment_id')::uuid;
+PERFORM public.isg_risk_versions_mutate_v1(co,'draft_version',gen_random_uuid(),gen_random_uuid(),jsonb_build_object('assessment_id',a,'kind','full','assessment_on','2025-01-01','expected_current',0));
+p:=jsonb_build_object('assessment_id',a,'version',1,'expected_current',0,'expected_edit_revision',0,'assessment_on','2025-02-01');op:=gen_random_uuid();mut:=gen_random_uuid();
+r:=public.isg_risk_versions_mutate_v1(co,'edit_draft',op,mut,p);
+IF r IS DISTINCT FROM public.isg_risk_versions_mutate_v1(co,'edit_draft',op,mut,p) THEN RAISE EXCEPTION 'Replay mismatch'; END IF;
+IF (SELECT assessment_on FROM private_isg.risk_assessment_versions WHERE assessment_id=a AND version=1)<>'2025-02-01'::date THEN RAISE EXCEPTION 'Edit lost'; END IF;
+BEGIN PERFORM public.isg_risk_versions_mutate_v1(co,'edit_draft',gen_random_uuid(),gen_random_uuid(),p);RAISE EXCEPTION 'Stale edit accepted';EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'VERSION_CONFLICT' THEN RAISE;END IF;END;
+BEGIN PERFORM public.isg_risk_versions_mutate_v1(co,'finalize_version',gen_random_uuid(),gen_random_uuid(),jsonb_build_object('assessment_id',a,'version',1,'expected_current',0,'period_years',1));RAISE EXCEPTION 'Stale finalize accepted';EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'VERSION_CONFLICT' THEN RAISE;END IF;END;
+PERFORM public.isg_risk_versions_mutate_v1(co,'cancel_draft',gen_random_uuid(),gen_random_uuid(),jsonb_build_object('assessment_id',a,'version',1,'expected_current',0,'expected_edit_revision',1,'cancellation_note','İşyerine ilişkin kayıt yanlış açıldı'));
+IF (SELECT state FROM private_isg.risk_assessment_versions WHERE assessment_id=a AND version=1)<>'cancelled' OR (SELECT current_version FROM private_isg.risk_assessments WHERE assessment_id=a)<>0 THEN RAISE EXCEPTION 'Cancellation damaged history/current'; END IF;
+IF (SELECT count(*) FROM private_isg.risk_draft_history WHERE assessment_id=a)<>2 THEN RAISE EXCEPTION 'Audit missing'; END IF;
+PERFORM public.isg_risk_versions_mutate_v1(co,'draft_version',gen_random_uuid(),gen_random_uuid(),jsonb_build_object('assessment_id',a,'kind','full','assessment_on','2025-01-01','expected_current',0));
+PERFORM public.isg_risk_versions_mutate_v1(co,'finalize_version',gen_random_uuid(),gen_random_uuid(),jsonb_build_object('assessment_id',a,'version',2,'expected_current',0,'period_years',1,'expected_edit_revision',0));
+BEGIN PERFORM public.isg_risk_versions_mutate_v1(co,'edit_draft',gen_random_uuid(),gen_random_uuid(),p||jsonb_build_object('version',2,'expected_current',2));RAISE EXCEPTION 'Final edited';EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'VERSION_FINALIZED' THEN RAISE;END IF;END;
+PERFORM set_config('test.actor','20000000-0000-0000-0000-000000000002',true);
+BEGIN PERFORM public.isg_risk_versions_mutate_v1(co,'cancel_draft',gen_random_uuid(),gen_random_uuid(),p);RAISE EXCEPTION 'Owner leaked';EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'ACCESS_DENIED' THEN RAISE;END IF;END;
+RAISE NOTICE 'ok risk draft edit/replay/concurrency/stale finalize/cancel/history/new draft/immutable final/owner';
+END $$;
+ROLLBACK;

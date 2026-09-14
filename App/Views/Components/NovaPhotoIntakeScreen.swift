@@ -45,7 +45,7 @@ struct NovaPhotoIntakeScreen: View {
             Button(RDLocalization.string("localizable.nova.photo.intake.gallery", table: .localizable, fallback: "Galeri")) { galleryOpen = true }
             Button(RDLocalization.string("localizable.nova.photo.intake.cancel", table: .localizable, fallback: "Vazgeç"), role: .cancel) { }
         }
-        .fullScreenCover(isPresented: $camera) {
+        .novaFullScreenCover(isPresented: $camera) {
             CameraPicker { image in
                 if let image { add([image]) }
                 camera = false
@@ -54,7 +54,7 @@ struct NovaPhotoIntakeScreen: View {
         .photosPicker(isPresented: $galleryOpen, selection: $gallery,
                       maxSelectionCount: max(1, maximum - images.count), matching: .images)
         .onChange(of: gallery) { _ in Task { await loadGallery() } }
-        .fullScreenCover(item: $preview) { item in
+        .novaFullScreenCover(item: $preview) { item in
             NovaPopup { NovaImageViewer(image: item.image) }
         }
         .alert(notice ?? "", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
@@ -117,7 +117,6 @@ struct NovaPhotoIntakeScreen: View {
                         Image(systemName: "xmark").font(.system(size: 11, weight: .bold))
                             .foregroundStyle(NovaColorToken.onInverse.color(in: scheme))
                             .frame(width: 28, height: 28)
-                            .background(NovaColorToken.inverse.color(in: scheme).opacity(0.75), in: Circle())
                     }.buttonStyle(.plain).padding(5)
                         .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.photo.intake.remove", table: .localizable, fallback: "Fotoğrafı çıkar")))
                         .accessibilityIdentifier("photo.intake.remove.\(index)")

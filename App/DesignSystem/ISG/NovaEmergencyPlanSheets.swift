@@ -35,7 +35,7 @@ struct NovaEmergencyDetailSheet: View {
                     }
                     history
                 }
-                .padding(20)
+                .padding(20).novaPopupContentSize()
             }
         }
         .accessibilityIdentifier("nova.emergency.detail")
@@ -213,7 +213,8 @@ struct NovaEmergencyPlanSheet: View {
                         NovaText(text: RDLocalization.string("localizable.nova.emergency.form.scope",
                             table: .localizable, fallback: "Kapsam"), style: .label)
                         TextField("", text: $draft.scope).textFieldStyle(.roundedBorder)
-                            .accessibilityIdentifier("nova.emergency.form.scope")
+                            .preference(key: NovaPopupBusyKey.self, value: saving)
+        .accessibilityIdentifier("nova.emergency.form.scope")
                     }
                     NovaDayField(label: RDLocalization.string("localizable.nova.emergency.row.prepared",
                         table: .localizable, fallback: "Hazırlanma"),
@@ -241,7 +242,7 @@ struct NovaEmergencyPlanSheet: View {
                     HStack(spacing: 10) {
                         NovaButton(label: RDLocalization.string("localizable.nova.emergency.cancel",
                             table: .localizable, fallback: "Vazgeç"), symbol: "xmark",
-                            variant: .surface, action: onClose)
+                            variant: .surface, action: onClose).disabled(saving)
                         NovaButton(label: RDLocalization.string("localizable.nova.emergency.form.save",
                             table: .localizable, fallback: "Yayımla"), symbol: "checkmark.seal",
                             variant: .primary) {
@@ -250,7 +251,7 @@ struct NovaEmergencyPlanSheet: View {
                         .disabled(saving || draft.team.isEmpty || draft.workplaceID == nil)
                     }
                 }
-                .padding(20)
+                .padding(20).novaPopupContentSize()
             }
         }
         .accessibilityIdentifier("nova.emergency.form")
@@ -271,7 +272,7 @@ struct NovaEmergencyPlanSheet: View {
                     NovaText(text: member.fullName + " · " + member.role.title, style: .meta)
                     Spacer(minLength: 0)
                     Button { draft.team.removeAll { $0.id == member.id } } label: {
-                        Image(systemName: "xmark.circle.fill").font(.system(size: 12))
+                        Image(systemName: "xmark.circle").font(.system(size: 12))
                     }.buttonStyle(.plain)
                 }
             }

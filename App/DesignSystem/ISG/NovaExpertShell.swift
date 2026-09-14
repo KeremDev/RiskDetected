@@ -69,6 +69,7 @@ struct NovaExpertShell<Content: View>: View {
         }
         // Caller replaces the state on Auth/session-epoch change; local child state must not leak.
         .id(navigation.epoch)
+        .environment(\.novaHasHeader, true)
     }
 
     private func guarded(_ action: (() -> Void)?, epoch: String) -> (() -> Void)? {
@@ -100,8 +101,7 @@ struct NovaShellTopBar: View {
             if typeSize.isAccessibilitySize { Spacer() } else { brand }
             icon("bell", label: hasUnread ? RDLocalization.string("localizable.nova.shell.notifications.with.new", table: .localizable, fallback: "Bildirimler, yeni bildirim var") : RDLocalization.string("localizable.nova.shell.notifications", table: .localizable, fallback: "Bildirimler"), id: "nova.notifications") {
                 send(.open(.notifications))
-            }.background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
-                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
+            }
                 .disabled(!notificationsAvailable).overlay(alignment: .topTrailing) {
                 if hasUnread {
                     Circle().fill(NovaColorToken.statusDangerDot.color(in: scheme)).frame(width: 8, height: 8)
@@ -109,12 +109,9 @@ struct NovaShellTopBar: View {
                 }
             }
             Button { send(.select(.profile)) } label: {
-                Group {
-                    if typeSize.isAccessibilitySize { Image(systemName: "person.fill").foregroundStyle(.white) }
-                    else { NovaText(text: novaInitials(userName), style: .label, color: .white) }
-                }.frame(width: 44, height: 44)
-                    .background(LinearGradient(colors: [Color(white: 0.25), Color(white: 0.1)], startPoint: .topLeading, endPoint: .bottomTrailing),
-                                in: RoundedRectangle(cornerRadius: NovaDimensionToken.radiusControl.value))
+                NovaIcon(symbol: "person", size: 22)
+                    .foregroundStyle(NovaColorToken.text.color(in: scheme))
+                    .frame(width: 44, height: 44)
             }.buttonStyle(.plain).accessibilityLabel(RDLocalization.string("localizable.nova.expert.shell.hesabim.f6d2ed00", table: .localizable, fallback: "Hesabım")).accessibilityIdentifier("nova.profile")
         }
         if typeSize.isAccessibilitySize { brand }
@@ -123,7 +120,7 @@ struct NovaShellTopBar: View {
 
     private var brand: some View {
         VStack(spacing: 1) {
-            NovaText(text: "NOVA", style: .brand)
+            NovaText(text: "İSGADA", style: .brand)
             NovaText(text: RDLocalization.string("localizable.nova.expert.shell.saha.denetim.asistani.192b4816", table: .localizable, fallback: "Saha denetim asistanı"), style: .meta, color: NovaColorToken.textMuted.color(in: scheme))
         }.frame(maxWidth: .infinity).multilineTextAlignment(.center)
     }
@@ -195,9 +192,8 @@ struct NovaShellTabStrip: View {
             Button { send(.open(.quickAdd)) } label: {
                 VStack(spacing: 2) {
                     Image(systemName: "plus").font(.system(size: 21, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(NovaColorToken.text.color(in: scheme))
                         .frame(width: 42, height: 42)
-                        .background(NovaColorToken.accent.color(in: scheme), in: Circle())
                     NovaText(text: "Ekle", style: .tab, color: NovaColorToken.accent.color(in: scheme)).lineLimit(1)
                 }.frame(minWidth: 44, maxWidth: expanded ? nil : .infinity, minHeight: 52)
                     .padding(.horizontal, expanded ? 12 : 0).contentShape(Rectangle())
@@ -511,14 +507,12 @@ private final class NovaIconBundleMarker {}
 struct NovaIcon: View {
     let symbol: String
     var size: CGFloat = 20
-    private static let assets: [String: String] = ["risk": "risk", "cameraLarge": "cameraLarge", "house": "home", "list.bullet": "list", "building.2": "firm", "mappin": "visit", "mappin.and.ellipse": "visit", "doc.text": "doc", "bell": "bell", "bell.fill": "bell", "person": "who", "camera": "cam", "helmet": "helmet", "sparkle": "starFilled", "exclamationmark.triangle": "openTriangle", "bookmark": "bookmark", "clock": "clock", "hand.thumbsup.fill": "award", "graduationcap": "award", "chart.bar": "chart", "chart.doc": "chart", "archivebox": "docDownload", "clock.arrow.circlepath": "docDownload", "folder": "docDownload"]
+    private static let symbols = ["risk": "shield", "cameraLarge": "camera", "helmet": "person.crop.square", "sparkle": "sparkle"]
     var body: some View {
-        Group {
-            if let name = Self.assets[symbol] {
-                Image("Nova_\(name)", bundle: Bundle(for: NovaIconBundleMarker.self)).renderingMode(.template)
-                    .resizable().scaledToFit().frame(width: size, height: size)
-            } else { Image(systemName: symbol).font(.system(size: size)).frame(width: size, height: size) }
-        }.accessibilityHidden(true)
+        Image(systemName: Self.symbols[symbol] ?? (symbol.hasSuffix(".fill") ? String(symbol.dropLast(5)) : symbol.replacingOccurrences(of: ".lefthalf.filled", with: "")))
+            .symbolVariant(.none).symbolRenderingMode(.monochrome)
+            .font(.system(size: size, weight: .regular))
+            .frame(width: size, height: size).accessibilityHidden(true)
     }
 }
 
@@ -528,9 +522,19 @@ struct NovaSizedText: View {
     var weight = "SemiBold"
     var color: Color?
     @Environment(\.colorScheme) private var scheme
+    private var role: NovaTypeToken {
+        switch size {
+        case ...10.5: return .badge
+        case ...12: return .meta
+        case ...13.5: return .body
+        case ...16: return .cardTitle
+        default: return .screenTitle
+        }
+    }
     var body: some View {
-        Text(verbatim: text).font(.custom("PlusJakartaSans-\(weight)", size: size, relativeTo: .body))
-            .foregroundStyle(color ?? NovaColorToken.text.color(in: scheme))
+        Text(verbatim: text)
+            .font(size > 22 ? .custom("PlusJakartaSans-\(weight)", size: size, relativeTo: .body) : NovaFont.font(role))
+            .foregroundStyle(NovaFont.ink(color, role: role, scheme: scheme))
             .fixedSize(horizontal: false, vertical: true)
     }
 }
@@ -771,7 +775,7 @@ struct NovaCompaniesScreen: View {
                 }
                 HStack(spacing: 10) {
                     Image(systemName: "magnifyingglass").font(.system(size: 14)).foregroundStyle(NovaColorToken.textPlaceholder.color(in: scheme))
-                    TextField(RDLocalization.string("localizable.nova.expert.shell.firma.ara.c12d1792", table: .localizable, fallback: "Firma ara..."), text: $search).font(.custom("PlusJakartaSans-Medium", size: 13))
+                    TextField(RDLocalization.string("localizable.nova.expert.shell.firma.ara.c12d1792", table: .localizable, fallback: "Firma ara..."), text: $search).font(NovaFont.font(.body))
                         .autocorrectionDisabled().accessibilityIdentifier("nova.companies.search")
                     if !search.isEmpty {
                         Button { search = "" } label: { Image(systemName: "xmark").frame(width: 44, height: 44) }.accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.shell.clear.search", table: .localizable, fallback: "Aramayı temizle")))

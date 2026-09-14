@@ -203,13 +203,13 @@ struct NovaDocumentTrackingScreen: View {
             query = ""
             reload = UUID()
         }
-        .fullScreenCover(item: $inspecting) { row in
+        .novaFullScreenCover(item: $inspecting) { row in
             NovaPopup {
                 NovaDocumentObligationSheet(obligation: row, client: client, canWrite: canWrite,
                     onChanged: { reload = UUID() }, onClosed: { inspecting = nil })
             }
         }
-        .fullScreenCover(isPresented: $adding) {
+        .novaFullScreenCover(isPresented: $adding) {
             NovaPopup {
                 NovaDocumentAddSheet(companies: companies, preselected: company,
                     allowedKinds: initialKinds, client: client) {
@@ -275,13 +275,13 @@ struct NovaDocumentTrackingScreen: View {
                 .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
             TextField(RDLocalization.string("localizable.nova.document.company.search", table: .localizable, fallback: "Firma ara veya listeden seçin"),
                 text: $companyQuery)
-                .font(.custom("PlusJakartaSans-Medium", size: 13.5))
+                .font(NovaFont.font(.body))
                 .textInputAutocapitalization(.never)
                 .focused($searchingCompany)
                 .accessibilityIdentifier("document.company.search")
             if !companyQuery.isEmpty {
                 Button { companyQuery = "" } label: {
-                    Image(systemName: "xmark.circle.fill").font(.system(size: 14))
+                    Image(systemName: "xmark.circle").font(.system(size: 14))
                         .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
                 }.buttonStyle(.plain)
                     .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.analysis.search.clear", table: .localizable, fallback: "Aramayı temizle")))
@@ -305,7 +305,6 @@ struct NovaDocumentTrackingScreen: View {
                         NovaIcon(symbol: "building.2", size: 15)
                             .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
                             .frame(width: 36, height: 36)
-                            .background(NovaColorToken.statusSuccessBg.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
                         VStack(alignment: .leading, spacing: 2) {
                             NovaText(text: option.name, style: .cardTitle).lineLimit(1)
                             if !option.detail.isEmpty { NovaText(text: option.detail, style: .micro,

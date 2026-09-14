@@ -43,7 +43,7 @@ struct NovaTrainingSessionEditor: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                Label(original == nil ? "Eğitim Ekle" : "Eğitim Düzenle", systemImage: "graduationcap").font(.headline)
+                Label(original == nil ? "Eğitim Ekle" : "Eğitim Düzenle", systemImage: "graduationcap").font(NovaFont.font(.cardTitle))
                 form
                 participants
                 NovaHelpHint(text: "Kaydettiğinizde seçilen personelin bu eğitime katıldığını beyan etmiş olursunuz. Ayrı planlama veya yoklama adımı yoktur.")
@@ -80,7 +80,7 @@ struct NovaTrainingSessionEditor: View {
                 } label: {
                     HStack { Image(systemName: "books.vertical"); Text(item?.title ?? "Kayıtlı eğitim seçin *"); Spacer(); Image(systemName: "chevron.down") }
                 }.tint(.primary)
-                Button { custom.toggle() } label: { Label("Yeni eğitim başlığı oluştur", systemImage: "plus") }.font(.subheadline)
+                Button { custom.toggle() } label: { Label("Yeni eğitim başlığı oluştur", systemImage: "plus") }.font(NovaFont.font(.body))
                 if custom {
                     field("Eğitim başlığı *", "graduationcap", $customTitle)
                     field("Süre · dakika *", "clock", $customMinutes).keyboardType(.numberPad)
@@ -92,20 +92,20 @@ struct NovaTrainingSessionEditor: View {
                     Text("Yüz yüze").tag("face_to_face"); Text("Online").tag("online"); Text("Karma").tag("mixed")
                 }.pickerStyle(.segmented)
                 if item?.code == "basic" || item?.code == "renewal" {
-                    Text("Karma: ortak konular online, işyerine özgü bölüm yüz yüze. İşyerine özgü içerik her firma için ayrıca sağlanmalıdır.").font(.caption).foregroundStyle(.secondary)
+                    Text("Karma: ortak konular online, işyerine özgü bölüm yüz yüze. İşyerine özgü içerik her firma için ayrıca sağlanmalıdır.").font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
                 }
                 field("Eğitmen *", "person", $trainer)
-                DatePicker("Eğitimin tamamlandığı tarih", selection: $held, in: ...Date(), displayedComponents: .date).font(.subheadline)
+                DatePicker("Eğitimin tamamlandığı tarih", selection: $held, in: ...Date(), displayedComponents: .date).font(NovaFont.font(.body))
                 field("Yer / bağlantı", "mappin.and.ellipse", $location)
-                TextField("Notlar", text: $notes, axis: .vertical).lineLimit(2...4).font(.subheadline)
+                TextField("Notlar", text: $notes, axis: .vertical).lineLimit(2...4).font(NovaFont.font(.body))
             }.disabled(!writable)
         }
     }
     private var participants: some View {
         NovaCard(padding: 14) {
             VStack(alignment: .leading, spacing: 10) {
-                Label("Firmalar ve katılımcılar", systemImage: "person.2").font(.subheadline)
-                TextField("Personel ara…", text: $search).font(.subheadline)
+                Label("Firmalar ve katılımcılar", systemImage: "person.2").font(NovaFont.font(.body))
+                TextField("Personel ara…", text: $search).font(NovaFont.font(.body))
                 ForEach(companies) { company in
                     VStack(alignment: .leading, spacing: 8) {
                         Button {
@@ -113,11 +113,11 @@ struct NovaTrainingSessionEditor: View {
                             else { selected[company.id] = [] }
                         } label: {
                             HStack { Image(systemName: selected[company.id] == nil ? "circle" : "checkmark.circle"); Text(company.name); Spacer() }
-                        }.buttonStyle(.plain).font(.subheadline).disabled(!writable || !writableCompanies.contains(company.id))
+                        }.buttonStyle(.plain).font(NovaFont.font(.body)).disabled(!writable || !writableCompanies.contains(company.id))
                         if let ids = selected[company.id] {
                             if let rule = item?.rules[company.hazard_class] {
                                 Text("\(rule.minutes / 60) sa \(rule.minutes % 60) dk · \(validity(rule.months))")
-                                    .font(.caption).foregroundStyle(.secondary)
+                                    .font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
                             }
                             ForEach((employees[company.id] ?? []).filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) }) { person in
                                 Button {
@@ -127,10 +127,10 @@ struct NovaTrainingSessionEditor: View {
                                     HStack {
                                         Image(systemName: ids.contains(person.id) ? "checkmark.square" : "square")
                                         Text(person.name); Spacer()
-                                    }.font(.subheadline).frame(minHeight: 34)
+                                    }.font(NovaFont.font(.body)).frame(minHeight: 34)
                                 }.buttonStyle(.plain).disabled(!writable)
                             }
-                            if employees[company.id]?.isEmpty != false { Text("Bu firmada aktif personel yok.").font(.caption) }
+                            if employees[company.id]?.isEmpty != false { Text("Bu firmada aktif personel yok.").font(NovaFont.font(.meta)) }
                             ForEach(original?.companies.first(where: { $0.company_id == company.id })?.participants.filter { person in
                                 !(employees[company.id] ?? []).contains { $0.id == person.id }
                             } ?? []) { person in
@@ -138,7 +138,7 @@ struct NovaTrainingSessionEditor: View {
                                     if ids.contains(person.id) { selected[company.id]?.remove(person.id) }
                                     else { selected[company.id]?.insert(person.id) }
                                 } label: {
-                                    Label("\(person.name) · eski kayıt", systemImage: ids.contains(person.id) ? "checkmark.square" : "square").font(.caption)
+                                    Label("\(person.name) · eski kayıt", systemImage: ids.contains(person.id) ? "checkmark.square" : "square").font(NovaFont.font(.meta))
                                 }.buttonStyle(.plain).disabled(!writable)
                             }
                         }
@@ -148,7 +148,7 @@ struct NovaTrainingSessionEditor: View {
         }
     }
     private func field(_ title: String, _ icon: String, _ binding: Binding<String>) -> some View {
-        HStack { Image(systemName: icon).frame(width: 20); TextField(title, text: binding) }.font(.subheadline).frame(minHeight: 34)
+        HStack { Image(systemName: icon).frame(width: 20); TextField(title, text: binding) }.font(NovaFont.font(.body)).frame(minHeight: 34)
     }
     private func validity(_ months: Int) -> String {
         guard months > 0 else { return "Tekrar tarihi tanımlı değil" }

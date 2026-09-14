@@ -38,7 +38,7 @@ struct NovaDirectoryDestination: View {
                     LazyVStack(alignment: .leading, spacing: 14) {
                         HStack(spacing: 12) {
                             if !isNovaPopup { NovaBackButton { if let onBack { onBack() } else { dismiss() } }.accessibilityIdentifier("directory.back") }
-                            NovaText(text: kind.title, style: .sectionTitle)
+                            NovaText(text: kind.title, style: .screenTitle)
                         }
                         NovaHelpHint(text: kind.help)
                         HStack(spacing: 10) {
@@ -46,7 +46,7 @@ struct NovaDirectoryDestination: View {
                                 HStack(spacing: 8) {
                                     NovaIcon(symbol: "magnifyingglass", size: 16)
                                     TextField(RDLocalization.string("localizable.nova.directory.search", table: .localizable, fallback: "Kayıt ara…"), text: $query)
-                                        .font(.custom("PlusJakartaSans-Medium", size: 14)).accessibilityIdentifier("directory.search")
+                                        .font(NovaFont.font(.body)).accessibilityIdentifier("directory.search")
                                 }
                             }
                             if kind.isCatalog {
@@ -77,7 +77,7 @@ struct NovaDirectoryDestination: View {
                                     HStack(spacing: 10) {
                                     if canWrite && (kind.isCatalog || kind == .engagements) { NovaButton(label: RDLocalization.string("localizable.nova.directory.screens.duzenle.7e356212", table: .localizable, fallback: "Düzenle"), symbol: "pencil", variant: .muted, isEnabled: !loading && error == nil && pending == nil) { editor = Editor(row: row) }.accessibilityIdentifier("directory.edit.\(row.id.uuidString.lowercased())") }
                                     if kind == .workplaces {
-                                        NavigationLink { NovaDirectoryDestination(scope: scope, kind: .contexts, parent: row.id, client: client, canWrite: canWrite) } label: { Label(RDLocalization.string("localizable.nova.directory.history.short", table: .localizable, fallback: "Bilgi geçmişi"), systemImage: "clock.arrow.circlepath").font(.custom("PlusJakartaSans-Medium", size: 13)).frame(maxWidth: .infinity, minHeight: 44) }
+                                        NavigationLink { NovaDirectoryDestination(scope: scope, kind: .contexts, parent: row.id, client: client, canWrite: canWrite) } label: { Label(RDLocalization.string("localizable.nova.directory.history.short", table: .localizable, fallback: "Bilgi geçmişi"), systemImage: "clock.arrow.circlepath").font(NovaFont.font(.body)).frame(maxWidth: .infinity, minHeight: 44) }
                                     }
                                     if kind == .contractors {
                                         NavigationLink { NovaDirectoryDestination(scope: scope, kind: .engagements, parent: row.id, client: client, canWrite: canWrite) } label: { Label(RDLocalization.string("localizable.nova.directory.screens.calisilan.isyerleri.ab67bdf8", table: .localizable, fallback: "Çalışılan işyerleri"), systemImage: "building.2") }
@@ -158,7 +158,7 @@ private struct NovaDirectoryEditor: View {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 12) {
                     if !isNovaPopup { NovaBackButton(isEnabled: !submitting, action: onBack).accessibilityIdentifier("directory.editor.back") }
-                    NovaText(text: kind.title, style: .sectionTitle)
+                    NovaText(text: kind.title, style: .screenTitle)
                 }
                 if [.contexts, .assignments].contains(kind) { NovaCard(padding: 16) { NovaText(text: RDLocalization.string("localizable.nova.directory.screens.onceki.donemi.secerseniz.bu.kayit.baslangic.tari.aa072143", table: .localizable, fallback: "Önceki dönemi seçerseniz bu kayıt başlangıç tarihinde bölünür; eski bilgiler korunur. Bitiş günü döneme dahil değildir."), style: .metaQuiet) } }
                 if kind == .engagements && original != nil { NovaText(text: RDLocalization.string("localizable.nova.directory.screens.firma.isyeri.ve.baslangic.degismez.bitisi.ve.aci.5e2c5767", table: .localizable, fallback: "Firma, işyeri ve başlangıç değişmez. Bitişi ve açıklamayı düzenleyebilirsiniz."), style: .metaQuiet) }
@@ -184,7 +184,7 @@ private struct NovaDirectoryEditor: View {
                                 Picker(field.label, selection: binding(field.id)) { Text(RDLocalization.string("localizable.nova.directory.screens.alt.isveren.963bc955", table: .localizable, fallback: "Alt işveren")).tag("subcontractor"); Text(RDLocalization.string("localizable.nova.directory.screens.yuklenici.3d11aad1", table: .localizable, fallback: "Yüklenici")).tag("contractor"); Text(RDLocalization.string("localizable.nova.directory.screens.tedarikci.dfce7f7e", table: .localizable, fallback: "Tedarikçi")).tag("supplier"); Text(RDLocalization.string("localizable.nova.directory.screens.diger.fbcfe757", table: .localizable, fallback: "Diğer")).tag("other") }.pickerStyle(.segmented)
                             } else if field.id == "hazard_class" {
                                 Picker(field.label, selection: binding(field.id)) { Text(RDLocalization.string("localizable.nova.directory.screens.secin.5519ecdd", table: .localizable, fallback: "Seçin")).tag(""); Text("Az").tag("low"); Text("Tehlikeli").tag("medium"); Text(RDLocalization.string("localizable.nova.directory.screens.cok.5c09224d", table: .localizable, fallback: "Çok")).tag("high") }.pickerStyle(.segmented)
-                            } else { TextField(field.label, text: binding(field.id)).font(.custom("PlusJakartaSans-Medium", size: 15)).textInputAutocapitalization(["starts_on", "ends_before", "timezone", "code"].contains(field.id) ? .never : .sentences).autocorrectionDisabled().focused($focusedField, equals: field.id).submitLabel(.done).onSubmit { focusedField = nil }.accessibilityIdentifier("directory.field.\(field.id)") }
+                            } else { TextField(field.label, text: binding(field.id)).font(NovaFont.font(.body)).textInputAutocapitalization(["starts_on", "ends_before", "timezone", "code"].contains(field.id) ? .never : .sentences).autocorrectionDisabled().focused($focusedField, equals: field.id).submitLabel(.done).onSubmit { focusedField = nil }.accessibilityIdentifier("directory.field.\(field.id)") }
                         }.disabled(pending != nil || (kind == .engagements && original != nil && ["organization_id", "workplace_id", "starts_on"].contains(field.id)))
                     }
                 }

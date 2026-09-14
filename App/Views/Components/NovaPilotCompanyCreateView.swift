@@ -46,7 +46,7 @@ struct NovaPilotCompanyCreateView: View {
                                         NovaIcon(symbol: "exclamationmark.triangle", size: 17).foregroundStyle(NovaColorToken.statusWarningInk.color(in: scheme))
                                         Picker(RDLocalization.string("localizable.nova.pilot.company.create.view.tehlike.sinifi.837c3a63", table: .localizable, fallback: "Tehlike sınıfı *"), selection: $hazard) {
                                             ForEach(CompanyHazardClass.allCases) { item in Text(item.title).tag(item) }
-                                        }.font(.custom("PlusJakartaSans-Medium", size: 13)).tint(NovaColorToken.text.color(in: scheme))
+                                        }.font(NovaFont.font(.body)).tint(NovaColorToken.text.color(in: scheme))
                                     }.frame(maxWidth: .infinity, alignment: .leading)
                                     Divider().frame(height: 30)
                                     field(RDLocalization.string("localizable.nova.pilot.company.create.view.sektor.a0de4868", table: .localizable, fallback: "Sektör *"), symbol: "square.grid.2x2", text: $sector, id: "sector")
@@ -65,7 +65,7 @@ struct NovaPilotCompanyCreateView: View {
                                 field(RDLocalization.string("localizable.nova.pilot.company.create.view.sicil.no.dc1d6d14", table: .localizable, fallback: "Sicil No"), symbol: "number", text: $registryNumber, id: "registryNumber")
                                 Divider()
                                 Toggle(isOn: $addResponsible) {
-                                    Label(RDLocalization.string("localizable.nova.pilot.company.create.view.sorumlu.personel.ekle.779d3a3d", table: .localizable, fallback: "Sorumlu personel ekle"), systemImage: "person.badge.plus").font(.subheadline)
+                                    Label(RDLocalization.string("localizable.nova.pilot.company.create.view.sorumlu.personel.ekle.779d3a3d", table: .localizable, fallback: "Sorumlu personel ekle"), systemImage: "person.badge.plus").font(NovaFont.font(.body))
                                 }.tint(NovaColorToken.accent.color(in: scheme))
                                 if addResponsible {
                                     field(RDLocalization.string("localizable.nova.pilot.company.create.view.ad.soyad.54b1adca", table: .localizable, fallback: "Ad soyad"), symbol: "person", text: $responsibleName, id: "responsible")
@@ -74,7 +74,7 @@ struct NovaPilotCompanyCreateView: View {
                             }
                         }.disabled(!loaded || submitting || pending != nil || storageFailed)
                         Label(RDLocalization.string("localizable.nova.pilot.company.create.view.yalnizca.pilot.kapsamina.eklenir.mevcut.firmalar.b99c355c", table: .localizable, fallback: "Yalnızca pilot kapsamına eklenir. Mevcut firmalarınız değişmez; firma limitiniz geçerlidir."), systemImage: "checkmark.shield")
-                            .font(.footnote).foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
+                            .font(NovaFont.font(.meta)).foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
                         if pending != nil {
                             NovaText(text: RDLocalization.string("localizable.nova.pilot.company.create.view.bekleyen.islemi.ayni.bilgilerle.tekrar.kontrol.e.1b29313f", table: .localizable, fallback: "Bekleyen işlemi aynı bilgilerle tekrar kontrol edin. İkinci bir firma oluşturulmaz."), style: .metaQuiet)
                         }
@@ -138,7 +138,7 @@ struct NovaPilotCompanyCreateView: View {
     private func field(_ title: String, symbol: String, text: Binding<String>, id: String, keyboard: UIKeyboardType = .default) -> some View {
         HStack(alignment: .center, spacing: 12) {
             NovaIcon(symbol: symbol, size: 18).foregroundStyle(NovaColorToken.accentInk.color(in: scheme)).frame(width: 22)
-                TextField(title, text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+                TextField(title, text: text).font(NovaFont.font(.body))
                     .foregroundStyle(NovaColorToken.text.color(in: scheme))
                     .textInputAutocapitalization(keyboard == .emailAddress ? .never : .words)
                     .keyboardType(keyboard).autocorrectionDisabled()

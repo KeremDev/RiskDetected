@@ -71,7 +71,6 @@ struct NovaAnalysisIntakePopup: View {
                 Button { back() } label: {
                     Image(systemName: "chevron.left").font(.system(size: 14, weight: .semibold))
                         .frame(width: 40, height: 40)
-                        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 13))
                 }.buttonStyle(.plain).disabled(isStarting)
                     .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.shell.back", table: .localizable, fallback: "Geri")))
                     .accessibilityIdentifier("analysis.intake.back")
@@ -130,7 +129,7 @@ struct NovaAnalysisIntakePopup: View {
                 Image(systemName: "magnifyingglass").font(.system(size: 13))
                     .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme)).accessibilityHidden(true)
                 TextField(RDLocalization.string("localizable.nova.intake.owner.search", table: .localizable, fallback: "Firma ara"), text: $query)
-                    .font(.custom("PlusJakartaSans-Medium", size: 14)).submitLabel(.done)
+                    .font(NovaFont.font(.body)).submitLabel(.done)
                     .accessibilityIdentifier("analysis.intake.owner.search")
             }.padding(.horizontal, 12).frame(minHeight: 42)
                 .background(NovaColorToken.surface.color(in: scheme), in: Capsule())

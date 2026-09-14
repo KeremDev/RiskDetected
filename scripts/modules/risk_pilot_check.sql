@@ -1,0 +1,28 @@
+BEGIN;
+SELECT set_config('test.actor','20000000-0000-0000-0000-000000000001',true);
+SELECT set_config('test.pilot','true',true);
+UPDATE private_isg.rollout SET read_enabled=true,write_enabled=true WHERE feature='risk';
+DO $$ DECLARE co uuid:='10000000-0000-0000-0000-000000000001'; a uuid; r jsonb; payload jsonb; op uuid; mut uuid; BEGIN
+r:=public.isg_risk_versions_mutate_v1(co,'open_assessment',gen_random_uuid(),gen_random_uuid(),'{"workplace_id":"40000000-0000-0000-0000-000000000001"}');
+a:=(r->>'assessment_id')::uuid;
+IF a IS NULL THEN RAISE EXCEPTION 'Assessment missing %',r; END IF;
+r:=public.isg_risk_versions_mutate_v1(co,'draft_version',gen_random_uuid(),gen_random_uuid(),jsonb_build_object('assessment_id',a,'kind','full','assessment_on','2024-02-29','expected_current',0));
+payload:=jsonb_build_object('assessment_id',a,'version',1,'expected_current',0,'period_years',1);op:=gen_random_uuid();mut:=gen_random_uuid();
+r:=public.isg_risk_versions_mutate_v1(co,'finalize_version',op,mut,payload);
+IF (SELECT valid_until FROM private_isg.risk_assessments WHERE assessment_id=a)<>'2025-02-28'::date THEN RAISE EXCEPTION 'Leap year date'; END IF;
+PERFORM public.isg_risk_versions_mutate_v1(co,'finalize_version',op,mut,payload);
+IF NOT (SELECT period_needs_review AND period_source='unapproved_fixture' FROM private_isg.risk_assessment_versions WHERE assessment_id=a AND version=1) THEN RAISE EXCEPTION 'Manual source lost'; END IF;
+PERFORM public.isg_risk_versions_mutate_v1(co,'draft_version',gen_random_uuid(),gen_random_uuid(),jsonb_build_object('assessment_id',a,'kind','metadata','revision_on','2025-01-01','reason','Belge başlık bilgisi düzeltildi','expected_current',1));
+PERFORM public.isg_risk_versions_mutate_v1(co,'finalize_version',gen_random_uuid(),gen_random_uuid(),jsonb_build_object('assessment_id',a,'version',2,'expected_current',1));
+IF NOT (SELECT period_needs_review AND period_source='unapproved_fixture' FROM private_isg.risk_assessment_versions WHERE assessment_id=a AND version=2) THEN RAISE EXCEPTION 'Correction lost source'; END IF;
+IF (SELECT valid_until FROM private_isg.risk_assessments WHERE assessment_id=a)<>'2025-02-28'::date OR (SELECT state FROM private_isg.risk_assessment_versions WHERE assessment_id=a AND version=1)<>'superseded' THEN RAISE EXCEPTION 'History/date changed'; END IF;
+BEGIN PERFORM public.isg_risk_versions_mutate_v1(co,'finalize_version',gen_random_uuid(),gen_random_uuid(),jsonb_build_object('assessment_id',a,'version',1,'expected_current',2,'period_years',1)); RAISE EXCEPTION 'Old revision republished'; EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'VERSION_FINALIZED' THEN RAISE; END IF; END;
+BEGIN PERFORM public.isg_risk_versions_mutate_v1(co,'draft_version',gen_random_uuid(),gen_random_uuid(),jsonb_build_object('assessment_id',a,'kind','rescan','expected_current',2)); RAISE EXCEPTION 'Rescan accepted'; EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'FILE_STORAGE_UNAVAILABLE' THEN RAISE; END IF; END;
+PERFORM public.isg_risk_versions_read_v1(co,'catalog',NULL,NULL,NULL,NULL,20,0);
+PERFORM public.isg_risk_versions_read_v1(co,'list',NULL,NULL,NULL,NULL,20,0);
+PERFORM public.isg_risk_versions_read_v1(co,'detail',NULL,NULL,NULL,a,20,0);
+PERFORM set_config('test.actor','20000000-0000-0000-0000-000000000002',true);
+BEGIN PERFORM public.isg_risk_versions_read_v1(co,'detail',NULL,NULL,NULL,a,20,0); RAISE EXCEPTION 'Owner leaked'; EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'ACCESS_DENIED' THEN RAISE; END IF; END;
+RAISE NOTICE 'ok risk pilot create/draft/finalize/replay/leap-year/history/date/source/owner/file gate';
+END $$;
+ROLLBACK;

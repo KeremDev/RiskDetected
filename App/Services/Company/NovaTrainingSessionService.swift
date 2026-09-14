@@ -37,6 +37,7 @@ struct NovaTrainingSession: Codable, Identifiable {
     let version: Int64
     let deleted_at: String?
     let companies: [Company]
+    var education: NovaEducationRecord? = nil
     var isLegacyPlan: Bool { companies.contains { $0.state == "planned" } }
     var count: Int { companies.reduce(0) { $0 + $1.participants.count } }
 }

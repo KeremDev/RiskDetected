@@ -14,6 +14,7 @@ struct NovaRiskClient {
     let open: (UUID, UUID) async throws -> NovaRiskRow?
     let draft: (UUID, NovaRiskVersionDraft) async throws -> NovaRiskRow?
     let finalize: (UUID, NovaRiskFinalizeDraft) async throws -> NovaRiskRow?
+    var cancelDraft: (UUID, NovaRiskRow, NovaRiskVersion, String) async throws -> NovaRiskRow? = { _,_,_,_ in throw NovaRiskFailure.unavailable }
 }
 
 /// One counter, in the same shape the rest of the modules use.
@@ -178,8 +179,11 @@ struct NovaRiskScreen: View {
     @State private var openChooser: String?
     @State private var detail: NovaRiskRow?
     @State private var newVersion: NovaRiskVersionDraft?
+    @State private var cancelling: NovaRiskRow?
     @State private var finalizing: NovaRiskFinalizeDraft?
     @State private var opening = false
+    @State private var creating = false
+    @State private var createCompany: UUID?
     @Environment(\.colorScheme) private var scheme
 
     private var allCompanies: String {
@@ -212,18 +216,37 @@ struct NovaRiskScreen: View {
             }
         }
         .task { await load(reset: true) }
+        .sheet(isPresented: $creating, onDismiss: { Task { await load(reset: true) } }) {
+            NovaCompanyCreateFlow(title: "Risk değerlendirmesi kaydı", companies: client.companies, catalogue: { co in try await client.catalogue(co) }, onSelect: { createCompany = $0 }) { catalogue in
+                if let co = createCompany { NovaRiskCreateRecord(client: client, company: co, catalogue: catalogue) { creating = false } }
+            }
+        }
         .sheet(item: $detail) { row in
             NovaRiskDetailSheet(row: row, canWrite: canWrite,
                 onNewVersion: { start(from: row) },
+                onEdit: { version in
+                    detail = nil
+                    newVersion = .init(assessmentID: row.id, kind: version.kind, assessmentOn: version.assessmentOn, revisionOn: version.revisionOn ?? "", scope: version.scope, reason: version.reason ?? "", expectedCurrent: row.currentVersion, versionToEdit: version.version, editRevision: version.editRevision)
+                },
+                onCancelDraft: { detail = nil; cancelling = row },
                 onFinalize: { version in
+                    detail = nil
                     finalizing = .init(assessmentID: row.id, version: version,
-                                       expectedCurrent: row.currentVersion)
+                                       expectedCurrent: row.currentVersion, kind: row.draftKind ?? .full, editRevision: row.versions.first(where: { $0.version == version })?.editRevision ?? 0)
                 },
                 onClose: { detail = nil })
         }
         .sheet(item: $newVersion) { draft in
             NovaRiskVersionSheet(draft: draft, catalogue: catalogue,
                 onSave: { edited in await save(edited) }, onClose: { newVersion = nil })
+        }
+        .sheet(item: $cancelling) { row in
+            NovaRiskCancelDraftSheet { reason in
+                guard let company = row.companyID, let version = row.versions.first(where: { $0.isDraft }) else { return NovaRiskFailure.validation.message }
+                do { _ = try await client.cancelDraft(company, row, version, reason); cancelling = nil; await load(reset: true); return nil }
+                catch let error as NovaRiskFailure { return error.message }
+                catch { return NovaRiskFailure.unavailable.message }
+            }
         }
         .sheet(item: $finalizing) { draft in
             NovaRiskFinalizeSheet(draft: draft, catalogue: catalogue,
@@ -234,11 +257,11 @@ struct NovaRiskScreen: View {
     @ViewBuilder private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
-                NovaButton(label: RDLocalization.string("localizable.nova.risk.back", table: .localizable, fallback: "Geri"),
-                    symbol: "chevron.left", variant: .surface, action: onBack)
+                NovaBackButton(action: onBack)
+                NovaText(text: headingOverride ?? NovaDestination.riskAssessments.title, style: .screenTitle)
                 Spacer(minLength: 0)
+                NovaButton(label: "Kayıt ekle", symbol: "plus", isEnabled: canWrite) { creating = true }
             }
-            NovaText(text: headingOverride ?? NovaDestination.riskAssessments.title, style: .screenTitle)
             // Said once, at the top, rather than implied by a colour.
             NovaText(text: NovaRiskWords.periodAttribution, style: .meta,
                 color: NovaColorToken.textSecondary.color(in: scheme))
@@ -349,26 +372,7 @@ struct NovaRiskScreen: View {
                 }
             }
         }
-        if canWrite, let catalogue, !catalogue.workplaces.isEmpty, query.company != nil {
-            NovaCard(padding: 14) {
-                VStack(alignment: .leading, spacing: 8) {
-                    NovaText(text: RDLocalization.string("localizable.nova.risk.start.title", table: .localizable,
-                        fallback: "Kayıt başlat"), style: .cardTitle)
-                    NovaText(text: RDLocalization.string("localizable.nova.risk.start.body", table: .localizable,
-                        fallback: "Takibi olmayan bir işyeri için kaydı açın. Açmak belge oluşturmaz."),
-                        style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
-                    ForEach(catalogue.workplaces) { workplace in
-                        NovaButton(label: workplace.name, symbol: "plus.circle", variant: .surface) {
-                            Task { await start(workplace: workplace.id) }
-                        }
-                        .disabled(opening)
-                    }
-                }
-            }
-        }
     }
-
-    // MARK: work
 
     private func load(reset: Bool) async {
         if reset { query.offset = 0 } else { query.offset += query.limit }
@@ -443,3 +447,44 @@ struct NovaRiskScreen: View {
 
 extension NovaRiskVersionDraft: Identifiable { var id: String { (assessmentID?.uuidString ?? "") + kind.rawValue } }
 extension NovaRiskFinalizeDraft: Identifiable { var id: String { (assessmentID?.uuidString ?? "") + "\(version)" } }
+
+
+private struct NovaRiskCreateRecord: View {
+    let client: NovaRiskClient
+    let company: UUID
+    let catalogue: NovaRiskCatalogue
+    let onClose: () -> Void
+    @State private var row: NovaRiskRow?
+    @State private var busy = false
+    @State private var error: String?
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let row, row.hasOpenDraft {
+                NovaText(text: "Bu işyerinin açık bir taslağı var. Kayıt ayrıntısından taslağı tamamlayabilirsiniz.", style: .body)
+                Button("Listeye dön", action: onClose)
+            } else if let row {
+                NovaRiskVersionSheet(draft: .init(assessmentID: row.id, kind: .full, assessmentOn: NovaDayField.text(Date()), expectedCurrent: row.currentVersion), catalogue: catalogue, onSave: { draft in
+                    do { _ = try await client.draft(company, draft); onClose(); return nil }
+                    catch let e as NovaRiskFailure { return e.message }
+                    catch { return NovaRiskFailure.unavailable.message }
+                }, onClose: onClose)
+            } else {
+                NovaText(text: "İşyeri seçin", style: .cardTitle)
+                if catalogue.workplaces.isEmpty { NovaText(text: "Önce firma bilgilerinden işyeri ekleyin.", style: .body) }
+                ForEach(catalogue.workplaces) { workplace in
+                    Button(workplace.name) {
+                        Task {
+                            busy = true; error = nil
+                            defer { busy = false }
+                            do { row = try await client.open(company, workplace.id) }
+                            catch let e as NovaRiskFailure { error = e.message }
+                            catch { self.error = NovaRiskFailure.unavailable.message }
+                        }
+                    }.disabled(busy)
+                }
+                if busy { ProgressView("Kayıt açılıyor…") }
+                if let error { Text(error) }
+            }
+        }.novaPopupContentSize().preference(key: NovaPopupBusyKey.self, value: busy)
+    }
+}

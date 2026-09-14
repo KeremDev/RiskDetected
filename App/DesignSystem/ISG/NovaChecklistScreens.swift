@@ -150,6 +150,7 @@ struct NovaChecklistScreen: View {
     @State private var detail: NovaChecklistRun?
     @State private var starting = false
     @State private var showingTemplates = false
+    @State private var authoringCompany: UUID?
     @Environment(\.colorScheme) private var scheme
 
     private var allCompanies: String {
@@ -190,23 +191,21 @@ struct NovaChecklistScreen: View {
                 onCancel: { await cancel(run) },
                 onClose: { detail = nil })
         }
-        .sheet(isPresented: $showingTemplates) {
-            NovaChecklistTemplateSheet(templates: templates, canWrite: canWrite,
-                onDraft: { title in await draftTemplate(title) },
-                onSetItem: { code, version, item, prompt, allowsNA, position in
-                    await setItem(code, version, item, prompt, allowsNA, position)
-                },
-                onRemoveItem: { code, version, item in await removeItem(code, version, item) },
-                onPublish: { code, version, note in await publish(code, version, note) },
-                onClose: { showingTemplates = false })
+        .sheet(isPresented: $showingTemplates, onDismiss: { Task { await load(reset: true) } }) {
+            NovaCompanyCreateFlow(title: "Kontrol Listeleri", companies: client.companies,
+                catalogue: client.catalogue, onSelect: { authoringCompany = $0 }) { _ in
+                if let company = authoringCompany {
+                    NovaChecklistAuthoring(client: client, company: company, onClose: { showingTemplates = false })
+                }
+            }
         }
     }
 
     @ViewBuilder private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
-                NovaButton(label: RDLocalization.string("localizable.nova.checklist.back", table: .localizable, fallback: "Geri"),
-                    symbol: "chevron.left", variant: .surface, action: onBack)
+                NovaBackButton(action: onBack)
+                NovaText(text: headingOverride ?? NovaDestination.checklists.title, style: .screenTitle)
                 Spacer(minLength: 0)
                 if canWrite {
                     NovaButton(label: RDLocalization.string("localizable.nova.checklist.templates",
@@ -214,7 +213,6 @@ struct NovaChecklistScreen: View {
                         variant: .surface) { showingTemplates = true }
                 }
             }
-            NovaText(text: headingOverride ?? NovaDestination.checklists.title, style: .screenTitle)
             // Said once, at the top, rather than implied by an empty screen.
             NovaText(text: NovaChecklistWords.noProductList, style: .meta,
                 color: NovaColorToken.textSecondary.color(in: scheme))

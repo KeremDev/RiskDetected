@@ -17,10 +17,10 @@ struct NovaSuccessPresentation: ViewModifier {
                         NovaCard(padding: 24) {
                             VStack(spacing: 14) {
                                 HStack(spacing: 18) {
-                                    Image(systemName: "sparkles").font(.title3).foregroundStyle(.orange)
+                                    Image(systemName: "sparkles").font(NovaFont.font(.sectionTitle)).foregroundStyle(.orange)
                                     Image(systemName: "checkmark.seal").font(.system(size: 44, weight: .light))
                                         .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
-                                    Image(systemName: "party.popper").font(.title3).foregroundStyle(.purple)
+                                    Image(systemName: "party.popper").font(NovaFont.font(.sectionTitle)).foregroundStyle(.purple)
                                 }.accessibilityHidden(true)
                                 NovaText(text: event.text, style: .cardTitle)
                                     .multilineTextAlignment(.center)

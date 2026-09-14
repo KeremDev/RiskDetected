@@ -152,14 +152,14 @@ struct NovaEquipmentCheckScreen: View {
             group = nil; equipmentType = nil; query = ""; openChooser = nil
             reload = UUID()
         }
-        .fullScreenCover(item: $inspecting) { row in
+        .novaFullScreenCover(item: $inspecting) { row in
             NovaPopup {
                 NovaEquipmentItemSheet(item: row, rule: rule(for: row.equipmentType),
                     workplaces: workplaces, client: client, canWrite: canWrite,
                     onChanged: { reload = UUID() }, onClosed: { inspecting = nil })
             }
         }
-        .fullScreenCover(isPresented: $adding) {
+        .novaFullScreenCover(isPresented: $adding) {
             NovaPopup {
                 NovaEquipmentAddSheet(companies: companies, preselected: company,
                     suggestions: suggestions, rules: rules, workplaces: workplaces, client: client) {
@@ -168,7 +168,7 @@ struct NovaEquipmentCheckScreen: View {
                     }
             }
         }
-        .fullScreenCover(isPresented: $editingPeriods) {
+        .novaFullScreenCover(isPresented: $editingPeriods) {
             NovaPopup {
                 NovaEquipmentPeriodSheet(company: company, suggestions: suggestions, rules: rules,
                     client: client) {
@@ -237,13 +237,13 @@ struct NovaEquipmentCheckScreen: View {
                 .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
             TextField(RDLocalization.string("localizable.nova.file.company.search", table: .localizable, fallback: "Firma ara veya listeden seçin"),
                 text: $companyQuery)
-                .font(.custom("PlusJakartaSans-Medium", size: 13.5))
+                .font(NovaFont.font(.body))
                 .textInputAutocapitalization(.never)
                 .focused($searchingCompany)
                 .accessibilityIdentifier("equipment.company.search")
             if !companyQuery.isEmpty {
                 Button { companyQuery = "" } label: {
-                    Image(systemName: "xmark.circle.fill").font(.system(size: 14))
+                    Image(systemName: "xmark.circle").font(.system(size: 14))
                         .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
                 }.buttonStyle(.plain)
                     .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.analysis.search.clear", table: .localizable, fallback: "Aramayı temizle")))
@@ -265,7 +265,6 @@ struct NovaEquipmentCheckScreen: View {
                         NovaIcon(symbol: "checkmark.shield", size: 15)
                             .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
                             .frame(width: 36, height: 36)
-                            .background(NovaColorToken.statusSuccessBg.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
                         VStack(alignment: .leading, spacing: 2) {
                             NovaText(text: option.name, style: .cardTitle).lineLimit(1)
                             if !option.detail.isEmpty { NovaText(text: option.detail, style: .micro,

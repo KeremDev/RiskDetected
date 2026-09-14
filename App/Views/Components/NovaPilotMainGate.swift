@@ -38,7 +38,7 @@ struct NovaPilotRoot: View {
     @EnvironmentObject private var app: AppState
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var controller = NovaWorkspaceController()
-    @State private var navigation = NovaNavigationState(epoch: UUID().uuidString, available: [.statistics, .companies, .newCompany, .findings, .newFinding, .analyses, .newAnalysis, .training, .newTraining, .documentChecklist, .documents, .periodicChecks])
+    @State private var navigation = NovaNavigationState(epoch: UUID().uuidString, available: [.riskAssessments, .statistics, .companies, .newCompany, .findings, .newFinding, .analyses, .newAnalysis, .training, .newTraining, .documentChecklist, .documents, .periodicChecks, .emergencyPlans, .drills, .ppeHandovers, .appointments, .katipContracts, .annualWorkPlans, .boardMeetings, .visits, .workPermits, .contractors, .reports, .reportArchive, .checklists])
     @State private var showingCreate = false
     @State private var notice: String?
     @State private var listRevision = UUID()
@@ -134,18 +134,17 @@ struct NovaPilotRoot: View {
                 ppe
             case .appointments:
                 appointments
+            case .katipContracts, .annualWorkPlans, .boardMeetings, .visits, .workPermits, .contractors:
+                if ready {
+                    NovaPilotProcessGate(identity: identity, kind: processKind(destination), onBack: { navigate(.home) })
+                        .id(destination)
+                } else { statusCard }
+            case .reports, .reportArchive:
+                NovaProcessArchive(identity: identity, onBack: { navigate(.home) })
             case .profile:
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.hesabim.3b621d08", table: .localizable, fallback: "Hesabım"), style: .screenTitle)
-                        NovaCard(padding: 20) {
-                            NovaText(text: name, style: .cardTitle)
-                            NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.nova.ozel.pilot.build.96665a0c", table: .localizable, fallback: "NOVA · özel pilot build"), style: .metaQuiet)
-                            NovaText(text: status, style: .metaQuiet)
-                        }
-                        NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.profil.duzenleme.ve.abonelik.islemleri.bu.pilot..efb31ef3", table: .localizable, fallback: "Profil düzenleme ve abonelik işlemleri bu pilot arayüzüne henüz bağlanmadı."))
-                        NovaButton(label: RDLocalization.string("localizable.nova.pilot.main.gate.cikis.yap.485ab15e", table: .localizable, fallback: "Çıkış yap"), symbol: "rectangle.portrait.and.arrow.right", variant: .surface) { app.signOut() }
-                    }.padding(20)
+                VStack(spacing: 0) {
+                    NovaPageHeading(title: "Profil", onBack: { navigate(.home) }).padding(.horizontal, 20)
+                    ProfileView()
                 }
             default:
                 NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.bu.modul.hazirlaniyor.henuz.canli.islem.yapmiyor.b652656a", table: .localizable, fallback: "Bu modül hazırlanıyor; henüz canlı işlem yapmıyor.")).padding(20)
@@ -160,7 +159,7 @@ struct NovaPilotRoot: View {
                 .accessibilityIdentifier("nova.pilot.root")
                 .allowsHitTesting(false)
         }
-        .fullScreenCover(isPresented: $showingCreate) {
+        .novaFullScreenCover(isPresented: $showingCreate) {
             NovaPopup {
             NovaPilotCompanyCreateView(identity: identity, service: .live()) { companyID in
                 listRevision = UUID()
@@ -168,7 +167,7 @@ struct NovaPilotRoot: View {
             }
             }
         }
-        .alert(RDLocalization.string("localizable.nova.pilot.main.gate.nova.pilot.d20fb7f1", table: .localizable, fallback: "NOVA pilot"), isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
+        .alert(RDLocalization.string("localizable.nova.pilot.main.gate.nova.pilot.d20fb7f1", table: .localizable, fallback: "İSGADA pilot"), isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
             Button("Tamam", role: .cancel) { notice = nil }
         } message: { Text(notice ?? "") }
         .task { if !previewOnly { await controller.observe() } }
@@ -243,7 +242,7 @@ struct NovaPilotRoot: View {
 
     @ViewBuilder private var emergencyPlans: some View {
         if ready {
-            NovaPilotEmergencyGate(identity: identity, canWrite: controller.canWrite,
+            NovaPilotEmergencyGate(identity: identity, canWrite: ready,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
@@ -252,16 +251,27 @@ struct NovaPilotRoot: View {
 
     @ViewBuilder private var drills: some View {
         if ready {
-            NovaPilotDrillGate(identity: identity, canWrite: controller.canWrite,
+            NovaPilotDrillGate(identity: identity, canWrite: ready,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
         }
     }
 
+    private func processKind(_ destination: NovaDestination) -> String {
+        switch destination {
+        case .katipContracts: return "katip_contract"
+        case .annualWorkPlans: return "annual_work_plan"
+        case .boardMeetings: return "board"
+        case .visits: return "site_visit"
+        case .workPermits: return "work_permit"
+        default: return "contractor"
+        }
+    }
+
     @ViewBuilder private var ppe: some View {
         if ready {
-            NovaPilotPPEGate(identity: identity, canWrite: controller.canWrite,
+            NovaPilotPPEGate(identity: identity, canWrite: ready,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
@@ -270,7 +280,16 @@ struct NovaPilotRoot: View {
 
     @ViewBuilder private var appointments: some View {
         if ready {
-            NovaPilotAppointmentGate(identity: identity, canWrite: controller.canWrite,
+            NovaPilotAppointmentGate(identity: identity, canWrite: ready,
+                onBack: { navigate(.home) })
+        } else {
+            NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
+        }
+    }
+
+    @ViewBuilder private var katip: some View {
+        if ready {
+            NovaPilotKatipGate(identity: identity, canWrite: controller.canWrite,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)

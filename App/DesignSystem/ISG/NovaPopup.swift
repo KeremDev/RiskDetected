@@ -5,7 +5,7 @@ private struct NovaPopupEnvironmentKey: EnvironmentKey {
 }
 
 extension EnvironmentValues {
-    /// True while a page is rendered inside the centered NOVA popup.
+    /// True while a page is rendered inside the centered İSGADA popup.
     /// Child pages use this to avoid duplicating a second back affordance.
     var isNovaPopup: Bool {
         get { self[NovaPopupEnvironmentKey.self] }
@@ -18,8 +18,13 @@ struct NovaPopup<Content: View>: View {
     @ViewBuilder let content: () -> Content
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.isNovaPopup) private var nested
+    @State private var busy = false
     @State private var contentHeight: CGFloat = 0
-    var body: some View {
+    @ViewBuilder var body: some View {
+        if nested { content() } else { presentation }
+    }
+    private var presentation: some View {
         GeometryReader { geometry in
             ZStack {
                 Rectangle().fill(.ultraThinMaterial).ignoresSafeArea()
@@ -31,9 +36,8 @@ struct NovaPopup<Content: View>: View {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark").font(.system(size: 16, weight: .semibold))
                             .frame(width: 44, height: 44)
-                            .background(NovaColorToken.surface.color(in: scheme), in: Circle())
-                            .overlay(Circle().strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
-                    }.buttonStyle(.plain)
+
+                    }.buttonStyle(.plain).disabled(busy)
                         .accessibilityLabel(RDLocalization.string("localizable.nova.company.management.gate.kapat.3148ed17", table: .localizable, fallback: "Kapat"))
                         .accessibilityIdentifier("nova.popup.close")
                         .padding(.top, 8).padding(.trailing, 8)
@@ -48,7 +52,10 @@ struct NovaPopup<Content: View>: View {
                 .shadow(color: .black.opacity(0.18), radius: 24, y: 8)
                 .padding(.horizontal, 16)
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
-        }.modifier(NovaTransparentPresentation())
+        }.font(NovaFont.font(.body)).foregroundStyle(NovaColorToken.text.color(in: scheme)).tint(NovaColorToken.text.color(in: scheme))
+        .modifier(NovaTransparentPresentation())
+            .onPreferenceChange(NovaPopupBusyKey.self) { busy = $0 }
+            .interactiveDismissDisabled(busy)
     }
 }
 
@@ -73,4 +80,9 @@ private struct NovaTransparentPresentation: ViewModifier {
             content
         }
     }
+}
+
+struct NovaPopupBusyKey: PreferenceKey {
+    static var defaultValue = false
+    static func reduce(value: inout Bool, nextValue: () -> Bool) { value = value || nextValue() }
 }

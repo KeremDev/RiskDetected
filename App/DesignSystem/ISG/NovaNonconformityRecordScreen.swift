@@ -363,14 +363,14 @@ struct NovaNonconformityRecordSheet: View {
     private func field(_ label: String, _ text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            TextField(label, text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+            TextField(label, text: text).font(NovaFont.font(.body))
                 .frame(minHeight: 36).accessibilityIdentifier("record.\(id)")
         }
     }
     private func area(_ label: String, _ text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            TextEditor(text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+            TextEditor(text: text).font(NovaFont.font(.body))
                 .frame(minHeight: 64).scrollContentBackground(.hidden)
                 .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 10))
                 .accessibilityIdentifier("record.\(id)")

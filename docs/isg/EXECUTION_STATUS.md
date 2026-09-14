@@ -1,3 +1,13 @@
+> 15 Eylül güncel canlı durum: [Master pilot aktivasyonu ve açık kabul listesi](PILOT_MASTER_ACTIVATION_2026-09-15.md). Altı ek süreç modülü ile uygunsuzluk/kontrol listesi servisleri açık; aşağıdaki önceki sürüm notları tarihseldir.
+
+> 15 Eylül KKD kapsam güncellemesi: yalnız zimmet + indirilebilir form. [Teslim notu](PPE_HANDOVER_ONLY_2026-09-15.md). Önceki KKD iade/miktar/yönetim kapsamının yerini alır.
+
+> 15 Eylül: [Modül kayıt yönetimi ve evrak bağlantısı](PILOT_MODULE_MANAGEMENT_2026-09-15.md) canlıda.
+
+> Son canlı modül teslimi: [Dört operasyon modülü](PILOT_OPERATIONAL_MODULES_2026-09-14.md).
+
+> Güncel genel modül sırası ve tamamlanma sınırları: [14 Eylül modül kuyruğu](MODULE_COMPLETION_QUEUE_2026-09-14.md). Aşağıdaki eski teslim kayıtları tarihseldir.
+
 # İSG Adası geçişi — yürütme kaydı
 
 Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesini istedi. Bu dosya ilerledikçe güncellenir; master planın tarihli teslim açıklamaları tarihsel kayıttır.

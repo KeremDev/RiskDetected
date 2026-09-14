@@ -59,6 +59,64 @@ extension NovaColorToken {
     func color(in scheme: ColorScheme) -> Color { rgba(dark: scheme == .dark).color }
 }
 
+/// The product surfaces use the slightly deeper neutral from the mobile
+/// reference. Keeping this as an environment style leaves the pinned İSGADA
+/// reference tokens untouched for the hostless design harness.
+enum NovaCanvasStyle {
+    case reference
+    case product
+
+    func color(in scheme: ColorScheme) -> Color {
+        switch self {
+        case .reference:
+            return NovaColorToken.canvas.color(in: scheme)
+        case .product:
+            return (scheme == .dark
+                ? NovaRGBA(red: 17, green: 17, blue: 20, alpha: 1)
+                : NovaRGBA(red: 233, green: 233, blue: 233, alpha: 1)).color
+        }
+    }
+}
+
+private struct NovaCanvasStyleKey: EnvironmentKey {
+    static let defaultValue = NovaCanvasStyle.reference
+}
+
+extension EnvironmentValues {
+    var novaCanvasStyle: NovaCanvasStyle {
+        get { self[NovaCanvasStyleKey.self] }
+        set { self[NovaCanvasStyleKey.self] = newValue }
+    }
+}
+
+/// All İSGADA surfaces use the same bundled font family, including previews.
+enum NovaTypographyFamily {
+    case reference
+    case product
+
+    func fontName(for weight: Int) -> String? {
+        guard self == .product else { return nil }
+        switch weight {
+        case 800...: return "PlusJakartaSans-ExtraBold"
+        case 700..<800: return "PlusJakartaSans-Bold"
+        case 600..<700: return "PlusJakartaSans-SemiBold"
+        case 500..<600: return "PlusJakartaSans-Medium"
+        default: return "PlusJakartaSans-Regular"
+        }
+    }
+}
+
+private struct NovaTypographyFamilyKey: EnvironmentKey {
+    static let defaultValue = NovaTypographyFamily.reference
+}
+
+extension EnvironmentValues {
+    var novaTypographyFamily: NovaTypographyFamily {
+        get { self[NovaTypographyFamilyKey.self] }
+        set { self[NovaTypographyFamilyKey.self] = newValue }
+    }
+}
+
 /// The floating tab bar sits over the scroll view, so a scrolling page owes it
 /// this much clearance or its last control is unreachable.
 let novaTabBarInset = NovaDimensionToken.layoutScrollBottomInset.value - NovaDimensionToken.spaceScreenX.value
@@ -68,16 +126,18 @@ struct NovaText: View {
     var style: NovaTypeToken = .body
     var color: Color?
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.novaTypographyFamily) private var typographyFamily
     @ScaledMetric(relativeTo: .body) private var scale = 1.0
 
     var body: some View {
         let spec = style.spec
         Text(verbatim: text)
-            .font(.custom(spec.fontName, size: spec.size, relativeTo: .body))
+            .font(.custom(typographyFamily.fontName(for: spec.weight) ?? spec.fontName,
+                         size: spec.size, relativeTo: .body))
             .tracking(spec.tracking * scale)
             // Native font leading differs from RN lineHeight; visual acceptance remains open.
             .lineSpacing(max(0, spec.lineHeight - spec.size) * scale)
-            .foregroundStyle(color ?? NovaColorToken.text.color(in: scheme))
+            .foregroundStyle(NovaFont.ink(color, role: style, scheme: scheme))
             .fixedSize(horizontal: false, vertical: true)
     }
 }
@@ -102,18 +162,26 @@ struct NovaCard<Content: View>: View {
     }
 }
 
-/// Every NOVA root and pushed destination owns an opaque canvas, not a system-white page.
+/// Every İSGADA root and pushed destination owns an opaque canvas, not a system-white page.
 /// White belongs to NovaCard/content surfaces; List/Form defaults must not cover the canvas.
 struct NovaPageSurface<Content: View>: View {
     @ViewBuilder let content: () -> Content
     @Environment(\.colorScheme) private var scheme
     @Environment(\.isNovaPopup) private var isNovaPopup
+    @Environment(\.novaCanvasStyle) private var canvasStyle
+    @Environment(\.novaHasHeader) private var hasHeader
 
     var body: some View {
-        content()
-            .frame(maxWidth: .infinity, maxHeight: isNovaPopup ? nil : .infinity, alignment: .topLeading)
+        VStack(spacing: 0) {
+            if !hasHeader && !isNovaPopup { NovaStandaloneHeader() }
+            content().environment(\.novaHasHeader, true)
+                .frame(maxWidth: .infinity, maxHeight: isNovaPopup ? nil : .infinity, alignment: .topLeading)
+        }
+            .font(NovaFont.font(.body))
+            .foregroundStyle(NovaColorToken.text.color(in: scheme))
+            .tint(NovaColorToken.text.color(in: scheme))
             .scrollContentBackground(.hidden)
-            .background(NovaColorToken.canvas.color(in: scheme).ignoresSafeArea())
+            .background(canvasStyle.color(in: scheme).ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar, .tabBar)
     }
 }
@@ -128,8 +196,7 @@ struct NovaBackButton: View {
             Image(systemName: "chevron.left").font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(NovaColorToken.text.color(in: scheme))
                 .frame(width: 44, height: 44)
-                .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
-                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
+
         }.buttonStyle(.plain).disabled(!isEnabled)
             .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.shell.back", table: .localizable, fallback: "Geri")))
     }
@@ -160,7 +227,7 @@ struct NovaPageHeading: View {
         HStack(spacing: 12) {
             if !isNovaPopup { NovaBackButton(isEnabled: isBackEnabled, action: onBack) }
             VStack(alignment: .leading, spacing: 3) {
-                NovaText(text: title, style: .sectionTitle)
+                NovaText(text: title, style: .screenTitle)
                 if !subtitle.isEmpty { NovaText(text: subtitle, style: .metaQuiet) }
             }
             Spacer(minLength: 0)
@@ -327,3 +394,32 @@ struct NovaComponentGallery_Previews: PreviewProvider {
     }
 }
 #endif
+
+/// Shared loading state for İSGADA pages. Motion respects the accessibility setting.
+struct NovaLoadingView: View {
+    var message: String = "Yükleniyor…"
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var rotating = false
+
+    var body: some View {
+        VStack(spacing: 18) {
+            ZStack {
+                Circle().stroke(NovaColorToken.text.color(in: scheme).opacity(0.08), lineWidth: 2)
+                Circle().trim(from: 0, to: 0.22)
+                    .stroke(NovaColorToken.text.color(in: scheme).opacity(0.65), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    .rotationEffect(.degrees(rotating ? 360 : 0))
+                    .animation(reduceMotion ? nil : .linear(duration: 1.8).repeatForever(autoreverses: false), value: rotating)
+                NovaIcon(symbol: "viewfinder", size: 24)
+            }.frame(width: 64, height: 64).accessibilityHidden(true)
+            NovaText(text: message, style: .metaQuiet)
+                .multilineTextAlignment(.center)
+        }
+        .padding(28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("nova.loading")
+        .onAppear { rotating = !reduceMotion }
+        .onChange(of: reduceMotion) { rotating = !$0 }
+    }
+}

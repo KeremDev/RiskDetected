@@ -41,7 +41,7 @@ struct NovaChecklistRunSheet: View {
                     questions
                     if canWrite && run.state == .open { actions }
                 }
-                .padding(20)
+                .padding(20).novaPopupContentSize()
             }
         }
         .sheet(item: $draft) { entry in
@@ -201,7 +201,7 @@ struct NovaChecklistAnswerSheet: View {
                         .disabled(saving)
                     }
                 }
-                .padding(20)
+                .padding(20).novaPopupContentSize()
             }
         }
         .accessibilityIdentifier("nova.checklist.answer.sheet")
@@ -295,7 +295,7 @@ struct NovaChecklistTemplateSheet: View {
                         table: .localizable, fallback: "Kapat"), symbol: "xmark",
                         variant: .surface, action: onClose)
                 }
-                .padding(20)
+                .padding(20).novaPopupContentSize()
             }
         }
         .accessibilityIdentifier("nova.checklist.templates")
@@ -439,3 +439,26 @@ struct NovaChecklistTemplateSheet: View {
 }
 
 extension NovaChecklistAnswerDraft: Identifiable { var id: String { (runID?.uuidString ?? "") + itemCode } }
+
+struct NovaChecklistAuthoring: View {
+    let client: NovaChecklistClient
+    let company: UUID
+    let onClose: () -> Void
+    @State private var templates: [NovaChecklistTemplate] = []
+    @State private var failure: String?
+    var body: some View {
+        NovaChecklistTemplateSheet(templates: templates, canWrite: true,
+            onDraft: { title in await mutate { try await client.draftTemplate(company,title) } },
+            onSetItem: { code,version,item,prompt,na,position in await mutate { try await client.setItem(company,code,version,item,prompt,na,position) } },
+            onRemoveItem: { code,version,item in await mutate { try await client.removeItem(company,code,version,item) } },
+            onPublish: { code,version,note in await mutate { try await client.publishTemplate(company,code,version,note) } },
+            onClose: onClose)
+            .task { do { templates = try await client.templates(company) } catch { failure = "Listeler yüklenemedi." } }
+            .overlay(alignment:.bottom) { if let failure { Text(failure).padding().background(.regularMaterial) } }
+    }
+    private func mutate(_ operation: () async throws -> Void) async -> String? {
+        do { try await operation(); templates = try await client.templates(company); return nil }
+        catch let error as NovaChecklistFailure { return error.message }
+        catch { return "İşlem tamamlanamadı. Yeniden deneyin." }
+    }
+}

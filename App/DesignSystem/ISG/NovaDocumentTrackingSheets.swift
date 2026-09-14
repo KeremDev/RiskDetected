@@ -40,7 +40,7 @@ struct NovaDocumentObligationSheet: View {
             kinds = (try? await client.kinds(company)) ?? []
             places = (try? await client.workplaces(company)) ?? []
         }
-        .fullScreenCover(isPresented: $editing) {
+        .novaFullScreenCover(isPresented: $editing) {
             NovaPopup {
                 NovaDocumentObligationForm(title: RDLocalization.string("localizable.nova.document.edit.title", table: .localizable, fallback: "Takip kaydını düzenle"),
                     kinds: kinds, places: places, draft: Self.draft(row), isKindLocked: true) { value in
@@ -302,7 +302,7 @@ struct NovaDocumentObligationSheet: View {
     private func field(_ label: String, _ text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            TextField(label, text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+            TextField(label, text: text).font(NovaFont.font(.body))
                 .frame(minHeight: 34).accessibilityIdentifier("document.copy.\(id)")
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -578,14 +578,14 @@ struct NovaDocumentObligationForm: View {
     private func field(_ label: String, _ text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            TextField(label, text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+            TextField(label, text: text).font(NovaFont.font(.body))
                 .frame(minHeight: 36).accessibilityIdentifier("document.field.\(id)")
         }
     }
     private func number(_ label: String, _ text: Binding<String>, id: String, hint: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            TextField(hint, text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+            TextField(hint, text: text).font(NovaFont.font(.body))
                 .keyboardType(.numberPad).frame(minHeight: 36)
                 .accessibilityIdentifier("document.field.\(id)")
         }.frame(maxWidth: .infinity, alignment: .leading)
@@ -593,7 +593,7 @@ struct NovaDocumentObligationForm: View {
     private func area(_ label: String, _ text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            TextEditor(text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+            TextEditor(text: text).font(NovaFont.font(.body))
                 .frame(minHeight: 64).scrollContentBackground(.hidden)
                 .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 10))
                 .accessibilityIdentifier("document.field.\(id)")

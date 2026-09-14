@@ -9,10 +9,10 @@ struct NovaAnalysisSectionTone {
     static func of(_ kind: NovaAnalysisSectionKind) -> NovaAnalysisSectionTone {
         switch kind {
         case .riskAnalysis: return .init(status: .danger, symbol: "exclamationmark.triangle")
-        case .expertRecommendations: return .init(status: .warning, symbol: "person.crop.rectangle")
+        case .expertRecommendations: return .init(status: .warning, symbol: "text.bubble")
         // Not the shared asset alias: that one draws an award badge, which is
         // not what a training recommendation means.
-        case .trainingRecommendations: return .init(status: .info, symbol: "graduationcap.fill")
+        case .trainingRecommendations: return .init(status: .info, symbol: "graduationcap")
         case .approvedNotebook: return .init(status: .neutral, symbol: "doc.text")
         }
     }
@@ -83,7 +83,6 @@ struct NovaAnalysisSectionHeader: View {
                     NovaIcon(symbol: tone.symbol, size: 18)
                         .foregroundStyle(palette.ink.color(in: scheme))
                         .frame(width: 38, height: 38)
-                        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
                     VStack(alignment: .leading, spacing: 3) {
                         NovaText(text: NovaAnalysisWords.sectionTitle(kind), style: .cardTitle,
                             color: palette.ink.color(in: scheme))
@@ -105,56 +104,65 @@ struct NovaAnalysisSectionHeader: View {
     }
 }
 
-/// What the scored section adds up to under the method the expert is reading
-/// it with. Every number here is counted from the rows on screen.
-struct NovaAnalysisStatsCard: View {
+/// A compact distribution marker for the scored section. The detail screen
+/// keeps the bar visible without turning the section intro into a dashboard.
+struct NovaAnalysisRiskSummaryCard: View {
     let section: NovaAnalysisSection
     let method: NovaRiskMethod
     @Environment(\.colorScheme) private var scheme
 
+    private var distribution: [(band: String, count: Int)] { section.distribution(method) }
+    private var unknownCount: Int {
+        section.items.filter { item in
+            guard let band = item.band(method) else { return true }
+            return !["critical", "high", "medium", "low"].contains(band)
+        }.count
+    }
+    private var buckets: [(band: String, count: Int)] {
+        if unknownCount > 0 { return distribution + [("unknown", unknownCount)] }
+        return distribution
+    }
+    private var total: Int { max(buckets.reduce(0) { $0 + $1.count }, 1) }
+
     var body: some View {
-        let top = section.highest(method)
-        NovaCard(padding: 12) {
-            VStack(spacing: 9) {
-                HStack(spacing: 8) {
-                    figure(RDLocalization.string("localizable.nova.analysis.stat.findings", table: .localizable, fallback: "Toplam bulgu"),
-                           "\(section.items.count)", caption: nil)
-                    figure(RDLocalization.string("localizable.nova.analysis.stat.highest", table: .localizable, fallback: "En yüksek skor"),
-                           top?.value(method).map(NovaNonconformityWords.score) ?? "—",
-                           caption: top?.band(method).map(NovaNonconformityWords.band))
+        distributionBar
+            .padding(.vertical, 3)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text(verbatim: accessibilitySummary))
+    }
+
+    private var distributionBar: some View {
+        GeometryReader { geometry in
+            HStack(spacing: 2) {
+                ForEach(buckets, id: \.band) { entry in
+                    if entry.count > 0 {
+                        Rectangle().fill(dotColor(for: entry.band))
+                            .frame(width: max(8, geometry.size.width * CGFloat(entry.count) / CGFloat(total)))
+                    }
                 }
-                distribution
+                if buckets.allSatisfy({ $0.count == 0 }) {
+                    Rectangle().fill(NovaColorToken.borderMuted.color(in: scheme))
+                }
             }
+            .clipShape(Capsule())
+        }
+        .frame(height: 6)
+        .accessibilityHidden(true)
+    }
+
+    private func dotColor(for band: String) -> Color {
+        switch band {
+        case "critical": return NovaColorToken.statusDangerDot.color(in: scheme)
+        case "high": return NovaColorToken.statusWarningDot.color(in: scheme)
+        case "medium": return NovaColorToken.statusInfoDot.color(in: scheme)
+        case "low": return NovaColorToken.textMuted.color(in: scheme)
+        default: return NovaColorToken.borderStrong.color(in: scheme)
         }
     }
 
-    private func figure(_ label: String, _ value: String, caption: String?) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            NovaText(text: label, style: .micro, color: NovaColorToken.onInverse.color(in: scheme).opacity(0.66))
-            NovaText(text: value, style: .sheetTitle, color: NovaColorToken.onInverse.color(in: scheme))
-            if let caption {
-                NovaText(text: caption, style: .badge, color: NovaColorToken.onInverse.color(in: scheme).opacity(0.8))
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12).padding(.vertical, 10)
-        .background(NovaColorToken.inverse.color(in: scheme), in: RoundedRectangle(cornerRadius: 16))
-    }
-
-    private var distribution: some View {
-        HStack(spacing: 6) {
-            ForEach(section.distribution(method), id: \.band) { entry in
-                let palette = NovaNonconformityWords.tone(entry.band).tokens
-                VStack(spacing: 2) {
-                    NovaText(text: "\(entry.count)", style: .cardTitle, color: palette.ink.color(in: scheme))
-                    NovaText(text: NovaNonconformityWords.band(entry.band), style: .micro,
-                        color: NovaColorToken.textTertiary.color(in: scheme))
-                }
-                .frame(maxWidth: .infinity).padding(.vertical, 7)
-                .background(palette.background.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
-                .accessibilityElement(children: .combine)
-            }
-        }
+    private var accessibilitySummary: String {
+        let parts = buckets.map { "\($0.count) \(NovaNonconformityWords.band($0.band))" }
+        return "Risk Analizi, \(section.items.count) bulgu. " + parts.joined(separator: ", ")
     }
 }
 
@@ -173,22 +181,20 @@ struct NovaAnalysisMethodToggle: View {
     private func cell(_ value: NovaRiskMethod) -> some View {
         let isOn = method == value
         return Button { method = value } label: {
-            VStack(spacing: 2) {
+            HStack(spacing: 5) {
                 HStack(spacing: 5) {
                     if isOn {
-                        Image(systemName: "checkmark").font(.system(size: 11, weight: .bold))
+                        Image(systemName: "checkmark").font(.system(size: 9, weight: .bold))
                             .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
                     }
-                    NovaText(text: NovaNonconformityWords.method(value), style: .cardTitle,
+                    NovaText(text: NovaNonconformityWords.method(value), style: .badge,
                         color: isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.textSecondary.color(in: scheme))
                 }
-                NovaText(text: formula(value), style: .micro,
-                    color: isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.textTertiary.color(in: scheme))
             }
-            .frame(maxWidth: .infinity).padding(.vertical, 11)
+            .frame(maxWidth: .infinity, minHeight: 32).padding(.vertical, 2)
             .background(isOn ? NovaColorToken.statusSuccessBg.color(in: scheme) : NovaColorToken.surface.color(in: scheme),
-                        in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16)
+                        in: RoundedRectangle(cornerRadius: 11))
+            .overlay(RoundedRectangle(cornerRadius: 11)
                 .strokeBorder(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.border.color(in: scheme),
                               lineWidth: isOn ? 1.4 : 1))
         }.buttonStyle(.plain)
@@ -279,8 +285,8 @@ struct NovaAnalysisItemBar: View {
     }
 }
 
-/// One scored finding, as its own card: what it is, how bad it is, the measure
-/// that answers it, and the controls that act on it.
+/// One scored finding, as its own card: its title, severity and the controls
+/// that act on it.
 struct NovaAnalysisFindingCard: View {
     let item: NovaAnalysisItem
     let method: NovaRiskMethod
@@ -301,10 +307,7 @@ struct NovaAnalysisFindingCard: View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
                 head
-                NovaText(text: item.title, style: .cardTitle).lineLimit(2)
                 if !item.body.isEmpty { NovaText(text: item.body, style: .metaQuiet).lineLimit(3) }
-                measureBox
-                tags
             }.padding(13).frame(maxWidth: .infinity, alignment: .leading)
             Rectangle().fill(NovaColorToken.hairline.color(in: scheme)).frame(height: 1)
             NovaAnalysisItemBar(canEdit: canEdit, reaction: item.reaction, onEdit: onEdit, onDelete: onDelete,
@@ -312,23 +315,22 @@ struct NovaAnalysisFindingCard: View {
         }
         .background(NovaColorToken.surface.color(in: scheme))
         .clipShape(RoundedRectangle(cornerRadius: NovaDimensionToken.radiusCard.value))
-        .overlay(RoundedRectangle(cornerRadius: NovaDimensionToken.radiusCard.value)
-            .strokeBorder(isSelected ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.border.color(in: scheme),
-                          lineWidth: isSelected ? 1.5 : 1))
     }
 
     private var head: some View {
-        HStack(alignment: .center, spacing: 7) {
+        HStack(alignment: .top, spacing: 7) {
             NovaText(text: "\(item.ordinal)", style: .badge, color: NovaColorToken.onInverse.color(in: scheme))
                 .frame(width: 22, height: 22)
                 .background(NovaColorToken.inverse.color(in: scheme), in: Circle())
-            if let band {
-                NovaStatusPill(label: NovaNonconformityWords.band(band), status: NovaNonconformityWords.tone(band), showsDot: false)
-            }
-            if let value = item.value(method) {
-                NovaText(text: NovaNonconformityWords.score(value), style: .cardTitle)
-            }
-            Spacer(minLength: 0)
+            VStack(alignment: .leading, spacing: 7) {
+                NovaText(text: item.title, style: .cardTitle)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if let band {
+                    NovaStatusPill(label: NovaNonconformityWords.band(band), status: NovaNonconformityWords.tone(band), showsDot: false)
+                        .fixedSize(horizontal: true, vertical: false)
+                }
+            }.frame(maxWidth: .infinity, alignment: .leading)
             if isSelectable { selectButton }
         }
     }
@@ -346,55 +348,6 @@ struct NovaAnalysisFindingCard: View {
             .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    @ViewBuilder private var measureBox: some View {
-        if let measure = item.measure?.trimmingCharacters(in: .whitespacesAndNewlines), !measure.isEmpty {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 5) {
-                    Image(systemName: "checkmark.seal.fill").font(.system(size: 10))
-                        .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
-                    NovaText(text: RDLocalization.string("localizable.nova.analysis.field.measure.corrective", table: .localizable,
-                        fallback: "Düzeltici önlem"), style: .micro, color: NovaColorToken.accentInk.color(in: scheme))
-                }
-                NovaText(text: measure, style: .metaQuiet).lineLimit(2)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(9)
-            .background(NovaColorToken.statusSuccessBg.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
-        }
-    }
-
-    @ViewBuilder private var tags: some View {
-        let entries = tagEntries
-        if !entries.isEmpty {
-            HStack(spacing: 5) {
-                ForEach(entries, id: \.text) { entry in
-                    NovaAnalysisTag(symbol: entry.symbol, text: entry.text, status: entry.status)
-                }
-                Spacer(minLength: 0)
-            }
-        }
-    }
-
-    private var tagEntries: [(symbol: String, text: String, status: NovaStatus)] {
-        var result: [(String, String, NovaStatus)] = []
-        if item.hasRootCause {
-            result.append(("magnifyingglass", RDLocalization.string("localizable.nova.analysis.field.root.cause", table: .localizable,
-                fallback: "Kök neden"), .warning))
-        }
-        if item.hasPreventive {
-            result.append(("shield", RDLocalization.string("localizable.nova.analysis.tag.preventive", table: .localizable,
-                fallback: "Önleyici"), .success))
-        }
-        if item.hasReferences {
-            result.append(("book", RDLocalization.string("localizable.nova.analysis.field.references", table: .localizable,
-                fallback: "Mevzuat"), .info))
-        }
-        if !item.photoIndices.isEmpty {
-            result.append(("photo", String(format: RDLocalization.string("localizable.nova.analysis.tag.photo.index", table: .localizable,
-                fallback: "Foto %@"), item.photoIndices.map(String.init).joined(separator: ", ")), .neutral))
-        }
-        return result
-    }
 }
 
 /// One unscored row of the judgement sections. It is never painted as if it
@@ -448,9 +401,6 @@ struct NovaAnalysisAdviceCard: View {
         }
         .background(NovaColorToken.surface.color(in: scheme))
         .clipShape(RoundedRectangle(cornerRadius: NovaDimensionToken.radiusCard.value))
-        .overlay(RoundedRectangle(cornerRadius: NovaDimensionToken.radiusCard.value)
-            .strokeBorder(isSelected ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.border.color(in: scheme),
-                          lineWidth: isSelected ? 1.5 : 1))
     }
 
     private var selectButton: some View {

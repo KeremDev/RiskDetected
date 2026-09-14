@@ -45,6 +45,8 @@ struct NovaTrainingRegister: View {
     @State private var writableCompanies = Set<UUID>()
     @State private var company: UUID?
     @State private var query = ""
+    @State private var cycleFilter = ""
+    @State private var dateFilter = ""
     @State private var loading = false
     @State private var error: String?
     @State private var pending = false
@@ -56,7 +58,9 @@ struct NovaTrainingRegister: View {
     private var service: NovaTrainingSessionService { .init(identity: identity) }
     private var visible: [NovaTrainingSession] {
         sessions.filter { (company == nil || $0.companies.contains { $0.company_id == company }) &&
-            (query.isEmpty || $0.title.localizedCaseInsensitiveContains(query) || $0.trainer.localizedCaseInsensitiveContains(query)) }
+            (query.isEmpty || $0.title.localizedCaseInsensitiveContains(query) || $0.trainer.localizedCaseInsensitiveContains(query)) &&
+            (dateFilter.isEmpty || $0.held_on.hasPrefix(dateFilter)) &&
+            (cycleFilter.isEmpty || $0.education?.scopes.contains { $0.cycle == cycleFilter } == true) }
         .sorted { $0.held_on > $1.held_on }
     }
     var body: some View {
@@ -71,8 +75,8 @@ struct NovaTrainingRegister: View {
                             Image(systemName: "building.2")
                             Text(companies.first { $0.id == company }?.name ?? "Tüm firmalar").lineLimit(2)
                             Spacer(minLength: 4)
-                            Image(systemName: "chevron.down").font(.caption)
-                        }.font(.subheadline).padding(12).background(.background, in: RoundedRectangle(cornerRadius: 16))
+                            Image(systemName: "chevron.down").font(NovaFont.font(.meta))
+                        }.font(NovaFont.font(.body)).padding(12).background(.background, in: RoundedRectangle(cornerRadius: 16))
                     }.tint(.primary).accessibilityIdentifier("training.company")
                     Button { editor = Editor(session: nil) } label: {
                         Label("Eğitim Ekle", systemImage: "plus").font(.system(size: 13))
@@ -83,7 +87,14 @@ struct NovaTrainingRegister: View {
                 NovaCard(padding: 12) {
                     HStack { Image(systemName: "magnifyingglass"); TextField("Eğitim veya eğitmen ara…", text: $query) }
                 }
-                Text("\(visible.count) eğitim").font(.caption).foregroundStyle(.secondary)
+                HStack {
+                    Picker("Eğitim türü", selection: $cycleFilter) {
+                        Text("Tüm eğitim türleri").tag("")
+                        ForEach(NovaEducationScope.cycles, id: \.0) { Text($0.1).tag($0.0) }
+                    }
+                    TextField("Tarih (YYYY-AA-GG)", text: $dateFilter).font(NovaFont.font(.meta))
+                }
+                Text("\(visible.count) eğitim").font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
                 if pending {
                     NovaHelpHint(text: "Önceki işlemin sonucu bekleniyor. Aynı kaydı güvenle tamamlayın.")
                     NovaButton(label: "Bekleyen işlemi tamamla", symbol: "arrow.clockwise", isEnabled: canWrite && !loading) {
@@ -101,20 +112,20 @@ struct NovaTrainingRegister: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {
                                     Image(systemName: "graduationcap")
-                                    Text(session.title).font(.headline)
+                                    Text(session.title).font(NovaFont.font(.cardTitle))
                                     Spacer()
-                                    Image(systemName: "chevron.right").font(.caption)
+                                    Image(systemName: "chevron.right").font(NovaFont.font(.meta))
                                 }
                                 HStack {
                                     Label(session.held_on, systemImage: "calendar")
                                     Label("\(session.count)", systemImage: "person.2")
                                     Text(trainingMethodName(session.method))
-                                }.font(.caption).foregroundStyle(.secondary)
-                                Text(session.companies.map(\.company_name).joined(separator: " · ")).font(.caption).lineLimit(2)
+                                }.font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
+                                Text(session.companies.map(\.company_name).joined(separator: " · ")).font(NovaFont.font(.meta)).lineLimit(2)
                                 if session.isLegacyPlan {
-                                    Text("Önceki plan · gerçekleştiği henüz doğrulanmadı").font(.caption).foregroundStyle(.orange)
+                                    Text("Önceki plan · gerçekleştiği henüz doğrulanmadı").font(NovaFont.font(.meta)).foregroundStyle(.orange)
                                 } else if session.companies.allSatisfy({ $0.state == "cancelled" }) {
-                                    Text("Önceki iptal kaydı").font(.caption).foregroundStyle(.secondary)
+                                    Text("Önceki iptal kaydı").font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
                                 }
                             }.frame(maxWidth: .infinity, alignment: .leading)
                         }
@@ -124,9 +135,9 @@ struct NovaTrainingRegister: View {
         }.task(id: revision) { await load() }
             .onAppear { if !initializedFilter { company = initialCompany; initializedFilter = true } }
             .refreshable { revision = UUID() }
-            .fullScreenCover(item: $editor, onDismiss: { revision = UUID() }) { value in
+            .novaFullScreenCover(item: $editor, onDismiss: { revision = UUID() }) { value in
                 NovaPopup {
-                    NovaTrainingSessionEditor(identity: identity, personnel: personnel, companies: companies,
+                    NovaEducationEntry(identity: identity, personnel: personnel, companies: companies,
                         initialCompany: company, catalog: catalog, original: value.session,
                         canWrite: canWrite && (value.session?.companies.allSatisfy { writableCompanies.contains($0.company_id) } ?? !writableCompanies.isEmpty),
                         writableCompanies: writableCompanies)

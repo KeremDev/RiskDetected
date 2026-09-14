@@ -3,7 +3,7 @@
     <!-- Real localized strings land in Faz 3 via the same codegen approach as iOS
          (App/Localization/*.xcstrings -> Generated/) — see master §23.1. This is a
          placeholder so the app has a label before that pipeline exists. -->
-    <string name="app_name">RiskDetected</string>
+    <string name="app_name">İSGADA</string>
     <string name="update_ready_title">Güncelleme hazır</string>
     <string name="update_ready_message">Yeni sürüm indirildi. Güncellemeyi tamamlamak için uygulamayı yeniden başlat.</string>
     <string name="restart_and_update">Yeniden başlat ve güncelle</string>

@@ -25,6 +25,7 @@ struct NovaPilotRiskGate: View {
             detail: { assessment in try await service.detail(identity, assessment: assessment) },
             open: { company, workplace in try await service.open(identity, company: company, workplace: workplace) },
             draft: { company, draft in try await service.draft(identity, company: company, draft: draft) },
-            finalize: { company, draft in try await service.finalize(identity, company: company, draft: draft) })
+            finalize: { company, draft in try await service.finalize(identity, company: company, draft: draft) },
+            cancelDraft: { company, row, version, reason in try await service.cancelDraft(identity, company: company, row: row, version: version, reason: reason) })
     }
 }

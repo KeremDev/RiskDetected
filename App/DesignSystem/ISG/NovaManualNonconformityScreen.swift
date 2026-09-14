@@ -52,7 +52,7 @@ struct NovaManualNonconformityScreen: View {
             Button(RDLocalization.string("localizable.nova.photo.intake.gallery", table: .localizable, fallback: "Galeri")) { galleryOpen = true }
             Button(RDLocalization.string("localizable.nova.photo.intake.cancel", table: .localizable, fallback: "Vazgeç"), role: .cancel) { }
         }
-        .fullScreenCover(isPresented: $camera) {
+        .novaFullScreenCover(isPresented: $camera) {
             CameraPicker { image in
                 if let image { photos.append(image); draft.photoCount = photos.count }
                 camera = false
@@ -60,7 +60,7 @@ struct NovaManualNonconformityScreen: View {
         }
         .photosPicker(isPresented: $galleryOpen, selection: $gallery, maxSelectionCount: 3, matching: .images)
         .onChange(of: gallery) { _ in Task { await loadGallery() } }
-        .fullScreenCover(item: $preview) { item in
+        .novaFullScreenCover(item: $preview) { item in
             NovaPopup { NovaImageViewer(image: item.image) }
         }
     }
@@ -178,9 +178,8 @@ struct NovaManualNonconformityScreen: View {
                                     photos.remove(at: index); draft.photoCount = photos.count
                                 } label: {
                                     Image(systemName: "xmark").font(.system(size: 10, weight: .bold))
-                                        .foregroundStyle(NovaColorToken.onInverse.color(in: scheme))
+                                        .foregroundStyle(NovaColorToken.text.color(in: scheme))
                                         .frame(width: 26, height: 26)
-                                        .background(NovaColorToken.inverse.color(in: scheme).opacity(0.75), in: Circle())
                                 }.buttonStyle(.plain).padding(4)
                                     .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.photo.intake.remove", table: .localizable, fallback: "Fotoğrafı çıkar")))
                             }
@@ -191,7 +190,6 @@ struct NovaManualNonconformityScreen: View {
                         Image(systemName: "plus").font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
                             .frame(maxWidth: .infinity).frame(height: 92)
-                            .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
                     }.buttonStyle(.plain).accessibilityIdentifier("manual.photo.add")
                         .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.photo.intake.add", table: .localizable, fallback: "Fotoğraf ekle")))
                 }
@@ -300,14 +298,14 @@ struct NovaManualNonconformityScreen: View {
     private func field(_ label: String, _ text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            TextField(label, text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+            TextField(label, text: text).font(NovaFont.font(.body))
                 .frame(minHeight: 36).accessibilityIdentifier("manual.field.\(id)")
         }
     }
     private func area(_ label: String, _ text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            TextEditor(text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+            TextEditor(text: text).font(NovaFont.font(.body))
                 .frame(minHeight: 72).scrollContentBackground(.hidden)
                 .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 10))
                 .accessibilityIdentifier("manual.field.\(id)")

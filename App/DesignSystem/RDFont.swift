@@ -1,9 +1,8 @@
 import SwiftUI
 import UIKit
 
-/// App-wide typography contract. The finding/result flow established Mulish as
-/// the product typeface; every user-facing screen now resolves its existing
-/// sizes and weights through this single mapping.
+/// Screen typography shares İSGADA’s bundled Plus Jakarta family.
+/// UIKit document rendering retains its existing font contract.
 enum RDTypography {
     static func font(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         .custom(
@@ -45,12 +44,12 @@ enum RDTypography {
     }
 
     private static func postScriptName(for weight: Font.Weight) -> String {
-        if weight == .black { return "Mulish-Black" }
-        if weight == .heavy { return "Mulish-ExtraBold" }
-        if weight == .bold { return "Mulish-Bold" }
-        if weight == .semibold { return "Mulish-SemiBold" }
-        if weight == .medium { return "Mulish-Medium" }
-        return "Mulish-Regular"
+        if weight == .black { return "PlusJakartaSans-ExtraBold" }
+        if weight == .heavy { return "PlusJakartaSans-ExtraBold" }
+        if weight == .bold { return "PlusJakartaSans-Bold" }
+        if weight == .semibold { return "PlusJakartaSans-SemiBold" }
+        if weight == .medium { return "PlusJakartaSans-Medium" }
+        return "PlusJakartaSans-Regular"
     }
 
     private static func postScriptName(for weight: UIFont.Weight) -> String {

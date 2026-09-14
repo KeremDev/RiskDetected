@@ -97,7 +97,7 @@ private struct PersonnelContent: View {
                 }
             }
         }
-        .fullScreenCover(isPresented: $showingCreate) {
+        .novaFullScreenCover(isPresented: $showingCreate) {
             NovaPopup {
             NavigationStack {
                 NovaPageSurface {
@@ -116,7 +116,7 @@ private struct PersonnelContent: View {
                 PersonnelHeading(title: "Personeller", subtitle: companyName,
                     trailingTitle: "Ekle", trailingAction: { showingCreate = true }, onBack: onBack)
                 NovaCard(padding: 14) {
-                    HStack { NovaIcon(symbol: "magnifyingglass", size: 18); TextField(RDLocalization.string("localizable.nova.personnel.screens.personel.ara.6695c740", table: .localizable, fallback: "Personel ara…"), text: $query).font(.custom("PlusJakartaSans-Medium", size: 15)).accessibilityIdentifier("personnel.search") }
+                    HStack { NovaIcon(symbol: "magnifyingglass", size: 18); TextField(RDLocalization.string("localizable.nova.personnel.screens.personel.ara.6695c740", table: .localizable, fallback: "Personel ara…"), text: $query).font(NovaFont.font(.body)).accessibilityIdentifier("personnel.search") }
                 }
                 HStack(spacing: 8) {
                     NovaIcon(symbol: "archivebox", size: 13)
@@ -214,13 +214,12 @@ private struct PersonnelHeading: View {
     var body: some View {
         HStack(spacing: 12) {
             if !isNovaPopup { NovaBackButton(isEnabled: isBackEnabled, action: onBack).accessibilityIdentifier(backIdentifier) }
-            VStack(alignment: .leading, spacing: 4) { NovaText(text: title, style: .sectionTitle); if !subtitle.isEmpty { HStack(spacing: 6) { NovaIcon(symbol: "building.2", size: 13); NovaText(text: subtitle, style: .metaQuiet) } } }
+            VStack(alignment: .leading, spacing: 4) { NovaText(text: title, style: .screenTitle); if !subtitle.isEmpty { HStack(spacing: 6) { NovaIcon(symbol: "building.2", size: 13); NovaText(text: subtitle, style: .metaQuiet) } } }
             Spacer(minLength: 0)
             if let trailingAction {
                 Button(action: trailingAction) {
                     HStack(spacing: 4) { Image(systemName: "plus").font(.system(size: 11, weight: .medium)); NovaSizedText(text: trailingTitle ?? "Ekle", size: 11.5, weight: "Medium") }
                         .padding(.horizontal, 15).frame(minWidth: 108, minHeight: 32)
-                        .background(NovaColorToken.accent.color(in: scheme), in: Capsule())
                         .foregroundStyle(NovaColorToken.onAccent.color(in: scheme))
                 }.buttonStyle(.plain).disabled(!isBackEnabled).accessibilityIdentifier("personnel.add")
             }
@@ -328,7 +327,7 @@ private struct NovaEmployeeEditor: View {
                 NovaCard(padding: 18) {
                     HStack(spacing: 10) {
                         NovaIcon(symbol: "person", size: 18)
-                        TextField(RDLocalization.string("localizable.nova.personnel.screens.ad.soyad.9ca817b1", table: .localizable, fallback: "Ad soyad"), text: $state.name).font(.custom("PlusJakartaSans-Medium", size: 15)).textContentType(.name).disabled(!state.canEdit).accessibilityIdentifier("personnel.name")
+                        TextField(RDLocalization.string("localizable.nova.personnel.screens.ad.soyad.9ca817b1", table: .localizable, fallback: "Ad soyad"), text: $state.name).font(NovaFont.font(.body)).textContentType(.name).disabled(!state.canEdit).accessibilityIdentifier("personnel.name")
                             .focused($focusedField, equals: "name").submitLabel(.done).onSubmit { focusedField = nil }
                     }
                 }
@@ -338,7 +337,7 @@ private struct NovaEmployeeEditor: View {
                         if let selected = state.selectedDepartment {
                             HStack { NovaText(text: selected.name); Spacer(); Button(RDLocalization.string("localizable.nova.personnel.screens.kaldir.f6bad754", table: .localizable, fallback: "Kaldır")) { state.selectedDepartment = nil; state.departmentText = "" }.disabled(!state.canEdit) }
                         } else {
-                            TextField(RDLocalization.string("localizable.nova.personnel.screens.departman.sec.veya.yeni.ad.yaz.70373e55", table: .localizable, fallback: "Departman seç veya yeni ad yaz"), text: $state.departmentText).font(.custom("PlusJakartaSans-Medium", size: 15)).disabled(!state.canEdit).accessibilityIdentifier("personnel.department")
+                            TextField(RDLocalization.string("localizable.nova.personnel.screens.departman.sec.veya.yeni.ad.yaz.70373e55", table: .localizable, fallback: "Departman seç veya yeni ad yaz"), text: $state.departmentText).font(NovaFont.font(.body)).disabled(!state.canEdit).accessibilityIdentifier("personnel.department")
                                 .focused($focusedField, equals: "department").submitLabel(.done).onSubmit { focusedField = nil }
                             ForEach(departments) { d in
                                 Button { state.selectedDepartment = d; state.departmentText = "" } label: { HStack { NovaIcon(symbol: "building.2", size: 18); NovaText(text: d.name); Spacer(); NovaIcon(symbol: "plus", size: 16) }.frame(minHeight: 44) }
@@ -355,7 +354,7 @@ private struct NovaEmployeeEditor: View {
                         HStack(spacing: 10) {
                             Image(systemName: "briefcase")
                             TextField(RDLocalization.string("localizable.nova.visual.0", table: .localizable, fallback: "Görev · isteğe bağlı"), text: $jobDraft)
-                                .font(.custom("PlusJakartaSans-Medium", size: 15))
+                                .font(NovaFont.font(.body))
                                 .accessibilityIdentifier("personnel.job")
                                 .focused($focusedField, equals: "job").submitLabel(.done)
                                 .onSubmit { focusedField = nil }
@@ -390,7 +389,7 @@ private struct NovaEmployeeEditor: View {
                 if archiveOnOpen { confirmation = true }
             }
         }
-        .fullScreenCover(isPresented: $confirmation) {
+        .novaFullScreenCover(isPresented: $confirmation) {
             NovaPersonnelPopupBackdrop {
                 ZStack {
                     Color(red: 15/255, green: 15/255, blue: 17/255).opacity(0.34).ignoresSafeArea().onTapGesture { confirmation = false }

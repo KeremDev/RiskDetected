@@ -1,0 +1,47 @@
+BEGIN;
+SELECT set_config('test.actor','20000000-0000-0000-0000-000000000001',true);
+SELECT set_config('test.pilot','true',true);
+SELECT set_config('test.pilot_write','true',true);
+UPDATE private_isg.rollout SET read_enabled=true,write_enabled=true;
+UPDATE private_isg.module_registry SET read_enabled=true,write_enabled=true;
+CREATE FUNCTION pg_temp.process_save(k text,v jsonb,r jsonb DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$ SELECT public.isg_pilot_process_mutate_v1('10000000-0000-0000-0000-000000000001','save',gen_random_uuid(),gen_random_uuid(),jsonb_build_object('kind',k,'values',v,'id',r->>'id','expected',r->>'expected')) $$;
+CREATE TEMP TABLE records(kind text,r jsonb);
+INSERT INTO records VALUES ('katip_contract',pg_temp.process_save('katip_contract','{"workplace_id":"40000000-0000-0000-0000-000000000001","counterparty":"Sözleşme","expert_contact":"Uzman","scope":"İSG","starts_on":"2026-01-01","declared_monthly_minutes":12}'));
+INSERT INTO records VALUES ('annual_work_plan',pg_temp.process_save('annual_work_plan','{"workplace_id":"40000000-0000-0000-0000-000000000001","plan_year":2026}'));
+INSERT INTO records SELECT 'annual_work_item',pg_temp.process_save('annual_work_item',jsonb_build_object('plan_id',r->>'id','activity','Faaliyet','planned_on','2026-01-01','state','planned')) FROM records WHERE kind='annual_work_plan';
+INSERT INTO records VALUES ('board',pg_temp.process_save('board','{"workplace_id":"40000000-0000-0000-0000-000000000001","applicability":"voluntary","agenda":["Gündem"],"planned_on":"2026-01-01","state":"planned"}'));
+INSERT INTO records SELECT 'board_decision',pg_temp.process_save('board_decision',jsonb_build_object('meeting_id',r->>'id','decision_no',1,'decision_text','Karar','state','open')) FROM records WHERE kind='board';
+INSERT INTO records VALUES ('site_visit',pg_temp.process_save('site_visit','{"workplace_id":"40000000-0000-0000-0000-000000000001","visited_on":"2026-01-01","expert_note":"Saha ziyareti"}'));
+INSERT INTO records SELECT 'site_observation',pg_temp.process_save('site_observation',jsonb_build_object('visit_id',r->>'id','note','Gözlem')) FROM records WHERE kind='site_visit';
+INSERT INTO records VALUES ('work_permit',pg_temp.process_save('work_permit','{"workplace_id":"40000000-0000-0000-0000-000000000001","template_code":"hot_work","job_description":"İş","planned_on":"2026-01-01","parties":[]}'));
+INSERT INTO records VALUES ('contractor',pg_temp.process_save('contractor','{"code":"C1","name":"Dış firma","relationship":"contractor"}'));
+INSERT INTO records SELECT 'contractor_engagement',pg_temp.process_save('contractor_engagement',jsonb_build_object('organization_id',r->>'id','workplace_id','40000000-0000-0000-0000-000000000001','starts_on','2026-01-01','description','İş')) FROM records WHERE kind='contractor';
+
+DO $$ DECLARE a jsonb; b jsonb; got jsonb; vals jsonb; spec jsonb; BEGIN
+ SELECT r INTO a FROM records WHERE kind='annual_work_item';
+ SELECT r INTO b FROM records WHERE kind='site_visit';
+ spec:=private_isg.process_spec('annual_work_item');
+ SELECT jsonb_object_agg(key,value) INTO vals FROM jsonb_each(a->'values') WHERE spec->'fields' ? key;
+ got:=public.isg_pilot_process_mutate_v1((a->>'company_id')::uuid,'save',gen_random_uuid(),gen_random_uuid(),jsonb_build_object('kind','annual_work_item','id',a->>'id','expected',a->>'expected','values',vals,'related_kind','site_visit','related_id',b->>'id'));
+ IF got->>'related_id' IS DISTINCT FROM b->>'id' THEN RAISE EXCEPTION 'Link missing'; END IF;
+ IF got->'values'->>'state'<>'planned' THEN RAISE EXCEPTION 'Link changed state'; END IF;
+ a:=got;
+ BEGIN
+ PERFORM public.isg_pilot_process_mutate_v1((a->>'company_id')::uuid,'save',gen_random_uuid(),gen_random_uuid(),jsonb_build_object('kind','annual_work_item','id',a->>'id','expected',a->>'expected','values',vals,'related_kind','annual_work_item','related_id',a->>'id'));
+ RAISE EXCEPTION 'Self link accepted';
+ EXCEPTION WHEN check_violation THEN NULL; END;
+ got:=public.isg_pilot_process_mutate_v1((a->>'company_id')::uuid,'save',gen_random_uuid(),gen_random_uuid(),jsonb_build_object('kind','annual_work_item','id',a->>'id','expected',a->>'expected','values',vals));
+ IF got->>'related_id' IS NOT NULL THEN RAISE EXCEPTION 'Link not removed'; END IF;
+ RAISE NOTICE 'ok process link saved, state preserved, self link refused, removed';
+ SELECT r INTO a FROM records WHERE kind='contractor_engagement';
+ spec:=private_isg.process_spec('contractor_engagement');
+ SELECT jsonb_object_agg(key,value) INTO vals FROM jsonb_each(a->'values') WHERE spec->'fields' ? key;
+ BEGIN PERFORM pg_temp.process_save('contractor_engagement',vals); RAISE EXCEPTION 'Overlap accepted';
+ EXCEPTION WHEN exclusion_violation THEN NULL; END;
+ PERFORM public.isg_pilot_process_mutate_v1((a->>'company_id')::uuid,'delete',gen_random_uuid(),gen_random_uuid(),jsonb_build_object('kind','contractor_engagement','id',a->>'id','expected',a->>'expected'));
+ got:=pg_temp.process_save('contractor_engagement',vals);
+ IF got->>'id'=a->>'id' THEN RAISE EXCEPTION 'Reused tombstone'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM private_isg.contractor_engagements WHERE id=(a->>'id')::uuid AND is_deleted) THEN RAISE EXCEPTION 'History lost'; END IF;
+ RAISE NOTICE 'ok contractor active overlap refused, deleted range reusable, history retained';
+END $$;
+ROLLBACK;

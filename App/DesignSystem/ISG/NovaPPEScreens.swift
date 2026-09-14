@@ -142,6 +142,9 @@ struct NovaPPEScreen: View {
     var canWrite: Bool = true
     var initialCompany: UUID?
     var headingOverride: String?
+    var management: ((UUID, UUID) -> AnyView)?
+    @State private var pendingCreate = false
+    @State private var draftCompany: UUID?
 
     @State private var board: NovaPPEBoard?
     @State private var catalogue: NovaPPECatalogue?
@@ -195,6 +198,13 @@ struct NovaPPEScreen: View {
                 },
                 onRemoveReturn: { entry in await removeReturn(row, entry) },
                 onClose: { detail = nil })
+                .safeAreaInset(edge: .bottom) {
+                    if canWrite, let company = row.companyID, let management {
+                        NovaModuleManageAction(content: { management(company, row.id) }, onDone: {
+                            detail = nil; Task { await load(reset: true) }
+                        })
+                    }
+                }
         }
         .sheet(item: $handing) { draft in
             NovaPPEHandoverSheet(draft: draft, catalogue: catalogue,
@@ -209,16 +219,15 @@ struct NovaPPEScreen: View {
     @ViewBuilder private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
-                NovaButton(label: RDLocalization.string("localizable.nova.ppe.back", table: .localizable, fallback: "Geri"),
-                    symbol: "chevron.left", variant: .surface, action: onBack)
+                NovaBackButton(action: onBack)
+                NovaText(text: headingOverride ?? NovaDestination.ppeHandovers.title, style: .screenTitle)
                 Spacer(minLength: 0)
-                if canWrite, query.company != nil {
+                if canWrite {
                     NovaButton(label: RDLocalization.string("localizable.nova.ppe.new",
                         table: .localizable, fallback: "Zimmet ver"), symbol: "plus",
-                        variant: .primary) { handing = .init(handedOn: NovaDayField.text(Date())) }
+                        variant: .primary) { startCreate() }
                 }
             }
-            NovaText(text: headingOverride ?? NovaDestination.ppeHandovers.title, style: .screenTitle)
             // Said once, at the top, rather than discovered in a form.
             NovaText(text: NovaPPEWords.signedCopyNote, style: .meta,
                 color: NovaColorToken.textSecondary.color(in: scheme))
@@ -324,6 +333,12 @@ struct NovaPPEScreen: View {
 
     // MARK: work
 
+    private func startCreate() {
+        draftCompany = query.company
+        if query.company == nil { pendingCreate = true; openChooser = "company" }
+        else { handing = .init(handedOn: NovaDayField.text(Date())) }
+    }
+
     private func load(reset: Bool) async {
         if reset { query.offset = 0 } else { query.offset += query.limit }
         loading = true; failure = nil
@@ -331,6 +346,7 @@ struct NovaPPEScreen: View {
             if companies.isEmpty { companies = try await client.companies() }
             if query.company == nil, let initialCompany { query.company = initialCompany }
             catalogue = try await client.catalogue(query.company)
+            if pendingCreate, query.company != nil { pendingCreate = false; draftCompany = query.company; handing = .init(handedOn: NovaDayField.text(Date())) }
             let answer = try await client.board(query)
             if reset || board == nil { board = answer }
             else if let existing = board {
@@ -344,11 +360,15 @@ struct NovaPPEScreen: View {
     }
 
     private func openDetail(_ row: NovaPPEHandover) async {
-        do { detail = try await client.detail(row.id) } catch { detail = row }
+        draftCompany = row.companyID
+        do {
+            catalogue = try await client.catalogue(row.companyID)
+            detail = try await client.detail(row.id)
+        } catch { failure = "Kayıt açılamadı. Yeniden deneyin." }
     }
 
     private func save(_ draft: NovaPPEHandoverDraft) async -> String? {
-        guard let company = query.company else { return NovaPPEFailure.validation.message }
+        guard let company = draftCompany ?? query.company else { return NovaPPEFailure.validation.message }
         do {
             _ = try await client.recordHandover(company, draft)
             handing = nil
@@ -359,7 +379,7 @@ struct NovaPPEScreen: View {
     }
 
     private func giveBack(_ draft: NovaPPEReturnDraft) async -> String? {
-        guard let company = query.company else { return NovaPPEFailure.validation.message }
+        guard let company = draftCompany ?? query.company else { return NovaPPEFailure.validation.message }
         do {
             _ = try await client.recordReturn(company, draft)
             returning = nil

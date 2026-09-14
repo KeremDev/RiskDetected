@@ -7,6 +7,8 @@ struct NovaRiskDetailSheet: View {
     let row: NovaRiskRow
     var canWrite: Bool = true
     let onNewVersion: () -> Void
+    var onEdit: ((NovaRiskVersion) -> Void)?
+    var onCancelDraft: (() -> Void)?
     let onFinalize: (Int) -> Void
     let onClose: () -> Void
     @Environment(\.colorScheme) private var scheme
@@ -31,7 +33,7 @@ struct NovaRiskDetailSheet: View {
                     if canWrite { actions }
                     history
                 }
-                .padding(20)
+                .padding(20).novaPopupContentSize()
             }
         }
         .accessibilityIdentifier("nova.risk.detail")
@@ -82,6 +84,10 @@ struct NovaRiskDetailSheet: View {
                     fallback: "Taslak belge değildir. Tamamlanana kadar yürürlükteki sürüm değişmez."),
                     style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
                 if canWrite, let version = row.draftVersion {
+                    if let draft = row.versions.first(where: { $0.version == version }), let onEdit {
+                        NovaButton(label: "Taslağı düzenle", symbol: "pencil", variant: .surface) { onEdit(draft) }
+                    }
+                    if let onCancelDraft { NovaButton(label: "Taslağı iptal et", symbol: "xmark", variant: .surface, action: onCancelDraft) }
                     NovaButton(label: RDLocalization.string("localizable.nova.risk.draft.finalize",
                         table: .localizable, fallback: "Taslağı tamamla"),
                         symbol: "checkmark.seal", variant: .primary) { onFinalize(version) }
@@ -136,6 +142,9 @@ struct NovaRiskDetailSheet: View {
                             NovaText(text: reason, style: .meta,
                                 color: NovaColorToken.textSecondary.color(in: scheme))
                         }
+                        if let note = version.cancellationNote, !note.isEmpty {
+                            NovaText(text: "İptal gerekçesi: " + note, style: .body)
+                        }
                         if !version.scope.isEmpty {
                             NovaText(text: RDLocalization.string("localizable.nova.risk.scope", table: .localizable,
                                 fallback: "Kapsam") + ": " + version.scope.joined(separator: ", "),
@@ -167,6 +176,7 @@ struct NovaRiskDetailSheet: View {
     }
     private func stateWord(_ value: String) -> String {
         switch value {
+        case "cancelled": return "İptal edildi"
         case "draft": return RDLocalization.string("localizable.nova.risk.version.draft", table: .localizable, fallback: "Taslak")
         case "final": return RDLocalization.string("localizable.nova.risk.version.final", table: .localizable, fallback: "Yürürlükte")
         default: return RDLocalization.string("localizable.nova.risk.version.superseded", table: .localizable, fallback: "Geçmiş")
@@ -208,16 +218,17 @@ struct NovaRiskVersionSheet: View {
         NovaPopup {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    NovaText(text: RDLocalization.string("localizable.nova.risk.version.title",
+                    NovaText(text: draft.versionToEdit != nil ? "Taslağı düzenle" : RDLocalization.string("localizable.nova.risk.version.title",
                         table: .localizable, fallback: "Yeni sürüm"), style: .screenTitle)
                     NovaFileChooserButton(
                         label: RDLocalization.string("localizable.nova.risk.version.kind",
                             table: .localizable, fallback: "Sürüm türü"),
                         value: draft.kind.title, isOpen: choosingKind,
                         identifier: "nova.risk.version.kind") { choosingKind.toggle() }
+                        .disabled(draft.versionToEdit != nil)
                     if choosingKind {
                         NovaFileChooserPanel(
-                            options: NovaRiskKind.allCases.map { .init(id: $0.rawValue, title: $0.title) },
+                            options: NovaRiskKind.allCases.filter { $0 != .rescan }.map { .init(id: $0.rawValue, title: $0.title) },
                             selected: draft.kind.rawValue,
                             identifier: "nova.risk.version.kind.panel") { value in
                             if let value, let kind = NovaRiskKind(rawValue: value) { draft.kind = kind }
@@ -267,9 +278,10 @@ struct NovaRiskVersionSheet: View {
                         .disabled(saving)
                     }
                 }
-                .padding(20)
+                .padding(20).novaPopupContentSize()
             }
         }
+        .preference(key: NovaPopupBusyKey.self, value: saving)
         .accessibilityIdentifier("nova.risk.version.sheet")
     }
 
@@ -293,7 +305,7 @@ struct NovaRiskVersionSheet: View {
                 HStack(spacing: 6) {
                     NovaAnalysisTag(symbol: "square.dashed", text: entry, status: .info)
                     Button { draft.scope.removeAll { $0 == entry } } label: {
-                        Image(systemName: "xmark.circle.fill").font(.system(size: 12))
+                        Image(systemName: "xmark.circle").font(.system(size: 12))
                     }.buttonStyle(.plain)
                 }
             }
@@ -327,6 +339,7 @@ struct NovaRiskFinalizeSheet: View {
                         table: .localizable,
                         fallback: "Tamamlanan sürüm yürürlüğe girer ve bir daha değiştirilemez. Doğrulama sizin beyanınızdır."))
 
+                    if draft.kind == .full {
                     if let catalogue, !catalogue.rules.isEmpty {
                         NovaFileChooserButton(
                             label: RDLocalization.string("localizable.nova.risk.finalize.source",
@@ -360,6 +373,9 @@ struct NovaRiskFinalizeSheet: View {
                                 .accessibilityIdentifier("nova.risk.finalize.years")
                         }
                     }
+                    } else {
+                        NovaHelpHint(text: "Bu revizyon mevcut değerlendirme tarihini ve süre kaynağını korur.")
+                    }
                     if let failure {
                         NovaText(text: failure, style: .meta,
                             color: NovaColorToken.statusDangerInk.color(in: scheme))
@@ -376,9 +392,33 @@ struct NovaRiskFinalizeSheet: View {
                         .disabled(saving)
                     }
                 }
-                .padding(20)
+                .padding(20).novaPopupContentSize()
             }
         }
+        .preference(key: NovaPopupBusyKey.self, value: saving)
         .accessibilityIdentifier("nova.risk.finalize.sheet")
+    }
+}
+
+
+struct NovaRiskCancelDraftSheet: View {
+    let onConfirm: (String) async -> String?
+    @State private var reason = ""
+    @State private var busy = false
+    @State private var failure: String?
+    var body: some View {
+        NovaPopup {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    NovaText(text: "Taslağı iptal et", style: .screenTitle)
+                    NovaText(text: "Taslak geçmişte korunur. Yürürlükteki sürüm ve tarihleri değişmez.", style: .body)
+                    TextField("İptal gerekçesi (en az 10 karakter)", text: $reason, axis: .vertical).lineLimit(3...6)
+                    if let failure { NovaText(text: failure, style: .meta) }
+                    NovaButton(label: "Taslağı iptal et", symbol: "xmark", isEnabled: !busy && reason.trimmingCharacters(in: .whitespacesAndNewlines).count >= 10) {
+                        Task { busy = true; failure = await onConfirm(reason.trimmingCharacters(in: .whitespacesAndNewlines)); busy = false }
+                    }
+                }.padding(20).novaPopupContentSize().disabled(busy)
+            }
+        }.preference(key: NovaPopupBusyKey.self, value: busy)
     }
 }

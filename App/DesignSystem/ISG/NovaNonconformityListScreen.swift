@@ -75,11 +75,11 @@ struct NovaNonconformityListScreen: View {
                 .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme)).accessibilityHidden(true)
             TextField(RDLocalization.string("localizable.nova.nonconformity.search", table: .localizable,
                 fallback: "Başlık, firma veya işyeri ara"), text: $filter.query)
-                .font(.custom("PlusJakartaSans-Medium", size: 14)).submitLabel(.done)
+                .font(NovaFont.font(.body)).submitLabel(.done)
                 .accessibilityIdentifier("nonconformity.search")
             if !filter.query.isEmpty {
                 Button { filter.query = "" } label: {
-                    Image(systemName: "xmark.circle.fill").frame(width: 32, height: 32)
+                    Image(systemName: "xmark.circle").frame(width: 32, height: 32)
                         .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
                 }.buttonStyle(.plain)
                     .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.nonconformity.search.clear", table: .localizable, fallback: "Aramayı temizle")))

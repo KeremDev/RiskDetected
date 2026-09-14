@@ -142,12 +142,11 @@ import Foundation
     private func mutate(_ identity: NovaSessionIdentity, company: UUID, action: String,
                         payload: [String: PersonnelRPCValue]) async throws -> NovaAppointment? {
         try check(identity)
-        let data = try await rpc("isg_appointments_mutate_v1", [
-            "p_company": .id(company), "p_action": .string(action),
-            "p_operation": .id(UUID()), "p_mutation": .id(UUID()),
-            "p_payload": .object(payload)])
-        try check(identity)
-        return try JSONDecoder().decode(MutationEnvelope.self, from: data).row.map(appointment)
+        return try await NovaModuleMutationJournal.run(function: "isg_appointments_mutate_v1", identity: identity,
+            company: company, action: action, payload: payload, rpc: rpc,
+            validate: { try check(identity) }, decode: { data in
+                return try JSONDecoder().decode(MutationEnvelope.self, from: data).row.map(appointment)
+            })
     }
 
     /// Saying why the person holds the role is required; there is no field of

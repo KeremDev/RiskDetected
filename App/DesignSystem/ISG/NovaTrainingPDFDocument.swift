@@ -16,7 +16,7 @@ struct NovaTrainingPDFDocument: FileDocument {
             func newPage() {
                 context.beginPage(); page += 1; y = 48
                 UIColor.white.setFill(); context.cgContext.fill(bounds)
-                ("NOVA / Eğitim kayıt belgesi" as NSString).draw(at: CGPoint(x: 40, y: 22), withAttributes: [.font: UIFont.systemFont(ofSize: 10), .foregroundColor: UIColor.darkGray])
+                ("İSGADA / Eğitim kayıt belgesi" as NSString).draw(at: CGPoint(x: 40, y: 22), withAttributes: [.font: UIFont.systemFont(ofSize: 10), .foregroundColor: UIColor.darkGray])
                 ("Sürüm \(session.version) | Sayfa \(page) | İmzasız kayıt çıktısı" as NSString).draw(at: CGPoint(x: 40, y: 814), withAttributes: [.font: UIFont.systemFont(ofSize: 9), .foregroundColor: UIColor.darkGray])
             }
             func paragraph(_ text: String, size: CGFloat = 12, bold: Bool = false) {

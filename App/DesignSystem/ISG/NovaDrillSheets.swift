@@ -36,7 +36,7 @@ struct NovaDrillDetailSheet: View {
                     }
                     if canWrite && !drill.performed && drill.state != .cancelled { actions }
                 }
-                .padding(20)
+                .padding(20).novaPopupContentSize()
             }
         }
         .accessibilityIdentifier("nova.drill.detail")
@@ -212,7 +212,7 @@ struct NovaDrillPlanSheet: View {
                     HStack(spacing: 10) {
                         NovaButton(label: RDLocalization.string("localizable.nova.drill.cancel",
                             table: .localizable, fallback: "Vazgeç"), symbol: "xmark",
-                            variant: .surface, action: onClose)
+                            variant: .surface, action: onClose).disabled(saving)
                         NovaButton(label: RDLocalization.string("localizable.nova.drill.form.save",
                             table: .localizable, fallback: "Planla"), symbol: "checkmark",
                             variant: .primary) {
@@ -221,9 +221,10 @@ struct NovaDrillPlanSheet: View {
                         .disabled(saving || draft.planID == nil)
                     }
                 }
-                .padding(20)
+                .padding(20).novaPopupContentSize()
             }
         }
+        .preference(key: NovaPopupBusyKey.self, value: saving)
         .accessibilityIdentifier("nova.drill.form")
     }
 }
@@ -257,7 +258,8 @@ struct NovaDrillResultSheet: View {
                         NovaText(text: RDLocalization.string("localizable.nova.drill.detail.observation",
                             table: .localizable, fallback: "Gözlem"), style: .label)
                         TextEditor(text: $draft.observation).frame(minHeight: 60)
-                            .accessibilityIdentifier("nova.drill.result.observation")
+                            .preference(key: NovaPopupBusyKey.self, value: saving)
+        .accessibilityIdentifier("nova.drill.result.observation")
                     }
                     VStack(alignment: .leading, spacing: 4) {
                         NovaText(text: RDLocalization.string("localizable.nova.drill.detail.improvement",
@@ -272,7 +274,7 @@ struct NovaDrillResultSheet: View {
                     HStack(spacing: 10) {
                         NovaButton(label: RDLocalization.string("localizable.nova.drill.cancel",
                             table: .localizable, fallback: "Vazgeç"), symbol: "xmark",
-                            variant: .surface, action: onClose)
+                            variant: .surface, action: onClose).disabled(saving)
                         NovaButton(label: RDLocalization.string("localizable.nova.drill.result.save",
                             table: .localizable, fallback: "Kaydet"), symbol: "checkmark",
                             variant: .primary) {
@@ -281,7 +283,7 @@ struct NovaDrillResultSheet: View {
                         .disabled(saving || draft.participants.isEmpty)
                     }
                 }
-                .padding(20)
+                .padding(20).novaPopupContentSize()
             }
         }
         .accessibilityIdentifier("nova.drill.result")

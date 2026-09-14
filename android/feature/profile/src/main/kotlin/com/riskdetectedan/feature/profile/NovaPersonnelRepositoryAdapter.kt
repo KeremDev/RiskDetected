@@ -9,7 +9,7 @@ import kotlinx.serialization.json.*
 import java.text.Normalizer
 import java.util.UUID
 
-/** Explicit production boundary; not installed by the offline/synthetic NOVA host. */
+/** Explicit production boundary; not installed by the offline/synthetic İSGADA host. */
 internal fun PersonnelRepository.novaClient(currentScope: () -> NovaPersonnelScope?): NovaPersonnelClient {
     suspend fun <T> scoped(scope: NovaPersonnelScope, block: suspend () -> T): T {
         currentCoroutineContext().ensureActive()

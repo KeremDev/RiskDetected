@@ -29,6 +29,9 @@ enum NovaDestination: String, CaseIterable, Hashable {
     case ppeHandovers
     /// P10: who holds a safety role, in which scope and on what basis.
     case appointments
+    /// P10: the expert's own record of the İSG hizmet sözleşmesi.
+    case katipContracts
+    case annualWorkPlans, boardMeetings, workPermits, contractors
     /// The analysis surfaces are their own menu entries: one lists what was
     /// analysed, the other starts a new one.
     case analyses, newAnalysis
@@ -42,6 +45,11 @@ enum NovaDestination: String, CaseIterable, Hashable {
         case .drills: return RDLocalization.string("localizable.nova.navigation.drills", table: .localizable, fallback: "Tatbikatlar")
         case .ppeHandovers: return RDLocalization.string("localizable.nova.navigation.ppe", table: .localizable, fallback: "KKD Zimmetleri")
         case .appointments: return RDLocalization.string("localizable.nova.navigation.appointments", table: .localizable, fallback: "Atama ve Temsilciler")
+        case .annualWorkPlans: return "Yıllık Çalışma Planı"
+        case .boardMeetings: return "Kurul ve Toplantılar"
+        case .workPermits: return "Çalışma İzni Formları"
+        case .contractors: return "Taşeron ve Dış Firmalar"
+        case .katipContracts: return RDLocalization.string("localizable.nova.navigation.katip", table: .localizable, fallback: "İSG-KATİP Sözleşmeleri")
         case .home: return RDLocalization.string("localizable.nova.navigation.ana.sayfa.1fc29356", table: .localizable, fallback: "Ana Sayfa")
         case .newFinding: return RDLocalization.string("localizable.nova.navigation.uygunsuzluk.ekle", table: .localizable, fallback: "Uygunsuzluk Ekle")
         case .analyses: return RDLocalization.string("localizable.nova.navigation.analizlerim", table: .localizable, fallback: "Analizlerim")
@@ -72,7 +80,7 @@ enum NovaDestination: String, CaseIterable, Hashable {
         case .emergencyPlans: return .home
         case .drills: return .home
         case .ppeHandovers: return .home
-        case .appointments: return .home
+        case .appointments, .katipContracts, .annualWorkPlans, .boardMeetings, .workPermits, .contractors: return .home
         case .home: return .home
         case .newFinding: return .findings
         case .analyses: return .findings
@@ -104,6 +112,11 @@ enum NovaDestination: String, CaseIterable, Hashable {
         case .drills: return "figure.run"
         case .ppeHandovers: return "shield.checkered"
         case .appointments: return "person.badge.shield.checkmark"
+        case .katipContracts: return "doc.text.magnifyingglass"
+        case .annualWorkPlans: return "calendar"
+        case .boardMeetings: return "person.3"
+        case .workPermits: return "doc.text"
+        case .contractors: return "building.2"
         case .home: return "house"
         case .newFinding: return "exclamationmark.triangle"
         case .analyses: return "photo.on.rectangle.angled"
@@ -126,7 +139,7 @@ enum NovaDestination: String, CaseIterable, Hashable {
         }
     }
     // Historical route values remain decodable; removed product features are not offered.
-    static let drawer: [Self] = [.home, .findings, .analyses, .newAnalysis, .newFinding, .companies, .riskAssessments, .checklists, .emergencyPlans, .drills, .ppeHandovers, .appointments, .periodicChecks, .documentChecklist, .documents, .statistics, .training, .reports, .reportArchive, .notifications]
+    static let drawer: [Self] = [.home, .findings, .analyses, .newAnalysis, .newFinding, .companies, .riskAssessments, .checklists, .emergencyPlans, .drills, .ppeHandovers, .appointments, .katipContracts, .annualWorkPlans, .boardMeetings, .visits, .workPermits, .contractors, .periodicChecks, .documentChecklist, .documents, .statistics, .training, .reports, .reportArchive, .notifications]
     static let quickAdd: [Self] = [.newCompany, .newAnalysis, .newFinding, .newDocument]
 }
 

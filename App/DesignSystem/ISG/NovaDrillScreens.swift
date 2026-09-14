@@ -139,6 +139,8 @@ struct NovaDrillScreen: View {
     var canWrite: Bool = true
     var initialCompany: UUID?
     var headingOverride: String?
+    var management: ((UUID, UUID) -> AnyView)?
+    @State private var draftCompany: UUID?
 
     @State private var board: NovaDrillBoard?
     @State private var catalogue: NovaDrillCatalogue?
@@ -191,10 +193,20 @@ struct NovaDrillScreen: View {
                 },
                 onCancel: { reason in await cancel(drill, reason) },
                 onClose: { detail = nil })
+                .safeAreaInset(edge: .bottom) {
+                    if canWrite, let company = drill.companyID, let management {
+                        NovaModuleManageAction(content: { management(company, drill.id) }, onDone: {
+                            detail = nil; Task { await load(reset: true) }
+                        })
+                    }
+                }
         }
         .sheet(item: $planning) { draft in
-            NovaDrillPlanSheet(draft: draft, catalogue: catalogue,
-                onSave: { edited in await plan(edited) }, onClose: { planning = nil })
+            NovaCompanyCreateFlow(title: "Tatbikat planla", companies: client.companies,
+                catalogue: client.catalogue, onSelect: { draftCompany = $0 }) { selectedCatalogue in
+                NovaDrillPlanSheet(draft: draft, catalogue: selectedCatalogue,
+                    onSave: { edited in await plan(edited) }, onClose: { planning = nil })
+            }
         }
         .sheet(item: $recording) { draft in
             NovaDrillResultSheet(draft: draft, catalogue: catalogue,
@@ -205,16 +217,15 @@ struct NovaDrillScreen: View {
     @ViewBuilder private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
-                NovaButton(label: RDLocalization.string("localizable.nova.drill.back", table: .localizable, fallback: "Geri"),
-                    symbol: "chevron.left", variant: .surface, action: onBack)
+                NovaBackButton(action: onBack)
+                NovaText(text: headingOverride ?? NovaDestination.drills.title, style: .screenTitle)
                 Spacer(minLength: 0)
-                if canWrite, query.company != nil {
+                if canWrite {
                     NovaButton(label: RDLocalization.string("localizable.nova.drill.new",
                         table: .localizable, fallback: "Tatbikat planla"), symbol: "plus",
-                        variant: .primary) { planning = .init(plannedOn: NovaDayField.text(Date())) }
+                        variant: .primary) { startCreate() }
                 }
             }
-            NovaText(text: headingOverride ?? NovaDestination.drills.title, style: .screenTitle)
             // Said once, at the top, rather than implied by a colour.
             NovaText(text: NovaDrillWords.planningIsNotPerforming, style: .meta,
                 color: NovaColorToken.textSecondary.color(in: scheme))
@@ -330,6 +341,11 @@ struct NovaDrillScreen: View {
 
     // MARK: work
 
+    private func startCreate() {
+        draftCompany = nil
+        planning = .init(plannedOn: NovaDayField.text(Date()))
+    }
+
     private func load(reset: Bool) async {
         if reset { query.offset = 0 } else { query.offset += query.limit }
         loading = true; failure = nil
@@ -351,11 +367,15 @@ struct NovaDrillScreen: View {
     }
 
     private func openDetail(_ drill: NovaDrill) async {
-        do { detail = try await client.detail(drill.id) } catch { detail = drill }
+        draftCompany = drill.companyID
+        do {
+            catalogue = try await client.catalogue(drill.companyID)
+            detail = try await client.detail(drill.id)
+        } catch { failure = "Kayıt açılamadı. Yeniden deneyin." }
     }
 
     private func plan(_ draft: NovaDrillPlanDraft) async -> String? {
-        guard let company = query.company else { return NovaDrillFailure.validation.message }
+        guard let company = draftCompany ?? query.company else { return NovaDrillFailure.validation.message }
         do {
             _ = try await client.plan(company, draft)
             planning = nil
@@ -366,7 +386,7 @@ struct NovaDrillScreen: View {
     }
 
     private func record(_ draft: NovaDrillResultDraft) async -> String? {
-        guard let company = query.company else { return NovaDrillFailure.validation.message }
+        guard let company = draftCompany ?? query.company else { return NovaDrillFailure.validation.message }
         do {
             _ = try await client.record(company, draft)
             recording = nil

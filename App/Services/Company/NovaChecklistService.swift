@@ -194,12 +194,11 @@ import Foundation
     private func mutate(_ identity: NovaSessionIdentity, company: UUID, action: String,
                         payload: [String: PersonnelRPCValue]) async throws -> NovaChecklistRun? {
         try check(identity)
-        let data = try await rpc("isg_checklists_mutate_v1", [
-            "p_company": .id(company), "p_action": .string(action),
-            "p_operation": .id(UUID()), "p_mutation": .id(UUID()),
-            "p_payload": .object(payload)])
-        try check(identity)
-        return try JSONDecoder().decode(MutationEnvelope.self, from: data).row.map(run)
+        return try await NovaModuleMutationJournal.run(function: "isg_checklists_mutate_v1", identity: identity,
+            company: company, action: action, payload: payload, rpc: rpc,
+            validate: { try check(identity) }, decode: { data in
+                try JSONDecoder().decode(MutationEnvelope.self, from: data).row.map(run)
+            })
     }
 
     // MARK: authoring

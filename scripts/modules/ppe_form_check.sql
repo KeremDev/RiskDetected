@@ -1,0 +1,27 @@
+BEGIN;
+SELECT set_config('test.actor','20000000-0000-0000-0000-000000000001',true);
+SELECT set_config('test.pilot','true',true);
+SELECT set_config('test.pilot_write','true',true);
+UPDATE private_isg.rollout SET read_enabled=true,write_enabled=true;
+UPDATE private_isg.module_registry SET read_enabled=true,write_enabled=true;
+CREATE TEMP TABLE form_test AS SELECT gen_random_uuid() op,gen_random_uuid() mutation,NULL::jsonb result;
+UPDATE form_test SET result=public.isg_ppe_mutate_v1('10000000-0000-0000-0000-000000000001','create_form',op,mutation,'{"employee_id":"30000000-0000-0000-0000-000000000001","item":"Baret, koruyucu gözlük","handed_on":"2026-01-01"}');
+DO $$ DECLARE r jsonb; saved jsonb; BEGIN
+SELECT public.isg_ppe_mutate_v1('10000000-0000-0000-0000-000000000001','create_form',op,mutation,'{"employee_id":"30000000-0000-0000-0000-000000000001","item":"Baret, koruyucu gözlük","handed_on":"2026-01-01"}') INTO r FROM form_test;
+IF (SELECT count(*) FROM private_isg.ppe_handovers)<>1 OR r->>'replayed'<>'true' THEN RAISE EXCEPTION 'Replay failed'; END IF;
+RAISE NOTICE 'ok PPE form idempotent creation';
+SELECT public.isg_ppe_form_v1((result->>'handover_id')::uuid) INTO saved FROM form_test;
+UPDATE private_isg.employees SET full_name='Changed' WHERE id='30000000-0000-0000-0000-000000000001';
+IF public.isg_ppe_form_v1((saved->>'id')::uuid) IS DISTINCT FROM saved THEN RAISE EXCEPTION 'Snapshot changed'; END IF;
+RAISE NOTICE 'ok PPE form snapshot immutable after employee rename';
+IF EXISTS(SELECT 1 FROM private_isg.ppe_returns) THEN RAISE EXCEPTION 'Return manufactured'; END IF;
+RAISE NOTICE 'ok PPE no return records';
+END $$;
+CREATE FUNCTION pg_temp.ppe_refuses(q text,want text) RETURNS void LANGUAGE plpgsql AS $$ BEGIN BEGIN EXECUTE q; EXCEPTION WHEN OTHERS THEN IF SQLERRM=want THEN RAISE NOTICE 'ok PPE refuses %',want; RETURN; END IF; RAISE; END; RAISE EXCEPTION 'Expected %',want; END $$;
+SELECT pg_temp.ppe_refuses(format('SELECT public.isg_ppe_mutate_v1(''10000000-0000-0000-0000-000000000001'',%L,gen_random_uuid(),gen_random_uuid(),''{}'')',action),'FEATURE_UNAVAILABLE') FROM unnest(ARRAY['record_return','remove_return','record_handover']) action;
+SELECT pg_temp.ppe_refuses('SELECT public.isg_ppe_mutate_v1(''10000000-0000-0000-0000-000000000001'',''create_form'',gen_random_uuid(),gen_random_uuid(),''{"quantity":3}'')','PAYLOAD_NOT_ALLOWED');
+SELECT pg_temp.ppe_refuses(format('SELECT public.isg_pilot_module_mutate_v1(''10000000-0000-0000-0000-000000000001'',%L,gen_random_uuid(),gen_random_uuid(),''{"module":"ppe"}'')',action),'FEATURE_UNAVAILABLE') FROM unnest(ARRAY['update','delete','link_document']) action;
+SELECT pg_temp.ppe_refuses('SELECT public.isg_ppe_mutate_v1(''10000000-0000-0000-0000-000000000001'',''create_form'',gen_random_uuid(),gen_random_uuid(),''{"employee_id":"30000000-0000-0000-0000-000000000003","item":"Baret","handed_on":"2026-01-01"}'')','ACCESS_DENIED');
+SELECT set_config('test.actor','20000000-0000-0000-0000-000000000002',true);
+SELECT pg_temp.ppe_refuses(format('SELECT public.isg_ppe_form_v1(%L)',result->>'handover_id'),'ACCESS_DENIED') FROM form_test;
+ROLLBACK;

@@ -137,6 +137,8 @@ struct NovaEmergencyPlanScreen: View {
     var canWrite: Bool = true
     var initialCompany: UUID?
     var headingOverride: String?
+    var management: ((UUID, UUID) -> AnyView)?
+    @State private var draftCompany: UUID?
 
     @State private var board: NovaEmergencyBoard?
     @State private var catalogue: NovaEmergencyCatalogue?
@@ -188,28 +190,42 @@ struct NovaEmergencyPlanScreen: View {
                                      team: plan.team)
                 },
                 onClose: { detail = nil })
+                .safeAreaInset(edge: .bottom) {
+                    if canWrite, let company = plan.companyID, let management {
+                        NovaModuleManageAction(content: { management(company, plan.id) }, onDone: {
+                            detail = nil; Task { await load(reset: true) }
+                        })
+                    }
+                }
         }
         .sheet(item: $drafting) { draft in
-            NovaEmergencyPlanSheet(draft: draft, catalogue: catalogue,
-                onSave: { edited in await publish(edited) }, onClose: { drafting = nil })
+            if draft.planID != nil {
+                NovaEmergencyPlanSheet(draft: draft, catalogue: catalogue,
+                    onSave: { edited in await publish(edited) }, onClose: { drafting = nil })
+            } else {
+            NovaCompanyCreateFlow(title: "Plan yayınla", companies: client.companies,
+                catalogue: client.catalogue, onSelect: { draftCompany = $0 }) { selectedCatalogue in
+                NovaEmergencyPlanSheet(draft: draft, catalogue: selectedCatalogue,
+                    onSave: { edited in await publish(edited) }, onClose: { drafting = nil })
+            }
+            }
         }
     }
 
     @ViewBuilder private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
-                NovaButton(label: RDLocalization.string("localizable.nova.emergency.back", table: .localizable, fallback: "Geri"),
-                    symbol: "chevron.left", variant: .surface, action: onBack)
+                NovaBackButton(action: onBack)
+                NovaText(text: headingOverride ?? NovaDestination.emergencyPlans.title, style: .screenTitle)
                 Spacer(minLength: 0)
-                if canWrite, query.company != nil {
+                if canWrite {
                     NovaButton(label: RDLocalization.string("localizable.nova.emergency.new",
                         table: .localizable, fallback: "Plan yayımla"), symbol: "plus",
                         variant: .primary) {
-                        drafting = .init(preparedOn: NovaDayField.text(Date()))
+                        startCreate()
                     }
                 }
             }
-            NovaText(text: headingOverride ?? NovaDestination.emergencyPlans.title, style: .screenTitle)
             // Said once, at the top, rather than implied by a colour.
             NovaText(text: NovaEmergencyWords.periodAttribution, style: .meta,
                 color: NovaColorToken.textSecondary.color(in: scheme))
@@ -322,6 +338,11 @@ struct NovaEmergencyPlanScreen: View {
 
     // MARK: work
 
+    private func startCreate() {
+        draftCompany = nil
+        drafting = .init(preparedOn: NovaDayField.text(Date()))
+    }
+
     private func load(reset: Bool) async {
         if reset { query.offset = 0 } else { query.offset += query.limit }
         loading = true; failure = nil
@@ -343,11 +364,15 @@ struct NovaEmergencyPlanScreen: View {
     }
 
     private func openDetail(_ plan: NovaEmergencyPlan) async {
-        do { detail = try await client.detail(plan.id) } catch { detail = plan }
+        draftCompany = plan.companyID
+        do {
+            catalogue = try await client.catalogue(plan.companyID)
+            detail = try await client.detail(plan.id)
+        } catch { failure = "Kayıt açılamadı. Yeniden deneyin." }
     }
 
     private func publish(_ draft: NovaEmergencyPlanDraft) async -> String? {
-        guard let company = query.company else { return NovaEmergencyFailure.validation.message }
+        guard let company = draftCompany ?? query.company else { return NovaEmergencyFailure.validation.message }
         do {
             _ = try await client.publish(company, draft)
             drafting = nil

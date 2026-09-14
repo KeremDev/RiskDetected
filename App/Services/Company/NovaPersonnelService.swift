@@ -33,7 +33,10 @@ enum PersonnelRPCValue: Encodable, Equatable {
 /// Device-only Keychain; no token, analytics event, Cloud sync, or plain preferences.
 @MainActor final class KeychainPersonnelPendingStorage: PersonnelPendingStorage {
     private let service: String
-    init(service: String = "com.riskdetected.personnel.pending.v1") { self.service = service }
+    private let maximumBytes: Int
+    init(service: String = "com.riskdetected.personnel.pending.v1", maximumBytes: Int = 16384) {
+        self.service = service; self.maximumBytes = min(maximumBytes, 2_200_000)
+    }
     private func query(_ account: String) -> [String: Any] {
         [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
          kSecAttrAccount as String: account, kSecAttrSynchronizable as String: false]
@@ -42,11 +45,11 @@ enum PersonnelRPCValue: Encodable, Equatable {
         var q = query(account); q[kSecReturnData as String] = true; q[kSecMatchLimit as String] = kSecMatchLimitOne
         var value: CFTypeRef?; let status = SecItemCopyMatching(q as CFDictionary, &value)
         if status == errSecItemNotFound { return nil }
-        guard status == errSecSuccess, let data = value as? Data, data.count <= 16384 else { throw NovaPersonnelFailure.unavailable }
+        guard status == errSecSuccess, let data = value as? Data, data.count <= maximumBytes else { throw NovaPersonnelFailure.unavailable }
         return data
     }
     func write(_ data: Data, account: String) throws {
-        guard data.count <= 16384 else { throw NovaPersonnelFailure.validation }
+        guard data.count <= maximumBytes else { throw NovaPersonnelFailure.validation }
         let attributes: [String: Any] = [kSecValueData as String: data, kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly]
         let status = SecItemUpdate(query(account) as CFDictionary, attributes as CFDictionary)
         if status == errSecItemNotFound {

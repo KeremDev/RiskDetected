@@ -1,7 +1,7 @@
 import Foundation
 import UIKit
 
-/// Composition between the NOVA analysis screens and the services the product
+/// Composition between the İSGADA analysis screens and the services the product
 /// already ships. Nothing here re-implements the analysis pipeline, the report
 /// renderer or the nonconformity boundary; it only carries them.
 @MainActor

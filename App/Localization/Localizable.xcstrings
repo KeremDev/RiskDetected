@@ -23419,6 +23419,1356 @@
         }
       }
     },
+    "localizable.nova.katip.back": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.cancel": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.close": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapat"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.count": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d / %d contracts"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d / %d sözleşme"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.declared.note": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This duration is what the contract declares. The product does not know the required duration and does not say whether it is enough."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu süre sözleşmenin beyanıdır. Ürün gereken süreyi bilmez ve yeterli olup olmadığını söylemez."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.detail.archive": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivle"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.detail.declared": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Declared service time"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beyan edilen hizmet süresi"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.detail.document": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contract original"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sözleşme aslı"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.detail.end": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "End the contract"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sözleşmeyi bitir"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.detail.fix": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Correct the end date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitiş tarihini düzelt"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.detail.nofiling": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing was filed with the official system"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resmî sisteme hiçbir bildirim yapılmadı"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.detail.norequirement": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The required duration is unknown"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gereken süre bilinmiyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.document.note": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The contract document is not stored in the app. Here you only note where the original is kept."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sözleşme belgesi uygulamada saklanmaz. Burada yalnız aslının nerede tutulduğunu not edersiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.empty.body": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a company and add its OHS service contract to your own record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir firma seçip İSG hizmeti sözleşmesini kendi kaydınıza ekleyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.empty.title": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No contract recorded"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sözleşme kaydı yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.end.after": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The contract started on %@; the end cannot be before that."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sözleşme %@ tarihinde başladı; bitiş bundan önce olamaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.end.note": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This only closes your own record; nothing changes in the official system."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu işlem yalnız sizin kaydınızı kapatır; resmî sistemde hiçbir şey değişmez."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.end.save": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.error.archived": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The dates of an archived contract cannot be changed."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivlenmiş sözleşmenin tarihleri değiştirilemez."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.error.conflict": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record changed elsewhere in the meantime. Refresh and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt bu sırada başka bir yerden değişti. Yenileyip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.error.denied": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You do not have access to this record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kayda erişim yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.error.ends": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The end date cannot be before the start date."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitiş tarihi başlangıçtan önce olamaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.error.feature": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modules are not open yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modüller henüz açık değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.error.module": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The İSG-KATİP contract module is not open yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSG-KATİP sözleşme modülü henüz açık değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.error.plan": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This action needs a Plus or Pro subscription."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu işlem için Plus veya Pro aboneliği gerekiyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.error.unavailable": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record could not be loaded. Check your connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt alınamadı. Bağlantıyı kontrol edip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.error.validation": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The information entered is incomplete or inconsistent."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Girilen bilgiler eksik veya birbiriyle uyumsuz."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.explain.active": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In force until %@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ tarihine kadar yürürlükte."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.explain.archived": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This contract was archived."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu sözleşme arşivlendi."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.explain.expired": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ended on %@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ tarihinde sona erdi."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.explain.expiring": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ends on %@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ tarihinde bitiyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.explain.open": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open ended contract; there is no end date."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süresiz sözleşme; bitiş tarihi yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.explain.upcoming": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starts on %@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ tarihinde başlayacak."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.filter.companies": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All companies"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm firmalar"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.filter.company": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.filter.state": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "State"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durum"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.filter.states": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All states"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm durumlar"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.form.counterparty": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other party (OSGB or employer)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karşı taraf (OSGB veya işveren)"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.form.declarednote": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note about the duration"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süreye dair not"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.form.expert": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expert / physician"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzman / hekim"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.form.location": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where the contract original is kept"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sözleşme aslı nerede"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.form.minutes": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Declared monthly time (minutes)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beyan edilen aylık süre (dakika)"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.form.openhint": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If the end date is left empty the contract is recorded as open ended."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitiş tarihi boş bırakılırsa sözleşme süresiz olarak kaydedilir."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.form.pickplace": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a workplace"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri seçin"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.form.save": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.form.scope": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scope"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapsam"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.form.title": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record a contract"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sözleşme kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.form.workplace": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workplace"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.group.archived": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşiv"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.group.archived.footer": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "closed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kapatıldı"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.group.current": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In force"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yürürlükte"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.group.current.footer": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "running"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sürüyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.group.expired": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expired"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süresi doldu"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.group.expired.footer": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "date passed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tarih geçti"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.group.expiring": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ending soon"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitiyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.group.expiring.footer": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "approaching"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yaklaşan"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.integration.note": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The app does not act on İSG-KATİP, does not query it and never asks for a password. This is only your own record of the contract."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygulama İSG-KATİP üzerinde işlem yapmaz, sorgu çekmez ve şifre istemez. Burası yalnız sizin kendi sözleşme kaydınızdır."
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.more": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show more"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha fazla göster"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.new": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add contract"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sözleşme ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.row.declared": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Declared"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beyan"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.row.ends": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ends"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitiş"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.row.expert": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expert"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzman"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.row.starts": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starts"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlangıç"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.row.term": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tür"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.search": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search party, scope or company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kurum, kapsam veya firma ara"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.service.hours": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d hours per month"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ayda %d saat"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.service.hoursminutes": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d hours %d minutes per month"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ayda %d saat %d dakika"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.state.active": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In force"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yürürlükte"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.state.archived": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archived"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivlendi"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.state.expired": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expired"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süresi doldu"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.state.expiring": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ending soon"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitiyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.state.upcoming": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starts later"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlayacak"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.term.fixed": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fixed term"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süreli"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.term.open": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open ended"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süresiz"
+          }
+        }
+      }
+    },
+    "localizable.nova.katip.unset": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not stated"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belirtilmedi"
+          }
+        }
+      }
+    },
     "localizable.nova.manual.choose.detail": {
       "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -24225,6 +25575,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "İstatistikler"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.katip": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSG-KATİP Contracts"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSG-KATİP Sözleşmeleri"
           }
         }
       }
@@ -27836,13 +29204,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "NOVA · private pilot build"
+            "value": "İSGADA · private pilot build"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "NOVA · özel pilot build"
+            "value": "İSGADA · özel pilot build"
           }
         }
       }
@@ -27854,13 +29222,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "NOVA pilot"
+            "value": "İSGADA pilot"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "NOVA pilot"
+            "value": "İSGADA pilot"
           }
         }
       }

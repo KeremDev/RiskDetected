@@ -54,7 +54,7 @@ struct NovaEquipmentItemSheet: View {
             reports = (try? await client.filedReports(company)) ?? []
             if current == nil { current = try? await client.detail(row.id) }
         }
-        .fullScreenCover(isPresented: $editing) {
+        .novaFullScreenCover(isPresented: $editing) {
             NovaPopup {
                 NovaEquipmentEditSheet(item: row, workplaces: workplaces) { value in
                     current = try await client.update(row, value)
@@ -63,7 +63,7 @@ struct NovaEquipmentItemSheet: View {
                 }
             }
         }
-        .fullScreenCover(item: $correcting) { entry in
+        .novaFullScreenCover(item: $correcting) { entry in
             NovaPopup {
                 NovaEquipmentReportEditSheet(report: entry, periodMonths: row.periodMonths,
                     reports: reports) { value in
@@ -80,7 +80,6 @@ struct NovaEquipmentItemSheet: View {
             NovaIcon(symbol: row.group.symbol, size: 19)
                 .foregroundStyle(tone.tokens.ink.color(in: scheme))
                 .frame(width: 44, height: 44)
-                .background(tone.tokens.background.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
             VStack(alignment: .leading, spacing: 3) {
                 NovaText(text: NovaEquipmentWords.type(row.equipmentType), style: .sheetTitle).lineLimit(2)
                 NovaText(text: row.serialTag, style: .metaQuiet)
@@ -453,7 +452,7 @@ struct NovaEquipmentItemSheet: View {
     private func field(_ label: String, _ text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            TextField(label, text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+            TextField(label, text: text).font(NovaFont.font(.body))
                 .frame(minHeight: 34).accessibilityIdentifier("equipment.inspection.\(id)")
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -567,7 +566,7 @@ struct NovaEquipmentReportEditSheet: View {
     private func field(_ label: String, _ text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            TextField(label, text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+            TextField(label, text: text).font(NovaFont.font(.body))
                 .frame(minHeight: 34).accessibilityIdentifier("equipment.report.\(id)")
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -695,7 +694,7 @@ struct NovaEquipmentAddSheet: View {
     private func field(_ label: String, _ text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            TextField(label, text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+            TextField(label, text: text).font(NovaFont.font(.body))
                 .frame(minHeight: 34).accessibilityIdentifier("equipment.add.\(id)")
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -770,7 +769,7 @@ struct NovaEquipmentEditSheet: View {
     private func field(_ label: String, _ text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            TextField(label, text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+            TextField(label, text: text).font(NovaFont.font(.body))
                 .frame(minHeight: 34).accessibilityIdentifier("equipment.edit.\(id)")
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -922,7 +921,7 @@ struct NovaEquipmentPeriodSheet: View {
     private func field(_ label: String, _ text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            TextField(label, text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+            TextField(label, text: text).font(NovaFont.font(.body))
                 .keyboardType(id == "months" ? .numberPad : .default)
                 .frame(minHeight: 34).accessibilityIdentifier("equipment.period.\(id)")
         }.frame(maxWidth: .infinity, alignment: .leading)

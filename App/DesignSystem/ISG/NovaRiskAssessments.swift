@@ -158,6 +158,8 @@ struct NovaRiskVersion: Identifiable, Equatable {
     let fileAssetID: UUID?
     let sources: [NovaRiskSource]
     let impacts: [NovaRiskImpact]
+    var editRevision: Int = 0
+    var cancellationNote: String?
     var isDraft: Bool { state == "draft" }
     var isFinal: Bool { state == "final" }
 }
@@ -249,6 +251,8 @@ struct NovaRiskVersionDraft: Equatable {
     var scope: [String] = []
     var reason: String = ""
     var expectedCurrent: Int = 0
+    var versionToEdit: Int?
+    var editRevision: Int = 0
 }
 
 /// What the expert confirms to make a version the document that stands.
@@ -260,6 +264,8 @@ struct NovaRiskFinalizeDraft: Equatable {
     /// shown as the expert's.
     var ruleCode: String = ""
     var periodYears: String = ""
+    var kind: NovaRiskKind = .full
+    var editRevision: Int = 0
 }
 
 enum NovaRiskFailure: Error, Equatable {

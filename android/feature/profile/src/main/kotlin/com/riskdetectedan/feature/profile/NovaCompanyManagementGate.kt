@@ -65,9 +65,11 @@ fun CompanyListScreen(onBack: (() -> Unit)? = null, viewModel: CompanyViewModel 
 
 @Composable
 internal fun NovaCompanyWorkspace(scope: NovaPersonnelScope, companyName: String, canWrite: Boolean, personnel: NovaPersonnelClient, directory: NovaDirectoryClient, onBack: () -> Unit) {
+    var educationOpen by remember(scope) { mutableStateOf(false) }
     var personnelOpen by remember(scope) { mutableStateOf(false) }
     var catalog by remember(scope) { mutableStateOf<NovaDirectoryKind?>(null) }
     when {
+        educationOpen -> EducationScreen(com.riskdetectedan.core.data.company.PersonnelWorkspaceIdentity(scope.ownerID,scope.sessionID),canWrite,{educationOpen=false})
         personnelOpen -> NovaPersonnelDestination(scope, companyName, personnel, { personnelOpen = false }, directory, canWrite)
         catalog != null -> NovaDirectoryDestination(scope, catalog!!, client = directory, canWrite = canWrite) { catalog = null }
         else -> NovaPageSurface {
@@ -78,6 +80,7 @@ internal fun NovaCompanyWorkspace(scope: NovaPersonnelScope, companyName: String
                     Row { NovaGlyph(Icons.Outlined.Lock, null); NovaText("Salt okunur · kayıtlarınız korunuyor") }
                     NovaText("Yeni kayıt ve düzenleme şu anda kullanılamıyor.", style = NovaTypeToken.metaQuiet)
                 } }
+                WorkspaceAction("Eğitimler", Icons.Outlined.School) { educationOpen = true }
                 WorkspaceAction("Personeller", Icons.Outlined.PeopleOutline) { personnelOpen = true }
                 listOf(NovaDirectoryKind.workplaces to Icons.Outlined.Business, NovaDirectoryKind.departments to Icons.Outlined.AccountTree,
                     NovaDirectoryKind.jobs to Icons.Outlined.WorkOutline, NovaDirectoryKind.contractors to Icons.Outlined.Business).forEach { (kind, icon) ->

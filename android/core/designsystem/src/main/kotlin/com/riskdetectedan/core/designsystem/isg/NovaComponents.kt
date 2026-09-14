@@ -67,7 +67,7 @@ fun NovaCard(modifier: Modifier = Modifier, padding: Int = 11, border: Color = C
     }
 }
 
-/** Full-page canvas is distinct from white rounded card surfaces on every NOVA destination. */
+/** Full-page canvas is distinct from white rounded card surfaces on every İSGADA destination. */
 @Composable
 fun NovaPageSurface(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
     Box(modifier.fillMaxSize().background(NovaColorToken.canvas.color()), content = content)

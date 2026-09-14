@@ -75,7 +75,7 @@ struct NovaPilotReviewHarness: View {
             }
         }
         }
-        .fullScreenCover(isPresented: $create) {
+        .novaFullScreenCover(isPresented: $create) {
             NovaPopup {
             NovaPilotCompanyCreateView(identity: identity,
                 service: .init(rpc: { _, _ in
@@ -106,7 +106,7 @@ struct NovaPilotReviewHarness: View {
                 thumbnail: { _ in Self.fixturePhoto },
                 open: { entry in reviewRecord = entry }, create: { navigation.apply(.navigate(.newFinding), from: navigation.epoch) }),
                 companies: reviewCompanies, today: "2026-09-14", onBack: {})
-                .fullScreenCover(item: $reviewRecord) { entry in
+                .novaFullScreenCover(item: $reviewRecord) { entry in
                     NovaPopup {
                         NovaNonconformityRecordSheet(entry: entry, client: .init(
                             load: { entry.row }, transition: { _, _, _ in entry.row },
@@ -118,17 +118,17 @@ struct NovaPilotReviewHarness: View {
             NovaAnalysisListScreen(load: { reviewSummaries }, thumbnail: { _ in Self.fixturePhoto },
                 onOpen: { _ in showingReviewDetail = true }, onBack: {},
                 onReports: { showingReviewReports = true })
-                .fullScreenCover(isPresented: $showingReviewDetail) {
+                .novaFullScreenCover(isPresented: $showingReviewDetail) {
                     NovaAnalysisDetailScreen(analysisID: Self.analysis, client: reviewDetailClient,
                         onBack: { showingReviewDetail = false })
                 }
-                .fullScreenCover(isPresented: $showingReviewReports) {
+                .novaFullScreenCover(isPresented: $showingReviewReports) {
                     NovaAnalysisReportsScreen(load: { reviewReports },
                         onBack: { showingReviewReports = false })
                 }
         case .newAnalysis:
             NovaPhotoIntakeScreen(images: $reviewImages, onStart: { showingIntake = true }, onBack: {})
-                .fullScreenCover(isPresented: $showingIntake) {
+                .novaFullScreenCover(isPresented: $showingIntake) {
                     NovaPopup {
                         NovaAnalysisIntakePopup(companies: reviewCompanies, sectors: NovaPilotFindingsGate.sectorOptions,
                             focuses: reviewFocuses, draft: $draft, onStart: { showingIntake = false })

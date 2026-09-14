@@ -18,7 +18,6 @@ struct NovaAnalysisOverviewCard: View {
                     NovaIcon(symbol: symbol, size: 19)
                         .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
                         .frame(width: 42, height: 42)
-                        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
                     VStack(alignment: .leading, spacing: 3) {
                         NovaText(text: title, style: .sheetTitle)
                         NovaText(text: detail, style: .metaQuiet,
@@ -47,7 +46,6 @@ struct NovaAnalysisOverviewCard: View {
             Image(systemName: figure.symbol).font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(NovaColorToken.inverse.color(in: scheme))
                 .frame(width: 28, height: 28)
-                .background(NovaColorToken.onInverse.color(in: scheme).opacity(0.92), in: RoundedRectangle(cornerRadius: 9))
             VStack(alignment: .leading, spacing: 0) {
                 NovaText(text: figure.value, style: .cardTitle, color: NovaColorToken.onInverse.color(in: scheme))
                 NovaText(text: figure.label, style: .micro,
@@ -81,12 +79,12 @@ struct NovaAnalysisSearchField: View {
             Image(systemName: "magnifyingglass").font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
             TextField(placeholder, text: $text)
-                .font(.custom("PlusJakartaSans-Medium", size: 13.5))
+                .font(NovaFont.font(.body))
                 .textInputAutocapitalization(.never)
                 .accessibilityIdentifier(identifier)
             if !text.isEmpty {
                 Button { text = "" } label: {
-                    Image(systemName: "xmark.circle.fill").font(.system(size: 14))
+                    Image(systemName: "xmark.circle").font(.system(size: 14))
                         .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
                 }.buttonStyle(.plain)
                     .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.analysis.search.clear", table: .localizable, fallback: "Aramayı temizle")))
@@ -200,7 +198,6 @@ struct NovaAnalysisListScreen: View {
                     Image(systemName: "doc.text").font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(NovaColorToken.text.color(in: scheme))
                         .frame(width: 44, height: 44)
-                        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
                         .overlay(RoundedRectangle(cornerRadius: 14)
                             .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
                 }.buttonStyle(.plain)
@@ -225,20 +222,24 @@ struct NovaAnalysisListScreen: View {
     /// The counters are taken from the rows this page actually read, so the
     /// caption says how many that was rather than implying an account total.
     private var overview: some View {
-        NovaAnalysisOverviewCard(symbol: "viewfinder",
-            title: RDLocalization.string("localizable.nova.analysis.overview.title", table: .localizable, fallback: "Saha taramaları"),
-            detail: RDLocalization.string("localizable.nova.analysis.overview.detail", table: .localizable,
-                fallback: "Son analizlerinizi, kritik riskleri ve bulgu sayısını tek yerden takip edin."),
-            headline: "\(stats.total)",
-            headlineCaption: RDLocalization.string("localizable.nova.analysis.overview.unit", table: .localizable, fallback: "Analiz"),
-            figures: [
-                .init(symbol: "calendar", value: "\(stats.thisWeek)",
-                      label: RDLocalization.string("localizable.nova.analysis.filter.week", table: .localizable, fallback: "Bu hafta")),
-                .init(symbol: "exclamationmark.triangle", value: "\(stats.critical)",
-                      label: RDLocalization.string("localizable.nova.nonconformity.severity.critical", table: .localizable, fallback: "Kritik")),
-                .init(symbol: "checkmark.seal", value: "\(stats.findings)",
-                      label: RDLocalization.string("localizable.nova.analysis.overview.findings", table: .localizable, fallback: "Bulgu"))
-            ])
+        HStack(spacing: 8) {
+            metric("Analiz", value: stats.total, symbol: "viewfinder")
+            metric("Bu hafta", value: stats.thisWeek, symbol: "calendar")
+            metric("Kritik", value: stats.critical, symbol: "exclamationmark.triangle")
+            metric("Bulgu", value: stats.findings, symbol: "list.bullet")
+        }
+    }
+
+    private func metric(_ label: String, value: Int, symbol: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            NovaIcon(symbol: symbol, size: 17)
+            NovaSizedText(text: rows == nil ? "—" : String(value), size: 21, weight: "ExtraBold")
+            NovaSizedText(text: label, size: 10, weight: "Medium")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(11)
+        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .combine)
     }
 
     private var search: some View {
@@ -260,7 +261,6 @@ struct NovaAnalysisListScreen: View {
             Image(systemName: company == nil ? "building.2" : "building.2.fill").font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(company == nil ? NovaColorToken.text.color(in: scheme) : NovaColorToken.accentInk.color(in: scheme))
                 .frame(width: 44, height: 44)
-                .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
                 .overlay(RoundedRectangle(cornerRadius: 14)
                     .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
         }
@@ -283,10 +283,9 @@ struct NovaAnalysisListScreen: View {
         if let error {
             NovaCard(padding: 16) { NovaText(text: error, style: .metaQuiet) }
         } else if rows == nil {
-            NovaCard(padding: 16) {
-                NovaText(text: RDLocalization.string("localizable.nova.analysis.list.loading", table: .localizable,
-                    fallback: "Analizler yükleniyor…"), style: .metaQuiet)
-            }
+            NovaLoadingView(message: RDLocalization.string("localizable.nova.analysis.list.loading", table: .localizable,
+                fallback: "Analizler yükleniyor…"))
+                .frame(minHeight: 280)
         } else if visible.isEmpty {
             NovaCard(padding: 16) {
                 NovaText(text: RDLocalization.string("localizable.nova.analysis.list.empty", table: .localizable,
@@ -364,10 +363,9 @@ struct NovaAnalysisListScreen: View {
         .frame(width: 62, height: 62)
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .overlay(alignment: .bottomLeading) {
-            Image(systemName: "camera.fill").font(.system(size: 8, weight: .bold))
+            Image(systemName: "camera").font(.system(size: 8, weight: .bold))
                 .foregroundStyle(NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
                 .frame(width: 17, height: 17)
-                .background(NovaColorToken.accent.color(in: scheme), in: Circle())
                 .padding(3)
         }
         .accessibilityHidden(true)

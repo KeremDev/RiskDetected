@@ -132,7 +132,6 @@ struct NovaAnalysisItemSheet: View {
             Image(systemName: isOn ? "\(symbol).fill" : symbol).font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.text.color(in: scheme))
                 .frame(width: 38, height: 38)
-                .background(NovaColorToken.surface.color(in: scheme).opacity(0.92), in: Circle())
         }.buttonStyle(.plain).disabled(busy)
             .accessibilityLabel(Text(verbatim: label))
             .accessibilityIdentifier("analysis.item.\(value.rawValue)")
@@ -316,14 +315,14 @@ struct NovaAnalysisEditSheet: View {
     private func field(_ label: String, _ text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            TextField(label, text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+            TextField(label, text: text).font(NovaFont.font(.body))
                 .frame(minHeight: 36).accessibilityIdentifier("analysis.edit.\(id)")
         }
     }
     private func area(_ label: String, _ text: Binding<String>, id: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            TextEditor(text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+            TextEditor(text: text).font(NovaFont.font(.body))
                 .frame(minHeight: 70).scrollContentBackground(.hidden)
                 .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 10))
                 .accessibilityIdentifier("analysis.edit.\(id)")
@@ -713,7 +712,6 @@ struct NovaAnalysisReportSheet: View {
             NovaIcon(symbol: "doc.text", size: 20)
                 .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
                 .frame(width: 42, height: 42)
-                .background(NovaColorToken.statusSuccessBg.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
             VStack(alignment: .leading, spacing: 3) {
                 NovaText(text: RDLocalization.string("localizable.nova.analysis.report.title", table: .localizable, fallback: "Rapor oluştur"), style: .sheetTitle)
                 NovaText(text: RDLocalization.string("localizable.nova.analysis.report.hint", table: .localizable,
@@ -736,7 +734,6 @@ struct NovaAnalysisReportSheet: View {
                 Image(systemName: symbol).font(.system(size: 17, weight: .medium))
                     .foregroundStyle(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.textSecondary.color(in: scheme))
                     .frame(width: 42, height: 42)
-                    .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 13))
                 VStack(alignment: .leading, spacing: 3) {
                     NovaText(text: title, style: .cardTitle)
                     NovaText(text: detail, style: .metaQuiet)

@@ -34,6 +34,8 @@ import Foundation
     private struct VersionRow: Decodable {
         let version: Int
         let kind: String
+        let edit_revision: Int?
+        let cancellation_note: String?
         let previous_version: Int?
         let assessment_on: String
         let revision_on: String?
@@ -152,7 +154,7 @@ import Foundation
             dateNeedsReview: entry.date_needs_review ?? false,
             validUntil: entry.valid_until, sourceDrift: entry.source_drift ?? false,
             driftNote: entry.drift_note, fileAssetID: entry.file_asset_id,
-            sources: sources, impacts: impacts)
+            sources: sources, impacts: impacts, editRevision: entry.edit_revision ?? 0, cancellationNote: entry.cancellation_note)
     }
 
     private func read(_ arguments: [String: PersonnelRPCValue]) async throws -> Data {
@@ -212,12 +214,9 @@ import Foundation
     private func mutate(_ identity: NovaSessionIdentity, company: UUID, action: String,
                         payload: [String: PersonnelRPCValue]) async throws -> NovaRiskRow? {
         try check(identity)
-        let data = try await rpc("isg_risk_versions_mutate_v1", [
-            "p_company": .id(company), "p_action": .string(action),
-            "p_operation": .id(UUID()), "p_mutation": .id(UUID()),
-            "p_payload": .object(payload)])
-        try check(identity)
-        return try JSONDecoder().decode(MutationEnvelope.self, from: data).row.map(row)
+        return try await NovaModuleMutationJournal.run(function: "isg_risk_versions_mutate_v1", identity: identity, company: company, action: action, payload: payload, rpc: rpc, validate: { try check(identity) }, decode: { data in
+            try JSONDecoder().decode(MutationEnvelope.self, from: data).row.map(row)
+        })
     }
 
     /// Opening a workplace's record twice is the same record; the server says so
@@ -247,7 +246,17 @@ import Foundation
         if draft.kind.needsScope { payload["scope"] = .array(draft.scope.map { .string($0) }) }
         let reason = draft.reason.trimmingCharacters(in: .whitespacesAndNewlines)
         if !reason.isEmpty { payload["reason"] = .string(reason) }
+        if let version = draft.versionToEdit {
+            payload.removeValue(forKey: "kind")
+            payload["version"] = .number(Int64(version))
+            payload["expected_edit_revision"] = .number(Int64(draft.editRevision))
+            return try await mutate(identity, company: company, action: "edit_draft", payload: payload)
+        }
         return try await mutate(identity, company: company, action: "draft_version", payload: payload)
+    }
+
+    func cancelDraft(_ identity: NovaSessionIdentity, company: UUID, row: NovaRiskRow, version: NovaRiskVersion, reason: String) async throws -> NovaRiskRow? {
+        try await mutate(identity, company: company, action: "cancel_draft", payload: ["assessment_id": .id(row.id), "version": .number(Int64(version.version)), "expected_current": .number(Int64(row.currentVersion)), "expected_edit_revision": .number(Int64(version.editRevision)), "cancellation_note": .string(reason)])
     }
 
     /// The verification is the signed-in expert's own: there is no field for
@@ -258,6 +267,7 @@ import Foundation
         var payload: [String: PersonnelRPCValue] = [
             "assessment_id": .id(assessment), "version": .number(Int64(draft.version)),
             "expected_current": .number(Int64(draft.expectedCurrent))]
+        payload["expected_edit_revision"] = .number(Int64(draft.editRevision))
         let rule = draft.ruleCode.trimmingCharacters(in: .whitespacesAndNewlines)
         if !rule.isEmpty {
             payload["rule_code"] = .string(rule)

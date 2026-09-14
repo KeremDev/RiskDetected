@@ -66,7 +66,6 @@ struct NovaAnalysisReportsScreen: View {
                 Image(systemName: "arrow.clockwise").font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(NovaColorToken.text.color(in: scheme))
                     .frame(width: 44, height: 44)
-                    .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
                     .overlay(RoundedRectangle(cornerRadius: 14)
                         .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
             }.buttonStyle(.plain)
@@ -106,10 +105,8 @@ struct NovaAnalysisReportsScreen: View {
         if let error {
             NovaCard(padding: 16) { NovaText(text: error, style: .metaQuiet) }
         } else if rows == nil {
-            NovaCard(padding: 16) {
-                NovaText(text: RDLocalization.string("localizable.nova.analysis.reports.loading", table: .localizable,
-                    fallback: "Raporlar yükleniyor…"), style: .metaQuiet)
-            }
+            NovaLoadingView(message: RDLocalization.string("localizable.nova.analysis.reports.loading", table: .localizable,
+                fallback: "Raporlar yükleniyor…")).frame(minHeight: 280)
         } else if visible.isEmpty {
             NovaCard(padding: 16) {
                 NovaText(text: RDLocalization.string("localizable.nova.analysis.reports.empty", table: .localizable,
@@ -130,7 +127,6 @@ struct NovaAnalysisReportsScreen: View {
                         .font(.system(size: 17, weight: .medium))
                         .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
                         .frame(width: 44, height: 44)
-                        .background(NovaColorToken.statusSuccessBg.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
                     VStack(alignment: .leading, spacing: 5) {
                         NovaText(text: row.title, style: .cardTitle).lineLimit(1)
                         HStack(spacing: 5) {

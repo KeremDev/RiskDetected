@@ -136,6 +136,8 @@ struct NovaAppointmentScreen: View {
     var canWrite: Bool = true
     var initialCompany: UUID?
     var headingOverride: String?
+    var management: ((UUID, UUID) -> AnyView)?
+    @State private var draftCompany: UUID?
 
     @State private var board: NovaAppointmentBoard?
     @State private var catalogue: NovaAppointmentCatalogue?
@@ -192,10 +194,20 @@ struct NovaAppointmentScreen: View {
                                    isCorrection: row.endsBefore != nil)
                 },
                 onClose: { detail = nil })
+                .safeAreaInset(edge: .bottom) {
+                    if canWrite, let company = row.companyID, let management {
+                        NovaModuleManageAction(content: { management(company, row.id) }, onDone: {
+                            detail = nil; Task { await load(reset: true) }
+                        })
+                    }
+                }
         }
         .sheet(item: $drafting) { draft in
-            NovaAppointmentSheet(draft: draft, catalogue: catalogue,
-                onSave: { edited in await save(edited) }, onClose: { drafting = nil })
+            NovaCompanyCreateFlow(title: "Görev ver", companies: client.companies,
+                catalogue: client.catalogue, onSelect: { draftCompany = $0 }) { selectedCatalogue in
+                NovaAppointmentSheet(draft: draft, catalogue: selectedCatalogue,
+                    onSave: { edited in await save(edited) }, onClose: { drafting = nil })
+            }
         }
         .sheet(item: $ending) { draft in
             NovaAppointmentEndSheet(draft: draft,
@@ -206,16 +218,15 @@ struct NovaAppointmentScreen: View {
     @ViewBuilder private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
-                NovaButton(label: RDLocalization.string("localizable.nova.appointment.back", table: .localizable, fallback: "Geri"),
-                    symbol: "chevron.left", variant: .surface, action: onBack)
+                NovaBackButton(action: onBack)
+                NovaText(text: headingOverride ?? NovaDestination.appointments.title, style: .screenTitle)
                 Spacer(minLength: 0)
-                if canWrite, query.company != nil {
+                if canWrite {
                     NovaButton(label: RDLocalization.string("localizable.nova.appointment.new",
                         table: .localizable, fallback: "Görev ver"), symbol: "plus",
-                        variant: .primary) { drafting = .init(startsOn: NovaDayField.text(Date())) }
+                        variant: .primary) { startCreate() }
                 }
             }
-            NovaText(text: headingOverride ?? NovaDestination.appointments.title, style: .screenTitle)
             // Said once, at the top, rather than discovered in a form.
             NovaText(text: NovaAppointmentWords.noQualificationNote, style: .meta,
                 color: NovaColorToken.textSecondary.color(in: scheme))
@@ -327,6 +338,11 @@ struct NovaAppointmentScreen: View {
 
     // MARK: work
 
+    private func startCreate() {
+        draftCompany = nil
+        drafting = .init(startsOn: NovaDayField.text(Date()))
+    }
+
     private func load(reset: Bool) async {
         if reset { query.offset = 0 } else { query.offset += query.limit }
         loading = true; failure = nil
@@ -347,11 +363,15 @@ struct NovaAppointmentScreen: View {
     }
 
     private func openDetail(_ row: NovaAppointment) async {
-        do { detail = try await client.detail(row.id) } catch { detail = row }
+        draftCompany = row.companyID
+        do {
+            catalogue = try await client.catalogue(row.companyID)
+            detail = try await client.detail(row.id)
+        } catch { failure = "Kayıt açılamadı. Yeniden deneyin." }
     }
 
     private func save(_ draft: NovaAppointmentDraft) async -> String? {
-        guard let company = query.company else { return NovaAppointmentFailure.validation.message }
+        guard let company = draftCompany ?? query.company else { return NovaAppointmentFailure.validation.message }
         do {
             _ = try await client.record(company, draft)
             drafting = nil
@@ -362,7 +382,7 @@ struct NovaAppointmentScreen: View {
     }
 
     private func finish(_ draft: NovaAppointmentEndDraft) async -> String? {
-        guard let company = query.company else { return NovaAppointmentFailure.validation.message }
+        guard let company = draftCompany ?? query.company else { return NovaAppointmentFailure.validation.message }
         do {
             _ = try await client.end(company, draft)
             ending = nil

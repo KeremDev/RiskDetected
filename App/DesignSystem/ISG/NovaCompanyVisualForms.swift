@@ -21,7 +21,7 @@ struct NovaCompanyVisualEditor: View {
                             Text(RDLocalization.string("localizable.nova.visual.7", table: .localizable, fallback: "Az Tehlikeli")).tag("low")
                             Text(RDLocalization.string("localizable.nova.visual.8", table: .localizable, fallback: "Tehlikeli")).tag("medium")
                             Text(RDLocalization.string("localizable.nova.visual.9", table: .localizable, fallback: "Çok Tehlikeli")).tag("high")
-                        }.font(.custom("PlusJakartaSans-Medium", size: 14))
+                        }.font(NovaFont.font(.body))
                         field(RDLocalization.string("localizable.nova.visual.10", table: .localizable, fallback: "Sektör *"), "square.grid.2x2", $sector)
                         field(RDLocalization.string("localizable.nova.visual.11", table: .localizable, fallback: "Firma e-posta"), "envelope", $email).keyboardType(.emailAddress)
                         field(RDLocalization.string("localizable.nova.visual.12", table: .localizable, fallback: "Çalışan sayısı"), "person.2", $employees).keyboardType(.numberPad)
@@ -39,7 +39,7 @@ struct NovaCompanyVisualEditor: View {
     }
     private func field(_ title: String, _ symbol: String, _ value: Binding<String>) -> some View {
         HStack(spacing: 10) { Image(systemName: symbol); TextField(title, text: value) }
-            .font(.custom("PlusJakartaSans-Medium", size: 14)).frame(minHeight: 32)
+            .font(NovaFont.font(.body)).frame(minHeight: 32)
     }
 }
 
@@ -49,7 +49,7 @@ struct NovaCompanyVisualDelete: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Label(RDLocalization.string("localizable.nova.visual.19", table: .localizable, fallback: "Firmayı Sil"), systemImage: "trash").font(.headline).foregroundStyle(.red)
+                Label(RDLocalization.string("localizable.nova.visual.19", table: .localizable, fallback: "Firmayı Sil"), systemImage: "trash").font(NovaFont.font(.cardTitle)).foregroundStyle(.red)
                 NovaText(text: name, style: .cardTitle)
                 NovaText(text: RDLocalization.string("localizable.nova.visual.20", table: .localizable, fallback: "Bu firmayı silmek istediğinizden emin misiniz?"))
                 NovaText(text: RDLocalization.string("localizable.nova.visual.21", table: .localizable, fallback: "Tasarım önizlemesi · Bu ekranda hiçbir kayıt silinmez."), style: .metaQuiet)

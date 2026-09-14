@@ -33,7 +33,7 @@ struct NovaAppointmentDetailSheet: View {
                             symbol: "calendar.badge.minus", variant: .primary, action: onEnd)
                     }
                 }
-                .padding(20)
+                .padding(20).novaPopupContentSize()
             }
         }
         .accessibilityIdentifier("nova.appointment.detail")
@@ -176,7 +176,8 @@ struct NovaAppointmentSheet: View {
                                         .strokeBorder(NovaColorToken.hairline.color(in: scheme), lineWidth: 1))
                             }
                             .buttonStyle(.plain)
-                            .accessibilityIdentifier("nova.appointment.form.role.\(role.kind.rawValue)")
+                            .preference(key: NovaPopupBusyKey.self, value: saving)
+        .accessibilityIdentifier("nova.appointment.form.role.\(role.kind.rawValue)")
                         }
                     }
 
@@ -233,7 +234,7 @@ struct NovaAppointmentSheet: View {
                     HStack(spacing: 10) {
                         NovaButton(label: RDLocalization.string("localizable.nova.appointment.cancel",
                             table: .localizable, fallback: "Vazgeç"), symbol: "xmark",
-                            variant: .surface, action: onClose)
+                            variant: .surface, action: onClose).disabled(saving)
                         NovaButton(label: RDLocalization.string("localizable.nova.appointment.form.save",
                             table: .localizable, fallback: "Kaydet"), symbol: "checkmark",
                             variant: .primary) {
@@ -242,7 +243,7 @@ struct NovaAppointmentSheet: View {
                         .disabled(saving || draft.employeeID == nil || draft.workplaceID == nil)
                     }
                 }
-                .padding(20)
+                .padding(20).novaPopupContentSize()
             }
         }
         .accessibilityIdentifier("nova.appointment.form")
@@ -284,7 +285,7 @@ struct NovaAppointmentEndSheet: View {
                     HStack(spacing: 10) {
                         NovaButton(label: RDLocalization.string("localizable.nova.appointment.cancel",
                             table: .localizable, fallback: "Vazgeç"), symbol: "xmark",
-                            variant: .surface, action: onClose)
+                            variant: .surface, action: onClose).disabled(saving)
                         NovaButton(label: RDLocalization.string("localizable.nova.appointment.end.save",
                             table: .localizable, fallback: "Kaydet"), symbol: "checkmark",
                             variant: .primary) {
@@ -293,9 +294,10 @@ struct NovaAppointmentEndSheet: View {
                         .disabled(saving)
                     }
                 }
-                .padding(20)
+                .padding(20).novaPopupContentSize()
             }
         }
+        .preference(key: NovaPopupBusyKey.self, value: saving)
         .accessibilityIdentifier("nova.appointment.end")
     }
 }
