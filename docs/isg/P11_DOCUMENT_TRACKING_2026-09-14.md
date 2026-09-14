@@ -167,7 +167,51 @@ iş kazası başlıkları evrak yükümlülüğü değil.
 Firma sayfası bunu **tek çağrıyla** okuyor: portföy cevabı `kind_counts` ile
 tür başına sayım döndürüyor, sayfa her başlık için ayrı sorgu atmıyor.
 
-## 9. Eşzamanlı çalışma
+## 9. Üçüncü tur — önce firma, sonra evrak
+
+### Sayfa firma seçimiyle açılıyor
+
+Evrak Takibi artık doğrudan bir listeyle değil, **firma seçimiyle** başlıyor:
+
+- Üstte arama kutusu. **Yazmadan önce de firmalar listeleniyor**; kutuya
+  dokunmak listeyi getirmek için yeterli, yazmak sadece daraltıyor.
+- Gövdede ampullü bilgi: *"İlk önce firma seçimi yapın. Seçtiğiniz firmanın
+  evrak kontrolü hemen aşağıda açılır."*
+- Her firma satırı **kendi sayımını taşıyor** (Eksik 1 · Yaklaşıyor 1 · Süresi
+  doldu 1 · Güncel 1). Hiç kaydı olmayan firma "Takip başlamadı" diyor, sıfır
+  uydurmuyor.
+
+Firma seçilince üstte seçili firma satırı ve **Firma değiştir** çıkıyor, altında
+o firmanın evrak kontrolü açılıyor. Firma sayfasından gelindiğinde seçim adımı
+atlanıyor; orada firma zaten belli.
+
+### İstatistik kartları sakinleşti
+
+Siyah çipli tek blok kaldırıldı. Yerine **ana sayfadaki özet kartlarının aynı
+biçimi**: beyaz yüzey, 18 yarıçap, 86×86; tonlu ikon + sayı, altında durum adı,
+en altta kısa ve olgusal bir alt satır.
+
+| Kart | Alt satır |
+|---|---|
+| Eksik | kopya yok |
+| Yaklaşıyor | bitişe yakın |
+| Süresi doldu | bitiş geçti |
+| Güncel | dosyada |
+
+Alt satırlar talimat değil tespit: "yenilenmeli" gibi bir emir yazmıyor.
+Karta dokunmak aşağıdaki çiplerle aynı filtreyi uyguluyor.
+
+Bilgi kartındaki ikinci "Evrak takibi" başlığı kaldırıldı; sayfa başlığında
+zaten yazıyor.
+
+### Sayımlar ekrandakini takip ediyor
+
+Sunucunun `counts` alanı bilerek hesabın tamamını sayar. Ekran bunu körü körüne
+göstermiyor: firma seçiliyse o firmanın sayımı, firma sayfasından bir başlıkla
+gelindiyse o başlığın `kind_counts` sayımı, hiçbiri yoksa hesabın tamamı
+gösteriliyor.
+
+## 10. Eşzamanlı çalışma
 
 Bu dilim yazılırken aynı çalışma ağacında başka bir oturum eğitim modülünü
 yazıyordu. Commit yalnız bu dilimin yollarını içerir; `NovaPilotMainGate.swift`,
@@ -177,7 +221,7 @@ bırakıldı. Bu tur foundation'da kalan tek hata (`NovaCompanyManagementGate.sw
 ham metinleri), sabit metin borcundaki artış ve ana ağacın derleme hatası
 (`NovaTrainingSessionService.swift`) o çalışmaya aittir.
 
-## 10. Açık kalan
+## 11. Açık kalan
 
 - **Rollout kapalı.** `UPDATE private_isg.rollout SET read_enabled=true,
   write_enabled=true WHERE feature='document_tracking';` — ayrı bir insan kararı.

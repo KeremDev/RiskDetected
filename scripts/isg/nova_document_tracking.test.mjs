@@ -113,6 +113,14 @@ test('the portfolio page reads the account once and shows ten at a time',()=>{
   assert.doesNotMatch(gate,/for .* in companies|companies\.map \{[^}]*await/);
   // Asking for more re-reads the page rather than trimming what is on screen.
   assert.match(screen,/shown \+= NovaDocumentQuery\(\)\.limit/);
+  // A company is chosen before anything is tracked, and the picker lists every
+  // company before a single character is typed.
+  assert.match(screen,/if company == nil \{ picker \} else \{ tracker \}/);
+  assert.match(screen,/guard !needle\.isEmpty else \{ return companies \}/);
+  assert.match(screen,/localizable\.nova\.document\.pick\.company/);
+  // The counters follow what is on screen, not the account headline.
+  assert.match(screen,/if let initialKinds \{ return board\.counts\(forKinds: initialKinds\) \}/);
+  assert.match(screen,/if let selectedCompany \{ return selectedCompany\.counts \}/);
   assert.match(screen,/\.onChange\(of: status\)[\s\S]{0,120}?reload = UUID\(\)/);
   assert.match(screen,/\.onChange\(of: company\)[\s\S]{0,120}?reload = UUID\(\)/);
   // The headline counts the account, not the page that happens to be loaded.

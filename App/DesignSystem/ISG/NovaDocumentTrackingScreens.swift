@@ -75,14 +75,63 @@ struct NovaDayField: View {
     }
 }
 
-/// Every document the expert tracks, across every company: what is missing,
-/// what ran out and what is about to. The list is a tally of tracked documents;
-/// it is never a verdict about a company or about any person.
+/// One counter, in the same shape the home page uses for its summary: a toned
+/// icon beside the number, the name under it and a short factual footer.
+struct NovaDocumentStatCard: View {
+    let status: NovaDocumentStatus
+    let value: Int
+    var isSelected = false
+    let onTap: () -> Void
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    /// What the count means, stated as a fact rather than as an instruction.
+    private var footer: String {
+        switch status {
+        case .missing: return RDLocalization.string("localizable.nova.document.stat.missing", table: .localizable, fallback: "kopya yok")
+        case .dueSoon: return RDLocalization.string("localizable.nova.document.stat.due.soon", table: .localizable, fallback: "bitişe yakın")
+        case .expired: return RDLocalization.string("localizable.nova.document.stat.expired", table: .localizable, fallback: "bitiş geçti")
+        case .valid: return RDLocalization.string("localizable.nova.document.stat.valid", table: .localizable, fallback: "dosyada")
+        }
+    }
+
+    var body: some View {
+        let tone = NovaDocumentWords.tone(status).tokens.ink
+        return Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Image(systemName: NovaDocumentWords.symbol(status)).font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(tone.color(in: scheme))
+                    NovaSizedText(text: "\(value)", size: 19, weight: "ExtraBold")
+                }
+                NovaSizedText(text: NovaDocumentWords.status(status), size: 10, weight: "Medium",
+                    color: NovaColorToken.textMuted.color(in: scheme))
+                    .lineLimit(2).frame(maxWidth: .infinity, minHeight: 24, alignment: .topLeading)
+                NovaSizedText(text: footer, size: 9.5, weight: "Bold",
+                    color: value > 0 ? tone.color(in: scheme) : NovaColorToken.textMuted.color(in: scheme))
+                    .lineLimit(1).minimumScaleFactor(0.8)
+            }
+            .padding(.horizontal, 10).padding(.vertical, 11)
+            .frame(width: typeSize.isAccessibilitySize ? 160 : 86,
+                   height: typeSize.isAccessibilitySize ? nil : 86, alignment: .topLeading)
+            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 18))
+            .overlay(RoundedRectangle(cornerRadius: 18)
+                .strokeBorder(isSelected ? tone.color(in: scheme) : .clear, lineWidth: 1.5))
+        }.buttonStyle(.plain)
+            .accessibilityIdentifier("document.stat.\(status.rawValue)")
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+/// The tracker. A company is chosen first, because an obligation belongs to
+/// one; its own standing and its own documents open underneath. The list is a
+/// tally of tracked documents; it is never a verdict about a company or about
+/// any person.
 struct NovaDocumentTrackingScreen: View {
     let client: NovaDocumentTrackingClient
     let onBack: () -> Void
     var canWrite = true
-    /// Opens straight onto one company's own documents, from the company page.
+    /// Opened from a company page: that company is already the answer.
     var initialCompany: UUID?
     /// Opens onto one heading of the company page, such as periodic checks.
     var initialKinds: [String]?
@@ -91,6 +140,7 @@ struct NovaDocumentTrackingScreen: View {
     @State private var board: NovaDocumentPortfolio?
     @State private var companies: [NovaAnalysisCompanyOption] = []
     @State private var error: String?
+    @State private var companyQuery = ""
     @State private var query = ""
     @State private var status: NovaDocumentStatus?
     @State private var company: UUID?
@@ -100,12 +150,38 @@ struct NovaDocumentTrackingScreen: View {
     @State private var loading = false
     @State private var reload = UUID()
     @State private var started = false
+    @FocusState private var searchingCompany: Bool
 
+    /// The company page hands one in; there it is never changed on this screen.
+    private var isCompanyLocked: Bool { initialCompany != nil }
     private var selectedCompany: NovaDocumentCompanySummary? {
         board?.companies.first { $0.id == company }
     }
+    private var selectedName: String? {
+        selectedCompany?.name ?? companies.first { $0.id == company }?.name
+    }
+    /// The counters follow what the page is actually showing: one heading when
+    /// the company page named one, otherwise the chosen company, otherwise the
+    /// whole account. The server's headline covers the account, so narrowing is
+    /// read from the per-company and per-kind tallies it sends alongside it.
+    private var visibleCounts: [NovaDocumentStatus: Int] {
+        guard let board else { return [:] }
+        if let initialKinds { return board.counts(forKinds: initialKinds) }
+        if let selectedCompany { return selectedCompany.counts }
+        return board.counts
+    }
+    private func count(_ state: NovaDocumentStatus) -> Int { visibleCounts[state] ?? 0 }
+    private var trackedHere: Int { NovaDocumentStatus.allCases.reduce(0) { $0 + count($1) } }
+
     private var request: NovaDocumentQuery {
         .init(query: query, status: status, company: company, kinds: initialKinds, limit: shown, offset: 0)
+    }
+    /// What the picker is offering right now. An empty box lists everything, so
+    /// the expert can pick without typing.
+    private var offered: [NovaAnalysisCompanyOption] {
+        let needle = companyQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !needle.isEmpty else { return companies }
+        return companies.filter { $0.name.lowercased().contains(needle) || $0.detail.lowercased().contains(needle) }
     }
 
     var body: some View {
@@ -113,12 +189,7 @@ struct NovaDocumentTrackingScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 11) {
                     header
-                    overview
-                    if let selectedCompany { companyCard(selectedCompany) }
-                    hint
-                    search
-                    chips
-                    list
+                    if company == nil { picker } else { tracker }
                 }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
             }
         }
@@ -126,7 +197,12 @@ struct NovaDocumentTrackingScreen: View {
         // Filters re-read the page rather than trimming what is already here,
         // so the row count on screen is always the server's own answer.
         .onChange(of: status) { _ in shown = NovaDocumentQuery().limit; reload = UUID() }
-        .onChange(of: company) { _ in shown = NovaDocumentQuery().limit; reload = UUID() }
+        .onChange(of: company) { _ in
+            shown = NovaDocumentQuery().limit
+            status = nil
+            query = ""
+            reload = UUID()
+        }
         .fullScreenCover(item: $inspecting) { row in
             NovaPopup {
                 NovaDocumentObligationSheet(obligation: row, client: client, canWrite: canWrite,
@@ -135,7 +211,7 @@ struct NovaDocumentTrackingScreen: View {
         }
         .fullScreenCover(isPresented: $adding) {
             NovaPopup {
-                NovaDocumentAddSheet(companies: companies, preselected: company ?? initialCompany,
+                NovaDocumentAddSheet(companies: companies, preselected: company,
                     allowedKinds: initialKinds, client: client) {
                         adding = false
                         reload = UUID()
@@ -149,13 +225,11 @@ struct NovaDocumentTrackingScreen: View {
             NovaBackButton { onBack() }
             VStack(alignment: .leading, spacing: 2) {
                 NovaText(text: headingOverride ?? NovaDestination.documentChecklist.title, style: .screenTitle)
-                if let board {
-                    NovaText(text: String(format: RDLocalization.string("localizable.nova.document.subtitle", table: .localizable,
-                        fallback: "%1$d firma · %2$d kayıt"), board.companies.count, board.tracked), style: .metaQuiet)
-                }
+                if let selectedName { NovaText(text: selectedName, style: .metaQuiet) }
             }
             Spacer(minLength: 0)
-            if canWrite {
+            // Adding needs a company, so the control appears once there is one.
+            if canWrite && company != nil {
                 Button { adding = true } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "plus").font(.system(size: 13, weight: .bold))
@@ -170,55 +244,140 @@ struct NovaDocumentTrackingScreen: View {
         }
     }
 
-    /// The account's own standing, counted by the server over everything it
-    /// tracks — not over the page that happens to be on screen.
-    private var overview: some View {
-        let value = board ?? .init()
-        return NovaAnalysisOverviewCard(symbol: "doc.text",
-            title: RDLocalization.string("localizable.nova.document.overview.title", table: .localizable, fallback: "Evrak takibi"),
-            detail: RDLocalization.string("localizable.nova.document.overview.detail.portfolio", table: .localizable,
-                fallback: "Tüm firmalarınızda eksik, süresi dolmuş ve yaklaşan evrakları tek yerden görün."),
-            headline: "\(value.needsAttention)",
-            headlineCaption: RDLocalization.string("localizable.nova.document.overview.attention", table: .localizable, fallback: "ilgi bekliyor"),
-            figures: [
-                .init(symbol: "questionmark.circle", value: "\(value.count(.missing))",
-                      label: NovaDocumentWords.status(.missing)),
-                .init(symbol: "exclamationmark.circle", value: "\(value.count(.expired))",
-                      label: NovaDocumentWords.status(.expired)),
-                .init(symbol: "clock", value: "\(value.count(.dueSoon))",
-                      label: NovaDocumentWords.status(.dueSoon))
-            ])
+    // MARK: choosing a company
+
+    @ViewBuilder private var picker: some View {
+        companyField
+        NovaHelpHint(text: RDLocalization.string("localizable.nova.document.pick.company", table: .localizable,
+            fallback: "İlk önce firma seçimi yapın. Seçtiğiniz firmanın evrak kontrolü hemen aşağıda açılır."))
+        if let error {
+            NovaCard(padding: 16) { NovaText(text: error, style: .metaQuiet) }
+        } else if companies.isEmpty {
+            NovaCard(padding: 16) {
+                NovaText(text: loading
+                    ? RDLocalization.string("localizable.nova.document.loading", table: .localizable, fallback: "Evrak takibi yükleniyor…")
+                    : RDLocalization.string("localizable.nova.document.company.empty", table: .localizable,
+                        fallback: "Evrak takibi için önce bir firma ekleyin."), style: .metaQuiet)
+            }
+        } else if offered.isEmpty {
+            NovaCard(padding: 16) {
+                NovaText(text: RDLocalization.string("localizable.nova.document.company.nomatch", table: .localizable,
+                    fallback: "Bu aramaya uyan firma yok."), style: .metaQuiet)
+            }
+        } else {
+            ForEach(offered) { option in companyRow(option) }
+        }
     }
 
-    /// When one company is picked, its own standing sits under the headline so
-    /// the expert sees that company's detail without leaving the page.
-    private func companyCard(_ entry: NovaDocumentCompanySummary) -> some View {
-        NovaCard(padding: 12) {
-            VStack(alignment: .leading, spacing: 9) {
-                HStack(spacing: 8) {
-                    NovaIcon(symbol: "building.2", size: 15)
-                        .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
-                    NovaText(text: entry.name, style: .cardTitle)
-                    Spacer(minLength: 0)
-                    NovaText(text: String(format: RDLocalization.string("localizable.nova.document.company.total", table: .localizable,
-                        fallback: "%d kayıt"), entry.total), style: .micro,
-                        color: NovaColorToken.textTertiary.color(in: scheme))
-                }
-                HStack(spacing: 6) {
-                    ForEach(NovaDocumentStatus.allCases) { state in
-                        let palette = NovaDocumentWords.tone(state).tokens
-                        VStack(spacing: 2) {
-                            NovaText(text: "\(entry.count(state))", style: .cardTitle,
-                                color: palette.ink.color(in: scheme))
-                            NovaText(text: NovaDocumentWords.status(state), style: .micro,
-                                color: NovaColorToken.textTertiary.color(in: scheme)).lineLimit(1)
+    private var companyField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
+            TextField(RDLocalization.string("localizable.nova.document.company.search", table: .localizable, fallback: "Firma ara veya listeden seçin"),
+                text: $companyQuery)
+                .font(.custom("PlusJakartaSans-Medium", size: 13.5))
+                .textInputAutocapitalization(.never)
+                .focused($searchingCompany)
+                .accessibilityIdentifier("document.company.search")
+            if !companyQuery.isEmpty {
+                Button { companyQuery = "" } label: {
+                    Image(systemName: "xmark.circle.fill").font(.system(size: 14))
+                        .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
+                }.buttonStyle(.plain)
+                    .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.analysis.search.clear", table: .localizable, fallback: "Aramayı temizle")))
+            }
+        }
+        .padding(.horizontal, 12).frame(minHeight: 46)
+        .background(NovaColorToken.surface.color(in: scheme), in: Capsule())
+        .overlay(Capsule().strokeBorder(searchingCompany ? NovaColorToken.accentInk.color(in: scheme)
+                                                         : NovaColorToken.border.color(in: scheme),
+                                        lineWidth: searchingCompany ? 1.4 : 1))
+    }
+
+    /// Each company carries what it is actually holding, so the choice is made
+    /// with the counts in view rather than blind.
+    private func companyRow(_ option: NovaAnalysisCompanyOption) -> some View {
+        let summary = board?.companies.first { $0.id == option.id }
+        return Button { company = option.id; searchingCompany = false } label: {
+            NovaCard(padding: 11) {
+                VStack(alignment: .leading, spacing: 7) {
+                    HStack(spacing: 9) {
+                        NovaIcon(symbol: "building.2", size: 15)
+                            .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+                            .frame(width: 36, height: 36)
+                            .background(NovaColorToken.statusSuccessBg.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
+                        VStack(alignment: .leading, spacing: 2) {
+                            NovaText(text: option.name, style: .cardTitle).lineLimit(1)
+                            if !option.detail.isEmpty { NovaText(text: option.detail, style: .micro,
+                                color: NovaColorToken.textTertiary.color(in: scheme)).lineLimit(1) }
                         }
-                        .frame(maxWidth: .infinity).padding(.vertical, 7)
-                        .background(palette.background.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
-                        .accessibilityElement(children: .combine)
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
                     }
+                    if let summary, summary.total > 0 {
+                        HStack(spacing: 5) {
+                            ForEach(NovaDocumentStatus.allCases) { state in
+                                if summary.count(state) > 0 {
+                                    NovaAnalysisTag(symbol: NovaDocumentWords.symbol(state),
+                                        text: "\(NovaDocumentWords.status(state)) \(summary.count(state))",
+                                        status: NovaDocumentWords.tone(state))
+                                }
+                            }
+                            Spacer(minLength: 0)
+                        }
+                    } else if summary == nil && board != nil {
+                        NovaAnalysisTag(symbol: "questionmark.circle",
+                            text: RDLocalization.string("localizable.nova.document.company.untracked", table: .localizable, fallback: "Takip başlamadı"),
+                            status: .neutral)
+                    }
+                }.frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }.buttonStyle(.plain)
+            .accessibilityIdentifier("document.company.\(option.id.uuidString.lowercased())")
+    }
+
+    // MARK: the chosen company's documents
+
+    @ViewBuilder private var tracker: some View {
+        if !isCompanyLocked { chosenCompany }
+        stats
+        hint
+        search
+        chips
+        list
+    }
+
+    private var chosenCompany: some View {
+        HStack(spacing: 9) {
+            NovaIcon(symbol: "building.2", size: 14)
+                .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+            NovaText(text: selectedName ?? "", style: .cardTitle).lineLimit(1)
+            Spacer(minLength: 0)
+            Button { company = nil; companyQuery = "" } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: "arrow.left.arrow.right").font(.system(size: 10, weight: .bold))
+                    NovaText(text: RDLocalization.string("localizable.nova.document.company.change", table: .localizable, fallback: "Firma değiştir"),
+                        style: .meta, color: NovaColorToken.accentInk.color(in: scheme))
+                }.foregroundStyle(NovaColorToken.accentInk.color(in: scheme)).frame(minHeight: 36)
+            }.buttonStyle(.plain).accessibilityIdentifier("document.company.change")
+        }
+        .padding(.horizontal, 12).padding(.vertical, 4)
+        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16)
+            .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
+    }
+
+    /// Four counters for the chosen company, in the home page's own card shape.
+    /// Tapping one is the same filter the chips below carry.
+    private var stats: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .top, spacing: 8) {
+                ForEach(NovaDocumentStatus.allCases) { state in
+                    NovaDocumentStatCard(status: state, value: count(state),
+                        isSelected: status == state) { status = status == state ? nil : state }
                 }
-            }.frame(maxWidth: .infinity, alignment: .leading)
+            }.padding(.vertical, 2)
         }
     }
 
@@ -229,32 +388,10 @@ struct NovaDocumentTrackingScreen: View {
     }
 
     private var search: some View {
-        HStack(spacing: 8) {
-            NovaAnalysisSearchField(text: $query,
-                placeholder: RDLocalization.string("localizable.nova.document.search", table: .localizable, fallback: "Evrak ara"),
-                identifier: "document.tracking.search")
-                .onSubmit { shown = NovaDocumentQuery().limit; reload = UUID() }
-            companyMenu
-        }
-    }
-
-    private var companyMenu: some View {
-        Menu {
-            Button(RDLocalization.string("localizable.nova.document.company.all", table: .localizable, fallback: "Tüm firmalar")) { company = nil }
-            ForEach(board?.companies ?? []) { entry in
-                Button("\(entry.name) · \(entry.total)") { company = entry.id }
-            }
-        } label: {
-            Image(systemName: company == nil ? "building.2" : "building.2.fill")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(company == nil ? NovaColorToken.text.color(in: scheme) : NovaColorToken.accentInk.color(in: scheme))
-                .frame(width: 44, height: 44)
-                .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
-                .overlay(RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
-        }
-        .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.nonconformity.filter.company", table: .localizable, fallback: "Firma")))
-        .accessibilityIdentifier("document.tracking.company")
+        NovaAnalysisSearchField(text: $query,
+            placeholder: RDLocalization.string("localizable.nova.document.search", table: .localizable, fallback: "Evrak ara"),
+            identifier: "document.tracking.search")
+            .onSubmit { shown = NovaDocumentQuery().limit; reload = UUID() }
     }
 
     private var chips: some View {
@@ -263,7 +400,7 @@ struct NovaDocumentTrackingScreen: View {
                 NovaAnalysisFilterChip(title: RDLocalization.string("localizable.nova.nonconformity.filter.all", table: .localizable, fallback: "Tümü"),
                     isOn: status == nil, identifier: "document.tracking.filter.all") { status = nil }
                 ForEach(NovaDocumentStatus.allCases) { value in
-                    NovaAnalysisFilterChip(title: "\(NovaDocumentWords.status(value)) \(board?.count(value) ?? 0)",
+                    NovaAnalysisFilterChip(title: "\(NovaDocumentWords.status(value)) \(count(value))",
                         isOn: status == value,
                         identifier: "document.tracking.filter.\(value.rawValue)") { status = value }
                 }
@@ -282,12 +419,12 @@ struct NovaDocumentTrackingScreen: View {
         } else if board?.rows.isEmpty ?? true {
             NovaCard(padding: 16) {
                 VStack(alignment: .leading, spacing: 8) {
-                    NovaText(text: (board?.tracked ?? 0) == 0
+                    NovaText(text: trackedHere == 0
                         ? RDLocalization.string("localizable.nova.document.empty", table: .localizable,
                             fallback: "Bu firmada takibe alınmış evrak yok. Takip etmek istediğiniz evrakı ekleyin.")
                         : RDLocalization.string("localizable.nova.document.empty.filtered", table: .localizable,
                             fallback: "Bu filtreye uyan kayıt yok."), style: .metaQuiet)
-                    if canWrite && (board?.tracked ?? 0) == 0 {
+                    if canWrite && trackedHere == 0 {
                         NovaButton(label: RDLocalization.string("localizable.nova.document.add.title", table: .localizable, fallback: "Takibe evrak ekle"),
                             symbol: "plus") { adding = true }
                             .accessibilityIdentifier("document.tracking.empty.add")
@@ -347,11 +484,11 @@ struct NovaDocumentTrackingScreen: View {
                             status: NovaDocumentWords.tone(row.status), showsDot: false)
                     }
                     HStack(spacing: 5) {
-                        if let name = row.companyName, company == nil {
-                            NovaAnalysisTag(symbol: "building.2", text: name, status: .neutral)
-                        }
                         NovaAnalysisTag(symbol: row.basis == .legal ? "book" : "person",
                             text: NovaDocumentWords.basis(row.basis), status: .neutral)
+                        if let name = row.workplaceName {
+                            NovaAnalysisTag(symbol: "building.2", text: name, status: .neutral)
+                        }
                         if let until = row.latestValidUntil {
                             NovaAnalysisTag(symbol: "calendar", text: until,
                                 status: NovaDocumentWords.tone(row.status))

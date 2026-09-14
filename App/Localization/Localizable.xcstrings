@@ -11251,6 +11251,24 @@
         }
       }
     },
+    "localizable.nova.document.company.change": {
+      "comment": "nova_document_tracking; company-first tracker page, picker and status cards; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma değiştir"
+          }
+        }
+      }
+    },
     "localizable.nova.document.company.empty": {
       "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -11287,6 +11305,42 @@
         }
       }
     },
+    "localizable.nova.document.company.nomatch": {
+      "comment": "nova_document_tracking; company-first tracker page, picker and status cards; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No company matches this search."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu aramaya uyan firma yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.document.company.search": {
+      "comment": "nova_document_tracking; company-first tracker page, picker and status cards; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search a company, or pick one from the list"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma ara veya listeden seçin"
+          }
+        }
+      }
+    },
     "localizable.nova.document.company.total": {
       "comment": "nova_document_tracking; document portfolio page, company-page heading and add flow; placeholders: %d; review: human_draft",
       "extractionState": "manual",
@@ -11301,6 +11355,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "%d kayıt"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.company.untracked": {
+      "comment": "nova_document_tracking; company-first tracker page, picker and status cards; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not tracked yet"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takip başlamadı"
           }
         }
       }
@@ -12313,6 +12385,24 @@
         }
       }
     },
+    "localizable.nova.document.pick.company": {
+      "comment": "nova_document_tracking; company-first tracker page, picker and status cards; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a company first. Its document tracking opens right below."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlk önce firma seçimi yapın. Seçtiğiniz firmanın evrak kontrolü hemen aşağıda açılır."
+          }
+        }
+      }
+    },
     "localizable.nova.document.save": {
       "comment": "nova_document_tracking; document obligation tracker screens and service; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -12417,6 +12507,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Evrak takibini aç"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.stat.due.soon": {
+      "comment": "nova_document_tracking; company-first tracker page, picker and status cards; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "near its end"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bitişe yakın"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.stat.expired": {
+      "comment": "nova_document_tracking; company-first tracker page, picker and status cards; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "end has passed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bitiş geçti"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.stat.missing": {
+      "comment": "nova_document_tracking; company-first tracker page, picker and status cards; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "no copy"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kopya yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.document.stat.valid": {
+      "comment": "nova_document_tracking; company-first tracker page, picker and status cards; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "on file"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dosyada"
           }
         }
       }
