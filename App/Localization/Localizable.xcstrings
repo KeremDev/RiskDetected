@@ -6968,7 +6968,7 @@
       }
     },
     "localizable.nova.add.finding.from.analysis": {
-      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "comment": "nova_analysis; record board, folder tabs and menu routing; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -6986,7 +6986,7 @@
       }
     },
     "localizable.nova.add.finding.from.analysis.detail": {
-      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "comment": "nova_analysis; record board, folder tabs and menu routing; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7004,7 +7004,7 @@
       }
     },
     "localizable.nova.add.finding.hint": {
-      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "comment": "nova_analysis; record board, folder tabs and menu routing; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7022,7 +7022,7 @@
       }
     },
     "localizable.nova.add.finding.manual": {
-      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "comment": "nova_analysis; record board, folder tabs and menu routing; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7040,7 +7040,7 @@
       }
     },
     "localizable.nova.add.finding.manual.action": {
-      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "comment": "nova_analysis; record board, folder tabs and menu routing; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7058,7 +7058,7 @@
       }
     },
     "localizable.nova.add.finding.manual.detail": {
-      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "comment": "nova_analysis; record board, folder tabs and menu routing; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7076,7 +7076,7 @@
       }
     },
     "localizable.nova.add.finding.new.analysis": {
-      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "comment": "nova_analysis; record board, folder tabs and menu routing; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7094,7 +7094,7 @@
       }
     },
     "localizable.nova.analysis.assign": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7112,7 +7112,7 @@
       }
     },
     "localizable.nova.analysis.assign.empty": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7130,7 +7130,7 @@
       }
     },
     "localizable.nova.analysis.assign.failed": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7148,7 +7148,7 @@
       }
     },
     "localizable.nova.analysis.assign.failed.load": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7166,7 +7166,7 @@
       }
     },
     "localizable.nova.analysis.assign.run": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7184,7 +7184,7 @@
       }
     },
     "localizable.nova.analysis.assign.title": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7201,8 +7201,26 @@
         }
       }
     },
+    "localizable.nova.analysis.back": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri Dön"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.caption.expert": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: %d; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7220,7 +7238,7 @@
       }
     },
     "localizable.nova.analysis.caption.notebook": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: %d; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7238,7 +7256,7 @@
       }
     },
     "localizable.nova.analysis.caption.risk": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: %d; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7256,7 +7274,7 @@
       }
     },
     "localizable.nova.analysis.caption.training": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: %d; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7274,7 +7292,7 @@
       }
     },
     "localizable.nova.analysis.company.detail": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: %1$d, %2$d; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7292,7 +7310,7 @@
       }
     },
     "localizable.nova.analysis.company.unnamed": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7310,7 +7328,7 @@
       }
     },
     "localizable.nova.analysis.edit": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7328,7 +7346,7 @@
       }
     },
     "localizable.nova.analysis.edit.failed": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7346,7 +7364,7 @@
       }
     },
     "localizable.nova.analysis.edit.hint": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7364,7 +7382,7 @@
       }
     },
     "localizable.nova.analysis.edit.save": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7382,7 +7400,7 @@
       }
     },
     "localizable.nova.analysis.edit.title": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7399,8 +7417,26 @@
         }
       }
     },
+    "localizable.nova.analysis.field.audience": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Who it is for"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kimler için"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.field.body": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7418,7 +7454,7 @@
       }
     },
     "localizable.nova.analysis.field.category": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7436,7 +7472,7 @@
       }
     },
     "localizable.nova.analysis.field.measure": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7453,8 +7489,26 @@
         }
       }
     },
+    "localizable.nova.analysis.field.measure.corrective": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corrective measure"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düzeltici önlem"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.field.references": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7471,8 +7525,26 @@
         }
       }
     },
+    "localizable.nova.analysis.field.root.cause": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Root cause"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kök neden"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.field.title": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7490,7 +7562,7 @@
       }
     },
     "localizable.nova.analysis.file.hint": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7508,7 +7580,7 @@
       }
     },
     "localizable.nova.analysis.file.kind": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7526,7 +7598,7 @@
       }
     },
     "localizable.nova.analysis.file.needs.company": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7544,7 +7616,7 @@
       }
     },
     "localizable.nova.analysis.file.run": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7561,8 +7633,26 @@
         }
       }
     },
+    "localizable.nova.analysis.file.run.short": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File to company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmaya Aktar"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.file.selected": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: %d; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7580,7 +7670,7 @@
       }
     },
     "localizable.nova.analysis.file.title": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7598,7 +7688,7 @@
       }
     },
     "localizable.nova.analysis.file.unscored": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7615,8 +7705,26 @@
         }
       }
     },
+    "localizable.nova.analysis.filter.week": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This week"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu hafta"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.focus.required": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7634,7 +7742,7 @@
       }
     },
     "localizable.nova.analysis.item.cancel": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7652,7 +7760,7 @@
       }
     },
     "localizable.nova.analysis.item.delete": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7670,7 +7778,7 @@
       }
     },
     "localizable.nova.analysis.item.delete.confirm": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7688,7 +7796,7 @@
       }
     },
     "localizable.nova.analysis.item.delete.failed": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7706,7 +7814,7 @@
       }
     },
     "localizable.nova.analysis.item.delete.yes": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7724,7 +7832,7 @@
       }
     },
     "localizable.nova.analysis.item.dislike": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7742,7 +7850,7 @@
       }
     },
     "localizable.nova.analysis.item.like": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7760,7 +7868,7 @@
       }
     },
     "localizable.nova.analysis.item.more": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7777,8 +7885,26 @@
         }
       }
     },
+    "localizable.nova.analysis.item.ordinal": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: %d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entry #%d"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt #%d"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.item.reaction.failed": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7796,7 +7922,7 @@
       }
     },
     "localizable.nova.analysis.item.unscored": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7814,7 +7940,7 @@
       }
     },
     "localizable.nova.analysis.list.empty": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7832,7 +7958,7 @@
       }
     },
     "localizable.nova.analysis.list.failed": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7850,7 +7976,7 @@
       }
     },
     "localizable.nova.analysis.list.filter.unassigned": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7868,7 +7994,7 @@
       }
     },
     "localizable.nova.analysis.list.findings": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: %d; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7886,7 +8012,7 @@
       }
     },
     "localizable.nova.analysis.list.hint": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7904,7 +8030,7 @@
       }
     },
     "localizable.nova.analysis.list.loading": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7922,7 +8048,7 @@
       }
     },
     "localizable.nova.analysis.list.new": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7940,7 +8066,7 @@
       }
     },
     "localizable.nova.analysis.list.refresh": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7958,7 +8084,7 @@
       }
     },
     "localizable.nova.analysis.list.title": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7976,7 +8102,7 @@
       }
     },
     "localizable.nova.analysis.load.failed": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -7994,7 +8120,7 @@
       }
     },
     "localizable.nova.analysis.loading": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8012,7 +8138,7 @@
       }
     },
     "localizable.nova.analysis.localization.required": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8029,8 +8155,98 @@
         }
       }
     },
+    "localizable.nova.analysis.notebook.heading": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "APPROVED NOTEBOOK ENTRIES"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ONAYLI DEFTER KAYITLARI"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.overview.detail": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Track your recent analyses, their critical risks and their finding count in one place."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Son analizlerinizi, kritik riskleri ve bulgu sayısını tek yerden takip edin."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.overview.findings": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Findings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulgu"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.overview.title": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Site scans"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saha taramaları"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.overview.unit": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyses"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.photo.open": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8048,7 +8264,7 @@
       }
     },
     "localizable.nova.analysis.projection.missing": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8065,8 +8281,80 @@
         }
       }
     },
+    "localizable.nova.analysis.purpose.expert": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assessments that call for professional judgement and arrive unscored. You decide whether they fit your workplace."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzmanlık gerektiren, skorsuz gelen değerlendirmelerdir. İşyerinize uygunluğunu siz kontrol edersiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.purpose.notebook": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notebook drafts produced from the analysis findings and put before the expert."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz bulgularından üretilen, uzman değerlendirmesine sunulan defter taslaklarıdır."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.purpose.risk": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The hazards seen in the photo, scored with the method you picked. You can file the ones you select to the company as nonconformities."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğrafta görülen tehlikeler, seçtiğiniz metotla skorlanmış olarak listelenir. Seçtiklerinizi firmaya uygunsuzluk olarak aktarabilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.purpose.training": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shows which trainings are meaningful for the hazards and equipment seen. It states nothing about anyone's existing certificates."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görülen tehlike ve ekipmanlara göre hangi eğitimlerin anlamlı olduğunu gösterir. Kişilerin mevcut belgeleri hakkında bir tespit içermez."
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.report": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8084,7 +8372,7 @@
       }
     },
     "localizable.nova.analysis.report.attach": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: %@; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8101,8 +8389,44 @@
         }
       }
     },
+    "localizable.nova.analysis.report.excel": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk analysis table"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Analizi Tablosu"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.report.excel.detail": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An Excel table that scores the findings with the method you pick."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulguları seçtiğiniz metotla hesaplayan Excel tablosu."
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.report.failed": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8120,7 +8444,7 @@
       }
     },
     "localizable.nova.analysis.report.hint": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8138,7 +8462,7 @@
       }
     },
     "localizable.nova.analysis.report.no.company": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8155,8 +8479,62 @@
         }
       }
     },
+    "localizable.nova.analysis.report.pdf": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standart Rapor"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.report.pdf.detail": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A PDF covering every section of the analysis."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizin tüm bölümlerini içeren PDF dökümü."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.report.pick": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a report type"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor türü seçin"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.report.run": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8174,7 +8552,7 @@
       }
     },
     "localizable.nova.analysis.report.saved": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: %@; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8191,8 +8569,26 @@
         }
       }
     },
+    "localizable.nova.analysis.report.selected": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: %d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d entries selected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d kayıt seçili"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.report.title": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8209,8 +8605,242 @@
         }
       }
     },
+    "localizable.nova.analysis.reports.empty": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have not produced a report from an analysis yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz analizden rapor oluşturmadınız."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.reports.failed": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reports could not be loaded. Check your connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raporlar alınamadı. Bağlantınızı kontrol edip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.reports.filter.excel": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excel"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.reports.filter.pdf": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.reports.loading": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading reports…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raporlar yükleniyor…"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.reports.overview.detail": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The PDF and Excel reports you produced from photo analyses are kept here."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraflı analizlerden ürettiğiniz PDF ve Excel raporları burada durur."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.reports.overview.title": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audit-ready output"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denetime hazır çıktılar"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.reports.search": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search reports"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor ara"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.reports.title": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis reports"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz Raporları"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.reports.unit": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "files"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dosya"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.result.title": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis result"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz Sonucu"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.search.clear": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear the search"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aramayı temizle"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.search.placeholder": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search analyses"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz ara"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.section.empty": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8228,7 +8858,7 @@
       }
     },
     "localizable.nova.analysis.section.expert": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8246,7 +8876,7 @@
       }
     },
     "localizable.nova.analysis.section.notebook": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8264,7 +8894,7 @@
       }
     },
     "localizable.nova.analysis.section.risk": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8282,7 +8912,7 @@
       }
     },
     "localizable.nova.analysis.section.training": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8299,8 +8929,116 @@
         }
       }
     },
+    "localizable.nova.analysis.selection.all": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select all"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tümünü seç"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.selection.count": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: %1$d, %2$d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d/%2$d selected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d/%2$d seçili"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.selection.none": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear selection"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tümünü bırak"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.stat.findings": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Total findings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toplam bulgu"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.stat.highest": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Highest score"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En yüksek skor"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.tag.photo.index": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: %@; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto %@"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.tag.photos": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: %d; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8317,8 +9055,26 @@
         }
       }
     },
+    "localizable.nova.analysis.tag.preventive": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preventive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önleyici"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.teaser": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8336,7 +9092,7 @@
       }
     },
     "localizable.nova.analysis.title": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8354,7 +9110,7 @@
       }
     },
     "localizable.nova.analysis.unassigned": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8372,7 +9128,7 @@
       }
     },
     "localizable.nova.analysis.unassigned.detail": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8389,8 +9145,80 @@
         }
       }
     },
+    "localizable.nova.analysis.unit.advice": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: %d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d suggestions"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d Öneri"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.unit.entry": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: %d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d entries"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d Kayıt"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.unit.finding": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: %d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d findings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d Bulgu"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.unit.opinion": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: %d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d opinions"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d Görüş"
+          }
+        }
+      }
+    },
     "localizable.nova.bridge.alert.ok": {
-      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "comment": "nova_manual; photo analysis bridge; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8408,7 +9236,7 @@
       }
     },
     "localizable.nova.bridge.band.unknown": {
-      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "comment": "nova_manual; photo analysis bridge; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8426,7 +9254,7 @@
       }
     },
     "localizable.nova.bridge.band.unreadable": {
-      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "comment": "nova_manual; photo analysis bridge; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8444,7 +9272,7 @@
       }
     },
     "localizable.nova.bridge.detail": {
-      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "comment": "nova_manual; photo analysis bridge; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8462,7 +9290,7 @@
       }
     },
     "localizable.nova.bridge.done": {
-      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "comment": "nova_manual; photo analysis bridge; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8480,7 +9308,7 @@
       }
     },
     "localizable.nova.bridge.finished": {
-      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "comment": "nova_manual; photo analysis bridge; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8498,7 +9326,7 @@
       }
     },
     "localizable.nova.bridge.no.findings": {
-      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "comment": "nova_manual; photo analysis bridge; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8516,7 +9344,7 @@
       }
     },
     "localizable.nova.bridge.no.workplace": {
-      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "comment": "nova_manual; photo analysis bridge; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8534,7 +9362,7 @@
       }
     },
     "localizable.nova.bridge.open.selected": {
-      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "comment": "nova_manual; photo analysis bridge; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8552,7 +9380,7 @@
       }
     },
     "localizable.nova.bridge.outcome.existing": {
-      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "comment": "nova_manual; photo analysis bridge; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8570,7 +9398,7 @@
       }
     },
     "localizable.nova.bridge.outcome.failed": {
-      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "comment": "nova_manual; photo analysis bridge; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8588,7 +9416,7 @@
       }
     },
     "localizable.nova.bridge.outcome.opened": {
-      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "comment": "nova_manual; photo analysis bridge; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8606,7 +9434,7 @@
       }
     },
     "localizable.nova.bridge.outcome.severity": {
-      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "comment": "nova_manual; photo analysis bridge; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8624,7 +9452,7 @@
       }
     },
     "localizable.nova.bridge.photo.unreadable": {
-      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "comment": "nova_manual; photo analysis bridge; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8642,7 +9470,7 @@
       }
     },
     "localizable.nova.bridge.title": {
-      "comment": "nova_manual; photo analysis bridge; review: human_draft",
+      "comment": "nova_manual; photo analysis bridge; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8674,10 +9502,11 @@
             "value": "Company Details"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.company.error.companies.not.loaded": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaCompanyDestination.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaCompanyDestination.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8695,7 +9524,7 @@
       }
     },
     "localizable.nova.company.gate.back.to.management": {
-      "comment": "nova_manual; App/Views/Components/NovaCompanyManagementGate.swift; review: human_draft",
+      "comment": "nova_manual; App/Views/Components/NovaCompanyManagementGate.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8853,7 +9682,8 @@
             "value": "Sector"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.company.summary.retry": {
       "extractionState": "manual",
@@ -8870,7 +9700,8 @@
             "value": "Reload summary"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.company.summary.unavailable": {
       "extractionState": "manual",
@@ -8887,10 +9718,11 @@
             "value": "—: No data yet or module not connected. Personnel counts active records."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.components.loading.description": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaComponents.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaComponents.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -8922,7 +9754,8 @@
             "value": "Current"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.directory.baslangic.tarihini.yyyy.aa.gg.biciminde.gecerli..ab922e2c": {
       "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaDirectory.swift:118; placeholders: none; review: human_draft",
@@ -9015,7 +9848,7 @@
       }
     },
     "localizable.nova.directory.edit.employer.relationship": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -9033,7 +9866,7 @@
       }
     },
     "localizable.nova.directory.engagement.ongoing": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -9050,8 +9883,26 @@
         }
       }
     },
+    "localizable.nova.directory.engagement.range": {
+      "comment": "nova_directory; engagement row start and end dates; placeholders: %1$@, %2$@; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ → %2$@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ → %2$@"
+          }
+        }
+      }
+    },
     "localizable.nova.directory.error.not.verified.yet": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -9069,7 +9920,7 @@
       }
     },
     "localizable.nova.directory.error.operation.unverified": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -9087,7 +9938,7 @@
       }
     },
     "localizable.nova.directory.error.options.not.loaded": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -9105,7 +9956,7 @@
       }
     },
     "localizable.nova.directory.error.record.rejected": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -9123,7 +9974,7 @@
       }
     },
     "localizable.nova.directory.error.records.not.loaded": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -9209,7 +10060,8 @@
             "value": "Information history"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.directory.isyeri.baglam.gecmisi.68d6a76b": {
       "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaDirectory.swift:13; placeholders: none; review: human_draft",
@@ -9266,7 +10118,7 @@
       }
     },
     "localizable.nova.directory.new.record": {
-      "comment": "nova_manual; review: human_draft",
+      "comment": "nova_manual; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -9338,7 +10190,7 @@
       }
     },
     "localizable.nova.directory.recheck.same.operation": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -9356,7 +10208,7 @@
       }
     },
     "localizable.nova.directory.record.fallback.title": {
-      "comment": "nova_manual; review: human_draft",
+      "comment": "nova_manual; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -9374,7 +10226,7 @@
       }
     },
     "localizable.nova.directory.save": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaDirectoryScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -10180,7 +11032,8 @@
             "value": "Search records…"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.directory.search.empty": {
       "extractionState": "manual",
@@ -10197,7 +11050,8 @@
             "value": "No matching records."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.directory.yeni.baslangic.onceki.donemin.baslangicindan.son.9f10fbc6": {
       "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaDirectory.swift:127; placeholders: none; review: human_draft",
@@ -10848,7 +11702,7 @@
       }
     },
     "localizable.nova.findings.hint": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -10880,7 +11734,8 @@
             "value": "Track changes to workplace, department and job over time."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.help.contexts": {
       "extractionState": "manual",
@@ -10897,7 +11752,8 @@
             "value": "Record when details such as hazard class apply; previous records stay unchanged."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.help.contractors": {
       "extractionState": "manual",
@@ -10914,7 +11770,8 @@
             "value": "Manage contractors and suppliers you work with."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.help.departments": {
       "extractionState": "manual",
@@ -10931,7 +11788,8 @@
             "value": "Organize personnel into units such as production or office."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.help.employers": {
       "extractionState": "manual",
@@ -10948,7 +11806,8 @@
             "value": "Set the employee's employer relationship with the main or external company."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.help.engagements": {
       "extractionState": "manual",
@@ -10965,7 +11824,8 @@
             "value": "Record where and when an external organization works."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.help.jobs": {
       "extractionState": "manual",
@@ -10982,7 +11842,8 @@
             "value": "Define jobs and titles that can be assigned to personnel."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.help.workplaces": {
       "extractionState": "manual",
@@ -10999,10 +11860,11 @@
             "value": "Manage branches and work sites. Information history preserves the details valid on past dates."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.intake.continue": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11020,7 +11882,7 @@
       }
     },
     "localizable.nova.intake.focus.required": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11038,7 +11900,7 @@
       }
     },
     "localizable.nova.intake.hint.focus": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11056,7 +11918,7 @@
       }
     },
     "localizable.nova.intake.hint.owner": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11074,7 +11936,7 @@
       }
     },
     "localizable.nova.intake.hint.sector": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11092,7 +11954,7 @@
       }
     },
     "localizable.nova.intake.owner.empty": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11110,7 +11972,7 @@
       }
     },
     "localizable.nova.intake.owner.no.match": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11128,7 +11990,7 @@
       }
     },
     "localizable.nova.intake.owner.none": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11146,7 +12008,7 @@
       }
     },
     "localizable.nova.intake.owner.none.detail": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11164,7 +12026,7 @@
       }
     },
     "localizable.nova.intake.owner.search": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11182,7 +12044,7 @@
       }
     },
     "localizable.nova.intake.owner.sector.unknown": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11200,7 +12062,7 @@
       }
     },
     "localizable.nova.intake.photo.count": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: %d, %@; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11218,7 +12080,7 @@
       }
     },
     "localizable.nova.intake.photo.count.short": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: %d; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11236,7 +12098,7 @@
       }
     },
     "localizable.nova.intake.sector.auto": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: %@; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11254,7 +12116,7 @@
       }
     },
     "localizable.nova.intake.start": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11272,7 +12134,7 @@
       }
     },
     "localizable.nova.intake.step.focus": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11290,7 +12152,7 @@
       }
     },
     "localizable.nova.intake.step.owner": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11308,7 +12170,7 @@
       }
     },
     "localizable.nova.intake.step.sector": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11326,7 +12188,7 @@
       }
     },
     "localizable.nova.intake.title": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11344,7 +12206,7 @@
       }
     },
     "localizable.nova.manual.choose.detail": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11362,7 +12224,7 @@
       }
     },
     "localizable.nova.manual.hazard.description": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11380,7 +12242,7 @@
       }
     },
     "localizable.nova.manual.hazard.measure": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11398,7 +12260,7 @@
       }
     },
     "localizable.nova.manual.hazard.title": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11416,7 +12278,7 @@
       }
     },
     "localizable.nova.manual.legislation.hint": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11434,7 +12296,7 @@
       }
     },
     "localizable.nova.manual.needs.company": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11452,7 +12314,7 @@
       }
     },
     "localizable.nova.manual.next": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: %@; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11470,7 +12332,7 @@
       }
     },
     "localizable.nova.manual.no.company": {
-      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "comment": "nova_analysis; record board, folder tabs and menu routing; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11488,7 +12350,7 @@
       }
     },
     "localizable.nova.manual.pending": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11506,7 +12368,7 @@
       }
     },
     "localizable.nova.manual.photo.not.stored": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11524,7 +12386,7 @@
       }
     },
     "localizable.nova.manual.progress": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: %1$d, %2$d; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11542,25 +12404,25 @@
       }
     },
     "localizable.nova.manual.progress.hint": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Legislation, the responsible person and scoring are optional; once entered they count as completed."
+            "value": "The photo, legislation, the responsible person and scoring are optional; once entered they count as completed."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mevzuat, sorumlu ve skorlama isteğe bağlıdır; girildiğinde tamamlandı sayılır."
+            "value": "Fotoğraf, mevzuat, sorumlu ve skorlama isteğe bağlıdır; girildiğinde tamamlandı sayılır."
           }
         }
       }
     },
     "localizable.nova.manual.ready": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11578,7 +12440,7 @@
       }
     },
     "localizable.nova.manual.responsible.hint": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11596,7 +12458,7 @@
       }
     },
     "localizable.nova.manual.responsible.note": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11614,7 +12476,7 @@
       }
     },
     "localizable.nova.manual.save": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11632,7 +12494,7 @@
       }
     },
     "localizable.nova.manual.step.company": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11650,7 +12512,7 @@
       }
     },
     "localizable.nova.manual.step.firma": {
-      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "comment": "nova_analysis; record board, folder tabs and menu routing; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11668,7 +12530,7 @@
       }
     },
     "localizable.nova.manual.step.hazard": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11686,7 +12548,7 @@
       }
     },
     "localizable.nova.manual.step.legislation": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11704,7 +12566,7 @@
       }
     },
     "localizable.nova.manual.step.photo": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11722,7 +12584,7 @@
       }
     },
     "localizable.nova.manual.step.responsible": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11740,7 +12602,7 @@
       }
     },
     "localizable.nova.manual.step.scoring": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11758,7 +12620,7 @@
       }
     },
     "localizable.nova.manual.subtitle": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11776,7 +12638,7 @@
       }
     },
     "localizable.nova.manual.title": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11794,7 +12656,7 @@
       }
     },
     "localizable.nova.manual.workplace.loading": {
-      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "comment": "nova_analysis; record board, folder tabs and menu routing; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11812,7 +12674,7 @@
       }
     },
     "localizable.nova.manual.workplace.optional": {
-      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "comment": "nova_analysis; record board, folder tabs and menu routing; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11830,7 +12692,7 @@
       }
     },
     "localizable.nova.manual.workplace.used": {
-      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "comment": "nova_analysis; record board, folder tabs and menu routing; placeholders: %@; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11884,7 +12746,7 @@
       }
     },
     "localizable.nova.navigation.analiz.yap": {
-      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "comment": "nova_analysis; record board, folder tabs and menu routing; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -11902,7 +12764,7 @@
       }
     },
     "localizable.nova.navigation.analizlerim": {
-      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "comment": "nova_analysis; record board, folder tabs and menu routing; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12096,7 +12958,8 @@
             "value": "Periodic Inspections"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.navigation.rapor.arsivi.67865663": {
       "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:32; placeholders: none; review: human_draft",
@@ -12135,7 +12998,7 @@
       }
     },
     "localizable.nova.navigation.uygunsuzluk.ekle": {
-      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "comment": "nova_analysis; record board, folder tabs and menu routing; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12153,7 +13016,7 @@
       }
     },
     "localizable.nova.navigation.uygunsuzluklar": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12207,7 +13070,7 @@
       }
     },
     "localizable.nova.nonconformity.actions.add": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12225,7 +13088,7 @@
       }
     },
     "localizable.nova.nonconformity.actions.assignee": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12243,7 +13106,7 @@
       }
     },
     "localizable.nova.nonconformity.actions.description": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12261,7 +13124,7 @@
       }
     },
     "localizable.nova.nonconformity.actions.empty": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12279,7 +13142,7 @@
       }
     },
     "localizable.nova.nonconformity.actions.hint": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12297,7 +13160,7 @@
       }
     },
     "localizable.nova.nonconformity.actions.short": {
-      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "comment": "nova_analysis; record board, folder tabs and menu routing; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12315,7 +13178,7 @@
       }
     },
     "localizable.nova.nonconformity.actions.title": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12333,7 +13196,7 @@
       }
     },
     "localizable.nova.nonconformity.choose.manual.action": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12351,7 +13214,7 @@
       }
     },
     "localizable.nova.nonconformity.choose.manual.detail": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12369,7 +13232,7 @@
       }
     },
     "localizable.nova.nonconformity.choose.manual.title": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12387,7 +13250,7 @@
       }
     },
     "localizable.nova.nonconformity.choose.photo.action": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12405,7 +13268,7 @@
       }
     },
     "localizable.nova.nonconformity.choose.photo.detail": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12423,7 +13286,7 @@
       }
     },
     "localizable.nova.nonconformity.choose.photo.title": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12441,7 +13304,7 @@
       }
     },
     "localizable.nova.nonconformity.choose.photo.unavailable": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12459,7 +13322,7 @@
       }
     },
     "localizable.nova.nonconformity.choose.prompt": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12477,7 +13340,7 @@
       }
     },
     "localizable.nova.nonconformity.closed.on": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: %@; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12495,7 +13358,7 @@
       }
     },
     "localizable.nova.nonconformity.count": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: %1$d, %2$d; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12513,7 +13376,7 @@
       }
     },
     "localizable.nova.nonconformity.detail.edit": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12531,7 +13394,7 @@
       }
     },
     "localizable.nova.nonconformity.detail.empty": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12549,7 +13412,7 @@
       }
     },
     "localizable.nova.nonconformity.detail.hint": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12567,7 +13430,7 @@
       }
     },
     "localizable.nova.nonconformity.detail.title": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12585,7 +13448,7 @@
       }
     },
     "localizable.nova.nonconformity.due.on": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: %@; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12603,7 +13466,7 @@
       }
     },
     "localizable.nova.nonconformity.empty": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12621,7 +13484,7 @@
       }
     },
     "localizable.nova.nonconformity.empty.filtered": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12639,7 +13502,7 @@
       }
     },
     "localizable.nova.nonconformity.error.conflict": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12657,7 +13520,7 @@
       }
     },
     "localizable.nova.nonconformity.error.denied": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12675,7 +13538,7 @@
       }
     },
     "localizable.nova.nonconformity.error.detail": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12693,7 +13556,7 @@
       }
     },
     "localizable.nova.nonconformity.error.list": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12711,7 +13574,7 @@
       }
     },
     "localizable.nova.nonconformity.error.risk.incomplete": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12729,7 +13592,7 @@
       }
     },
     "localizable.nova.nonconformity.error.save": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12747,7 +13610,7 @@
       }
     },
     "localizable.nova.nonconformity.error.severity.unknown": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12765,7 +13628,7 @@
       }
     },
     "localizable.nova.nonconformity.error.unavailable": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12783,7 +13646,7 @@
       }
     },
     "localizable.nova.nonconformity.error.validation": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12801,7 +13664,7 @@
       }
     },
     "localizable.nova.nonconformity.error.workplaces": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12819,7 +13682,7 @@
       }
     },
     "localizable.nova.nonconformity.field.severity": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12837,7 +13700,7 @@
       }
     },
     "localizable.nova.nonconformity.field.title": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12855,7 +13718,7 @@
       }
     },
     "localizable.nova.nonconformity.field.title.hint": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12873,7 +13736,7 @@
       }
     },
     "localizable.nova.nonconformity.field.workplace": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12891,7 +13754,7 @@
       }
     },
     "localizable.nova.nonconformity.filter.all": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12909,7 +13772,7 @@
       }
     },
     "localizable.nova.nonconformity.filter.closed": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12927,7 +13790,7 @@
       }
     },
     "localizable.nova.nonconformity.filter.company": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12945,7 +13808,7 @@
       }
     },
     "localizable.nova.nonconformity.filter.draft": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12963,7 +13826,7 @@
       }
     },
     "localizable.nova.nonconformity.filter.open": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12981,7 +13844,7 @@
       }
     },
     "localizable.nova.nonconformity.filter.overdue": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: %d; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -12999,7 +13862,7 @@
       }
     },
     "localizable.nova.nonconformity.filter.reset": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13017,7 +13880,7 @@
       }
     },
     "localizable.nova.nonconformity.filter.state": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13035,7 +13898,7 @@
       }
     },
     "localizable.nova.nonconformity.from.analysis": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13053,7 +13916,7 @@
       }
     },
     "localizable.nova.nonconformity.from.expert": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13071,7 +13934,7 @@
       }
     },
     "localizable.nova.nonconformity.kind.improvement": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13089,7 +13952,7 @@
       }
     },
     "localizable.nova.nonconformity.kind.nonconformity": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13107,7 +13970,7 @@
       }
     },
     "localizable.nova.nonconformity.loading": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13125,7 +13988,7 @@
       }
     },
     "localizable.nova.nonconformity.manual.save": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13143,7 +14006,7 @@
       }
     },
     "localizable.nova.nonconformity.manual.title": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13161,7 +14024,7 @@
       }
     },
     "localizable.nova.nonconformity.move.action": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13179,7 +14042,7 @@
       }
     },
     "localizable.nova.nonconformity.move.assignee": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13197,7 +14060,7 @@
       }
     },
     "localizable.nova.nonconformity.move.reason": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13215,7 +14078,7 @@
       }
     },
     "localizable.nova.nonconformity.move.reason.hint": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13233,7 +14096,7 @@
       }
     },
     "localizable.nova.nonconformity.move.reason.required": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13251,7 +14114,7 @@
       }
     },
     "localizable.nova.nonconformity.move.title": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: %@; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13269,7 +14132,7 @@
       }
     },
     "localizable.nova.nonconformity.needs.verification": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13287,7 +14150,7 @@
       }
     },
     "localizable.nova.nonconformity.new": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13305,7 +14168,7 @@
       }
     },
     "localizable.nova.nonconformity.new.short": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13323,7 +14186,7 @@
       }
     },
     "localizable.nova.nonconformity.opened.on": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: %@; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13341,7 +14204,7 @@
       }
     },
     "localizable.nova.nonconformity.overdue": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13359,7 +14222,7 @@
       }
     },
     "localizable.nova.nonconformity.read.only": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13377,7 +14240,7 @@
       }
     },
     "localizable.nova.nonconformity.refresh": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13395,7 +14258,7 @@
       }
     },
     "localizable.nova.nonconformity.scored": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: %@; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13413,7 +14276,7 @@
       }
     },
     "localizable.nova.nonconformity.search": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13431,7 +14294,7 @@
       }
     },
     "localizable.nova.nonconformity.search.clear": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13449,7 +14312,7 @@
       }
     },
     "localizable.nova.nonconformity.severity.critical": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13467,7 +14330,7 @@
       }
     },
     "localizable.nova.nonconformity.severity.high": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13485,7 +14348,7 @@
       }
     },
     "localizable.nova.nonconformity.severity.low": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13503,7 +14366,7 @@
       }
     },
     "localizable.nova.nonconformity.severity.medium": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13521,7 +14384,7 @@
       }
     },
     "localizable.nova.nonconformity.state.assigned": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13539,7 +14402,7 @@
       }
     },
     "localizable.nova.nonconformity.state.cancelled": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13557,7 +14420,7 @@
       }
     },
     "localizable.nova.nonconformity.state.closed": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13575,7 +14438,7 @@
       }
     },
     "localizable.nova.nonconformity.state.draft": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13593,7 +14456,7 @@
       }
     },
     "localizable.nova.nonconformity.state.in.progress": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13611,7 +14474,7 @@
       }
     },
     "localizable.nova.nonconformity.state.open": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13629,7 +14492,7 @@
       }
     },
     "localizable.nova.nonconformity.state.pending": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13647,7 +14510,7 @@
       }
     },
     "localizable.nova.nonconformity.state.reopened": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13665,7 +14528,7 @@
       }
     },
     "localizable.nova.nonconformity.state.terminal": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13683,7 +14546,7 @@
       }
     },
     "localizable.nova.nonconformity.state.title": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13701,7 +14564,7 @@
       }
     },
     "localizable.nova.nonconformity.verification.accepted": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13719,7 +14582,7 @@
       }
     },
     "localizable.nova.nonconformity.verification.add": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13737,7 +14600,7 @@
       }
     },
     "localizable.nova.nonconformity.verification.empty": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13755,7 +14618,7 @@
       }
     },
     "localizable.nova.nonconformity.verification.hint": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13773,7 +14636,7 @@
       }
     },
     "localizable.nova.nonconformity.verification.note": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13791,7 +14654,7 @@
       }
     },
     "localizable.nova.nonconformity.verification.rejected": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13809,7 +14672,7 @@
       }
     },
     "localizable.nova.nonconformity.verification.title": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13827,7 +14690,7 @@
       }
     },
     "localizable.nova.personnel.active": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13845,7 +14708,7 @@
       }
     },
     "localizable.nova.personnel.archived": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13863,7 +14726,7 @@
       }
     },
     "localizable.nova.personnel.archiving.operation": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13895,10 +14758,11 @@
             "value": "Personnel added successfully!"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.personnel.edit": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13916,7 +14780,7 @@
       }
     },
     "localizable.nova.personnel.edit.title": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13934,7 +14798,7 @@
       }
     },
     "localizable.nova.personnel.error.department.ambiguous": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13952,7 +14816,7 @@
       }
     },
     "localizable.nova.personnel.error.not.loaded": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13970,7 +14834,7 @@
       }
     },
     "localizable.nova.personnel.error.pending.unverified": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13988,7 +14852,7 @@
       }
     },
     "localizable.nova.personnel.error.record.changed": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14006,7 +14870,7 @@
       }
     },
     "localizable.nova.personnel.error.rejected": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14038,10 +14902,11 @@
             "value": "Check the full name field."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.personnel.no.department.selected": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14059,7 +14924,7 @@
       }
     },
     "localizable.nova.personnel.reactivate": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14077,7 +14942,7 @@
       }
     },
     "localizable.nova.personnel.reactivate.title": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14095,7 +14960,7 @@
       }
     },
     "localizable.nova.personnel.save": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14113,7 +14978,7 @@
       }
     },
     "localizable.nova.personnel.save.changes": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaPersonnelScreens.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14707,7 +15572,7 @@
       }
     },
     "localizable.nova.personnel.see.all": {
-      "comment": "nova_manual; review: human_draft",
+      "comment": "nova_manual; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14725,7 +15590,7 @@
       }
     },
     "localizable.nova.personnel.tag.representative.no": {
-      "comment": "nova_manual; review: human_draft",
+      "comment": "nova_manual; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14743,7 +15608,7 @@
       }
     },
     "localizable.nova.personnel.tag.support.no": {
-      "comment": "nova_manual; review: human_draft",
+      "comment": "nova_manual; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14761,7 +15626,7 @@
       }
     },
     "localizable.nova.personnel.tag.training.empty": {
-      "comment": "nova_manual; review: human_draft",
+      "comment": "nova_manual; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14779,7 +15644,7 @@
       }
     },
     "localizable.nova.photo.intake.add": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14797,7 +15662,7 @@
       }
     },
     "localizable.nova.photo.intake.camera": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14815,7 +15680,7 @@
       }
     },
     "localizable.nova.photo.intake.cancel": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14833,7 +15698,7 @@
       }
     },
     "localizable.nova.photo.intake.count": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: %1$d, %2$d; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14851,7 +15716,7 @@
       }
     },
     "localizable.nova.photo.intake.full": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: %d; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14869,7 +15734,7 @@
       }
     },
     "localizable.nova.photo.intake.gallery": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14887,7 +15752,7 @@
       }
     },
     "localizable.nova.photo.intake.hint": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14905,7 +15770,7 @@
       }
     },
     "localizable.nova.photo.intake.remove": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14923,7 +15788,7 @@
       }
     },
     "localizable.nova.photo.intake.required": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14941,7 +15806,7 @@
       }
     },
     "localizable.nova.photo.intake.source": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -14959,7 +15824,7 @@
       }
     },
     "localizable.nova.photo.viewer": {
-      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; review: human_draft",
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -15823,7 +16688,7 @@
       }
     },
     "localizable.nova.pilot.nonconformity.needs.company": {
-      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "comment": "nova_manual; nonconformity screens; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -15841,7 +16706,7 @@
       }
     },
     "localizable.nova.pilot.nonconformity.unavailable": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -15858,8 +16723,98 @@
         }
       }
     },
+    "localizable.nova.risk.factor.frequency": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "F"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "F"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.factor.probability": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "P"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.factor.severity": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ş"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.formula.fine.kinney": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "R = P × F × S"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "R = O × F × Ş"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.formula.matrix": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "R = P × S"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "R = O × Ş"
+          }
+        }
+      }
+    },
     "localizable.nova.risk.frequency": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -15877,7 +16832,7 @@
       }
     },
     "localizable.nova.risk.method": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -15895,7 +16850,7 @@
       }
     },
     "localizable.nova.risk.method.clear": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -15913,7 +16868,7 @@
       }
     },
     "localizable.nova.risk.method.fine.kinney": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -15931,7 +16886,7 @@
       }
     },
     "localizable.nova.risk.method.matrix": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -15949,7 +16904,7 @@
       }
     },
     "localizable.nova.risk.method.pick": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -15967,7 +16922,7 @@
       }
     },
     "localizable.nova.risk.probability": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -15985,7 +16940,7 @@
       }
     },
     "localizable.nova.risk.score.incomplete": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -16003,7 +16958,7 @@
       }
     },
     "localizable.nova.risk.score.preview": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: %@; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -16020,8 +16975,26 @@
         }
       }
     },
+    "localizable.nova.risk.score.unit": {
+      "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "POINTS"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PUAN"
+          }
+        }
+      }
+    },
     "localizable.nova.risk.severity": {
-      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -16039,7 +17012,7 @@
       }
     },
     "localizable.nova.shell.add.nonconformity": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -16075,7 +17048,7 @@
       }
     },
     "localizable.nova.shell.back": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -16093,7 +17066,7 @@
       }
     },
     "localizable.nova.shell.clear.search": {
-      "comment": "nova_manual; icon-only control needs a spoken name; review: human_draft",
+      "comment": "nova_manual; icon-only control needs a spoken name; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -16129,7 +17102,7 @@
       }
     },
     "localizable.nova.shell.company.not.found": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -16147,7 +17120,7 @@
       }
     },
     "localizable.nova.shell.connection.unknown": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -16183,7 +17156,7 @@
       }
     },
     "localizable.nova.shell.no.company.added": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -16201,7 +17174,7 @@
       }
     },
     "localizable.nova.shell.no.company.assigned": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -16219,7 +17192,7 @@
       }
     },
     "localizable.nova.shell.no.recent.activity": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -16237,7 +17210,7 @@
       }
     },
     "localizable.nova.shell.notifications": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -16255,7 +17228,7 @@
       }
     },
     "localizable.nova.shell.notifications.with.new": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -16273,7 +17246,7 @@
       }
     },
     "localizable.nova.shell.open.menu": {
-      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; review: human_draft",
+      "comment": "nova_manual; App/DesignSystem/ISG/NovaExpertShell.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -16309,7 +17282,7 @@
       }
     },
     "localizable.nova.shell.summary.loading": {
-      "comment": "nova_manual; review: human_draft",
+      "comment": "nova_manual; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -16341,7 +17314,8 @@
             "value": "Job · optional"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.1": {
       "extractionState": "manual",
@@ -16358,7 +17332,8 @@
             "value": "Job is a design preview and is not saved yet."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.10": {
       "extractionState": "manual",
@@ -16375,7 +17350,8 @@
             "value": "Sector *"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.11": {
       "extractionState": "manual",
@@ -16392,7 +17368,8 @@
             "value": "Company email"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.12": {
       "extractionState": "manual",
@@ -16409,7 +17386,8 @@
             "value": "Employee count"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.13": {
       "extractionState": "manual",
@@ -16426,7 +17404,8 @@
             "value": "Responsible employee"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.14": {
       "extractionState": "manual",
@@ -16443,7 +17422,8 @@
             "value": "Full name"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.15": {
       "extractionState": "manual",
@@ -16460,7 +17440,8 @@
             "value": "Design preview · Changes are not saved yet."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.16": {
       "extractionState": "manual",
@@ -16477,7 +17458,8 @@
             "value": "Design preview"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.17": {
       "extractionState": "manual",
@@ -16494,7 +17476,8 @@
             "value": "OK"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.18": {
       "extractionState": "manual",
@@ -16511,7 +17494,8 @@
             "value": "Not connected yet. Company details were not changed."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.19": {
       "extractionState": "manual",
@@ -16528,7 +17512,8 @@
             "value": "Delete Company"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.2": {
       "extractionState": "manual",
@@ -16545,7 +17530,8 @@
             "value": "Update"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.20": {
       "extractionState": "manual",
@@ -16562,7 +17548,8 @@
             "value": "Are you sure you want to delete this company?"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.21": {
       "extractionState": "manual",
@@ -16579,7 +17566,8 @@
             "value": "Design preview · No records are deleted on this screen."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.22": {
       "extractionState": "manual",
@@ -16596,7 +17584,8 @@
             "value": "Delete company"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.23": {
       "extractionState": "manual",
@@ -16613,7 +17602,8 @@
             "value": "Deletion is not connected yet. No records were deleted."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.3": {
       "extractionState": "manual",
@@ -16630,7 +17620,8 @@
             "value": "Delete"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.4": {
       "extractionState": "manual",
@@ -16647,7 +17638,8 @@
             "value": "Update Company"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.5": {
       "extractionState": "manual",
@@ -16664,7 +17656,8 @@
             "value": "Company name *"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.6": {
       "extractionState": "manual",
@@ -16681,7 +17674,8 @@
             "value": "Hazard class"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.7": {
       "extractionState": "manual",
@@ -16698,7 +17692,8 @@
             "value": "Low hazard"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.8": {
       "extractionState": "manual",
@@ -16715,7 +17710,8 @@
             "value": "Hazardous"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.visual.9": {
       "extractionState": "manual",
@@ -16732,7 +17728,8 @@
             "value": "Very hazardous"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.accidents": {
       "extractionState": "manual",
@@ -16749,7 +17746,8 @@
             "value": "Work Accidents"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.board": {
       "extractionState": "manual",
@@ -16766,7 +17764,8 @@
             "value": "OHS Committee"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.collapsed": {
       "extractionState": "manual",
@@ -16783,7 +17782,8 @@
             "value": "Collapsed"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.company.info": {
       "extractionState": "manual",
@@ -16800,7 +17800,8 @@
             "value": "Company Information"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.complete": {
       "extractionState": "manual",
@@ -16817,7 +17818,8 @@
             "value": "Completed"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.disclaimer": {
       "extractionState": "manual",
@@ -16834,7 +17836,8 @@
             "value": "Indicates record completion."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.emergency": {
       "extractionState": "manual",
@@ -16851,7 +17854,8 @@
             "value": "Emergency Action Plan"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.expanded": {
       "extractionState": "manual",
@@ -16868,7 +17872,8 @@
             "value": "Expanded"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.files": {
       "extractionState": "manual",
@@ -16885,7 +17890,8 @@
             "value": "Other Files"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.handover": {
       "extractionState": "manual",
@@ -16902,7 +17908,8 @@
             "value": "Equipment Handover Forms"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.hint": {
       "extractionState": "manual",
@@ -16919,7 +17926,8 @@
             "value": "Your score increases as sections are completed."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.inspections": {
       "extractionState": "manual",
@@ -16936,7 +17944,8 @@
             "value": "Periodic Inspections"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.logo": {
       "extractionState": "manual",
@@ -16953,7 +17962,8 @@
             "value": "Company Logo"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.missing": {
       "extractionState": "manual",
@@ -16970,7 +17980,8 @@
             "value": "Missing"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.pending": {
       "extractionState": "manual",
@@ -16987,7 +17998,8 @@
             "value": "File and document services are not connected yet. No live records can be created here."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.personnel": {
       "extractionState": "manual",
@@ -17004,7 +18016,8 @@
             "value": "Personnel List"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.representative": {
       "extractionState": "manual",
@@ -17021,7 +18034,8 @@
             "value": "Employee Representative"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.review": {
       "extractionState": "manual",
@@ -17038,7 +18052,8 @@
             "value": "Needs review"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.risk": {
       "extractionState": "manual",
@@ -17055,7 +18070,8 @@
             "value": "Risk Assessment"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.score.count": {
       "extractionState": "manual",
@@ -17072,7 +18088,8 @@
             "value": "%d/%d sections completed"
           }
         }
-      }
+      },
+      "comment": "placeholders: %d"
     },
     "localizable.nova.workspace.score.pending": {
       "extractionState": "manual",
@@ -17089,7 +18106,8 @@
             "value": "The score will be calculated when all section data is connected."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.score.spoken": {
       "extractionState": "manual",
@@ -17106,7 +18124,8 @@
             "value": "Completion score: %d / 100"
           }
         }
-      }
+      },
+      "comment": "placeholders: %d"
     },
     "localizable.nova.workspace.section.pending": {
       "extractionState": "manual",
@@ -17123,7 +18142,8 @@
             "value": "This section's record service is not connected. Completion cannot be verified."
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.support": {
       "extractionState": "manual",
@@ -17140,7 +18160,8 @@
             "value": "Support Personnel"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.title": {
       "extractionState": "manual",
@@ -17157,7 +18178,8 @@
             "value": "Company Completion Score"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.training": {
       "extractionState": "manual",
@@ -17174,7 +18196,8 @@
             "value": "Training"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.unknown": {
       "extractionState": "manual",
@@ -17191,7 +18214,8 @@
             "value": "Completion score cannot be calculated yet"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.nova.workspace.waiting": {
       "extractionState": "manual",
@@ -17208,7 +18232,8 @@
             "value": "Awaiting data"
           }
         }
-      }
+      },
+      "comment": "placeholders: none"
     },
     "localizable.profile.notifications.loading.message": {
       "comment": "computed_ui_copy; App/Views/Profile/ProfileView.swift; notification settings loading message; placeholders: none",

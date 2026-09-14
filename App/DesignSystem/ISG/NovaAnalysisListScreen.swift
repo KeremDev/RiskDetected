@@ -1,5 +1,129 @@
 import SwiftUI
 
+/// The card that opens a list page: what the page is, how many rows it has,
+/// and a short row of counters. Every number is passed in already counted.
+struct NovaAnalysisOverviewCard: View {
+    let symbol: String
+    let title: String
+    let detail: String
+    let headline: String
+    let headlineCaption: String
+    let figures: [NovaAnalysisOverviewFigure]
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        NovaCard(padding: 12, tint: NovaColorToken.statusSuccessBg.color(in: scheme)) {
+            VStack(spacing: 10) {
+                HStack(alignment: .top, spacing: 10) {
+                    NovaIcon(symbol: symbol, size: 19)
+                        .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+                        .frame(width: 42, height: 42)
+                        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
+                    VStack(alignment: .leading, spacing: 3) {
+                        NovaText(text: title, style: .sheetTitle)
+                        NovaText(text: detail, style: .metaQuiet,
+                            color: NovaColorToken.textSecondary.color(in: scheme))
+                    }
+                    Spacer(minLength: 0)
+                    VStack(spacing: 0) {
+                        NovaText(text: headline, style: .screenTitle, color: NovaColorToken.onInverse.color(in: scheme))
+                        NovaText(text: headlineCaption, style: .micro,
+                            color: NovaColorToken.onInverse.color(in: scheme).opacity(0.7))
+                    }
+                    .frame(minWidth: 74).padding(.horizontal, 10).padding(.vertical, 11)
+                    .background(NovaColorToken.inverse.color(in: scheme), in: RoundedRectangle(cornerRadius: 16))
+                }
+                if !figures.isEmpty {
+                    HStack(spacing: 7) {
+                        ForEach(figures) { figure in chip(figure) }
+                    }
+                }
+            }
+        }
+    }
+
+    private func chip(_ figure: NovaAnalysisOverviewFigure) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: figure.symbol).font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(NovaColorToken.inverse.color(in: scheme))
+                .frame(width: 28, height: 28)
+                .background(NovaColorToken.onInverse.color(in: scheme).opacity(0.92), in: RoundedRectangle(cornerRadius: 9))
+            VStack(alignment: .leading, spacing: 0) {
+                NovaText(text: figure.value, style: .cardTitle, color: NovaColorToken.onInverse.color(in: scheme))
+                NovaText(text: figure.label, style: .micro,
+                    color: NovaColorToken.onInverse.color(in: scheme).opacity(0.7)).lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 8).padding(.vertical, 7)
+        .frame(maxWidth: .infinity)
+        .background(NovaColorToken.inverse.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
+        .accessibilityElement(children: .combine)
+    }
+}
+
+struct NovaAnalysisOverviewFigure: Identifiable, Equatable {
+    let symbol: String
+    let value: String
+    let label: String
+    var id: String { label }
+}
+
+/// The search field the analysis pages share.
+struct NovaAnalysisSearchField: View {
+    @Binding var text: String
+    let placeholder: String
+    var identifier = "analysis.search"
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
+            TextField(placeholder, text: $text)
+                .font(.custom("PlusJakartaSans-Medium", size: 13.5))
+                .textInputAutocapitalization(.never)
+                .accessibilityIdentifier(identifier)
+            if !text.isEmpty {
+                Button { text = "" } label: {
+                    Image(systemName: "xmark.circle.fill").font(.system(size: 14))
+                        .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
+                }.buttonStyle(.plain)
+                    .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.analysis.search.clear", table: .localizable, fallback: "Aramayı temizle")))
+            }
+        }
+        .padding(.horizontal, 12).frame(minHeight: 44)
+        .background(NovaColorToken.surface.color(in: scheme), in: Capsule())
+        .overlay(Capsule().strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
+    }
+}
+
+/// One filter chip in the row under the search field.
+struct NovaAnalysisFilterChip: View {
+    let title: String
+    let isOn: Bool
+    var identifier: String
+    let action: () -> Void
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                if isOn {
+                    Image(systemName: "checkmark").font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(NovaColorToken.onInverse.color(in: scheme))
+                }
+                NovaText(text: title, style: .meta,
+                    color: isOn ? NovaColorToken.onInverse.color(in: scheme) : NovaColorToken.textSecondary.color(in: scheme))
+            }
+            .padding(.horizontal, 13).frame(minHeight: 38)
+            .background(isOn ? NovaColorToken.inverse.color(in: scheme) : NovaColorToken.surfaceMuted.color(in: scheme), in: Capsule())
+        }.buttonStyle(.plain)
+            .accessibilityIdentifier(identifier)
+            .accessibilityAddTraits(isOn ? .isSelected : [])
+    }
+}
+
 /// Every completed analysis on the account, with its picture and the labels it
 /// ran under. An unassigned one is not hidden: it is the row that still needs
 /// a decision.
@@ -10,38 +134,79 @@ struct NovaAnalysisListScreen: View {
     let onOpen: (UUID) -> Void
     let onBack: () -> Void
     var onNewPhotoAnalysis: (() -> Void)?
+    var onReports: (() -> Void)?
     @Environment(\.colorScheme) private var scheme
     @State private var rows: [NovaAnalysisSummary]?
     @State private var images: [UUID: UIImage] = [:]
     @State private var error: String?
-    @State private var onlyUnassigned = false
+    @State private var query = ""
+    @State private var filter: Filter = .all
+    @State private var company: String?
     @State private var reload = UUID()
 
+    private enum Filter: String, CaseIterable, Identifiable {
+        case all, week, critical, unassigned
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .all: return RDLocalization.string("localizable.nova.nonconformity.filter.all", table: .localizable, fallback: "Tümü")
+            case .week: return RDLocalization.string("localizable.nova.analysis.filter.week", table: .localizable, fallback: "Bu hafta")
+            case .critical: return RDLocalization.string("localizable.nova.nonconformity.severity.critical", table: .localizable, fallback: "Kritik")
+            case .unassigned: return RDLocalization.string("localizable.nova.analysis.list.filter.unassigned", table: .localizable, fallback: "Firmasız")
+            }
+        }
+    }
+
+    private var all: [NovaAnalysisSummary] { rows ?? [] }
+    private var stats: NovaAnalysisListStats { .init(all) }
+    private var companyNames: [String] { Array(Set(all.compactMap(\.companyName))).sorted() }
+
     private var visible: [NovaAnalysisSummary] {
-        let all = rows ?? []
-        return onlyUnassigned ? all.filter(\.isUnassigned) : all
+        let boundary = Date().addingTimeInterval(-7 * 24 * 60 * 60)
+        return all.filter { row in
+            guard row.matches(query) else { return false }
+            if let company, row.companyName != company { return false }
+            switch filter {
+            case .all: return true
+            case .week: return (row.createdAt ?? .distantPast) >= boundary
+            case .critical: return row.highestBand == "critical"
+            case .unassigned: return row.isUnassigned
+            }
+        }
     }
 
     var body: some View {
         NovaPageSurface {
             ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 11) {
                     header
-                    NovaHelpHint(text: RDLocalization.string("localizable.nova.analysis.list.hint", table: .localizable,
-                        fallback: "Firmasız analizler hesabınızda durur; istediğiniz zaman bir firmaya atayabilirsiniz."))
-                    filters
-                    body_
-                }.padding(20).padding(.bottom, novaTabBarInset)
+                    overview
+                    search
+                    chips
+                    list
+                }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
             }
         }
         .task(id: reload) { await refresh() }
     }
 
     private var header: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             NovaBackButton { onBack() }
             NovaText(text: RDLocalization.string("localizable.nova.analysis.list.title", table: .localizable, fallback: "Analizlerim"), style: .screenTitle)
             Spacer(minLength: 0)
+            if let onReports {
+                Button(action: onReports) {
+                    Image(systemName: "doc.text").font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(NovaColorToken.text.color(in: scheme))
+                        .frame(width: 44, height: 44)
+                        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
+                        .overlay(RoundedRectangle(cornerRadius: 14)
+                            .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
+                }.buttonStyle(.plain)
+                    .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.analysis.reports.title", table: .localizable, fallback: "Analiz Raporları")))
+                    .accessibilityIdentifier("analysis.list.reports")
+            }
             if let onNewPhotoAnalysis {
                 Button(action: onNewPhotoAnalysis) {
                     HStack(spacing: 6) {
@@ -50,38 +215,71 @@ struct NovaAnalysisListScreen: View {
                             style: .buttonSm, color: NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
                     }
                     .foregroundStyle(NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
-                    .padding(.horizontal, 14).frame(minHeight: 40)
+                    .padding(.horizontal, 14).frame(minHeight: 44)
                     .background(NovaColorToken.accent.color(in: scheme), in: Capsule())
                 }.buttonStyle(.plain).accessibilityIdentifier("analysis.list.new")
             }
         }
     }
 
-    private var filters: some View {
+    /// The counters are taken from the rows this page actually read, so the
+    /// caption says how many that was rather than implying an account total.
+    private var overview: some View {
+        NovaAnalysisOverviewCard(symbol: "viewfinder",
+            title: RDLocalization.string("localizable.nova.analysis.overview.title", table: .localizable, fallback: "Saha taramaları"),
+            detail: RDLocalization.string("localizable.nova.analysis.overview.detail", table: .localizable,
+                fallback: "Son analizlerinizi, kritik riskleri ve bulgu sayısını tek yerden takip edin."),
+            headline: "\(stats.total)",
+            headlineCaption: RDLocalization.string("localizable.nova.analysis.overview.unit", table: .localizable, fallback: "Analiz"),
+            figures: [
+                .init(symbol: "calendar", value: "\(stats.thisWeek)",
+                      label: RDLocalization.string("localizable.nova.analysis.filter.week", table: .localizable, fallback: "Bu hafta")),
+                .init(symbol: "exclamationmark.triangle", value: "\(stats.critical)",
+                      label: RDLocalization.string("localizable.nova.nonconformity.severity.critical", table: .localizable, fallback: "Kritik")),
+                .init(symbol: "checkmark.seal", value: "\(stats.findings)",
+                      label: RDLocalization.string("localizable.nova.analysis.overview.findings", table: .localizable, fallback: "Bulgu"))
+            ])
+    }
+
+    private var search: some View {
         HStack(spacing: 8) {
-            chip(false, RDLocalization.string("localizable.nova.nonconformity.filter.all", table: .localizable, fallback: "Tümü"))
-            chip(true, RDLocalization.string("localizable.nova.analysis.list.filter.unassigned", table: .localizable, fallback: "Firmasız"))
-            Spacer(minLength: 0)
-            Button { reload = UUID() } label: {
-                Image(systemName: "arrow.clockwise").frame(width: 40, height: 40)
-            }.buttonStyle(.plain)
-                .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.analysis.list.refresh", table: .localizable, fallback: "Listeyi yenile")))
-                .accessibilityIdentifier("analysis.list.refresh")
+            NovaAnalysisSearchField(text: $query,
+                placeholder: RDLocalization.string("localizable.nova.analysis.search.placeholder", table: .localizable, fallback: "Analiz ara"),
+                identifier: "analysis.list.search")
+            companyMenu
         }
     }
 
-    private func chip(_ value: Bool, _ title: String) -> some View {
-        Button { onlyUnassigned = value } label: {
-            NovaText(text: title, style: .meta,
-                color: onlyUnassigned == value ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.textSecondary.color(in: scheme))
-                .padding(.horizontal, 12).frame(minHeight: 38)
-                .background(onlyUnassigned == value ? NovaColorToken.statusSuccessBg.color(in: scheme) : NovaColorToken.surface.color(in: scheme), in: Capsule())
-        }.buttonStyle(.plain)
-            .accessibilityIdentifier("analysis.list.filter.\(value ? "unassigned" : "all")")
-            .accessibilityAddTraits(onlyUnassigned == value ? .isSelected : [])
+    private var companyMenu: some View {
+        Menu {
+            Button(RDLocalization.string("localizable.nova.nonconformity.filter.all", table: .localizable, fallback: "Tümü")) { company = nil }
+            ForEach(companyNames, id: \.self) { name in
+                Button(name) { company = name }
+            }
+        } label: {
+            Image(systemName: company == nil ? "building.2" : "building.2.fill").font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(company == nil ? NovaColorToken.text.color(in: scheme) : NovaColorToken.accentInk.color(in: scheme))
+                .frame(width: 44, height: 44)
+                .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
+        }
+        .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.nonconformity.filter.company", table: .localizable, fallback: "Firma")))
+        .accessibilityIdentifier("analysis.list.company")
     }
 
-    @ViewBuilder private var body_: some View {
+    private var chips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 7) {
+                ForEach(Filter.allCases) { value in
+                    NovaAnalysisFilterChip(title: value.title, isOn: filter == value,
+                        identifier: "analysis.list.filter.\(value.rawValue)") { filter = value }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var list: some View {
         if let error {
             NovaCard(padding: 16) { NovaText(text: error, style: .metaQuiet) }
         } else if rows == nil {
@@ -101,48 +299,55 @@ struct NovaAnalysisListScreen: View {
 
     private func card(_ row: NovaAnalysisSummary) -> some View {
         Button { onOpen(row.id) } label: {
-            NovaCard(padding: 12) {
-                HStack(alignment: .top, spacing: 11) {
+            NovaCard(padding: 10) {
+                HStack(alignment: .top, spacing: 10) {
                     picture(row)
-                    VStack(alignment: .leading, spacing: 6) {
-                        NovaText(text: row.title, style: .cardTitle).lineLimit(2)
-                        HStack(spacing: 6) {
-                            if row.isUnassigned {
-                                NovaStatusPill(label: RDLocalization.string("localizable.nova.analysis.unassigned", table: .localizable, fallback: "Firmasız"), status: .info)
-                            } else if let name = row.companyName {
-                                NovaStatusPill(label: name, status: .neutral, showsDot: false)
-                            }
+                    VStack(alignment: .leading, spacing: 5) {
+                        HStack(alignment: .top, spacing: 6) {
+                            NovaText(text: row.title, style: .cardTitle).lineLimit(1)
+                            Spacer(minLength: 0)
                             if let band = row.highestBand {
-                                NovaStatusPill(label: NovaNonconformityWords.band(band), status: NovaNonconformityWords.tone(band))
+                                NovaStatusPill(label: NovaNonconformityWords.band(band),
+                                    status: NovaNonconformityWords.tone(band), showsDot: false)
                             }
                         }
                         HStack(spacing: 5) {
-                            if let count = row.findingCount {
-                                label("exclamationmark.triangle", String(format: RDLocalization.string("localizable.nova.analysis.list.findings", table: .localizable,
-                                    fallback: "%d bulgu"), count))
-                            }
-                            if row.photoCount > 0 {
-                                label("photo", String(format: RDLocalization.string("localizable.nova.analysis.tag.photos", table: .localizable,
-                                    fallback: "%d fotoğraf"), row.photoCount))
-                            }
+                            fact("calendar", row.createdOn)
+                            if let count = row.findingCount { fact("exclamationmark.triangle", "\(count)") }
+                            if row.photoCount > 0 { fact("photo", "\(row.photoCount)") }
                         }
-                        if let sector = row.sectorLabel {
-                            label("building.2", sector)
+                        HStack(spacing: 5) {
+                            if row.isUnassigned {
+                                NovaAnalysisTag(symbol: "building.2",
+                                    text: RDLocalization.string("localizable.nova.analysis.unassigned", table: .localizable, fallback: "Firmasız"),
+                                    status: .info)
+                            } else if let name = row.companyName {
+                                NovaAnalysisTag(symbol: "building.2", text: name, status: .neutral)
+                            }
+                            if let sector = row.sectorLabel {
+                                NovaAnalysisTag(symbol: "square.grid.2x2", text: sector, status: .neutral)
+                            }
+                            if row.isReviewed {
+                                NovaAnalysisTag(symbol: "checkmark.circle",
+                                    text: RDLocalization.string("localizable.history.status.reviewed", table: .localizable, fallback: "İncelendi"),
+                                    status: .warning)
+                            }
+                            Spacer(minLength: 0)
                         }
-                        NovaText(text: row.createdOn, style: .metaQuiet)
                     }.frame(maxWidth: .infinity, alignment: .leading)
                     Image(systemName: "chevron.right").font(.system(size: 12))
-                        .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme)).padding(.top, 4)
+                        .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme)).padding(.top, 6)
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
         }.buttonStyle(.plain)
             .accessibilityIdentifier("analysis.list.row.\(row.id.uuidString.lowercased())")
     }
 
-    private func label(_ symbol: String, _ text: String) -> some View {
-        HStack(spacing: 4) {
-            NovaIcon(symbol: symbol, size: 11).foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
-            NovaText(text: text, style: .micro, color: NovaColorToken.textSecondary.color(in: scheme))
+    private func fact(_ symbol: String, _ text: String) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: symbol).font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
+            NovaText(text: text, style: .micro, color: NovaColorToken.textSecondary.color(in: scheme)).lineLimit(1)
         }
     }
 
@@ -152,12 +357,19 @@ struct NovaAnalysisListScreen: View {
                 Image(uiImage: image).resizable().scaledToFill()
             } else {
                 NovaColorToken.surfaceMuted.color(in: scheme)
-                    .overlay(NovaIcon(symbol: "photo", size: 18)
+                    .overlay(NovaIcon(symbol: "photo", size: 16)
                         .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme)))
             }
         }
-        .frame(width: 76, height: 76)
-        .clipShape(RoundedRectangle(cornerRadius: 15))
+        .frame(width: 62, height: 62)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(alignment: .bottomLeading) {
+            Image(systemName: "camera.fill").font(.system(size: 8, weight: .bold))
+                .foregroundStyle(NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
+                .frame(width: 17, height: 17)
+                .background(NovaColorToken.accent.color(in: scheme), in: Circle())
+                .padding(3)
+        }
         .accessibilityHidden(true)
         .task(id: row.id) {
             guard images[row.id] == nil else { return }

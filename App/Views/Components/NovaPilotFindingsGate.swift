@@ -23,11 +23,14 @@ struct NovaPilotFindingsGate: View {
     @EnvironmentObject private var app: AppState
     @Environment(\.colorScheme) private var scheme
 
-    private enum Route: Equatable {
-        case root, photo, manual
-        case detail(UUID)
-    }
+    private enum Route: Equatable { case root, photo, manual, reports }
+    /// The analysis detail is presented over the shell rather than pushed into
+    /// it, because that page owns its own pinned bar and must not sit under
+    /// the tab bar.
+    private struct AnalysisTarget: Identifiable, Equatable { let id: UUID }
     @State private var route: Route = .root
+    @State private var openAnalysis: AnalysisTarget?
+    @State private var pending: UUID?
     @State private var companies: [NovaAnalysisCompanyOption] = []
     @State private var images: [UIImage] = []
     @State private var draft = NovaAnalysisIntakeDraft()
@@ -47,20 +50,27 @@ struct NovaPilotFindingsGate: View {
             case .root: root
             case .photo: photo
             case .manual: manual
-            case .detail(let id): detail(id)
+            case .reports: reports
             }
         }
-        .fullScreenCover(item: $job) { work in
+        // The finished analysis is opened from the waiting screen's own
+        // dismissal, so the two presentations never contend for the same slot.
+        .fullScreenCover(item: $job, onDismiss: {
+            guard let id = pending else { return }
+            pending = nil
+            openAnalysis = .init(id: id)
+        }) { work in
             AnalyzingView(isPresented: Binding(get: { job != nil }, set: { if !$0 { job = nil } }),
                 asyncWork: work.work, previewImage: work.preview, photoCount: work.photoCount,
                 onComplete: { bundle in
-                    job = nil
-                    guard let bundle else { return }
+                    guard let bundle else { job = nil; return }
                     images = []
-                    route = .detail(bundle.analysis.id)
+                    pending = bundle.analysis.id
+                    job = nil
                 },
                 onError: { message in job = nil; notice = message })
         }
+        .fullScreenCover(item: $openAnalysis) { target in detail(target.id) }
         .fullScreenCover(item: $record) { entry in
             NovaPopup {
                 NovaNonconformityRecordSheet(entry: entry, client: recordClient(entry), canWrite: canWrite)
@@ -262,13 +272,22 @@ struct NovaPilotFindingsGate: View {
         NovaAnalysisListScreen(
             load: { try await NovaAnalysisWorkspace.summaries(identity: identity, method: method) },
             thumbnail: { await NovaAnalysisWorkspace.thumbnail(analysisID: $0) },
-            onOpen: { route = .detail($0) }, onBack: { onNavigate(.findings) },
-            onNewPhotoAnalysis: { onNavigate(.newAnalysis) })
+            onOpen: { openAnalysis = .init(id: $0) }, onBack: { onNavigate(.findings) },
+            onNewPhotoAnalysis: { onNavigate(.newAnalysis) },
+            onReports: { route = .reports })
+    }
+
+    /// The archive of reports produced from photo analyses.
+    private var reports: some View {
+        NovaAnalysisReportsScreen(
+            load: { try await NovaAnalysisWorkspace.reports(identity: identity) },
+            onBack: { route = .root },
+            onOpenAnalysis: { openAnalysis = .init(id: $0) })
     }
 
     private func detail(_ analysisID: UUID) -> some View {
         NovaAnalysisDetailScreen(analysisID: analysisID, client: detailClient(analysisID),
-            onBack: { route = .root; boardRevision = UUID() }, canWrite: true)
+            onBack: { openAnalysis = nil; boardRevision = UUID() }, canWrite: true)
     }
 
     private func detailClient(_ analysisID: UUID) -> NovaAnalysisDetailClient {
@@ -307,7 +326,7 @@ struct NovaPilotFindingsGate: View {
         intent.recordKind = request.recordKind
         if request.section.isScored {
             intent.findingID = request.item.id
-            if request.severity == nil { intent.riskBand = request.item.band }
+            if request.severity == nil { intent.riskBand = request.band }
         } else {
             intent.expertItemID = request.item.id
             intent.hazardDescription = request.item.body

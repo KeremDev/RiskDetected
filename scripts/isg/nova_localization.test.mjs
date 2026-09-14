@@ -18,6 +18,7 @@ const NOVA_FILES=[
   'App/DesignSystem/ISG/NovaAnalysisIntake.swift','App/DesignSystem/ISG/NovaAnalysisIntakeScreens.swift',
   'App/DesignSystem/ISG/NovaAnalysisDetail.swift','App/DesignSystem/ISG/NovaAnalysisDetailScreens.swift',
   'App/DesignSystem/ISG/NovaAnalysisSheets.swift','App/DesignSystem/ISG/NovaAnalysisListScreen.swift',
+  'App/DesignSystem/ISG/NovaAnalysisSectionViews.swift','App/DesignSystem/ISG/NovaAnalysisReportsScreen.swift',
   'App/DesignSystem/ISG/NovaManualNonconformityScreen.swift',
   'App/DesignSystem/ISG/NovaNonconformityTransitions.swift',
   'App/DesignSystem/ISG/NovaNonconformityListScreen.swift',
@@ -33,7 +34,14 @@ const NOVA_FILES=[
 const CATALOGS=['Localizable','Analysis','Auth','Legal','Notifications','Onboarding','Paywall','Reports',
   'SafetyTerminology','ProfessionalProgress','InfoPlist'];
 // Proper nouns: identical in tr and en because they are names, not copy.
-const PROPER_NOUNS=new Set(['localizable.nova.risk.method.fine.kinney']);
+// The two file formats are product names, and the frequency factor of the
+// Fine-Kinney scale is written F in both languages; the other two factors are
+// not, so they are absent here and must still differ.
+const PROPER_NOUNS=new Set(['localizable.nova.risk.method.fine.kinney',
+  'localizable.nova.analysis.reports.filter.pdf','localizable.nova.analysis.reports.filter.excel',
+  'localizable.nova.risk.factor.frequency',
+  // A date range is an arrow between two values, identical in both languages.
+  'localizable.nova.directory.engagement.range']);
 // A font face is a resource name, never copy a person reads.
 const RESOURCE=/^(?:PlusJakartaSans-|SF|system)/;
 const read=path=>readFileSync(resolve(ROOT,path),'utf8');

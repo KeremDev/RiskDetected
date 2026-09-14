@@ -1,0 +1,65 @@
+{
+  "phase": "P09-native-4",
+  "slice": "analysis result sections, analysis list, analysis report archive, finding detail popup",
+  "date": "2026-09-14",
+  "migration": null,
+  "runs": {
+    "foundation": { "checks": 470, "failed": 0 },
+    "nova_design": { "checks": 41, "failed": 0 },
+    "navigation_contract": { "scenarios": 94, "transitions": 230, "status": "pass" },
+    "session_host_contract": { "cases": 104, "transitions": 467, "status": "pass" },
+    "company_list_check": { "checks": 34, "status": "pass" },
+    "directory_check": { "checks": 38, "status": "pass" },
+    "directory_form_rules_check": { "guards": 6, "status": "pass" },
+    "analysis_intake_check": { "checks": 31, "status": "pass" },
+    "nova_analysis_flow": { "guards": 17, "failed": 0 },
+    "nova_localization": { "guards": 4, "failed": 0 },
+    "localization_migrate_check": "pass",
+    "localization_hardcoded_debt": 14,
+    "localization_keys_total": 1378,
+    "ios_debug_build": "succeeded",
+    "nova_pilot_simulator_build": "succeeded"
+  },
+  "localization_catalog_tests": {
+    "passed": [
+      "L10N-001", "L10N-002", "L10N-003", "L10N-004", "L10N-005", "L10N-006",
+      "L10N-007", "L10N-008", "L10N-009", "L10N-010", "L10N-011", "L10N-012",
+      "L10N-013", "L10N-014", "L10N-015", "L10N-016", "L10N-017", "L10N-017A",
+      "L10N-017B", "L10N-NATIVE", "JUR-005/006/007", "JUR-008", "JUR-009", "JUR-010"
+    ],
+    "failed": ["L10N-018"],
+    "l10n_018": {
+      "assertion": "Turkish localized-unit count",
+      "expected": 2387,
+      "actual": 3086,
+      "pre_existing": true,
+      "not_rebaselined_because": "the lock exists so the owner reviews Turkish copy; 699 units drifted across earlier NOVA phases and were not written in this session"
+    }
+  },
+  "repairs": [
+    "L10N-001 had been red since the NOVA catalogue work: 427 Localizable entries carried no placeholder metadata, so the whole file aborted on the first test and L10N-002 through L10N-017B never ran",
+    "L10N-004: NovaDirectoryScreens.swift built an engagement date range as a raw interpolated string; it is a placeholder key now and the hard-coded debt fell from 15 to 14",
+    "L10N-013: localizable.nova.manual.progress.hint had drifted between the code fallback and the catalogue value"
+  ],
+  "posture": {
+    "engine_unchanged": true,
+    "server_unchanged": true,
+    "client_states_a_score": false,
+    "unscored_section_shows_a_band": false,
+    "one_method_score_derived_from_the_other": false,
+    "filed_band_is_the_method_being_read": true,
+    "list_counts_are_counted_from_loaded_rows": true,
+    "report_archive_reads_photo_analyses_only": true,
+    "analysis_detail_presented_over_the_shell": true,
+    "finding_detail_is_a_popup": true,
+    "rollout_open": false
+  },
+  "open": [
+    "rollout for feature 'nonconformity' remains closed; a separate human decision",
+    "L10N-018 catalogue lock is stale by 699 Turkish units and needs the owner to re-seal it",
+    "manual evidence photo is still not stored; P04 second slice gates it",
+    "Android carries only the navigation model; these screens have no Kotlin counterpart",
+    "the report archive page reads the first 50 rows; no paging",
+    "downloading or sharing a report file is not offered on the archive page"
+  ]
+}

@@ -89,6 +89,8 @@ test('the design layer stays free of the SDK and of legacy writes', () => {
     'App/DesignSystem/ISG/NovaAnalysisDetailScreens.swift',
     'App/DesignSystem/ISG/NovaAnalysisSheets.swift',
     'App/DesignSystem/ISG/NovaAnalysisListScreen.swift',
+    'App/DesignSystem/ISG/NovaAnalysisSectionViews.swift',
+    'App/DesignSystem/ISG/NovaAnalysisReportsScreen.swift',
     'App/DesignSystem/ISG/NovaManualNonconformityScreen.swift',
     'App/DesignSystem/ISG/NovaNonconformityTransitions.swift',
     'App/DesignSystem/ISG/NovaNonconformityListScreen.swift',
@@ -177,4 +179,66 @@ test('filing an item is keyed by that item, so a second press replays', () => {
   assert.match(gate, /result\.alreadyOpen \? \.alreadyOpen : \.opened/);
   // The analysis and its findings are referenced, never copied or rewritten.
   assert.doesNotMatch(gate, /deleteFinding|deleteAnalysis/);
+});
+
+test('the method toggle reads a band, it never converts one', () => {
+  const model = read('App/DesignSystem/ISG/NovaAnalysisDetail.swift');
+  // Each method keeps its own score. Nothing maps one scale onto the other.
+  assert.match(model, /func score\(_ method: NovaRiskMethod\) -> NovaAnalysisScore\? \{\s*\n\s*method == \.fineKinney \? fineKinney : matrix/);
+  assert.doesNotMatch(model, /fk.*(?:\*|\/)\s*\d+\s*(?:\/|\*).*m5/i);
+  const service = read('App/Services/Company/NovaAnalysisWorkspaceService.swift');
+  // A method's factors are printed only when the analysis recorded all of them.
+  assert.match(service, /guard band != nil \|\| score != nil else \{ return nil \}/);
+  assert.match(service, /if let probability, let frequency, let severity \{/);
+  // The judgement sections are given no score at all, under either method.
+  assert.match(service, /if kind\.isScored \{[\s\S]{0,400}?item\.fineKinney = fineKinney[\s\S]{0,300}?item\.matrix = matrix/);
+});
+
+test('the band that is filed is the band the expert was reading', () => {
+  const model = read('App/DesignSystem/ISG/NovaAnalysisDetail.swift');
+  // The request carries the band; the item alone no longer answers for one.
+  assert.match(model, /struct NovaAnalysisFileRequest[\s\S]{0,700}?let band: String\?/);
+  const sheets = read('App/DesignSystem/ISG/NovaAnalysisSheets.swift');
+  assert.match(sheets, /band: section\.isScored \? item\.band\(method\) : nil/);
+  const gate = read('App/Views/Components/NovaPilotFindingsGate.swift');
+  assert.match(gate, /if request\.severity == nil \{ intent\.riskBand = request\.band \}/);
+});
+
+test('every count on the analysis pages is counted from the rows on screen', () => {
+  const model = read('App/DesignSystem/ISG/NovaAnalysisDetail.swift');
+  // The list card counts the rows it was handed; it never takes a total from
+  // somewhere the page did not read.
+  assert.match(model, /struct NovaAnalysisListStats[\s\S]{0,600}?init\(_ rows: \[NovaAnalysisSummary\]/);
+  assert.match(model, /total = rows\.count/);
+  assert.match(model, /struct NovaAnalysisReportStats[\s\S]{0,400}?init\(_ rows: \[NovaAnalysisReportEntry\]/);
+  // The band distribution is counted over the section's own items, under the
+  // method being read, not taken from anywhere else.
+  assert.match(model, /items\.filter \{ \$0\.band\(method\) == band \}\.count/);
+  const section = read('App/DesignSystem/ISG/NovaAnalysisSectionViews.swift');
+  // The scored section's own total is the length of the list it just drew.
+  assert.match(section, /"\\\(section\.items\.count\)"/);
+});
+
+test('the report archive page reads the photo analyses it claims to list', () => {
+  const service = read('App/Services/Company/NovaAnalysisWorkspaceService.swift');
+  assert.match(service, /listReports\(limit: limit, photoAnalysesOnly: true\)/);
+  // A company the pilot list cannot name falls back to the archive's own
+  // snapshot rather than being shown as if it had no company.
+  assert.match(service, /companyName: row\.companyID\.flatMap \{ names\[\$0\] \} \?\? row\.companySnapshot\?\.name/);
+  const gate = read('App/Views/Components/NovaPilotFindingsGate.swift');
+  assert.match(gate, /NovaAnalysisReportsScreen\(/);
+});
+
+test('the analysis detail owns the bottom of its own page', () => {
+  const screen = read('App/DesignSystem/ISG/NovaAnalysisDetailScreens.swift');
+  // The bar is pinned, so scrolling never takes the two controls away.
+  assert.match(screen, /\.safeAreaInset\(edge: \.bottom\) \{ actionBar \}/);
+  assert.match(screen, /accessibilityIdentifier\("analysis\.detail\.back"\)/);
+  assert.match(screen, /symbol: "slider\.horizontal\.3", id: "report"/);
+  assert.match(screen, /accessibilityIdentifier\("analysis\.detail\.\\\(id\)"\)/);
+  // The page is presented over the shell, so the shell's tab bar is not under it.
+  const gate = read('App/Views/Components/NovaPilotFindingsGate.swift');
+  assert.match(gate, /\.fullScreenCover\(item: \$openAnalysis\) \{ target in detail\(target\.id\) \}/);
+  // Risk analysis is what the detail opens on.
+  assert.match(screen, /@State private var section: NovaAnalysisSectionKind = \.riskAnalysis/);
 });

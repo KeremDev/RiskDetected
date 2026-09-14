@@ -11,27 +11,23 @@ struct NovaFindingEditValues: Equatable {
     var score = NovaRiskScoreInput()
 }
 
-/// One item, in full. Reading, reacting, editing and deleting all happen here
-/// so the list underneath can stay short.
+/// One item, in full: the picture it was read from, what it scored, and every
+/// field behind the two lines the list showed.
 struct NovaAnalysisItemSheet: View {
     let item: NovaAnalysisItem
     let section: NovaAnalysisSectionKind
     let method: NovaRiskMethod
+    var photo: UIImage?
+    var analysisTitle = ""
+    var companyName: String?
+    var createdOn = ""
     let reaction: NovaAnalysisReaction
     var canWrite = true
     let react: (NovaAnalysisReaction) async throws -> Void
-    let save: (NovaFindingEditValues) async throws -> Void
-    let remove: () async throws -> Void
+    let onEdit: () -> Void
+    let onDelete: () -> Void
     @Environment(\.colorScheme) private var scheme
-    @State private var editing = false
-    @State private var confirmingDelete = false
     @State private var chosen: NovaAnalysisReaction = .none
-    @State private var title = ""
-    @State private var category = ""
-    @State private var body_ = ""
-    @State private var measure = ""
-    @State private var references = ""
-    @State private var score = NovaRiskScoreInput()
     @State private var busy = false
     @State private var error: String?
     @State private var loaded = false
@@ -39,81 +35,83 @@ struct NovaAnalysisItemSheet: View {
     /// Only the scored findings are real analysis findings; the judgement
     /// sections have no editable record behind them.
     private var isEditable: Bool { canWrite && section.isScored }
+    private var band: String? { item.band(method) }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                heading
-                if editing { form } else { reading }
+            VStack(alignment: .leading, spacing: 11) {
+                hero
+                if isEditable { controls }
+                scoreCard
+                fields
                 if let error {
                     NovaText(text: error, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme))
                 }
-                controls
-            }.padding(20).novaPopupContentSize()
+            }.padding(16).novaPopupContentSize()
         }
-        .background(NovaKeyboardDismissArea())
-        .onAppear {
-            guard !loaded else { return }
-            loaded = true
-            chosen = reaction
-            title = item.title
-            category = item.category ?? ""
-            body_ = item.body
-            measure = item.measure ?? ""
-            references = item.references ?? ""
-            score = NovaRiskScoreInput(method: method)
-        }
+        .onAppear { if !loaded { loaded = true; chosen = reaction } }
     }
 
-    private var heading: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            NovaText(text: "\(item.ordinal). \(item.title)", style: .sheetTitle)
-            HStack(spacing: 6) {
-                if let band = item.band {
-                    NovaStatusPill(label: NovaNonconformityWords.band(band), status: NovaNonconformityWords.tone(band))
-                    if let value = item.score {
-                        NovaText(text: NovaNonconformityWords.score(value) + " · " + NovaNonconformityWords.method(method), style: .metaQuiet)
+    // MARK: hero
+
+    private var hero: some View {
+        // The picture is clamped and clipped first, so the caption below is
+        // laid out against the visible frame rather than the image's own size.
+        picture
+            .frame(maxWidth: .infinity).frame(height: 200).clipped()
+            .overlay(LinearGradient(colors: [.clear, NovaColorToken.inverse.color(in: scheme).opacity(0.88)],
+                                    startPoint: .center, endPoint: .bottom))
+            .overlay(alignment: .bottomLeading) { caption }
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .overlay(alignment: .topTrailing) { feedback.padding(9) }
+    }
+
+    private var caption: some View {
+        VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 6) {
+                    if let band {
+                        NovaStatusPill(label: NovaNonconformityWords.band(band), status: NovaNonconformityWords.tone(band), showsDot: false)
+                    } else {
+                        NovaStatusPill(label: RDLocalization.string("localizable.nova.analysis.item.unscored", table: .localizable, fallback: "Skorsuz"),
+                            status: .info, showsDot: false)
                     }
-                } else {
-                    NovaStatusPill(label: RDLocalization.string("localizable.nova.analysis.item.unscored", table: .localizable, fallback: "Skorsuz"),
-                        status: .info, showsDot: false)
+                    NovaText(text: String(format: RDLocalization.string("localizable.nova.analysis.item.ordinal", table: .localizable,
+                        fallback: "Kayıt #%d"), item.ordinal), style: .micro,
+                        color: NovaColorToken.onInverse.color(in: scheme).opacity(0.8))
+                    Spacer(minLength: 0)
+                    if let value = item.value(method) {
+                        NovaText(text: NovaNonconformityWords.score(value), style: .sheetTitle,
+                            color: NovaColorToken.onInverse.color(in: scheme))
+                    }
                 }
-            }
-        }
+                NovaText(text: item.title, style: .cardTitle, color: NovaColorToken.onInverse.color(in: scheme)).lineLimit(3)
+                NovaText(text: subtitle, style: .micro, color: NovaColorToken.onInverse.color(in: scheme).opacity(0.72)).lineLimit(1)
+        }.padding(12)
     }
 
-    @ViewBuilder private var reading: some View {
-        NovaCard(padding: 14) {
-            VStack(alignment: .leading, spacing: 10) {
-                if let category = item.category, !category.isEmpty {
-                    detail(RDLocalization.string("localizable.nova.analysis.field.category", table: .localizable, fallback: "Kategori"), category)
-                }
-                detail(RDLocalization.string("localizable.nova.analysis.field.body", table: .localizable, fallback: "Açıklama"), item.body)
-                detail(RDLocalization.string("localizable.nova.analysis.field.measure", table: .localizable, fallback: "Önlem"), item.measure)
-                detail(RDLocalization.string("localizable.nova.analysis.field.references", table: .localizable, fallback: "Mevzuat"), item.references)
-            }.frame(maxWidth: .infinity, alignment: .leading)
-        }
-        feedback
+    private var subtitle: String {
+        [companyName, analysisTitle.isEmpty ? nil : analysisTitle, createdOn.isEmpty ? nil : createdOn]
+            .compactMap { $0 }.joined(separator: " · ")
     }
 
-    @ViewBuilder private func detail(_ label: String, _ value: String?) -> some View {
-        if let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            VStack(alignment: .leading, spacing: 2) {
-                NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-                NovaText(text: value)
-            }.frame(maxWidth: .infinity, alignment: .leading)
+    @ViewBuilder private var picture: some View {
+        if let photo {
+            Image(uiImage: photo).resizable().scaledToFill()
+        } else {
+            NovaColorToken.surfaceMuted.color(in: scheme)
+                .overlay(NovaIcon(symbol: "photo", size: 30)
+                    .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme)))
         }
     }
 
     /// Two answers and a way back out of both: pressing the same one again
     /// withdraws it rather than leaving an opinion the expert changed.
     private var feedback: some View {
-        HStack(spacing: 8) {
-            reactionButton(.like, "hand.thumbsup.fill",
+        HStack(spacing: 6) {
+            reactionButton(.like, "hand.thumbsup",
                 RDLocalization.string("localizable.nova.analysis.item.like", table: .localizable, fallback: "Faydalı"))
-            reactionButton(.dislike, "hand.thumbsdown.fill",
+            reactionButton(.dislike, "hand.thumbsdown",
                 RDLocalization.string("localizable.nova.analysis.item.dislike", table: .localizable, fallback: "Faydasız"))
-            Spacer(minLength: 0)
         }
     }
 
@@ -131,61 +129,187 @@ struct NovaAnalysisItemSheet: View {
                 busy = false
             }
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: symbol).font(.system(size: 13))
-                NovaText(text: label, style: .meta,
-                    color: isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.textSecondary.color(in: scheme))
-            }
-            .foregroundStyle(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.textSecondary.color(in: scheme))
-            .padding(.horizontal, 14).frame(minHeight: 42)
-            .background(isOn ? NovaColorToken.statusSuccessBg.color(in: scheme) : NovaColorToken.surface.color(in: scheme), in: Capsule())
+            Image(systemName: isOn ? "\(symbol).fill" : symbol).font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.text.color(in: scheme))
+                .frame(width: 38, height: 38)
+                .background(NovaColorToken.surface.color(in: scheme).opacity(0.92), in: Circle())
         }.buttonStyle(.plain).disabled(busy)
+            .accessibilityLabel(Text(verbatim: label))
             .accessibilityIdentifier("analysis.item.\(value.rawValue)")
             .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 
-    @ViewBuilder private var form: some View {
-        NovaCard(padding: 14) {
-            VStack(alignment: .leading, spacing: 10) {
-                field(RDLocalization.string("localizable.nova.analysis.field.title", table: .localizable, fallback: "Başlık"), $title, id: "title")
-                field(RDLocalization.string("localizable.nova.analysis.field.category", table: .localizable, fallback: "Kategori"), $category, id: "category")
-                area(RDLocalization.string("localizable.nova.analysis.field.body", table: .localizable, fallback: "Açıklama"), $body_, id: "body")
-                area(RDLocalization.string("localizable.nova.analysis.field.measure", table: .localizable, fallback: "Önlem"), $measure, id: "measure")
-                area(RDLocalization.string("localizable.nova.analysis.field.references", table: .localizable, fallback: "Mevzuat"), $references, id: "references")
-            }
+    private var controls: some View {
+        HStack(spacing: 8) {
+            control("square.and.pencil", RDLocalization.string("localizable.nova.analysis.edit", table: .localizable, fallback: "Bulguyu düzenle"),
+                    id: "edit", status: .neutral, action: onEdit)
+            control("trash", RDLocalization.string("localizable.nova.analysis.item.delete", table: .localizable, fallback: "Bulguyu sil"),
+                    id: "delete", status: .danger, action: onDelete)
         }
-        NovaRiskScoreEditor(score: $score, allowsClearing: false)
-        NovaText(text: RDLocalization.string("localizable.nova.analysis.edit.hint", table: .localizable,
-            fallback: "Değişiklikleriniz bulguya işlenir; skoru yeniden girerseniz bandı sunucu hesaplar."), style: .metaQuiet)
     }
 
-    @ViewBuilder private var controls: some View {
-        if editing {
-            NovaButton(label: RDLocalization.string("localizable.nova.analysis.edit.save", table: .localizable, fallback: "Değişiklikleri kaydet"),
-                symbol: "checkmark", isEnabled: !busy && !title.trimmingCharacters(in: .whitespaces).isEmpty,
-                isLoading: busy) { Task { await submit() } }
-                .accessibilityIdentifier("analysis.item.save")
-            NovaButton(label: RDLocalization.string("localizable.nova.analysis.item.cancel", table: .localizable, fallback: "Vazgeç"),
-                symbol: "xmark", variant: .surface, isEnabled: !busy) { editing = false }
-                .accessibilityIdentifier("analysis.item.cancel")
-        } else if isEditable {
-            NovaButton(label: RDLocalization.string("localizable.nova.analysis.edit", table: .localizable, fallback: "Bulguyu düzenle"),
-                symbol: "square.and.pencil", variant: .surface) { editing = true }
-                .accessibilityIdentifier("analysis.item.edit")
-            if confirmingDelete {
-                NovaText(text: RDLocalization.string("localizable.nova.analysis.item.delete.confirm", table: .localizable,
-                    fallback: "Bu bulgu analizden kalıcı olarak silinecek."), style: .metaQuiet,
-                    color: NovaColorToken.statusDangerInk.color(in: scheme))
-                NovaButton(label: RDLocalization.string("localizable.nova.analysis.item.delete.yes", table: .localizable, fallback: "Evet, sil"),
-                    symbol: "trash", variant: .danger, isEnabled: !busy, isLoading: busy) { Task { await drop() } }
-                    .accessibilityIdentifier("analysis.item.delete.confirm")
-                NovaButton(label: RDLocalization.string("localizable.nova.analysis.item.cancel", table: .localizable, fallback: "Vazgeç"),
-                    symbol: "xmark", variant: .surface, isEnabled: !busy) { confirmingDelete = false }
-            } else {
-                NovaButton(label: RDLocalization.string("localizable.nova.analysis.item.delete", table: .localizable, fallback: "Bulguyu sil"),
-                    symbol: "trash", variant: .danger) { confirmingDelete = true }
-                    .accessibilityIdentifier("analysis.item.delete")
+    private func control(_ symbol: String, _ label: String, id: String, status: NovaStatus, action: @escaping () -> Void) -> some View {
+        let palette = status.tokens
+        return Button(action: action) {
+            HStack(spacing: 7) {
+                Image(systemName: symbol).font(.system(size: 13, weight: .semibold))
+                NovaText(text: label, style: .meta, color: palette.ink.color(in: scheme))
             }
+            .foregroundStyle(palette.ink.color(in: scheme))
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .background(palette.background.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
+        }.buttonStyle(.plain).accessibilityIdentifier("analysis.item.\(id)")
+    }
+
+    // MARK: score
+
+    @ViewBuilder private var scoreCard: some View {
+        if let score = item.score(method), let value = score.value {
+            let palette = NovaNonconformityWords.tone(score.band).tokens
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(alignment: .firstTextBaseline, spacing: 7) {
+                    NovaText(text: NovaNonconformityWords.score(value), style: .screenTitle,
+                        color: palette.ink.color(in: scheme))
+                    NovaText(text: RDLocalization.string("localizable.nova.risk.score.unit", table: .localizable, fallback: "PUAN"),
+                        style: .micro, color: palette.ink.color(in: scheme).opacity(0.8))
+                    Spacer(minLength: 0)
+                    NovaText(text: NovaNonconformityWords.method(method), style: .meta,
+                        color: palette.ink.color(in: scheme))
+                }
+                if !score.factors.isEmpty {
+                    HStack(spacing: 5) {
+                        ForEach(Array(score.factors.enumerated()), id: \.element.id) { at, factor in
+                            if at > 0 {
+                                NovaText(text: "×", style: .meta, color: palette.ink.color(in: scheme).opacity(0.6))
+                            }
+                            NovaText(text: "\(factor.label) \(NovaNonconformityWords.score(factor.value))", style: .badge,
+                                color: palette.ink.color(in: scheme))
+                                .padding(.horizontal, 8).padding(.vertical, 5)
+                                .background(NovaColorToken.surface.color(in: scheme).opacity(0.7), in: Capsule())
+                        }
+                        NovaText(text: "=", style: .meta, color: palette.ink.color(in: scheme).opacity(0.6))
+                        NovaText(text: NovaNonconformityWords.score(value), style: .badge,
+                            color: palette.ink.color(in: scheme))
+                        Spacer(minLength: 0)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(13)
+            .background(palette.background.color(in: scheme), in: RoundedRectangle(cornerRadius: 18))
+        }
+    }
+
+    // MARK: fields
+
+    @ViewBuilder private var fields: some View {
+        panel(RDLocalization.string("localizable.nova.analysis.field.body", table: .localizable, fallback: "Açıklama"),
+              "text.alignleft", item.body, status: NovaNonconformityWords.tone(band))
+        if let audience = item.audience {
+            panel(RDLocalization.string("localizable.nova.analysis.field.audience", table: .localizable, fallback: "Kimler için"),
+                  "person.2", audience, status: .info)
+        }
+        panel(RDLocalization.string("localizable.nova.analysis.field.root.cause", table: .localizable, fallback: "Kök neden"),
+              "magnifyingglass", item.rootCause, status: .warning)
+        measuresPanel
+        panel(RDLocalization.string("localizable.nova.analysis.field.references", table: .localizable, fallback: "Mevzuat"),
+              "book", item.references, status: .info)
+        if let value = item.durationValue, let label = item.durationLabel {
+            panel(label, "clock", [value, item.durationNote].compactMap { $0 }.joined(separator: "\n"), status: .neutral)
+        }
+    }
+
+    /// The measures the item carries, each under its own name. When it carries
+    /// none, the single recommended action stands in for them.
+    @ViewBuilder private var measuresPanel: some View {
+        if item.measures.isEmpty {
+            panel(RDLocalization.string("localizable.nova.analysis.field.measure.corrective", table: .localizable, fallback: "Düzeltici önlem"),
+                  "checkmark.seal", item.measure, status: .success)
+        } else {
+            ForEach(item.measures) { measure in
+                panel(measure.title, measure.isPreventive ? "shield" : "checkmark.seal", measure.text,
+                      status: measure.isPreventive ? .info : .success)
+            }
+        }
+    }
+
+    @ViewBuilder private func panel(_ label: String, _ symbol: String, _ value: String?, status: NovaStatus) -> some View {
+        if let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let palette = status.tokens
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 6) {
+                    Image(systemName: symbol).font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(palette.ink.color(in: scheme))
+                    NovaText(text: label.uppercased(), style: .overline, color: palette.ink.color(in: scheme))
+                }
+                NovaText(text: value, style: .body)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 16))
+            .overlay(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 2).fill(palette.ink.color(in: scheme).opacity(0.55))
+                    .frame(width: 3).padding(.vertical, 12).padding(.leading, 1)
+            }
+            .overlay(RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
+        }
+    }
+}
+
+/// Editing one scored finding. It is its own popup so the reading view above
+/// never turns into a form the expert did not ask for.
+struct NovaAnalysisEditSheet: View {
+    let item: NovaAnalysisItem
+    let method: NovaRiskMethod
+    let save: (NovaFindingEditValues) async throws -> Void
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.dismiss) private var dismiss
+    @State private var title = ""
+    @State private var category = ""
+    @State private var body_ = ""
+    @State private var measure = ""
+    @State private var references = ""
+    @State private var score = NovaRiskScoreInput()
+    @State private var busy = false
+    @State private var error: String?
+    @State private var loaded = false
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 11) {
+                NovaText(text: RDLocalization.string("localizable.nova.analysis.edit", table: .localizable, fallback: "Bulguyu düzenle"), style: .sheetTitle)
+                NovaCard(padding: 13) {
+                    VStack(alignment: .leading, spacing: 9) {
+                        field(RDLocalization.string("localizable.nova.analysis.field.title", table: .localizable, fallback: "Başlık"), $title, id: "title")
+                        field(RDLocalization.string("localizable.nova.analysis.field.category", table: .localizable, fallback: "Kategori"), $category, id: "category")
+                        area(RDLocalization.string("localizable.nova.analysis.field.body", table: .localizable, fallback: "Açıklama"), $body_, id: "body")
+                        area(RDLocalization.string("localizable.nova.analysis.field.measure", table: .localizable, fallback: "Önlem"), $measure, id: "measure")
+                        area(RDLocalization.string("localizable.nova.analysis.field.references", table: .localizable, fallback: "Mevzuat"), $references, id: "references")
+                    }
+                }
+                NovaRiskScoreEditor(score: $score, allowsClearing: false)
+                NovaText(text: RDLocalization.string("localizable.nova.analysis.edit.hint", table: .localizable,
+                    fallback: "Değişiklikleriniz bulguya işlenir; skoru yeniden girerseniz bandı sunucu hesaplar."), style: .metaQuiet)
+                if let error { NovaText(text: error, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme)) }
+                NovaButton(label: RDLocalization.string("localizable.nova.analysis.edit.save", table: .localizable, fallback: "Değişiklikleri kaydet"),
+                    symbol: "checkmark", isEnabled: !busy && !title.trimmingCharacters(in: .whitespaces).isEmpty,
+                    isLoading: busy) { Task { await submit() } }
+                    .accessibilityIdentifier("analysis.item.save")
+                NovaButton(label: RDLocalization.string("localizable.nova.analysis.item.cancel", table: .localizable, fallback: "Vazgeç"),
+                    symbol: "xmark", variant: .surface, isEnabled: !busy) { dismiss() }
+                    .accessibilityIdentifier("analysis.item.cancel")
+            }.padding(16).novaPopupContentSize()
+        }
+        .onAppear {
+            guard !loaded else { return }
+            loaded = true
+            title = item.title
+            category = item.category ?? ""
+            body_ = item.body
+            measure = item.measure ?? ""
+            references = item.references ?? ""
+            score = NovaRiskScoreInput(method: method)
         }
     }
 
@@ -224,6 +348,39 @@ struct NovaAnalysisItemSheet: View {
                 fallback: "Bulgu güncellenemedi. Aynı işlemi tekrar deneyin.")
         }
         busy = false
+    }
+}
+
+/// Deleting one finding is its own step, and it says what will be lost before
+/// it asks for the press that does it.
+struct NovaAnalysisDeleteSheet: View {
+    let item: NovaAnalysisItem
+    let remove: () async throws -> Void
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.dismiss) private var dismiss
+    @State private var busy = false
+    @State private var error: String?
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 11) {
+                NovaText(text: RDLocalization.string("localizable.nova.analysis.item.delete", table: .localizable, fallback: "Bulguyu sil"), style: .sheetTitle)
+                NovaCard(padding: 13, tint: NovaColorToken.statusDangerBg.color(in: scheme)) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        NovaText(text: item.title, style: .cardTitle, color: NovaColorToken.statusDangerInk.color(in: scheme))
+                        NovaText(text: RDLocalization.string("localizable.nova.analysis.item.delete.confirm", table: .localizable,
+                            fallback: "Bu bulgu analizden kalıcı olarak silinecek."), style: .metaQuiet,
+                            color: NovaColorToken.statusDangerInk.color(in: scheme))
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                }
+                if let error { NovaText(text: error, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme)) }
+                NovaButton(label: RDLocalization.string("localizable.nova.analysis.item.delete.yes", table: .localizable, fallback: "Evet, sil"),
+                    symbol: "trash", variant: .danger, isEnabled: !busy, isLoading: busy) { Task { await drop() } }
+                    .accessibilityIdentifier("analysis.item.delete.confirm")
+                NovaButton(label: RDLocalization.string("localizable.nova.analysis.item.cancel", table: .localizable, fallback: "Vazgeç"),
+                    symbol: "xmark", variant: .surface, isEnabled: !busy) { dismiss() }
+            }.padding(16).novaPopupContentSize()
+        }
     }
 
     private func drop() async {
@@ -350,6 +507,9 @@ struct NovaRiskScoreEditor: View {
 struct NovaAnalysisFileSheet: View {
     let items: [NovaAnalysisItem]
     let section: NovaAnalysisSectionKind
+    /// The method the expert is reading the analysis with. The band that
+    /// travels with a scored item is that method's band, never the other's.
+    let method: NovaRiskMethod
     let loadWorkplaces: () async throws -> [NovaNonconformityWorkplace]
     let file: (NovaAnalysisFileRequest) async -> NovaFindingOutcome
     let onFinished: () -> Void
@@ -367,7 +527,7 @@ struct NovaAnalysisFileSheet: View {
     /// An unscored item, or one whose band cannot be read, needs a severity
     /// from a person before it can be filed at all.
     private func needsSeverity(_ item: NovaAnalysisItem) -> Bool {
-        !section.isScored || item.band == nil || item.isUnreadableBand
+        !section.isScored || item.band(method) == nil || item.isUnreadableBand(method)
     }
     private func isReady(_ item: NovaAnalysisItem) -> Bool {
         !needsSeverity(item) || severity[item.id] != nil
@@ -376,7 +536,7 @@ struct NovaAnalysisFileSheet: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 11) {
                 NovaText(text: RDLocalization.string("localizable.nova.analysis.file.title", table: .localizable, fallback: "Firmaya aktar"), style: .sheetTitle)
                 NovaHelpHint(text: RDLocalization.string("localizable.nova.analysis.file.hint", table: .localizable,
                     fallback: "Analiz kaydı olduğu gibi kalır. Seçtikleriniz için firmada ayrı kayıt açılır."))
@@ -385,7 +545,7 @@ struct NovaAnalysisFileSheet: View {
                 ForEach(items) { item in row(item) }
                 if let error { NovaText(text: error, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme)) }
                 footer
-            }.padding(20).novaPopupContentSize()
+            }.padding(16).novaPopupContentSize()
         }
         .task {
             do { workplaces = try await loadWorkplaces(); workplace = workplaces.first?.id }
@@ -437,7 +597,7 @@ struct NovaAnalysisFileSheet: View {
     }
 
     private func row(_ item: NovaAnalysisItem) -> some View {
-        NovaCard(padding: 14) {
+        NovaCard(padding: 13) {
             VStack(alignment: .leading, spacing: 8) {
                 NovaText(text: item.title, style: .cardTitle)
                 if needsSeverity(item) {
@@ -453,7 +613,7 @@ struct NovaAnalysisFileSheet: View {
                         }
                     }.pickerStyle(.segmented).disabled(running)
                         .accessibilityIdentifier("analysis.file.severity.\(item.id.uuidString.lowercased())")
-                } else if let band = item.band {
+                } else if let band = item.band(method) {
                     NovaStatusPill(label: NovaNonconformityWords.band(band), status: NovaNonconformityWords.tone(band))
                 }
                 if let outcome = outcomes[item.id] { outcomeLine(outcome) }
@@ -496,7 +656,9 @@ struct NovaAnalysisFileSheet: View {
         running = true
         for item in ready {
             let outcome = await file(.init(item: item, section: section, workplaceID: target,
-                recordKind: section.isScored ? .nonconformity : kind, severity: severity[item.id]))
+                recordKind: section.isScored ? .nonconformity : kind,
+                band: section.isScored ? item.band(method) : nil,
+                severity: severity[item.id]))
             outcomes[item.id] = outcome
             record(item.id, outcome)
         }
@@ -509,10 +671,13 @@ struct NovaAnalysisFileSheet: View {
 /// analysis belongs to.
 struct NovaAnalysisReportSheet: View {
     let data: NovaAnalysisDetailData
+    /// The method the detail screen is being read with; the report opens on it.
+    var method: NovaRiskMethod = .fineKinney
+    var selectedCount = 0
     let generate: (NovaAnalysisReportRequest) async throws -> Void
     @Environment(\.colorScheme) private var scheme
-    @State private var format: NovaAnalysisReportFormat = .pdf
-    @State private var method: NovaRiskMethod = .fineKinney
+    @State private var format: NovaAnalysisReportFormat?
+    @State private var chosenMethod: NovaRiskMethod = .fineKinney
     @State private var attach = true
     @State private var running = false
     @State private var error: String?
@@ -520,45 +685,105 @@ struct NovaAnalysisReportSheet: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                NovaText(text: RDLocalization.string("localizable.nova.analysis.report.title", table: .localizable, fallback: "Rapor oluştur"), style: .sheetTitle)
-                NovaHelpHint(text: RDLocalization.string("localizable.nova.analysis.report.hint", table: .localizable,
-                    fallback: "Rapor arşivinize kaydedilir. Firma seçiliyse Analiz Raporu olarak o firmaya işlenir."))
-                NovaCard(padding: 14) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Picker("", selection: $format) {
-                            Text(verbatim: "PDF").tag(NovaAnalysisReportFormat.pdf)
-                            Text(verbatim: "Excel").tag(NovaAnalysisReportFormat.excel)
-                        }.pickerStyle(.segmented).accessibilityIdentifier("analysis.report.format")
-                        Picker("", selection: $method) {
-                            ForEach(NovaRiskMethod.allCases) { value in
-                                Text(verbatim: NovaNonconformityWords.method(value)).tag(value)
-                            }
-                        }.pickerStyle(.segmented).accessibilityIdentifier("analysis.report.method")
-                        if let name = data.companyName {
-                            Toggle(isOn: $attach) {
-                                NovaText(text: String(format: RDLocalization.string("localizable.nova.analysis.report.attach", table: .localizable,
-                                    fallback: "%@ firmasına işle"), name), style: .metaQuiet)
-                            }.accessibilityIdentifier("analysis.report.attach")
-                        } else {
-                            NovaText(text: RDLocalization.string("localizable.nova.analysis.report.no.company", table: .localizable,
-                                fallback: "Analiz bir firmaya bağlı değil; rapor yalnız arşivinize kaydedilir."), style: .metaQuiet)
-                        }
-                    }.frame(maxWidth: .infinity, alignment: .leading)
-                }
+            VStack(alignment: .leading, spacing: 11) {
+                heading
+                option(.pdf, symbol: "doc.text",
+                       title: RDLocalization.string("localizable.nova.analysis.report.pdf", table: .localizable, fallback: "Standart Rapor"),
+                       detail: RDLocalization.string("localizable.nova.analysis.report.pdf.detail", table: .localizable,
+                           fallback: "Analizin tüm bölümlerini içeren PDF dökümü."))
+                option(.excel, symbol: "tablecells",
+                       title: RDLocalization.string("localizable.nova.analysis.report.excel", table: .localizable, fallback: "Risk Analizi Tablosu"),
+                       detail: RDLocalization.string("localizable.nova.analysis.report.excel.detail", table: .localizable,
+                           fallback: "Bulguları seçtiğiniz metotla hesaplayan Excel tablosu."))
+                methodRow
+                companyRow
                 if let error { NovaText(text: error, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme)) }
-                NovaButton(label: RDLocalization.string("localizable.nova.analysis.report.run", table: .localizable, fallback: "Oluştur"),
-                    symbol: "doc.text", isEnabled: !running, isLoading: running) { Task { await run() } }
+                NovaButton(label: format == nil
+                    ? RDLocalization.string("localizable.nova.analysis.report.pick", table: .localizable, fallback: "Rapor türü seçin")
+                    : RDLocalization.string("localizable.nova.analysis.report.run", table: .localizable, fallback: "Oluştur"),
+                    symbol: "arrow.down.doc", isEnabled: !running && format != nil, isLoading: running) { Task { await run() } }
                     .accessibilityIdentifier("analysis.report.run")
-            }.padding(20).novaPopupContentSize()
+            }.padding(16).novaPopupContentSize()
         }
-        .onAppear { if !loaded { loaded = true; method = data.method } }
+        .onAppear { if !loaded { loaded = true; chosenMethod = method } }
+    }
+
+    private var heading: some View {
+        HStack(alignment: .top, spacing: 10) {
+            NovaIcon(symbol: "doc.text", size: 20)
+                .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+                .frame(width: 42, height: 42)
+                .background(NovaColorToken.statusSuccessBg.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
+            VStack(alignment: .leading, spacing: 3) {
+                NovaText(text: RDLocalization.string("localizable.nova.analysis.report.title", table: .localizable, fallback: "Rapor oluştur"), style: .sheetTitle)
+                NovaText(text: RDLocalization.string("localizable.nova.analysis.report.hint", table: .localizable,
+                    fallback: "Rapor arşivinize kaydedilir. Firma seçiliyse Analiz Raporu olarak o firmaya işlenir."),
+                    style: .metaQuiet)
+                if selectedCount > 0 {
+                    NovaText(text: String(format: RDLocalization.string("localizable.nova.analysis.report.selected", table: .localizable,
+                        fallback: "%d kayıt seçili"), selectedCount), style: .micro,
+                        color: NovaColorToken.textTertiary.color(in: scheme))
+                }
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func option(_ value: NovaAnalysisReportFormat, symbol: String, title: String, detail: String) -> some View {
+        let isOn = format == value
+        return Button { format = value } label: {
+            HStack(alignment: .top, spacing: 11) {
+                Image(systemName: symbol).font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.textSecondary.color(in: scheme))
+                    .frame(width: 42, height: 42)
+                    .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 13))
+                VStack(alignment: .leading, spacing: 3) {
+                    NovaText(text: title, style: .cardTitle)
+                    NovaText(text: detail, style: .metaQuiet)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: isOn ? "checkmark.circle.fill" : "circle").font(.system(size: 19))
+                    .foregroundStyle(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.borderStrong.color(in: scheme))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading).padding(12)
+            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 18))
+            .overlay(RoundedRectangle(cornerRadius: 18)
+                .strokeBorder(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.border.color(in: scheme),
+                              lineWidth: isOn ? 1.5 : 1))
+        }.buttonStyle(.plain)
+            .accessibilityIdentifier("analysis.report.format.\(value.rawValue)")
+            .accessibilityAddTraits(isOn ? .isSelected : [])
+    }
+
+    private var methodRow: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            NovaText(text: RDLocalization.string("localizable.nova.risk.method", table: .localizable, fallback: "Risk metodu"), style: .label,
+                color: NovaColorToken.textTertiary.color(in: scheme))
+            NovaAnalysisMethodToggle(method: $chosenMethod)
+        }
+    }
+
+    @ViewBuilder private var companyRow: some View {
+        if let name = data.companyName {
+            NovaCard(padding: 12) {
+                Toggle(isOn: $attach) {
+                    NovaText(text: String(format: RDLocalization.string("localizable.nova.analysis.report.attach", table: .localizable,
+                        fallback: "%@ firmasına işle"), name), style: .meta)
+                }.accessibilityIdentifier("analysis.report.attach")
+            }
+        } else {
+            NovaCard(padding: 12) {
+                NovaText(text: RDLocalization.string("localizable.nova.analysis.report.no.company", table: .localizable,
+                    fallback: "Analiz bir firmaya bağlı değil; rapor yalnız arşivinize kaydedilir."), style: .metaQuiet)
+            }
+        }
     }
 
     private func run() async {
+        guard let format else { return }
         running = true; error = nil
         do {
-            try await generate(.init(analysisID: data.analysisID, format: format, method: method,
+            try await generate(.init(analysisID: data.analysisID, format: format, method: chosenMethod,
                 companyID: attach ? data.companyID : nil))
         } catch {
             // The server owns the report quota; its refusal is shown as it is.
@@ -582,7 +807,7 @@ struct NovaAnalysisCompanySheet: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 11) {
                 NovaText(text: RDLocalization.string("localizable.nova.analysis.assign.title", table: .localizable, fallback: "Firmaya ata"), style: .sheetTitle)
                 if companies.isEmpty && error == nil {
                     NovaCard(padding: 14) {
@@ -611,7 +836,7 @@ struct NovaAnalysisCompanySheet: View {
                 NovaButton(label: RDLocalization.string("localizable.nova.analysis.assign.run", table: .localizable, fallback: "Ata"),
                     symbol: "checkmark", isEnabled: !running && selected != nil, isLoading: running) { Task { await run() } }
                     .accessibilityIdentifier("analysis.assign.run")
-            }.padding(20).novaPopupContentSize()
+            }.padding(16).novaPopupContentSize()
         }
         .task {
             do { companies = try await load() }

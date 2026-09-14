@@ -18,6 +18,7 @@ struct NovaPilotReviewHarness: View {
     @State private var create = false
     @State private var navigation = NovaNavigationState(epoch: "review-only", available: [.companies, .findings, .newFinding, .analyses, .newAnalysis])
     @State private var draft = NovaAnalysisIntakeDraft()
+    @State private var showingReviewReports = false
     @State private var reviewImages: [UIImage] = []
     @State private var reviewRecord: NovaNonconformityEntry?
     @State private var showingReviewDetail = false
@@ -91,10 +92,15 @@ struct NovaPilotReviewHarness: View {
                 }
         case .analyses:
             NovaAnalysisListScreen(load: { reviewSummaries }, thumbnail: { _ in Self.fixturePhoto },
-                onOpen: { _ in showingReviewDetail = true }, onBack: {})
+                onOpen: { _ in showingReviewDetail = true }, onBack: {},
+                onReports: { showingReviewReports = true })
                 .fullScreenCover(isPresented: $showingReviewDetail) {
                     NovaAnalysisDetailScreen(analysisID: Self.analysis, client: reviewDetailClient,
                         onBack: { showingReviewDetail = false })
+                }
+                .fullScreenCover(isPresented: $showingReviewReports) {
+                    NovaAnalysisReportsScreen(load: { reviewReports },
+                        onBack: { showingReviewReports = false })
                 }
         case .newAnalysis:
             NovaPhotoIntakeScreen(images: $reviewImages, onStart: { showingIntake = true }, onBack: {})
@@ -168,6 +174,16 @@ struct NovaPilotReviewHarness: View {
          .init(id: Self.employee, title: "Depo kontrolü", createdOn: "13 Eylül 2026 · 16:05",
                companyName: summary.name, findingCount: 5, photoCount: 1, sectorLabel: "Depo / Lojistik", highestBand: "medium")]
     }
+    private var reviewReports: [NovaAnalysisReportEntry] {
+        [.init(id: UUID(), title: "Saha turu · Analiz Raporu", fileName: "saha-turu.pdf",
+               createdOn: "14 Eylül 2026 · 10:24", companyName: summary.name, format: "pdf",
+               methodLabel: "Fine-Kinney", kindLabel: "analysis", fileSize: 284_000,
+               analysisID: Self.analysis, createdAt: nil),
+         .init(id: UUID(), title: "Depo kontrolü · Risk Tablosu", fileName: "depo-risk.xlsx",
+               createdOn: "13 Eylül 2026 · 16:09", companyName: nil, format: "xlsx",
+               methodLabel: "5×5 Matris", kindLabel: "risk_table", fileSize: 41_000,
+               analysisID: nil, createdAt: nil)]
+    }
     private var reviewDetailClient: NovaAnalysisDetailClient {
         .init(load: { reviewDetail }, photos: { [Self.fixturePhoto] }, companies: { reviewCompanies },
               assign: { _ in reviewAssigned = true }, workplaces: { _ in reviewWorkplaces },
@@ -178,35 +194,58 @@ struct NovaPilotReviewHarness: View {
     /// one unscored section, so both refusals can be seen in review.
     private var reviewDetail: NovaAnalysisDetailData {
         let risk = NovaAnalysisSection(kind: .riskAnalysis, items: [
-            .init(id: UUID(), ordinal: 1, title: "Korkuluk eksik", category: "Yüksekte çalışma",
-                  body: "Platform kenarında korkuluk yok.", measure: "Korkuluk montajı yapılacak.",
-                  references: "6331 sayılı Kanun md.4", band: "high", score: 270),
-            .init(id: UUID(), ordinal: 2, title: "Pano önü kapalı", category: "Elektrik",
-                  body: "Elektrik panosunun önü malzeme ile kapatılmış.", measure: "Pano önü boşaltılacak.",
-                  references: nil, band: "critical", score: 600),
-            .init(id: UUID(), ordinal: 3, title: "Okunamayan bulgu", category: nil,
-                  body: "Bandı hesaplanamadı.", measure: nil, references: nil, band: "unknown", score: nil),
+            scored(1, "Korkuluk eksik", "Yüksekte çalışma", "Platform kenarında korkuluk yok.",
+                   "Korkuluk montajı yapılacak.", "6331 sayılı Kanun md.4", band: "high", score: 270,
+                   factors: [6, 3, 15], rootCause: "Kenar koruması işe başlamadan tamamlanmamış."),
+            scored(2, "Pano önü kapalı", "Elektrik", "Elektrik panosunun önü malzeme ile kapatılmış.",
+                   "Pano önü boşaltılacak.", nil, band: "critical", score: 600, factors: [10, 6, 10],
+                   rootCause: nil),
+            // Deliberately unreadable: the screen must refuse to map it.
+            scored(3, "Okunamayan bulgu", nil, "Bandı hesaplanamadı.", nil, nil,
+                   band: "unknown", score: nil, factors: [], rootCause: nil),
         ], isTeaser: false)
         let expert = NovaAnalysisSection(kind: .expertRecommendations, items: [
-            .init(id: UUID(), ordinal: 1, title: "Saha turu sıklığı artırılmalı", category: nil,
-                  body: "Haftalık tur önerilir.", measure: nil, references: nil, band: nil, score: nil),
-            .init(id: UUID(), ordinal: 2, title: "Acil çıkış tatbikatı", category: nil,
-                  body: "Yıllık tatbikat planlanmalı.", measure: nil, references: nil, band: nil, score: nil),
+            unscored(1, "Saha turu sıklığı artırılmalı", "Haftalık tur önerilir.", category: nil, audience: nil),
+            unscored(2, "Acil çıkış tatbikatı", "Yıllık tatbikat planlanmalı.", category: nil, audience: nil),
         ], isTeaser: false)
         let training = NovaAnalysisSection(kind: .trainingRecommendations, items: [
-            .init(id: UUID(), ordinal: 1, title: "Yüksekte çalışma eğitimi", category: nil,
-                  body: "16 saat · temel", measure: nil, references: nil, band: nil, score: nil),
+            unscored(1, "Yüksekte çalışma eğitimi", "Açık kenar ve düşmeye karşı korunma uygulamalı işlenir.",
+                     category: "Göreve özgü uygulamalı eğitim", audience: "Tüm çalışanlar"),
         ], isTeaser: true)
         let notebook = NovaAnalysisSection(kind: .approvedNotebook, items: [
-            .init(id: UUID(), ordinal: 1, title: "Onaylı defter kaydı", category: nil,
-                  body: "Tespit edilen eksiklikler işverene bildirilmiştir.", measure: nil,
-                  references: nil, band: nil, score: nil),
+            unscored(1, "Onaylı defter kaydı", "Tespit edilen eksiklikler işverene bildirilmiştir.",
+                     category: nil, audience: nil),
         ], isTeaser: false)
         return .init(analysisID: Self.analysis, title: "Saha turu · 2 fotoğraf",
             createdOn: "14 Eylül 2026 · 10:20", methodLabel: "Fine-Kinney", method: .fineKinney,
             companyID: reviewAssigned ? Self.company : nil,
             companyName: reviewAssigned ? summary.name : nil, sections: [risk, expert, training, notebook],
             isProjectionMissing: false)
+    }
+    /// A synthetic scored finding. The two methods carry their own numbers so
+    /// the toggle on the detail screen has something real to switch between.
+    private func scored(_ ordinal: Int, _ title: String, _ category: String?, _ body: String,
+                        _ measure: String?, _ references: String?, band: String, score: Double?,
+                        factors: [Double], rootCause: String?) -> NovaAnalysisItem {
+        var item = NovaAnalysisItem(id: UUID(), ordinal: ordinal, title: title, category: category,
+            body: body, measure: measure, references: references)
+        item.rootCause = rootCause
+        item.photoIndices = [1]
+        item.fineKinney = .init(band: band, value: score, factors: factors.count == 3
+            ? [.init(label: "O", value: factors[0]), .init(label: "F", value: factors[1]),
+               .init(label: "Ş", value: factors[2])] : [])
+        item.matrix = .init(band: band, value: score.map { _ in 20 },
+            factors: factors.isEmpty ? [] : [.init(label: "O", value: 4), .init(label: "Ş", value: 5)])
+        return item
+    }
+
+    private func unscored(_ ordinal: Int, _ title: String, _ body: String,
+                          category: String?, audience: String?) -> NovaAnalysisItem {
+        var item = NovaAnalysisItem(id: UUID(), ordinal: ordinal, title: title, category: category,
+            body: body, measure: nil, references: nil)
+        item.audience = audience
+        item.photoIndices = [1]
+        return item
     }
 }
 #endif

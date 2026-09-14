@@ -27,7 +27,7 @@ enum NovaAnalysisWorkspace {
     /// from the pilot list. An id we cannot name stays unnamed rather than
     /// being shown as if it had no company.
     static func summaries(identity: NovaSessionIdentity, method: RiskMethod,
-                          limit: Int = 30) async throws -> [NovaAnalysisSummary] {
+                          limit: Int = 50) async throws -> [NovaAnalysisSummary] {
         let rows = try await AnalysisService.shared.listRecent(limit: limit)
         let companies = (try? await loadNovaPilotOverview(identity: identity)) ?? []
         let names = Dictionary(uniqueKeysWithValues: companies.map { ($0.id, $0.name) })
@@ -40,7 +40,47 @@ enum NovaAnalysisWorkspace {
                 photoCount: row.photoCount ?? 0,
                 sectorLabel: row.analysisSectorID?.label(),
                 // The band of the expert's own method, never the other one's.
-                highestBand: method == .fineKinney ? row.highestBandFK : row.highestBandM5)
+                highestBand: method == .fineKinney ? row.highestBandFK : row.highestBandM5,
+                focusLabel: focusLabel(row.canvas),
+                // The list only ever holds finished analyses, so this is the
+                // row's own status rather than a guess about one.
+                isReviewed: row.status == "completed",
+                createdAt: date(row.createdAt))
+        }
+    }
+
+    /// The first focus the analysis ran under, as the product names it.
+    private static func focusLabel(_ canvas: String) -> String? {
+        canvas.split(separator: ",").map(String.init)
+            .compactMap { id in AnalysisCanvas.all.first { $0.id == id.trimmingCharacters(in: .whitespaces) }?.title }
+            .first
+    }
+
+    static func date(_ value: String?) -> Date? {
+        guard let value else { return nil }
+        return ISO8601DateFormatter.novaFractional.date(from: value)
+            ?? ISO8601DateFormatter.novaPlain.date(from: value)
+    }
+
+    /// The reports the account produced from photo analyses. The archive is
+    /// the product's own; nothing is recomputed from the analyses here.
+    static func reports(identity: NovaSessionIdentity, limit: Int = 50) async throws -> [NovaAnalysisReportEntry] {
+        let rows = try await AnalysisService.shared.listReports(limit: limit, photoAnalysesOnly: true)
+        let companies = (try? await loadNovaPilotOverview(identity: identity)) ?? []
+        let names = Dictionary(uniqueKeysWithValues: companies.map { ($0.id, $0.name) })
+        return rows.map { row in
+            let method = RiskMethod(rawValue: row.method)
+            return NovaAnalysisReportEntry(id: row.id, title: row.title, fileName: row.fileName,
+                createdOn: day(row.createdAt),
+                // A company we cannot name is still a company: the snapshot the
+                // archive kept answers it when the pilot list does not.
+                companyName: row.companyID.flatMap { names[$0] } ?? row.companySnapshot?.name,
+                format: row.format ?? "pdf",
+                methodLabel: method?.label ?? row.method,
+                kindLabel: row.kind,
+                fileSize: row.fileSize,
+                analysisID: row.analysisID,
+                createdAt: date(row.createdAt))
         }
     }
 
@@ -152,7 +192,7 @@ enum NovaAnalysisWorkspace {
         let hub = try? await AnalysisResultHubService.shared.loadWhenReady(analysisID: analysisID, language: .current)
         let companies = (try? await loadNovaPilotOverview(identity: identity)) ?? []
         let name = bundle.analysis.companyID.flatMap { id in companies.first { $0.id == id }?.name }
-        let sections = self.sections(hub: hub, bundle: bundle, method: method)
+        let sections = self.sections(hub: hub, bundle: bundle)
         let focuses = bundle.analysis.canvas.split(separator: ",").map(String.init)
             .compactMap { id in AnalysisCanvas.all.first { $0.id == id.trimmingCharacters(in: .whitespaces) }?.title }
         return .init(analysisID: analysisID, title: bundle.analysis.title, createdOn: day(bundle.analysis.createdAt),
@@ -167,37 +207,93 @@ enum NovaAnalysisWorkspace {
     /// The hub is the product's own projection. When it is not available the
     /// scored findings still come from the analysis itself, and the three
     /// judgement sections are shown as empty rather than invented.
-    private static func sections(hub: AnalysisResultHubResponse?, bundle: AnalysisResultBundle,
-                                 method: RiskMethod) -> [NovaAnalysisSection] {
+    private static func sections(hub: AnalysisResultHubResponse?, bundle: AnalysisResultBundle) -> [NovaAnalysisSection] {
         NovaAnalysisSectionKind.allCases.map { kind in
             if let section = hub?.sections.first(where: { $0.id.rawValue == kind.rawValue }) {
                 return .init(kind: kind, items: section.items.enumerated().map { at, item in
-                    self.item(item, at: at, kind: kind, method: method)
+                    self.item(item, at: at, kind: kind)
                 }, isTeaser: section.access == .teaser)
             }
             guard kind == .riskAnalysis else { return .init(kind: kind, items: [], isTeaser: false) }
             return .init(kind: kind, items: bundle.findings.sorted { $0.ordinal < $1.ordinal }.map { finding in
-                .init(id: finding.id, ordinal: finding.ordinal, title: finding.title, category: finding.category,
-                      body: finding.description ?? "", measure: finding.recommendedAction,
-                      references: finding.referencesText,
-                      band: method == .fineKinney ? finding.fkBand : finding.m5Band,
-                      score: method == .fineKinney ? finding.fkScore : finding.m5Score.map(Double.init))
+                var item = NovaAnalysisItem(id: finding.id, ordinal: finding.ordinal, title: finding.title,
+                    category: finding.category, body: finding.description ?? "",
+                    measure: finding.recommendedAction, references: finding.referencesText)
+                item.rootCause = finding.rootCauseText
+                item.measures = measures(finding.recommendedMeasures)
+                item.photoIndices = finding.sourcePhotoIndices ?? []
+                item.fineKinney = fineKinney(band: finding.fkBand, score: finding.fkScore,
+                    probability: finding.fkProbability, frequency: finding.fkFrequency, severity: finding.fkSeverity)
+                item.matrix = matrix(band: finding.m5Band, score: finding.m5Score,
+                    probability: finding.m5Probability, severity: finding.m5Severity)
+                return item
             }, isTeaser: false)
         }
     }
 
     private static func item(_ value: AnalysisResultHubItem, at index: Int,
-                             kind: NovaAnalysisSectionKind, method: RiskMethod) -> NovaAnalysisItem {
-        // Only the risk-analysis section carries a band. The judgement sections
-        // arrive unscored and must not be shown as if they had one.
-        let band = kind.isScored ? (method == .fineKinney ? value.fkBand : value.m5Band) : nil
-        let score = kind.isScored ? (method == .fineKinney ? value.fkScore : value.m5Score.map(Double.init)) : nil
-        return .init(id: value.id, ordinal: value.ordinal ?? value.displayOrder ?? (index + 1),
+                             kind: NovaAnalysisSectionKind) -> NovaAnalysisItem {
+        var item = NovaAnalysisItem(id: value.id, ordinal: value.ordinal ?? value.displayOrder ?? (index + 1),
             title: value.displayTitle, category: value.categoryLabel ?? value.category,
             body: value.displayBody.isEmpty ? (value.text ?? "") : value.displayBody,
             measure: value.recommendedAction ?? value.recommendationText,
-            references: value.referencesText ?? value.referenceText,
-            band: band, score: score)
+            references: value.referencesText ?? value.referenceText)
+        item.rootCause = value.rootCauseText
+        item.measures = measures(value.recommendedMeasures)
+        item.audience = value.audienceLabel
+        item.durationLabel = value.durationLabel
+        item.durationValue = value.durationValue
+        item.durationNote = value.durationNote
+        item.photoIndices = value.sourcePhotoIndices ?? []
+        item.reaction = reaction(value.userReaction)
+        // Only the risk-analysis section carries a band. The judgement sections
+        // arrive unscored and must not be shown as if they had one.
+        if kind.isScored {
+            item.fineKinney = fineKinney(band: value.fkBand, score: value.fkScore,
+                probability: value.fkProbability, frequency: value.fkFrequency, severity: value.fkSeverity)
+            item.matrix = matrix(band: value.m5Band, score: value.m5Score,
+                probability: value.m5Probability, severity: value.m5Severity)
+        }
+        return item
+    }
+
+    private static func reaction(_ value: AnalysisItemReaction?) -> NovaAnalysisReaction {
+        switch value {
+        case .like: return .like
+        case .dislike: return .dislike
+        default: return .none
+        }
+    }
+
+    private static func measures(_ values: [FindingMeasure]?) -> [NovaAnalysisMeasure] {
+        (values ?? []).map { measure in
+            .init(id: measure.id, title: measure.displayTitle, text: measure.text,
+                  isPreventive: measure.kind == .preventive)
+        }
+    }
+
+    /// The factors are shown only when the analysis recorded all of them, so a
+    /// product the screen prints can never be missing one of its terms.
+    private static func fineKinney(band: String?, score: Double?, probability: Double?,
+                                   frequency: Double?, severity: Double?) -> NovaAnalysisScore? {
+        guard band != nil || score != nil else { return nil }
+        var factors: [NovaAnalysisScoreFactor] = []
+        if let probability, let frequency, let severity {
+            factors = [.init(label: RDLocalization.string("localizable.nova.risk.factor.probability", table: .localizable, fallback: "O"), value: probability),
+                       .init(label: RDLocalization.string("localizable.nova.risk.factor.frequency", table: .localizable, fallback: "F"), value: frequency),
+                       .init(label: RDLocalization.string("localizable.nova.risk.factor.severity", table: .localizable, fallback: "Ş"), value: severity)]
+        }
+        return .init(band: band, value: score, factors: factors)
+    }
+
+    private static func matrix(band: String?, score: Int?, probability: Int?, severity: Int?) -> NovaAnalysisScore? {
+        guard band != nil || score != nil else { return nil }
+        var factors: [NovaAnalysisScoreFactor] = []
+        if let probability, let severity {
+            factors = [.init(label: RDLocalization.string("localizable.nova.risk.factor.probability", table: .localizable, fallback: "O"), value: Double(probability)),
+                       .init(label: RDLocalization.string("localizable.nova.risk.factor.severity", table: .localizable, fallback: "Ş"), value: Double(severity))]
+        }
+        return .init(band: band, value: score.map(Double.init), factors: factors)
     }
 
     static func assign(analysisID: UUID, companyID: UUID) async throws {
