@@ -13,6 +13,7 @@ const NOVA_FILES=[
   'App/DesignSystem/ISG/NovaComponents.swift','App/DesignSystem/ISG/NovaDirectory.swift',
   'App/DesignSystem/ISG/NovaDirectoryScreens.swift','App/DesignSystem/ISG/NovaExpertShell.swift',
   'App/DesignSystem/ISG/NovaNavigation.swift','App/DesignSystem/ISG/NovaPersonnel.swift',
+  'App/DesignSystem/ISG/NovaNonconformity.swift','App/DesignSystem/ISG/NovaNonconformityScreens.swift',
   'App/DesignSystem/ISG/NovaPersonnelScreens.swift','App/DesignSystem/ISG/NovaSessionHost.swift',
   'App/DesignSystem/ISG/NovaTokens.swift','App/DesignSystem/ISG/NovaWorkspaceCapability.swift',
   'App/Views/Components/NotebookDestination.swift','App/Views/Components/NovaCompanyManagementGate.swift',
@@ -42,6 +43,35 @@ function shippedLines(source){
   });
   return out;
 }
+// A localized call often wraps onto the next line, so the fallback has to be
+// blanked across the whole file rather than line by line. Newlines are kept so
+// every offset still maps back to its original line number.
+function withoutLocalizedCalls(source){
+  const out=source.split(''); const marker='RDLocalization.string(';
+  let at=source.indexOf(marker);
+  while(at>=0){
+    let depth=0, index=at+marker.length-1;
+    for(;index<source.length;index++){
+      const character=source[index];
+      if(character==='(')depth++;
+      else if(character===')'){depth--; if(depth===0)break;}
+    }
+    for(let blank=at;blank<=Math.min(index,source.length-1);blank++){
+      if(out[blank]!=='\n')out[blank]=' ';
+    }
+    at=source.indexOf(marker,index+1);
+  }
+  return out.join('');
+}
+function shippedSource(source){
+  const lines=withoutLocalizedCalls(source).split('\n'); const out=[]; let debug=0;
+  lines.forEach((line,index)=>{
+    if(/^\s*#if DEBUG/.test(line))debug++;
+    else if(/^\s*#endif/.test(line)&&debug>0)debug--;
+    else if(debug===0)out.push({line,number:index+1});
+  });
+  return out;
+}
 
 test('every NOVA localization key resolves in a catalog with tr and en',()=>{
   const keys=catalogKeys(); const seen=new Set();
@@ -62,9 +92,8 @@ test('every NOVA localization key resolves in a catalog with tr and en',()=>{
 test('no shipped NOVA copy is left as a raw literal',()=>{
   const offenders=[];
   for(const file of NOVA_FILES){
-    for(const {line,number} of shippedLines(read(file))){
-      // Drop the localized calls first; what is left must not be user copy.
-      const bare=line.replace(/RDLocalization\.string\([^)]*\)/g,'§');
+    for(const {line,number} of shippedSource(read(file))){
+      const bare=line;
       for(const match of bare.matchAll(/"((?:[^"\\]|\\.)*)"/g)){
         const value=match[1];
         if(!value||RESOURCE.test(value))continue;

@@ -9470,6 +9470,24 @@
         }
       }
     },
+    "localizable.nova.navigation.uygunsuzluklar": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nonconformities"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygunsuzluklar"
+          }
+        }
+      }
+    },
     "localizable.nova.navigation.yeni.uygunsuzluk.0f9172a3": {
       "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:22; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -9502,6 +9520,780 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ziyaret Ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.choose.manual.action": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to the form"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forma geç"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.choose.manual.detail": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You write the title, the workplace and the severity yourself."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlık, işyeri ve önem derecesini kendiniz yazarsınız."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.choose.manual.title": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter it yourself"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elle gir"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.choose.photo.action": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a photo"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf seç"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.choose.photo.detail": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The existing analysis engine runs; the findings you choose become nonconformities."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mevcut analiz motoru çalışır; seçtiğiniz bulgulardan uygunsuzluk açılır."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.choose.photo.title": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyse a photo"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraftan analiz"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.choose.photo.unavailable": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo analysis is not wired to this screen yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf analizi bu ekrana henüz bağlanmadı."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.choose.prompt": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How would you like to start?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nasıl başlamak istersiniz?"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.empty": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No nonconformity records yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz uygunsuzluk kaydı yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.error.conflict": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record changed in the meantime. Refresh the list and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt bu sırada değişti. Listeyi yenileyip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.error.denied": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You do not have access to the nonconformity records of this company."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu firma için uygunsuzluk kaydına erişiminiz yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.error.list": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nonconformities could not be loaded. Check your connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygunsuzluklar yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.error.save": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record could not be opened. Check the information and retry the same operation."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt açılamadı. Bilgileri kontrol edip aynı işlemi tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.error.severity.unknown": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The finding's risk band could not be read. Choose the severity yourself."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulgunun risk bandı okunamadı. Önem derecesini kendiniz seçin."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.error.unavailable": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The nonconformity module is currently unavailable."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygunsuzluk modülü şu anda kullanılamıyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.error.validation": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The information sent was not accepted. Check the fields."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gönderilen bilgiler kabul edilmedi. Alanları kontrol edin."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.error.workplaces": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The workplace list could not be loaded. Try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri listesi alınamadı. Tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.field.severity": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Severity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önem derecesi"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.field.title": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Title"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlık"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.field.title.hint": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A short, clear title"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kısa ve açık bir başlık"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.field.workplace": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workplace"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.filter.all": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tümü"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.filter.closed": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapalı"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.filter.draft": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draft"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taslak"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.filter.open": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açık"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.from.analysis": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Came from a photo analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf analizinden geldi"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.loading": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading records"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlar yükleniyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.manual.save": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the nonconformity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygunsuzluğu aç"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.manual.title": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manual Nonconformity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elle Uygunsuzluk"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.new": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New Nonconformity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni Uygunsuzluk"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.read.only": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read only · new records cannot be opened"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salt okunur · yeni kayıt açılamıyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.severity.critical": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Critical"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kritik"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.severity.high": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "High"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yüksek"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.severity.low": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Low"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düşük"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.severity.medium": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medium"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orta"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.state.assigned": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assigned"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atandı"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.state.cancelled": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelled"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İptal edildi"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.state.closed": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapandı"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.state.draft": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draft"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taslak"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.state.in.progress": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In progress"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devam ediyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.state.open": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açık"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.state.pending": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Awaiting verification"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doğrulama bekliyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.state.reopened": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reopened"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeniden açıldı"
           }
         }
       }
@@ -10454,6 +11246,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Eğitim · —"
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.nonconformity.needs.company": {
+      "comment": "nova_manual; nonconformity screens; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A nonconformity belongs to a company. Choose one from Firmalar first."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygunsuzluk kaydı bir firmaya bağlıdır. Önce Firmalar'dan bir firma seçin."
           }
         }
       }

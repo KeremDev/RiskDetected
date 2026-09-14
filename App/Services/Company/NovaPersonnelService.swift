@@ -4,12 +4,16 @@ import Security
 /// JSON scalars preserve explicit SQL NULL arguments (Encodable optionals omit keys).
 enum PersonnelRPCValue: Encodable, Equatable {
     case string(String), number(Int64), bool(Bool), null
+    /// A jsonb argument. The server validates its keys against a per-action
+    /// allowlist, so this is a transport shape and never a free-form escape.
+    indirect case object([String: PersonnelRPCValue])
     func encode(to encoder: Encoder) throws {
         var c = encoder.singleValueContainer()
         switch self {
         case .string(let v): try c.encode(v)
         case .number(let v): try c.encode(v)
         case .bool(let v): try c.encode(v)
+        case .object(let v): try c.encode(v)
         case .null: try c.encodeNil()
         }
     }

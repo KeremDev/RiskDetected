@@ -37,7 +37,7 @@ struct NovaPilotRoot: View {
     @EnvironmentObject private var app: AppState
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var controller = NovaWorkspaceController()
-    @State private var navigation = NovaNavigationState(epoch: UUID().uuidString, available: [.companies, .newCompany])
+    @State private var navigation = NovaNavigationState(epoch: UUID().uuidString, available: [.companies, .newCompany, .findings, .newFinding])
     @State private var showingCreate = false
     @State private var notice: String?
     @State private var listRevision = UUID()
@@ -85,6 +85,10 @@ struct NovaPilotRoot: View {
                 }
             case .companies:
                 companies
+            case .findings:
+                nonconformities(startOnNew: false)
+            case .newFinding:
+                nonconformities(startOnNew: true)
             case .profile:
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
@@ -154,6 +158,35 @@ struct NovaPilotRoot: View {
                 }
             }
         }.padding(.horizontal, 20).padding(.bottom, 10)
+    }
+
+    /// Nonconformities live under a selected company: without one there is no
+    /// workplace to attach a record to, so the screen asks for the company first.
+    @ViewBuilder private func nonconformities(startOnNew: Bool) -> some View {
+        if ready, let scope = controller.scope {
+            NovaNonconformityDestination(scope: scope, client: nonconformityClient(scope),
+                onBack: { navigate(.home) }, canWrite: controller.canWrite,
+                onStartPhotoAnalysis: nil, startOnNew: startOnNew)
+                .id(scope.epoch)
+        } else {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    NovaText(text: NovaDestination.findings.title, style: .screenTitle)
+                    statusCard
+                    NovaText(text: RDLocalization.string("localizable.nova.pilot.nonconformity.needs.company", table: .localizable,
+                        fallback: "Uygunsuzluk kaydı bir firmaya bağlıdır. Önce Firmalar'dan bir firma seçin."))
+                    NovaButton(label: NovaDestination.companies.title, symbol: "building.2", variant: .surface) { navigate(.companies) }
+                        .accessibilityIdentifier("nonconformity.pick.company")
+                }.padding(20)
+            }
+        }
+    }
+
+    private func nonconformityClient(_ scope: NovaPersonnelScope) -> NovaNonconformityClient {
+        let service = NovaNonconformityService.live(currentScope: { controller.scope })
+        return .init(list: { try await service.list(scope, state: $0) },
+                     workplaces: { try await service.workplaces(scope) },
+                     open: { try await service.open(scope, intent: $0) })
     }
 
     @ViewBuilder private var companies: some View {
