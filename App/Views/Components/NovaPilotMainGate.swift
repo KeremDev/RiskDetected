@@ -126,6 +126,8 @@ struct NovaPilotRoot: View {
                 risk
             case .checklists:
                 checklists
+            case .emergencyPlans:
+                emergencyPlans
             case .profile:
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
@@ -227,6 +229,15 @@ struct NovaPilotRoot: View {
     @ViewBuilder private var checklists: some View {
         if ready {
             NovaPilotChecklistGate(identity: identity, canWrite: controller.canWrite,
+                onBack: { navigate(.home) })
+        } else {
+            NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
+        }
+    }
+
+    @ViewBuilder private var emergencyPlans: some View {
+        if ready {
+            NovaPilotEmergencyGate(identity: identity, canWrite: controller.canWrite,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)

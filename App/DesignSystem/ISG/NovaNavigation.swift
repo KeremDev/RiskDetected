@@ -21,6 +21,8 @@ enum NovaDestination: String, CaseIterable, Hashable {
     case riskAssessments
     /// P09: the expert's own question lists and the runs filled against them.
     case checklists
+    /// P10: the versioned emergency plan and the team frozen into it.
+    case emergencyPlans
     /// The analysis surfaces are their own menu entries: one lists what was
     /// analysed, the other starts a new one.
     case analyses, newAnalysis
@@ -30,6 +32,7 @@ enum NovaDestination: String, CaseIterable, Hashable {
         case .periodicChecks: return RDLocalization.string("localizable.nova.navigation.periodic.checks", table: .localizable, fallback: "Periyodik Kontroller")
         case .riskAssessments: return RDLocalization.string("localizable.nova.navigation.risk.assessments", table: .localizable, fallback: "Risk Değerlendirmesi")
         case .checklists: return RDLocalization.string("localizable.nova.navigation.checklists", table: .localizable, fallback: "Kontrol Listeleri")
+        case .emergencyPlans: return RDLocalization.string("localizable.nova.navigation.emergency.plans", table: .localizable, fallback: "Acil Durum Planları")
         case .home: return RDLocalization.string("localizable.nova.navigation.ana.sayfa.1fc29356", table: .localizable, fallback: "Ana Sayfa")
         case .newFinding: return RDLocalization.string("localizable.nova.navigation.uygunsuzluk.ekle", table: .localizable, fallback: "Uygunsuzluk Ekle")
         case .analyses: return RDLocalization.string("localizable.nova.navigation.analizlerim", table: .localizable, fallback: "Analizlerim")
@@ -57,6 +60,7 @@ enum NovaDestination: String, CaseIterable, Hashable {
         case .periodicChecks: return .home
         case .riskAssessments: return .home
         case .checklists: return .home
+        case .emergencyPlans: return .home
         case .home: return .home
         case .newFinding: return .findings
         case .analyses: return .findings
@@ -84,6 +88,7 @@ enum NovaDestination: String, CaseIterable, Hashable {
         case .periodicChecks: return "checkmark.shield"
         case .riskAssessments: return "shield.lefthalf.filled"
         case .checklists: return "checklist"
+        case .emergencyPlans: return "light.beacon.max"
         case .home: return "house"
         case .newFinding: return "exclamationmark.triangle"
         case .analyses: return "photo.on.rectangle.angled"
@@ -106,7 +111,7 @@ enum NovaDestination: String, CaseIterable, Hashable {
         }
     }
     // Historical route values remain decodable; removed product features are not offered.
-    static let drawer: [Self] = [.home, .findings, .analyses, .newAnalysis, .newFinding, .companies, .riskAssessments, .checklists, .periodicChecks, .documentChecklist, .documents, .statistics, .training, .reports, .reportArchive, .notifications]
+    static let drawer: [Self] = [.home, .findings, .analyses, .newAnalysis, .newFinding, .companies, .riskAssessments, .checklists, .emergencyPlans, .periodicChecks, .documentChecklist, .documents, .statistics, .training, .reports, .reportArchive, .notifications]
     static let quickAdd: [Self] = [.newCompany, .newAnalysis, .newFinding, .newDocument]
 }
 

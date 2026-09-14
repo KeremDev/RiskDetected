@@ -14185,6 +14185,1338 @@
         }
       }
     },
+    "localizable.nova.emergency.back": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.cancel": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.count": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d / %d plans"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d / %d plan"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.detail.basis": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basis: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dayanak: %@"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.detail.history": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version history"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sürüm geçmişi"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.detail.renew": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Publish a new version"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni sürüm yayımla"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.detail.team": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Team"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekip"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.detail.total": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d versions"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d sürüm"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.detail.versionteam": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This version's team (%d)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu sürümün ekibi (%d)"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.empty.body": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a company and publish the emergency plan for its workplace."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir firma seçip o işyeri için acil durum planını yayımlayın."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.empty.title": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No plans"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.error.conflict": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record changed elsewhere meanwhile. Refresh and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt bu sırada başka bir yerden değişti. Yenileyip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.error.denied": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No access to this record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kayda erişim yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.error.feature": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modules are not open yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modüller henüz açık değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.error.future": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The preparation date cannot be later than today."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hazırlanma tarihi bugünden ileri olamaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.error.module": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The emergency plans module is not open yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acil durum planları modülü henüz açık değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.error.plan": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This action needs a Plus or Pro subscription."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu işlem için Plus veya Pro aboneliği gerekiyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.error.role": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The team role was not recognised."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekip görevi tanınmadı."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.error.unavailable": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record could not be loaded. Check the connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt alınamadı. Bağlantıyı kontrol edip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.error.validation": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The entered details are incomplete or inconsistent."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Girilen bilgiler eksik veya birbiriyle uyumsuz."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.explain.due": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The validity date is inside the warning window."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçerlilik tarihi uyarı penceresinin içinde."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.explain.expired": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The validity date has passed."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçerlilik tarihi geçti."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.explain.never": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No plan has been published for this workplace."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu işyeri için yayımlanmış plan yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.explain.unknown": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A plan exists but no end date was written. No tracking is produced until one is entered."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan var ama geçerlilik bitişi yazılmamış. Tarih girilene kadar takip üretilmez."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.explain.valid": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The plan is in force."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan yürürlükte."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.filter.companies": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All companies"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm firmalar"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.filter.company": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.filter.state": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durum"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.filter.states": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All statuses"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm durumlar"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.form.addmember": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to the team"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekibe ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.form.basis": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dayanak"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.form.contact": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contact (optional)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İletişim (isteğe bağlı)"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.form.name": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full name"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ad soyad"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.form.new": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Publish a plan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan yayımla"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.form.pickplace": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a workplace"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri seçin"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.form.renew": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New version"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni sürüm"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.form.save": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Publish"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yayımla"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.form.scope": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scope"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapsam"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.form.team": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Team"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekip"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.form.teamempty": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At least one person is required."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En az bir kişi gerekli."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.form.workplace": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workplace"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.group.current": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güncel"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.group.current.footer": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in force"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yürürlükte"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.group.due": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Due soon"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yaklaşıyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.group.due.footer": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "approaching"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yaklaşan"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.group.expired": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expired"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süresi doldu"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.group.expired.footer": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "date passed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tarih geçti"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.group.untracked": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untracked"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takipsiz"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.group.untracked.footer": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "no end date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "süre yazılmamış"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.more": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show more"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha fazla göster"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.new": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Publish a plan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan yayımla"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.period.expert": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "the expert's decision"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "uzmanın kararı"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.period.note": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The product proposes no renewal period. The date you write is recorded as the expert's own decision."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ürün yenileme süresi önermez. Yazdığınız tarih uzmanın kendi kararı olarak kaydedilir."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.renewal.note": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A renewal opens a new version. The previous one stays on record with its own team, dates and scope."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yenileme yeni bir sürüm açar. Önceki sürüm kendi ekibi, tarihleri ve kapsamıyla kayıtta kalır."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.review.note": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A plan whose basis you did not write is marked for review. That mark cannot be cleared by hand."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dayanağını yazmadığınız plan gözden geçirilecek olarak işaretlenir. Bu işaret elle kaldırılamaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.role.coordinator": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coordinator"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koordinatör"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.role.evacuation": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evacuation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tahliye"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.role.fire": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fire"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yangın"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.role.firstaid": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First aid"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlk yardım"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.role.other": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diğer"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.row.prepared": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prepared"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hazırlanma"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.row.review": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basis not written · review it"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dayanağı yazılmamış · gözden geçirin"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.row.team": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Team"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekip"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.row.until": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valid until"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçerlilik"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.row.version": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sürüm"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.search": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search scope, workplace or company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapsam, işyeri veya firma ara"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.state.due": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Due soon"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yaklaşıyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.state.expired": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expired"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süresi doldu"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.state.never": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No plan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.state.unknown": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No end date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süre yazılmamış"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.state.valid": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In force"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yürürlükte"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.unset": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not set"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belirtilmedi"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.version.active": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In force"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yürürlükte"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.version.superseded": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Past"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçmiş"
+          }
+        }
+      }
+    },
     "localizable.nova.equipment.add.save": {
       "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -20463,6 +21795,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Eğitim ve Takip"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.emergency.plans": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emergency Plans"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acil Durum Planları"
           }
         }
       }
