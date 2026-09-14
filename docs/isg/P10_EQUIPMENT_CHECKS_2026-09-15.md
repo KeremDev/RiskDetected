@@ -238,3 +238,9 @@ anahtarları eklendikten sonra **yeniden derlemeden** bakıldığı için ekrand
 - Modül firma tamamlanma skoruna bağlanmadı.
 - Kontrol raporunun kendisi yalnızca Diğer Dosyalar arşivinden seçilebiliyor;
   bu ekrandan doğrudan dosya yükleme yok.
+
+## Canlı pilot
+
+14 Eylül 2026'da bu modül canlı projede açıldı. Canlı proje bu dosyadaki migration zincirini taşımıyor; açılış, kırpılmış bir pilot bundle ile yapıldı ve üç bilinçli sapma taşıyor. Ayrıntı, sapmalar, doğrulama ve kapatma yolu: [Canlı pilot kaydı](NOVA_EQUIPMENT_PILOT_2026-09-14.md).
+
+Buradaki geliştirme migration'ları (`20260915030000`, `20260915050000`, `20260915070000`) **değiştirilmedi**; pilot bundle onların canlıya uyarlanmış kopyasıdır ve `supabase/pilot-release/` altında ayrı durur.
