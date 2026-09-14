@@ -9019,6 +9019,42 @@
         }
       }
     },
+    "localizable.nova.analysis.summary.highest": {
+      "comment": "nova_analysis; compact risk summary; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Highest"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En yüksek"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.summary.scored": {
+      "comment": "nova_analysis; compact risk summary; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scored findings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skorlanan bulgular"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.tag.photo.index": {
       "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: %@; review: human_draft",
       "extractionState": "manual",
@@ -19189,6 +19225,24 @@
         }
       }
     },
+    "localizable.nova.navigation.risk.assessments": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Assessment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Değerlendirmesi"
+          }
+        }
+      }
+    },
     "localizable.nova.navigation.uygunsuzluk.ekle": {
       "comment": "nova_analysis; record board, folder tabs and menu routing; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -22915,6 +22969,582 @@
         }
       }
     },
+    "localizable.nova.risk.action.new": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start a new version"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni sürüm başlat"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.analysis.note": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A photo analysis can be used as a source; on its own it is not a risk assessment."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf analizi kaynak olarak kullanılabilir; tek başına risk değerlendirmesi sayılmaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.back": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.cancel": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.count": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d / %d records"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d / %d kayıt"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.draft.finalize": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Complete the draft"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taslağı tamamla"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.draft.note": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A draft is not the document. The version in force does not change until it is completed."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taslak belge değildir. Tamamlanana kadar yürürlükteki sürüm değişmez."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.draft.title": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open draft"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açık taslak"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.empty.body": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a workplace and start its risk assessment record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir işyeri seçip risk değerlendirmesi kaydını başlatın."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.empty.title": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No records"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.error.conflict": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record changed elsewhere meanwhile. Refresh and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt bu sırada başka bir yerden değişti. Yenileyip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.error.denied": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No access to this record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kayda erişim yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.error.draft": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This assessment already has an open draft. Complete it first."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu değerlendirmede zaten açık bir taslak var. Önce onu tamamlayın."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.error.finalized": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A completed version cannot be changed."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamamlanmış sürüm değiştirilemez."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.error.future": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The assessment date cannot be later than today."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Değerlendirme tarihi bugünden ileri olamaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.error.immutable": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The assessment date changes only on a full renewal."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Değerlendirme tarihi yalnızca tam yenilemede değişir."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.error.module": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The risk assessment module is not open yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk değerlendirmesi modülü henüz açık değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.error.plan": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This action needs a Plus or Pro subscription."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu işlem için Plus veya Pro aboneliği gerekiyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.error.rule": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The chosen rule is not published. You can set the period yourself."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçilen kural yayımlanmış değil. Süreyi kendiniz belirleyebilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.error.unavailable": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record could not be loaded. Check the connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt alınamadı. Bağlantıyı kontrol edip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.error.validation": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The entered details are incomplete or inconsistent."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Girilen bilgiler eksik veya birbiriyle uyumsuz."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.explain.due": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The validity date is inside the warning window."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçerlilik tarihi uyarı penceresinin içinde."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.explain.expired": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The validity date has passed."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçerlilik tarihi geçti."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.explain.never": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There is no completed risk assessment record for this workplace."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu işyeri için tamamlanmış bir risk değerlendirmesi kaydı yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.explain.unknown": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A document exists but no validity period is recorded. No date is produced until one is entered."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belge var ama geçerlilik süresi kayıtlı değil. Süre girilene kadar tarih üretilmez."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.explain.valid": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The document is in force."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belge yürürlükte."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.fact.assessment": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assessment date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Değerlendirme tarihi"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.fact.drift": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The source analysis changed after this document was prepared. The document was not changed."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaynak analiz bu belge hazırlandıktan sonra değişti. Belge değiştirilmedi."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.fact.period": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Period"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süre"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.fact.review": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This period is the expert's own decision; it is not presented as a legal requirement."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu süre uzmanın kendi kararıdır; mevzuat gereği olarak sunulmaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.fact.until": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valid until"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçerlilik"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.fact.version": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version in force"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yürürlükteki sürüm"
+          }
+        }
+      }
+    },
     "localizable.nova.risk.factor.frequency": {
       "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -22969,6 +23599,186 @@
         }
       }
     },
+    "localizable.nova.risk.filter.companies": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All companies"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm firmalar"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.filter.company": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.filter.state": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durum"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.filter.states": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All statuses"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm durumlar"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.finalize.norules": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There is no approved period catalogue. The period you enter is recorded as \"set by the expert\"."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onaylanmış bir süre kataloğu yok. Gireceğiniz süre \"uzman tarafından belirlenen\" olarak kaydedilir."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.finalize.note": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A completed version comes into force and cannot be changed again. The verification is your own declaration."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamamlanan sürüm yürürlüğe girer ve bir daha değiştirilemez. Doğrulama sizin beyanınızdır."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.finalize.save": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Complete"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamamla"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.finalize.source": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Period source"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süre kaynağı"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.finalize.title": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Complete the version"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sürümü tamamla"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.finalize.years": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Validity period (years)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçerlilik süresi (yıl)"
+          }
+        }
+      }
+    },
     "localizable.nova.risk.formula.fine.kinney": {
       "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -23019,6 +23829,384 @@
           "stringUnit": {
             "state": "translated",
             "value": "Frekans"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.group.current": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güncel"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.group.current.footer": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in force"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yürürlükte"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.group.due": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Due soon"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yaklaşıyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.group.due.footer": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "approaching"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yaklaşan"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.group.expired": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expired"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süresi doldu"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.group.expired.footer": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "date passed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tarih geçti"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.group.untracked": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untracked"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takipsiz"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.group.untracked.footer": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "no document"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "belge yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.history": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version history"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sürüm geçmişi"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.history.empty": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No versions yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz sürüm yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.impact.none": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No change"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Değişiklik yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.impact.reschedule": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To be rescheduled"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeniden planlanacak"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.impact.review": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To be reviewed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gözden geçirilecek"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.kind.full": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full renewal"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tam yenileme"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.kind.full.explain": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carries a new assessment date and restarts the period."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni bir değerlendirme tarihi taşır ve süreyi yeniden başlatır."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.kind.metadata": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detail correction"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bilgi düzeltmesi"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.kind.metadata.explain": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corrects mistyped information. It does not change the assessment date or the period."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yanlış yazılmış bilgiyi düzeltir. Değerlendirme tarihini ve süreyi değiştirmez."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.kind.partial": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partial revision"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kısmi revizyon"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.kind.partial.explain": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updates specific sections. It does not change the assessment date or the period."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belirli bölümleri günceller. Değerlendirme tarihini ve süreyi değiştirmez."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.kind.rescan": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rescan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeniden tarama"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.kind.rescan.explain": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adds a better copy of the same document. It does not count as a renewal."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aynı belgenin daha iyi bir kopyasını ekler. Yenileme sayılmaz."
           }
         }
       }
@@ -23113,6 +24301,96 @@
         }
       }
     },
+    "localizable.nova.risk.more": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show more"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha fazla göster"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.period.attribution": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every row states where its period came from. A period the expert set is not presented as a legal requirement."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süre kaynağı her satırda yazılıdır. Uzmanın kendi belirlediği süre mevzuat gereği olarak sunulmaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.period.expert": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set by the expert"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzman tarafından belirlenen"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.period.own": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A period I set myself"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kendi belirlediğim süre"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.period.rule": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Published rule"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yayımlanmış kural"
+          }
+        }
+      }
+    },
     "localizable.nova.risk.probability": {
       "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -23127,6 +24405,204 @@
           "stringUnit": {
             "state": "translated",
             "value": "Olasılık"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.row.draft": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Has an open draft"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açık taslak var"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.row.drift": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Source analysis changed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaynak analiz değişti"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.row.olddate": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date is very old · review it"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarih çok eski · gözden geçirin"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.row.period": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Period"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süre"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.row.until": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valid until"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçerlilik"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.row.version": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sürüm"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.row.workplace": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workplace"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.row.years": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d years"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d yıl"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.scope": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scope"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapsam"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.scope.add": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Section name"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bölüm adı"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.scope.button": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekle"
           }
         }
       }
@@ -23185,6 +24661,24 @@
         }
       }
     },
+    "localizable.nova.risk.search": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search workplace or company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri veya firma ara"
+          }
+        }
+      }
+    },
     "localizable.nova.risk.severity": {
       "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -23199,6 +24693,330 @@
           "stringUnit": {
             "state": "translated",
             "value": "Şiddet"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.sources": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d analysis findings carried over"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d analiz bulgusu aktarıldı"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.start.body": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the record for a workplace that has none. Opening it creates no document."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takibi olmayan bir işyeri için kaydı açın. Açmak belge oluşturmaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.start.title": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start a record"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt başlat"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.state.due": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Due soon"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yaklaşıyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.state.expired": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expired"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süresi doldu"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.state.never": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not assessed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Değerlendirilmemiş"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.state.unknown": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Period unknown"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süre bilinmiyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.state.valid": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In force"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yürürlükte"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.unset": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not set"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belirtilmedi"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.version.draft": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draft"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taslak"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.version.final": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In force"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yürürlükte"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.version.keepdate": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This kind keeps the document's original assessment date."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu tür, belgenin özgün değerlendirme tarihini korur."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.version.kind": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version kind"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sürüm türü"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.version.reason": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reason"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gerekçe"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.version.revision": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revision date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revizyon tarihi"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.version.save": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the draft"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taslağı aç"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.version.superseded": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Past"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçmiş"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.version.title": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New version"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni sürüm"
           }
         }
       }
