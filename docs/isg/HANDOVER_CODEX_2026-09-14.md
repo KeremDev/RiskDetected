@@ -1,5 +1,7 @@
 # Devir notu — İSG geçişinde sunucu dilimlerini sürdürmek
 
+> **Güncel native dilim:** [Uygunsuzluk panosu ve analiz detayı](P09_RECORD_BOARD_2026-09-14.md) — çok firmalı filtreli pano, kayıt ekranı ve durum geçişleri (migration'ın kenar tablosuyla iki yönlü test edilmiş), resimle başlayan fotoğraf akışı + popup'lu firma/sektör/odak, ikon menülü analiz detayı ve bulgu popup'ı. Elle girişte fotoğraf adımı **kayda eklenmiyor**: `promote_clean_upload` temiz tarama sonucu istiyor, tarayıcı yok. Rollout **açılmadı**.
+
 > **Güncel native dilim:** [Fotoğraf analizi akışı](P09_ANALYSIS_FLOW_2026-09-14.md) — fotoğraf → firma (firmasız seçenekli) → sektör (firmadan otomatik) → odak; NOVA analiz detayı (dört bölüm, bulgu düzenleme, rapor, seçileni firmaya aktarma); firmasız analiz ve sonradan atama; akordiyonlu elle giriş. Sunucu tarafı [P09 ikinci dilim](P09_NONCONFORMITY_DETAIL_2026-09-14.md) (`20260914190000`): detay alanları, generated skor/bant, `record_kind` ve `legacy_expert_item`. Rollout **açılmadı**. Elle girişte kanıt fotoğrafı adımı yok (P04 dosya sınırı kapalı).
 
 > **Canlı pilot ilerleme yöntemi:** [NOVA firma akışı rollout kaydı](NOVA_LIVE_PILOT_ROLLOUT_2026-09-14.md). İlk doğrulama fiziksel iOS cihazındaki dar pilot firma yüzeyinde; cihaz/scope/read-back kanıtı olmadan canlı mutation veya genel rollout yapılmıyor.

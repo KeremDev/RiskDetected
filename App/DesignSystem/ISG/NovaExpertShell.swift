@@ -359,7 +359,14 @@ struct NovaShellPanel: View {
             NovaText(text: RDLocalization.string("localizable.nova.expert.shell.ne.eklemek.istiyorsun.ee07893e", table: .localizable, fallback: "Ne eklemek istiyorsun?"), style: .sectionTitle).padding(.horizontal, 4).padding(.bottom, 4)
             ForEach(NovaDestination.quickAdd, id: \.self) { destination in
                 Button {
-                    if destination == .newCompany { onCompanyCreate?() } else { send(.navigate(destination)) }
+                    if destination == .newCompany { onCompanyCreate?() }
+                    else {
+                        // The host may prepare a destination before it opens, the
+                        // same way the drawer lets it; the quick-add sheet must
+                        // not skip that notice.
+                        onDestination?(destination)
+                        send(.navigate(destination))
+                    }
                 } label: {
                     HStack(spacing: 12) {
                         NovaIcon(symbol: destination.quickSymbol, size: 21)

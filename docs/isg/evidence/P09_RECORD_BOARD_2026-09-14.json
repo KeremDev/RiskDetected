@@ -1,0 +1,68 @@
+{
+  "phase": "P09-native-2",
+  "slice": "nonconformity board, record page, photo-first intake, analysis detail rework",
+  "date": "2026-09-14",
+  "files": {
+    "design": [
+      "App/DesignSystem/ISG/NovaNonconformityTransitions.swift",
+      "App/DesignSystem/ISG/NovaNonconformityListScreen.swift",
+      "App/DesignSystem/ISG/NovaNonconformityRecordScreen.swift",
+      "App/DesignSystem/ISG/NovaNonconformitySheets.swift",
+      "App/DesignSystem/ISG/NovaAnalysisIntakeScreens.swift",
+      "App/DesignSystem/ISG/NovaAnalysisDetailScreens.swift",
+      "App/DesignSystem/ISG/NovaAnalysisSheets.swift",
+      "App/DesignSystem/ISG/NovaAnalysisListScreen.swift",
+      "App/DesignSystem/ISG/NovaManualNonconformityScreen.swift"
+    ],
+    "composition": [
+      "App/Views/Components/NovaPilotFindingsGate.swift",
+      "App/Views/Components/NovaPhotoIntakeScreen.swift",
+      "App/Services/Company/NovaAnalysisWorkspaceService.swift"
+    ]
+  },
+  "runs": {
+    "foundation": {
+      "checks": 470,
+      "failed": 0
+    },
+    "nova_design": {
+      "checks": 35,
+      "failed": 0,
+      "new_checks": 3
+    },
+    "localization_migrate_check": "pass",
+    "localization_hardcoded_debt": 15,
+    "localization_keys_total": 1309,
+    "ios_debug_build": "succeeded",
+    "nova_pilot_simulator_build": "succeeded"
+  },
+  "posture": {
+    "state_machine_matches_migration_both_ways": true,
+    "board_reads_each_company_through_its_own_call": true,
+    "manual_photo_stored_on_record": false,
+    "manual_photo_storage_claimed": false,
+    "unscored_item_band_mapped": false,
+    "client_states_a_score": false,
+    "rollout_opened": false
+  },
+  "visual_review": {
+    "device": "iPhone 17 Pro simulator",
+    "launch": "RD_UI_TEST_MAIN RD_UI_TEST_NOVA_REVIEW",
+    "confirmed": [
+      "board with search, company/state/kind filters and overdue marker",
+      "record page with meta, detail, allowed state moves",
+      "analysis detail icon menu framed with the section heading",
+      "item popup with useful/not-useful, edit and delete",
+      "analysis list rows with picture slot, band, counts and sector"
+    ]
+  },
+  "open": [
+    "rollout for the nonconformity feature is still closed",
+    "manual evidence photo needs P04 second slice: promote_clean_upload requires a clean scan verdict and no scanner exists",
+    "board fans out one read per company; a multi-company read belongs on the server as counts grow",
+    "record kind and overdue filtering are client side under the 200 row page limit",
+    "choosing a company for an analysis also moves the workspace scope",
+    "corrective action state cannot be advanced: no server action for it",
+    "tests/isg/shell-ios harness still does not compile"
+  ]
+}

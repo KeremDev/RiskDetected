@@ -1,3 +1,5 @@
+- **14 Eylül uygunsuzluk panosu ve analiz detayı (ikinci tur):** [Pano, kayıt ekranı, fotoğraf akışı ve analiz detayı](P09_RECORD_BOARD_2026-09-14.md). Uygunsuzluklar artık firma/durum/tür/termin filtreli, aramalı, çok firmalı bir pano; satıra dokununca kayıt ekranı ve sunucunun izin verdiği durum geçişleri açılıyor. Fotoğraf akışı resimle başlıyor (kamera/galeri), firma-sektör-odak popup'ta soruluyor. Analiz detayında fotoğraf küçük görsel, dört bölüm ikon menüsü, bulgu popup'ında Faydalı/Faydasız/düzenle/sil. Elle girişte fotoğraf adımı var ama **kayda eklenmiyor**: P04 temiz tarama olmadan dosya kalıcı yapmıyor. 470 foundation, 35 nova-design PASS. Rollout hâlâ kapalı.
+
 # İSG Adası / RiskDetected — güncel geliştirme durumu
 
 

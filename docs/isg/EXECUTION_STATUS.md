@@ -4,6 +4,8 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 
 ## Güncel durum
 
+- **14 Eylül uygunsuzluk panosu ve analiz detayı (ikinci tur):** [Pano, kayıt ekranı, fotoğraf akışı ve analiz detayı](P09_RECORD_BOARD_2026-09-14.md). Uygunsuzluklar artık firma/durum/tür/termin filtreli, aramalı, çok firmalı bir pano; satıra dokununca kayıt ekranı ve sunucunun izin verdiği durum geçişleri açılıyor. Fotoğraf akışı resimle başlıyor (kamera/galeri), firma-sektör-odak popup'ta soruluyor. Analiz detayında fotoğraf küçük görsel, dört bölüm ikon menüsü, bulgu popup'ında Faydalı/Faydasız/düzenle/sil. Elle girişte fotoğraf adımı var ama **kayda eklenmiyor**: P04 temiz tarama olmadan dosya kalıcı yapmıyor. 470 foundation, 35 nova-design PASS. Rollout hâlâ kapalı.
+
 - **14 Eylül fotoğraf analizi akışı:** [Firma/sektör/odak, analiz detayı ve elle giriş](P09_ANALYSIS_FLOW_2026-09-14.md) ile [uygunsuzluk detayı sunucu dilimi](P09_NONCONFORMITY_DETAIL_2026-09-14.md). Fotoğraf seçimi artık firma (firmasız seçeneğiyle), sektör (firmadan otomatik, tanınmazsa boş) ve odak soruyor; analiz detayı dört bölümüyle NOVA'da, skorsuz uzman görüşü maddeleri geliştirme önerisi olarak da kaydedilebiliyor; elle giriş akordiyonu ilerleme çubuğuyla çalışıyor. 1158 sentetik, 33 upgrade, 470 foundation, 32 nova-design PASS. **Rollout hâlâ kapalı**; elle girişte kanıt fotoğrafı adımı yok.
 
 - **14 Eylül canlı pilot ilerleme yöntemi:** [NOVA firma akışı rollout kaydı](NOVA_LIVE_PILOT_ROLLOUT_2026-09-14.md). İlk doğrulama yüzeyi fiziksel iOS cihazındaki pilot firma akışı olarak tutuldu; build/scope/read-back kapıları tamamlanmadan canlı mutation kapsamı genişletilmiyor.
