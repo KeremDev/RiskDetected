@@ -14185,6 +14185,1194 @@
         }
       }
     },
+    "localizable.nova.drill.back": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.cancel": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.count": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d / %d drills"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d / %d tatbikat"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.detail.cancel": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel the drill"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tatbikatı iptal et"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.detail.confirmcancel": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm the cancellation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İptali onayla"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.detail.improvement": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Improvement"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İyileştirme"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.detail.observation": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Observation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gözlem"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.detail.participants": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Participants"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Katılımcı"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.detail.reason": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancellation reason"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İptal gerekçesi"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.detail.record": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record the drill"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tatbikat kaydı gir"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.detail.superseded": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "updated since"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sonradan güncellendi"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.empty.body": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a published plan and schedule a drill."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yayımlanmış bir planı seçip tatbikat planlayın."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.empty.noplan": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Publish an emergency plan first; a drill rehearses a version of one."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önce bir acil durum planı yayımlayın; tatbikat bir plan sürümünü prova eder."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.empty.title": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No drills recorded"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tatbikat kaydı yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.error.conflict": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record changed elsewhere meanwhile. Refresh and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt bu sırada başka bir yerden değişti. Yenileyip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.error.denied": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No access to this record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kayda erişim yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.error.feature": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modules are not open yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modüller henüz açık değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.error.future": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The drill date cannot be later than today."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tatbikat tarihi bugünden ileri olamaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.error.module": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The drills module is not open yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tatbikat modülü henüz açık değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.error.participant": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One of the participants is not this company's personnel."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Katılımcılardan biri bu firmanın personeli değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.error.performed": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A drill that was held cannot be cancelled or rewritten."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yapılmış tatbikat iptal edilemez veya yeniden yazılamaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.error.plan": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This action needs a Plus or Pro subscription."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu işlem için Plus veya Pro aboneliği gerekiyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.error.unavailable": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record could not be loaded. Check the connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt alınamadı. Bağlantıyı kontrol edip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.error.validation": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The entered details are incomplete or inconsistent."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Girilen bilgiler eksik veya birbiriyle uyumsuz."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.explain.cancelled": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This drill was called off."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu tatbikattan vazgeçildi."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.explain.due": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The planned date is inside the warning window."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planlanan tarih uyarı penceresinin içinde."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.explain.overdue": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The planned date passed and no drill was recorded."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planlanan tarih geçti ve tatbikat kaydı girilmedi."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.explain.performed": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Held with %d participants."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d katılımcıyla yapıldı."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.explain.scheduled": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planned for a later date. Planning is not performing."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İleri bir tarihe planlandı. Planlamak yapmak değildir."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.filter.companies": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All companies"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm firmalar"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.filter.company": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.filter.state": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durum"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.filter.states": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All statuses"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm durumlar"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.form.pickplan": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a plan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan seçin"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.form.plan": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan to rehearse"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prova edilecek plan"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.form.save": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schedule"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planla"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.form.title": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schedule a drill"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tatbikat planla"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.form.version": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %d of the plan, the one in force, will be rehearsed."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planın yürürlükteki %d. sürümü prova edilecek."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.group.closed": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Closed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapandı"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.group.closed.footer": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "held / cancelled"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yapıldı / iptal"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.group.due": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Due soon"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yaklaşıyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.group.due.footer": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "approaching"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yaklaşan"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.group.overdue": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Missed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçti"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.group.overdue.footer": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "not held"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yapılmadı"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.group.scheduled": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scheduled"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planlı"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.group.scheduled.footer": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "later date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ileri tarihli"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.more": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show more"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha fazla göster"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.new": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schedule a drill"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tatbikat planla"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.pinned.note": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A drill is pinned to the plan version it rehearsed. A plan published later does not move this record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tatbikat, prova ettiği plan sürümüne sabitlidir. Sonradan yayımlanan plan bu kaydı taşımaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.planning.note": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planning is not performing. A drill whose date passed does not count as held; you enter the record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planlamak yapmak değildir. Tarihi geçen tatbikat yapılmış sayılmaz; kaydı siz girersiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.result.nopeople": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This company has no active personnel on record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu firmada aktif personel kaydı yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.result.save": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.result.title": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drill record"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tatbikat kaydı"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.row.performed": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Held"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yapılan"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.row.plan": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emergency plan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acil durum planı"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.row.planned": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planned"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planlanan"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.row.superseded": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The rehearsed plan version was updated"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prova edilen plan sürümü güncellendi"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.row.version": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan version"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan sürümü"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.search": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search plan, workplace or company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan, işyeri veya firma ara"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.snapshot.note": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Participants are frozen with the names they had when you saved. Changing the personnel record later does not change this drill."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Katılımcılar kaydettiğiniz andaki adlarıyla donar. Personel kaydı sonradan değişse de bu tatbikat değişmez."
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.state.cancelled": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelled"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İptal edildi"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.state.due": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Due soon"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yaklaşıyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.state.overdue": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date passed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarihi geçti"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.state.performed": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Held"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yapıldı"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.state.scheduled": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scheduled"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planlandı"
+          }
+        }
+      }
+    },
+    "localizable.nova.drill.unset": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not held"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yapılmadı"
+          }
+        }
+      }
+    },
     "localizable.nova.emergency.back": {
       "comment": "isg_emergency_plans; Acil Durum Planları: plan board, version history, team snapshot and publish form; placeholders: %d/%@ where shown; review: human_draft",
       "extractionState": "manual",
@@ -21759,6 +22947,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dosya Ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.drills": {
+      "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drills"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tatbikatlar"
           }
         }
       }
