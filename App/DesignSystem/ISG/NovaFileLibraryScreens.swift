@@ -71,6 +71,113 @@ struct NovaFileStatCard: View {
     }
 }
 
+/// One option inside a chooser: what it is called, how many rows it covers and
+/// the tone the archive uses for it.
+struct NovaFileChooserOption: Identifiable, Equatable {
+    /// nil is the unfiltered answer ("Tümü" / "Tüm başlıklar").
+    let id: String?
+    let title: String
+    var count: Int?
+    var symbol: String?
+    var tone: NovaStatus = .neutral
+    var identity: String { id ?? "all" }
+}
+
+/// The closed half of a chooser: the field name above, the current answer and a
+/// chevron. Two of these sit side by side and the list opens underneath, so a
+/// long set of headings never runs off the side of the screen.
+struct NovaFileChooserButton: View {
+    let label: String
+    let value: String
+    var symbol: String?
+    var isOpen = false
+    var isAnswered = true
+    let identifier: String
+    let onTap: () -> Void
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 2) {
+                NovaSizedText(text: label, size: 9.5, weight: "Bold",
+                    color: NovaColorToken.textTertiary.color(in: scheme))
+                HStack(spacing: 6) {
+                    if let symbol {
+                        Image(systemName: symbol).font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+                    }
+                    NovaSizedText(text: value, size: 13, weight: isAnswered ? "Bold" : "Medium",
+                        color: isAnswered ? NovaColorToken.text.color(in: scheme)
+                                          : NovaColorToken.textTertiary.color(in: scheme))
+                        .lineLimit(1).minimumScaleFactor(0.78)
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
+                        .rotationEffect(.degrees(isOpen ? 180 : 0))
+                }
+            }
+            .padding(.horizontal, 12).padding(.vertical, 9)
+            .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(isOpen ? NovaColorToken.accentInk.color(in: scheme)
+                                     : NovaColorToken.border.color(in: scheme),
+                              lineWidth: isOpen ? 1.4 : 1))
+        }.buttonStyle(.plain)
+            .accessibilityIdentifier(identifier)
+            .accessibilityValue(Text(verbatim: value))
+    }
+}
+
+/// The open half: the options as a compact two-column grid, the count on the
+/// right and the chosen one marked. One panel is open at a time.
+struct NovaFileChooserPanel: View {
+    let options: [NovaFileChooserOption]
+    let selected: String?
+    let identifier: String
+    let onPick: (String?) -> Void
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 240 : 150),
+                                     spacing: 7)], spacing: 7) {
+            ForEach(options) { option in cell(option) }
+        }
+        .padding(9)
+        .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func cell(_ option: NovaFileChooserOption) -> some View {
+        let isOn = selected == option.id
+        let palette = option.tone.tokens
+        return Button { onPick(option.id) } label: {
+            HStack(spacing: 7) {
+                Image(systemName: isOn ? "checkmark.circle.fill" : (option.symbol ?? "circle"))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(isOn ? NovaColorToken.accentInk.color(in: scheme)
+                                          : palette.ink.color(in: scheme))
+                NovaSizedText(text: option.title, size: 12, weight: isOn ? "Bold" : "Medium")
+                    .lineLimit(1).minimumScaleFactor(0.75)
+                Spacer(minLength: 0)
+                if let count = option.count {
+                    NovaSizedText(text: "\(count)", size: 12, weight: "Bold",
+                        color: count > 0 ? NovaColorToken.textSecondary.color(in: scheme)
+                                         : NovaColorToken.textMuted.color(in: scheme))
+                }
+            }
+            .padding(.horizontal, 10).frame(minHeight: 40)
+            .background(isOn ? NovaColorToken.statusSuccessBg.color(in: scheme)
+                             : NovaColorToken.surface.color(in: scheme),
+                        in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(isOn ? NovaColorToken.accentInk.color(in: scheme) : .clear, lineWidth: 1.2))
+        }.buttonStyle(.plain)
+            .accessibilityIdentifier("\(identifier).\(option.identity)")
+            .accessibilityAddTraits(isOn ? .isSelected : [])
+    }
+}
+
 /// Diğer Dosyalar. A company is chosen first, because a filed document belongs
 /// to one; its archive opens underneath. What the page shows about a file is
 /// always what really happened to it: an upload that has not been cleared is
@@ -102,6 +209,8 @@ struct NovaFileLibraryScreen: View {
     @State private var loading = false
     @State private var reload = UUID()
     @State private var started = false
+    /// Which chooser is open, if any. One at a time keeps the page short.
+    @State private var openChooser: String?
     @FocusState private var searchingCompany: Bool
 
     private var isCompanyLocked: Bool { initialCompany != nil }
@@ -159,6 +268,7 @@ struct NovaFileLibraryScreen: View {
             group = nil
             category = nil
             query = ""
+            openChooser = nil
             reload = UUID()
         }
         .fullScreenCover(item: $inspecting) { row in
@@ -317,8 +427,7 @@ struct NovaFileLibraryScreen: View {
         stats
         hint
         search
-        chips
-        if initialCategories == nil { categoryChips }
+        filters
         list
     }
 
@@ -349,7 +458,10 @@ struct NovaFileLibraryScreen: View {
             HStack(alignment: .top, spacing: 8) {
                 ForEach(NovaFileGroup.allCases) { value in
                     NovaFileStatCard(group: value, value: count(value),
-                        isSelected: group == value) { group = group == value ? nil : value }
+                        isSelected: group == value) {
+                            group = group == value ? nil : value
+                            openChooser = nil
+                        }
                 }
             }.padding(.vertical, 2)
         }
@@ -371,36 +483,67 @@ struct NovaFileLibraryScreen: View {
             .onSubmit { shown = NovaFileQuery().limit; reload = UUID() }
     }
 
-    private var chips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 7) {
-                NovaAnalysisFilterChip(title: RDLocalization.string("localizable.nova.nonconformity.filter.all", table: .localizable, fallback: "Tümü"),
-                    isOn: group == nil, identifier: "file.library.filter.all") { group = nil }
-                ForEach(NovaFileGroup.allCases) { value in
-                    NovaAnalysisFilterChip(title: "\(value.title) \(count(value))",
-                        isOn: group == value,
-                        identifier: "file.library.filter.\(value.rawValue)") { group = value }
+    /// Two choosers side by side. The list opens underneath the one that was
+    /// tapped, so thirteen headings stay reachable without a strip that runs
+    /// off the side of the screen.
+    @ViewBuilder private var filters: some View {
+        HStack(spacing: 8) {
+            NovaFileChooserButton(
+                label: RDLocalization.string("localizable.nova.file.filter.state", table: .localizable, fallback: "Durum"),
+                value: group?.title ?? allStates,
+                symbol: group?.symbol ?? "line.3.horizontal.decrease",
+                isOpen: openChooser == "state", identifier: "file.library.filter") {
+                    openChooser = openChooser == "state" ? nil : "state"
                 }
+            if initialCategories == nil {
+                NovaFileChooserButton(
+                    label: RDLocalization.string("localizable.nova.file.filter.category", table: .localizable, fallback: "Başlık"),
+                    value: category.map(NovaFileWords.category) ?? allCategories,
+                    symbol: "folder",
+                    isOpen: openChooser == "category", identifier: "file.library.category") {
+                        openChooser = openChooser == "category" ? nil : "category"
+                    }
             }
+        }
+        if openChooser == "state" {
+            NovaFileChooserPanel(options: stateOptions, selected: group?.rawValue,
+                identifier: "file.library.filter") { picked in
+                    group = picked.flatMap(NovaFileGroup.init(rawValue:))
+                    openChooser = nil
+                }
+        }
+        if openChooser == "category" {
+            NovaFileChooserPanel(options: categoryOptions, selected: category,
+                identifier: "file.library.category") { picked in
+                    category = picked
+                    openChooser = nil
+                }
         }
     }
 
-    /// The headings a file can be filed under, with what each one holds.
-    private var categoryChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 7) {
-                NovaAnalysisFilterChip(title: RDLocalization.string("localizable.nova.file.category.all", table: .localizable, fallback: "Tüm başlıklar"),
-                    isOn: category == nil, identifier: "file.library.category.all") { category = nil }
-                ForEach(catalogue) { entry in
-                    let held = (board?.categoryCounts[entry.code] ?? [:]).values.reduce(0, +)
-                    if held > 0 || category == entry.code {
-                        NovaAnalysisFilterChip(title: "\(NovaFileWords.category(entry.code)) \(held)",
-                            isOn: category == entry.code,
-                            identifier: "file.library.category.\(entry.code)") { category = entry.code }
-                    }
-                }
-            }
+    private var allStates: String {
+        RDLocalization.string("localizable.nova.nonconformity.filter.all", table: .localizable, fallback: "Tümü")
+    }
+    private var allCategories: String {
+        RDLocalization.string("localizable.nova.file.category.all", table: .localizable, fallback: "Tüm başlıklar")
+    }
+
+    private var stateOptions: [NovaFileChooserOption] {
+        [.init(id: nil, title: allStates, count: filedHere, symbol: "square.grid.2x2")] +
+        NovaFileGroup.allCases.map { value in
+            .init(id: value.rawValue, title: value.title, count: count(value),
+                  symbol: value.symbol, tone: tone(value))
         }
+    }
+
+    /// Every heading the archive holds something under, plus the one in force,
+    /// so a filter can always be seen and cleared.
+    private var categoryOptions: [NovaFileChooserOption] {
+        let held = { (code: String) in (board?.categoryCounts[code] ?? [:]).values.reduce(0, +) }
+        return [.init(id: nil, title: allCategories, count: filedHere, symbol: "square.grid.2x2")] +
+            catalogue.filter { held($0.code) > 0 || category == $0.code }
+                .map { .init(id: $0.code, title: NovaFileWords.category($0.code),
+                             count: held($0.code), symbol: "folder") }
     }
 
     @ViewBuilder private var list: some View {

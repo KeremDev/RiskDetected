@@ -146,6 +146,29 @@ test('every word the screens use is in the shipping catalogue in both languages'
   }
 });
 
+test('the filters are two choosers, not strips that run off the screen',()=>{
+  // One panel open at a time, opened under the button that was tapped.
+  assert.match(screen,/@State private var openChooser: String\?/);
+  assert.match(screen,/isOpen: openChooser == "state"/);
+  assert.match(screen,/isOpen: openChooser == "category"/);
+  assert.match(screen,/if openChooser == "state" \{/);
+  assert.match(screen,/if openChooser == "category" \{/);
+  // The horizontal chip strips they replaced are gone from every archive screen.
+  for(const [path,source] of [['screen',screen],['sheets',sheets]])
+    assert.doesNotMatch(code(source),/NovaAnalysisFilterChip/,path);
+  // Each option still carries the count it filters to.
+  assert.match(screen,/count: count\(value\)/);
+});
+
+test('a heading is asked for rather than defaulted to whatever comes first',()=>{
+  // Picking a file opens the chooser instead of silently filing the document
+  // under the first entry in the catalogue.
+  assert.match(sheets,/if draft\.category == nil \{ choosingCategory = true \}/);
+  assert.doesNotMatch(code(sheets),/draft\.category = categories\.first/);
+  // And the form stays unsendable until the expert has chosen one.
+  assert.match(model,/guard category != nil, !title\.trimmingCharacters\(in: \.whitespaces\)\.isEmpty else \{ return false \}/);
+});
+
 test('the picker offers what the server declared, not a list of its own',()=>{
   assert.match(screen,/static func contentTypes\(_ accepts: \[NovaFileAcceptance\]\) -> \[UTType\]/);
   assert.match(sheets,/allowedContentTypes: NovaFileScreenWords\.contentTypes\(accepts\)/);

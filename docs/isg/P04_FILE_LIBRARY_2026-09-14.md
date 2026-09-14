@@ -137,10 +137,18 @@ duruyor.
 
 Kullanıcının Evrak Takibi'nde onayladığı düzenin aynısı: önce firma seçimi
 (aramalı, yazmadan da listeleyen), ampullü ipucu, seçimden sonra ana sayfadaki
-kart biçiminde dört sayaç, arama, durum ve başlık çipleri, ilk **10** kayıt ve
+kart biçiminde dört sayaç, arama, durum ve başlık seçicileri, ilk **10** kayıt ve
 "Daha fazla göster". Satıra dokunmak kompakt popup açıyor: durum, red gerekçesi
 ve denetçinin bulgusu, tür/boyut/saptanan tür/eklenme, not, **Denetim** kartı ve
 işlemler (aç, düzenle, listeden kaldır, yüklemeyi iptal et).
+
+Filtreler iki yatay çip şeridi değil, **yan yana iki seçici**: Durum ve Başlık.
+Dokununca liste **altta** iki sütunlu, sayıları sağda açılıyor; seçince
+kapanıyor. On üç başlık böylece ekrandan taşmadan erişilebilir kalıyor. Aynı
+seçici dosya ekleme ve yeniden dosyalama popup'larında da kullanılıyor: dosya
+seçilir seçilmez başlık listesi **kendiliğinden açılıyor** ve başlık seçilene
+kadar "Yükle ve denetle" pasif kalıyor — başlık kataloğun ilk sırasına
+varsayılmıyor, uzmana soruluyor.
 
 Simülatör incelemesinde üç şey düzeltildi: "Denetlenemedi" kelimesi kart içinde
 ortadan bölünüyordu (ölçekleniyor), firma satırındaki dört etiket taşıyordu
@@ -152,10 +160,10 @@ ortadan bölünüyordu (ölçekleniyor), firma satırındaki dört etiket taşı
 |---|---|
 | `run_auth_restore.mjs --synthetic-session` | **ok: true, 1248 kontrol, 0 hata**, 48'i `file_library` (`output/isg/runs/synthetic-auth-J5B1Fe`) |
 | `run_suite.mjs foundation` | 534/535 — tek hata eşzamanlı oturumun eğitim metinleri |
-| `run_suite.mjs nova-design` | 65/65 |
+| `run_suite.mjs nova-design` | 67/67 |
 | `file_format_inspector.test.mjs` | 37/37 |
 | `file_library_guard.test.mjs` | 15/15 |
-| `nova_file_library.test.mjs` | 13/13 |
+| `nova_file_library.test.mjs` | 15/15 |
 | `localization_catalog_tests.mjs` | L10N-001/002/003 PASS; L10N-004 borcu **tamamı eğitim modülünün**, bu dilimden 0 |
 | `migrate_swift_localization_catalogs.mjs --check` | PASS, bekleyen 0 |
 | iOS Debug + `NOVA_PILOT_BUILD` derlemeleri | SUCCEEDED |

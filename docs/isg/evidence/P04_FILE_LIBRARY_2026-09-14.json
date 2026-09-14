@@ -123,7 +123,7 @@
   ],
   "design_tests": {
    "file": "scripts/isg/nova_file_library.test.mjs",
-   "total": 13,
+   "total": 15,
    "failed": 0
   },
   "guard_tests": {
@@ -136,7 +136,9 @@
    "company page: Dosya Ekle",
    "company page headings via file_library_categories.section"
   ],
-  "android_parity": false
+  "android_parity": false,
+  "filters": "two side-by-side choosers that open a two-column panel underneath; no horizontal chip strips",
+  "heading_defaulted_on_upload": false
  },
  "suites": {
   "foundation": {
@@ -145,7 +147,7 @@
    "failure_owner": "the concurrent session's education copy, not this slice"
   },
   "nova_design": {
-   "total": 65,
+   "total": 67,
    "failed": 0
   },
   "l10n": {

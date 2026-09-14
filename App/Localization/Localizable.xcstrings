@@ -13717,6 +13717,24 @@
         }
       }
     },
+    "localizable.nova.file.category.choose": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a heading"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlık seçin"
+          }
+        }
+      }
+    },
     "localizable.nova.file.category.contract": {
       "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -13911,6 +13929,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Eğitim belgesi"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.company.choose": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma seçin"
           }
         }
       }
@@ -14397,6 +14433,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Henüz belirlenmedi"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.filter.category": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heading"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlık"
+          }
+        }
+      }
+    },
+    "localizable.nova.file.filter.state": {
+      "comment": "nova_file_library; Diğer Dosyalar archive: company picker, counters, entry popup and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durum"
           }
         }
       }

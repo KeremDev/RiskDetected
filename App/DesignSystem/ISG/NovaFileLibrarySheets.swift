@@ -253,6 +253,7 @@ struct NovaFileRenameSheet: View {
     @State private var note: String
     @State private var busy = false
     @State private var error: String?
+    @State private var choosing = false
 
     init(entry: NovaFileEntry, catalogue: [NovaFileCategory],
          save: @escaping (String, String, String) async throws -> Void) {
@@ -289,19 +290,19 @@ struct NovaFileRenameSheet: View {
         }
     }
 
-    private var categoryPicker: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            NovaText(text: RDLocalization.string("localizable.nova.file.field.category", table: .localizable, fallback: "Başlık altında sakla"),
-                style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 7) {
-                    ForEach(catalogue) { option in
-                        NovaAnalysisFilterChip(title: NovaFileWords.category(option.code),
-                            isOn: category == option.code,
-                            identifier: "file.rename.category.\(option.code)") { category = option.code }
-                    }
+    /// The same chooser the archive uses, so refiling reads the way filing did.
+    @ViewBuilder private var categoryPicker: some View {
+        NovaFileChooserButton(
+            label: RDLocalization.string("localizable.nova.file.field.category", table: .localizable, fallback: "Başlık altında sakla"),
+            value: NovaFileWords.category(category), symbol: "folder",
+            isOpen: choosing, identifier: "file.rename.category") { choosing.toggle() }
+        if choosing {
+            NovaFileChooserPanel(
+                options: catalogue.map { .init(id: $0.code, title: NovaFileWords.category($0.code), symbol: "folder") },
+                selected: category, identifier: "file.rename.category") { picked in
+                    if let picked { category = picked }
+                    choosing = false
                 }
-            }
         }
     }
 
@@ -333,6 +334,10 @@ struct NovaFileAddSheet: View {
     @State private var busy = false
     @State private var error: String?
     @State private var outcome: NovaFileEntry?
+    /// Opened on its own once a file is chosen, because filing it is the next
+    /// thing the expert has to decide.
+    @State private var choosingCategory = false
+    @State private var choosingCompany = false
 
     private var maxBytes: Int { accepts.map(\.maxBytes).max() ?? 0 }
     private var allExtensions: [String] { accepts.flatMap(\.extensions).sorted() }
@@ -380,18 +385,21 @@ struct NovaFileAddSheet: View {
             .accessibilityIdentifier("file.add.save")
     }
 
-    private var companyPicker: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            NovaText(text: RDLocalization.string("localizable.nova.file.field.company", table: .localizable, fallback: "Firma"),
-                style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 7) {
-                    ForEach(companies) { option in
-                        NovaAnalysisFilterChip(title: option.name, isOn: company == option.id,
-                            identifier: "file.add.company.\(option.id.uuidString.lowercased())") { company = option.id }
-                    }
+    /// The same chooser as the heading, so a long company list stays reachable.
+    @ViewBuilder private var companyPicker: some View {
+        NovaFileChooserButton(
+            label: RDLocalization.string("localizable.nova.file.field.company", table: .localizable, fallback: "Firma"),
+            value: companies.first { $0.id == company }?.name
+                ?? RDLocalization.string("localizable.nova.file.company.choose", table: .localizable, fallback: "Firma seçin"),
+            symbol: "building.2", isOpen: choosingCompany, isAnswered: company != nil,
+            identifier: "file.add.company") { choosingCompany.toggle() }
+        if choosingCompany {
+            NovaFileChooserPanel(
+                options: companies.map { .init(id: $0.id.uuidString, title: $0.name, symbol: "building.2") },
+                selected: company?.uuidString, identifier: "file.add.company") { picked in
+                    company = picked.flatMap(UUID.init(uuidString:))
+                    choosingCompany = false
                 }
-            }
         }
     }
 
@@ -422,19 +430,23 @@ struct NovaFileAddSheet: View {
         }.buttonStyle(.plain).accessibilityIdentifier("file.add.pick")
     }
 
-    private var categoryPicker: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            NovaText(text: RDLocalization.string("localizable.nova.file.field.category", table: .localizable, fallback: "Başlık altında sakla"),
-                style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 7) {
-                    ForEach(categories) { option in
-                        NovaAnalysisFilterChip(title: NovaFileWords.category(option.code),
-                            isOn: draft.category == option.code,
-                            identifier: "file.add.category.\(option.code)") { draft.category = option.code }
-                    }
+    /// The heading the file will be filed under. A chooser rather than a strip
+    /// that runs off the side: thirteen headings are all reachable, and the one
+    /// in force is always the thing on the button.
+    @ViewBuilder private var categoryPicker: some View {
+        NovaFileChooserButton(
+            label: RDLocalization.string("localizable.nova.file.field.category", table: .localizable, fallback: "Başlık altında sakla"),
+            value: draft.category.map(NovaFileWords.category)
+                ?? RDLocalization.string("localizable.nova.file.category.choose", table: .localizable, fallback: "Başlık seçin"),
+            symbol: "folder", isOpen: choosingCategory, isAnswered: draft.category != nil,
+            identifier: "file.add.category") { choosingCategory.toggle() }
+        if choosingCategory {
+            NovaFileChooserPanel(
+                options: categories.map { .init(id: $0.code, title: NovaFileWords.category($0.code), symbol: "folder") },
+                selected: draft.category, identifier: "file.add.category") { picked in
+                    draft.category = picked
+                    choosingCategory = false
                 }
-            }
         }
     }
 
@@ -498,7 +510,9 @@ struct NovaFileAddSheet: View {
             if draft.title.isEmpty {
                 draft.title = url.deletingPathExtension().lastPathComponent
             }
-            if draft.category == nil { draft.category = categories.first?.code }
+            // The heading is the expert's decision, so it is asked for rather
+            // than defaulted to whatever happens to be first in the catalogue.
+            if draft.category == nil { choosingCategory = true }
         } catch {
             self.error = NovaFileScreenWords.failure(.uploadFailed)
         }
