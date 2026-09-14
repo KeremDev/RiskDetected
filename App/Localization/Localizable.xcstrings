@@ -13015,6 +13015,24 @@
         }
       }
     },
+    "localizable.nova.equipment.due.period.is": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: correcting a filed report and the informational İSG-KATİP mark; placeholders: %d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The type's period is %d months. If you change the date, the record says the date is yours."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Türün süresi %d ay. Değiştirirseniz kayıt, tarihin sizin belirlediğinizi söyler."
+          }
+        }
+      }
+    },
     "localizable.nova.equipment.edit.title": {
       "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -13465,6 +13483,24 @@
         }
       }
     },
+    "localizable.nova.equipment.field.katip": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: correcting a filed report and the informational İSG-KATİP mark; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSG-KATİP"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSG-KATİP"
+          }
+        }
+      }
+    },
     "localizable.nova.equipment.field.last": {
       "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -13897,6 +13933,24 @@
         }
       }
     },
+    "localizable.nova.equipment.katip.declared": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: correcting a filed report and the informational İSG-KATİP mark; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "expert's declaration"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "uzman beyanı"
+          }
+        }
+      }
+    },
     "localizable.nova.equipment.katip.hint": {
       "comment": "nova_equipment_checks; Periyodik Kontroller: default periods, the editable next date and the İSG-KATİP declaration; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -13933,6 +13987,24 @@
         }
       }
     },
+    "localizable.nova.equipment.katip.no": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: correcting a filed report and the informational İSG-KATİP mark; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not marked"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşaretlenmedi"
+          }
+        }
+      }
+    },
     "localizable.nova.equipment.katip.note": {
       "comment": "nova_equipment_checks; Periyodik Kontroller: default periods, the editable next date and the İSG-KATİP declaration; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -13965,6 +14037,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "KATİP beyanı"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.katip.yes": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: correcting a filed report and the informational İSG-KATİP mark; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assignment made"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atama yapıldı"
           }
         }
       }
@@ -14361,6 +14451,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kontrol kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.report.edit.hint": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: correcting a filed report and the informational İSG-KATİP mark; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The check date and the result are the report itself and are not edited here. If one is wrong, record the correct report separately."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrol tarihi ve sonucu raporun kendisidir; buradan değiştirilmez. Yanlışsa doğru raporu ayrıca kaydedin."
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.report.edit.title": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: correcting a filed report and the informational İSG-KATİP mark; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Correct the check record"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontrol kaydını düzelt"
           }
         }
       }

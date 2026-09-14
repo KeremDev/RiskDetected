@@ -7,6 +7,7 @@ import {ROOT} from './lib.mjs';
 const read=path=>readFileSync(join(ROOT,path),'utf8');
 const migration=read('supabase/migrations/20260915030000_isg_equipment_checks.sql');
 const periods=read('supabase/migrations/20260915050000_isg_equipment_periods.sql');
+const edit=read('supabase/migrations/20260915070000_isg_equipment_inspection_edit.sql');
 const model=read('App/DesignSystem/ISG/NovaEquipmentChecks.swift');
 const screen=read('App/DesignSystem/ISG/NovaEquipmentCheckScreens.swift');
 const sheets=read('App/DesignSystem/ISG/NovaEquipmentCheckSheets.swift');
@@ -81,6 +82,37 @@ test('the İSG-KATİP mark is optional and never claims a verification',()=>{
     assert.doesNotMatch(code(source),/isgkatip|csgb\.gov/i,path);
   }
   assert.match(code(periods),/CHECK\(NOT katip_official_verification\)/);
+});
+
+test('a filed report can be corrected and the date stays editable afterwards',()=>{
+  assert.match(sheets,/struct NovaEquipmentReportEditSheet: View/);
+  assert.match(sheets,/client\.updateInspection\(row, entry, value\)/);
+  // The date and the result are shown, never bound to an editable field.
+  const sheet=sheets.slice(sheets.indexOf('struct NovaEquipmentReportEditSheet'),
+    sheets.indexOf('/// Registering equipment'));
+  assert.doesNotMatch(sheet,/value: \$draft\.performedOn/);
+  assert.doesNotMatch(sheet,/draft\.result = /);
+  assert.match(sheet,/localizable\.nova\.equipment\.report\.edit\.hint/);
+  // And the server refuses them too, so the screen is not the only guard.
+  const allowlist=edit.slice(edit.indexOf("allowed:=CASE p_action"),edit.indexOf("ELSE NULL END;"));
+  const correction=allowlist.slice(allowlist.indexOf("'update_inspection'"));
+  assert.doesNotMatch(correction,/'performed_on'|'result'/);
+});
+
+test('the İSG-KATİP mark is informational and is shown as a declaration',()=>{
+  // Read without digging: it sits in the facts with whose statement it is.
+  assert.match(sheets,/localizable\.nova\.equipment\.field\.katip/);
+  const declared=catalogue.strings['localizable.nova.equipment.katip.declared'];
+  assert.equal(declared.localizations.tr.stringUnit.value,'uzman beyanı');
+  // A speech bubble, not a seal: a seal reads like a verification.
+  assert.doesNotMatch(sheets,/symbol: "checkmark\.seal",\s*\n?\s*text: RDLocalization\.string\("localizable\.nova\.equipment\.katip\.tag"/);
+  assert.match(sheets,/symbol: "text\.bubble"/);
+  // It reaches no state, no group and no counter: the enums that decide what a
+  // row is, and the screen that counts and filters them, never mention it.
+  const decides=model.slice(model.indexOf('enum NovaEquipmentState'),
+    model.indexOf('/// Where a type'));
+  assert.doesNotMatch(code(decides),/katip/i);
+  assert.doesNotMatch(code(screen),/katip/i);
 });
 
 test('no period is ever shown without where it came from',()=>{

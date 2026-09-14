@@ -7,7 +7,8 @@ import {beginEquipmentChecksProbe,equipmentChecksFiles} from './equipment_checks
 
 const migration=readFileSync(resolve(ROOT,equipmentChecksFiles[0]),'utf8');
 const periods=readFileSync(resolve(ROOT,equipmentChecksFiles[1]),'utf8');
-const probe=readFileSync(resolve(ROOT,equipmentChecksFiles[2]),'utf8');
+const edit=readFileSync(resolve(ROOT,equipmentChecksFiles[2]),'utf8');
+const probe=readFileSync(resolve(ROOT,equipmentChecksFiles[3]),'utf8');
 const runner=readFileSync(resolve(ROOT,'scripts/isg/run_auth_restore.mjs'),'utf8');
 const core=readFileSync(resolve(ROOT,'supabase/migrations/20260913230000_isg_module_core.sql'),'utf8');
 /** Comments explain the rule; they are not evidence that the rule is there. */
@@ -106,7 +107,12 @@ test('this module is not a human health check',()=>{
   assert.match(code(migration),/'health_record',false/);
 });
 
-test('the second migration opens no switch either',()=>{
+test('neither later migration opens a switch either',()=>{
+  for(const later of [periods,edit]){
+    assert.doesNotMatch(later,/UPDATE private_isg\.rollout SET/);
+    assert.doesNotMatch(later,/INSERT INTO private_isg\.rollout/);
+    assert.doesNotMatch(later,/UPDATE private_isg\.module_registry SET/);
+  }
   assert.doesNotMatch(periods,/UPDATE private_isg\.rollout SET/);
   assert.doesNotMatch(periods,/INSERT INTO private_isg\.rollout/);
   assert.doesNotMatch(periods,/UPDATE private_isg\.module_registry SET/);
@@ -165,7 +171,7 @@ test('every write goes through the P10 function that owns the rule',()=>{
 
 test('no client action can name the meaning of a date or a state',()=>{
   // The live allowlist is the one the newest migration replaced the entry with.
-  const allowlist=periods.slice(periods.indexOf("allowed:=CASE p_action"),periods.indexOf("ELSE NULL END;"));
+  const allowlist=edit.slice(edit.indexOf("allowed:=CASE p_action"),edit.indexOf("ELSE NULL END;"));
   for(const action of ['set_rule','register_equipment','update_equipment','archive_equipment','record_inspection'])
     assert.match(allowlist,new RegExp(`'${action}'`),action);
   // next_due_on is the expert's to set; what it MEANS is still the server's.
@@ -193,6 +199,35 @@ test('the slice adds no index that duplicates one already there',()=>{
   for(const index of added)
     assert.ok(!existing.includes(`${index.table}(${index.columns})`),`${index.name} duplicates a P10 index`);
   assert.match(probe,/the_slice_adds_no_index_that_duplicates_one_already_there/);
+});
+
+test('a filed report can be corrected but never rewritten',()=>{
+  const allowlist=edit.slice(edit.indexOf("allowed:=CASE p_action"),edit.indexOf("ELSE NULL END;"));
+  const correction=allowlist.slice(allowlist.indexOf("'update_inspection'"));
+  // The date and the result are what the report IS, so they are not editable.
+  assert.doesNotMatch(correction,/'performed_on'/);
+  assert.doesNotMatch(correction,/'result'/);
+  assert.match(correction,/'next_due_on'/);
+  // A corrected date is classified the same way an entered one is.
+  assert.match(code(edit),/WHEN chosen=derived THEN 'period' ELSE 'expert' END/);
+  // It is measured against the report's own date, which it cannot move.
+  assert.match(code(edit),/report\.performed_on,report\.result\)/);
+  // An asset nobody cleared stays unattachable through this path too.
+  assert.match(code(edit),/WHERE asset_id=\(p_payload->>'evidence_asset_id'\)::uuid AND scan_status='clean'/);
+  assert.match(probe,/a_correction_can_never_rewrite_the_check_date_or_its_result/);
+  assert.match(probe,/a_corrected_date_that_matches_the_period_reads_as_the_periods_again/);
+});
+
+test('the İSG-KATİP mark is information and moves nothing',()=>{
+  // It appears in no state, no group and no filter word the server accepts.
+  assert.doesNotMatch(code(periods),/katip[a-z_]*\s*(THEN|WHEN)\s*'(valid|overdue|due_soon|failed|never_inspected|period_unknown)'/);
+  const status=migration.slice(migration.indexOf('CREATE FUNCTION private_isg.equipment_check_status'),
+    migration.indexOf('CREATE FUNCTION private_isg.equipment_check_gate'));
+  assert.doesNotMatch(status,/katip/i);
+  // Unticking takes the note with it: a note explains a tick.
+  assert.match(code(edit),/WHEN p_payload \? 'katip_declared' AND NOT coalesce\(\(p_payload->>'katip_declared'\)::boolean,false\) THEN NULL/);
+  assert.match(probe,/the_katip_mark_moves_no_state_no_counter_and_no_filter/);
+  assert.match(probe,/unticking_the_katip_mark_removes_the_note_it_explained/);
 });
 
 test('the probe runs last and reports what it left closed',()=>{

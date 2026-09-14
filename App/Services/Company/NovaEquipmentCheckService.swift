@@ -295,6 +295,32 @@ import Foundation
                      needsReview: rule.needs_review, exceptionNote: rule.exception_note)
     }
 
+    /// Corrects a report that is already on file. The check date and the result
+    /// are not editable: they are what the report is, so the right answer to a
+    /// wrong one is the right report.
+    func updateInspection(_ identity: NovaSessionIdentity, equipment: NovaEquipmentItem,
+                          inspection: NovaEquipmentInspection,
+                          draft: NovaEquipmentInspectionDraft) async throws -> NovaEquipmentItem {
+        try check(identity)
+        guard let company = equipment.companyID else { throw NovaEquipmentFailure.denied }
+        var payload: [String: PersonnelRPCValue] = [
+            "equipment_id": .id(equipment.id), "inspection_id": .id(inspection.id)]
+        payload["inspector"] = Self.trimmed(draft.inspector).map { .string($0) } ?? .null
+        payload["external_ref"] = Self.trimmed(draft.externalRef).map { .string($0) } ?? .null
+        payload["note"] = Self.trimmed(draft.note).map { .string($0) } ?? .null
+        payload["evidence_asset_id"] = draft.evidenceAssetID.map { .id($0) } ?? .null
+        payload["next_due_on"] = Self.trimmed(draft.nextDueOn).map { .string($0) } ?? .null
+        payload["katip_declared"] = .bool(draft.katipDeclared)
+        payload["katip_note"] = draft.katipDeclared
+            ? (Self.trimmed(draft.katipNote).map { .string($0) } ?? .null) : .null
+        let data = try await mutate(company: company, action: "update_inspection", payload: payload)
+        try check(identity)
+        guard let row = try JSONDecoder().decode(MutationEnvelope.self, from: data).row else {
+            throw NovaEquipmentFailure.unavailable
+        }
+        return item(row)
+    }
+
     /// One report. The next due date is the server's: it comes from the type's
     /// period, and a report with no period behind it gets none.
     func recordInspection(_ identity: NovaSessionIdentity, equipment: NovaEquipmentItem,

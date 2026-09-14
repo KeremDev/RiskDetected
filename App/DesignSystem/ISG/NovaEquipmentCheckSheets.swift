@@ -19,6 +19,7 @@ struct NovaEquipmentItemSheet: View {
     @State private var draft = NovaEquipmentInspectionDraft()
     @State private var reports: [NovaFileEntry] = []
     @State private var choosingReport = false
+    @State private var correcting: NovaEquipmentInspection?
     @State private var busy = false
     @State private var error: String?
 
@@ -60,6 +61,16 @@ struct NovaEquipmentItemSheet: View {
                     editing = false
                     onChanged()
                 }
+            }
+        }
+        .fullScreenCover(item: $correcting) { entry in
+            NovaPopup {
+                NovaEquipmentReportEditSheet(report: entry, periodMonths: row.periodMonths,
+                    reports: reports) { value in
+                        current = try await client.updateInspection(row, entry, value)
+                        correcting = nil
+                        onChanged()
+                    }
             }
         }
     }
@@ -118,6 +129,19 @@ struct NovaEquipmentItemSheet: View {
                      workplaces.first { $0.id == row.workplaceID }?.name ?? "—")
                 cell("number", RDLocalization.string("localizable.nova.equipment.field.ref", table: .localizable, fallback: "Rapor no"),
                      row.lastExternalRef ?? "—")
+                // Informational only: it moves no state and no counter, and the
+                // detail line says whose statement it is.
+                cell("text.bubble", RDLocalization.string("localizable.nova.equipment.field.katip", table: .localizable, fallback: "İSG-KATİP"),
+                     row.katipDeclared
+                        ? RDLocalization.string("localizable.nova.equipment.katip.yes", table: .localizable, fallback: "Atama yapıldı")
+                        : RDLocalization.string("localizable.nova.equipment.katip.no", table: .localizable, fallback: "İşaretlenmedi"),
+                     detail: row.katipDeclared
+                        ? RDLocalization.string("localizable.nova.equipment.katip.declared", table: .localizable, fallback: "uzman beyanı")
+                        : "")
+            }
+            if row.katipDeclared, let note = row.katipNote, !note.isEmpty {
+                NovaText(text: note, style: .metaQuiet)
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.top, 7)
             }
         }
     }
@@ -302,6 +326,12 @@ struct NovaEquipmentItemSheet: View {
     }
 
     private func historyRow(_ entry: NovaEquipmentInspection) -> some View {
+        Button { if canWrite { correcting = entry } } label: { historyBody(entry) }
+            .buttonStyle(.plain).disabled(!canWrite)
+            .accessibilityIdentifier("equipment.history.\(entry.id.uuidString.lowercased())")
+    }
+
+    private func historyBody(_ entry: NovaEquipmentInspection) -> some View {
         HStack(alignment: .top, spacing: 9) {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 5) {
@@ -322,13 +352,17 @@ struct NovaEquipmentItemSheet: View {
                         NovaAnalysisTag(symbol: "pencil", text: NovaEquipmentWords.due(.expert), status: .neutral)
                     }
                     if entry.katipDeclared {
-                        NovaAnalysisTag(symbol: "checkmark.seal",
+                        NovaAnalysisTag(symbol: "text.bubble",
                             text: RDLocalization.string("localizable.nova.equipment.katip.tag", table: .localizable, fallback: "KATİP beyanı"),
                             status: .neutral)
                     }
                     Spacer(minLength: 0)
                 }
             }.frame(maxWidth: .infinity, alignment: .leading)
+            if canWrite {
+                Image(systemName: "square.and.pencil").font(.system(size: 12))
+                    .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
+            }
         }
         .padding(9)
         .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
@@ -421,6 +455,120 @@ struct NovaEquipmentItemSheet: View {
             NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
             TextField(label, text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
                 .frame(minHeight: 34).accessibilityIdentifier("equipment.inspection.\(id)")
+        }.frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// Correcting a report that is already on file. The check date and the result
+/// are shown and not edited: they are what the report is, and the screen says
+/// what to do instead when one of them is wrong.
+struct NovaEquipmentReportEditSheet: View {
+    let report: NovaEquipmentInspection
+    let periodMonths: Int?
+    let reports: [NovaFileEntry]
+    let save: (NovaEquipmentInspectionDraft) async throws -> Void
+    @Environment(\.colorScheme) private var scheme
+    @State private var draft: NovaEquipmentInspectionDraft
+    @State private var choosingReport = false
+    @State private var busy = false
+    @State private var error: String?
+
+    init(report: NovaEquipmentInspection, periodMonths: Int?, reports: [NovaFileEntry],
+         save: @escaping (NovaEquipmentInspectionDraft) async throws -> Void) {
+        self.report = report; self.periodMonths = periodMonths; self.reports = reports; self.save = save
+        var value = NovaEquipmentInspectionDraft()
+        value.performedOn = report.performedOn
+        value.result = report.result
+        value.nextDueOn = report.nextDueOn ?? ""
+        value.inspector = report.inspector ?? ""
+        value.externalRef = report.externalRef ?? ""
+        value.note = report.note ?? ""
+        value.katipDeclared = report.katipDeclared
+        value.katipNote = report.katipNote ?? ""
+        value.evidenceAssetID = report.evidenceAssetID
+        value.evidenceTitle = reports.first { $0.id == report.evidenceAssetID }?.title
+        _draft = State(initialValue: value)
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 11) {
+                NovaText(text: RDLocalization.string("localizable.nova.equipment.report.edit.title", table: .localizable, fallback: "Kontrol kaydını düzelt"),
+                    style: .sheetTitle)
+                HStack(spacing: 5) {
+                    NovaAnalysisTag(symbol: "calendar", text: report.performedOn, status: .neutral)
+                    NovaAnalysisTag(symbol: "checkmark.seal", text: NovaEquipmentWords.result(report.result),
+                        status: report.result == "fail" ? .danger : .neutral)
+                    Spacer(minLength: 0)
+                }
+                NovaHelpHint(text: RDLocalization.string("localizable.nova.equipment.report.edit.hint", table: .localizable,
+                    fallback: "Kontrol tarihi ve sonucu raporun kendisidir; buradan değiştirilmez. Yanlışsa doğru raporu ayrıca kaydedin."))
+                if report.result == "fail" {
+                    NovaText(text: RDLocalization.string("localizable.nova.equipment.fail.hint", table: .localizable,
+                        fallback: "Olumsuz sonuç için sonraki kontrol tarihi üretilmez."),
+                        style: .micro, color: NovaColorToken.statusWarningInk.color(in: scheme))
+                } else {
+                    NovaDayField(label: RDLocalization.string("localizable.nova.equipment.field.next", table: .localizable, fallback: "Sonraki kontrol"),
+                        value: $draft.nextDueOn, identifier: "equipment.report.due", isClearable: true)
+                    if let periodMonths {
+                        NovaText(text: String(format: RDLocalization.string("localizable.nova.equipment.due.period.is", table: .localizable,
+                            fallback: "Türün süresi %d ay. Değiştirirseniz kayıt, tarihin sizin belirlediğinizi söyler."), periodMonths),
+                            style: .micro, color: NovaColorToken.textTertiary.color(in: scheme))
+                    }
+                }
+                field(RDLocalization.string("localizable.nova.equipment.field.inspector", table: .localizable, fallback: "Kontrolü yapan"),
+                      $draft.inspector, id: "inspector")
+                field(RDLocalization.string("localizable.nova.equipment.field.ref", table: .localizable, fallback: "Rapor no"),
+                      $draft.externalRef, id: "ref")
+                katipField
+                field(RDLocalization.string("localizable.nova.document.field.note", table: .localizable, fallback: "Not"),
+                      $draft.note, id: "note")
+                if let error {
+                    NovaText(text: error, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme))
+                }
+                NovaButton(label: RDLocalization.string("localizable.nova.document.save", table: .localizable, fallback: "Kaydet"),
+                    symbol: "checkmark", isEnabled: !busy, isLoading: busy) {
+                    Task {
+                        busy = true; error = nil
+                        do { try await save(draft) }
+                        catch let failure as NovaEquipmentFailure { error = NovaEquipmentWords.failure(failure) }
+                        catch { self.error = NovaEquipmentWords.failure(.validation) }
+                        busy = false
+                    }
+                }.accessibilityIdentifier("equipment.report.save")
+            }.padding(16).novaPopupContentSize()
+        }
+    }
+
+    /// The same optional, informational mark the entry form carries.
+    @ViewBuilder private var katipField: some View {
+        Button { draft.katipDeclared.toggle() } label: {
+            HStack(spacing: 8) {
+                Image(systemName: draft.katipDeclared ? "checkmark.square.fill" : "square")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+                NovaSizedText(text: RDLocalization.string("localizable.nova.equipment.katip.mark", table: .localizable,
+                    fallback: "İSG-KATİP ataması yapıldı"), size: 12.5,
+                    weight: draft.katipDeclared ? "Bold" : "Medium")
+                Spacer(minLength: 0)
+            }.frame(minHeight: 40)
+        }.buttonStyle(.plain)
+            .accessibilityIdentifier("equipment.report.katip")
+            .accessibilityAddTraits(draft.katipDeclared ? .isSelected : [])
+        if draft.katipDeclared {
+            field(RDLocalization.string("localizable.nova.equipment.katip.note", table: .localizable, fallback: "Atama notu"),
+                  $draft.katipNote, id: "katip")
+        }
+        NovaText(text: RDLocalization.string("localizable.nova.equipment.katip.hint", table: .localizable,
+            fallback: "Bu işaret uzmanın kendi beyanıdır. Uygulama İSG-KATİP üzerinde sorgulama veya işlem yapmaz."),
+            style: .micro, color: NovaColorToken.textTertiary.color(in: scheme))
+    }
+
+    private func field(_ label: String, _ text: Binding<String>, id: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
+            TextField(label, text: text).font(.custom("PlusJakartaSans-Medium", size: 14))
+                .frame(minHeight: 34).accessibilityIdentifier("equipment.report.\(id)")
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }

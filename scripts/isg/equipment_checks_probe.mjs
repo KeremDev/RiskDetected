@@ -6,6 +6,7 @@ import {ROOT} from './lib.mjs';
 export const equipmentChecksFiles=[
   'supabase/migrations/20260915030000_isg_equipment_checks.sql',
   'supabase/migrations/20260915050000_isg_equipment_periods.sql',
+  'supabase/migrations/20260915070000_isg_equipment_inspection_edit.sql',
   'scripts/isg/equipment_checks_probe.mjs',
 ];
 // The general period the product now starts every type at.
@@ -39,6 +40,7 @@ export async function beginEquipmentChecksProbe({synthetic,sql,request,companyID
   const mark=(name,ok)=>pass('equipment_checks_'+name,ok);
   sql(read(equipmentChecksFiles[0]));
   sql(read(equipmentChecksFiles[1]));
+  sql(read(equipmentChecksFiles[2]));
 
   mark('the_slice_adds_no_switch_of_its_own',
     // It rides on the switches P10 already created rather than inventing a
@@ -267,6 +269,59 @@ export async function beginEquipmentChecksProbe({synthetic,sql,request,companyID
   mark('a_katip_note_without_the_mark_is_refused',
     sql("SELECT count(*) FROM private_isg.equipment_inspections WHERE NOT katip_assignment_declared AND katip_declared_note IS NOT NULL;")==='0');
 
+  // A report that is already on file can be corrected.
+  const filed=mutate('record_inspection',{equipment_id:own('KRN-110'),
+    performed_on:day(anchor,-11),result:'pass',inspector:'Yanlış isim',
+    external_ref:'YNLS-1',katip_declared:false});
+  const report=filed.body.row.inspections[0];
+  const corrected=mutate('update_inspection',{equipment_id:filed.body.equipment_id,
+    inspection_id:report.id,inspector:'Doğru kuruluş',external_ref:'RPT-2026-0200',
+    next_due_on:day(anchor,150),katip_declared:true,katip_note:'Atama sonradan işaretlendi.'});
+  mark('a_report_already_on_file_can_be_corrected',corrected.status===200&&
+    corrected.body.row.last_inspector==='Doğru kuruluş'&&
+    corrected.body.row.last_external_ref==='RPT-2026-0200'&&
+    corrected.body.row.next_due_on===day(anchor,150)&&
+    corrected.body.row.due_source==='expert'&&
+    corrected.body.row.katip_assignment_declared===true&&
+    corrected.body.row.katip_declared_note==='Atama sonradan işaretlendi.');
+  // Putting it back on the period's own answer reads as the period's again.
+  const restored=mutate('update_inspection',{equipment_id:filed.body.equipment_id,
+    inspection_id:report.id,
+    next_due_on:addMonths({y:Number(day(anchor,-11).slice(0,4)),m:Number(day(anchor,-11).slice(5,7)),
+      d:Number(day(anchor,-11).slice(8,10))},CRANE_PERIOD_MONTHS)});
+  mark('a_corrected_date_that_matches_the_period_reads_as_the_periods_again',
+    restored.status===200&&restored.body.row.due_source==='period');
+  // The date and the result are what the report is, and cannot be edited.
+  mark('a_correction_can_never_rewrite_the_check_date_or_its_result',
+    mutate('update_inspection',{equipment_id:filed.body.equipment_id,inspection_id:report.id,
+      performed_on:day(anchor,-1)}).body?.message==='PAYLOAD_NOT_ALLOWED'&&
+    mutate('update_inspection',{equipment_id:filed.body.equipment_id,inspection_id:report.id,
+      result:'fail'}).body?.message==='PAYLOAD_NOT_ALLOWED'&&
+    sql("SELECT performed_on||':'||result FROM private_isg.equipment_inspections WHERE inspection_id="+quote(report.id)+";")===day(anchor,-11)+':pass');
+  mark('a_correction_is_refused_on_another_owners_report',
+    mutate('update_inspection',{equipment_id:filed.body.equipment_id,
+      inspection_id:randomUUID(),inspector:'Yabancı'}).body?.message==='ACCESS_DENIED');
+  mark('a_corrected_date_before_the_report_is_refused',
+    mutate('update_inspection',{equipment_id:filed.body.equipment_id,inspection_id:report.id,
+      next_due_on:day(anchor,-11)}).body?.message==='DUE_BEFORE_REPORT');
+  // Unticking the mark takes its note with it: a note explains a tick.
+  const untick=mutate('update_inspection',{equipment_id:filed.body.equipment_id,
+    inspection_id:report.id,katip_declared:false});
+  mark('unticking_the_katip_mark_removes_the_note_it_explained',
+    untick.body.row.katip_assignment_declared===false&&
+    untick.body.row.katip_declared_note===null);
+  // The mark is information and nothing else: it moves no state and no counter.
+  const beforeMark=readCall({p_limit:100}).body;
+  mutate('update_inspection',{equipment_id:filed.body.equipment_id,inspection_id:report.id,
+    katip_declared:true,katip_note:'Bilgi amaçlı.'});
+  const afterMark=readCall({p_limit:100}).body;
+  mark('the_katip_mark_moves_no_state_no_counter_and_no_filter',
+    JSON.stringify(beforeMark.counts)===JSON.stringify(afterMark.counts)&&
+    beforeMark.rows.find(row=>row.id===filed.body.equipment_id).state===
+      afterMark.rows.find(row=>row.id===filed.body.equipment_id).state&&
+    // There is no state or group word to filter it by, either.
+    readCall({p_state:'katip'}).body?.message==='VALIDATION_ERROR');
+
   // A report cannot be dated in the future.
   mark('a_report_dated_after_today_is_refused',
     mutate('record_inspection',{equipment_id:crane.body.equipment_id,
@@ -399,7 +454,9 @@ export async function beginEquipmentChecksProbe({synthetic,sql,request,companyID
       needs_two_switches:['modules','equipment'],
       period_defaults_offered:true,period_default_source:'regulation_default',
       period_default_needs_review:true,due_date_invented_without_a_rule:false,
-      next_date_editable_by_the_expert:true,katip_official_verification:false,
+      next_date_editable_by_the_expert:true,filed_report_correctable:true,
+      correction_can_rewrite_date_or_result:false,
+      katip_official_verification:false,katip_mark_affects_state:false,
       state_stored:false,health_records_tracked:false,compliance_verdict_returned:false,
       legacy_tables_written:false,production_deployed:false};
   }};

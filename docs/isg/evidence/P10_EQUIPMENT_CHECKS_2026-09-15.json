@@ -5,7 +5,8 @@
  "branch": "codex/isg-transition-foundation",
  "migration": [
   "supabase/migrations/20260915030000_isg_equipment_checks.sql",
-  "supabase/migrations/20260915050000_isg_equipment_periods.sql"
+  "supabase/migrations/20260915050000_isg_equipment_periods.sql",
+  "supabase/migrations/20260915070000_isg_equipment_inspection_edit.sql"
  ],
  "own_rollout_feature_added": false,
  "module_left_disabled": true,
@@ -14,11 +15,11 @@
   "equipment"
  ],
  "synthetic_run": {
-  "directory": "output/isg/runs/synthetic-auth-N3g8jI",
+  "directory": "output/isg/runs/synthetic-auth-Ikxt4p",
   "ok": true,
-  "checks_total": 1298,
+  "checks_total": 1305,
   "checks_failed": 0,
-  "equipment_checks": 50,
+  "equipment_checks": 57,
   "ids": [
    "equipment_checks_the_slice_adds_no_switch_of_its_own",
    "equipment_checks_every_new_table_is_private_and_row_secured",
@@ -50,6 +51,13 @@
    "equipment_checks_the_katip_mark_is_optional_and_defaults_to_not_declared",
    "equipment_checks_no_row_can_ever_claim_the_official_system_was_checked",
    "equipment_checks_a_katip_note_without_the_mark_is_refused",
+   "equipment_checks_a_report_already_on_file_can_be_corrected",
+   "equipment_checks_a_corrected_date_that_matches_the_period_reads_as_the_periods_again",
+   "equipment_checks_a_correction_can_never_rewrite_the_check_date_or_its_result",
+   "equipment_checks_a_correction_is_refused_on_another_owners_report",
+   "equipment_checks_a_corrected_date_before_the_report_is_refused",
+   "equipment_checks_unticking_the_katip_mark_removes_the_note_it_explained",
+   "equipment_checks_the_katip_mark_moves_no_state_no_counter_and_no_filter",
    "equipment_checks_a_report_dated_after_today_is_refused",
    "equipment_checks_another_owners_company_is_refused_on_every_action",
    "equipment_checks_another_owners_equipment_cannot_be_inspected_through_this_company",
@@ -95,7 +103,14 @@
   "changed_date_can_read_as_derived": false,
   "katip_declaration_optional": true,
   "katip_official_verification_possible": false,
-  "katip_note_without_the_mark": false
+  "katip_note_without_the_mark": false,
+  "filed_report_correctable": true,
+  "correction_can_rewrite_the_check_date": false,
+  "correction_can_rewrite_the_result": false,
+  "corrected_date_reclassified_the_same_way": true,
+  "unclean_asset_attachable_through_the_correction": false,
+  "katip_mark_affects_state_or_counter": false,
+  "katip_note_survives_unticking": false
  },
  "boundary": {
   "authenticated_entries": [
@@ -118,12 +133,12 @@
   ],
   "design_tests": {
    "file": "scripts/isg/nova_equipment_checks.test.mjs",
-   "total": 15,
+   "total": 17,
    "failed": 0
   },
   "guard_tests": {
    "file": "scripts/isg/equipment_checks_guard.test.mjs",
-   "total": 21,
+   "total": 23,
    "failed": 0
   },
   "connected_to": [
@@ -139,12 +154,12 @@
  },
  "suites": {
   "foundation": {
-   "total": 556,
+   "total": 558,
    "failed": 1,
    "failure_owner": "the concurrent session's education copy, not this slice"
   },
   "nova_design": {
-   "total": 82,
+   "total": 84,
    "failed": 0
   },
   "l10n": {

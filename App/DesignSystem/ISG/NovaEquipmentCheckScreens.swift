@@ -18,6 +18,8 @@ struct NovaEquipmentCheckClient {
     let archive: (NovaEquipmentItem) async throws -> Void
     let setRule: (UUID, NovaEquipmentRuleDraft) async throws -> NovaEquipmentRule
     let recordInspection: (NovaEquipmentItem, NovaEquipmentInspectionDraft) async throws -> NovaEquipmentItem
+    /// Corrects a report already on file. Its date and result are not editable.
+    var updateInspection: (NovaEquipmentItem, NovaEquipmentInspection, NovaEquipmentInspectionDraft) async throws -> NovaEquipmentItem = { item, _, _ in item }
     /// Reports already filed in the archive, so a check can point at a real
     /// file instead of carrying a second copy of one.
     var filedReports: (UUID) async throws -> [NovaFileEntry] = { _ in [] }

@@ -1,8 +1,9 @@
 # Periyodik Kontroller — P10 istemci dilimi
 
-15 Eylül 2026. İki migration: `20260915030000_isg_equipment_checks.sql` ve
-`20260915050000_isg_equipment_periods.sql`. **İkisi de kendi rollout satırını
-eklemiyor ve hiçbir anahtarı açmıyor.**
+15 Eylül 2026. Üç migration: `20260915030000_isg_equipment_checks.sql`,
+`20260915050000_isg_equipment_periods.sql` ve
+`20260915070000_isg_equipment_inspection_edit.sql`. **Üçü de kendi rollout
+satırını eklemiyor ve hiçbir anahtarı açmıyor.**
 
 Sol menüdeki **Periyodik Kontroller** girişi artık gerçek bir sayfaya iniyor,
 firma detay sayfasındaki aynı başlık ve ana sayfadaki özet kartı bağlandı.
@@ -110,6 +111,24 @@ varsayılanıdır; sınıflandırma istemcinin değil.
 Rapor tarihinden önceki bir tarih ve olumsuz sonuca elle verilen tarih
 reddediliyor (`DUE_BEFORE_REPORT`, `DUE_ON_A_FAILED_CHECK`).
 
+## 5.3. Kaydedilmiş rapor düzeltilebiliyor — `20260915070000`
+
+"Kullanıcı isterse değiştirebilir" yalnız giriş anında değil. Geçmişteki bir
+rapora dokunmak **düzeltme popup'ını** açıyor: sonraki kontrol tarihi, kontrolü
+yapan, rapor no, arşiv raporu, İSG-KATİP işareti ve notu, not.
+
+**Değiştirilemeyen iki alan:** kontrol tarihi ve sonucu. Bunlar raporun
+kendisidir; değiştirmek olanı sessizce yeniden yazmak olurdu. Ekran ne
+yapılacağını söylüyor:
+
+> Kontrol tarihi ve sonucu raporun kendisidir; buradan değiştirilmez. Yanlışsa
+> doğru raporu ayrıca kaydedin.
+
+Sunucu da aynısını yapıyor: `performed_on` ve `result` bu eylemin payload
+allowlist'inde yok. Düzeltilen tarih girişteki ile **aynı şekilde**
+sınıflandırılıyor — sürenin ürettiğine geri çekilirse tekrar "Süreden
+hesaplandı" oluyor. Temiz olmayan bir asset bu yoldan da eklenemiyor.
+
 ## 5.2. İSG-KATİP ataması — uzmanın beyanı
 
 Kontrol kaydederken opsiyonel bir işaret: **"İSG-KATİP ataması yapıldı"** ve
@@ -126,7 +145,14 @@ doğruluyor. İşaretin altında ekranda yazıyor:
 > işlem yapmaz.
 
 İşaretlenmemiş bir kayda not yazılamıyor (`CHECK(katip_assignment_declared OR
-katip_declared_note IS NULL)`): boş bir kutunun açıklaması olmaz.
+katip_declared_note IS NULL)`): boş bir kutunun açıklaması olmaz. İşareti geri
+almak notunu da alıyor.
+
+**Sadece bilgi amaçlı.** Hiçbir duruma, sayaca veya filtreye dokunmuyor; probe
+işareti değiştirip sayımların ve satır durumunun **bit bit aynı kaldığını**
+doğruluyor ve `katip` diye bir filtre kelimesi olmadığını gösteriyor. Ekranda
+mühür ikonu değil **konuşma balonu** kullanılıyor — mühür doğrulama gibi okunur.
+Detay kartında "Atama yapıldı · uzman beyanı" olarak görünüyor.
 
 ## 6. Sunucu sınırı
 
@@ -176,17 +202,18 @@ yokluğu bilginin kendisi.
 
 | Kapı | Sonuç |
 |---|---|
-| `run_auth_restore.mjs --synthetic-session` | **ok: true, 1298 kontrol, 0 hata**, 50'si `equipment_checks` (`output/isg/runs/synthetic-auth-N3g8jI`) |
-| `run_suite.mjs foundation` | 555/556 — tek hata eşzamanlı oturumun eğitim metinleri |
-| `run_suite.mjs nova-design` | 82/82 |
-| `equipment_checks_guard.test.mjs` | 21/21 |
-| `nova_equipment_checks.test.mjs` | 15/15 |
+| `run_auth_restore.mjs --synthetic-session` | **ok: true, 1305 kontrol, 0 hata**, 57'si `equipment_checks` (`output/isg/runs/synthetic-auth-Ikxt4p`) |
+| `run_suite.mjs foundation` | 557/558 — tek hata eşzamanlı oturumun eğitim metinleri |
+| `run_suite.mjs nova-design` | 84/84 |
+| `equipment_checks_guard.test.mjs` | 23/23 |
+| `nova_equipment_checks.test.mjs` | 17/17 |
 | `localization_catalog_tests.mjs` | L10N-001/002/003 PASS; L10N-004 borcundan bu dilime düşen **0** |
 | `migrate_swift_localization_catalogs.mjs --check` | PASS, bekleyen 0 |
 | iOS Debug + `NOVA_PILOT_BUILD` | SUCCEEDED |
 
 Simülatörde firma seçimi, envanter listesi (altı durumun tamamı), süre özeti,
-ekipman popup'ı ve kontrol kaydetme paneli yürütüldü: rapor tarihi seçilince
+ekipman popup'ı, kontrol kaydetme paneli ve rapor düzeltme popup'ı yürütüldü:
+rapor tarihi seçilince
 sonraki tarih kendiliğinden doldu, "Süreden hesaplandı" satırı göründü ve
 İSG-KATİP işareti ile beyan uyarısı çalıştı. İki düzeltme: başlık, ekleme
 butonuyla yan yanayken iki satıra kırılıyordu (ölçekleniyor); yeni katalog

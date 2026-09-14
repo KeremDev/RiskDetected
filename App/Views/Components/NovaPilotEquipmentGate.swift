@@ -31,6 +31,10 @@ struct NovaPilotEquipmentGate: View {
             recordInspection: { equipment, draft in
                 try await service.recordInspection(identity, equipment: equipment, draft: draft)
             },
+            updateInspection: { equipment, inspection, draft in
+                try await service.updateInspection(identity, equipment: equipment,
+                                                   inspection: inspection, draft: draft)
+            },
             // The reports the archive already holds for this company, so an
             // inspection can point at a filed document instead of carrying a
             // second copy of one. Only files that were actually cleared appear.
