@@ -38,16 +38,13 @@ struct NovaPilotRoot: View {
     @EnvironmentObject private var app: AppState
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var controller = NovaWorkspaceController()
-    @State private var navigation = NovaNavigationState(epoch: UUID().uuidString, available: [.companies, .newCompany, .findings, .newFinding])
+    @State private var navigation = NovaNavigationState(epoch: UUID().uuidString, available: [.companies, .newCompany, .findings, .newFinding, .analyses, .newAnalysis])
     @State private var showingCreate = false
     @State private var notice: String?
     @State private var listRevision = UUID()
     @State private var overview: [NovaPilotCompanySummary]?
     @State private var overviewFailed = false
     @State private var sceneRevalidation = NovaSceneRevalidation()
-    /// The home picture card goes straight to the camera; the drawer entry and
-    /// the quick-add sheet ask how to start.
-    @State private var pendingStart: NovaFindingsStart = .chooser
     private var overviewKey: String { "\(controller.host.navigation.epoch):\(ready):\(listRevision):\(navigation.selected)" }
     private var activeCompanies: [NovaPilotCompanySummary]? { ready ? overview?.filter { !$0.is_archived } : nil }
     private var metrics: [NovaMetricItem] {
@@ -75,7 +72,6 @@ struct NovaPilotRoot: View {
                 // than in NavigationStack's path. Selecting Firmalar from the
                 // drawer/tab therefore must clear that feature-local scope.
                 if destination == .companies { controller.select(nil) }
-                if destination == .newFinding { pendingStart = .chooser }
             },
             onLogout: { app.signOut() }) { destination in
             switch destination {
@@ -86,18 +82,19 @@ struct NovaPilotRoot: View {
                         openCount: nil, metrics: metrics, activity: nil,
                         trainingMessage: RDLocalization.string("localizable.nova.pilot.main.gate.egitim.modulu.henuz.kullanima.acik.degil.e21b7bc6", table: .localizable, fallback: "Eğitim modülü henüz kullanıma açık değil."),
                         summaryMessage: activeCompanies != nil ? RDLocalization.string("localizable.nova.pilot.main.gate.pilot.firmalarinizin.guncel.kayitlari.01d48da7", table: .localizable, fallback: "Pilot firmalarınızın güncel kayıtları.") : overviewFailed ? RDLocalization.string("localizable.nova.pilot.main.gate.ozet.alinamadi.yenileyerek.tekrar.deneyin.9b6a6077", table: .localizable, fallback: "Özet alınamadı. Yenileyerek tekrar deneyin.") : RDLocalization.string("localizable.nova.pilot.main.gate.ozet.verileri.henuz.bagli.degil.4508136e", table: .localizable, fallback: "Özet verileri henüz bağlı değil.")),
-                        onNavigate: { destination in
-                            pendingStart = destination == .newFinding ? .chooser : pendingStart
-                            navigate(destination)
-                        },
-                        onPhoto: { pendingStart = .photo; navigate(.newFinding) }, onAssistant: unavailable)
+                        onNavigate: navigate,
+                        onPhoto: { navigate(.newAnalysis) }, onAssistant: unavailable)
                 }
             case .companies:
                 companies
             case .findings:
-                nonconformities(start: .board)
+                nonconformities(.board)
+            case .analyses:
+                nonconformities(.analyses)
+            case .newAnalysis:
+                nonconformities(.newAnalysis)
             case .newFinding:
-                nonconformities(start: pendingStart)
+                nonconformities(.addFinding)
             case .profile:
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
@@ -169,14 +166,13 @@ struct NovaPilotRoot: View {
         }.padding(.horizontal, 20).padding(.bottom, 10)
     }
 
-    /// The Uygunsuzluklar surface owns the whole analysis route: a photo
-    /// analysis may start without a company, while records still need one.
-    @ViewBuilder private func nonconformities(start: NovaFindingsStart) -> some View {
+    /// Each menu entry lands on exactly one page; the surface says which.
+    @ViewBuilder private func nonconformities(_ surface: NovaFindingsSurface) -> some View {
         if ready {
             NovaPilotFindingsGate(identity: identity, scope: controller.scope, canWrite: controller.canWrite,
-                select: controller.select, currentScope: { controller.scope }, startMode: start,
-                onCompanies: { navigate(.companies) }, onHome: { navigate(.home) })
-                .id("\(controller.host.navigation.epoch):\(start)")
+                select: controller.select, currentScope: { controller.scope }, surface: surface,
+                onNavigate: navigate, onCompanies: { navigate(.companies) }, onHome: { navigate(.home) })
+                .id("\(controller.host.navigation.epoch):\(surface)")
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {

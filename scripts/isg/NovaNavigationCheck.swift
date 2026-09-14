@@ -1,5 +1,14 @@
 import Foundation
 
+// The navigation model carries its own presentation titles, and those titles
+// are what the catalogue pins. Compiling it on its own therefore needs the
+// localisation entry point; this stub answers with the written fallback, which
+// is exactly the Turkish string the catalogue records.
+enum RDLocalizationTable { case localizable }
+enum RDLocalization {
+    static func string(_ key: String, table: RDLocalizationTable, fallback: String) -> String { fallback }
+}
+
 @main struct NovaNavigationCheck {
     static func main() throws {
         let root = CommandLine.arguments.dropFirst().first ?? "contracts/isg/v1"

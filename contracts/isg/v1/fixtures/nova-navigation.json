@@ -5192,6 +5192,630 @@
           }
         }
       ]
+    },
+    {
+      "id": "route-newCompany-enabled-fresh",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "newCompany"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "newCompany",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "companies",
+            "overlay": null,
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [
+                "newCompany"
+              ],
+              "profile": []
+            },
+            "current": "newCompany",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-newCompany-enabled-stale",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "newCompany"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "newCompany",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-newCompany-locked-fresh",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "newCompany",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-newCompany-locked-stale",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "newCompany",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-analyses-enabled-fresh",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "analyses"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "analyses",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "findings",
+            "overlay": null,
+            "paths": {
+              "home": [],
+              "findings": [
+                "analyses"
+              ],
+              "companies": [],
+              "profile": []
+            },
+            "current": "analyses",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-analyses-enabled-stale",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "analyses"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "analyses",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-analyses-locked-fresh",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "analyses",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-analyses-locked-stale",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "analyses",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-newAnalysis-enabled-fresh",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "newAnalysis"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "newAnalysis",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "findings",
+            "overlay": null,
+            "paths": {
+              "home": [],
+              "findings": [
+                "newAnalysis"
+              ],
+              "companies": [],
+              "profile": []
+            },
+            "current": "newAnalysis",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-newAnalysis-enabled-stale",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "newAnalysis"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "newAnalysis",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-newAnalysis-locked-fresh",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "newAnalysis",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-newAnalysis-locked-stale",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "newAnalysis",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
     }
   ]
 }

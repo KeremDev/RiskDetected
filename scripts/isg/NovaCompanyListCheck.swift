@@ -1,5 +1,16 @@
 import Foundation
 
+// The model carries its own presentation strings. Compiling it on its own
+// therefore needs the localisation entry point; this stub answers with the
+// written fallback.
+enum RDLocalizationTable { case localizable }
+enum RDLocalization {
+    static func string(_ key: String, table: RDLocalizationTable, fallback: String) -> String { fallback }
+    static func format(_ key: String, table: RDLocalizationTable, fallback: String, arguments: [String]) -> String {
+        String(format: fallback, arguments: arguments)
+    }
+}
+
 @main struct NovaCompanyListCheck {
     static func main() throws {
         let data = try Data(contentsOf: URL(fileURLWithPath: CommandLine.arguments[1]))

@@ -16,9 +16,12 @@ struct NovaPilotReviewHarness: View {
     private static let employee = UUID(uuidString: "00000000-0000-4000-8000-000000000004")!
     @State private var selected = false
     @State private var create = false
-    @State private var navigation = NovaNavigationState(epoch: "review-only", available: [.companies, .findings, .newFinding])
-    @State private var analysisRoute: AnalysisReviewRoute = .intake
+    @State private var navigation = NovaNavigationState(epoch: "review-only", available: [.companies, .findings, .newFinding, .analyses, .newAnalysis])
     @State private var draft = NovaAnalysisIntakeDraft()
+    @State private var reviewImages: [UIImage] = []
+    @State private var reviewRecord: NovaNonconformityEntry?
+    @State private var showingReviewDetail = false
+    @State private var showingIntake = false
     /// Review-only: assigning in the fixture flips the same screen into its
     /// with-a-company shape, so the transfer step can be seen as well.
     @State private var reviewAssigned = false
@@ -46,8 +49,8 @@ struct NovaPilotReviewHarness: View {
         NovaExpertShell(navigation: $navigation, userName: "Tasarım Provası", connectionLabel: "Sentetik veriler · canlı bağlantı yok",
             onCompanyCreate: { create = true },
             onDestination: { destination in if destination == .companies { selected = false } }) { destination in
-            if destination == .findings || destination == .newFinding {
-                analysisReview
+            if [.findings, .newFinding, .analyses, .newAnalysis].contains(destination) {
+                analysisReview(destination)
             } else if selected {
                 NovaCompanyWorkspace(scope: scope, companyName: summary.name, canWrite: true, personnel: personnel, directory: directory,
                     onBack: { selected = false }, loadSummary: { summary })
@@ -69,22 +72,49 @@ struct NovaPilotReviewHarness: View {
 
     // MARK: synthetic analysis surface
 
-    enum AnalysisReviewRoute: String, CaseIterable, Identifiable {
-        case board, record, intake, detail, manual, list
-        var id: String { rawValue }
-        var title: String {
-            switch self {
-            case .board: return "Uygunsuzluklar"
-            case .record: return "Kayıt"
-            case .intake: return "Fotoğraf akışı"
-            case .detail: return "Analiz detayı"
-            case .manual: return "Elle giriş"
-            case .list: return "Analizlerim"
-            }
+    /// Rendered per destination, exactly the way the drawer reaches them, so
+    /// the review build has no menu of its own.
+    @ViewBuilder private func analysisReview(_ destination: NovaDestination) -> some View {
+        switch destination {
+        case .findings:
+            NovaNonconformityListScreen(client: .init(load: { reviewEntries },
+                thumbnail: { _ in Self.fixturePhoto },
+                open: { entry in reviewRecord = entry }, create: { navigation.apply(.navigate(.newFinding), from: navigation.epoch) }),
+                companies: reviewCompanies, today: "2026-09-14", onBack: {})
+                .fullScreenCover(item: $reviewRecord) { entry in
+                    NovaPopup {
+                        NovaNonconformityRecordSheet(entry: entry, client: .init(
+                            load: { entry.row }, transition: { _, _, _ in entry.row },
+                            addAction: { _, _, _ in entry.row }, verify: { _, _ in entry.row },
+                            saveDetail: { _ in entry.row }))
+                    }
+                }
+        case .analyses:
+            NovaAnalysisListScreen(load: { reviewSummaries }, thumbnail: { _ in Self.fixturePhoto },
+                onOpen: { _ in showingReviewDetail = true }, onBack: {})
+                .fullScreenCover(isPresented: $showingReviewDetail) {
+                    NovaAnalysisDetailScreen(analysisID: Self.analysis, client: reviewDetailClient,
+                        onBack: { showingReviewDetail = false })
+                }
+        case .newAnalysis:
+            NovaPhotoIntakeScreen(images: $reviewImages, onStart: { showingIntake = true }, onBack: {})
+                .fullScreenCover(isPresented: $showingIntake) {
+                    NovaPopup {
+                        NovaAnalysisIntakePopup(companies: reviewCompanies, sectors: NovaPilotFindingsGate.sectorOptions,
+                            focuses: reviewFocuses, draft: $draft, onStart: { showingIntake = false })
+                            .onAppear { if draft.photoCount == 0 { draft.photoCount = max(1, reviewImages.count) } }
+                    }
+                }
+        case .newFinding:
+            NovaManualNonconformityScreen(companies: reviewCompanies,
+                workplaces: { _ in reviewWorkplaces }, save: { _ in nil }, onBack: {})
+        default:
+            NovaAnalysisDetailScreen(analysisID: Self.analysis, client: reviewDetailClient, onBack: {})
         }
     }
 
     private static let workplace = UUID(uuidString: "00000000-0000-4000-8000-000000000005")!
+    private static let analysis = UUID(uuidString: "00000000-0000-4000-8000-000000000006")!
     /// A drawn placeholder, never a real site photo.
     private static let fixturePhoto: UIImage = {
         let size = CGSize(width: 400, height: 300)
@@ -97,37 +127,6 @@ struct NovaPilotReviewHarness: View {
             context.fill(CGRect(x: 300, y: 90, width: 16, height: 100))
         }
     }()
-    private static let analysis = UUID(uuidString: "00000000-0000-4000-8000-000000000006")!
-
-    @ViewBuilder private var analysisReview: some View {
-        VStack(spacing: 0) {
-            Picker("", selection: $analysisRoute) {
-                ForEach(AnalysisReviewRoute.allCases) { route in Text(verbatim: route.title).tag(route) }
-            }.pickerStyle(.segmented).padding(.horizontal, 20).padding(.bottom, 8)
-            switch analysisRoute {
-            case .intake:
-                NovaAnalysisIntakePopup(companies: reviewCompanies, sectors: NovaPilotFindingsGate.sectorOptions,
-                    focuses: reviewFocuses, draft: $draft, onStart: {})
-                    .onAppear { if draft.photoCount == 0 { draft.photoCount = 2 } }
-            case .detail:
-                NovaAnalysisDetailScreen(analysisID: Self.analysis, client: reviewDetailClient, onBack: {})
-            case .manual:
-                NovaManualNonconformityScreen(workplaces: reviewWorkplaces, save: { _ in nil }, onBack: {})
-            case .list:
-                NovaAnalysisListScreen(load: { reviewSummaries }, thumbnail: { _ in nil },
-                    onOpen: { _ in analysisRoute = .detail }, onBack: {})
-            case .board:
-                NovaNonconformityListScreen(client: .init(load: { reviewEntries },
-                    open: { _ in }, create: { analysisRoute = .manual }),
-                    companies: reviewCompanies, today: "2026-09-14", onBack: {})
-            case .record:
-                NovaNonconformityRecordScreen(entry: reviewEntries[0], client: .init(
-                    load: { reviewEntries[0].row }, transition: { _, _, _ in reviewEntries[0].row },
-                    addAction: { _, _, _ in reviewEntries[0].row }, verify: { _, _ in reviewEntries[0].row },
-                    saveDetail: { _ in reviewEntries[0].row }), onBack: {})
-            }
-        }
-    }
 
     private var reviewCompanies: [NovaAnalysisCompanyOption] {
         [.init(id: Self.company, name: summary.name, detail: "1 işyeri · 1 personel", sector: "İmalat / Fabrika"),

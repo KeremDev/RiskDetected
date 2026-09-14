@@ -17,12 +17,17 @@ enum NovaTab: String, CaseIterable, Hashable {
 enum NovaDestination: String, CaseIterable, Hashable {
     case home, newFinding, findings, companies, memory, documentChecklist, documents, visits, statistics, training, reports, reportArchive, notifications, profile, newDocument, newVisit, newTraining
     case periodicChecks, newCompany
+    /// The analysis surfaces are their own menu entries: one lists what was
+    /// analysed, the other starts a new one.
+    case analyses, newAnalysis
     var title: String {
         switch self {
         case .newCompany: return RDLocalization.string("localizable.nova.navigation.firma.ekle.b4073323", table: .localizable, fallback: "Firma Ekle")
         case .periodicChecks: return RDLocalization.string("localizable.nova.navigation.periodic.checks", table: .localizable, fallback: "Periyodik Kontroller")
         case .home: return RDLocalization.string("localizable.nova.navigation.ana.sayfa.1fc29356", table: .localizable, fallback: "Ana Sayfa")
-        case .newFinding: return RDLocalization.string("localizable.nova.navigation.yeni.uygunsuzluk.0f9172a3", table: .localizable, fallback: "Yeni Uygunsuzluk")
+        case .newFinding: return RDLocalization.string("localizable.nova.navigation.uygunsuzluk.ekle", table: .localizable, fallback: "Uygunsuzluk Ekle")
+        case .analyses: return RDLocalization.string("localizable.nova.navigation.analizlerim", table: .localizable, fallback: "Analizlerim")
+        case .newAnalysis: return RDLocalization.string("localizable.nova.navigation.analiz.yap", table: .localizable, fallback: "Analiz Yap")
         case .findings: return "Uygunsuzluklar"
         case .companies: return "Firmalar"
         case .memory: return RDLocalization.string("localizable.nova.navigation.isletme.hafizasi.c231f5c8", table: .localizable, fallback: "İşletme Hafızası")
@@ -46,6 +51,8 @@ enum NovaDestination: String, CaseIterable, Hashable {
         case .periodicChecks: return .home
         case .home: return .home
         case .newFinding: return .findings
+        case .analyses: return .findings
+        case .newAnalysis: return .findings
         case .findings: return .findings
         case .companies: return .companies
         case .memory: return .home
@@ -68,7 +75,9 @@ enum NovaDestination: String, CaseIterable, Hashable {
         case .newCompany: return "building.2"
         case .periodicChecks: return "checkmark.shield"
         case .home: return "house"
-        case .newFinding: return "camera"
+        case .newFinding: return "exclamationmark.triangle"
+        case .analyses: return "photo.on.rectangle.angled"
+        case .newAnalysis: return "camera"
         case .findings: return "list.bullet"
         case .companies: return "building.2"
         case .memory: return "clock.arrow.circlepath"
@@ -87,8 +96,8 @@ enum NovaDestination: String, CaseIterable, Hashable {
         }
     }
     // Historical route values remain decodable; removed product features are not offered.
-    static let drawer: [Self] = [.home, .newFinding, .findings, .companies, .periodicChecks, .documentChecklist, .documents, .statistics, .training, .reports, .reportArchive, .notifications]
-    static let quickAdd: [Self] = [.newCompany, .newFinding, .newDocument, .newTraining]
+    static let drawer: [Self] = [.home, .findings, .analyses, .newAnalysis, .newFinding, .companies, .periodicChecks, .documentChecklist, .documents, .statistics, .training, .reports, .reportArchive, .notifications]
+    static let quickAdd: [Self] = [.newCompany, .newAnalysis, .newFinding, .newDocument]
 }
 
 enum NovaOverlay: String, CaseIterable { case drawer, quickAdd, notifications }

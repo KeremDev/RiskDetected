@@ -141,30 +141,62 @@ struct NovaAnalysisDetailScreen: View {
     // MARK: header
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(spacing: 10) {
             NovaBackButton { onBack() }
-            VStack(alignment: .leading, spacing: 3) {
-                NovaText(text: data?.title ?? RDLocalization.string("localizable.nova.analysis.title", table: .localizable, fallback: "Analiz"), style: .screenTitle)
-                if let data {
-                    NovaText(text: [data.createdOn, data.methodLabel,
-                        data.companyName ?? RDLocalization.string("localizable.nova.analysis.unassigned", table: .localizable, fallback: "Firmasız")]
-                        .joined(separator: " · "), style: .metaQuiet)
-                }
-            }
+            NovaText(text: RDLocalization.string("localizable.nova.analysis.title", table: .localizable, fallback: "Analiz"), style: .screenTitle)
             Spacer(minLength: 0)
-            thumbnail
         }
     }
 
-    /// The analysed picture sits next to the title; tapping it opens the full
-    /// size in a popup rather than pushing another page.
+    /// One compact card for what this analysis is: picture, name, company,
+    /// date and method. Tapping the picture opens it full size.
+    private func summaryCard(_ data: NovaAnalysisDetailData) -> some View {
+        NovaCard(padding: 12) {
+            HStack(alignment: .top, spacing: 11) {
+                thumbnail
+                VStack(alignment: .leading, spacing: 5) {
+                    NovaText(text: data.title, style: .cardTitle).lineLimit(2)
+                    HStack(spacing: 5) {
+                        if let name = data.companyName {
+                            NovaStatusPill(label: name, status: .neutral, showsDot: false)
+                        } else {
+                            NovaStatusPill(label: RDLocalization.string("localizable.nova.analysis.unassigned", table: .localizable, fallback: "Firmasız"), status: .info)
+                        }
+                    }
+                    HStack(spacing: 9) {
+                        fact("calendar", data.createdOn)
+                        fact("chart.bar", data.methodLabel)
+                    }
+                    if data.sectorLabel != nil || data.photoCount > 0 {
+                        HStack(spacing: 9) {
+                            if data.photoCount > 0 {
+                                fact("photo", String(format: RDLocalization.string("localizable.nova.analysis.tag.photos", table: .localizable,
+                                    fallback: "%d fotoğraf"), data.photoCount))
+                            }
+                            if let sector = data.sectorLabel { fact("building.2", sector) }
+                        }
+                    }
+                }.frame(maxWidth: .infinity, alignment: .leading)
+            }.frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func fact(_ symbol: String, _ text: String) -> some View {
+        HStack(spacing: 4) {
+            NovaIcon(symbol: symbol, size: 11).foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
+            NovaText(text: text, style: .micro, color: NovaColorToken.textSecondary.color(in: scheme)).lineLimit(1)
+        }
+    }
+
+    /// The analysed picture; tapping it opens the full size in a popup rather
+    /// than pushing another page.
     @ViewBuilder private var thumbnail: some View {
         if let first = pictures.first {
             Button { preview = .init(image: first) } label: {
                 Image(uiImage: first).resizable().scaledToFill()
-                    .frame(width: 54, height: 54)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                    .overlay(RoundedRectangle(cornerRadius: 14)
+                    .frame(width: 68, height: 68)
+                    .clipShape(RoundedRectangle(cornerRadius: 15))
+                    .overlay(RoundedRectangle(cornerRadius: 15)
                         .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
                     .overlay(alignment: .bottomTrailing) {
                         if pictures.count > 1 {
@@ -177,61 +209,50 @@ struct NovaAnalysisDetailScreen: View {
             }.buttonStyle(.plain)
                 .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.analysis.photo.open", table: .localizable, fallback: "Analiz fotoğrafını büyüt")))
                 .accessibilityIdentifier("analysis.detail.photo")
+        } else {
+            NovaColorToken.surfaceMuted.color(in: scheme)
+                .frame(width: 68, height: 68)
+                .overlay(NovaIcon(symbol: "photo", size: 18).foregroundStyle(NovaColorToken.textTertiary.color(in: scheme)))
+                .clipShape(RoundedRectangle(cornerRadius: 15))
+                .accessibilityHidden(true)
         }
     }
 
     @ViewBuilder private func content(_ data: NovaAnalysisDetailData) -> some View {
+        summaryCard(data)
         if data.isProjectionMissing {
-            NovaCard(padding: 16) {
+            NovaCard(padding: 14) {
                 NovaText(text: RDLocalization.string("localizable.nova.analysis.projection.missing", table: .localizable,
                     fallback: "Bu analizin bölümleri henüz hazır değil. Biraz sonra tekrar açın."), style: .metaQuiet)
             }
         }
-        tags(data)
         actions(data)
-        sectionFrame(data)
-        if let current = data.section(section) {
-            if current.isTeaser {
-                NovaCard(padding: 14) {
-                    NovaText(text: RDLocalization.string("localizable.nova.analysis.teaser", table: .localizable,
-                        fallback: "Bu bölümün tamamı planınıza dahil değil; yalnız bir özeti gösteriliyor."), style: .metaQuiet)
-                }
-            }
-            if current.items.isEmpty {
-                NovaCard(padding: 14) {
-                    NovaText(text: RDLocalization.string("localizable.nova.analysis.section.empty", table: .localizable,
-                        fallback: "Bu bölümde kayıt yok."), style: .metaQuiet)
-                }
-            } else {
-                ForEach(current.items) { item in row(item, data: data) }
-                fileFooter(data, section: current)
-            }
-        }
-    }
-
-    /// What the analysis actually ran with, so the reader never has to guess.
-    @ViewBuilder private func tags(_ data: NovaAnalysisDetailData) -> some View {
-        let labels = [data.sectorLabel].compactMap { $0 } + data.focusLabels
-        if !labels.isEmpty || data.photoCount > 0 {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    if data.photoCount > 0 {
-                        tag("photo", String(format: RDLocalization.string("localizable.nova.analysis.tag.photos", table: .localizable,
-                            fallback: "%d fotoğraf"), data.photoCount))
+        NovaFolderTabs(tabs: data.sections.map { entry in
+            .init(id: entry.kind.rawValue, title: sectionTitle(entry.kind), symbol: sectionSymbol(entry.kind),
+                  caption: "\(entry.items.count)")
+        }, selection: Binding(get: { section.rawValue },
+                              set: { value in
+                                  guard let next = NovaAnalysisSectionKind(rawValue: value) else { return }
+                                  section = next; selected = []
+                              }),
+        identifierPrefix: "analysis.detail.section") {
+            VStack(alignment: .leading, spacing: 10) {
+                NovaText(text: sectionCaption(data.section(section)), style: .metaQuiet)
+                if let current = data.section(section) {
+                    if current.isTeaser {
+                        NovaText(text: RDLocalization.string("localizable.nova.analysis.teaser", table: .localizable,
+                            fallback: "Bu bölümün tamamı planınıza dahil değil; yalnız bir özeti gösteriliyor."), style: .metaQuiet)
                     }
-                    if let sector = data.sectorLabel { tag("building.2", sector) }
-                    ForEach(data.focusLabels, id: \.self) { focus in tag("sparkle", focus) }
-                }.padding(.vertical, 1)
+                    if current.items.isEmpty {
+                        NovaText(text: RDLocalization.string("localizable.nova.analysis.section.empty", table: .localizable,
+                            fallback: "Bu bölümde kayıt yok."), style: .metaQuiet)
+                    } else {
+                        ForEach(current.items) { item in row(item, data: data) }
+                        fileFooter(data, section: current)
+                    }
+                }
             }
         }
-    }
-
-    private func tag(_ symbol: String, _ text: String) -> some View {
-        HStack(spacing: 5) {
-            NovaIcon(symbol: symbol, size: 12).foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
-            NovaText(text: text, style: .micro, color: NovaColorToken.textSecondary.color(in: scheme))
-        }.padding(.horizontal, 10).frame(minHeight: 30)
-            .background(NovaColorToken.surface.color(in: scheme), in: Capsule())
     }
 
     @ViewBuilder private func actions(_ data: NovaAnalysisDetailData) -> some View {
@@ -255,44 +276,6 @@ struct NovaAnalysisDetailScreen: View {
     }
 
     // MARK: section menu
-
-    /// The four sections as an icon menu, and the chosen one's heading, inside
-    /// one frame so the menu and the title read as a single control.
-    private func sectionFrame(_ data: NovaAnalysisDetailData) -> some View {
-        NovaCard(padding: 12, border: NovaColorToken.accentInk.color(in: scheme)) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
-                    ForEach(data.sections) { entry in sectionIcon(entry) }
-                    Spacer(minLength: 0)
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    NovaText(text: sectionTitle(section), style: .sectionTitle)
-                    NovaText(text: sectionCaption(data.section(section)), style: .metaQuiet)
-                }
-            }.frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    private func sectionIcon(_ entry: NovaAnalysisSection) -> some View {
-        let isOn = entry.kind == section
-        return Button {
-            section = entry.kind
-            selected = []
-        } label: {
-            VStack(spacing: 4) {
-                NovaIcon(symbol: sectionSymbol(entry.kind), size: 19)
-                    .foregroundStyle(isOn ? NovaColorToken.onAccent.color(in: scheme) : NovaColorToken.textSecondary.color(in: scheme))
-                NovaText(text: "\(entry.items.count)", style: .micro,
-                    color: isOn ? NovaColorToken.onAccent.color(in: scheme) : NovaColorToken.textTertiary.color(in: scheme))
-            }.frame(width: 58, height: 54)
-                .background(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.surfaceMuted.color(in: scheme),
-                    in: RoundedRectangle(cornerRadius: 15))
-        }.buttonStyle(.plain)
-            .accessibilityLabel(Text(verbatim: sectionTitle(entry.kind)))
-            .accessibilityValue(Text(verbatim: "\(entry.items.count)"))
-            .accessibilityIdentifier("analysis.detail.section.\(entry.kind.rawValue)")
-            .accessibilityAddTraits(isOn ? .isSelected : [])
-    }
 
     private func sectionCaption(_ entry: NovaAnalysisSection?) -> String {
         let count = entry?.items.count ?? 0

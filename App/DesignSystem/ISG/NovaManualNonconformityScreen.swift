@@ -5,13 +5,19 @@ import PhotosUI
 /// a finished step carries a green tick, and the bar counts exactly the steps
 /// that are finished — never a step that was merely opened.
 struct NovaManualNonconformityScreen: View {
-    let workplaces: [NovaNonconformityWorkplace]
+    let companies: [NovaAnalysisCompanyOption]
+    /// The workplaces of one company, fetched when it is chosen.
+    let workplaces: (UUID) async throws -> [NovaNonconformityWorkplace]
     let save: (NovaManualDraft) async -> String?
     let onBack: () -> Void
     var isImprovementAllowed = true
     @Environment(\.colorScheme) private var scheme
     @State private var draft = NovaManualDraft()
-    @State private var open: NovaManualStep? = nil
+    // The picture is what the expert has in hand when they open this form, so
+    // its step starts open.
+    @State private var open: NovaManualStep? = .photo
+    @State private var places: [NovaNonconformityWorkplace] = []
+    @State private var loadingPlaces = false
     @State private var saving = false
     @State private var error: String?
     @State private var photos: [UIImage] = []
@@ -197,23 +203,72 @@ struct NovaManualNonconformityScreen: View {
     }
 
     @ViewBuilder private var companyStep: some View {
-        if workplaces.isEmpty {
-            NovaText(text: RDLocalization.string("localizable.nova.bridge.no.workplace", table: .localizable,
-                fallback: "Bu firmada kayıt açılacak bir işyeri yok."), style: .metaQuiet)
+        if companies.isEmpty {
+            NovaText(text: RDLocalization.string("localizable.nova.manual.no.company", table: .localizable,
+                fallback: "Bu hesapta kayıt açılacak firma yok."), style: .metaQuiet)
         } else {
-            ForEach(workplaces) { place in
-                Button { draft.workplaceID = place.id } label: {
+            ForEach(companies) { company in
+                Button { Task { await choose(company) } } label: {
                     HStack(spacing: 8) {
-                        Image(systemName: draft.workplaceID == place.id ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(draft.workplaceID == place.id ? NovaColorToken.accentInk.color(in: scheme)
+                        Image(systemName: draft.companyID == company.id ? "checkmark.circle.fill" : "circle")
+                            .foregroundStyle(draft.companyID == company.id ? NovaColorToken.accentInk.color(in: scheme)
                                                                            : NovaColorToken.borderStrong.color(in: scheme))
-                        NovaText(text: place.name)
+                        VStack(alignment: .leading, spacing: 1) {
+                            NovaText(text: company.name, style: .cardTitle)
+                            if !company.detail.isEmpty { NovaText(text: company.detail, style: .micro,
+                                color: NovaColorToken.textTertiary.color(in: scheme)) }
+                        }
                         Spacer(minLength: 0)
                     }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 }.buttonStyle(.plain)
-                    .accessibilityIdentifier("manual.workplace.\(place.id.uuidString.lowercased())")
+                    .accessibilityIdentifier("manual.company.\(company.id.uuidString.lowercased())")
             }
         }
+        if draft.companyID != nil {
+            Divider()
+            NovaText(text: RDLocalization.string("localizable.nova.manual.workplace.optional", table: .localizable,
+                fallback: "İşyeri / departman · isteğe bağlı"), style: .label,
+                color: NovaColorToken.textTertiary.color(in: scheme))
+            if loadingPlaces {
+                NovaText(text: RDLocalization.string("localizable.nova.manual.workplace.loading", table: .localizable,
+                    fallback: "İşyerleri yükleniyor…"), style: .metaQuiet)
+            } else if places.isEmpty {
+                NovaText(text: RDLocalization.string("localizable.nova.bridge.no.workplace", table: .localizable,
+                    fallback: "Bu firmada kayıt açılacak bir işyeri yok."), style: .metaQuiet)
+            } else {
+                ForEach(places) { place in
+                    Button { draft.workplaceID = place.id } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: draft.workplaceID == place.id ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(draft.workplaceID == place.id ? NovaColorToken.accentInk.color(in: scheme)
+                                                                               : NovaColorToken.borderStrong.color(in: scheme))
+                            NovaText(text: place.name)
+                            Spacer(minLength: 0)
+                        }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    }.buttonStyle(.plain)
+                        .accessibilityIdentifier("manual.workplace.\(place.id.uuidString.lowercased())")
+                }
+                // The record has to land on a workplace, so the first one is
+                // taken when the expert does not choose. The screen names it
+                // instead of filing the record somewhere unseen.
+                if let chosen = places.first(where: { $0.id == draft.workplaceID }) {
+                    NovaText(text: String(format: RDLocalization.string("localizable.nova.manual.workplace.used", table: .localizable,
+                        fallback: "Kayıt %@ işyerine açılacak."), chosen.name), style: .micro,
+                        color: NovaColorToken.textTertiary.color(in: scheme))
+                }
+            }
+        }
+    }
+
+    private func choose(_ company: NovaAnalysisCompanyOption) async {
+        draft.companyID = company.id
+        draft.workplaceID = nil
+        places = []
+        loadingPlaces = true
+        do { places = try await workplaces(company.id) }
+        catch { places = [] }
+        loadingPlaces = false
+        draft.workplaceID = places.first?.id
     }
 
     @ViewBuilder private var hazardStep: some View {
@@ -273,7 +328,7 @@ struct NovaManualNonconformityScreen: View {
     private func title(_ step: NovaManualStep) -> String {
         switch step {
         case .photo: return RDLocalization.string("localizable.nova.manual.step.photo", table: .localizable, fallback: "Fotoğraf")
-        case .company: return RDLocalization.string("localizable.nova.manual.step.company", table: .localizable, fallback: "İşyeri")
+        case .company: return RDLocalization.string("localizable.nova.manual.step.firma", table: .localizable, fallback: "Firma")
         case .hazard: return RDLocalization.string("localizable.nova.manual.step.hazard", table: .localizable, fallback: "Uygunsuzluk")
         case .scoring: return RDLocalization.string("localizable.nova.manual.step.scoring", table: .localizable, fallback: "Risk metodu ve skorlama")
         case .legislation: return RDLocalization.string("localizable.nova.manual.step.legislation", table: .localizable, fallback: "Mevzuat bilgisi")

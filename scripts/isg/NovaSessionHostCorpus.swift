@@ -1,5 +1,13 @@
 import Foundation
 
+// The navigation model carries its own presentation titles. Compiling it on its
+// own therefore needs the localisation entry point; this stub answers with the
+// written fallback, and the corpus never reads a title.
+enum RDLocalizationTable { case localizable }
+enum RDLocalization {
+    static func string(_ key: String, table: RDLocalizationTable, fallback: String) -> String { fallback }
+}
+
 enum NovaSessionHostCorpus {
     struct Failure: Error, CustomStringConvertible { let description: String }
 

@@ -29,10 +29,10 @@
     },
     {
       "id": "newFinding",
-      "title": "Yeni Uygunsuzluk",
+      "title": "Uygunsuzluk Ekle",
       "tab": "findings",
-      "iosSymbol": "camera",
-      "androidIcon": "PhotoCamera"
+      "iosSymbol": "exclamationmark.triangle",
+      "androidIcon": "WarningAmber"
     },
     {
       "id": "findings",
@@ -145,12 +145,35 @@
       "tab": "home",
       "iosSymbol": "checkmark.shield",
       "androidIcon": "Assessment"
+    },
+    {
+      "id": "newCompany",
+      "title": "Firma Ekle",
+      "tab": "companies",
+      "iosSymbol": "building.2",
+      "androidIcon": "Business"
+    },
+    {
+      "id": "analyses",
+      "title": "Analizlerim",
+      "tab": "findings",
+      "iosSymbol": "photo.on.rectangle.angled",
+      "androidIcon": "PhotoLibrary"
+    },
+    {
+      "id": "newAnalysis",
+      "title": "Analiz Yap",
+      "tab": "findings",
+      "iosSymbol": "camera",
+      "androidIcon": "PhotoCamera"
     }
   ],
   "drawer": [
     "home",
-    "newFinding",
     "findings",
+    "analyses",
+    "newAnalysis",
+    "newFinding",
     "companies",
     "periodicChecks",
     "documentChecklist",
@@ -162,9 +185,10 @@
     "notifications"
   ],
   "quickAdd": [
+    "newCompany",
+    "newAnalysis",
     "newFinding",
-    "newDocument",
-    "newTraining"
+    "newDocument"
   ],
   "reference": "OSGBTakip/apps/mobile/src/components/MobileShell.tsx"
 }

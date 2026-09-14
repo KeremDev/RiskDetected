@@ -4,6 +4,8 @@ import SwiftUI
 /// never imports the SDK.
 struct NovaNonconformityBoardClient {
     let load: () async throws -> [NovaNonconformityEntry]
+    /// The picture behind a record, when it came from a photo analysis.
+    let thumbnail: (NovaNonconformityEntry) async -> UIImage?
     let open: (NovaNonconformityEntry) -> Void
     let create: (() -> Void)?
 }
@@ -19,10 +21,10 @@ struct NovaNonconformityListScreen: View {
     let onBack: () -> Void
     @Environment(\.colorScheme) private var scheme
     @State private var entries: [NovaNonconformityEntry]?
+    @State private var pictures: [UUID: UIImage] = [:]
     @State private var filter = NovaNonconformityFilter()
     @State private var error: String?
     @State private var reload = UUID()
-    @FocusState private var searching: Bool
 
     private var visible: [NovaNonconformityEntry] {
         (entries ?? []).filter { $0.matches(filter, today: today) }
@@ -34,7 +36,7 @@ struct NovaNonconformityListScreen: View {
     var body: some View {
         NovaPageSurface {
             ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
+                LazyVStack(alignment: .leading, spacing: 10) {
                     header
                     search
                     filters
@@ -73,8 +75,7 @@ struct NovaNonconformityListScreen: View {
                 .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme)).accessibilityHidden(true)
             TextField(RDLocalization.string("localizable.nova.nonconformity.search", table: .localizable,
                 fallback: "Başlık, firma veya işyeri ara"), text: $filter.query)
-                .font(.custom("PlusJakartaSans-Medium", size: 14))
-                .focused($searching).submitLabel(.done)
+                .font(.custom("PlusJakartaSans-Medium", size: 14)).submitLabel(.done)
                 .accessibilityIdentifier("nonconformity.search")
             if !filter.query.isEmpty {
                 Button { filter.query = "" } label: {
@@ -83,66 +84,79 @@ struct NovaNonconformityListScreen: View {
                 }.buttonStyle(.plain)
                     .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.nonconformity.search.clear", table: .localizable, fallback: "Aramayı temizle")))
             }
-        }.padding(.horizontal, 14).frame(minHeight: 46)
+        }.padding(.horizontal, 14).frame(minHeight: 44)
             .background(NovaColorToken.surface.color(in: scheme), in: Capsule())
     }
 
-    @ViewBuilder private var filters: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            if companies.count > 1 {
-                row(label: RDLocalization.string("localizable.nova.nonconformity.filter.company", table: .localizable, fallback: "Firma")) {
-                    chip(RDLocalization.string("localizable.nova.nonconformity.filter.all", table: .localizable, fallback: "Tümü"),
-                         isOn: filter.companyID == nil, id: "company.all") { filter.companyID = nil }
-                    ForEach(companies) { company in
-                        chip(company.name, isOn: filter.companyID == company.id,
-                             id: "company.\(company.id.uuidString.lowercased())") { filter.companyID = company.id }
-                    }
+    // MARK: filters
+
+    /// Three dropdowns side by side. Each one opens its own list instead of
+    /// filling the page with chips.
+    private var filters: some View {
+        HStack(spacing: 7) {
+            dropdown(label: RDLocalization.string("localizable.nova.nonconformity.filter.company", table: .localizable, fallback: "Firma"),
+                     value: companies.first { $0.id == filter.companyID }?.name,
+                     identifier: "company") {
+                Button(allLabel) { filter.companyID = nil }
+                ForEach(companies) { company in
+                    Button(company.name) { filter.companyID = company.id }
                 }
             }
-            row(label: RDLocalization.string("localizable.nova.nonconformity.filter.state", table: .localizable, fallback: "Durum")) {
-                chip(RDLocalization.string("localizable.nova.nonconformity.filter.all", table: .localizable, fallback: "Tümü"),
-                     isOn: filter.state == nil && !filter.overdueOnly, id: "state.all") {
-                    filter.state = nil; filter.overdueOnly = false
-                }
-                ForEach([NovaNonconformityState.draft, .open, .assigned, .in_progress, .pending_verification, .closed], id: \.rawValue) { value in
-                    chip(NovaNonconformityWords.state(value.rawValue), isOn: filter.state == value,
-                         id: "state.\(value.rawValue)") { filter.state = value; filter.overdueOnly = false }
-                }
-                chip(String(format: RDLocalization.string("localizable.nova.nonconformity.filter.overdue", table: .localizable,
-                    fallback: "Termini geçen · %d"), overdueCount), isOn: filter.overdueOnly, id: "state.overdue") {
-                    filter.overdueOnly.toggle(); filter.state = nil
+            dropdown(label: RDLocalization.string("localizable.nova.nonconformity.filter.state", table: .localizable, fallback: "Durum"),
+                     value: stateValue, identifier: "state") {
+                Button(allLabel) { filter.state = nil; filter.overdueOnly = false }
+                Button(String(format: RDLocalization.string("localizable.nova.nonconformity.filter.overdue", table: .localizable,
+                    fallback: "Termini geçen · %d"), overdueCount)) { filter.overdueOnly = true; filter.state = nil }
+                ForEach([NovaNonconformityState.draft, .open, .assigned, .in_progress,
+                         .pending_verification, .closed, .reopened, .cancelled], id: \.rawValue) { value in
+                    Button(NovaNonconformityWords.state(value.rawValue)) { filter.state = value; filter.overdueOnly = false }
                 }
             }
-            row(label: RDLocalization.string("localizable.nova.analysis.file.kind", table: .localizable, fallback: "Kayıt türü")) {
-                chip(RDLocalization.string("localizable.nova.nonconformity.filter.all", table: .localizable, fallback: "Tümü"),
-                     isOn: filter.kind == nil, id: "kind.all") { filter.kind = nil }
+            dropdown(label: RDLocalization.string("localizable.nova.analysis.file.kind", table: .localizable, fallback: "Kayıt türü"),
+                     value: filter.kind.map(NovaNonconformityWords.recordKind), identifier: "kind") {
+                Button(allLabel) { filter.kind = nil }
                 ForEach(NovaNonconformityRecordKind.allCases) { value in
-                    chip(NovaNonconformityWords.recordKind(value), isOn: filter.kind == value,
-                         id: "kind.\(value.rawValue)") { filter.kind = value }
+                    Button(NovaNonconformityWords.recordKind(value)) { filter.kind = value }
                 }
             }
         }
     }
 
-    private func row<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) { content() }.padding(.vertical, 1)
-            }
+    private var allLabel: String {
+        RDLocalization.string("localizable.nova.nonconformity.filter.all", table: .localizable, fallback: "Tümü")
+    }
+    private var stateValue: String? {
+        if filter.overdueOnly {
+            return RDLocalization.string("localizable.nova.nonconformity.overdue", table: .localizable, fallback: "Termini geçti")
         }
+        return filter.state.map { NovaNonconformityWords.state($0.rawValue) }
     }
 
-    private func chip(_ title: String, isOn: Bool, id: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            NovaText(text: title, style: .meta,
-                color: isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.textSecondary.color(in: scheme))
-                .lineLimit(1)
-                .padding(.horizontal, 12).frame(minHeight: 38)
-                .background(isOn ? NovaColorToken.statusSuccessBg.color(in: scheme) : NovaColorToken.surface.color(in: scheme),
-                    in: Capsule())
-        }.buttonStyle(.plain).accessibilityIdentifier("nonconformity.filter.\(id)")
-            .accessibilityAddTraits(isOn ? .isSelected : [])
+    private func dropdown<Content: View>(label: String, value: String?, identifier: String,
+                                         @ViewBuilder content: () -> Content) -> some View {
+        let isOn = value != nil
+        return Menu {
+            content()
+        } label: {
+            HStack(spacing: 5) {
+                VStack(alignment: .leading, spacing: 1) {
+                    NovaText(text: label, style: .micro,
+                        color: NovaColorToken.textTertiary.color(in: scheme))
+                    NovaText(text: value ?? allLabel, style: .meta,
+                        color: isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.text.color(in: scheme))
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
+            }
+            .padding(.horizontal, 11).frame(maxWidth: .infinity, minHeight: 46)
+            .background(isOn ? NovaColorToken.statusSuccessBg.color(in: scheme) : NovaColorToken.surface.color(in: scheme),
+                in: RoundedRectangle(cornerRadius: 14))
+        }
+        .accessibilityIdentifier("nonconformity.filter.\(identifier)")
+        .accessibilityLabel(Text(verbatim: label))
+        .accessibilityValue(Text(verbatim: value ?? allLabel))
     }
 
     @ViewBuilder private var summary: some View {
@@ -154,8 +168,7 @@ struct NovaNonconformityListScreen: View {
                 if !filter.isEmpty {
                     Button { filter = NovaNonconformityFilter() } label: {
                         NovaText(text: RDLocalization.string("localizable.nova.nonconformity.filter.reset", table: .localizable, fallback: "Filtreleri temizle"),
-                            style: .meta, color: NovaColorToken.accentInk.color(in: scheme))
-                            .frame(minHeight: 32)
+                            style: .meta, color: NovaColorToken.accentInk.color(in: scheme)).frame(minHeight: 32)
                     }.buttonStyle(.plain).accessibilityIdentifier("nonconformity.filter.reset")
                 }
                 Button { reload = UUID() } label: {
@@ -186,54 +199,80 @@ struct NovaNonconformityListScreen: View {
         }
     }
 
+    // MARK: card
+
+    /// Compact by design: a picture, the title, and the rest as icons rather
+    /// than sentences.
     private func card(_ entry: NovaNonconformityEntry) -> some View {
         Button { client.open(entry) } label: {
-            NovaCard(padding: 14) {
-                VStack(alignment: .leading, spacing: 7) {
-                    HStack(alignment: .top, spacing: 8) {
-                        NovaText(text: entry.row.title, style: .cardTitle)
-                        Spacer(minLength: 0)
-                        Image(systemName: "chevron.right").font(.system(size: 12))
-                            .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
-                    }
-                    HStack(spacing: 6) {
-                        NovaStatusPill(label: NovaNonconformityWords.band(entry.row.severity),
-                            status: NovaNonconformityWords.tone(entry.row.severity))
-                        NovaStatusPill(label: NovaNonconformityWords.state(entry.row.state), status: .neutral, showsDot: false)
-                        if entry.row.kind == .improvement {
-                            NovaStatusPill(label: NovaNonconformityWords.recordKind(.improvement), status: .info, showsDot: false)
+            NovaCard(padding: 10) {
+                HStack(alignment: .top, spacing: 10) {
+                    picture(entry)
+                    VStack(alignment: .leading, spacing: 5) {
+                        NovaText(text: entry.row.title, style: .cardTitle).lineLimit(2)
+                        HStack(spacing: 5) {
+                            NovaStatusPill(label: NovaNonconformityWords.band(entry.row.severity),
+                                status: NovaNonconformityWords.tone(entry.row.severity))
+                            NovaStatusPill(label: NovaNonconformityWords.state(entry.row.state), status: .neutral, showsDot: false)
+                            if entry.row.kind == .improvement {
+                                NovaIcon(symbol: "lightbulb", size: 13)
+                                    .foregroundStyle(NovaColorToken.statusInfoInk.color(in: scheme))
+                                    .accessibilityLabel(Text(verbatim: NovaNonconformityWords.recordKind(.improvement)))
+                            }
                         }
-                    }
-                    HStack(spacing: 6) {
-                        NovaIcon(symbol: "building.2", size: 13)
-                            .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
-                        NovaText(text: [entry.companyName, entry.workplaceName].compactMap { $0 }.joined(separator: " · "),
-                            style: .metaQuiet)
-                    }
-                    HStack(spacing: 6) {
-                        NovaText(text: String(format: RDLocalization.string("localizable.nova.nonconformity.opened.on", table: .localizable,
-                            fallback: "Açılış %@"), entry.row.opened_on), style: .metaQuiet)
-                        if let due = entry.row.due_on {
-                            NovaText(text: "·", style: .metaQuiet)
-                            NovaText(text: String(format: RDLocalization.string("localizable.nova.nonconformity.due.on", table: .localizable,
-                                fallback: "Termin %@"), due), style: .metaQuiet,
-                                color: entry.isOverdue(today: today) ? NovaColorToken.statusDangerInk.color(in: scheme) : nil)
+                        HStack(spacing: 9) {
+                            fact("building.2", entry.companyName)
+                            if let place = entry.workplaceName { fact("mappin", place) }
                         }
-                    }
-                    if entry.isOverdue(today: today) {
-                        NovaStatusPill(label: RDLocalization.string("localizable.nova.nonconformity.overdue", table: .localizable, fallback: "Termini geçti"), status: .danger)
-                    }
-                    if entry.row.camefromFinding {
-                        NovaText(text: RDLocalization.string("localizable.nova.nonconformity.from.analysis", table: .localizable,
-                            fallback: "Fotoğraf analizinden geldi"), style: .metaQuiet)
-                    } else if entry.row.camefromExpertItem {
-                        NovaText(text: RDLocalization.string("localizable.nova.nonconformity.from.expert", table: .localizable,
-                            fallback: "Uzman görüşü maddesinden geldi"), style: .metaQuiet)
-                    }
+                        HStack(spacing: 9) {
+                            fact("calendar", entry.row.opened_on)
+                            if let due = entry.row.due_on {
+                                fact("clock", due, tone: entry.isOverdue(today: today)
+                                    ? NovaColorToken.statusDangerInk.color(in: scheme) : nil)
+                            }
+                            if entry.row.camefromFinding || entry.row.camefromExpertItem {
+                                NovaIcon(symbol: "sparkle", size: 12)
+                                    .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
+                                    .accessibilityLabel(Text(verbatim: entry.row.camefromFinding
+                                        ? RDLocalization.string("localizable.nova.nonconformity.from.analysis", table: .localizable, fallback: "Fotoğraf analizinden geldi")
+                                        : RDLocalization.string("localizable.nova.nonconformity.from.expert", table: .localizable, fallback: "Uzman görüşü maddesinden geldi")))
+                            }
+                        }
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                    Image(systemName: "chevron.right").font(.system(size: 12))
+                        .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme)).padding(.top, 3)
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
         }.buttonStyle(.plain)
             .accessibilityIdentifier("nonconformity.row.\(entry.id.uuidString.lowercased())")
+    }
+
+    private func fact(_ symbol: String, _ text: String, tone: Color? = nil) -> some View {
+        HStack(spacing: 4) {
+            NovaIcon(symbol: symbol, size: 11)
+                .foregroundStyle(tone ?? NovaColorToken.textTertiary.color(in: scheme))
+            NovaText(text: text, style: .micro, color: tone ?? NovaColorToken.textSecondary.color(in: scheme))
+                .lineLimit(1)
+        }
+    }
+
+    @ViewBuilder private func picture(_ entry: NovaNonconformityEntry) -> some View {
+        Group {
+            if let image = pictures[entry.id] {
+                Image(uiImage: image).resizable().scaledToFill()
+            } else {
+                NovaColorToken.surfaceMuted.color(in: scheme)
+                    .overlay(NovaIcon(symbol: entry.row.camefromFinding ? "photo" : "square.and.pencil", size: 16)
+                        .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme)))
+            }
+        }
+        .frame(width: 58, height: 58)
+        .clipShape(RoundedRectangle(cornerRadius: 13))
+        .accessibilityHidden(true)
+        .task(id: entry.id) {
+            guard pictures[entry.id] == nil else { return }
+            if let image = await client.thumbnail(entry) { pictures[entry.id] = image }
+        }
     }
 
     private func load() async {

@@ -216,6 +216,10 @@ struct NovaManualDraft: Equatable {
     /// How many site photos the expert attached. The pictures live in the
     /// screen; the draft only counts them so this model stays free of images.
     var photoCount = 0
+    var companyID: UUID?
+    /// The record always lands on a real workplace, because that is what the
+    /// server stores. Picking only a company fills this with that company's
+    /// first workplace, and the screen names the one it used.
     var workplaceID: UUID?
     var title = ""
     var hazardDescription = ""
@@ -235,7 +239,7 @@ struct NovaManualDraft: Equatable {
     func isComplete(_ step: NovaManualStep) -> Bool {
         switch step {
         case .photo: return photoCount > 0
-        case .company: return workplaceID != nil
+        case .company: return companyID != nil && workplaceID != nil
         case .hazard: return filled(title) && filled(hazardDescription) && filled(controlMeasure)
         case .scoring: return score.isComplete
         case .legislation: return filled(legislation)

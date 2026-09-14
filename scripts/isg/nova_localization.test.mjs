@@ -22,7 +22,7 @@ const NOVA_FILES=[
   'App/DesignSystem/ISG/NovaNonconformityTransitions.swift',
   'App/DesignSystem/ISG/NovaNonconformityListScreen.swift',
   'App/DesignSystem/ISG/NovaNonconformityRecordScreen.swift',
-  'App/DesignSystem/ISG/NovaNonconformitySheets.swift',
+  'App/DesignSystem/ISG/NovaFolderTabs.swift',
   'App/Views/Components/NovaPilotFindingsGate.swift',
   'App/Views/Components/NovaPhotoIntakeScreen.swift',
   'App/DesignSystem/ISG/NovaPersonnelScreens.swift','App/DesignSystem/ISG/NovaSessionHost.swift',

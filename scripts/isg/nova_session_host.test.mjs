@@ -10,11 +10,11 @@ test('host corpus covers every destination across release readiness, availabilit
   const catalog = JSON.parse(read('contracts/isg/v1/design/nova-navigation.json'));
   const ids = fixture.cases.map(c => c.id);
   assert.equal(new Set(ids).size, ids.length);
-  assert.equal(ids.length, 92);
+  assert.equal(ids.length, 104);
   for (const d of catalog.destinations) for (const variant of ['allowed','unimplemented','disabled','stale']) {
     assert.ok(ids.includes(`destination-${d.id}-${variant}`));
   }
-  assert.equal(fixture.cases.reduce((n,c)=>n+c.steps.length,0),416);
+  assert.equal(fixture.cases.reduce((n,c)=>n+c.steps.length,0),467);
   for (const c of fixture.cases) for (const s of c.steps) {
     assert.deepEqual(Object.keys(s.expected).sort(), ['available','current','epochChanged','overlay','pending','phase','value'].sort());
     if (s.expected.phase !== 'ready') {

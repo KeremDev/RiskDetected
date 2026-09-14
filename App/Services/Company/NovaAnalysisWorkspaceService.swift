@@ -62,6 +62,20 @@ enum NovaAnalysisWorkspace {
         return UIImage(data: data)
     }
 
+    /// The picture behind a record. Only a record born from a photo finding has
+    /// one: the finding is looked up, then its analysis, then that analysis's
+    /// first photo. A manual record simply has none.
+    static func recordThumbnail(_ entry: NovaNonconformityEntry) async -> UIImage? {
+        guard entry.row.camefromFinding, let reference = entry.row.source_ref,
+              let finding = UUID(uuidString: reference) else { return nil }
+        struct Row: Decodable { let analysis_id: UUID }
+        guard let data = try? await SupabaseService.shared.client.from("findings")
+            .select("analysis_id").eq("id", value: finding.uuidString).limit(1).execute().data,
+              let rows = try? JSONDecoder().decode([Row].self, from: data),
+              let analysis = rows.first?.analysis_id else { return nil }
+        return await thumbnail(analysisID: analysis)
+    }
+
     /// Every picture of one analysis, in order.
     static func photos(analysisID: UUID) async -> [UIImage] {
         guard let bundle = try? await AnalysisService.shared.result(analysisID: analysisID) else { return [] }

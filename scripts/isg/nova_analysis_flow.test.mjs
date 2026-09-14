@@ -93,10 +93,26 @@ test('the design layer stays free of the SDK and of legacy writes', () => {
     'App/DesignSystem/ISG/NovaNonconformityTransitions.swift',
     'App/DesignSystem/ISG/NovaNonconformityListScreen.swift',
     'App/DesignSystem/ISG/NovaNonconformityRecordScreen.swift',
-    'App/DesignSystem/ISG/NovaNonconformitySheets.swift']) {
+    'App/DesignSystem/ISG/NovaFolderTabs.swift']) {
     const source = read(path);
     assert.doesNotMatch(source, /import (Supabase|RevenueCat)|https?:|access_token|refresh_token|UserDefaults|Keychain/, path);
     assert.doesNotMatch(source, /AnalysisService|SupabaseService|PDFReportService/, path);
+  }
+});
+
+test('every menu entry lands on exactly one page', () => {
+  const gate = read('App/Views/Components/NovaPilotFindingsGate.swift');
+  assert.match(gate, /enum NovaFindingsSurface: Equatable \{ case board, analyses, newAnalysis, addFinding \}/);
+  const main = read('App/Views/Components/NovaPilotMainGate.swift');
+  for (const [destination, surface] of [['findings', 'board'], ['analyses', 'analyses'],
+    ['newAnalysis', 'newAnalysis'], ['newFinding', 'addFinding']]) {
+    assert.match(main, new RegExp(`case \\.${destination}:\\s*\\n\\s*nonconformities\\(\\.${surface}\\)`), destination);
+  }
+  // The home picture card starts an analysis rather than a hub.
+  assert.match(main, /onPhoto: \{ navigate\(\.newAnalysis\) \}/);
+  const navigation = read('App/DesignSystem/ISG/NovaNavigation.swift');
+  for (const id of ['analyses', 'newAnalysis', 'findings', 'newFinding']) {
+    assert.ok(navigation.includes(`.${id},`) || navigation.includes(`.${id}]`), id);
   }
 });
 
@@ -106,13 +122,18 @@ test('the manual flow asks every step the expert was promised', () => {
   assert.match(model, /static let requiredSteps: \[NovaManualStep\] = \[\.company, \.hazard\]/);
   assert.match(model, /score\.isEmpty \|\| score\.isComplete/);
   const screen = read('App/DesignSystem/ISG/NovaManualNonconformityScreen.swift');
-  for (const key of ['manual.step.photo', 'manual.step.company', 'manual.step.hazard', 'manual.step.scoring',
+  for (const key of ['manual.step.photo', 'manual.step.firma', 'manual.step.hazard', 'manual.step.scoring',
     'manual.step.legislation', 'manual.step.responsible']) {
     assert.ok(screen.includes(key), `manual step missing: ${key}`);
   }
   // The progress bar counts finished steps, never opened ones.
   assert.match(model, /var completedCount: Int \{ NovaManualStep\.allCases\.filter \{ isComplete\(\$0\) \}\.count \}/);
   assert.match(screen, /width: max\(0, proxy\.size\.width \* draft\.progress\)/);
+  // The picture is what the expert has in hand, so its step starts open.
+  assert.match(screen, /@State private var open: NovaManualStep\? = \.photo/);
+  // A record always lands on a real workplace and the screen names the one it used.
+  assert.match(screen, /localizable\.nova\.manual\.workplace\.used/);
+  assert.match(model, /case \.company: return companyID != nil && workplaceID != nil/);
 });
 
 test('the state machine on screen is the state machine in the database', () => {
@@ -136,9 +157,8 @@ test('the record screen only offers what the server will accept', () => {
   // Closing asks for the verification first instead of failing at the server.
   assert.match(screen, /edge\.requiresVerification && !hasAcceptedVerification/);
   assert.match(screen, /contains \{ \$0\.outcome == "accepted" \}/);
-  const sheets = read('App/DesignSystem/ISG/NovaNonconformitySheets.swift');
   // The server refuses a reason under five characters; so does the popup.
-  assert.match(sheets, /trimmedReason\.count < 5/);
+  assert.match(screen, /reason\.trimmingCharacters\(in: \.whitespacesAndNewlines\)\.count < 5/);
   const core = read('supabase/migrations/20260913210000_isg_nonconformity_core.sql');
   assert.match(core, /length\(reason\) BETWEEN 5 AND 2000/);
 });

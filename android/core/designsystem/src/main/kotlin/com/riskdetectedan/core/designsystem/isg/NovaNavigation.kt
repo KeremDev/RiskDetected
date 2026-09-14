@@ -10,7 +10,7 @@ enum class NovaTab(val title: String) {
 }
 enum class NovaDestination(val title: String, val tab: NovaTab) {
     home("Ana Sayfa", NovaTab.home),
-    newFinding("Yeni Uygunsuzluk", NovaTab.findings),
+    newFinding("Uygunsuzluk Ekle", NovaTab.findings),
     findings("Uygunsuzluklar", NovaTab.findings),
     companies("Firmalar", NovaTab.companies),
     memory("İşletme Hafızası", NovaTab.home),
@@ -26,10 +26,15 @@ enum class NovaDestination(val title: String, val tab: NovaTab) {
     newDocument("Dosya Ekle", NovaTab.home),
     newVisit("Ziyaret Ekle", NovaTab.home),
     newTraining("Eğitim Ekle", NovaTab.home),
-    periodicChecks("Periyodik Kontroller", NovaTab.home);
+    periodicChecks("Periyodik Kontroller", NovaTab.home),
+    newCompany("Firma Ekle", NovaTab.companies),
+    // The analysis surfaces are their own menu entries: one lists what was
+    // analysed, the other starts a new one.
+    analyses("Analizlerim", NovaTab.findings),
+    newAnalysis("Analiz Yap", NovaTab.findings);
     companion object {
-        val drawer = listOf(home, newFinding, findings, companies, periodicChecks, documentChecklist, documents, statistics, training, reports, reportArchive, notifications)
-        val quickAdd = listOf(newFinding, newDocument, newTraining)
+        val drawer = listOf(home, findings, analyses, newAnalysis, newFinding, companies, periodicChecks, documentChecklist, documents, statistics, training, reports, reportArchive, notifications)
+        val quickAdd = listOf(newCompany, newAnalysis, newFinding, newDocument)
     }
 }
 enum class NovaOverlay { drawer, quickAdd, notifications }

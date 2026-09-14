@@ -6967,6 +6967,132 @@
         }
       }
     },
+    "localizable.nova.add.finding.from.analysis": {
+      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick from analysis findings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz bulgularından seç"
+          }
+        }
+      }
+    },
+    "localizable.nova.add.finding.from.analysis.detail": {
+      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open an analysis, select its findings and transfer them to the company as nonconformities."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir analizi açın, bulguları seçin ve firmaya uygunsuzluk olarak aktarın."
+          }
+        }
+      }
+    },
+    "localizable.nova.add.finding.hint": {
+      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick from the findings of an analysis you already ran, or enter the record yourself."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha önce yaptığınız bir analizin bulgularından seçebilir ya da kaydı kendiniz girebilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.add.finding.manual": {
+      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I will enter it myself"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kendim gireceğim"
+          }
+        }
+      }
+    },
+    "localizable.nova.add.finding.manual.action": {
+      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to the form"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forma geç"
+          }
+        }
+      }
+    },
+    "localizable.nova.add.finding.manual.detail": {
+      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo, company, hazard, scoring, legislation and the responsible person are asked one step at a time."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf, firma, tehlike, skorlama, mevzuat ve sorumlu adım adım sorulur."
+          }
+        }
+      }
+    },
+    "localizable.nova.add.finding.new.analysis": {
+      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "If you have a new photo, analyse it first."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elinizde yeni bir fotoğraf varsa önce analiz edin."
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.assign": {
       "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
       "extractionState": "manual",
@@ -11343,6 +11469,24 @@
         }
       }
     },
+    "localizable.nova.manual.no.company": {
+      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account has no company to open a record on."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu hesapta kayıt açılacak firma yok."
+          }
+        }
+      }
+    },
     "localizable.nova.manual.pending": {
       "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
       "extractionState": "manual",
@@ -11505,6 +11649,24 @@
         }
       }
     },
+    "localizable.nova.manual.step.firma": {
+      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma"
+          }
+        }
+      }
+    },
     "localizable.nova.manual.step.hazard": {
       "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
       "extractionState": "manual",
@@ -11631,6 +11793,60 @@
         }
       }
     },
+    "localizable.nova.manual.workplace.loading": {
+      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading the workplaces…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyerleri yükleniyor…"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.workplace.optional": {
+      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workplace / department · optional"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri / departman · isteğe bağlı"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.workplace.used": {
+      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record will be opened on %@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt %@ işyerine açılacak."
+          }
+        }
+      }
+    },
     "localizable.nova.navigation.ana.sayfa.1fc29356": {
       "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaNavigation.swift:21; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -11663,6 +11879,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ana Sayfa"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.analiz.yap": {
+      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run an analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz Yap"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.analizlerim": {
+      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My analyses"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizlerim"
           }
         }
       }
@@ -11882,6 +12134,24 @@
         }
       }
     },
+    "localizable.nova.navigation.uygunsuzluk.ekle": {
+      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a nonconformity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygunsuzluk Ekle"
+          }
+        }
+      }
+    },
     "localizable.nova.navigation.uygunsuzluklar": {
       "comment": "nova_manual; nonconformity screens; review: human_draft",
       "extractionState": "manual",
@@ -12022,6 +12292,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aksiyonun sorumlusu bir uygulama kullanıcısı değildir; yalnız kayıtta görünür."
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.actions.short": {
+      "comment": "nova_analysis; record board, folder tabs and menu routing; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Action"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aksiyon"
           }
         }
       }

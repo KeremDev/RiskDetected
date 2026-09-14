@@ -11799,6 +11799,1464 @@
           }
         }
       ]
+    },
+    {
+      "id": "destination-newCompany-allowed",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "newCompany"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "newCompany"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newCompany",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "newCompany",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "newCompany",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newCompany",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-newCompany-unimplemented",
+      "implemented": [],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "newCompany"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "newCompany",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-newCompany-disabled",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "newCompany"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "newCompany",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-newCompany-stale",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "newCompany"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "r1",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "r1",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "newCompany"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newCompany",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "newCompany",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newCompany",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-analyses-allowed",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "analyses"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "analyses"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "analyses",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "analyses",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "analyses",
+            "overlay": null,
+            "available": [
+              "analyses",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-analyses-unimplemented",
+      "implemented": [],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "analyses"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "analyses",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-analyses-disabled",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "analyses"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "analyses",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-analyses-stale",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "analyses"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "r1",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "r1",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "analyses"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "analyses",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "analyses",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "analyses",
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-newAnalysis-allowed",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "newAnalysis"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "newAnalysis"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newAnalysis",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "newAnalysis",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "newAnalysis",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newAnalysis",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-newAnalysis-unimplemented",
+      "implemented": [],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "newAnalysis"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "newAnalysis",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-newAnalysis-disabled",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "newAnalysis"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "old",
+          "owner": "a",
+          "enabled": [],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "newAnalysis",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "destination-newAnalysis-stale",
+      "implemented": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "newAnalysis"
+      ],
+      "steps": [
+        {
+          "op": "adopt",
+          "identity": "a",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "old",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "request",
+          "key": "r1",
+          "expected": {
+            "phase": "resolving",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "home",
+              "profile"
+            ],
+            "pending": true,
+            "value": null,
+            "epochChanged": true
+          }
+        },
+        {
+          "op": "resolve",
+          "key": "r1",
+          "owner": "a",
+          "enabled": [
+            "home",
+            "newFinding",
+            "findings",
+            "companies",
+            "memory",
+            "documentChecklist",
+            "documents",
+            "visits",
+            "statistics",
+            "training",
+            "reports",
+            "reportArchive",
+            "notifications",
+            "profile",
+            "newDocument",
+            "newVisit",
+            "newTraining",
+            "newAnalysis"
+          ],
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newAnalysis",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        },
+        {
+          "op": "navigate",
+          "destination": "newAnalysis",
+          "from": "old",
+          "expected": {
+            "phase": "ready",
+            "current": "home",
+            "overlay": null,
+            "available": [
+              "companies",
+              "documentChecklist",
+              "documents",
+              "findings",
+              "home",
+              "memory",
+              "newAnalysis",
+              "newDocument",
+              "newFinding",
+              "newTraining",
+              "newVisit",
+              "notifications",
+              "profile",
+              "reportArchive",
+              "reports",
+              "statistics",
+              "training",
+              "visits"
+            ],
+            "pending": false,
+            "value": null,
+            "epochChanged": false
+          }
+        }
+      ]
     }
   ]
 }
