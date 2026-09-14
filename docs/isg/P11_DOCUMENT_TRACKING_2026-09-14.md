@@ -231,3 +231,9 @@ ham metinleri), sabit metin borcundaki artış ve ana ağacın derleme hatası
 - Android'de karşılığı yok.
 - Evrak türü kataloğu sabit; uzmanın kendi türünü tanımlaması yok ("Diğer belge"
   ile ad verilebiliyor).
+
+## Canlı pilot
+
+14 Eylül 2026'da bu modül canlı projede açıldı. Canlı proje bu dosyadaki migration zincirini taşımıyor; açılış, iki dilimin birleştirildiği bir pilot bundle ile yapıldı ve iki bilinçli sapma taşıyor (her ikisi de P05 pilot kapısı eklemek). Ayrıntı, doğrulama ve kapatma yolu: [Canlı pilot kaydı](NOVA_DOCUMENT_TRACKING_PILOT_2026-09-14.md).
+
+Buradaki geliştirme migration'ları (`20260914210000`, `20260914230000`) **değiştirilmedi**.
