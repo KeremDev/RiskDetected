@@ -59,6 +59,10 @@ extension NovaColorToken {
     func color(in scheme: ColorScheme) -> Color { rgba(dark: scheme == .dark).color }
 }
 
+/// The floating tab bar sits over the scroll view, so a scrolling page owes it
+/// this much clearance or its last control is unreachable.
+let novaTabBarInset = NovaDimensionToken.layoutScrollBottomInset.value - NovaDimensionToken.spaceScreenX.value
+
 struct NovaText: View {
     let text: String
     var style: NovaTypeToken = .body

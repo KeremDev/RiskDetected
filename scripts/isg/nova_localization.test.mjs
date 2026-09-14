@@ -13,8 +13,13 @@ const NOVA_FILES=[
   'App/DesignSystem/ISG/NovaComponents.swift','App/DesignSystem/ISG/NovaDirectory.swift',
   'App/DesignSystem/ISG/NovaDirectoryScreens.swift','App/DesignSystem/ISG/NovaExpertShell.swift',
   'App/DesignSystem/ISG/NovaNavigation.swift','App/DesignSystem/ISG/NovaPersonnel.swift',
-  'App/DesignSystem/ISG/NovaNonconformity.swift','App/DesignSystem/ISG/NovaNonconformityScreens.swift',
+  'App/DesignSystem/ISG/NovaNonconformity.swift','App/DesignSystem/ISG/NovaNonconformityLabels.swift',
   'App/DesignSystem/ISG/NovaFindingBridge.swift',
+  'App/DesignSystem/ISG/NovaAnalysisIntake.swift','App/DesignSystem/ISG/NovaAnalysisIntakeScreens.swift',
+  'App/DesignSystem/ISG/NovaAnalysisDetail.swift','App/DesignSystem/ISG/NovaAnalysisDetailScreens.swift',
+  'App/DesignSystem/ISG/NovaAnalysisSheets.swift','App/DesignSystem/ISG/NovaAnalysisListScreen.swift',
+  'App/DesignSystem/ISG/NovaManualNonconformityScreen.swift',
+  'App/Views/Components/NovaPilotFindingsGate.swift',
   'App/DesignSystem/ISG/NovaPersonnelScreens.swift','App/DesignSystem/ISG/NovaSessionHost.swift',
   'App/DesignSystem/ISG/NovaTokens.swift','App/DesignSystem/ISG/NovaWorkspaceCapability.swift',
   'App/Views/Components/NotebookDestination.swift','App/Views/Components/NovaCompanyManagementGate.swift',
@@ -22,6 +27,8 @@ const NOVA_FILES=[
 ];
 const CATALOGS=['Localizable','Analysis','Auth','Legal','Notifications','Onboarding','Paywall','Reports',
   'SafetyTerminology','ProfessionalProgress','InfoPlist'];
+// Proper nouns: identical in tr and en because they are names, not copy.
+const PROPER_NOUNS=new Set(['localizable.nova.risk.method.fine.kinney']);
 // A font face is a resource name, never copy a person reads.
 const RESOURCE=/^(?:PlusJakartaSans-|SF|system)/;
 const read=path=>readFileSync(resolve(ROOT,path),'utf8');
@@ -84,7 +91,9 @@ test('every NOVA localization key resolves in a catalog with tr and en',()=>{
       const tr=entry.value.localizations?.tr?.stringUnit?.value;
       const en=entry.value.localizations?.en?.stringUnit?.value;
       assert.ok(tr&&en,`${key[1]} lacks tr/en parity`);
-      assert.notEqual(en,tr,`${key[1]} was never translated: en equals tr`);
+      // A person's name is the same sentence in both languages. Only an
+      // explicitly named entry may match; everything else must differ.
+      if(!PROPER_NOUNS.has(key[1])) assert.notEqual(en,tr,`${key[1]} was never translated: en equals tr`);
     }
   }
   assert.ok(seen.size>=250,`expected the migrated surface, found only ${seen.size} keys`);

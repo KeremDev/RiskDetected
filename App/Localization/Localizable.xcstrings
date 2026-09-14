@@ -6967,6 +6967,1014 @@
         }
       }
     },
+    "localizable.nova.analysis.assign": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assign to a company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmaya ata"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.assign.empty": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pilot company was found to assign it to."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atanacak pilot firma bulunamadı."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.assign.failed": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The analysis could not be attached to the company. Try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz firmaya bağlanamadı. Tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.assign.failed.load": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The company list could not be fetched. Try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma listesi alınamadı. Tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.assign.run": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assign"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ata"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.assign.title": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assign to a company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmaya ata"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.company.detail": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d workplaces · %2$d people"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d işyeri · %2$d personel"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.company.unnamed": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attached company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bağlı firma"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.edit": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit the finding"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulguyu düzenle"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.edit.failed": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The finding could not be updated. Try the same action again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulgu güncellenemedi. Aynı işlemi tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.edit.hint": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your changes are written to the finding; if you re-enter the score, the server computes the band."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Değişiklikleriniz bulguya işlenir; skoru yeniden girerseniz bandı sunucu hesaplar."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.edit.save": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save the changes"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Değişiklikleri kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.edit.title": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit the finding"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulguyu düzenle"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.field.body": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açıklama"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.field.category": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Category"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kategori"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.field.measure": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Control measure"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önlem"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.field.references": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legislation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mevzuat"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.field.title": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Title"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlık"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.file.hint": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The analysis record stays as it is. A separate record is opened on the company for what you select."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz kaydı olduğu gibi kalır. Seçtikleriniz için firmada ayrı kayıt açılır."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.file.kind": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record type"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt türü"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.file.needs.company": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assign the analysis to a company before opening a nonconformity."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygunsuzluk açmak için önce analizi bir firmaya atayın."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.file.run": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the selected ones"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçilenleri aç"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.file.selected": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transfer the selected ones to the company (%d)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçilenleri firmaya aktar (%d)"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.file.title": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transfer to the company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmaya aktar"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.file.unscored": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This item arrives unscored. Choose the severity yourself."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu madde skorsuz geliyor. Önem derecesini siz seçin."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.focus.required": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose at least one focus that your plan covers."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planınızın kapsadığı en az bir odak seçin."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.list.empty": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There is no analysis to show."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görüntülenecek analiz yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.list.failed": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The analyses could not be fetched. Check your connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizler alınamadı. Bağlantınızı kontrol edip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.list.filter.unassigned": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmasız"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.list.findings": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d findings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d bulgu"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.list.hint": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analyses without a company stay on your account; you can assign one whenever you want."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmasız analizler hesabınızda durur; istediğiniz zaman bir firmaya atayabilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.list.loading": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading the analyses…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizler yükleniyor…"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.list.new": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New photo analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni fotoğraf analizi"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.list.refresh": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh the list"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listeyi yenile"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.list.title": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My analyses"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizlerim"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.load.failed": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The analysis could not be loaded. Check your connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.loading": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading the analysis…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz yükleniyor…"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.localization.required": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The analysis cannot start until the safety terminology profile is complete."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güvenlik terminolojisi profili tamamlanmadan analiz başlatılamaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.projection.missing": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The sections of this analysis are not ready yet. Open it again shortly."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu analizin bölümleri henüz hazır değil. Biraz sonra tekrar açın."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.report": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor oluştur"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.report.attach": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File it under %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ firmasına işle"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.report.failed": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The report could not be created. Try the same action again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor oluşturulamadı. Aynı işlemi tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.report.hint": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The report is saved to your archive. With a company selected it is filed there as an analysis report."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor arşivinize kaydedilir. Firma seçiliyse Analiz Raporu olarak o firmaya işlenir."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.report.no.company": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The analysis is not attached to a company; the report is only saved to your archive."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz bir firmaya bağlı değil; rapor yalnız arşivinize kaydedilir."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.report.run": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oluştur"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.report.saved": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Report saved to the archive: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor arşive kaydedildi: %@"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.report.title": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a report"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapor oluştur"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.section.empty": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There is no entry in this section."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu bölümde kayıt yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.section.expert": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expert advice"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzman Görüşü"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.section.notebook": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Safety log"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onaylı Defter"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.section.risk": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk Analizi"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.section.training": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training recommendations"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitim Önerileri"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.teaser": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your plan does not include this section in full; only a summary is shown."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu bölümün tamamı planınıza dahil değil; yalnız bir özeti gösteriliyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.title": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.unassigned": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmasız"
+          }
+        }
+      }
+    },
+    "localizable.nova.analysis.unassigned.detail": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This analysis is not attached to a company. It stays on your account; you can assign it whenever you want."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu analiz bir firmaya bağlı değil. Hesabınızda duruyor; istediğiniz zaman atayabilirsiniz."
+          }
+        }
+      }
+    },
     "localizable.nova.bridge.alert.ok": {
       "comment": "nova_manual; photo analysis bridge; review: human_draft",
       "extractionState": "manual",
@@ -9425,6 +10433,24 @@
         }
       }
     },
+    "localizable.nova.findings.hint": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A photo analysis can be run without a company; opening a record needs one."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraftan analiz firmasız da yapılabilir; kayıt açmak için bir firma gerekir."
+          }
+        }
+      }
+    },
     "localizable.nova.help.assignments": {
       "extractionState": "manual",
       "localizations": {
@@ -9557,6 +10583,672 @@
           "stringUnit": {
             "state": "translated",
             "value": "Manage branches and work sites. Information history preserves the details valid on past dates."
+          }
+        }
+      }
+    },
+    "localizable.nova.intake.continue": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devam et"
+          }
+        }
+      }
+    },
+    "localizable.nova.intake.focus.required": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose at least one focus to start."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlatmak için en az bir odak seçin."
+          }
+        }
+      }
+    },
+    "localizable.nova.intake.hint.focus": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose at least one focus. The number of focuses sets the scope of the analysis."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En az bir odak seçin. Odak sayısı analizin kapsamını belirler."
+          }
+        }
+      }
+    },
+    "localizable.nova.intake.hint.owner": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can attach the analysis to a company, or continue without one and assign it later."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizi bir firmaya bağlayabilir ya da firmasız sürdürüp sonradan atayabilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.intake.hint.sector": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk priorities and recommendations are adapted to the sector you choose."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk öncelikleri ve öneriler seçtiğiniz sektöre göre uyarlanır."
+          }
+        }
+      }
+    },
+    "localizable.nova.intake.owner.empty": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account has no pilot company. You can continue without one."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu hesapta pilot firma yok. Firmasız devam edebilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.intake.owner.none": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue without a company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmasız devam et"
+          }
+        }
+      }
+    },
+    "localizable.nova.intake.owner.none.detail": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The analysis stays on your account; you can assign it to a company later."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz hesabınızda kalır; sonradan bir firmaya atayabilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.intake.owner.sector.unknown": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sector not recognised"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sektör tanınmadı"
+          }
+        }
+      }
+    },
+    "localizable.nova.intake.photo.count": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d photos · %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d fotoğraf · %@"
+          }
+        }
+      }
+    },
+    "localizable.nova.intake.sector.auto": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The sector of %@ was selected automatically. You can change it."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ firmasının sektörü otomatik seçildi. İsterseniz değiştirebilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.intake.start": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start the analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizi başlat"
+          }
+        }
+      }
+    },
+    "localizable.nova.intake.step.focus": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis focus"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz odağı"
+          }
+        }
+      }
+    },
+    "localizable.nova.intake.step.owner": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma seçimi"
+          }
+        }
+      }
+    },
+    "localizable.nova.intake.step.sector": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sector"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sektör seçimi"
+          }
+        }
+      }
+    },
+    "localizable.nova.intake.title": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo analysis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf Analizi"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.choose.detail": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No AI is used. Hazard, control measure, scoring, legislation and the responsible person are asked one step at a time."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yapay zekâ kullanılmaz. Tehlike, önlem, skorlama, mevzuat ve sorumlu adım adım sorulur."
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.hazard.description": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açıklama"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.hazard.measure": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Control measure"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önlem"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.hazard.title": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hazard title"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tehlike başlığı"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.legislation.hint": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The related article, regulation or standard"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlgili madde, yönetmelik veya standart"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.needs.company": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a company before entering a record by hand."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elle kayıt için önce bir firma seçmelisiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.next": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sıradaki: %@"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.pending": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A required field is missing"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zorunlu alan eksik"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.progress": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d/%2$d sections completed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d/%2$d başlık tamamlandı"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.progress.hint": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legislation, the responsible person and scoring are optional; once entered they count as completed."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mevzuat, sorumlu ve skorlama isteğe bağlıdır; girildiğinde tamamlandı sayılır."
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.ready": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ready to save"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydedilebilir"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.responsible.hint": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The responsible person at the company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmadaki sorumlu kişi"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.responsible.note": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This person is not an app user; they only appear on the record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kişi bir uygulama kullanıcısı değildir; yalnız kayıtta görünür."
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.save": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the record"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydı aç"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.step.company": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workplace"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.step.hazard": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nonconformity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygunsuzluk"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.step.legislation": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Legislation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mevzuat bilgisi"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.step.responsible": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Responsible person"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma sorumlusu"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.step.scoring": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk method and scoring"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk metodu ve skorlama"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.subtitle": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No AI is used; you enter the information."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yapay zekâ kullanılmaz; bilgileri siz girersiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.title": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manual nonconformity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elle Uygunsuzluk"
           }
         }
       }
@@ -10082,6 +11774,24 @@
         }
       }
     },
+    "localizable.nova.nonconformity.error.risk.incomplete": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter every value of the risk method you chose."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçtiğiniz risk metodunun tüm değerlerini girin."
+          }
+        }
+      }
+    },
     "localizable.nova.nonconformity.error.save": {
       "comment": "nova_manual; nonconformity screens; review: human_draft",
       "extractionState": "manual",
@@ -10334,6 +12044,60 @@
         }
       }
     },
+    "localizable.nova.nonconformity.from.expert": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Came from an expert advice item"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzman görüşü maddesinden geldi"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.kind.improvement": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Improvement suggestion"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geliştirme önerisi"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.kind.nonconformity": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nonconformity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygunsuzluk"
+          }
+        }
+      }
+    },
     "localizable.nova.nonconformity.loading": {
       "comment": "nova_manual; nonconformity screens; review: human_draft",
       "extractionState": "manual",
@@ -10420,6 +12184,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Salt okunur · yeni kayıt açılamıyor"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.scored": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scored · %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skorlandı · %@"
           }
         }
       }
@@ -12452,6 +14234,204 @@
           "stringUnit": {
             "state": "translated",
             "value": "Uygunsuzluk kaydı bir firmaya bağlıdır. Önce Firmalar'dan bir firma seçin."
+          }
+        }
+      }
+    },
+    "localizable.nova.pilot.nonconformity.unavailable": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The nonconformity module needs live pilot access."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygunsuzluk modülü için canlı pilot erişimi gerekiyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.frequency": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frequency"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frekans"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.method": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk method"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk metodu"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.method.clear": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No score"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skorsuz"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.method.fine.kinney": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-Kinney"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine-Kinney"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.method.matrix": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5×5 matrix"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5×5 Matris"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.method.pick": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a method to score with."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skorlamak için bir metot seçin."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.probability": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probability"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Olasılık"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.score.incomplete": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose every value to get a score."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skor için tüm değerleri seçin."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.score.preview": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Score %@ · the stored band is computed by the server"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skor %@ · kaydedilen bandı sunucu hesaplar"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.severity": {
+      "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Severity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şiddet"
           }
         }
       }

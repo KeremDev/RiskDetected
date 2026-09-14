@@ -261,6 +261,13 @@ jobs:
         run: |
           swiftc App/DesignSystem/ISG/NovaNavigation.swift App/DesignSystem/ISG/NovaSessionHost.swift scripts/isg/NovaSessionHostCorpus.swift scripts/isg/NovaSessionHostCheck.swift -o "$RUNNER_TEMP/isg-nova-host-check"
           "$RUNNER_TEMP/isg-nova-host-check" contracts/isg/v1/fixtures/nova-session-host.json
+      - name: Verify the analysis intake sector match
+        # Pure model check: no catalogue import, no network, no Auth SDK.
+        if: success()
+        shell: bash
+        run: |
+          swiftc -parse-as-library App/DesignSystem/ISG/NovaAnalysisIntake.swift scripts/isg/NovaAnalysisIntakeCheck.swift -o "$RUNNER_TEMP/isg-analysis-intake-check"
+          "$RUNNER_TEMP/isg-analysis-intake-check"
       - name: Run hostless iOS XCTest on an available CI iPhone
         shell: bash
         run: |

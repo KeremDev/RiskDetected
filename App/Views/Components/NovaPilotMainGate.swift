@@ -45,11 +45,6 @@ struct NovaPilotRoot: View {
     @State private var overview: [NovaPilotCompanySummary]?
     @State private var overviewFailed = false
     @State private var sceneRevalidation = NovaSceneRevalidation()
-    @State private var bridgePhotos: [PhotosPickerItem] = []
-    @State private var bridgePickerArmed = false
-    @State private var bridgeJob: NovaPhotoBridgeJob?
-    @State private var bridgeFindings: NovaPhotoBridgeResult?
-    @State private var bridgeError: String?
     private var overviewKey: String { "\(controller.host.navigation.epoch):\(ready):\(listRevision):\(navigation.selected)" }
     private var activeCompanies: [NovaPilotCompanySummary]? { ready ? overview?.filter { !$0.is_archived } : nil }
     private var metrics: [NovaMetricItem] {
@@ -87,7 +82,7 @@ struct NovaPilotRoot: View {
                         openCount: nil, metrics: metrics, activity: nil,
                         trainingMessage: RDLocalization.string("localizable.nova.pilot.main.gate.egitim.modulu.henuz.kullanima.acik.degil.e21b7bc6", table: .localizable, fallback: "Eğitim modülü henüz kullanıma açık değil."),
                         summaryMessage: activeCompanies != nil ? RDLocalization.string("localizable.nova.pilot.main.gate.pilot.firmalarinizin.guncel.kayitlari.01d48da7", table: .localizable, fallback: "Pilot firmalarınızın güncel kayıtları.") : overviewFailed ? RDLocalization.string("localizable.nova.pilot.main.gate.ozet.alinamadi.yenileyerek.tekrar.deneyin.9b6a6077", table: .localizable, fallback: "Özet alınamadı. Yenileyerek tekrar deneyin.") : RDLocalization.string("localizable.nova.pilot.main.gate.ozet.verileri.henuz.bagli.degil.4508136e", table: .localizable, fallback: "Özet verileri henüz bağlı değil.")),
-                        onNavigate: navigate, onPhoto: unavailable, onAssistant: unavailable)
+                        onNavigate: navigate, onPhoto: { navigate(.newFinding) }, onAssistant: unavailable)
                 }
             case .companies:
                 companies
@@ -166,134 +161,26 @@ struct NovaPilotRoot: View {
         }.padding(.horizontal, 20).padding(.bottom, 10)
     }
 
-    /// Nonconformities live under a selected company: without one there is no
-    /// workplace to attach a record to, so the screen asks for the company first.
+    /// The Uygunsuzluklar surface owns the whole analysis route: a photo
+    /// analysis may start without a company, while records still need one.
     @ViewBuilder private func nonconformities(startOnNew: Bool) -> some View {
-        if ready, let scope = controller.scope {
-            Group {
-                if let result = bridgeFindings {
-                    NovaFindingSelectionScreen(findings: result.findings, workplaces: result.workplaces,
-                        open: { finding, workplace, severity in
-                            await openFromFinding(scope: scope, finding: finding, workplace: workplace, severity: severity)
-                        },
-                        onBack: { bridgeFindings = nil }, onFinished: { bridgeFindings = nil })
-                } else {
-                    NovaNonconformityDestination(scope: scope, client: nonconformityClient(scope),
-                        onBack: { navigate(.home) }, canWrite: controller.canWrite,
-                        onStartPhotoAnalysis: controller.canWrite ? { bridgePhotos = []; bridgePickerArmed = true } : nil,
-                        startOnNew: startOnNew)
-                }
-            }
-            .id(scope.epoch)
-            .photosPicker(isPresented: Binding(get: { bridgePickerArmed },
-                                               set: { if !$0 { bridgePickerArmed = false } }),
-                          selection: $bridgePhotos, maxSelectionCount: 3, matching: .images)
-            .onChange(of: bridgePhotos) { _ in Task { await startBridgeAnalysis(scope: scope) } }
-            .fullScreenCover(item: $bridgeJob) { job in
-                AnalyzingView(isPresented: Binding(get: { bridgeJob != nil }, set: { if !$0 { bridgeJob = nil } }),
-                    asyncWork: job.work, previewImage: job.preview, photoCount: job.photoCount,
-                    onComplete: { bundle in
-                        bridgeJob = nil
-                        Task { await presentBridgeFindings(scope: scope, bundle: bundle) }
-                    },
-                    onError: { message in bridgeJob = nil; bridgeError = message })
-            }
-            .alert(bridgeError ?? "", isPresented: Binding(get: { bridgeError != nil }, set: { if !$0 { bridgeError = nil } })) {
-                Button(RDLocalization.string("localizable.nova.bridge.alert.ok", table: .localizable, fallback: "Tamam")) { bridgeError = nil }
-            }
+        if ready {
+            NovaPilotFindingsGate(identity: identity, scope: controller.scope, canWrite: controller.canWrite,
+                select: controller.select, currentScope: { controller.scope },
+                companyName: controller.capability?.company_name, startOnNew: startOnNew,
+                onCompanies: { navigate(.companies) }, onHome: { navigate(.home) })
+                .id(controller.scope?.epoch ?? controller.host.navigation.epoch)
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     NovaText(text: NovaDestination.findings.title, style: .screenTitle)
                     statusCard
-                    NovaText(text: RDLocalization.string("localizable.nova.pilot.nonconformity.needs.company", table: .localizable,
-                        fallback: "Uygunsuzluk kaydı bir firmaya bağlıdır. Önce Firmalar'dan bir firma seçin."))
-                    NovaButton(label: NovaDestination.companies.title, symbol: "building.2", variant: .surface) { navigate(.companies) }
-                        .accessibilityIdentifier("nonconformity.pick.company")
+                    NovaText(text: RDLocalization.string("localizable.nova.pilot.nonconformity.unavailable", table: .localizable,
+                        fallback: "Uygunsuzluk modülü için canlı pilot erişimi gerekiyor."))
+                    NovaButton(label: RDLocalization.string("localizable.nova.pilot.main.gate.ana.sayfaya.don.0eb70db3", table: .localizable, fallback: "Ana sayfaya dön"), symbol: "chevron.left", variant: .surface) { navigate(.home) }
                 }.padding(20)
             }
         }
-    }
-
-    /// Loads the chosen photos and hands the existing analysis pipeline the work.
-    /// Nothing about the legacy analysis flow is reimplemented here.
-    private func startBridgeAnalysis(scope: NovaPersonnelScope) async {
-        bridgePickerArmed = false
-        let items = bridgePhotos
-        guard !items.isEmpty else { return }
-        var images: [UIImage] = []
-        for item in items {
-            if let data = try? await item.loadTransferable(type: Data.self), let image = UIImage(data: data) {
-                images.append(image)
-            }
-        }
-        bridgePhotos = []
-        guard !images.isEmpty else {
-            bridgeError = RDLocalization.string("localizable.nova.bridge.photo.unreadable", table: .localizable,
-                fallback: "Seçilen fotoğraflar okunamadı. Tekrar deneyin.")
-            return
-        }
-        // A fixed focus set for this first bridge. The home flow lets the expert
-        // pick the focuses; choosing them here is still open work, and sending
-        // all sixteen would change what the analysis costs and returns.
-        let canvases: [AnalysisCanvas] = [.general, .ppe, .warningSigns, .workingAtHeight, .electrical]
-        let owner = scope.ownerID
-        let company = scope.companyID
-        bridgeJob = NovaPhotoBridgeJob(work: { progress in
-            try await AnalysisService.shared.runPhotoAnalysis(userID: owner, images: images, canvases: canvases,
-                companyID: company, onProgress: progress)
-        }, preview: images.first, photoCount: images.count)
-    }
-
-    /// The analysis row and its findings stay exactly where they are; only the
-    /// expert's selection turns into nonconformities on the next screen.
-    private func presentBridgeFindings(scope: NovaPersonnelScope, bundle: AnalysisResultBundle?) async {
-        guard let bundle else { return }
-        let method = app.profile?.preferredMethod?.domain ?? .fineKinney
-        let findings = novaAnalysisFindings(from: bundle, method: method)
-        guard !findings.isEmpty else {
-            bridgeError = RDLocalization.string("localizable.nova.bridge.no.findings", table: .localizable,
-                fallback: "Bu analizde uygunsuzluğa dönüştürülecek bulgu yok.")
-            return
-        }
-        do {
-            let service = NovaNonconformityService.live(currentScope: { controller.scope })
-            let places = try await service.workplaces(scope)
-            bridgeFindings = .init(findings: findings, workplaces: places)
-        } catch {
-            bridgeError = RDLocalization.string("localizable.nova.nonconformity.error.workplaces", table: .localizable,
-                fallback: "İşyeri listesi alınamadı. Tekrar deneyin.")
-        }
-    }
-
-    /// The finding identifier is the mutation key, so opening the same finding
-    /// twice replays instead of creating a second record.
-    private func openFromFinding(scope: NovaPersonnelScope, finding: NovaAnalysisFinding,
-                                 workplace: UUID, severity: NovaNonconformitySeverity?) async -> NovaFindingOutcome {
-        let service = NovaNonconformityService.live(currentScope: { controller.scope })
-        let intent = NovaNonconformityIntent(origin: .finding, workplaceID: workplace, title: finding.title,
-            severity: severity, riskBand: severity == nil ? finding.band : nil, findingID: finding.id,
-            dueOn: nil, assignee: nil)
-        do {
-            let result = try await service.open(scope, intent: intent, mutationID: finding.id)
-            return result.alreadyOpen ? .alreadyOpen : .opened
-        } catch NovaNonconformityFailure.severityUnknown {
-            return .failed(RDLocalization.string("localizable.nova.bridge.outcome.severity", table: .localizable,
-                fallback: "Risk bandı okunamadı; önem derecesini seçip tekrar deneyin."))
-        } catch NovaNonconformityFailure.denied {
-            return .failed(RDLocalization.string("localizable.nova.nonconformity.error.denied", table: .localizable,
-                fallback: "Bu firma için uygunsuzluk kaydına erişiminiz yok."))
-        } catch {
-            return .failed(RDLocalization.string("localizable.nova.bridge.outcome.failed", table: .localizable,
-                fallback: "Bu bulgu için kayıt açılamadı. Aynı işlemi tekrar deneyin."))
-        }
-    }
-
-    private func nonconformityClient(_ scope: NovaPersonnelScope) -> NovaNonconformityClient {
-        let service = NovaNonconformityService.live(currentScope: { controller.scope })
-        return .init(list: { try await service.list(scope, state: $0) },
-                     workplaces: { try await service.workplaces(scope) },
-                     open: { try await service.open(scope, intent: $0).row })
     }
 
     @ViewBuilder private var companies: some View {
