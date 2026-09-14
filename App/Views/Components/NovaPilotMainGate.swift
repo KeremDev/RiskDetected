@@ -132,6 +132,8 @@ struct NovaPilotRoot: View {
                 drills
             case .ppeHandovers:
                 ppe
+            case .appointments:
+                appointments
             case .profile:
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
@@ -260,6 +262,15 @@ struct NovaPilotRoot: View {
     @ViewBuilder private var ppe: some View {
         if ready {
             NovaPilotPPEGate(identity: identity, canWrite: controller.canWrite,
+                onBack: { navigate(.home) })
+        } else {
+            NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
+        }
+    }
+
+    @ViewBuilder private var appointments: some View {
+        if ready {
+            NovaPilotAppointmentGate(identity: identity, canWrite: controller.canWrite,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)

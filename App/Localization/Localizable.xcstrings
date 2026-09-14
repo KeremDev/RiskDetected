@@ -9253,6 +9253,1122 @@
         }
       }
     },
+    "localizable.nova.appointment.back": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.basis.appointed": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By appointment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atamayla"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.basis.elected": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By election"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçimle"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.cancel": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.count": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d / %d roles"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d / %d görev"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.count.note": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The product does not say how many people a workplace needs; no approved count catalogue exists."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ürün bir işyeri için kaç kişi gerektiğini söylemez; onaylanmış bir sayı kataloğu yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.detail.basis": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basis"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dayanak"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.detail.end": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "End the role"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görevi sonlandır"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.detail.fix": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Correct the end date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitiş tarihini düzelt"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.detail.letter": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appointment letter"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atama yazısı"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.empty.body": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a company and record a representative, support staff member or team member."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir firma seçip temsilci, destek elemanı veya ekip üyesi görevini kaydedin."
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.empty.title": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No appointments"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atama kaydı yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.end.after": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The role began on %@; the end must be after that."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görev %@ tarihinde başladı; bitiş bundan sonrası olmalı."
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.end.save": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.error.basis": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "State whether the role was given by election or by appointment."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görevin seçimle mi atamayla mı verildiğini belirtin."
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.error.conflict": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record changed elsewhere meanwhile. Refresh and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt bu sırada başka bir yerden değişti. Yenileyip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.error.denied": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No access to this record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kayda erişim yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.error.feature": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modules are not open yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modüller henüz açık değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.error.module": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The appointments module is not open yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atama modülü henüz açık değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.error.overlap": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The same person cannot hold the same role at the same workplace over overlapping dates."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aynı kişi aynı görevi aynı işyerinde çakışan tarihlerde üstlenemez."
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.error.plan": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This action needs a Plus or Pro subscription."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu işlem için Plus veya Pro aboneliği gerekiyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.error.unavailable": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record could not be loaded. Check the connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt alınamadı. Bağlantıyı kontrol edip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.error.validation": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The entered details are incomplete or inconsistent."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Girilen bilgiler eksik veya birbiriyle uyumsuz."
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.explain.active": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No end date was entered; the role continues."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitiş tarihi girilmemiş; görev sürüyor."
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.explain.active.until": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In the role until %@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ tarihine kadar görevde."
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.explain.ended": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ended on %@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ tarihinde sona erdi."
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.explain.upcoming": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Begins on %@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ tarihinde başlayacak."
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.filter.companies": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All companies"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm firmalar"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.filter.company": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.filter.role": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Role"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görev"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.filter.roles": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All roles"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm görevler"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.filter.states": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All statuses"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm durumlar"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.form.basisnote": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minutes or decision number"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutanak veya karar no"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.form.letter": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where the appointment letter is"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atama yazısı nerede"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.form.person": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Person"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personel"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.form.pickperson": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a person"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personel seçin"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.form.pickplace": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a workplace"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri seçin"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.form.role": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Role"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görev"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.form.save": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydet"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.form.title": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assign a role"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görev ver"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.form.workplace": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workplace"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyeri"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.kind.fire": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fire team"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yangın ekibi"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.kind.firstaid": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "First aider"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlk yardımcı"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.kind.representative": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Worker representative"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çalışan temsilcisi"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.kind.support": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Support staff"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destek elemanı"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.kind.team": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Team member"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekip üyesi"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.letter.note": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The appointment letter is not stored in the app. Here you only note where the original is kept."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atama yazısı uygulamada saklanmaz. Burada yalnız aslının nerede tutulduğunu not edersiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.more": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show more"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha fazla göster"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.new": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assign a role"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görev ver"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.qualification.note": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Holding a role does not mean being qualified for it. The app verifies no legal condition and labels nobody as qualified."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görevi üstlenmek yeterli olmak demek değildir. Uygulama hiçbir yasal şartı doğrulamaz ve kimseye yeterli etiketi koymaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.row.archived": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The personnel record was archived"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personel kaydı arşivlendi"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.row.ends": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ends"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitiş"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.row.person": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Person"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personel"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.row.starts": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starts"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlangıç"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.search": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search person, workplace or company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kişi, işyeri veya firma ara"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.state.active": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In role"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görevde"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.state.active.footer": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "in force"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "yürürlükte"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.state.ended": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ended"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sona erdi"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.state.ended.footer": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "past"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "geçmiş"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.state.upcoming": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upcoming"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlayacak"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.state.upcoming.footer": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "later date"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ileri tarihli"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.unset": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not set"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belirtilmedi"
+          }
+        }
+      }
+    },
     "localizable.nova.bridge.alert.ok": {
       "comment": "nova_manual; photo analysis bridge; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -22875,6 +23991,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Analizlerim"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.appointments": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appointments"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atama ve Temsilciler"
           }
         }
       }
