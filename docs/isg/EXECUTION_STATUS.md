@@ -4,6 +4,8 @@ Başlangıç: 12 Eylül 2026. Kullanıcı planın uygulanmasına devam edilmesin
 
 ## Güncel durum
 
+- **14 Eylül fotoğraf analizi akışı:** [Firma/sektör/odak, analiz detayı ve elle giriş](P09_ANALYSIS_FLOW_2026-09-14.md) ile [uygunsuzluk detayı sunucu dilimi](P09_NONCONFORMITY_DETAIL_2026-09-14.md). Fotoğraf seçimi artık firma (firmasız seçeneğiyle), sektör (firmadan otomatik, tanınmazsa boş) ve odak soruyor; analiz detayı dört bölümüyle NOVA'da, skorsuz uzman görüşü maddeleri geliştirme önerisi olarak da kaydedilebiliyor; elle giriş akordiyonu ilerleme çubuğuyla çalışıyor. 1158 sentetik, 33 upgrade, 470 foundation, 32 nova-design PASS. **Rollout hâlâ kapalı**; elle girişte kanıt fotoğrafı adımı yok.
+
 - **14 Eylül canlı pilot ilerleme yöntemi:** [NOVA firma akışı rollout kaydı](NOVA_LIVE_PILOT_ROLLOUT_2026-09-14.md). İlk doğrulama yüzeyi fiziksel iOS cihazındaki pilot firma akışı olarak tutuldu; build/scope/read-back kapıları tamamlanmadan canlı mutation kapsamı genişletilmiyor.
 
 - **14 Eylül güncel cihaz teslimi:** [NOVA 2.0.3 (98)](NOVA_DEVICE_BUILD_98_2026-09-14.md) ana akordeon yüksekliği/çerçeve hiyerarşisi ve popup başlık boşluğu düzeltmeleriyle iPhone Kerem'e kuruldu/açıldı. Test koşusu kullanıcı isteğiyle çalıştırılmadı; canlı mevcut veriler değişmedi.

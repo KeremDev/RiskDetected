@@ -1,0 +1,77 @@
+{
+  "phase": "P09-native",
+  "slice": "photo analysis intake, NOVA analysis detail, manual accordion",
+  "date": "2026-09-14",
+  "files": {
+    "design": [
+      "App/DesignSystem/ISG/NovaAnalysisIntake.swift",
+      "App/DesignSystem/ISG/NovaAnalysisIntakeScreens.swift",
+      "App/DesignSystem/ISG/NovaAnalysisDetail.swift",
+      "App/DesignSystem/ISG/NovaAnalysisDetailScreens.swift",
+      "App/DesignSystem/ISG/NovaAnalysisSheets.swift",
+      "App/DesignSystem/ISG/NovaAnalysisListScreen.swift",
+      "App/DesignSystem/ISG/NovaManualNonconformityScreen.swift",
+      "App/DesignSystem/ISG/NovaNonconformityLabels.swift"
+    ],
+    "composition": [
+      "App/Views/Components/NovaPilotFindingsGate.swift",
+      "App/Services/Company/NovaAnalysisWorkspaceService.swift"
+    ],
+    "guards": [
+      "scripts/isg/nova_analysis_flow.test.mjs",
+      "scripts/isg/NovaAnalysisIntakeCheck.swift"
+    ]
+  },
+  "runs": {
+    "foundation": {
+      "checks": 470,
+      "failed": 0
+    },
+    "nova_design": {
+      "checks": 32,
+      "failed": 0,
+      "new_checks": 8
+    },
+    "analysis_intake_swiftc": {
+      "checks": 31,
+      "failed": 0
+    },
+    "localization_migrate_check": "pass",
+    "localization_hardcoded_debt": 15,
+    "ios_debug_build": "succeeded",
+    "nova_pilot_simulator_build": "succeeded"
+  },
+  "posture": {
+    "analysis_engine_reimplemented": false,
+    "report_renderer_reimplemented": false,
+    "unrecognised_company_sector_guessed": false,
+    "unscored_item_band_mapped": false,
+    "client_states_a_score": false,
+    "legacy_findings_written": false,
+    "rollout_opened": false,
+    "localization_keys_added": 110,
+    "catalogs_shrank": false
+  },
+  "visual_review": {
+    "device": "iPhone 17 Pro simulator",
+    "launch": "RD_UI_TEST_MAIN RD_UI_TEST_NOVA_REVIEW",
+    "confirmed": [
+      "company step with continue-without-company",
+      "auto-selected sector note naming the company",
+      "unrecognised sector marked on the company row",
+      "analysis detail with four sections",
+      "unreadable band asks the expert for a severity",
+      "centred popup with blur and close control",
+      "manual accordion progress 1/5 with a green tick",
+      "fine-kinney 6x3x15 = 270 previewed as high"
+    ]
+  },
+  "open": [
+    "rollout for the nonconformity feature is still closed",
+    "manual flow has no evidence photo step: no client boundary attaches a file to a nonconformity yet",
+    "nonconformity detail screen (transition, corrective action, verification) not built",
+    "record_kind has no server-side list filter",
+    "tests/isg/shell-ios harness does not compile since the P18 localization migration",
+    "choosing a company for an analysis also moves the workspace scope"
+  ]
+}
