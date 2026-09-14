@@ -7,6 +7,10 @@ import { ROOT } from './lib.mjs';
 import { assertNoExposedRestoreContainer, resolvePinnedRestoreImage } from './auth_restore_guard.mjs';
 import { probeStorageRestore } from './storage_restore_probe.mjs';
 import { parseRestoreMode } from './restore_mode.mjs';
+import { assertUnchangedSources, appendPassingCheck } from './run_evidence.mjs';
+import { beginP05PilotProbe, p05PilotFiles } from './p05_pilot_probe.mjs';
+import { beginP05AccountPilotProbe, p05AccountPilotFiles } from './p05_account_pilot_probe.mjs';
+import { probeP05PilotUpgrade, p05PilotUpgradeFiles } from './p05_pilot_upgrade_probe.mjs';
 import { beginSessionProbe } from './auth_session_probe.mjs';
 import { beginAuthMutationProbe } from './auth_mutation_probe.mjs';
 import { beginAuthPersonnelProbe, personnelAuthFiles } from './auth_personnel_probe.mjs';
@@ -31,6 +35,7 @@ import { beginCampaignCoreProbe, campaignCoreFiles } from './campaign_core_probe
 import { beginObservabilityAdminProbe, observabilityAdminFiles } from './observability_admin_probe.mjs';
 import { beginScorePortfolioProbe, scorePortfolioFiles } from './score_portfolio_probe.mjs';
 import { beginIntegratedRehearsalProbe, integratedRehearsalFiles } from './integrated_rehearsal_probe.mjs';
+import { beginNonconformityHTTPProbe, nonconformityHTTPFiles } from './nonconformity_http_probe.mjs';
 import { beginNotificationDispatchProbe, notificationDispatchFiles } from './notification_dispatch_probe.mjs';
 import { beginNotificationRepositoryProbe, notificationRepositoryFiles } from './notification_repository_probe.mjs';
 import { beginNotificationDeviceProbe, notificationDeviceFiles } from './notification_device_probe.mjs';
@@ -145,8 +150,7 @@ function request(path, { method = 'GET', token, body } = {}) {
   return JSON.parse(r.stdout);
 }
 function pass(id, condition) {
-  if (!condition) throw new Error(`AUTH_RESTORE_CHECK_FAILED_${id}`);
-  report.checks.push({ id, result: 'PASS' });
+  appendPassingCheck(report.checks, id, condition);
 }
 function mailbox() {
   if (!synthetic) throw new Error('AUTH_RESTORE_EMAIL_SYNTHETIC_REQUIRED');
@@ -195,8 +199,43 @@ for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => {
   report.ok = false; report.failed_stage = stage; report.error_code = 'AUTH_RESTORE_INTERRUPTED';
   cleanup().then(() => { saveReport(); process.exit(130); });
 });
+function sourceFingerprints(mode) {
+  return Object.fromEntries(['scripts/isg/run_evidence.mjs','scripts/isg/run_auth_restore.mjs','scripts/isg/password_auth_probe.mjs','scripts/isg/signup_recovery_probe.mjs','scripts/isg/auth_mail_sink.cjs','scripts/isg/auth_session_probe.mjs','scripts/isg/auth_mutation_probe.mjs','scripts/isg/sql/auth_mutation_fixture.sql','scripts/isg/sql/transaction_fixture.sql','scripts/isg/restore_mode.mjs','scripts/isg/sql/auth_session_fixture.sql','scripts/isg/auth_restore_guard.mjs']
+    .concat(personnelAuthFiles, ['scripts/isg/auth_personnel_probe.mjs','supabase/functions/_shared/personnel/directory-request.ts','supabase/functions/_shared/personnel/employee-create.ts','supabase/functions/_shared/isg/mutation-context.ts'])
+    .concat(personnelMigrationFiles)
+    .concat(directoryMigrationFiles)
+    .concat(workspaceAvailabilityFiles)
+    .concat(mode.synthetic ? dispatchQuotaFiles : [])
+    .concat(mode.synthetic ? fileCoreFiles : [])
+    .concat(mode.synthetic ? ruleCoreFiles : [])
+    .concat(mode.synthetic ? trainingCoreFiles : [])
+    .concat(mode.synthetic ? riskCoreFiles : [])
+    .concat(mode.synthetic ? nonconformityCoreFiles : [])
+    .concat(mode.synthetic ? moduleCoreFiles : [])
+    .concat(mode.synthetic ? moduleSecondFiles : [])
+    .concat(mode.synthetic ? documentImportFiles : [])
+    .concat(mode.synthetic ? notificationCoreFiles : [])
+    .concat(mode.synthetic ? personalNotesFiles : [])
+    .concat(mode.synthetic ? billingLifecycleFiles : [])
+    .concat(mode.synthetic ? campaignCoreFiles : [])
+    .concat(mode.synthetic ? observabilityAdminFiles : [])
+    .concat(mode.synthetic ? scorePortfolioFiles : [])
+    .concat(mode.synthetic ? integratedRehearsalFiles : [])
+    .concat(mode.synthetic ? nonconformityHTTPFiles : [])
+    .concat(mode.synthetic ? notificationDispatchFiles : [])
+    .concat(mode.synthetic ? notificationRepositoryFiles : [])
+    .concat(mode.synthetic ? notificationDeviceFiles : [])
+    .concat(mode.synthetic ? notebookAPIFiles : [])
+    .concat(mode.synthetic ? p05PilotFiles : [])
+    .concat(mode.synthetic ? p05AccountPilotFiles : [])
+    .concat(mode.p05Upgrade ? p05UpgradeFiles : [])
+    .concat(mode.p05PilotUpgrade ? p05PilotUpgradeFiles : [])
+    .concat(mode.nativeE2E ? ['scripts/isg/native_e2e_bridge.mjs','scripts/isg/native_e2e_oracle.mjs','scripts/isg/run_native_android.mjs','tests/isg/native-ios/NativeHarness.swift','tests/isg/native-ios/NativeUITests.swift','android/isg-native-check/src/main/kotlin/com/riskdetectedan/isg/nativecheck/NativeActivity.kt','android/isg-native-check/src/androidTest/kotlin/com/riskdetectedan/isg/nativecheck/NativeFlowTest.kt'] : [])
+    .map(path=>[path,digest(readFileSync(resolve(ROOT,path)))]));
+}
 try {
   const mode = parseRestoreMode(process.argv.slice(2));
+  report.source_sha256 = sourceFingerprints(mode);
   report.data_class = mode.synthetic ? 'synthetic' : 'restored_private_backup';
   report.original_source_accessed = !mode.synthetic;
   if (!mode.synthetic) sourceGuard();
@@ -274,6 +313,10 @@ try {
     stage = 'p05-full-legacy-upgrade';
     report.p05_upgrade = probeP05Upgrade({sql,pass,isolatedCopy:true});
   }
+  if (mode.p05PilotUpgrade) {
+    stage = 'p05-pilot-only-upgrade';
+    report.p05_pilot_upgrade = probeP05PilotUpgrade({sql,pass,isolatedCopy:true});
+  }
   const secret = randomBytes(48).toString('hex'), dbPassword = randomBytes(32).toString('hex');
   sql(`ALTER ROLE supabase_auth_admin PASSWORD '${dbPassword}';`);
   stage = 'auth-boot';
@@ -336,6 +379,7 @@ try {
   let observabilityProbe;
   let scoreProbe;
   let rehearsalProbe;
+  let nonconformityHTTPProbe;
   let notificationDispatchProbe;
   let notificationRepositoryProbe;
   let notebookAPIProbe;
@@ -363,7 +407,7 @@ try {
     stage = 'rule-core';
     ruleProbe=await beginRuleCoreProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'training-core';
-    trainingProbe=await beginTrainingCoreProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
+    trainingProbe=await beginTrainingCoreProbe({synthetic:true,sql,concurrentSql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'risk-core';
     riskProbe=await beginRiskCoreProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'nonconformity-core';
@@ -386,6 +430,8 @@ try {
     notificationRepositoryProbe=await beginNotificationRepositoryProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'notebook-api';
     notebookAPIProbe=await beginNotebookAPIProbe({synthetic:true,sql,concurrentSql,token:refresh.body.access_token,secret,request:personnelHTTPProbe.request,waitReady,pass});
+    stage = 'nonconformity-http';
+    nonconformityHTTPProbe=await beginNonconformityHTTPProbe({synthetic:true,sql,request:personnelHTTPProbe.request,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'billing-lifecycle';
     billingProbe=await beginBillingLifecycleProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'campaign-core';
@@ -396,8 +442,6 @@ try {
     scoreProbe=await beginScorePortfolioProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
     stage = 'integrated-rehearsal';
     rehearsalProbe=await beginIntegratedRehearsalProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,pass});
-    stage = 'personnel-advisors';
-    report.personnel_advisors=await probePersonnelAdvisors({synthetic:true,sql,guard,names,pass,onFindings:value=>{report.personnel_advisors=value;}});
   }
   if (mode.nativeE2E) {
     stage='native-e2e';
@@ -420,7 +464,19 @@ try {
           'receipts',(SELECT count(*) FROM private_isg.personnel_receipts WHERE response->>'employee_id' IN(SELECT id::text FROM people)));`));const directory=verifyNativeDirectory(sql,personnelMigrationProbe.companyID,platform);return {...result,directory,ok:result.employees===1&&result.restored===true&&result.audit===4&&result.events===4&&result.receipts===4&&directory.ok};}});
     reset();report.mobile_e2e_tested=true;
   }
+  let pilotProbe;
+  let accountPilotProbe;
+  if(mode.synthetic) {
+    stage='p05-readonly-pilot';
+    pilotProbe=await beginP05PilotProbe({synthetic:true,sql,companyID:personnelMigrationProbe.companyID,ownerID:id,request:personnelHTTPProbe.request,pass});
+    stage='p05-account-pilot';
+    accountPilotProbe=await beginP05AccountPilotProbe({synthetic:true,sql,concurrentSql,token:refresh.body.access_token,secret,companyID:personnelMigrationProbe.companyID,ownerID:id,request:personnelHTTPProbe.request,waitReady,pass});
+    stage='pilot-personnel-advisors';
+    report.personnel_advisors=await probePersonnelAdvisors({synthetic:true,sql,guard,names,pass,onFindings:value=>{report.personnel_advisors=value;}});
+  }
   pass('logout_succeeds', request('/logout', { method: 'POST', token: refresh.body.access_token }).status === 204);
+  if(pilotProbe)report.p05_pilot=pilotProbe.afterLogout();
+  if(accountPilotProbe)report.p05_account_pilot=accountPilotProbe.afterLogout();
   pass('logged_out_refresh_rejected', request('/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: refresh.body.refresh_token } }).status === 400);
   if (sessionProbe) report.session_guard = sessionProbe.afterLogout();
   if (mutationProbe) report.auth_mutation = mutationProbe.afterLogout();
@@ -445,6 +501,7 @@ try {
   if (observabilityProbe) report.observability_admin = observabilityProbe.afterLogout();
   if (scoreProbe) report.score_portfolio = scoreProbe.afterLogout();
   if (rehearsalProbe) report.integrated_rehearsal = rehearsalProbe.afterLogout();
+  if (nonconformityHTTPProbe) report.nonconformity_http = nonconformityHTTPProbe.afterLogout();
   if (notificationDispatchProbe) report.notification_dispatch = notificationDispatchProbe.afterLogout();
   if (notificationRepositoryProbe) report.notification_repository = notificationRepositoryProbe.afterLogout();
   if (notebookAPIProbe) report.notebook_api = notebookAPIProbe.afterLogout();
@@ -464,34 +521,8 @@ try {
   report.source_after = sql("BEGIN READ ONLY; SELECT jsonb_build_object('users',(select count(*) from auth.users),'identities',(select count(*) from auth.identities),'profiles',(select count(*) from public.profiles),'objects',(select count(*) from storage.objects),'auth_migrations',(select count(*) from auth.schema_migrations),'storage_migrations',(select count(*) from storage.migrations)); COMMIT;", true);
   pass('source_counts_unchanged', report.source_before === report.source_after);
   } else pass('synthetic_no_backup_or_storage_lane_used',!withStorage && report.original_source_accessed === false);
-  report.source_sha256 = Object.fromEntries(['scripts/isg/run_auth_restore.mjs','scripts/isg/password_auth_probe.mjs','scripts/isg/signup_recovery_probe.mjs','scripts/isg/auth_mail_sink.cjs','scripts/isg/auth_session_probe.mjs','scripts/isg/auth_mutation_probe.mjs','scripts/isg/sql/auth_mutation_fixture.sql','scripts/isg/sql/transaction_fixture.sql','scripts/isg/restore_mode.mjs','scripts/isg/sql/auth_session_fixture.sql','scripts/isg/auth_restore_guard.mjs']
-    .concat(personnelAuthFiles, ['scripts/isg/auth_personnel_probe.mjs','supabase/functions/_shared/personnel/directory-request.ts','supabase/functions/_shared/personnel/employee-create.ts','supabase/functions/_shared/isg/mutation-context.ts'])
-    .concat(personnelMigrationFiles)
-    .concat(directoryMigrationFiles)
-    .concat(workspaceAvailabilityFiles)
-    .concat(mode.synthetic ? dispatchQuotaFiles : [])
-    .concat(mode.synthetic ? fileCoreFiles : [])
-    .concat(mode.synthetic ? ruleCoreFiles : [])
-    .concat(mode.synthetic ? trainingCoreFiles : [])
-    .concat(mode.synthetic ? riskCoreFiles : [])
-    .concat(mode.synthetic ? nonconformityCoreFiles : [])
-    .concat(mode.synthetic ? moduleCoreFiles : [])
-    .concat(mode.synthetic ? moduleSecondFiles : [])
-    .concat(mode.synthetic ? documentImportFiles : [])
-    .concat(mode.synthetic ? notificationCoreFiles : [])
-    .concat(mode.synthetic ? personalNotesFiles : [])
-    .concat(mode.synthetic ? billingLifecycleFiles : [])
-    .concat(mode.synthetic ? campaignCoreFiles : [])
-    .concat(mode.synthetic ? observabilityAdminFiles : [])
-    .concat(mode.synthetic ? scorePortfolioFiles : [])
-    .concat(mode.synthetic ? integratedRehearsalFiles : [])
-    .concat(mode.synthetic ? notificationDispatchFiles : [])
-    .concat(mode.synthetic ? notificationRepositoryFiles : [])
-    .concat(mode.synthetic ? notificationDeviceFiles : [])
-    .concat(mode.synthetic ? notebookAPIFiles : [])
-    .concat(mode.p05Upgrade ? p05UpgradeFiles : [])
-    .concat(mode.nativeE2E ? ['scripts/isg/native_e2e_bridge.mjs','scripts/isg/native_e2e_oracle.mjs','scripts/isg/run_native_android.mjs','tests/isg/native-ios/NativeHarness.swift','tests/isg/native-ios/NativeUITests.swift','android/isg-native-check/src/main/kotlin/com/riskdetectedan/isg/nativecheck/NativeActivity.kt','android/isg-native-check/src/androidTest/kotlin/com/riskdetectedan/isg/nativecheck/NativeFlowTest.kt'] : [])
-    .map(path=>[path,digest(readFileSync(resolve(ROOT,path)))]));
+  assertUnchangedSources(report.source_sha256, sourceFingerprints(mode));
+  pass('source_files_unchanged_during_run', true);
   report.ok = true;
 } catch (error) {
   report.ok = false; report.failed_stage = stage;

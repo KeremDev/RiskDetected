@@ -37,8 +37,14 @@ suites.foundation.push('scripts/isg/campaign_core_guard.test.mjs');
 suites.foundation.push('scripts/isg/observability_admin_guard.test.mjs');
 suites.foundation.push('scripts/isg/score_portfolio_guard.test.mjs');
 suites.foundation.push('scripts/isg/nova_localization.test.mjs');
+suites.foundation.push('scripts/isg/localization_merge.test.mjs');
+suites.foundation.push('scripts/isg/run_evidence.test.mjs');
+suites.foundation.push('scripts/isg/p05_pilot_guard.test.mjs');
+suites.foundation.push('scripts/isg/p05_account_pilot_guard.test.mjs');
+suites.foundation.push('scripts/isg/p05_pilot_bundle.test.mjs');
 suites.foundation.push('scripts/isg/acceptance_ledger.test.mjs');
 suites.foundation.push('scripts/isg/integrated_rehearsal_guard.test.mjs');
+suites.foundation.push('scripts/isg/nonconformity_rpc_guard.test.mjs');
 if (!Object.hasOwn(suites, suite) || extra.length) {
   console.error('Usage: node scripts/isg/run_suite.mjs foundation|capacity-shadow|nova-design|password-auth; only offline suites are enabled here.');
   process.exitCode = 1;

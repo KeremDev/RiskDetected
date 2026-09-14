@@ -13,6 +13,8 @@ export const p05UpgradeFiles = ['scripts/isg/p05_upgrade_probe.mjs',
   'supabase/migrations/20260913154113_isg_notebook_organization_api.sql',
   'supabase/migrations/20260913170000_isg_training_core.sql',
   'supabase/migrations/20260913190000_isg_risk_versioning.sql',
+  'supabase/migrations/20260913191226_isg_p05_readonly_pilot.sql',
+  'supabase/migrations/20260913193231_isg_p05_account_pilot_creation.sql',
   'supabase/migrations/20260913210000_isg_nonconformity_core.sql',
   'supabase/migrations/20260913230000_isg_module_core.sql',
   'supabase/migrations/20260914010000_isg_module_core_second.sql',
@@ -27,7 +29,8 @@ export const p05UpgradeFiles = ['scripts/isg/p05_upgrade_probe.mjs',
   'supabase/migrations/20260914090000_isg_billing_lifecycle.sql',
   'supabase/migrations/20260914110000_isg_campaign_core.sql',
   'supabase/migrations/20260914130000_isg_observability_admin.sql',
-  'supabase/migrations/20260914150000_isg_score_portfolio.sql'];
+  'supabase/migrations/20260914150000_isg_score_portfolio.sql',
+  'supabase/migrations/20260914170000_isg_nonconformity_owner_rpc.sql'];
 
 /** Called only on the runner's freshly cloned, network=none, identity-guarded target. */
 export function probeP05Upgrade({sql,pass,isolatedCopy}) {
@@ -57,7 +60,7 @@ export function probeP05Upgrade({sql,pass,isolatedCopy}) {
   sql('SELECT private_isg.ensure_default(id) IS NOT NULL FROM public.companies;');
   pass('p05_full_copy_backfill_repeat_no_change', state() === first);
   pass('p05_full_copy_legacy_rows_unchanged_after_retry', fingerprint() === before);
-  pass('p05_full_copy_new_schema_rls', sql("SELECT count(*)=154 AND bool_and(rowsecurity) FROM pg_tables WHERE schemaname='private_isg';") === 't');
+  pass('p05_full_copy_new_schema_rls', sql("SELECT count(*)=158 AND bool_and(rowsecurity) FROM pg_tables WHERE schemaname='private_isg';") === 't');
   pass('p05_full_copy_client_table_grants_closed', sql("SELECT count(*) FROM information_schema.role_table_grants WHERE table_schema='private_isg' AND grantee IN ('PUBLIC','anon','authenticated','service_role');") === '0');
   pass('p05_full_copy_notification_dispatch_token_installed', sql("SELECT count(*)=5 FROM information_schema.columns WHERE table_schema='private_isg' AND table_name='notification_jobs' AND column_name IN ('dispatch_token','authorized_at','dispatch_expires_at','next_attempt_at','accepted_at');") === 't');
   pass('p05_full_copy_notification_completion_private', sql("SELECT NOT has_function_privilege('authenticated','private_isg.complete_notification_delivery(uuid,uuid,text,text,text,timestamptz)','EXECUTE') AND NOT has_function_privilege('service_role','private_isg.complete_notification_delivery(uuid,uuid,text,text,text,timestamptz)','EXECUTE');") === 't');

@@ -42,6 +42,8 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
     // Deliberate default-deny tables, with no client grants, are not missing policies.
     const denyTables=new Set(['rollout','workplaces','departments','employees','personnel_receipts','personnel_audit','personnel_outbox','workplace_initializations','job_roles','contractor_organizations','contractor_engagements','workplace_context_versions','employee_assignments','directory_events','directory_outbox',
       // P01/P03 ledgers: private by construction, worker/owner only, zero client grant.
+      'p05_pilot_grants',
+      'p05_pilot_accounts','p05_pilot_company_origins','p05_company_profiles',
       'consumer_registry','event_deliveries','consumer_receipts','dispatch_dead_letters','dispatch_reconciliations',
       'quota_definitions','legacy_entitlement_floors','quota_reservations','quota_settlements','quota_shadow_observations',
       'file_purposes','upload_intents','file_assets','file_derivatives','file_scan_results',
@@ -62,6 +64,7 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'export_jobs','import_batches','import_rows','import_checkpoints',
       'notification_purposes','notification_consents','producer_ownership','notification_episodes',
       'notification_jobs','delivery_attempts','notification_device_permissions',
+      'nonconformity_receipts',
       'personal_notes','note_conflicts','note_items','note_tags','note_tag_links','personal_reminders','note_mutation_receipts',
       'reminder_occurrences','device_delivery_claims',
       'billing_lifecycle_evidence','billing_lifecycle_projection','benefit_definitions','benefit_state_edges',
@@ -79,6 +82,8 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
     // This fresh, tiny fixture has no representative query workload. Keep the
     // explicitly reviewed FK-covering indexes: zero scans here is not removal evidence.
     const reviewedFKIndexes=new Set([
+      'nonconformity_receipts_nonconformity_receipt_company_idx',
+      'p05_pilot_grants_p05_pilot_company_idx',
       'portfolio_entries_portfolio_entry_company_idx','portfolio_entries_portfolio_entry_snapshot_idx',
       'portfolio_projections_portfolio_projection_policy_idx','score_contributions_score_contribution_process_idx',
       'score_simulations_score_simulation_from_idx','score_simulations_score_simulation_to_idx',
@@ -94,6 +99,7 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'campaign_versions_campaign_version_winback_reward_idx','eligibility_checks_eligibility_check_owner_idx',
       'eligibility_checks_eligibility_check_campaign_idx','referral_claims_referral_claim_inviter_idx',
       'referral_claims_referral_claim_invitee_idx','referral_codes_referral_code_campaign_idx',
+      'referral_claims_referral_claim_qualified_version_idx',
       'suppression_records_suppression_episode_idx','suppression_records_suppression_campaign_idx',
       'winback_episodes_winback_episode_campaign_idx','winback_episodes_winback_episode_version_idx',
       'winback_episodes_winback_episode_owner_idx',
@@ -155,6 +161,7 @@ export async function probePersonnelAdvisors({synthetic,sql,guard,names,pass,onF
       'notification_episodes_episode_owner_idx','delivery_attempts_attempt_job_idx',
       'personal_notes_note_owner_idx','note_conflicts_note_conflict_idx','note_items_note_item_idx',
       'note_tags_note_tag_owner_idx','note_tag_links_note_tag_link_idx',
+      'p05_company_profiles_p05_company_profile_responsible','p05_company_profiles_p05_company_profile_owner',
       'personal_reminders_reminder_owner_idx','personal_reminders_reminder_note_idx',
       'reminder_occurrences_occurrence_due_idx',
     ].map(key=>'unused_index_private_isg_'+key));

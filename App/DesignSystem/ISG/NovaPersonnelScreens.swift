@@ -156,7 +156,7 @@ private struct PersonnelContent: View {
                 if loading { ProgressView().frame(maxWidth: .infinity).accessibilityIdentifier("personnel.loading") }
                 if preview, (!rows.isEmpty || next != nil), let onShowAll {
                     Button(action: onShowAll) {
-                        HStack { NovaText(text: "Tümünü gör", style: .meta, color: NovaColorToken.accentInk.color(in: scheme)); Spacer(); NovaIcon(symbol: "chevron.right", size: 13) }
+                        HStack { NovaText(text: RDLocalization.string("localizable.nova.personnel.see.all", table: .localizable, fallback: "Tümünü gör"), style: .meta, color: NovaColorToken.accentInk.color(in: scheme)); Spacer(); NovaIcon(symbol: "chevron.right", size: 13) }
                             .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
                     }.buttonStyle(.plain).accessibilityIdentifier("personnel.show.all")
                 } else if let next, !loading {
@@ -259,9 +259,9 @@ private struct NovaEmployeeDetail: View {
                             HStack(spacing: 7) { NovaIcon(symbol: "building.2", size: 18); NovaText(text: placement.isEmpty ? RDLocalization.string("localizable.nova.personnel.no.department.selected", table: .localizable, fallback: "Departman seçilmedi") : placement, style: .metaQuiet) }
                             HStack(spacing: 7) { NovaIcon(symbol: "building.2", size: 15).foregroundStyle(NovaColorToken.accentInk.color(in: scheme)); NovaText(text: companyName, style: .metaQuiet) }
                             HStack(spacing: 7) {
-                                employeeTag("graduationcap", "Eğitim · —", tone: .statusInfoInk)
-                                employeeTag("person.crop.rectangle", "Temsilci · Hayır", tone: .statusWarningInk)
-                                employeeTag("person.3", "Destek · Hayır", tone: .accentInk)
+                                employeeTag("graduationcap", RDLocalization.string("localizable.nova.personnel.tag.training.empty", table: .localizable, fallback: "Eğitim · —"), tone: .statusInfoInk)
+                                employeeTag("person.crop.rectangle", RDLocalization.string("localizable.nova.personnel.tag.representative.no", table: .localizable, fallback: "Temsilci · Hayır"), tone: .statusWarningInk)
+                                employeeTag("person.3", RDLocalization.string("localizable.nova.personnel.tag.support.no", table: .localizable, fallback: "Destek · Hayır"), tone: .accentInk)
                             }
                         }.frame(maxWidth: .infinity, alignment: .leading)
                     }.accessibilityIdentifier("personnel.detail")

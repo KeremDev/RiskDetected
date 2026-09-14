@@ -6,6 +6,9 @@ import {ROOT} from './lib.mjs';
 
 // Every file of the new native surface that a person can read text from.
 const NOVA_FILES=[
+  'App/DesignSystem/ISG/NovaCompanyVisualForms.swift',
+  'App/DesignSystem/ISG/NovaPopup.swift',
+  'App/DesignSystem/ISG/NovaCompanyProgressViews.swift',
   'App/DesignSystem/ISG/NovaCompanyDestination.swift','App/DesignSystem/ISG/NovaCompanyListState.swift',
   'App/DesignSystem/ISG/NovaComponents.swift','App/DesignSystem/ISG/NovaDirectory.swift',
   'App/DesignSystem/ISG/NovaDirectoryScreens.swift','App/DesignSystem/ISG/NovaExpertShell.swift',
@@ -81,14 +84,18 @@ test('no shipped NOVA copy is left as a raw literal',()=>{
 test('an icon-only control carries a spoken name',()=>{
   const offenders=[];
   for(const file of NOVA_FILES){
-    for(const {line,number} of shippedLines(read(file))){
-      if(!/Button\s*[({]/.test(line))continue;
-      if(!/NovaIcon\(|Image\(systemName:/.test(line))continue;
+    const lines=shippedLines(read(file));
+    lines.forEach(({line,number},index)=>{
+      if(!/Button\s*[({]/.test(line))return;
+      if(!/NovaIcon\(|Image\(systemName:/.test(line))return;
       // An icon next to text already speaks; only a bare icon needs the label.
-      if(/NovaText\(|NovaSizedText\(|Text\(|label:\s*"/.test(line))continue;
-      if(/accessibilityLabel/.test(line))continue;
+      if(/NovaText\(|NovaSizedText\(|Text\(|label:\s*"/.test(line))return;
+      // A modifier chain often continues on the following lines, so the label
+      // may legitimately sit just below the button it belongs to.
+      const window=[line,lines[index+1]?.line??'',lines[index+2]?.line??''].join('\n');
+      if(/accessibilityLabel/.test(window))return;
       offenders.push(`${file}:${number}`);
-    }
+    });
   }
   assert.deepEqual(offenders,[],`icon-only controls without a spoken name:\n${offenders.join('\n')}`);
 });
