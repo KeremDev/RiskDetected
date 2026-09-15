@@ -9,6 +9,7 @@ const editor=read('App/DesignSystem/ISG/NovaEducationEditor.swift');
 const models=read('App/Services/Company/NovaEducationModels.swift');
 const caller=read('App/DesignSystem/ISG/NovaTrainingScreens.swift');
 const reference=read('App/DesignSystem/ISG/NovaManualNonconformityScreen.swift');
+const scopeEditor=read('App/DesignSystem/ISG/NovaEducationScopeEditor.swift');
 const catalogue=JSON.parse(read('App/Localization/Localizable.xcstrings')).strings;
 
 test('the entry screen is presented as a page, not wrapped in a popup',()=>{
@@ -38,12 +39,21 @@ test('a finished step offers the next unfinished one',()=>{
   assert.match(editor,/if draft\.isComplete\(step\), let next = draft\.nextIncomplete\(after: step\)/);
 });
 
-test('a scope opens its own popup instead of expanding inline',()=>{
-  assert.match(editor,/editingScope = \.init\(id: scope\.id\)/);
-  assert.match(editor,/\.novaFullScreenCover\(item: \$editingScope, onDismiss: \{ editingScope = nil \}\) \{ edit in/);
-  assert.match(editor,/NovaPopup \{\s*if let index = draft\.scopes\.firstIndex/);
-  // The scope editor's own internals are untouched by this change.
-  assert.doesNotMatch(editor,/DisclosureGroup/);
+test('a scope expands inline; only topics and minutes open in their own popup',()=>{
+  // Everything about who the scope is for (company/workplace context,
+  // personnel, document info) happens right inside the accordion step.
+  assert.match(editor,/expandedScope = isOpen \? nil : scope\.id/);
+  assert.match(editor,/NovaEducationScopeEditor\(scope: \$scope, context: context,/);
+  assert.doesNotMatch(editor,/\.novaFullScreenCover\(item: \$editingScope/);
+  // Only the heavy half — topics, their minutes, the realized days/hours —
+  // still opens as its own popup, reached by its own link.
+  assert.match(editor,/topicsScope = \.init\(id: scope\.id\)/);
+  assert.match(editor,/\.novaFullScreenCover\(item: \$topicsScope, onDismiss: \{ topicsScope = nil \}\) \{ edit in/);
+  assert.match(editor,/NovaEducationTopicsPopup\(scope: \$draft\.scopes\[index\]/);
+  // Personnel selection is the one thing that was reported as invisible: it
+  // must be plain, always-visible content, not a second collapsed disclosure.
+  assert.doesNotMatch(scopeEditor,/DisclosureGroup\("Personeller/);
+  assert.match(scopeEditor,/openTopics: \(\) -> Void/);
 });
 
 test('every step title is decoded to a real string, none of them silently blank',()=>{

@@ -87,7 +87,12 @@ struct NovaEducationEditor: View {
     // The picture in the manual form starts open because that is what the
     // expert has in hand; here the title is what the expert types first.
     @State private var open: NovaEducationStep? = .info
-    @State private var editingScope: ScopeEdit?
+    /// One scope expanded inline at a time — everything but topics/minutes
+    /// happens right there, no second popup in the way.
+    @State private var expandedScope: UUID?
+    /// Topics and their minutes, and the realized days/hours, are the one
+    /// part heavy enough to still deserve their own popup.
+    @State private var topicsScope: ScopeEdit?
     private struct Selection: Identifiable { let id = UUID(); let scope: UUID; let person: UUID; var document: UUID?; var revision: Int? }
     private struct ScopeEdit: Identifiable { let id: UUID }
     private var service: NovaEducationService { .init(identity: identity) }
@@ -137,17 +142,13 @@ struct NovaEducationEditor: View {
                 NovaPopup { NovaEducationCertificateScreen(identity: identity, session: saved, scopeID: selection.scope, personID: selection.person, canIssue: context.certificate_enabled && canWrite, documentID: selection.document, documentRevision: selection.revision) }
             }
         }
-        // The scope editor carries topics, lessons and participants — too much
-        // to unroll inside the accordion, so it opens as its own popup.
-        .novaFullScreenCover(item: $editingScope, onDismiss: { editingScope = nil }) { edit in
-            NovaPopup {
-                if let index = draft.scopes.firstIndex(where: { $0.id == edit.id }) {
-                    NovaEducationScopeEditor(scope: $draft.scopes[index], context: context, trainers: draft.trainers,
-                        people: people[draft.scopes[index].company_id] ?? [],
-                        excluded: Set(draft.scopes.filter { $0.id != edit.id }.flatMap { $0.participants.map(\.id) }),
-                        saveCurriculum: { Task { await saveCurriculum(draft.scopes[index]) } },
-                        remove: { draft.scopes.removeAll { $0.id == edit.id }; editingScope = nil })
-                }
+        // Only the heavy half — topics, minutes, realized days — opens as its
+        // own popup. Everything else about a scope is inline in the step.
+        .novaFullScreenCover(item: $topicsScope, onDismiss: { topicsScope = nil }) { edit in
+            if let index = draft.scopes.firstIndex(where: { $0.id == edit.id }) {
+                NovaEducationTopicsPopup(scope: $draft.scopes[index], context: context, trainers: draft.trainers,
+                    saveCurriculum: { Task { await saveCurriculum(draft.scopes[index]) } },
+                    onClose: { topicsScope = nil })
             }
         }
     }
@@ -266,23 +267,38 @@ struct NovaEducationEditor: View {
         }.disabled(!canWrite)
     }
 
-    /// Each scope shows as a compact summary; editing its topics, lessons and
-    /// participants opens in its own popup rather than expanding inline.
+    /// One scope expands inline at a time — company/workplace summary as the
+    /// header, everything but topics/minutes right there underneath.
     private var scopesStep: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ForEach(draft.scopes) { scope in
+            ForEach($draft.scopes) { $scope in
+                let isOpen = expandedScope == scope.id
                 NovaCard(padding: 12) {
-                    HStack(spacing: 10) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            NovaText(text: scope.company_name ?? RDLocalization.string("localizable.nova.education.scope.company",
-                                table: .localizable, fallback: "Firma"), style: .cardTitle)
-                            NovaText(text: "\(scope.workplace_name ?? "") · \(scope.group_name) · \(scope.participants.count) kişi · \(scope.net) dk",
-                                style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
+                    VStack(alignment: .leading, spacing: isOpen ? 14 : 0) {
+                        Button {
+                            expandedScope = isOpen ? nil : scope.id
+                        } label: {
+                            HStack(spacing: 10) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    NovaText(text: scope.company_name ?? RDLocalization.string("localizable.nova.education.scope.company",
+                                        table: .localizable, fallback: "Firma"), style: .cardTitle)
+                                    NovaText(text: "\(scope.workplace_name ?? "") · \(scope.group_name) · \(scope.participants.count) kişi · \(scope.net) dk",
+                                        style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
+                                }
+                                Spacer(minLength: 0)
+                                Image(systemName: isOpen ? "chevron.up" : "chevron.down").font(.system(size: 12, weight: .semibold))
+                            }
+                        }.buttonStyle(.plain).accessibilityIdentifier("education.scope.edit.\(scope.id)")
+                        if isOpen {
+                            NovaEducationScopeEditor(scope: $scope, context: context,
+                                people: people[scope.company_id] ?? [],
+                                excluded: Set(draft.scopes.filter { $0.id != scope.id }.flatMap { $0.participants.map(\.id) }),
+                                openTopics: { topicsScope = .init(id: scope.id) },
+                                remove: {
+                                    draft.scopes.removeAll { $0.id == scope.id }
+                                    if expandedScope == scope.id { expandedScope = nil }
+                                })
                         }
-                        Spacer(minLength: 0)
-                        NovaButton(label: RDLocalization.string("localizable.nova.education.scope.edit", table: .localizable, fallback: "Düzenle"),
-                            symbol: "pencil", variant: .surface) { editingScope = .init(id: scope.id) }
-                            .accessibilityIdentifier("education.scope.edit.\(scope.id)")
                     }
                 }
             }
@@ -438,9 +454,9 @@ struct NovaEducationEditor: View {
         }
         draft.scopes.append(scope)
         Task { await loadPeople(company) }
-        // A newly added scope has nothing to show yet; open it straight away
-        // instead of leaving the expert to find the edit button.
-        if seed { editingScope = .init(id: scope.id) }
+        // A newly added scope has nothing to show yet; expand it straight
+        // away instead of leaving the expert to find it in the list.
+        if seed { expandedScope = scope.id }
     }
     private func loadPeople(_ company: UUID) async {
         guard people[company] == nil else { return }
