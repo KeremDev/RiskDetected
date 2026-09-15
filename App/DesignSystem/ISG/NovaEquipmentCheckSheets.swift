@@ -19,9 +19,15 @@ struct NovaEquipmentItemSheet: View {
     @State private var draft = NovaEquipmentInspectionDraft()
     @State private var reports: [NovaFileEntry] = []
     @State private var choosingReport = false
+    @State private var addingReport = false
+    @State private var fileCategories: [NovaFileCategory] = []
+    @State private var fileAccepts: [NovaFileAcceptance] = []
+    @State private var fileAssurance = NovaFileAssurance()
     @State private var correcting: NovaEquipmentInspection?
     @State private var busy = false
     @State private var error: String?
+    @State private var opened: URL?
+    @State private var opening: UUID?
 
     private var row: NovaEquipmentItem { current ?? item }
     private var tone: NovaStatus {
@@ -53,6 +59,9 @@ struct NovaEquipmentItemSheet: View {
             guard let company = row.companyID else { return }
             reports = (try? await client.filedReports(company)) ?? []
             if current == nil { current = try? await client.detail(row.id) }
+            if let filing = try? await client.fileClient.catalogue() {
+                fileCategories = filing.categories; fileAccepts = filing.accepts; fileAssurance = filing.assurance
+            }
         }
         .novaFullScreenCover(isPresented: $editing) {
             NovaPopup {
@@ -72,6 +81,28 @@ struct NovaEquipmentItemSheet: View {
                         onChanged()
                     }
             }
+        }
+        .sheet(item: $opened) { url in NovaFileShareSheet(url: url) }
+    }
+
+    private func open(_ entry: NovaEquipmentInspection) {
+        guard let download = entry.evidenceDownload else { return }
+        opening = entry.id; error = nil
+        Task {
+            do {
+                let data = try await client.fileClient.download(download.bucket, download.path)
+                let url = FileManager.default.temporaryDirectory
+                    .appendingPathComponent(UUID().uuidString, isDirectory: true)
+                    .appendingPathComponent(download.path.components(separatedBy: "/").last ?? "belge")
+                try FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
+                                                         withIntermediateDirectories: true)
+                try data.write(to: url, options: .completeFileProtection)
+                opened = url
+            } catch {
+                self.error = RDLocalization.string("localizable.nova.file.failure.unavailable", table: .localizable,
+                    fallback: "Dosya servisi şu anda kullanılamıyor.")
+            }
+            opening = nil
         }
     }
 
@@ -287,20 +318,17 @@ struct NovaEquipmentItemSheet: View {
     }
 
     /// The report itself comes from the archive, so a check points at a file
-    /// that really exists rather than carrying a second copy of one.
+    /// that really exists rather than carrying a second copy of one. A new
+    /// one uploads right here — no redirect to Dosyalarım and back.
     @ViewBuilder private var reportPicker: some View {
         NovaFileChooserButton(
             label: RDLocalization.string("localizable.nova.equipment.field.report", table: .localizable, fallback: "Arşivdeki rapor"),
             value: draft.evidenceTitle
                 ?? RDLocalization.string("localizable.nova.equipment.report.none", table: .localizable, fallback: "Seçilmedi"),
             symbol: "doc", isOpen: choosingReport, isAnswered: draft.evidenceAssetID != nil,
-            identifier: "equipment.inspection.report") { choosingReport.toggle() }
+            identifier: "equipment.inspection.report") { choosingReport.toggle(); addingReport = false }
         if choosingReport {
-            if reports.isEmpty {
-                NovaText(text: RDLocalization.string("localizable.nova.equipment.report.empty", table: .localizable,
-                    fallback: "Bu firmada arşivlenmiş kontrol raporu yok. Dosyalarım'dan ekleyebilirsiniz."),
-                    style: .metaQuiet)
-            } else {
+            if !reports.isEmpty {
                 NovaFileChooserPanel(
                     options: [.init(id: nil, title: RDLocalization.string("localizable.nova.equipment.report.none", table: .localizable, fallback: "Seçilmedi"), symbol: "xmark")]
                         + reports.map { .init(id: $0.id.uuidString, title: $0.title, symbol: "doc") },
@@ -310,6 +338,27 @@ struct NovaEquipmentItemSheet: View {
                         draft.evidenceTitle = entry?.title
                         choosingReport = false
                     }
+            }
+            if addingReport {
+                NovaCard(padding: 12) {
+                    NovaFileAddInline(companies: [], preselected: row.companyID,
+                        categories: {
+                            let scoped = fileCategories.filter { $0.code == "inspection_report" }
+                            return scoped.isEmpty ? fileCategories : scoped
+                        }(),
+                        accepts: fileAccepts, assurance: fileAssurance, client: client.fileClient) { entry in
+                            if let entry {
+                                draft.evidenceAssetID = entry.assetID
+                                draft.evidenceTitle = entry.title
+                                reports.append(entry)
+                            }
+                            addingReport = false; choosingReport = false
+                        }
+                }
+            } else {
+                NovaButton(label: RDLocalization.string("localizable.nova.equipment.report.add", table: .localizable,
+                    fallback: "Yeni dosya ekle"), symbol: "plus", variant: .surface) { addingReport = true }
+                    .accessibilityIdentifier("equipment.inspection.report.add")
             }
         }
     }
@@ -325,9 +374,20 @@ struct NovaEquipmentItemSheet: View {
     }
 
     private func historyRow(_ entry: NovaEquipmentInspection) -> some View {
-        Button { if canWrite { correcting = entry } } label: { historyBody(entry) }
-            .buttonStyle(.plain).disabled(!canWrite)
-            .accessibilityIdentifier("equipment.history.\(entry.id.uuidString.lowercased())")
+        HStack(alignment: .top, spacing: 9) {
+            Button { if canWrite { correcting = entry } } label: { historyBody(entry) }
+                .buttonStyle(.plain).disabled(!canWrite)
+                .accessibilityIdentifier("equipment.history.\(entry.id.uuidString.lowercased())")
+            if entry.evidenceDownload != nil {
+                Button { open(entry) } label: {
+                    if opening == entry.id { ProgressView() }
+                    else { Image(systemName: "arrow.up.right.square").font(.system(size: 13)) }
+                }.buttonStyle(.plain).disabled(opening != nil)
+                    .accessibilityIdentifier("equipment.history.\(entry.id.uuidString.lowercased()).open")
+            }
+        }
+        .padding(9)
+        .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
     }
 
     private func historyBody(_ entry: NovaEquipmentInspection) -> some View {
@@ -363,8 +423,6 @@ struct NovaEquipmentItemSheet: View {
                     .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
             }
         }
-        .padding(9)
-        .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
     }
 
     @ViewBuilder private var controls: some View {

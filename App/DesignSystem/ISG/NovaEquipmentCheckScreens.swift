@@ -23,6 +23,7 @@ struct NovaEquipmentCheckClient {
     /// Reports already filed in the archive, so a check can point at a real
     /// file instead of carrying a second copy of one.
     var filedReports: (UUID) async throws -> [NovaFileEntry] = { _ in [] }
+    let fileClient: NovaFileLibraryClient
 }
 
 /// One counter, in the same shape the home page uses for its summary.

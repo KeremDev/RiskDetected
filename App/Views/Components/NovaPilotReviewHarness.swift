@@ -297,7 +297,8 @@ struct NovaPilotReviewHarness: View {
                         needsReview: draft.source.needsReview, exceptionNote: nil)
               },
               recordInspection: { item, _ in item },
-              filedReports: { _ in [] })
+              filedReports: { _ in [] },
+              fileClient: reviewFileClient)
     }
 
     /// Every type starts at the product's own general period, exactly as the
@@ -336,7 +337,7 @@ struct NovaPilotReviewHarness: View {
                   evidenceAssetID: nil,
                   inspections: last == nil ? [] : [.init(id: UUID(), performedOn: last!, result: result ?? "pass",
                       nextDueOn: due, periodMonths: months, inspector: "TSE yetkili kuruluş",
-                      externalRef: "RPT-2026-0114", note: nil, evidenceAssetID: nil,
+                      externalRef: "RPT-2026-0114", note: nil, evidenceAssetID: nil, evidenceDownload: nil,
                       dueSource: due == nil ? nil : .period, katipDeclared: true,
                       katipNote: "Atama yapıldı.")])
         }

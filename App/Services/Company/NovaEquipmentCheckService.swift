@@ -27,10 +27,12 @@ import Foundation
         let external_ref: String?
         let note: String?
         let evidence_asset_id: UUID?
+        let evidence_download: AssetDownloadRow?
         let due_source: String?
         let katip_assignment_declared: Bool?
         let katip_declared_note: String?
     }
+    private struct AssetDownloadRow: Decodable { let bucket: String; let path: String }
     private struct ItemRow: Decodable {
         let id: UUID
         var company_id: UUID?
@@ -57,6 +59,7 @@ import Foundation
         let katip_declared_note: String?
         let katip_official_verification: Bool?
         let evidence_asset_id: UUID?
+        let evidence_download: AssetDownloadRow?
         let inspections: [InspectionRow]?
     }
     private struct SuggestionRow: Decodable {
@@ -128,11 +131,13 @@ import Foundation
               // The server can only ever send false; nothing here can raise it.
               katipOfficialVerification: row.katip_official_verification ?? false,
               evidenceAssetID: row.evidence_asset_id,
+              evidenceDownload: row.evidence_download.map { .init(bucket: $0.bucket, path: $0.path) },
               inspections: (row.inspections ?? []).map { entry in
                   .init(id: entry.id, performedOn: entry.performed_on, result: entry.result,
                         nextDueOn: entry.next_due_on, periodMonths: entry.period_months,
                         inspector: entry.inspector, externalRef: entry.external_ref,
                         note: entry.note, evidenceAssetID: entry.evidence_asset_id,
+                        evidenceDownload: entry.evidence_download.map { .init(bucket: $0.bucket, path: $0.path) },
                         dueSource: entry.due_source.flatMap(NovaEquipmentDueSource.init(rawValue:)),
                         katipDeclared: entry.katip_assignment_declared ?? false,
                         katipNote: entry.katip_declared_note)

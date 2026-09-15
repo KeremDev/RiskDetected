@@ -19639,6 +19639,24 @@
         }
       }
     },
+    "localizable.nova.equipment.report.add": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add new file"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni dosya ekle"
+          }
+        }
+      }
+    },
     "localizable.nova.equipment.field.result": {
       "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -20499,24 +20517,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kontrol kaydını düzelt"
-          }
-        }
-      }
-    },
-    "localizable.nova.equipment.report.empty": {
-      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; placeholders: none; review: human_draft",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No inspection report is archived for this company. You can add one from My Files."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bu firmada arşivlenmiş kontrol raporu yok. Dosyalarım'dan ekleyebilirsiniz."
           }
         }
       }

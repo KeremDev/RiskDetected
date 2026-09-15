@@ -91,6 +91,13 @@ enum NovaEquipmentDueSource: String, Equatable {
     case period, expert
 }
 
+/// Where an inspection's attached evidence report actually lives, once one is
+/// filed and clean.
+struct NovaEquipmentAssetDownload: Equatable {
+    let bucket: String
+    let path: String
+}
+
 /// One inspection period, for one equipment type, in one company.
 struct NovaEquipmentRule: Identifiable, Equatable {
     let equipmentType: String
@@ -113,6 +120,7 @@ struct NovaEquipmentInspection: Identifiable, Equatable {
     let externalRef: String?
     let note: String?
     let evidenceAssetID: UUID?
+    let evidenceDownload: NovaEquipmentAssetDownload?
     var dueSource: NovaEquipmentDueSource?
     /// The expert's own note that an assignment was made in İSG-KATİP. Never a
     /// verification: nothing in this product reads the official system.
@@ -153,6 +161,7 @@ struct NovaEquipmentItem: Identifiable, Equatable {
     /// Structurally false. The server can only ever send false.
     var katipOfficialVerification = false
     var evidenceAssetID: UUID?
+    var evidenceDownload: NovaEquipmentAssetDownload?
     var inspections: [NovaEquipmentInspection] = []
 
     var group: NovaEquipmentGroup { .of(state) }
