@@ -43,7 +43,7 @@ struct NovaEducationScopeEditor: View {
     /// Always visible — this was the one part of the form nobody could find.
     private var peopleForm: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Personel (\(scope.participants.count))").font(NovaFont.font(.bodyStrong))
+            Text("Katılımcılar (\(scope.participants.count))").font(NovaFont.font(.bodyStrong))
             TextField("Personel ara", text: $search).textFieldStyle(.roundedBorder)
             ForEach(people.filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) }) { person in
                 Toggle(person.name, isOn: Binding(get: { scope.participants.contains { $0.id == person.id } }, set: { on in

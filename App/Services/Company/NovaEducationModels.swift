@@ -62,7 +62,12 @@ struct NovaEducationRecord: Codable, Equatable {
 }
 struct NovaEducationDraft: Codable, Equatable {
     var action = "save"; var id: UUID?; var expected_version: Int64 = 0
-    var title = "Temel İSG Eğitimi"; var provider_name = ""; var notes = ""
+    // Used to default to "Temel İSG Eğitimi" here, which made the "Eğitim ve
+    // düzenleyici" step register as complete before the expert had typed
+    // anything — a placeholder standing in for a real choice. It is now the
+    // TextField's placeholder text instead (see NovaEducationEditor.field),
+    // and the stored value starts genuinely empty.
+    var title = ""; var provider_name = ""; var notes = ""
     var trainers: [NovaEducationTrainer] = []; var scopes: [NovaEducationScope] = []
 }
 struct NovaEducationContext: Decodable {

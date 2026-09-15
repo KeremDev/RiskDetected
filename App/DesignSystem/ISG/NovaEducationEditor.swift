@@ -212,7 +212,7 @@ struct NovaEducationEditor: View {
         switch step {
         case .info: return RDLocalization.string("localizable.nova.education.step.info", table: .localizable, fallback: "Eğitim ve düzenleyici")
         case .trainers: return RDLocalization.string("localizable.nova.education.step.trainers", table: .localizable, fallback: "Eğiticiler")
-        case .scopes: return RDLocalization.string("localizable.nova.education.step.scopes", table: .localizable, fallback: "Firma ve kapsamlar")
+        case .scopes: return RDLocalization.string("localizable.nova.education.step.scopes", table: .localizable, fallback: "Firma, katılımcı ve konular")
         }
     }
     private func symbol(_ step: NovaEducationStep) -> String {
@@ -234,8 +234,11 @@ struct NovaEducationEditor: View {
 
     private var infoStep: some View {
         VStack(alignment: .leading, spacing: 8) {
+            NovaText(text: RDLocalization.string("localizable.nova.education.field.title.hint", table: .localizable,
+                fallback: "Konu başlıkları, süre ve katılımcılar bir sonraki 'Firma, katılımcı ve konular' adımında, firma eklendikten sonra düzenlenir."),
+                style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
             field(RDLocalization.string("localizable.nova.education.field.title", table: .localizable, fallback: "Eğitim başlığı"),
-                $draft.title, id: "education.title")
+                $draft.title, id: "education.title", placeholder: "Temel İSG Eğitimi")
             field(RDLocalization.string("localizable.nova.education.field.provider", table: .localizable, fallback: "Düzenleyici kişi / kurum"),
                 $draft.provider_name, id: "education.provider")
             area(RDLocalization.string("localizable.nova.education.field.notes", table: .localizable, fallback: "Notlar"),
@@ -262,8 +265,14 @@ struct NovaEducationEditor: View {
                     }
                 }
             }
-            NovaButton(label: RDLocalization.string("localizable.nova.education.trainer.add", table: .localizable, fallback: "Eğitici ekle"),
-                symbol: "plus", variant: .surface) { draft.trainers.append(.init()) }
+            HStack {
+                NovaButton(label: RDLocalization.string("localizable.nova.education.trainer.add", table: .localizable, fallback: "Eğitici ekle"),
+                    symbol: "plus", variant: .surface) { draft.trainers.append(.init()) }
+                if let me = app.profile?.fullName, !me.isEmpty, !draft.trainers.contains(where: { $0.name == me }) {
+                    NovaButton(label: RDLocalization.string("localizable.nova.education.trainer.addme", table: .localizable, fallback: "Kendimi ekle"),
+                        symbol: "person.fill.checkmark", variant: .surface) { draft.trainers.append(.init(name: me)) }
+                }
+            }
         }.disabled(!canWrite)
     }
 
@@ -271,6 +280,9 @@ struct NovaEducationEditor: View {
     /// header, everything but topics/minutes right there underneath.
     private var scopesStep: some View {
         VStack(alignment: .leading, spacing: 8) {
+            NovaText(text: RDLocalization.string("localizable.nova.education.scope.explainer", table: .localizable,
+                fallback: "Eğitimi hangi firma ve işyeri için verdiğinizi burada seçersiniz. Her kapsam kendi konu başlıklarını, süresini ve katılımcı listesini taşır."),
+                style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
             ForEach($draft.scopes) { $scope in
                 let isOpen = expandedScope == scope.id
                 NovaCard(padding: 12) {
@@ -383,10 +395,10 @@ struct NovaEducationEditor: View {
         }
     }
 
-    private func field(_ label: String, _ value: Binding<String>, id: String) -> some View {
+    private func field(_ label: String, _ value: Binding<String>, id: String, placeholder: String = "") -> some View {
         VStack(alignment: .leading, spacing: 4) {
             NovaText(text: label, style: .label)
-            TextField("", text: value).textFieldStyle(.roundedBorder).accessibilityIdentifier(id)
+            TextField(placeholder, text: value).textFieldStyle(.roundedBorder).accessibilityIdentifier(id)
         }
     }
     private func area(_ label: String, _ value: Binding<String>, id: String) -> some View {
@@ -423,20 +435,28 @@ struct NovaEducationEditor: View {
             } else if let original, let education = original.education {
                 draft = .init(id: original.id, expected_version: original.version, title: original.title,
                     provider_name: education.provider_name, notes: original.notes, trainers: education.trainers, scopes: education.scopes)
-            } else {
-                draft.trainers = [.init(name: original?.trainer ?? app.profile?.fullName ?? "")]
-                if let original {
-                    draft.id = original.id; draft.expected_version = original.version; draft.title = original.title; draft.notes = original.notes
-                    notice = RDLocalization.string("localizable.nova.education.notice.legacy", table: .localizable,
-                        fallback: "Eski kayıt için konuları ve gerçekleşen saatleri uzman bilgisiyle tamamlayın. Katalog geçmiş kaydı kendiliğinden değiştirmez.")
-                    for company in original.companies {
-                        if let wp = context.workplaces.first(where: { $0.company_id == company.company_id }) {
-                            add(company: company.company_id, workplace: wp.id, seed: false)
-                            let i = draft.scopes.count - 1
-                            draft.scopes[i].participants = company.participants.map { .init(id: $0.id, name: $0.name) }
-                        }
+            } else if let original {
+                // Migrating a real legacy record: its own trainer field is
+                // actual historical data, not a guess, so it is fair to
+                // carry it straight over.
+                draft.trainers = [.init(name: original.trainer)]
+                draft.id = original.id; draft.expected_version = original.version; draft.title = original.title; draft.notes = original.notes
+                notice = RDLocalization.string("localizable.nova.education.notice.legacy", table: .localizable,
+                    fallback: "Eski kayıt için konuları ve gerçekleşen saatleri uzman bilgisiyle tamamlayın. Katalog geçmiş kaydı kendiliğinden değiştirmez.")
+                for company in original.companies {
+                    if let wp = context.workplaces.first(where: { $0.company_id == company.company_id }) {
+                        add(company: company.company_id, workplace: wp.id, seed: false)
+                        let i = draft.scopes.count - 1
+                        draft.scopes[i].participants = company.participants.map { .init(id: $0.id, name: $0.name) }
                     }
-                } else if let company = initialCompany, let wp = context.workplaces.first(where: { $0.company_id == company }) { add(company: company, workplace: wp.id) }
+                }
+            } else {
+                // A genuinely new record: trainers start empty. Silently
+                // seeding the signed-in expert's own name here used to make
+                // "Eğiticiler" read as finished before anyone had chosen
+                // one — trainersStep offers the same name as a one-tap
+                // "Kendimi ekle" instead, so it stays fast but deliberate.
+                if let company = initialCompany, let wp = context.workplaces.first(where: { $0.company_id == company }) { add(company: company, workplace: wp.id) }
             }
             ready = true
             for company in Set(draft.scopes.map(\.company_id)) { await loadPeople(company) }

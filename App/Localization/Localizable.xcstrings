@@ -16921,6 +16921,24 @@
         }
       }
     },
+    "localizable.nova.education.field.title.hint": {
+      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Topics, duration and participants are set in the next 'Company, participants and topics' step, once a company is added."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konu başlıkları, süre ve katılımcılar bir sonraki 'Firma, katılımcı ve konular' adımında, firma eklendikten sonra düzenlenir."
+          }
+        }
+      }
+    },
     "localizable.nova.education.field.trainername": {
       "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
       "extractionState": "manual",
@@ -17252,13 +17270,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Company and scopes"
+            "value": "Company, participants and topics"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Firma ve kapsamlar"
+            "value": "Firma, katılımcı ve konular"
+          }
+        }
+      }
+    },
+    "localizable.nova.education.scope.explainer": {
+      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose which company and workplace this training was given at. Each scope carries its own topics, duration and participant list."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitimi hangi firma ve işyeri için verdiğinizi burada seçersiniz. Her kapsam kendi konu başlıklarını, süresini ve katılımcı listesini taşır."
           }
         }
       }
@@ -17349,6 +17385,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Eğitici ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.education.trainer.addme": {
+      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add myself"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kendimi ekle"
           }
         }
       }
