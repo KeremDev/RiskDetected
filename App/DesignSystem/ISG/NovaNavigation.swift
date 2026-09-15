@@ -45,10 +45,10 @@ enum NovaDestination: String, CaseIterable, Hashable {
         case .drills: return RDLocalization.string("localizable.nova.navigation.drills", table: .localizable, fallback: "Tatbikatlar")
         case .ppeHandovers: return RDLocalization.string("localizable.nova.navigation.ppe", table: .localizable, fallback: "KKD Zimmetleri")
         case .appointments: return RDLocalization.string("localizable.nova.navigation.appointments", table: .localizable, fallback: "Atama ve Temsilciler")
-        case .annualWorkPlans: return "Yıllık Çalışma Planı"
-        case .boardMeetings: return "Kurul ve Toplantılar"
-        case .workPermits: return "Çalışma İzni Formları"
-        case .contractors: return "Taşeron ve Dış Firmalar"
+        case .annualWorkPlans: return RDLocalization.string("localizable.nova.navigation.annual.work.plans", table: .localizable, fallback: "Yıllık Çalışma Planı")
+        case .boardMeetings: return RDLocalization.string("localizable.nova.navigation.board.meetings", table: .localizable, fallback: "Kurul ve Toplantılar")
+        case .workPermits: return RDLocalization.string("localizable.nova.navigation.work.permits", table: .localizable, fallback: "Çalışma İzni Formları")
+        case .contractors: return RDLocalization.string("localizable.nova.navigation.contractors", table: .localizable, fallback: "Taşeron ve Dış Firmalar")
         case .katipContracts: return RDLocalization.string("localizable.nova.navigation.katip", table: .localizable, fallback: "İSG-KATİP Sözleşmeleri")
         case .home: return RDLocalization.string("localizable.nova.navigation.ana.sayfa.1fc29356", table: .localizable, fallback: "Ana Sayfa")
         case .newFinding: return RDLocalization.string("localizable.nova.navigation.uygunsuzluk.ekle", table: .localizable, fallback: "Uygunsuzluk Ekle")
@@ -141,6 +141,38 @@ enum NovaDestination: String, CaseIterable, Hashable {
     // Historical route values remain decodable; removed product features are not offered.
     static let drawer: [Self] = [.home, .findings, .analyses, .newAnalysis, .newFinding, .companies, .riskAssessments, .checklists, .emergencyPlans, .drills, .ppeHandovers, .appointments, .katipContracts, .annualWorkPlans, .boardMeetings, .visits, .workPermits, .contractors, .periodicChecks, .documentChecklist, .documents, .statistics, .training, .reports, .reportArchive, .notifications]
     static let quickAdd: [Self] = [.newCompany, .newAnalysis, .newFinding, .newDocument]
+}
+
+/// Each drawer destination appears once; grouping does not alter route identities.
+struct NovaDrawerGroup: Identifiable {
+    let id: String
+    let title: String
+    let symbol: String
+    let destinations: [NovaDestination]
+
+    static var all: [Self] {
+        // Written as literal keys, not a prefix + id concatenation: the
+        // catalog scanner can only verify a key it can read whole.
+        [
+            .init(id: "analysis",
+                  title: RDLocalization.string("localizable.nova.drawer.group.analysis", table: .localizable, fallback: "Analiz ve Denetim"),
+                  symbol: "magnifyingglass",
+                  destinations: [.analyses, .newAnalysis, .findings, .newFinding, .riskAssessments, .checklists, .periodicChecks]),
+            .init(id: "people",
+                  title: RDLocalization.string("localizable.nova.drawer.group.people", table: .localizable, fallback: "Firma ve Personel"),
+                  symbol: "person.2",
+                  destinations: [.companies, .contractors, .training, .ppeHandovers, .appointments, .katipContracts]),
+            .init(id: "planning",
+                  title: RDLocalization.string("localizable.nova.drawer.group.planning", table: .localizable, fallback: "Plan ve Organizasyon"),
+                  symbol: "calendar",
+                  destinations: [.annualWorkPlans, .boardMeetings, .visits, .emergencyPlans, .drills, .workPermits]),
+            .init(id: "documents",
+                  title: RDLocalization.string("localizable.nova.drawer.group.documents", table: .localizable, fallback: "Evrak ve Raporlar"),
+                  symbol: "folder",
+                  destinations: [.documentChecklist, .documents, .reports, .reportArchive])
+        ]
+    }
+    static let direct: [NovaDestination] = [.home, .statistics, .notifications]
 }
 
 enum NovaOverlay: String, CaseIterable { case drawer, quickAdd, notifications }

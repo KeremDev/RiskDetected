@@ -43,7 +43,9 @@ const PROPER_NOUNS=new Set(['localizable.nova.risk.method.fine.kinney',
   'localizable.nova.analysis.reports.filter.pdf','localizable.nova.analysis.reports.filter.excel',
   'localizable.nova.risk.factor.frequency',
   // A date range is an arrow between two values, identical in both languages.
-  'localizable.nova.directory.engagement.range']);
+  'localizable.nova.directory.engagement.range',
+  // The brand name. It is not translated.
+  'localizable.nova.expert.shell.brand']);
 // A font face is a resource name, never copy a person reads.
 const RESOURCE=/^(?:PlusJakartaSans-|SF|system)/;
 const read=path=>readFileSync(resolve(ROOT,path),'utf8');

@@ -244,18 +244,26 @@ struct NovaCompanyWorkspace: View {
                             .accessibilityIdentifier("company.personnel.add")
                     }
                 } else if section == .risk {
-                    NovaButton(label: "Değerlendirmeleri aç", symbol: "shield", variant: .surface) { processKind = "risk" }
+                    NovaButton(label: RDLocalization.string("localizable.nova.workspace.section.risk.open", table: .localizable, fallback: "Değerlendirmeleri aç"),
+                        symbol: "shield", variant: .surface) { processKind = "risk" }
                 } else if section == .training {
-                    NovaHelpHint(text: "Gerçekleşen eğitimleri personel seçerek kaydedin ve eğitim geçmişini görüntüleyin.")
-                    NovaButton(label: "Eğitimleri aç", symbol: "graduationcap", variant: .surface) { sheet = .training }
+                    NovaHelpHint(text: RDLocalization.string("localizable.nova.workspace.section.training.hint", table: .localizable,
+                        fallback: "Gerçekleşen eğitimleri personel seçerek kaydedin ve eğitim geçmişini görüntüleyin."))
+                    NovaButton(label: RDLocalization.string("localizable.nova.workspace.section.training.open", table: .localizable, fallback: "Eğitimleri aç"),
+                        symbol: "graduationcap", variant: .surface) { sheet = .training }
                 }
                 if let kind = moduleKind(section) {
                     if let row = processTracking?.summaries.first(where: { $0.id == kind }), row.available {
-                        NovaText(text: "\(row.total) kayıt · \(row.overdue) tarihi geçmiş · \(row.upcoming) yaklaşan", style: .meta)
+                        NovaText(text: String(format: RDLocalization.string("localizable.nova.workspace.section.tracking.summary", table: .localizable,
+                            fallback: "%1$d kayıt · %2$d tarihi geçmiş · %3$d yaklaşan"), row.total, row.overdue, row.upcoming), style: .meta)
                     }
-                    NovaButton(label: kind == "appointment" ? "Atamaları aç" : "Kayıtları aç", symbol: "chevron.right", variant: .surface) { processKind = kind }
+                    NovaButton(label: kind == "appointment"
+                        ? RDLocalization.string("localizable.nova.workspace.section.appointments.open", table: .localizable, fallback: "Atamaları aç")
+                        : RDLocalization.string("localizable.nova.workspace.section.records.open", table: .localizable, fallback: "Kayıtları aç"),
+                        symbol: "chevron.right", variant: .surface) { processKind = kind }
                     if section == .emergency {
-                        NovaButton(label: "Tatbikatları aç", symbol: "figure.run", variant: .surface) { processKind = "drill" }
+                        NovaButton(label: RDLocalization.string("localizable.nova.workspace.section.drills.open", table: .localizable, fallback: "Tatbikatları aç"),
+                            symbol: "figure.run", variant: .surface) { processKind = "drill" }
                     }
                 }
                 // Periodic checks are the whole of this heading, so the

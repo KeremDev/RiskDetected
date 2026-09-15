@@ -397,7 +397,7 @@ struct NovaComponentGallery_Previews: PreviewProvider {
 
 /// Shared loading state for İSGADA pages. Motion respects the accessibility setting.
 struct NovaLoadingView: View {
-    var message: String = "Yükleniyor…"
+    var message: String = RDLocalization.string("localizable.nova.components.loading", table: .localizable, fallback: "Yükleniyor…")
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var rotating = false

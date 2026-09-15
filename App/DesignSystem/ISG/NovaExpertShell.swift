@@ -6,7 +6,13 @@ struct NovaExpertShell<Content: View>: View {
     @Binding var navigation: NovaNavigationState
     let userName: String
     var hasUnread = false
+    var unreadCount = 0
     var notificationItems: [NovaNotice] = []
+    /// The bell's own note, shown under the list. Empty hides it.
+    var noticeNote = ""
+    var onReadNotice: ((String) -> Void)?
+    var onDismissNotice: ((String) -> Void)?
+    var onRestoreNotice: ((String) -> Void)?
     var connectionLabel = RDLocalization.string("localizable.nova.shell.connection.unknown", table: .localizable, fallback: "Bağlantı bilgisi yok")
     var onReadAll: (() -> Void)?
     var onClearNotifications: (() -> Void)?
@@ -26,6 +32,7 @@ struct NovaExpertShell<Content: View>: View {
             ZStack {
                 VStack(spacing: 0) {
                     NovaShellTopBar(current: navigation.current, userName: userName, hasUnread: hasUnread,
+                        unreadCount: unreadCount,
                         canGoBack: !(navigation.paths[navigation.selected] ?? []).isEmpty,
                         notificationsAvailable: navigation.canOpen(.notifications), send: send)
                     TabView(selection: Binding(get: { navigation.selected }, set: { send(.select($0)) })) {
@@ -60,7 +67,11 @@ struct NovaExpertShell<Content: View>: View {
                 if let panel = navigation.overlay {
                     NovaShellPanel(panel: panel, selected: navigation.current, canOpen: navigation.canOpen,
                         userName: userName, send: send, notices: notificationItems, connectionLabel: connectionLabel,
+                        noticeNote: noticeNote,
                         onReadAll: guarded(onReadAll, epoch: epoch), onClear: guarded(onClearNotifications, epoch: epoch),
+                        onReadNotice: guardedKey(onReadNotice, epoch: epoch),
+                        onDismissNotice: guardedKey(onDismissNotice, epoch: epoch),
+                        onRestoreNotice: guardedKey(onRestoreNotice, epoch: epoch),
                         onCompanyCreate: guarded(onCompanyCreate, epoch: epoch),
                         onDestination: guardedDestination(onDestination, epoch: epoch),
                         onLogout: guarded(onLogout, epoch: epoch))
@@ -77,6 +88,11 @@ struct NovaExpertShell<Content: View>: View {
         return { guard navigation.epoch == epoch else { return }; action() }
     }
 
+    private func guardedKey(_ action: ((String) -> Void)?, epoch: String) -> ((String) -> Void)? {
+        guard let action else { return nil }
+        return { key in guard navigation.epoch == epoch else { return }; action(key) }
+    }
+
     private func guardedDestination(_ action: ((NovaDestination) -> Void)?, epoch: String) -> ((NovaDestination) -> Void)? {
         guard let action else { return nil }
         return { destination in guard navigation.epoch == epoch else { return }; action(destination) }
@@ -87,11 +103,14 @@ struct NovaShellTopBar: View {
     let current: NovaDestination
     let userName: String
     let hasUnread: Bool
+    var unreadCount = 0
     let canGoBack: Bool
     let notificationsAvailable: Bool
     let send: (NovaNavigationEvent) -> Void
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var expandedDrawerGroup: String?
 
     var body: some View {
         VStack(spacing: 8) {
@@ -102,12 +121,7 @@ struct NovaShellTopBar: View {
             icon("bell", label: hasUnread ? RDLocalization.string("localizable.nova.shell.notifications.with.new", table: .localizable, fallback: "Bildirimler, yeni bildirim var") : RDLocalization.string("localizable.nova.shell.notifications", table: .localizable, fallback: "Bildirimler"), id: "nova.notifications") {
                 send(.open(.notifications))
             }
-                .disabled(!notificationsAvailable).overlay(alignment: .topTrailing) {
-                if hasUnread {
-                    Circle().fill(NovaColorToken.statusDangerDot.color(in: scheme)).frame(width: 8, height: 8)
-                        .padding(7).accessibilityHidden(true)
-                }
-            }
+                .disabled(!notificationsAvailable).overlay(alignment: .topTrailing) { badge }
             Button { send(.select(.profile)) } label: {
                 NovaIcon(symbol: "person", size: 22)
                     .foregroundStyle(NovaColorToken.text.color(in: scheme))
@@ -118,9 +132,24 @@ struct NovaShellTopBar: View {
         }.padding(.horizontal, NovaDimensionToken.spaceScreenX.value).padding(.top, 8).padding(.bottom, 2)
     }
 
+    /// A count when there is one, a plain dot when there is only a flag. Both
+    /// are decoration: the label already says there is something new.
+    @ViewBuilder private var badge: some View {
+        if unreadCount > 0 {
+            Text(verbatim: unreadCount > 99 ? "99+" : String(unreadCount))
+                .font(.system(size: 10, weight: .bold)).foregroundStyle(.white)
+                .padding(.horizontal, 4).frame(minWidth: 16, minHeight: 16)
+                .background(NovaColorToken.statusDangerDot.color(in: scheme), in: Capsule())
+                .padding(4).accessibilityHidden(true)
+        } else if hasUnread {
+            Circle().fill(NovaColorToken.statusDangerDot.color(in: scheme)).frame(width: 8, height: 8)
+                .padding(7).accessibilityHidden(true)
+        }
+    }
+
     private var brand: some View {
         VStack(spacing: 1) {
-            NovaText(text: "İSGADA", style: .brand)
+            NovaText(text: RDLocalization.string("localizable.nova.expert.shell.brand", table: .localizable, fallback: "İSGADA"), style: .brand)
             NovaText(text: RDLocalization.string("localizable.nova.expert.shell.saha.denetim.asistani.192b4816", table: .localizable, fallback: "Saha denetim asistanı"), style: .meta, color: NovaColorToken.textMuted.color(in: scheme))
         }.frame(maxWidth: .infinity).multilineTextAlignment(.center)
     }
@@ -143,6 +172,8 @@ struct NovaShellTabBar: View {
     var onDestination: ((NovaDestination) -> Void)? = nil
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var expandedDrawerGroup: String?
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
@@ -241,14 +272,18 @@ struct NovaPopupSurface<Content: View>: View {
     }
 }
 
-struct NovaNotice: Identifiable {
+/// One line in the bell. The owner computes every field; the shell only draws
+/// it, and `id` is the key the owner marks the notice by.
+struct NovaNotice: Identifiable, Equatable {
     let id: String
     let title: String
     let detail: String
-    let count: Int
+    /// How late it is, in words. Never a bare number the reader must decode.
+    let badge: String
     let symbol: String
     let tone: NovaColorToken
     var unread = true
+    var dismissed = false
     var destination: NovaDestination = .notifications
 }
 
@@ -265,13 +300,19 @@ struct NovaShellPanel: View {
     let send: (NovaNavigationEvent) -> Void
     var notices: [NovaNotice] = []
     var connectionLabel = RDLocalization.string("localizable.nova.shell.connection.unknown", table: .localizable, fallback: "Bağlantı bilgisi yok")
+    var noticeNote = ""
     var onReadAll: (() -> Void)?
     var onClear: (() -> Void)?
+    var onReadNotice: ((String) -> Void)?
+    var onDismissNotice: ((String) -> Void)?
+    var onRestoreNotice: ((String) -> Void)?
     var onCompanyCreate: (() -> Void)?
     var onDestination: ((NovaDestination) -> Void)?
     var onLogout: (() -> Void)?
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var expandedDrawerGroup: String?
 
     var body: some View {
         GeometryReader { geometry in
@@ -323,22 +364,17 @@ struct NovaShellPanel: View {
             Rectangle().fill(NovaColorToken.hairline.color(in: scheme)).frame(height: 1).padding(.bottom, 12)
             ScrollView {
                 VStack(spacing: 0) {
-                    ForEach(NovaDestination.drawer, id: \.self) { destination in
-                        Button {
-                            onDestination?(destination)
-                            send(.navigate(destination))
-                        } label: {
-                            HStack(spacing: 12) {
-                                NovaIcon(symbol: destination == .training ? "doc.text" : destination.symbol, size: 18).frame(width: 18)
-                                    .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
-                                NovaSizedText(text: destination.title, size: 14, color: NovaColorToken.textSecondary.color(in: scheme))
-                                Spacer(minLength: 0)
-                            }.padding(.horizontal, 8).frame(minHeight: 44).contentShape(Rectangle())
-                        }.buttonStyle(.plain).disabled(!canOpen(destination)).opacity(canOpen(destination) ? 1 : 0.4)
-                            .accessibilityIdentifier("nova.destination.\(destination.rawValue)")
+                    drawerDestination(.home)
+                    ForEach(NovaDrawerGroup.all) { group in
+                        drawerGroup(group)
                     }
+                    drawerDestination(.statistics)
+                    drawerDestination(.notifications)
                 }
             }.accessibilityIdentifier("nova.panel.scroll")
+                .onAppear {
+                    expandedDrawerGroup = NovaDrawerGroup.all.first { $0.destinations.contains(selected) }?.id
+                }
             Button { onLogout?() } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "arrow.right")
@@ -348,6 +384,63 @@ struct NovaShellPanel: View {
             }.buttonStyle(.plain).disabled(onLogout == nil).accessibilityIdentifier("nova.logout")
                 .padding(.top, 10).padding(.bottom, 14)
         }.padding(.horizontal, 20)
+    }
+
+    private func drawerGroup(_ group: NovaDrawerGroup) -> some View {
+        let expanded = expandedDrawerGroup == group.id
+        return VStack(spacing: 0) {
+            Button {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.18)) {
+                    expandedDrawerGroup = expanded ? nil : group.id
+                }
+            } label: {
+                HStack(spacing: 12) {
+                    NovaIcon(symbol: group.symbol, size: 18).frame(width: 20)
+                    NovaText(text: group.title, style: .buttonSm)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 4)
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 11, weight: .medium))
+                        .rotationEffect(.degrees(expanded ? 180 : 0))
+                }
+                .foregroundStyle(NovaColorToken.text.color(in: scheme))
+                .padding(.horizontal, 8).padding(.vertical, 6)
+                .frame(minHeight: 46).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("nova.drawer.group.\(group.id)")
+            .accessibilityValue(expanded ? RDLocalization.string("localizable.nova.drawer.expanded", table: .localizable, fallback: "Açık") : RDLocalization.string("localizable.nova.drawer.collapsed", table: .localizable, fallback: "Kapalı"))
+            if expanded {
+                VStack(spacing: 0) {
+                    ForEach(group.destinations, id: \.self) { destination in
+                        drawerDestination(destination, nested: true)
+                    }
+                }.padding(.bottom, 6)
+            }
+        }
+    }
+
+    private func drawerDestination(_ destination: NovaDestination, nested: Bool = false) -> some View {
+        Button {
+            onDestination?(destination)
+            send(.navigate(destination))
+        } label: {
+            HStack(spacing: 12) {
+                NovaIcon(symbol: destination.symbol, size: nested ? 17 : 18).frame(width: 20)
+                NovaText(text: destination.title, style: nested ? .body : .buttonSm)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 4)
+                if selected == destination {
+                    Image(systemName: "checkmark").font(.system(size: 11, weight: .semibold))
+                }
+            }
+            .foregroundStyle(NovaColorToken.text.color(in: scheme))
+            .padding(.leading, nested ? 24 : 8).padding(.trailing, 8).padding(.vertical, 6)
+            .frame(minHeight: 44).contentShape(Rectangle())
+        }.buttonStyle(.plain).disabled(!canOpen(destination))
+            .opacity(canOpen(destination) ? 1 : 0.4)
+            .accessibilityIdentifier("nova.destination.\(destination.rawValue)")
+            .accessibilityAddTraits(selected == destination ? .isSelected : [])
     }
 
     private var quickAdd: some View {
@@ -413,24 +506,14 @@ struct NovaShellPanel: View {
                     .foregroundStyle(NovaColorToken.textMuted.color(in: scheme))
             }
             ForEach(notices) { notice in
-                Button { send(.navigate(notice.destination)) } label: {
-                    HStack(alignment: .top, spacing: 10) {
-                        NovaIcon(symbol: notice.symbol, size: 19)
-                            .foregroundStyle(notice.tone.color(in: scheme)).frame(width: 32, height: 32)
-                            .overlay(alignment: .topTrailing) {
-                                if notice.unread { Circle().fill(NovaColorToken.statusDangerDot.color(in: scheme)).frame(width: 5, height: 5) }
-                            }
-                        VStack(alignment: .leading, spacing: 3) {
-                            HStack {
-                                NovaSizedText(text: notice.title, size: 13, weight: "Bold")
-                                Spacer(minLength: 0)
-                                NovaText(text: String(notice.count), style: .label, color: notice.tone.color(in: scheme))
-                            }
-                            NovaSizedText(text: notice.detail, size: 11, weight: "Regular", color: NovaColorToken.textMuted.color(in: scheme))
-                        }
-                    }.padding(.horizontal, 12).padding(.vertical, 11).frame(maxWidth: .infinity, alignment: .leading)
-                        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 20))
-                }.buttonStyle(.plain).disabled(!canOpen(notice.destination)).accessibilityIdentifier("nova.notice.\(notice.id)").padding(.bottom, 7)
+                noticeRow(notice)
+            }
+            if !noticeNote.isEmpty {
+                // Said where the list can be emptied, because deleting here
+                // deletes nothing else.
+                NovaSizedText(text: noticeNote, size: 10, weight: "Regular",
+                    color: NovaColorToken.textMuted.color(in: scheme))
+                    .padding(.horizontal, 12).padding(.bottom, 8)
             }
             Button { send(.navigate(.notifications)) } label: {
                 HStack(spacing: 4) {
@@ -440,6 +523,67 @@ struct NovaShellPanel: View {
             }.buttonStyle(.plain).foregroundStyle(NovaColorToken.statusSuccessInk.color(in: scheme)).padding(.top, -6).padding(.bottom, -13)
                 .disabled(!canOpen(.notifications)).accessibilityIdentifier("nova.notices.center")
         }.buttonStyle(.plain)
+    }
+
+    /// One notice: the whole row opens the record, and the two controls on the
+    /// right mark it read or take it off the list.
+    @ViewBuilder private func noticeRow(_ notice: NovaNotice) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Button {
+                // Opening a notice is reading it.
+                onReadNotice?(notice.id)
+                send(.navigate(notice.destination))
+            } label: {
+                HStack(alignment: .top, spacing: 10) {
+                    NovaIcon(symbol: notice.symbol, size: 19)
+                        .foregroundStyle(notice.tone.color(in: scheme)).frame(width: 32, height: 32)
+                        .overlay(alignment: .topTrailing) {
+                            if notice.unread {
+                                Circle().fill(NovaColorToken.statusDangerDot.color(in: scheme))
+                                    .frame(width: 5, height: 5)
+                            }
+                        }
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(alignment: .top, spacing: 6) {
+                            NovaSizedText(text: notice.title, size: 13, weight: notice.unread ? "Bold" : "Medium")
+                            Spacer(minLength: 0)
+                            NovaSizedText(text: notice.badge, size: 10, weight: "Bold",
+                                color: notice.tone.color(in: scheme))
+                        }
+                        NovaSizedText(text: notice.detail, size: 11, weight: "Regular",
+                            color: NovaColorToken.textMuted.color(in: scheme))
+                    }
+                }.frame(maxWidth: .infinity, alignment: .leading)
+            }.buttonStyle(.plain).disabled(!canOpen(notice.destination))
+                .accessibilityIdentifier("nova.notice.\(notice.id)")
+            VStack(spacing: 2) {
+                if notice.dismissed {
+                    noticeAction("arrow.uturn.backward",
+                        RDLocalization.string("localizable.nova.notice.restore", table: .localizable, fallback: "Geri al"),
+                        "nova.notice.restore.\(notice.id)", onRestoreNotice == nil) { onRestoreNotice?(notice.id) }
+                } else {
+                    noticeAction(notice.unread ? "envelope.open" : "envelope",
+                        RDLocalization.string("localizable.nova.notice.read", table: .localizable, fallback: "Okundu işaretle"),
+                        "nova.notice.read.\(notice.id)", onReadNotice == nil || !notice.unread) { onReadNotice?(notice.id) }
+                    noticeAction("trash",
+                        RDLocalization.string("localizable.nova.notice.dismiss", table: .localizable, fallback: "Bildirimi sil"),
+                        "nova.notice.dismiss.\(notice.id)", onDismissNotice == nil) { onDismissNotice?(notice.id) }
+                }
+            }
+        }.padding(.horizontal, 12).padding(.vertical, 11).frame(maxWidth: .infinity, alignment: .leading)
+            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 20))
+            .opacity(notice.dismissed ? 0.55 : 1)
+            .padding(.bottom, 7)
+    }
+
+    @ViewBuilder private func noticeAction(_ symbol: String, _ label: String, _ identifier: String,
+                                           _ disabled: Bool, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            NovaIcon(symbol: symbol, size: 13)
+                .foregroundStyle(NovaColorToken.textMuted.color(in: scheme))
+                .frame(width: 30, height: 30).contentShape(Rectangle())
+        }.buttonStyle(.plain).disabled(disabled)
+            .accessibilityLabel(Text(verbatim: label)).accessibilityIdentifier(identifier)
     }
 }
 
@@ -545,6 +689,8 @@ struct NovaDashboardScreen: View {
     let onPhoto: () -> Void
     let onAssistant: () -> Void
     var onFinding: ((String) -> Void)?
+    var trackingIdentity: NovaSessionIdentity?
+    var trackingCanWrite = false
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
     private var muted: Color { NovaColorToken.textMuted.color(in: scheme) }
@@ -553,6 +699,10 @@ struct NovaDashboardScreen: View {
         ScrollView {
             VStack(spacing: 0) {
                 welcome.padding(.horizontal, 20).padding(.bottom, 20)
+                if let trackingIdentity {
+                    NovaModuleTrackingCard(identity: trackingIdentity, canWrite: trackingCanWrite)
+                        .padding(.horizontal, 20).padding(.bottom, 16)
+                }
                 HStack {
                     NovaText(text: RDLocalization.string("localizable.nova.expert.shell.ozet.79587bac", table: .localizable, fallback: "Özet"), style: .sectionTitle)
                     Spacer()

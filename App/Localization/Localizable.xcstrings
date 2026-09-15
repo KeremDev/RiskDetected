@@ -8803,6 +8803,24 @@
         }
       }
     },
+    "localizable.nova.analysis.retry": {
+      "comment": "nova_general_check_2026-09-15; localization hygiene pass; placeholders: %d/%@ and positional %1$d/%2$d/%3$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekrar dene"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.search.clear": {
       "comment": "nova_analysis; analysis result sections, analysis list and report archive; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -12259,6 +12277,24 @@
       },
       "comment": "placeholders: none"
     },
+    "localizable.nova.components.loading": {
+      "comment": "nova_general_check_2026-09-15; localization hygiene pass; placeholders: %d/%@ and positional %1$d/%2$d/%3$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yükleniyor…"
+          }
+        }
+      }
+    },
     "localizable.nova.components.loading.description": {
       "comment": "nova_manual; App/DesignSystem/ISG/NovaComponents.swift; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -15352,7 +15388,8 @@
             "value": "Collapsed"
           }
         }
-      }
+      },
+      "comment": "nova_navigation; drawer group accessibility state; placeholders: none; review: human_draft"
     },
     "localizable.nova.drawer.expanded": {
       "extractionState": "manual",
@@ -15369,7 +15406,8 @@
             "value": "Expanded"
           }
         }
-      }
+      },
+      "comment": "nova_navigation; drawer group accessibility state; placeholders: none; review: human_draft"
     },
     "localizable.nova.drawer.group.analysis": {
       "extractionState": "manual",
@@ -15386,7 +15424,8 @@
             "value": "Analysis and Inspections"
           }
         }
-      }
+      },
+      "comment": "nova_navigation; drawer section heading; placeholders: none; review: human_draft"
     },
     "localizable.nova.drawer.group.documents": {
       "extractionState": "manual",
@@ -15403,7 +15442,8 @@
             "value": "Documents and Reports"
           }
         }
-      }
+      },
+      "comment": "nova_navigation; drawer section heading; placeholders: none; review: human_draft"
     },
     "localizable.nova.drawer.group.people": {
       "extractionState": "manual",
@@ -15420,7 +15460,8 @@
             "value": "Companies and People"
           }
         }
-      }
+      },
+      "comment": "nova_navigation; drawer section heading; placeholders: none; review: human_draft"
     },
     "localizable.nova.drawer.group.planning": {
       "extractionState": "manual",
@@ -15437,7 +15478,8 @@
             "value": "Planning and Organization"
           }
         }
-      }
+      },
+      "comment": "nova_navigation; drawer section heading; placeholders: none; review: human_draft"
     },
     "localizable.nova.drill.back": {
       "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
@@ -21199,6 +21241,24 @@
         }
       }
     },
+    "localizable.nova.expert.shell.brand": {
+      "comment": "nova_general_check_2026-09-15; localization hygiene pass; placeholders: %d/%@ and positional %1$d/%2$d/%3$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSGADA"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSGADA"
+          }
+        }
+      }
+    },
     "localizable.nova.expert.shell.bu.ay.6f00fad9": {
       "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:524; placeholders: none; review: human_draft",
       "extractionState": "manual",
@@ -26185,6 +26245,24 @@
         }
       }
     },
+    "localizable.nova.navigation.annual.work.plans": {
+      "comment": "nova_general_check_2026-09-15; localization hygiene pass; placeholders: %d/%@ and positional %1$d/%2$d/%3$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annual Work Plan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık Çalışma Planı"
+          }
+        }
+      }
+    },
     "localizable.nova.navigation.appointments": {
       "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
       "extractionState": "manual",
@@ -26221,6 +26299,24 @@
         }
       }
     },
+    "localizable.nova.navigation.board.meetings": {
+      "comment": "nova_general_check_2026-09-15; localization hygiene pass; placeholders: %d/%@ and positional %1$d/%2$d/%3$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Board and Meetings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kurul ve Toplantılar"
+          }
+        }
+      }
+    },
     "localizable.nova.navigation.checklists": {
       "comment": "isg_checklist_runs; Kontrol Listeleri: run board, question popup, nonconformity offer and list authoring; placeholders: %d where shown; review: human_draft",
       "extractionState": "manual",
@@ -26235,6 +26331,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kontrol Listeleri"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.contractors": {
+      "comment": "nova_general_check_2026-09-15; localization hygiene pass; placeholders: %d/%@ and positional %1$d/%2$d/%3$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contractors and Outside Firms"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taşeron ve Dış Firmalar"
           }
         }
       }
@@ -26559,6 +26673,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Uygunsuzluklar"
+          }
+        }
+      }
+    },
+    "localizable.nova.navigation.work.permits": {
+      "comment": "nova_general_check_2026-09-15; localization hygiene pass; placeholders: %d/%@ and positional %1$d/%2$d/%3$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Work Permit Forms"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çalışma İzni Formları"
           }
         }
       }
@@ -35365,6 +35497,42 @@
       },
       "comment": "placeholders: %d"
     },
+    "localizable.nova.workspace.section.appointments.open": {
+      "comment": "nova_general_check_2026-09-15; localization hygiene pass; placeholders: %d/%@ and positional %1$d/%2$d/%3$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open appointments"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atamaları aç"
+          }
+        }
+      }
+    },
+    "localizable.nova.workspace.section.drills.open": {
+      "comment": "nova_general_check_2026-09-15; localization hygiene pass; placeholders: %d/%@ and positional %1$d/%2$d/%3$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open drills"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tatbikatları aç"
+          }
+        }
+      }
+    },
     "localizable.nova.workspace.section.pending": {
       "extractionState": "manual",
       "localizations": {
@@ -35382,6 +35550,96 @@
         }
       },
       "comment": "placeholders: none"
+    },
+    "localizable.nova.workspace.section.records.open": {
+      "comment": "nova_general_check_2026-09-15; localization hygiene pass; placeholders: %d/%@ and positional %1$d/%2$d/%3$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open records"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtları aç"
+          }
+        }
+      }
+    },
+    "localizable.nova.workspace.section.risk.open": {
+      "comment": "nova_general_check_2026-09-15; localization hygiene pass; placeholders: %d/%@ and positional %1$d/%2$d/%3$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open assessments"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Değerlendirmeleri aç"
+          }
+        }
+      }
+    },
+    "localizable.nova.workspace.section.tracking.summary": {
+      "comment": "nova_general_check_2026-09-15; localization hygiene pass; placeholders: %d/%@ and positional %1$d/%2$d/%3$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d records · %2$d overdue · %3$d upcoming"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d kayıt · %2$d tarihi geçmiş · %3$d yaklaşan"
+          }
+        }
+      }
+    },
+    "localizable.nova.workspace.section.training.hint": {
+      "comment": "nova_general_check_2026-09-15; localization hygiene pass; placeholders: %d/%@ and positional %1$d/%2$d/%3$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record completed training by picking personnel and review the training history."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gerçekleşen eğitimleri personel seçerek kaydedin ve eğitim geçmişini görüntüleyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.workspace.section.training.open": {
+      "comment": "nova_general_check_2026-09-15; localization hygiene pass; placeholders: %d/%@ and positional %1$d/%2$d/%3$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open training"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitimleri aç"
+          }
+        }
+      }
     },
     "localizable.nova.workspace.support": {
       "extractionState": "manual",
