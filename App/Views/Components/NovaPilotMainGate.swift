@@ -153,7 +153,7 @@ struct NovaPilotRoot: View {
                 appointments
             case .katipContracts, .annualWorkPlans, .boardMeetings, .visits, .workPermits, .contractors:
                 if ready {
-                    NovaPilotProcessGate(identity: identity, kind: processKind(destination), canWrite: controller.canWrite, onBack: { navigate(.home) })
+                    NovaPilotProcessGate(identity: identity, kind: processKind(destination), canWrite: ready, onBack: { navigate(.home) })
                         .id(destination)
                 } else { statusCard }
             case .notifications:
@@ -254,7 +254,7 @@ struct NovaPilotRoot: View {
     /// when the expert picks one.
     @ViewBuilder private var risk: some View {
         if ready {
-            NovaPilotRiskGate(identity: identity, canWrite: controller.canWrite,
+            NovaPilotRiskGate(identity: identity, canWrite: ready,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
@@ -263,7 +263,7 @@ struct NovaPilotRoot: View {
 
     @ViewBuilder private var checklists: some View {
         if ready {
-            NovaPilotChecklistGate(identity: identity, canWrite: controller.canWrite,
+            NovaPilotChecklistGate(identity: identity, canWrite: ready,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
@@ -319,7 +319,7 @@ struct NovaPilotRoot: View {
 
     @ViewBuilder private var katip: some View {
         if ready {
-            NovaPilotKatipGate(identity: identity, canWrite: controller.canWrite,
+            NovaPilotKatipGate(identity: identity, canWrite: ready,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
@@ -328,7 +328,7 @@ struct NovaPilotRoot: View {
 
     @ViewBuilder private var equipment: some View {
         if ready {
-            NovaPilotEquipmentGate(identity: identity, canWrite: controller.canWrite,
+            NovaPilotEquipmentGate(identity: identity, canWrite: ready,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)

@@ -177,7 +177,11 @@ test('the company page reads the module from the same tally the module uses',()=
 
 test('Periyodik Kontroller is reachable from the menu and the home summary',()=>{
   assert.match(main,/case \.periodicChecks:\n\s*equipment/);
-  assert.match(main,/NovaPilotEquipmentGate\(identity: identity, canWrite: controller\.canWrite/);
+  // canWrite here must not depend on a company already being selected: this
+  // route is opened straight from the menu, with no company chosen yet, so
+  // controller.canWrite (which requires controller.scope) would always be
+  // false and silently disable every write control on the page.
+  assert.match(main,/NovaPilotEquipmentGate\(identity: identity, canWrite: ready/);
   assert.match(main,/available: \[[^\]]*\.periodicChecks[,\]]/);
   // The home card counts records and lands on this page; it states no verdict.
   assert.match(main,/id: "equipment", value: equipmentBoard\.map \{ String\(\$0\.needsAttention\) \} \?\? "—"/);
