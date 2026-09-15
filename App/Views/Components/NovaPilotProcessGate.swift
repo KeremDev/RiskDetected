@@ -135,31 +135,45 @@ struct NovaProcessEditor: View {
     var body: some View {
         NovaPopup {
             ScrollView {
-                VStack(alignment:.leading,spacing:14) {
-                    NovaText(text:spec.title,style:.screenTitle)
+                VStack(alignment:.leading,spacing:10) {
+                    HStack(spacing: 10) {
+                        Image(systemName: kindSymbol).font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.white).frame(width: 34, height: 34)
+                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 10))
+                        NovaText(text:spec.title,style:.screenTitle)
+                        Spacer(minLength: 0)
+                    }
                     if kind == "katip_contract" { NovaText(text:"Uzmanın sözleşme kaydıdır; resmî İSG-KATİP işlemi yapılmaz.",style:.meta) }
                     if kind == "work_permit" { NovaText(text:"Form hazırlama aracıdır. Çalışmayı başlatma veya saha onayı vermez.",style:.meta) }
                     if loading { ProgressView("Kayıt yükleniyor…") }
                     if let catalogue, !loading {
                         ForEach(spec.fields) { field in
-                            VStack(alignment:.leading,spacing:6) {
-                                NovaText(text:field.title + (field.required ? " *" : ""),style:.label)
-                                control(field,catalogue)
+                            fieldRow(field) { control(field,catalogue) }
+                        }
+                        NovaCard(padding: 12) {
+                            fieldIcon("doc.text") {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    NovaText(text:"Firma evrak kaydı",style:.label)
+                                    Picker("",selection:$document) {
+                                        Text("Bağlantı yok").tag("")
+                                        ForEach(catalogue.documents) { Text($0.name).tag($0.id.uuidString) }
+                                    }.labelsHidden()
+                                    if catalogue.documents.isEmpty { NovaText(text:"Evrak Takibi bölümüne eklediğiniz firma kayıtları burada seçilebilir.",style:.meta) }
+                                }
                             }
                         }
-                        Picker("Firma evrak kaydı",selection:$document) {
-                            Text("Bağlantı yok").tag("")
-                            ForEach(catalogue.documents) { Text($0.name).tag($0.id.uuidString) }
-                        }
-                        if catalogue.documents.isEmpty { NovaText(text:"Evrak Takibi bölümüne eklediğiniz firma kayıtları burada seçilebilir.",style:.meta) }
                         if kind == "annual_work_item" || kind == "board_decision" || kind == "site_observation" {
-                            VStack(alignment: .leading, spacing: 8) {
-                                NovaText(text: "İlgili süreç kaydı", style: .label)
-                                NovaText(text: relatedID.isEmpty ? "Gerçek kayda bağlantı ekleyebilirsiniz." : (relatedTitle.isEmpty ? "Bağlı kayıt" : relatedTitle), style: .meta)
-                                HStack {
-                                    Button(relatedID.isEmpty ? "Kayıt seç" : "Değiştir") { choosingRelated = true }
-                                    if !relatedID.isEmpty { Button("Bağlantıyı kaldır") { relatedKind = ""; relatedID = ""; relatedTitle = "" } }
-                                }.disabled(!canWrite)
+                            NovaCard(padding: 12) {
+                                fieldIcon("link") {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        NovaText(text: "İlgili süreç kaydı", style: .label)
+                                        NovaText(text: relatedID.isEmpty ? "Gerçek kayda bağlantı ekleyebilirsiniz." : (relatedTitle.isEmpty ? "Bağlı kayıt" : relatedTitle), style: .meta)
+                                        HStack {
+                                            Button(relatedID.isEmpty ? "Kayıt seç" : "Değiştir") { choosingRelated = true }
+                                            if !relatedID.isEmpty { Button("Bağlantıyı kaldır") { relatedKind = ""; relatedID = ""; relatedTitle = "" } }
+                                        }.disabled(!canWrite)
+                                    }
+                                }
                             }
                         }
                         if row != nil {
@@ -206,6 +220,52 @@ struct NovaProcessEditor: View {
             if case .array(let list) = values[key] { return list.map(\.text).joined(separator:"\n") }
             return values[key]?.text ?? ""
         },set:{values[key] = .string($0)})
+    }
+    private var kindSymbol: String {
+        switch kind {
+        case "katip_contract": return "signature"
+        case "annual_work_plan": return "calendar"
+        case "annual_work_item": return "checkmark.circle"
+        case "board": return "person.3"
+        case "board_decision": return "checkmark.seal"
+        case "site_visit": return "figure.walk"
+        case "site_observation": return "eye"
+        case "work_permit": return "doc.badge.gearshape"
+        case "contractor": return "building.2.crop.circle"
+        default: return "briefcase"
+        }
+    }
+    /// A compact icon chip in front of one field's label+control, matching
+    /// the manual nonconformity screen's field styling.
+    @ViewBuilder private func fieldIcon<V: View>(_ symbol: String, @ViewBuilder _ content: @escaping () -> V) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: symbol).font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.accentColor).frame(width: 26, height: 26)
+                .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+            content().frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+    @ViewBuilder private func fieldRow<V: View>(_ field: NovaProcessField, @ViewBuilder _ value: @escaping () -> V) -> some View {
+        NovaCard(padding: 12) {
+            fieldIcon(fieldSymbol(field)) {
+                VStack(alignment: .leading, spacing: 4) {
+                    NovaText(text: field.title + (field.required ? " *" : ""), style: .label)
+                    value()
+                }
+            }
+        }
+    }
+    private func fieldSymbol(_ field: NovaProcessField) -> String {
+        switch field.type {
+        case "choice": return "list.bullet.circle"
+        case "workplaces","organizations": return "building.2"
+        case "employees": return "person.2"
+        case "date": return "calendar"
+        case "datetime": return "calendar.badge.clock"
+        case "multiline","lines": return "text.alignleft"
+        case "number": return "number"
+        default: return "pencil.line"
+        }
     }
     @ViewBuilder private func control(_ field:NovaProcessField,_ cat:NovaProcessPage) -> some View {
         switch field.type {
