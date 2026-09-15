@@ -212,22 +212,38 @@ struct NovaAppointmentSheet: View {
                             }
                         }
                     }
+                    // A company with no workplace has nothing to ask, and one
+                    // with exactly one gets it silently — only a real choice
+                    // among several is shown as a picker.
+                    let workplaceCount = catalogue?.workplaces.count ?? 0
                     fieldCard("building.2") {
-                        NovaFileChooserButton(
-                            label: RDLocalization.string("localizable.nova.appointment.form.workplace",
-                                table: .localizable, fallback: "İşyeri"),
-                            value: placeTitle, isOpen: openChooser == "place",
-                            identifier: "nova.appointment.form.workplace") {
-                            openChooser = openChooser == "place" ? nil : "place"
-                        }
-                        if openChooser == "place" {
-                            NovaFileChooserPanel(
-                                options: (catalogue?.workplaces ?? []).map {
-                                    .init(id: $0.id.uuidString, title: $0.name) },
-                                selected: draft.workplaceID?.uuidString,
-                                identifier: "nova.appointment.form.workplace.panel") { value in
-                                draft.workplaceID = value.flatMap(UUID.init(uuidString:))
-                                openChooser = nil
+                        if workplaceCount <= 1 {
+                            VStack(alignment: .leading, spacing: 4) {
+                                NovaText(text: RDLocalization.string("localizable.nova.appointment.form.workplace",
+                                    table: .localizable, fallback: "İşyeri"), style: .label,
+                                    color: NovaColorToken.textTertiary.color(in: scheme))
+                                NovaText(text: workplaceCount == 1 ? placeTitle
+                                    : RDLocalization.string("localizable.nova.appointment.form.noworkplace",
+                                        table: .localizable, fallback: "Bu firmada kayıt açılacak bir işyeri yok."),
+                                    style: .cardTitle)
+                            }
+                        } else {
+                            NovaFileChooserButton(
+                                label: RDLocalization.string("localizable.nova.appointment.form.workplace",
+                                    table: .localizable, fallback: "İşyeri"),
+                                value: placeTitle, isOpen: openChooser == "place",
+                                identifier: "nova.appointment.form.workplace") {
+                                openChooser = openChooser == "place" ? nil : "place"
+                            }
+                            if openChooser == "place" {
+                                NovaFileChooserPanel(
+                                    options: (catalogue?.workplaces ?? []).map {
+                                        .init(id: $0.id.uuidString, title: $0.name) },
+                                    selected: draft.workplaceID?.uuidString,
+                                    identifier: "nova.appointment.form.workplace.panel") { value in
+                                    draft.workplaceID = value.flatMap(UUID.init(uuidString:))
+                                    openChooser = nil
+                                }
                             }
                         }
                     }

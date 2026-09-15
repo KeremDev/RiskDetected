@@ -142,7 +142,10 @@ struct NovaEmergencyPlan: Identifiable, Equatable {
 }
 
 struct NovaEmergencyCatalogue: Equatable {
-    struct Workplace: Identifiable, Equatable { let id: UUID; let name: String; let needsReview: Bool }
+    struct Workplace: Identifiable, Equatable {
+        let id: UUID; let name: String; let needsReview: Bool
+        var hazardClass: String? = nil; var suggestedPeriodYears: Int? = nil
+    }
     /// Who the company already lists as destek elemanı (Atama ve Temsilciler).
     /// A suggestion only: picking one lends a name into the team being built,
     /// nothing more. The plan's team stays a plain snapshot either way.

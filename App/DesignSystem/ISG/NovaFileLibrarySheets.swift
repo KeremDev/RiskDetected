@@ -347,12 +347,17 @@ struct NovaInlineFileField: View {
                     NovaText(text: RDLocalization.string("localizable.nova.emergency.form.file.attached",
                         table: .localizable, fallback: "Dosya ekli"), style: .meta)
                     Spacer(minLength: 0)
+                    NovaButton(label: RDLocalization.string("localizable.nova.emergency.form.file.replace",
+                        table: .localizable, fallback: "Dosyayı değiştir"), symbol: "arrow.triangle.2.circlepath",
+                        variant: .surface) { adding = true }
+                        .accessibilityIdentifier("nova.inline.file.replace")
                     Button { assetID = "" } label: {
                         Image(systemName: "xmark.circle").font(.system(size: 12))
                     }.buttonStyle(.plain).accessibilityIdentifier("nova.inline.file.remove")
                 }
-            }
-            if adding {
+            } else {
+                // No file yet: the upload area itself is the first thing shown,
+                // not a button that reveals it — one tap fewer to attach one.
                 NovaCard(padding: 12) {
                     NovaFileAddInline(companies: [], preselected: company, categories: scopedCategories,
                         accepts: accepts, assurance: assurance, client: fileClient) { entry in
@@ -360,12 +365,6 @@ struct NovaInlineFileField: View {
                             adding = false
                         }
                 }
-            } else {
-                NovaButton(label: assetID.isEmpty
-                    ? RDLocalization.string("localizable.nova.emergency.form.file.add", table: .localizable, fallback: "Dosya ekle")
-                    : RDLocalization.string("localizable.nova.emergency.form.file.replace", table: .localizable, fallback: "Dosyayı değiştir"),
-                    symbol: "paperclip", variant: .surface, isEnabled: company != nil) { adding = true }
-                    .accessibilityIdentifier("nova.inline.file.add")
             }
         }
         .task {

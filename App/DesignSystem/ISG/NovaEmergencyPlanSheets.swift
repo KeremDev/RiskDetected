@@ -238,6 +238,19 @@ struct NovaEmergencyPlanSheet: View {
                 fallback: "İşyeri seçin")
     }
 
+    private var suggestedYears: Int? {
+        catalogue?.workplaces.first { $0.id == draft.workplaceID }?.suggestedPeriodYears
+    }
+
+    /// Prefills the field, never overwrites what the expert already set —
+    /// the same "auto-fill once, editable after" rule Risk Analizi uses.
+    private func fillSuggestedValidity() {
+        guard draft.validUntil.isEmpty, let years = suggestedYears,
+              let prepared = NovaDayField.date(draft.preparedOn),
+              let until = Calendar.current.date(byAdding: .year, value: years, to: prepared) else { return }
+        draft.validUntil = NovaDayField.text(until)
+    }
+
     var body: some View {
         NovaPopup {
             ScrollView {
@@ -252,51 +265,95 @@ struct NovaEmergencyPlanSheet: View {
                     }
 
                     // The workplace of a renewal is the plan's own and does not
-                    // move, so it is shown rather than offered.
-                    if draft.isRenewal {
-                        NovaText(text: workplaceTitle, style: .label)
-                    } else {
-                        NovaFileChooserButton(
-                            label: RDLocalization.string("localizable.nova.emergency.form.workplace",
-                                table: .localizable, fallback: "İşyeri"),
-                            value: workplaceTitle, isOpen: choosingWorkplace,
-                            identifier: "nova.emergency.form.workplace") { choosingWorkplace.toggle() }
-                        if choosingWorkplace {
-                            NovaFileChooserPanel(
-                                options: (catalogue?.workplaces ?? []).map { .init(id: $0.id.uuidString, title: $0.name) },
-                                selected: draft.workplaceID?.uuidString,
-                                identifier: "nova.emergency.form.workplace.panel") { value in
-                                draft.workplaceID = value.flatMap(UUID.init(uuidString:))
-                                choosingWorkplace = false
+                    // move, so it is shown rather than offered. A company with
+                    // no workplace has nothing to ask, and one with exactly one
+                    // gets it silently — only a real choice is shown.
+                    let workplaces = catalogue?.workplaces ?? []
+                    NovaCard(padding: 12) {
+                        fieldIcon("building.2") {
+                            if draft.isRenewal || workplaces.count == 1 {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    NovaText(text: RDLocalization.string("localizable.nova.emergency.form.workplace",
+                                        table: .localizable, fallback: "İşyeri"), style: .label)
+                                    NovaText(text: workplaceTitle, style: .cardTitle)
+                                }
+                            } else if workplaces.isEmpty {
+                                NovaText(text: RDLocalization.string("localizable.nova.emergency.form.noworkplace",
+                                    table: .localizable, fallback: "Bu firmada kayıt açılacak bir işyeri yok."), style: .metaQuiet)
+                            } else {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    NovaFileChooserButton(
+                                        label: RDLocalization.string("localizable.nova.emergency.form.workplace",
+                                            table: .localizable, fallback: "İşyeri"),
+                                        value: workplaceTitle, isOpen: choosingWorkplace,
+                                        identifier: "nova.emergency.form.workplace") { choosingWorkplace.toggle() }
+                                    if choosingWorkplace {
+                                        NovaFileChooserPanel(
+                                            options: workplaces.map { .init(id: $0.id.uuidString, title: $0.name) },
+                                            selected: draft.workplaceID?.uuidString,
+                                            identifier: "nova.emergency.form.workplace.panel") { value in
+                                            draft.workplaceID = value.flatMap(UUID.init(uuidString:))
+                                            choosingWorkplace = false
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        NovaText(text: RDLocalization.string("localizable.nova.emergency.form.scope",
-                            table: .localizable, fallback: "Kapsam"), style: .label)
-                        TextField("", text: $draft.scope).textFieldStyle(.roundedBorder)
-                            .preference(key: NovaPopupBusyKey.self, value: saving)
-        .accessibilityIdentifier("nova.emergency.form.scope")
+                    NovaCard(padding: 12) {
+                        fieldIcon("text.alignleft") {
+                            VStack(alignment: .leading, spacing: 4) {
+                                NovaText(text: RDLocalization.string("localizable.nova.emergency.form.scope",
+                                    table: .localizable, fallback: "Kapsam"), style: .label)
+                                TextField("", text: $draft.scope)
+                                    .preference(key: NovaPopupBusyKey.self, value: saving)
+                                    .accessibilityIdentifier("nova.emergency.form.scope")
+                            }
+                        }
                     }
-                    NovaDayField(label: RDLocalization.string("localizable.nova.emergency.row.prepared",
-                        table: .localizable, fallback: "Hazırlanma"),
-                        value: $draft.preparedOn, identifier: "nova.emergency.form.prepared")
-                    NovaDayField(label: RDLocalization.string("localizable.nova.emergency.row.until",
-                        table: .localizable, fallback: "Geçerlilik"),
-                        value: $draft.validUntil, identifier: "nova.emergency.form.until", isClearable: true)
-                    NovaHelpHint(text: NovaEmergencyWords.periodAttribution)
+                    HStack(alignment: .top, spacing: 8) {
+                        NovaCard(padding: 12) {
+                            fieldIcon("calendar") {
+                                NovaDayField(label: RDLocalization.string("localizable.nova.emergency.row.prepared",
+                                    table: .localizable, fallback: "Hazırlanma"),
+                                    value: $draft.preparedOn, identifier: "nova.emergency.form.prepared")
+                            }
+                        }.frame(maxWidth: .infinity)
+                        NovaCard(padding: 12) {
+                            fieldIcon("calendar.badge.clock") {
+                                NovaDayField(label: RDLocalization.string("localizable.nova.emergency.row.until",
+                                    table: .localizable, fallback: "Geçerlilik"),
+                                    value: $draft.validUntil, identifier: "nova.emergency.form.until", isClearable: true)
+                            }
+                        }.frame(maxWidth: .infinity)
+                    }
+                    if let years = suggestedYears {
+                        NovaHelpHint(text: String(format: RDLocalization.string("localizable.nova.emergency.form.hazard.hint",
+                            table: .localizable,
+                            fallback: "İşyerinin tehlike sınıfına göre %d yıl otomatik dolduruldu. Gerekirse değiştirebilirsiniz."), years))
+                    } else {
+                        NovaHelpHint(text: NovaEmergencyWords.periodAttribution)
+                    }
 
-                    teamEditor
-                    fileEditor
+                    NovaCard(padding: 12) {
+                        fieldIcon("person.2") { teamEditor }
+                    }
+                    NovaCard(padding: 12) {
+                        fieldIcon("paperclip") { fileEditor }
+                    }
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        NovaText(text: RDLocalization.string("localizable.nova.emergency.form.basis",
-                            table: .localizable, fallback: "Dayanak"), style: .label)
-                        TextField("", text: $draft.reviewNote).textFieldStyle(.roundedBorder)
-                            .accessibilityIdentifier("nova.emergency.form.basis")
-                        NovaText(text: NovaEmergencyWords.reviewNote, style: .meta,
-                            color: NovaColorToken.textSecondary.color(in: scheme))
+                    NovaCard(padding: 12) {
+                        fieldIcon("doc.text") {
+                            VStack(alignment: .leading, spacing: 4) {
+                                NovaText(text: RDLocalization.string("localizable.nova.emergency.form.basis",
+                                    table: .localizable, fallback: "Dayanak"), style: .label)
+                                TextField("", text: $draft.reviewNote)
+                                    .accessibilityIdentifier("nova.emergency.form.basis")
+                                NovaText(text: NovaEmergencyWords.reviewNote, style: .meta,
+                                    color: NovaColorToken.textSecondary.color(in: scheme))
+                            }
+                        }
                     }
 
                     if let failure {
@@ -319,6 +376,24 @@ struct NovaEmergencyPlanSheet: View {
             }
         }
         .accessibilityIdentifier("nova.emergency.form")
+        .onAppear {
+            if draft.workplaceID == nil, let only = catalogue?.workplaces, only.count == 1 {
+                draft.workplaceID = only[0].id
+            }
+            fillSuggestedValidity()
+        }
+        .onChange(of: draft.workplaceID) { _ in fillSuggestedValidity() }
+        .onChange(of: draft.preparedOn) { _ in fillSuggestedValidity() }
+    }
+
+    /// A plain line icon in front of one field group — no tint, no background
+    /// chip, matching the rest of the app's forms.
+    @ViewBuilder private func fieldIcon<V: View>(_ symbol: String, @ViewBuilder _ content: @escaping () -> V) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: symbol).font(.system(size: 15, weight: .regular))
+                .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme)).frame(width: 20, height: 22)
+            content().frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 
     /// The upload happens right here — no cover, no second screen. Opening it
@@ -334,12 +409,17 @@ struct NovaEmergencyPlanSheet: View {
                     NovaText(text: RDLocalization.string("localizable.nova.emergency.form.file.attached",
                         table: .localizable, fallback: "Dosya ekli"), style: .meta)
                     Spacer(minLength: 0)
+                    NovaButton(label: RDLocalization.string("localizable.nova.emergency.form.file.replace",
+                        table: .localizable, fallback: "Dosyayı değiştir"), symbol: "arrow.triangle.2.circlepath",
+                        variant: .surface) { addingFile = true }
+                        .accessibilityIdentifier("nova.emergency.form.file.replace")
                     Button { draft.assetID = nil } label: {
                         Image(systemName: "xmark.circle").font(.system(size: 12))
                     }.buttonStyle(.plain).accessibilityIdentifier("nova.emergency.form.file.remove")
                 }
-            }
-            if addingFile {
+            } else if fileCompany != nil {
+                // The upload area shows up on its own — no "Dosya ekle" tap
+                // needed first.
                 NovaCard(padding: 12) {
                     NovaFileAddInline(companies: [], preselected: fileCompany,
                         categories: emergencyFileCategories, accepts: fileAccepts,
@@ -348,14 +428,6 @@ struct NovaEmergencyPlanSheet: View {
                             addingFile = false
                         }
                 }
-            } else {
-                NovaButton(label: draft.assetID == nil
-                    ? RDLocalization.string("localizable.nova.emergency.form.file.add", table: .localizable,
-                        fallback: "Dosya ekle")
-                    : RDLocalization.string("localizable.nova.emergency.form.file.replace", table: .localizable,
-                        fallback: "Dosyayı değiştir"),
-                    symbol: "paperclip", variant: .surface, isEnabled: fileCompany != nil) { addingFile = true }
-                    .accessibilityIdentifier("nova.emergency.form.file.add")
             }
         }
     }
@@ -382,30 +454,34 @@ struct NovaEmergencyPlanSheet: View {
             }
             TextField(RDLocalization.string("localizable.nova.emergency.form.name",
                 table: .localizable, fallback: "Ad soyad"), text: $memberName)
-                .textFieldStyle(.roundedBorder)
+                .frame(minHeight: 36)
                 .accessibilityIdentifier("nova.emergency.form.name")
             // Only the roles the schema knows, so the snapshot cannot carry one
             // the server would refuse.
-            HStack(spacing: 6) {
-                ForEach(catalogue?.roles ?? NovaEmergencyRole.allCases) { role in
-                    Button { memberRole = role } label: {
-                        NovaSizedText(text: role.title, size: 10.5,
-                            weight: memberRole == role ? "Bold" : "Medium",
-                            color: memberRole == role
-                                ? NovaColorToken.accentInk.color(in: scheme)
-                                : NovaColorToken.textSecondary.color(in: scheme))
-                            .padding(.vertical, 5).padding(.horizontal, 8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                    .strokeBorder(NovaColorToken.hairline.color(in: scheme), lineWidth: 1))
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(catalogue?.roles ?? NovaEmergencyRole.allCases) { role in
+                        let isSelected = memberRole == role
+                        Button { memberRole = role } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: role.symbol).font(.system(size: 10, weight: .semibold))
+                                NovaSizedText(text: role.title, size: 11, weight: isSelected ? "Bold" : "Medium")
+                            }
+                            .foregroundStyle(isSelected ? NovaColorToken.onInverse.color(in: scheme)
+                                                        : NovaColorToken.textSecondary.color(in: scheme))
+                            .padding(.vertical, 7).padding(.horizontal, 11)
+                            .background(isSelected ? NovaColorToken.accent.color(in: scheme)
+                                                    : NovaColorToken.surfaceMuted.color(in: scheme),
+                                in: Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("nova.emergency.form.role.\(role.rawValue)")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("nova.emergency.form.role.\(role.rawValue)")
                 }
             }
             TextField(RDLocalization.string("localizable.nova.emergency.form.contact",
                 table: .localizable, fallback: "İletişim (isteğe bağlı)"), text: $memberContact)
-                .textFieldStyle(.roundedBorder)
+                .frame(minHeight: 36)
                 .accessibilityIdentifier("nova.emergency.form.contact")
             NovaButton(label: RDLocalization.string("localizable.nova.emergency.form.addmember",
                 table: .localizable, fallback: "Ekibe ekle"), symbol: "person.badge.plus", variant: .surface) {

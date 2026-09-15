@@ -56,7 +56,10 @@ import Foundation
         let asset_download: AssetDownloadRow?
         let versions: [VersionRow]?
     }
-    private struct WorkplaceRow: Decodable { let id: UUID; let name: String; let needs_review: Bool }
+    private struct WorkplaceRow: Decodable {
+        let id: UUID; let name: String; let needs_review: Bool
+        let hazard_class: String?; let suggested_period_years: Int?
+    }
     private struct RoleRow: Decodable { let code: String; let ordinal: Int }
     private struct SupportStaffRow: Decodable {
         let appointment_id: UUID
@@ -132,7 +135,8 @@ import Foundation
                                    "p_kind": .string("catalog")])
         try check(identity)
         let envelope = try JSONDecoder().decode(CatalogEnvelope.self, from: data)
-        return .init(workplaces: envelope.workplaces.map { .init(id: $0.id, name: $0.name, needsReview: $0.needs_review) },
+        return .init(workplaces: envelope.workplaces.map { .init(id: $0.id, name: $0.name, needsReview: $0.needs_review,
+                     hazardClass: $0.hazard_class, suggestedPeriodYears: $0.suggested_period_years) },
                      roles: envelope.team_roles.sorted { $0.ordinal < $1.ordinal }
                         .compactMap { NovaEmergencyRole(rawValue: $0.code) },
                      supportStaff: (envelope.support_staff ?? []).map {

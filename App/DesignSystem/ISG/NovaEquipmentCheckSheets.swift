@@ -721,20 +721,32 @@ struct NovaEquipmentAddSheet: View {
         }
     }
 
+    // A company with no workplace has nothing to ask, and one with exactly
+    // one gets it silently — only a real choice among several is shown.
     @ViewBuilder private var workplacePicker: some View {
-        NovaFileChooserButton(
-            label: RDLocalization.string("localizable.nova.document.field.scope", table: .localizable, fallback: "Kapsam"),
-            value: workplaces.first { $0.id == draft.workplaceID }?.name
-                ?? RDLocalization.string("localizable.nova.equipment.workplace.choose", table: .localizable, fallback: "İşyeri seçin"),
-            symbol: "building.2", isOpen: choosing == "workplace", isAnswered: draft.workplaceID != nil,
-            identifier: "equipment.add.workplace") { choosing = choosing == "workplace" ? nil : "workplace" }
-        if choosing == "workplace" {
-            NovaFileChooserPanel(
-                options: workplaces.map { .init(id: $0.id.uuidString, title: $0.name, symbol: "building.2") },
-                selected: draft.workplaceID?.uuidString, identifier: "equipment.add.workplace") { picked in
-                    draft.workplaceID = picked.flatMap(UUID.init(uuidString:))
-                    choosing = nil
-                }
+        if workplaces.count <= 1 {
+            VStack(alignment: .leading, spacing: 4) {
+                NovaText(text: RDLocalization.string("localizable.nova.document.field.scope", table: .localizable, fallback: "Kapsam"),
+                    style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
+                NovaText(text: workplaces.first?.name
+                    ?? RDLocalization.string("localizable.nova.equipment.noworkplace", table: .localizable,
+                        fallback: "Bu firmada kayıt açılacak bir işyeri yok."), style: .cardTitle)
+            }
+        } else {
+            NovaFileChooserButton(
+                label: RDLocalization.string("localizable.nova.document.field.scope", table: .localizable, fallback: "Kapsam"),
+                value: workplaces.first { $0.id == draft.workplaceID }?.name
+                    ?? RDLocalization.string("localizable.nova.equipment.workplace.choose", table: .localizable, fallback: "İşyeri seçin"),
+                symbol: "building.2", isOpen: choosing == "workplace", isAnswered: draft.workplaceID != nil,
+                identifier: "equipment.add.workplace") { choosing = choosing == "workplace" ? nil : "workplace" }
+            if choosing == "workplace" {
+                NovaFileChooserPanel(
+                    options: workplaces.map { .init(id: $0.id.uuidString, title: $0.name, symbol: "building.2") },
+                    selected: draft.workplaceID?.uuidString, identifier: "equipment.add.workplace") { picked in
+                        draft.workplaceID = picked.flatMap(UUID.init(uuidString:))
+                        choosing = nil
+                    }
+            }
         }
     }
 
