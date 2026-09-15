@@ -714,13 +714,14 @@ struct NovaDashboardScreen: View {
                             Button { onNavigate(metric.destination) } label: {
                                 VStack(alignment: .leading, spacing: 3) {
                                     HStack(spacing: 6) {
-                                        NovaIcon(symbol: metric.symbol, size: 15).foregroundStyle(metric.tone.color(in: scheme))
-                                        NovaSizedText(text: metric.value, size: 19, weight: "ExtraBold")
+                                        NovaIcon(symbol: metric.symbol, size: 15)
+                                            .foregroundStyle(NovaColorToken.text.color(in: scheme))
+                                        NovaText(text: metric.value, style: .cardTitle)
                                     }
-                                    NovaSizedText(text: metric.label, size: 10, weight: "Medium", color: muted)
+                                    NovaText(text: metric.label, style: .meta)
                                         .lineLimit(2).frame(maxWidth: .infinity, minHeight: 24, alignment: .topLeading)
-                                    NovaSizedText(text: metric.footer, size: 9.5, weight: "Bold",
-                                        color: metric.id == "open" ? metric.tone.color(in: scheme) : muted)
+                                    NovaText(text: metric.footer, style: .micro,
+                                        color: metric.id == "open" ? metric.tone.color(in: scheme) : nil)
                                         .lineLimit(1).minimumScaleFactor(0.8)
                                 }.padding(.horizontal, 10).padding(.vertical, 11)
                                     .frame(width: typeSize.isAccessibilitySize ? 160 : 86, height: typeSize.isAccessibilitySize ? nil : 86, alignment: .topLeading)
@@ -821,7 +822,7 @@ struct NovaDashboardScreen: View {
     private var capture: some View {
         VStack(spacing: 0) {
             HStack {
-                NovaText(text: RDLocalization.string("localizable.nova.expert.shell.yeni.kayit.9acd3c41", table: .localizable, fallback: "Yeni kayıt"), style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
+                NovaText(text: RDLocalization.string("localizable.nova.expert.shell.yeni.kayit.9acd3c41", table: .localizable, fallback: "Yeni kayıt"), style: .meta, color: NovaColorToken.text.color(in: scheme))
                     .padding(.horizontal, 12).padding(.vertical, 6)
                     .background(NovaColorToken.surfaceMuted.color(in: scheme), in: Capsule())
                 Spacer()
@@ -840,7 +841,7 @@ struct NovaDashboardScreen: View {
                             Image(systemName: "plus").font(.system(size: 12, weight: .bold))
                                 .foregroundStyle(NovaColorToken.accent.color(in: scheme)).offset(x: 5, y: 5)
                         }
-                    NovaText(text: RDLocalization.string("localizable.nova.expert.shell.fotograf.cek.veya.galeriden.sec.bea08bcc", table: .localizable, fallback: "Fotoğraf çek veya galeriden seç"), style: .meta, color: NovaColorToken.textTertiary.color(in: scheme))
+                    NovaText(text: RDLocalization.string("localizable.nova.expert.shell.fotograf.cek.veya.galeriden.sec.bea08bcc", table: .localizable, fallback: "Fotoğraf çek veya galeriden seç"), style: .meta, color: NovaColorToken.text.color(in: scheme))
                 }.frame(maxWidth: .infinity, minHeight: 118)
                     .background { NovaPhotoBackdrop() }
                     .clipShape(RoundedRectangle(cornerRadius: 20))
@@ -849,7 +850,7 @@ struct NovaDashboardScreen: View {
             Button { onNavigate(.newFinding) } label: {
                 HStack(spacing: 9) {
                     Image(systemName: "arrow.right")
-                    NovaSizedText(text: RDLocalization.string("localizable.nova.expert.shell.uygunsuzluk.ekle.808de642", table: .localizable, fallback: "Uygunsuzluk Ekle"), size: 15, weight: "Bold", color: .white)
+                    NovaText(text: RDLocalization.string("localizable.nova.expert.shell.uygunsuzluk.ekle.808de642", table: .localizable, fallback: "Uygunsuzluk Ekle"), style: .button, color: .white)
                 }.foregroundStyle(.white).frame(maxWidth: .infinity, minHeight: 54)
                     .background(NovaColorToken.accent.color(in: scheme), in: Capsule())
                     .shadow(color: NovaColorToken.accent.color(in: scheme).opacity(0.18), radius: 18, x: 0, y: 9)
