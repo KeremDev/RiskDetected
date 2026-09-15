@@ -349,6 +349,7 @@ Her küçük düzenleme sonrasında tüm testleri çalıştırmak yerine uygulam
 - [P18 NOVA dil ve erişilebilirlik kataloğu](P18_NOVA_LOCALIZATION_2026-09-14.md)
 - [P19 kabul defteri ve bütünleşik prova](P19_INTEGRATED_REHEARSAL_2026-09-14.md)
 - [P13 server-push reminder API, native istemci ve yapılacaklar](P13_SERVER_PUSH_REMINDERS_2026-09-13.md)
+- [P12 başlık çubuğundaki bildirim çanı (notice feed)](P12_NOTICE_FEED_2026-09-15.md) — okuma anında hesaplanır, oku/sil/geri al, push iddiası yok; SQL 54/54, **canlı pilota uygulandı** (sürüm 20260915053021), iOS **derlenmedi** (Xcode lisansı)
 - [Devir notu (sonraki geliştirici için)](HANDOVER_CODEX_2026-09-14.md)
 
 Kaynak kabul CSV'si başlangıç uygulama/koşum durumlarını içerir; henüz tüm yeni runner sonuçlarıyla güncellenmiş bir canlı coverage tablosu değildir. Güncel tamamlandı/bekliyor değerlendirmesi bu belgede ve bağlantılı kanıtlarda katmanlarıyla belirtilmiştir.
