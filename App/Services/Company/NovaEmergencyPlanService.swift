@@ -54,9 +54,17 @@ import Foundation
     }
     private struct WorkplaceRow: Decodable { let id: UUID; let name: String; let needs_review: Bool }
     private struct RoleRow: Decodable { let code: String; let ordinal: Int }
+    private struct SupportStaffRow: Decodable {
+        let appointment_id: UUID
+        let employee_id: UUID
+        let full_name: String
+        let workplace_id: UUID?
+        let workplace_name: String?
+    }
     private struct CatalogEnvelope: Decodable {
         let workplaces: [WorkplaceRow]
         let team_roles: [RoleRow]
+        let support_staff: [SupportStaffRow]?
         let notice_days: Int
         let period_defaults_offered: Bool
     }
@@ -119,6 +127,8 @@ import Foundation
         return .init(workplaces: envelope.workplaces.map { .init(id: $0.id, name: $0.name, needsReview: $0.needs_review) },
                      roles: envelope.team_roles.sorted { $0.ordinal < $1.ordinal }
                         .compactMap { NovaEmergencyRole(rawValue: $0.code) },
+                     supportStaff: (envelope.support_staff ?? []).map {
+                        .init(id: $0.employee_id, fullName: $0.full_name, workplaceName: $0.workplace_name) },
                      noticeDays: envelope.notice_days,
                      periodDefaultsOffered: envelope.period_defaults_offered)
     }

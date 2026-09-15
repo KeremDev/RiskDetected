@@ -25,6 +25,7 @@ suites.foundation.push('scripts/isg/drills_guard.test.mjs');
 suites.foundation.push('scripts/isg/ppe_handovers_guard.test.mjs');
 suites.foundation.push('scripts/isg/appointments_guard.test.mjs');
 suites.foundation.push('scripts/isg/notice_feed_guard.test.mjs');
+suites.foundation.push('scripts/isg/emergency_plan_support_staff_guard.test.mjs');
 suites.foundation.push('scripts/isg/nonconformity_core_guard.test.mjs');
 suites.foundation.push('scripts/isg/module_core_guard.test.mjs');
 suites.foundation.push('scripts/isg/module_second_guard.test.mjs');

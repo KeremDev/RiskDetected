@@ -9883,6 +9883,42 @@
         }
       }
     },
+    "localizable.nova.appointment.form.person.empty": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching personnel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşleşen personel yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.appointment.form.person.search": {
+      "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search personnel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personel ara"
+          }
+        }
+      }
+    },
     "localizable.nova.appointment.form.pickperson": {
       "comment": "isg_appointments; Atama ve Temsilciler: role board, assign and end popups; placeholders: %d/%@ where shown; review: human_draft",
       "extractionState": "manual",
@@ -15301,6 +15337,108 @@
         }
       }
     },
+    "localizable.nova.drawer.collapsed": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapalı"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collapsed"
+          }
+        }
+      }
+    },
+    "localizable.nova.drawer.expanded": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açık"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expanded"
+          }
+        }
+      }
+    },
+    "localizable.nova.drawer.group.analysis": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz ve Denetim"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analysis and Inspections"
+          }
+        }
+      }
+    },
+    "localizable.nova.drawer.group.documents": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evrak ve Raporlar"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Documents and Reports"
+          }
+        }
+      }
+    },
+    "localizable.nova.drawer.group.people": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma ve Personel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Companies and People"
+          }
+        }
+      }
+    },
+    "localizable.nova.drawer.group.planning": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan ve Organizasyon"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planning and Organization"
+          }
+        }
+      }
+    },
     "localizable.nova.drill.back": {
       "comment": "isg_drills; Tatbikatlar: drill board, plan and result popups, participant snapshot; placeholders: %d where shown; review: human_draft",
       "extractionState": "manual",
@@ -17169,6 +17307,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kapsam"
+          }
+        }
+      }
+    },
+    "localizable.nova.emergency.form.supportstaff": {
+      "comment": "isg_emergency_plans; Acil Durum Planları: plan board, versions, publish popup; destek elemanı suggestions from Atama ve Temsilciler; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick from support staff"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destek elemanlarından seç"
           }
         }
       }
@@ -23419,24 +23575,6 @@
         }
       }
     },
-    "localizable.nova.katip.back": {
-      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Back"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Geri"
-          }
-        }
-      }
-    },
     "localizable.nova.katip.cancel": {
       "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
       "extractionState": "manual",
@@ -27375,6 +27513,690 @@
           "stringUnit": {
             "state": "translated",
             "value": "Uzman doğrulaması"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.back": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.badge.overdue": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d days past"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d gün geçti"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.badge.soon": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d days"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d gün"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.badge.today": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "today"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bugün"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.clear": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear the list"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listeyi temizle"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.count.overdue": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Past"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçmiş"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.count.total": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açık"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.count.unread": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unread"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Okunmamış"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.dismiss": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete this notice"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirimi sil"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.dismiss.note": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deleting removes the notice from the list; it does not delete the record. If the date changes the notice comes back."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Silmek bildirimi listeden kaldırır; kaydı silmez. Tarih değişirse bildirim yeniden görünür."
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.empty.body": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notices appear here as the dates on your records come close."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlarınızın tarihleri yaklaştığında bildirimler burada görünür."
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.empty.title": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing is due"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekleyen bildirim yok"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.error.denied": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You do not have access to these notices."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu bildirimlere erişim yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.error.feature": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notices are not open yet."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirimler henüz açık değil."
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.error.gone": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This notice is no longer current. The list was refreshed."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu bildirim artık geçerli değil. Liste yenilendi."
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.error.unavailable": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notices could not be loaded. Check your connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirimler alınamadı. Bağlantıyı kontrol edip tekrar deneyin."
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.error.validation": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The request is not valid."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İstek geçersiz."
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.explain.overdue": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%2$d days past %1$@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ tarihini %2$d gün geçti."
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.explain.soon": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%2$d days until %1$@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ tarihine %2$d gün kaldı."
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.explain.today": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today: %@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün: %@."
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.kind.annual": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annual plan activity"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yıllık plan işi"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.kind.appointment": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appointment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atama"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.kind.board": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Board meeting"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kurul toplantısı"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.kind.decision": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Board decision"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kurul kararı"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.kind.document": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evrak"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.kind.drill": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drill"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tatbikat"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.kind.emergency": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Emergency plan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acil durum planı"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.kind.equipment": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Periodic check"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Periyodik kontrol"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.kind.katip": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSG-KATİP contract"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İSG-KATİP sözleşmesi"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.kind.risk": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk assessment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Risk değerlendirmesi"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.more": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There is more; the nearest dates are shown first."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha fazlası var; yaklaşan tarihler önce gösterilir."
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.push.note": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This list is computed from the dates on your records. It does not show that a phone notification was sent or read."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu liste kayıtlarınızın tarihlerinden hesaplanır. Telefon bildirimi gönderildiğini ya da okunduğunu göstermez."
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.read": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark as read"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Okundu işaretle"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.readall": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mark all read"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tümünü oku"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.restore": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri al"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.scope.active": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açık"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.scope.all": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Including hidden"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gizlenenler dahil"
+          }
+        }
+      }
+    },
+    "localizable.nova.notice.scope.unread": {
+      "comment": "isg_notice_feed; header bell and Bildirim Merkezi: due-date notices, read/delete/undo; the copy states the list is computed from records and is not a push receipt; placeholders: %d/%@ and positional %1$@/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unread"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Okunmamış"
           }
         }
       }

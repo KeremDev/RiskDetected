@@ -134,8 +134,17 @@ struct NovaEmergencyPlan: Identifiable, Equatable {
 
 struct NovaEmergencyCatalogue: Equatable {
     struct Workplace: Identifiable, Equatable { let id: UUID; let name: String; let needsReview: Bool }
+    /// Who the company already lists as destek elemanı (Atama ve Temsilciler).
+    /// A suggestion only: picking one lends a name into the team being built,
+    /// nothing more. The plan's team stays a plain snapshot either way.
+    struct SupportStaff: Identifiable, Equatable {
+        let id: UUID
+        let fullName: String
+        let workplaceName: String?
+    }
     let workplaces: [Workplace]
     let roles: [NovaEmergencyRole]
+    let supportStaff: [SupportStaff]
     let noticeDays: Int
     /// The product proposes no renewal period, because no approved catalogue
     /// exists. Whatever date the expert writes is stored as the expert's.

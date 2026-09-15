@@ -266,6 +266,7 @@ struct NovaEmergencyPlanSheet: View {
                     table: .localizable, fallback: "En az bir kişi gerekli."), style: .meta,
                     color: NovaColorToken.textSecondary.color(in: scheme))
             }
+            supportStaffPicker
             ForEach(draft.team) { member in
                 HStack(spacing: 6) {
                     Image(systemName: member.role.symbol).font(.system(size: 11, weight: .semibold))
@@ -311,6 +312,41 @@ struct NovaEmergencyPlanSheet: View {
                 draft.team.append(.init(fullName: name, role: memberRole,
                                         contact: contact.isEmpty ? nil : contact))
                 memberName = ""; memberContact = ""
+            }
+        }
+    }
+
+    /// Firmanın Atama ve Temsilciler'de kayıtlı destek elemanları. Bir isme
+    /// dokunmak yalnız ad alanını doldurur; ekip yine de düz bir liste olarak
+    /// donar, atamaya bağlı bir işaretçi tutulmaz.
+    @ViewBuilder private var supportStaffPicker: some View {
+        let candidates = catalogue?.supportStaff ?? []
+        if !candidates.isEmpty {
+            VStack(alignment: .leading, spacing: 5) {
+                NovaText(text: RDLocalization.string("localizable.nova.emergency.form.supportstaff",
+                    table: .localizable, fallback: "Destek elemanlarından seç"), style: .meta,
+                    color: NovaColorToken.textSecondary.color(in: scheme))
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(candidates) { person in
+                            Button {
+                                memberName = person.fullName
+                                memberRole = .other
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "person.fill.checkmark").font(.system(size: 10, weight: .semibold))
+                                    NovaSizedText(text: person.fullName, size: 11, weight: "Medium")
+                                }
+                                .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+                                .padding(.vertical, 6).padding(.horizontal, 10)
+                                .background(NovaColorToken.statusSuccessBg.color(in: scheme),
+                                    in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            }
+                            .buttonStyle(.plain).disabled(draft.team.contains { $0.fullName == person.fullName })
+                            .accessibilityIdentifier("nova.emergency.form.supportstaff.\(person.id)")
+                        }
+                    }
+                }
             }
         }
     }

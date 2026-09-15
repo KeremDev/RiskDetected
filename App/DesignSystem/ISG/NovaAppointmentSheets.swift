@@ -96,7 +96,17 @@ struct NovaAppointmentSheet: View {
     @State private var failure: String?
     @State private var saving = false
     @State private var openChooser: String?
+    @State private var personSearch = ""
     @Environment(\.colorScheme) private var scheme
+
+    /// Filtered locally: the catalogue already scopes to the chosen company,
+    /// so searching never re-asks the server.
+    private var matchingEmployees: [NovaAppointmentCatalogue.Employee] {
+        let all = catalogue?.employees ?? []
+        let needle = personSearch.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !needle.isEmpty else { return all }
+        return all.filter { $0.fullName.localizedCaseInsensitiveContains(needle) }
+    }
 
     private var personTitle: String {
         catalogue?.employees.first { $0.id == draft.employeeID }?.fullName
@@ -124,13 +134,25 @@ struct NovaAppointmentSheet: View {
                         openChooser = openChooser == "person" ? nil : "person"
                     }
                     if openChooser == "person" {
-                        NovaFileChooserPanel(
-                            options: (catalogue?.employees ?? []).map {
-                                .init(id: $0.id.uuidString, title: $0.fullName) },
-                            selected: draft.employeeID?.uuidString,
-                            identifier: "nova.appointment.form.person.panel") { value in
-                            draft.employeeID = value.flatMap(UUID.init(uuidString:))
-                            openChooser = nil
+                        // Firma zaten seçili: burada yalnız o firmanın
+                        // personeli içinde arama yapılır.
+                        NovaAnalysisSearchField(text: $personSearch,
+                            placeholder: RDLocalization.string("localizable.nova.appointment.form.person.search",
+                                table: .localizable, fallback: "Personel ara"),
+                            identifier: "nova.appointment.form.person.search")
+                        if matchingEmployees.isEmpty {
+                            NovaText(text: RDLocalization.string("localizable.nova.appointment.form.person.empty",
+                                table: .localizable, fallback: "Eşleşen personel yok"), style: .meta,
+                                color: NovaColorToken.textSecondary.color(in: scheme))
+                        } else {
+                            NovaFileChooserPanel(
+                                options: matchingEmployees.map { .init(id: $0.id.uuidString, title: $0.fullName) },
+                                selected: draft.employeeID?.uuidString,
+                                identifier: "nova.appointment.form.person.panel") { value in
+                                draft.employeeID = value.flatMap(UUID.init(uuidString:))
+                                openChooser = nil
+                                personSearch = ""
+                            }
                         }
                     }
                     NovaFileChooserButton(
