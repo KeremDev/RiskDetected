@@ -281,4 +281,14 @@ import Foundation
         try check(identity)
         return bytes
     }
+
+    /// The same download a filed row uses, for a caller (the emergency plan
+    /// detail, say) that only has the bucket/path a module's own row resolved
+    /// rather than the whole library entry.
+    func download(_ identity: NovaSessionIdentity, bucket: String, path: String) async throws -> Data {
+        try check(identity)
+        let bytes = try await download(bucket, path)
+        try check(identity)
+        return bytes
+    }
 }

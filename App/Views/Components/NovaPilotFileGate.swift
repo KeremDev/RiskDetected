@@ -37,6 +37,7 @@ struct NovaPilotFileGate: View {
             archive: { entry in try await service.archive(identity, entry: entry) },
             cancel: { entry in try await service.cancel(identity, entry: entry) },
             recheck: { entry in try await service.recheck(identity, entry: entry) },
-            contents: { entry in try await service.contents(identity, entry: entry) })
+            contents: { entry in try await service.contents(identity, entry: entry) },
+            download: { bucket, path in try await service.download(identity, bucket: bucket, path: path) })
     }
 }

@@ -5,9 +5,13 @@ import SwiftUI
 struct NovaEmergencyDetailSheet: View {
     let plan: NovaEmergencyPlan
     var canWrite: Bool = true
+    let fileClient: NovaFileLibraryClient
     let onRenew: () -> Void
     let onClose: () -> Void
     @Environment(\.colorScheme) private var scheme
+    @State private var opened: URL?
+    @State private var openFailure: String?
+    @State private var opening = false
 
     var body: some View {
         NovaPopup {
@@ -22,6 +26,7 @@ struct NovaEmergencyDetailSheet: View {
                             color: NovaColorToken.textSecondary.color(in: scheme))
                     }
                     facts
+                    if plan.assetDownload != nil { fileRow }
                     team(plan.team, title: RDLocalization.string("localizable.nova.emergency.detail.team",
                         table: .localizable, fallback: "Ekip"))
                     if canWrite {
@@ -39,6 +44,50 @@ struct NovaEmergencyDetailSheet: View {
             }
         }
         .accessibilityIdentifier("nova.emergency.detail")
+        .sheet(item: $opened) { url in NovaFileShareSheet(url: url) }
+    }
+
+    @ViewBuilder private var fileRow: some View {
+        NovaCard(padding: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: "doc.fill").font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(NovaColorToken.statusSuccessInk.color(in: scheme))
+                VStack(alignment: .leading, spacing: 1) {
+                    NovaText(text: RDLocalization.string("localizable.nova.emergency.form.file.attached",
+                        table: .localizable, fallback: "Dosya ekli"), style: .cardTitle)
+                    if let openFailure {
+                        NovaText(text: openFailure, style: .metaQuiet,
+                            color: NovaColorToken.statusDangerInk.color(in: scheme))
+                    }
+                }
+                Spacer(minLength: 0)
+                NovaButton(label: RDLocalization.string("localizable.nova.file.open", table: .localizable,
+                    fallback: "Dosyayı aç"), symbol: "arrow.up.right.square", variant: .surface,
+                    isEnabled: !opening, isLoading: opening) { open() }
+                    .accessibilityIdentifier("nova.emergency.detail.file.open")
+            }
+        }
+    }
+
+    private func open() {
+        guard let download = plan.assetDownload else { return }
+        opening = true; openFailure = nil
+        Task {
+            do {
+                let data = try await fileClient.download(download.bucket, download.path)
+                let url = FileManager.default.temporaryDirectory
+                    .appendingPathComponent(UUID().uuidString, isDirectory: true)
+                    .appendingPathComponent(download.path.components(separatedBy: "/").last ?? "belge")
+                try FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
+                                                         withIntermediateDirectories: true)
+                try data.write(to: url, options: .completeFileProtection)
+                opened = url
+            } catch {
+                openFailure = RDLocalization.string("localizable.nova.file.failure.unavailable", table: .localizable,
+                    fallback: "Dosya servisi şu anda kullanılamıyor.")
+            }
+            opening = false
+        }
     }
 
     @ViewBuilder private var facts: some View {

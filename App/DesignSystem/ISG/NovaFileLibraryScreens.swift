@@ -20,6 +20,9 @@ struct NovaFileLibraryClient {
     let cancel: (NovaFileEntry) async throws -> Void
     let recheck: (NovaFileEntry) async throws -> NovaFileEntry
     let contents: (NovaFileEntry) async throws -> Data
+    /// The same download, for a caller that only has a bucket/path a module's
+    /// own row resolved rather than a whole library entry.
+    let download: (String, String) async throws -> Data
 }
 
 /// One counter, in the same shape the home page uses for its summary: a toned

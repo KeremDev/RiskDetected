@@ -42,6 +42,7 @@ struct NovaPilotEmergencyGate: View {
             archive: { entry in try await fileService.archive(identity, entry: entry) },
             cancel: { entry in try await fileService.cancel(identity, entry: entry) },
             recheck: { entry in try await fileService.recheck(identity, entry: entry) },
-            contents: { entry in try await fileService.contents(identity, entry: entry) })
+            contents: { entry in try await fileService.contents(identity, entry: entry) },
+            download: { bucket, path in try await fileService.download(identity, bucket: bucket, path: path) })
     }
 }

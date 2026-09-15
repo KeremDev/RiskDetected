@@ -188,7 +188,7 @@ struct NovaEmergencyPlanScreen: View {
         }
         .task { await load(reset: true) }
         .sheet(item: $detail) { plan in
-            NovaEmergencyDetailSheet(plan: plan, canWrite: canWrite,
+            NovaEmergencyDetailSheet(plan: plan, canWrite: canWrite, fileClient: client.fileClient,
                 onRenew: {
                     detail = nil
                     drafting = .init(planID: plan.id, workplaceID: plan.workplaceID,
