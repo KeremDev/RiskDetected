@@ -235,7 +235,9 @@ struct NovaAnalysisIntakePopup: View {
 
     @ViewBuilder private var focusStep: some View {
         NovaHelpHint(text: stepHint)
-        ForEach(focuses) { focus in focusRow(focus) }
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 7), count: 2), spacing: 7) {
+            ForEach(focuses) { focus in focusRow(focus) }
+        }
     }
 
     private func focusRow(_ focus: NovaAnalysisFocusOption) -> some View {
@@ -244,23 +246,25 @@ struct NovaAnalysisIntakePopup: View {
             guard !focus.isLocked else { return }
             draft.toggle(focus: focus.id)
         } label: {
-            NovaCard(padding: 11, border: isSelected ? NovaColorToken.accentInk.color(in: scheme) : .clear) {
-                HStack(alignment: .top, spacing: 9) {
-                    NovaIcon(symbol: focus.symbol, size: 17)
-                        .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 6) {
-                            NovaText(text: focus.title, style: .cardTitle)
-                            if focus.isLocked { NovaStatusPill(label: focus.lockLabel, status: .neutral, showsDot: false) }
-                        }
-                        NovaText(text: focus.detail, style: .metaQuiet).lineLimit(2)
+            NovaCard(padding: 10, border: isSelected ? NovaColorToken.accentInk.color(in: scheme) : .clear,
+                     tint: isSelected ? NovaColorToken.statusSuccessBg.color(in: scheme) : nil) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        NovaIcon(symbol: focus.symbol, size: 16)
+                            .foregroundStyle(isSelected ? NovaColorToken.accentInk.color(in: scheme)
+                                                        : NovaColorToken.textSecondary.color(in: scheme))
+                        Spacer(minLength: 0)
+                        Image(systemName: isSelected ? "checkmark.square.fill" : "square")
+                            .foregroundStyle(focus.isLocked ? NovaColorToken.borderStrong.color(in: scheme)
+                                : isSelected ? NovaColorToken.accentInk.color(in: scheme)
+                                             : NovaColorToken.borderStrong.color(in: scheme))
                     }
-                    Spacer(minLength: 0)
-                    Image(systemName: isSelected ? "checkmark.square.fill" : "square")
-                        .foregroundStyle(focus.isLocked ? NovaColorToken.borderStrong.color(in: scheme)
-                            : isSelected ? NovaColorToken.accentInk.color(in: scheme)
-                                         : NovaColorToken.borderStrong.color(in: scheme))
-                }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    HStack(spacing: 6) {
+                        NovaText(text: focus.title, style: .cardTitle)
+                        if focus.isLocked { NovaStatusPill(label: focus.lockLabel, status: .neutral, showsDot: false) }
+                    }
+                    NovaText(text: focus.detail, style: .metaQuiet).lineLimit(3)
+                }.frame(maxWidth: .infinity, minHeight: 74, alignment: .topLeading)
             }.opacity(focus.isLocked ? 0.55 : 1)
         }.buttonStyle(.plain).disabled(focus.isLocked)
             .accessibilityIdentifier("analysis.intake.focus.\(focus.id)")

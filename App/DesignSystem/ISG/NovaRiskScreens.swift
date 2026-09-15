@@ -39,15 +39,14 @@ struct NovaRiskStatCard: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Image(systemName: group.symbol).font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(tone.color(in: scheme))
-                    NovaSizedText(text: "\(value)", size: 19, weight: "ExtraBold")
+                        .foregroundStyle(NovaColorToken.text.color(in: scheme))
+                    NovaText(text: "\(value)", style: .cardTitle)
                 }
-                NovaSizedText(text: group.title, size: 10, weight: "Medium",
-                    color: NovaColorToken.textMuted.color(in: scheme))
+                NovaText(text: group.title, style: .meta)
                     .lineLimit(2).minimumScaleFactor(0.82)
                     .frame(maxWidth: .infinity, minHeight: 24, alignment: .topLeading)
-                NovaSizedText(text: group.footer, size: 9.5, weight: "Bold",
-                    color: value > 0 ? tone.color(in: scheme) : NovaColorToken.textMuted.color(in: scheme))
+                NovaText(text: group.footer, style: .micro,
+                    color: value > 0 ? tone.color(in: scheme) : nil)
                     .lineLimit(1).minimumScaleFactor(0.8)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -169,6 +168,12 @@ struct NovaRiskScreen: View {
     var canWrite: Bool = true
     var initialCompany: UUID?
     var headingOverride: String?
+    /// False when the shell's own top bar already shows a back chevron for
+    /// this screen (reached by navigating from home) — a second one here
+    /// would only duplicate it. True (the default) is for a context with no
+    /// shell chrome at all, such as the company-management cover, where this
+    /// is the only way back.
+    var showBackButton = true
 
     @State private var board: NovaRiskBoard?
     @State private var catalogue: NovaRiskCatalogue?
@@ -256,9 +261,10 @@ struct NovaRiskScreen: View {
     @ViewBuilder private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
-                NovaBackButton(action: onBack)
+                if showBackButton { NovaBackButton(action: onBack) }
                 NovaText(text: headingOverride ?? NovaDestination.riskAssessments.title, style: .screenTitle)
-                Spacer(minLength: 0)
+                    .lineLimit(1).minimumScaleFactor(0.7)
+                Spacer(minLength: 8)
                 NovaButton(label: "Kayıt ekle", symbol: "plus", isEnabled: canWrite) { creating = true }
             }
             // Said once, at the top, rather than implied by a colour.

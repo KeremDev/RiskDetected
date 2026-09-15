@@ -21727,6 +21727,42 @@
         }
       }
     },
+    "localizable.nova.expert.shell.yeni.firma.kaydi.olustur": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a new company record"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni firma kaydı oluştur"
+          }
+        }
+      }
+    },
+    "localizable.nova.expert.shell.fotograflardan.risk.analizi.olustur": {
+      "comment": "computed_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a risk analysis from photos"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraflardan risk analizi oluştur"
+          }
+        }
+      }
+    },
     "localizable.nova.expert.shell.saha.denetim.asistani.192b4816": {
       "comment": "custom_ui_copy; App/DesignSystem/ISG/NovaExpertShell.swift:114; placeholders: none; review: human_draft",
       "extractionState": "manual",

@@ -594,6 +594,8 @@ extension NovaDestination {
         case .newDocument: return RDLocalization.string("localizable.nova.expert.shell.rapor.form.veya.belge.yukle.d2d30a9a", table: .localizable, fallback: "Rapor, form veya belge yükle")
         case .newVisit: return RDLocalization.string("localizable.nova.expert.shell.yeni.saha.ziyareti.planla.dbc1aeb4", table: .localizable, fallback: "Yeni saha ziyareti planla")
         case .newTraining: return RDLocalization.string("localizable.nova.expert.shell.firma.personeline.egitim.kaydi.olustur.17b5c3df", table: .localizable, fallback: "Firma personeline eğitim kaydı oluştur")
+        case .newCompany: return RDLocalization.string("localizable.nova.expert.shell.yeni.firma.kaydi.olustur", table: .localizable, fallback: "Yeni firma kaydı oluştur")
+        case .newAnalysis: return RDLocalization.string("localizable.nova.expert.shell.fotograflardan.risk.analizi.olustur", table: .localizable, fallback: "Fotoğraflardan risk analizi oluştur")
         default: return ""
         }
     }

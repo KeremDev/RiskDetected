@@ -81,6 +81,7 @@ struct NovaManualNonconformityScreen: View {
             NovaBackButton(isEnabled: !saving) { onBack() }
             VStack(alignment: .leading, spacing: 2) {
                 NovaText(text: RDLocalization.string("localizable.nova.manual.title", table: .localizable, fallback: "Elle Uygunsuzluk"), style: .screenTitle)
+                    .lineLimit(1).minimumScaleFactor(0.7)
                 NovaText(text: RDLocalization.string("localizable.nova.manual.subtitle", table: .localizable,
                     fallback: "Yapay zekâ kullanılmaz; bilgileri siz girersiniz."), style: .metaQuiet)
             }

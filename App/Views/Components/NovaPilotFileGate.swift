@@ -10,6 +10,7 @@ struct NovaPilotFileGate: View {
     var initialCompany: UUID?
     var initialCategories: [String]?
     var headingOverride: String?
+    var startInAddMode = false
     let onBack: () -> Void
 
     private var service: NovaFileLibraryService { .live() }
@@ -17,7 +18,7 @@ struct NovaPilotFileGate: View {
     var body: some View {
         NovaFileLibraryScreen(client: client, onBack: onBack, canWrite: canWrite,
             initialCompany: initialCompany, initialCategories: initialCategories,
-            headingOverride: headingOverride)
+            headingOverride: headingOverride, startInAddMode: startInAddMode)
     }
 
     /// Every call carries the signed-in session, which the service re-checks on

@@ -38,7 +38,7 @@ struct NovaPilotRoot: View {
     @EnvironmentObject private var app: AppState
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var controller = NovaWorkspaceController()
-    @State private var navigation = NovaNavigationState(epoch: UUID().uuidString, available: [.riskAssessments, .statistics, .companies, .newCompany, .findings, .newFinding, .analyses, .newAnalysis, .training, .newTraining, .documentChecklist, .documents, .periodicChecks, .emergencyPlans, .drills, .ppeHandovers, .appointments, .katipContracts, .annualWorkPlans, .boardMeetings, .visits, .workPermits, .contractors, .reports, .reportArchive, .checklists, .notifications])
+    @State private var navigation = NovaNavigationState(epoch: UUID().uuidString, available: [.riskAssessments, .statistics, .companies, .newCompany, .findings, .newFinding, .analyses, .newAnalysis, .training, .newTraining, .documentChecklist, .documents, .newDocument, .periodicChecks, .emergencyPlans, .drills, .ppeHandovers, .appointments, .katipContracts, .annualWorkPlans, .boardMeetings, .visits, .workPermits, .contractors, .reports, .reportArchive, .checklists, .notifications])
     @State private var showingCreate = false
     @State private var notice: String?
     @State private var listRevision = UUID()
@@ -136,7 +136,9 @@ struct NovaPilotRoot: View {
             case .documentChecklist:
                 documents
             case .documents:
-                files
+                files()
+            case .newDocument:
+                files(startInAddMode: true)
             case .periodicChecks:
                 equipment
             case .riskAssessments:
@@ -254,7 +256,7 @@ struct NovaPilotRoot: View {
     /// when the expert picks one.
     @ViewBuilder private var risk: some View {
         if ready {
-            NovaPilotRiskGate(identity: identity, canWrite: ready,
+            NovaPilotRiskGate(identity: identity, canWrite: ready, showBackButton: false,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
@@ -337,10 +339,11 @@ struct NovaPilotRoot: View {
 
     /// Diğer Dosyalar reads the whole account and narrows to one company when
     /// the expert picks one.
-    @ViewBuilder private var files: some View {
+    @ViewBuilder private func files(startInAddMode: Bool = false) -> some View {
         if ready {
             NovaPilotFileGate(identity: identity, canWrite: controller.canWrite,
-                onBack: { navigate(.home) })
+                startInAddMode: startInAddMode, onBack: { navigate(.home) })
+                .id(startInAddMode)
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
         }

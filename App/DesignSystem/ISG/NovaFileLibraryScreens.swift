@@ -194,6 +194,9 @@ struct NovaFileLibraryScreen: View {
     /// Opens onto one heading of the company page, such as periodic checks.
     var initialCategories: [String]?
     var headingOverride: String?
+    /// Opened from the quick-add menu's "Dosya Ekle": the upload sheet opens
+    /// immediately instead of landing on the list first.
+    var startInAddMode = false
     @Environment(\.colorScheme) private var scheme
     @State private var board: NovaFileLibrary?
     @State private var catalogue: [NovaFileCategory] = []
@@ -645,6 +648,7 @@ struct NovaFileLibraryScreen: View {
         if !started {
             started = true
             company = initialCompany
+            if startInAddMode { adding = true }
             companies = (try? await client.companies()) ?? []
             if let answer = try? await client.catalogue() {
                 catalogue = answer.categories

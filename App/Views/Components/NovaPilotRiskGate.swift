@@ -8,13 +8,14 @@ struct NovaPilotRiskGate: View {
     /// Opened from a company page: the module starts on that company.
     var initialCompany: UUID?
     var headingOverride: String?
+    var showBackButton = true
     let onBack: () -> Void
 
     private var service: NovaRiskAssessmentService { .live() }
 
     var body: some View {
         NovaRiskScreen(client: client, onBack: onBack, canWrite: canWrite,
-            initialCompany: initialCompany, headingOverride: headingOverride)
+            initialCompany: initialCompany, headingOverride: headingOverride, showBackButton: showBackButton)
     }
 
     private var client: NovaRiskClient {

@@ -88,7 +88,9 @@ struct NovaPhotoIntakeScreen: View {
                 ForEach(Array(images.enumerated()), id: \.offset) { index, image in
                     thumbnail(image, index: index)
                 }
-                if images.count < maximum {
+                // Every remaining slot shows at once, not one at a time as each
+                // photo is added — the expert sees the whole capacity up front.
+                ForEach(0..<max(0, maximum - images.count), id: \.self) { slot in
                     Button { choosing = true } label: {
                         VStack(spacing: 5) {
                             Image(systemName: "plus").font(.system(size: 18, weight: .semibold))
@@ -99,7 +101,7 @@ struct NovaPhotoIntakeScreen: View {
                             .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 16))
                             .overlay(RoundedRectangle(cornerRadius: 16)
                                 .strokeBorder(NovaColorToken.borderStrong.color(in: scheme), style: StrokeStyle(lineWidth: 1.4, dash: [5, 4])))
-                    }.buttonStyle(.plain).accessibilityIdentifier("photo.intake.add")
+                    }.buttonStyle(.plain).accessibilityIdentifier("photo.intake.add.\(slot)")
                 }
             }
             NovaText(text: String(format: RDLocalization.string("localizable.nova.photo.intake.count", table: .localizable,
