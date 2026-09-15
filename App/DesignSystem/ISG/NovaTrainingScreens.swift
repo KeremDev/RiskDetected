@@ -136,12 +136,13 @@ struct NovaTrainingRegister: View {
             .onAppear { if !initializedFilter { company = initialCompany; initializedFilter = true } }
             .refreshable { revision = UUID() }
             .novaFullScreenCover(item: $editor, onDismiss: { revision = UUID() }) { value in
-                NovaPopup {
-                    NovaEducationEntry(identity: identity, personnel: personnel, companies: companies,
-                        initialCompany: company, catalog: catalog, original: value.session,
-                        canWrite: canWrite && (value.session?.companies.allSatisfy { writableCompanies.contains($0.company_id) } ?? !writableCompanies.isEmpty),
-                        writableCompanies: writableCompanies)
-                }
+                // A full page, not a popup: the entry supplies its own back
+                // control and accordion chrome (the pre-catalogue fallback
+                // path still uses its own small card internally).
+                NovaEducationEntry(identity: identity, personnel: personnel, companies: companies,
+                    initialCompany: company, catalog: catalog, original: value.session,
+                    canWrite: canWrite && (value.session?.companies.allSatisfy { writableCompanies.contains($0.company_id) } ?? !writableCompanies.isEmpty),
+                    writableCompanies: writableCompanies)
             }
     }
     private func load() async {

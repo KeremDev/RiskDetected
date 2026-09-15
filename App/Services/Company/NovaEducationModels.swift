@@ -138,3 +138,32 @@ enum NovaEducationClock {
         return output
     }
 }
+
+/// The steps the accordion asks for, in the order they are asked. A step is
+/// finished only when it carries what the record needs — the same rule the
+/// manual nonconformity form uses for its own accordion.
+enum NovaEducationStep: String, CaseIterable, Identifiable {
+    case info, trainers, scopes
+    var id: String { rawValue }
+}
+
+extension NovaEducationDraft {
+    private func filled(_ value: String) -> Bool { !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+
+    func isComplete(_ step: NovaEducationStep) -> Bool {
+        switch step {
+        case .info: return filled(title)
+        case .trainers: return trainers.contains { filled($0.name) }
+        case .scopes: return scopes.contains { !$0.participants.isEmpty }
+        }
+    }
+    var completedCount: Int { NovaEducationStep.allCases.filter { isComplete($0) }.count }
+    var progress: Double { Double(completedCount) / Double(NovaEducationStep.allCases.count) }
+    /// The next step after this one that is still unfinished, so a finished
+    /// step can open the next one instead of leaving the expert to hunt.
+    func nextIncomplete(after step: NovaEducationStep) -> NovaEducationStep? {
+        let all = NovaEducationStep.allCases
+        guard let at = all.firstIndex(of: step) else { return nil }
+        return all[(at + 1)...].first { !isComplete($0) }
+    }
+}
