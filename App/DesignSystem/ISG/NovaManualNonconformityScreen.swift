@@ -233,6 +233,11 @@ struct NovaManualNonconformityScreen: View {
             } else if places.isEmpty {
                 NovaText(text: RDLocalization.string("localizable.nova.bridge.no.workplace", table: .localizable,
                     fallback: "Bu firmada kayıt açılacak bir işyeri yok."), style: .metaQuiet)
+            } else if places.count == 1 {
+                // One workplace is not a choice; it is already selected.
+                NovaText(text: String(format: RDLocalization.string("localizable.nova.manual.workplace.used", table: .localizable,
+                    fallback: "Kayıt %@ işyerine açılacak."), places[0].name), style: .micro,
+                    color: NovaColorToken.textTertiary.color(in: scheme))
             } else {
                 ForEach(places) { place in
                     Button { draft.workplaceID = place.id } label: {

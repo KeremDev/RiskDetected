@@ -379,10 +379,22 @@ struct NovaProcessEditor: View {
                 Text("Seçin").tag("")
                 ForEach(field.choices.keys.sorted(),id:\.self) { Text(field.choices[$0] ?? $0).tag($0) }
             }
-        case "workplaces","organizations":
+        case "workplaces":
+            // No workplace to open a record under, or exactly one: nothing to
+            // ask. A picker only appears when there is a real choice.
+            if cat.workplaces.count <= 1 {
+                NovaText(text: cat.workplaces.first?.name
+                    ?? "Bu firmada kayıt açılacak bir işyeri yok.", style: .cardTitle)
+            } else {
+                Picker(field.title,selection:text(field.id)) {
+                    Text("Seçin").tag("")
+                    ForEach(cat.workplaces) { Text($0.name).tag($0.id.uuidString) }
+                }
+            }
+        case "organizations":
             Picker(field.title,selection:text(field.id)) {
                 Text("Seçin").tag("")
-                ForEach(field.type == "workplaces" ? cat.workplaces : cat.organizations) { Text($0.name).tag($0.id.uuidString) }
+                ForEach(cat.organizations) { Text($0.name).tag($0.id.uuidString) }
             }
         case "employees":
             ForEach(cat.employees) { person in
@@ -451,6 +463,11 @@ struct NovaProcessEditor: View {
                 if kind == "work_permit" { values["template_code"] = .string("general") }
                 if let key = spec.parentKey, let parent { values[key] = .string(parent.uuidString) }
                 if kind == "contractor_engagement", let parent { values["organization_id"] = .string(parent.uuidString) }
+                // One workplace is not a choice; fill it in rather than
+                // asking again for the same answer.
+                if spec.fields.contains(where: {$0.id == "workplace_id"}), let only = catalogue?.workplaces, only.count == 1 {
+                    values["workplace_id"] = .string(only[0].id.uuidString)
+                }
             }
         } catch { failure = NovaProcessService.message(error) }
     }

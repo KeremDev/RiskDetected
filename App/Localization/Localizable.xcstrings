@@ -25289,6 +25289,14 @@
         }
       }
     },
+    "localizable.nova.katip.form.noworkplace": {
+      "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This company has no workplace to open a record under." } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Bu firmada kayıt açılacak bir işyeri yok." } }
+      }
+    },
     "localizable.nova.katip.form.pickplace": {
       "comment": "isg_katip_contracts; İSG-KATİP Sözleşmeleri: contract board, record/end/archive popups; the copy states the app never acts on the official system; placeholders: %d/%@ where shown; review: human_draft",
       "extractionState": "manual",

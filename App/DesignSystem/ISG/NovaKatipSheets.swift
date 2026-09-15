@@ -260,19 +260,34 @@ struct NovaKatipContractSheet: View {
                     // First thing on the form, before any field.
                     NovaHelpHint(text: NovaKatipWords.noIntegrationNote)
 
-                    NovaFileChooserButton(
-                        label: RDLocalization.string("localizable.nova.katip.form.workplace",
-                            table: .localizable, fallback: "İşyeri"),
-                        value: placeTitle, isOpen: openChooser,
-                        identifier: "nova.katip.form.workplace") { openChooser.toggle() }
-                    if openChooser {
-                        NovaFileChooserPanel(
-                            options: (catalogue?.workplaces ?? []).map {
-                                .init(id: $0.id.uuidString, title: $0.name) },
-                            selected: draft.workplaceID?.uuidString,
-                            identifier: "nova.katip.form.workplace.panel") { value in
-                            draft.workplaceID = value.flatMap(UUID.init(uuidString:))
-                            openChooser = false
+                    // A company with no workplace has nothing to ask, and one
+                    // with exactly one gets it silently — only a real choice
+                    // among several is shown as a picker.
+                    let workplaces = catalogue?.workplaces ?? []
+                    if workplaces.count <= 1 {
+                        VStack(alignment: .leading, spacing: 4) {
+                            NovaText(text: RDLocalization.string("localizable.nova.katip.form.workplace",
+                                table: .localizable, fallback: "İşyeri"), style: .label,
+                                color: NovaColorToken.textTertiary.color(in: scheme))
+                            NovaText(text: workplaces.isEmpty
+                                ? RDLocalization.string("localizable.nova.katip.form.noworkplace", table: .localizable,
+                                    fallback: "Bu firmada kayıt açılacak bir işyeri yok.")
+                                : placeTitle, style: .cardTitle)
+                        }
+                    } else {
+                        NovaFileChooserButton(
+                            label: RDLocalization.string("localizable.nova.katip.form.workplace",
+                                table: .localizable, fallback: "İşyeri"),
+                            value: placeTitle, isOpen: openChooser,
+                            identifier: "nova.katip.form.workplace") { openChooser.toggle() }
+                        if openChooser {
+                            NovaFileChooserPanel(
+                                options: workplaces.map { .init(id: $0.id.uuidString, title: $0.name) },
+                                selected: draft.workplaceID?.uuidString,
+                                identifier: "nova.katip.form.workplace.panel") { value in
+                                draft.workplaceID = value.flatMap(UUID.init(uuidString:))
+                                openChooser = false
+                            }
                         }
                     }
 
@@ -345,6 +360,11 @@ struct NovaKatipContractSheet: View {
             }
         }
         .accessibilityIdentifier("nova.katip.form")
+        .onAppear {
+            if draft.workplaceID == nil, let only = catalogue?.workplaces, only.count == 1 {
+                draft.workplaceID = only[0].id
+            }
+        }
     }
 
     @ViewBuilder private func field(_ label: String, _ value: Binding<String>,

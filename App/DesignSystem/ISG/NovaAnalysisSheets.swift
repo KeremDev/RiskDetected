@@ -574,6 +574,9 @@ struct NovaAnalysisFileSheet: View {
                 NovaText(text: RDLocalization.string("localizable.nova.bridge.no.workplace", table: .localizable,
                     fallback: "Bu firmada kayıt açılacak bir işyeri yok."), style: .metaQuiet)
             }
+        } else if workplaces.count == 1 {
+            // One workplace is not a choice; it is already selected.
+            EmptyView()
         } else {
             NovaCard(padding: 14) {
                 VStack(alignment: .leading, spacing: 6) {
