@@ -126,7 +126,9 @@ struct NovaAnalysisFilterChip: View {
 /// ran under. An unassigned one is not hidden: it is the row that still needs
 /// a decision.
 struct NovaAnalysisListScreen: View {
-    let load: () async throws -> [NovaAnalysisSummary]
+    /// One page, from an offset; the screen owns paging so the caller only
+    /// answers the one question it is asked.
+    let load: (Int) async throws -> (rows: [NovaAnalysisSummary], hasMore: Bool)
     /// The first picture of one analysis. A missing picture is simply absent.
     let thumbnail: (UUID) async -> UIImage?
     let onOpen: (UUID) -> Void
@@ -135,6 +137,8 @@ struct NovaAnalysisListScreen: View {
     var onReports: (() -> Void)?
     @Environment(\.colorScheme) private var scheme
     @State private var rows: [NovaAnalysisSummary]?
+    @State private var hasMore = false
+    @State private var loadingMore = false
     @State private var images: [UUID: UIImage] = [:]
     @State private var error: String?
     @State private var query = ""
@@ -293,6 +297,21 @@ struct NovaAnalysisListScreen: View {
             }
         } else {
             ForEach(visible) { row in card(row) }
+            // Only offered on an unfiltered, unsearched view of the account's
+            // own order: filtering client-side over one page would silently
+            // hide rows a further page might actually answer.
+            if hasMore && query.isEmpty && company == nil && filter == .all {
+                Button {
+                    Task { await loadMore() }
+                } label: {
+                    HStack(spacing: 6) {
+                        if loadingMore { ProgressView() }
+                        NovaText(text: RDLocalization.string("localizable.nova.analysis.list.more", table: .localizable,
+                            fallback: "Daha fazla göster"), style: .meta, color: NovaColorToken.accentInk.color(in: scheme))
+                    }.frame(maxWidth: .infinity, minHeight: 44)
+                }.buttonStyle(.plain).disabled(loadingMore)
+                    .accessibilityIdentifier("analysis.list.more")
+            }
         }
     }
 
@@ -377,10 +396,26 @@ struct NovaAnalysisListScreen: View {
 
     private func refresh() async {
         error = nil
-        do { rows = try await load() }
+        do {
+            let page = try await load(0)
+            rows = page.rows; hasMore = page.hasMore
+        }
         catch is CancellationError { }
         catch {
-            rows = []
+            rows = []; hasMore = false
+            self.error = RDLocalization.string("localizable.nova.analysis.list.failed", table: .localizable,
+                fallback: "Analizler alınamadı. Bağlantınızı kontrol edip tekrar deneyin.")
+        }
+    }
+    private func loadMore() async {
+        guard !loadingMore, hasMore else { return }
+        loadingMore = true; defer { loadingMore = false }
+        do {
+            let page = try await load(all.count)
+            rows = all + page.rows; hasMore = page.hasMore
+        }
+        catch is CancellationError { }
+        catch {
             self.error = RDLocalization.string("localizable.nova.analysis.list.failed", table: .localizable,
                 fallback: "Analizler alınamadı. Bağlantınızı kontrol edip tekrar deneyin.")
         }

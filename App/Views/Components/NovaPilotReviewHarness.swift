@@ -115,7 +115,7 @@ struct NovaPilotReviewHarness: View {
                     }
                 }
         case .analyses:
-            NovaAnalysisListScreen(load: { reviewSummaries }, thumbnail: { _ in Self.fixturePhoto },
+            NovaAnalysisListScreen(load: { _ in (reviewSummaries, false) }, thumbnail: { _ in Self.fixturePhoto },
                 onOpen: { _ in showingReviewDetail = true }, onBack: {},
                 onReports: { showingReviewReports = true })
                 .novaFullScreenCover(isPresented: $showingReviewDetail) {

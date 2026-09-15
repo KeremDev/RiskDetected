@@ -23,15 +23,17 @@ enum NovaAnalysisWorkspace {
         return dayFormatter.string(from: date)
     }
 
-    /// Every completed analysis on the account, with the company name resolved
-    /// from the pilot list. An id we cannot name stays unnamed rather than
-    /// being shown as if it had no company.
+    /// One page of completed analyses, newest first, with the company name
+    /// resolved from the pilot list. An id we cannot name stays unnamed
+    /// rather than being shown as if it had no company. `hasMore` is the
+    /// server's own signal (a full page came back), never a guess from a
+    /// count this call never asked for.
     static func summaries(identity: NovaSessionIdentity, method: RiskMethod,
-                          limit: Int = 50) async throws -> [NovaAnalysisSummary] {
-        let rows = try await AnalysisService.shared.listRecent(limit: limit)
+                          limit: Int = 50, offset: Int = 0) async throws -> (rows: [NovaAnalysisSummary], hasMore: Bool) {
+        let rows = try await AnalysisService.shared.listRecent(limit: limit, offset: offset)
         let companies = (try? await loadNovaPilotOverview(identity: identity)) ?? []
         let names = Dictionary(uniqueKeysWithValues: companies.map { ($0.id, $0.name) })
-        return rows.map { row in
+        let summaries = rows.map { row in
             NovaAnalysisSummary(id: row.id, title: row.title, createdOn: day(row.createdAt),
                 companyName: row.companyID.flatMap { names[$0] }
                     ?? row.companyID.map { _ in RDLocalization.string("localizable.nova.analysis.company.unnamed",
@@ -47,6 +49,7 @@ enum NovaAnalysisWorkspace {
                 isReviewed: row.status == "completed",
                 createdAt: date(row.createdAt))
         }
+        return (summaries, rows.count == limit)
     }
 
     /// The first focus the analysis ran under, as the product names it.
@@ -189,7 +192,11 @@ enum NovaAnalysisWorkspace {
     static func detail(analysisID: UUID, identity: NovaSessionIdentity,
                        method: RiskMethod, methodLabel: String) async throws -> NovaAnalysisDetailData {
         let bundle = try await AnalysisService.shared.result(analysisID: analysisID)
-        let hub = try? await AnalysisResultHubService.shared.loadWhenReady(analysisID: analysisID, language: .current)
+        let hub = try await AnalysisResultHubService.shared.loadWhenReady(analysisID: analysisID, language: .current)
+        // A disabled or incomplete projection is not an empty analysis.
+        guard hub.enabled, NovaAnalysisSectionKind.allCases.allSatisfy({ kind in
+            hub.sections.contains { $0.id.rawValue == kind.rawValue }
+        }) else { throw URLError(.badServerResponse) }
         let companies = (try? await loadNovaPilotOverview(identity: identity)) ?? []
         let name = bundle.analysis.companyID.flatMap { id in companies.first { $0.id == id }?.name }
         let sections = self.sections(hub: hub, bundle: bundle)
@@ -198,7 +205,7 @@ enum NovaAnalysisWorkspace {
         return .init(analysisID: analysisID, title: bundle.analysis.title, createdOn: day(bundle.analysis.createdAt),
             methodLabel: methodLabel, method: method == .fineKinney ? .fineKinney : .matrix5x5,
             companyID: bundle.analysis.companyID, companyName: name, sections: sections,
-            isProjectionMissing: hub?.enabled != true,
+            isProjectionMissing: false,
             photoCount: bundle.photos.count,
             sectorLabel: bundle.analysis.analysisSectorID?.label(),
             focusLabels: focuses)

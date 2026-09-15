@@ -272,7 +272,7 @@ struct NovaPilotFindingsGate: View {
 
     private var analyses: some View {
         NovaAnalysisListScreen(
-            load: { try await NovaAnalysisWorkspace.summaries(identity: identity, method: method) },
+            load: { offset in try await NovaAnalysisWorkspace.summaries(identity: identity, method: method, offset: offset) },
             thumbnail: { await NovaAnalysisWorkspace.thumbnail(analysisID: $0) },
             onOpen: { openAnalysis = .init(id: $0) }, onBack: { onNavigate(.findings) },
             onNewPhotoAnalysis: { onNavigate(.newAnalysis) },

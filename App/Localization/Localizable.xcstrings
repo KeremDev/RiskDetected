@@ -8047,6 +8047,24 @@
         }
       }
     },
+    "localizable.nova.analysis.list.more": {
+      "comment": "nova_analysis_list; Analizlerim: pagination past the first page; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show more"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha fazla göster"
+          }
+        }
+      }
+    },
     "localizable.nova.analysis.list.new": {
       "comment": "nova_analysis; photo analysis intake, analysis detail and manual record; placeholders: none; review: human_draft",
       "extractionState": "manual",

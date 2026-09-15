@@ -388,6 +388,7 @@ final class AnalysisService {
     /// Geçmiş analizleri listeler.
     func listRecent(
         limit: Int = 20,
+        offset: Int = 0,
         companyID: UUID? = nil,
         includeHiddenTextAnalyses: Bool = false
     ) async throws -> [AnalysisRow] {
@@ -401,7 +402,7 @@ final class AnalysisService {
                         .eq("status", value: "completed")
                         .eq("company_id", value: companyID.uuidString)
                         .order("created_at", ascending: false)
-                        .limit(limit)
+                        .range(from: offset, to: offset + limit - 1)
                         .execute()
                         .value
                 } else {
@@ -412,7 +413,7 @@ final class AnalysisService {
                         .eq("kind", value: "photo")
                         .eq("company_id", value: companyID.uuidString)
                         .order("created_at", ascending: false)
-                        .limit(limit)
+                        .range(from: offset, to: offset + limit - 1)
                         .execute()
                         .value
                 }
@@ -423,7 +424,7 @@ final class AnalysisService {
                         .select()
                         .eq("status", value: "completed")
                         .order("created_at", ascending: false)
-                        .limit(limit)
+                        .range(from: offset, to: offset + limit - 1)
                         .execute()
                         .value
                 } else {
@@ -433,7 +434,7 @@ final class AnalysisService {
                         .eq("status", value: "completed")
                         .eq("kind", value: "photo")
                         .order("created_at", ascending: false)
-                        .limit(limit)
+                        .range(from: offset, to: offset + limit - 1)
                         .execute()
                         .value
                 }
