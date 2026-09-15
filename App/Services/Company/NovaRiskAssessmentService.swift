@@ -227,11 +227,20 @@ import Foundation
         })
     }
 
-    /// Opening a workplace's record twice is the same record; the server says so
-    /// rather than making a second one.
+    /// Opening a workplace's record twice is the same record; the server says
+    /// so rather than making a second one. Unlike the other actions this one
+    /// carries no side effect worth protecting with a durable retry receipt,
+    /// so it skips the Keychain-backed mutation journal — a fresh id pair
+    /// every call is enough, and one less thing that can fail before the
+    /// request even reaches the network.
     func open(_ identity: NovaSessionIdentity, company: UUID, workplace: UUID) async throws -> NovaRiskRow? {
-        try await mutate(identity, company: company, action: "open_assessment",
-                         payload: ["workplace_id": .id(workplace)])
+        try check(identity)
+        let data = try await rpc("isg_risk_versions_mutate_v1", [
+            "p_company": .id(company), "p_action": .string("open_assessment"),
+            "p_operation": .id(UUID()), "p_mutation": .id(UUID()),
+            "p_payload": .object(["workplace_id": .id(workplace)])])
+        try check(identity)
+        return try JSONDecoder().decode(MutationEnvelope.self, from: data).row.map(row)
     }
 
     func draft(_ identity: NovaSessionIdentity, company: UUID,
