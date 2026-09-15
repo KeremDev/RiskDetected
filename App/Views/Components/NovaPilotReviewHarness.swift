@@ -111,7 +111,7 @@ struct NovaPilotReviewHarness: View {
                         NovaNonconformityRecordSheet(entry: entry, client: .init(
                             load: { entry.row }, transition: { _, _, _ in entry.row },
                             addAction: { _, _, _ in entry.row }, verify: { _, _ in entry.row },
-                            saveDetail: { _ in entry.row }))
+                            saveDetail: { _ in entry.row }, download: { _, _ in Data() }))
                     }
                 }
         case .analyses:
@@ -137,7 +137,7 @@ struct NovaPilotReviewHarness: View {
                 }
         case .newFinding:
             NovaManualNonconformityScreen(companies: reviewCompanies,
-                workplaces: { _ in reviewWorkplaces }, save: { _ in nil }, onBack: {})
+                workplaces: { _ in reviewWorkplaces }, fileClient: reviewFileClient, save: { _ in nil }, onBack: {})
         case .documentChecklist:
             NovaDocumentTrackingScreen(client: reviewDocumentClient, onBack: {})
         case .documents:

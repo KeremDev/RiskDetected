@@ -25975,20 +25975,38 @@
         }
       }
     },
-    "localizable.nova.manual.photo.not.stored": {
+    "localizable.nova.manual.photo.evidence.title": {
       "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The photo is not attached to the record yet: the evidence file store is not open. What you add here is only visible while this form is open."
+            "value": "Nonconformity photo"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fotoğraf şu an kayda eklenmiyor: kanıt dosyası deposu henüz açık değil. Buraya eklediğiniz görsel yalnız bu form açıkken görünür."
+            "value": "Uygunsuzluk fotoğrafı"
+          }
+        }
+      }
+    },
+    "localizable.nova.manual.photo.upload.failed": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The photos could not be uploaded. Check your connection and try again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraflar yüklenemedi. Bağlantıyı kontrol edip tekrar deneyin."
           }
         }
       }
@@ -27267,6 +27285,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Termin %@"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.evidence.item": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: %d; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo %d"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto %d"
+          }
+        }
+      }
+    },
+    "localizable.nova.nonconformity.evidence.title": {
+      "comment": "nova_analysis; nonconformity board, analysis detail and photo intake; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evidence photos"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kanıt fotoğrafları"
           }
         }
       }

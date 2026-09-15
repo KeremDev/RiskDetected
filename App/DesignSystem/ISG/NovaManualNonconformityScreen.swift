@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import CryptoKit
 
 /// The hand-entered record, asked one step at a time. Every step is revisitable,
 /// a finished step carries a green tick, and the bar counts exactly the steps
@@ -8,6 +9,7 @@ struct NovaManualNonconformityScreen: View {
     let companies: [NovaAnalysisCompanyOption]
     /// The workplaces of one company, fetched when it is chosen.
     let workplaces: (UUID) async throws -> [NovaNonconformityWorkplace]
+    let fileClient: NovaFileLibraryClient
     let save: (NovaManualDraft) async -> String?
     let onBack: () -> Void
     var isImprovementAllowed = true
@@ -196,9 +198,6 @@ struct NovaManualNonconformityScreen: View {
                 }
             }
         }
-        NovaText(text: RDLocalization.string("localizable.nova.manual.photo.not.stored", table: .localizable,
-            fallback: "Fotoğraf şu an kayda eklenmiyor: kanıt dosyası deposu henüz açık değil. Buraya eklediğiniz görsel yalnız bu form açıkken görünür."),
-            style: .metaQuiet, color: NovaColorToken.statusWarningInk.color(in: scheme))
     }
 
     @ViewBuilder private var companyStep: some View {
@@ -318,10 +317,42 @@ struct NovaManualNonconformityScreen: View {
             symbol: "checkmark", isEnabled: draft.canSave && !saving, isLoading: saving) {
             Task {
                 saving = true; error = nil
+                if let company = draft.companyID, !photos.isEmpty {
+                    let uploaded = await uploadEvidence(company: company)
+                    guard !uploaded.isEmpty else {
+                        error = RDLocalization.string("localizable.nova.manual.photo.upload.failed", table: .localizable,
+                            fallback: "Fotoğraflar yüklenemedi. Bağlantıyı kontrol edip tekrar deneyin.")
+                        saving = false
+                        return
+                    }
+                    draft.evidenceAssetIDs = uploaded
+                }
                 error = await save(draft)
                 saving = false
             }
         }.accessibilityIdentifier("manual.save")
+    }
+
+    /// JPEG-encodes and files each photo before the record itself is opened,
+    /// so the server only ever sees clean, already-owned assets to attach —
+    /// the same rule every other module's evidence attach follows.
+    private func uploadEvidence(company: UUID) async -> [UUID] {
+        var ids: [UUID] = []
+        for image in photos {
+            guard let data = image.jpegData(compressionQuality: 0.85) else { continue }
+            var fileDraft = NovaFileDraft()
+            fileDraft.title = RDLocalization.string("localizable.nova.manual.photo.evidence.title", table: .localizable,
+                fallback: "Uygunsuzluk fotoğrafı")
+            fileDraft.category = "nonconformity_evidence"
+            fileDraft.fileName = "uygunsuzluk-\(UUID().uuidString.prefix(8)).jpg"
+            fileDraft.fileExtension = "jpg"
+            fileDraft.bytes = data.count
+            fileDraft.sha256 = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+            if let entry = try? await fileClient.file(company, fileDraft, data), let id = entry.assetID {
+                ids.append(id)
+            }
+        }
+        return ids
     }
 
     private func title(_ step: NovaManualStep) -> String {

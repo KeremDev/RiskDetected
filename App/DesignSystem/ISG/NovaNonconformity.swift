@@ -32,6 +32,10 @@ struct NovaNonconformityRow: Equatable, Identifiable, Codable {
     var detail: NovaNonconformityDetail? = nil
     var actions: [NovaCorrectiveAction]? = nil
     var verifications: [NovaVerificationRecord]? = nil
+    /// The photos filed at record creation, up to three. Absent on records
+    /// opened before evidence attach existed.
+    var evidence_asset_ids: [UUID]? = nil
+    var evidence_downloads: [NovaEvidenceDownload]? = nil
     /// A record that came from a photo analysis keeps pointing at that finding;
     /// the finding itself is never rewritten.
     var camefromFinding: Bool { source_kind == "legacy_finding" }
@@ -57,6 +61,13 @@ struct NovaVerificationRecord: Equatable, Identifiable, Codable {
     let id: UUID
     let outcome: String
     let verified_on: String
+}
+
+/// Where a filed evidence photo's bytes live, the same shape every other
+/// module's asset download uses.
+struct NovaEvidenceDownload: Equatable, Codable {
+    let bucket: String
+    let path: String
 }
 
 struct NovaNonconformityWorkplace: Equatable, Identifiable, Codable {
@@ -90,6 +101,9 @@ struct NovaNonconformityIntent: Equatable, Codable {
     var legislation: String?
     var responsible: String?
     var score = NovaRiskScoreInput()
+    /// Clean, owned assets already filed in the library — up to three, the
+    /// same cap the server enforces. Empty means no photo was attached.
+    var evidenceAssetIDs: [UUID] = []
 
     var action: String {
         switch origin {
@@ -216,6 +230,9 @@ struct NovaManualDraft: Equatable {
     /// How many site photos the expert attached. The pictures live in the
     /// screen; the draft only counts them so this model stays free of images.
     var photoCount = 0
+    /// Set once the screen has uploaded the photos and knows their filed
+    /// asset ids. Empty until then, even when photoCount > 0.
+    var evidenceAssetIDs: [UUID] = []
     var companyID: UUID?
     /// The record always lands on a real workplace, because that is what the
     /// server stores. Picking only a company fills this with that company's

@@ -84,6 +84,9 @@ import Foundation
             payload["record_kind"] = .string(intent.recordKind.rawValue)
             if !assignee.isEmpty { payload["assignee"] = .string(assignee) }
             Self.merge(detail: intent, into: &payload)
+            if !intent.evidenceAssetIDs.isEmpty {
+                payload["evidence_asset_ids"] = .array(intent.evidenceAssetIDs.map { .id($0) })
+            }
         }
         let data = try await rpc("isg_nonconformity_mutate_v1", [
             "p_company": .id(scope.companyID), "p_action": .string(intent.action),

@@ -6,6 +6,8 @@ struct NovaNonconformityRecordClient {
     let addAction: (String, String, String?) async throws -> NovaNonconformityRow
     let verify: (Bool, String) async throws -> NovaNonconformityRow
     let saveDetail: (NovaNonconformityDetailDraft) async throws -> NovaNonconformityRow
+    /// The same bucket/path download every other module's evidence uses.
+    let download: (String, String) async throws -> Data
 }
 
 /// What the detail editor is holding. Separate from the manual-entry draft so
@@ -47,6 +49,8 @@ struct NovaNonconformityRecordSheet: View {
     @State private var verifyAccepted = true
     @State private var verifyNote = ""
     @State private var detail = NovaNonconformityDetailDraft()
+    @State private var opened: URL?
+    @State private var openingIndex: Int?
 
     private enum Panel: Equatable { case none, detail, state, action, verify }
 
@@ -62,6 +66,7 @@ struct NovaNonconformityRecordSheet: View {
                 heading
                 facts
                 detailCard
+                evidenceCard
                 if canWrite { operations }
                 history
                 if let error {
@@ -71,6 +76,7 @@ struct NovaNonconformityRecordSheet: View {
         }
         .background(NovaKeyboardDismissArea())
         .task { await reload() }
+        .sheet(item: $opened) { url in NovaFileShareSheet(url: url) }
     }
 
     // MARK: heading and facts
@@ -176,6 +182,58 @@ struct NovaNonconformityRecordSheet: View {
                 NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
                 NovaText(text: text, style: .metaQuiet)
             }.frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    // MARK: evidence
+
+    @ViewBuilder private var evidenceCard: some View {
+        let downloads = current.evidence_downloads ?? []
+        if !downloads.isEmpty {
+            NovaCard(padding: 12) {
+                VStack(alignment: .leading, spacing: 8) {
+                    NovaText(text: RDLocalization.string("localizable.nova.nonconformity.evidence.title", table: .localizable,
+                        fallback: "Kanıt fotoğrafları"), style: .sectionTitle)
+                    HStack(spacing: 8) {
+                        ForEach(Array(downloads.enumerated()), id: \.offset) { index, download in
+                            Button { open(index, download) } label: {
+                                VStack(spacing: 4) {
+                                    if openingIndex == index {
+                                        ProgressView()
+                                    } else {
+                                        Image(systemName: "photo").font(.system(size: 16))
+                                            .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+                                    }
+                                    NovaText(text: String(format: RDLocalization.string("localizable.nova.nonconformity.evidence.item",
+                                        table: .localizable, fallback: "Foto %d"), index + 1), style: .micro)
+                                }.frame(width: 64, height: 64)
+                                    .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
+                            }.buttonStyle(.plain).disabled(openingIndex != nil)
+                                .accessibilityIdentifier("nonconformity.evidence.\(index)")
+                        }
+                        Spacer(minLength: 0)
+                    }
+                }.frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private func open(_ index: Int, _ download: NovaEvidenceDownload) {
+        openingIndex = index; error = nil
+        Task {
+            do {
+                let data = try await client.download(download.bucket, download.path)
+                let url = FileManager.default.temporaryDirectory
+                    .appendingPathComponent(UUID().uuidString, isDirectory: true)
+                    .appendingPathComponent(download.path.components(separatedBy: "/").last ?? "kanit.jpg")
+                try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try data.write(to: url, options: .completeFileProtection)
+                opened = url
+            } catch {
+                self.error = RDLocalization.string("localizable.nova.file.failure.unavailable", table: .localizable,
+                    fallback: "Dosya servisi şu anda kullanılamıyor.")
+            }
+            openingIndex = nil
         }
     }
 

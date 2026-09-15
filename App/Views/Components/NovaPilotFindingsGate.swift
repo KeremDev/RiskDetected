@@ -41,6 +41,7 @@ struct NovaPilotFindingsGate: View {
     @State private var boardRevision = UUID()
 
     private var service: NovaNonconformityService { .live(currentScope: currentScope) }
+    private var files: NovaFileLibraryService { .live() }
     private var today: String { NovaAnalysisWorkspace.todayISO() }
     private var method: RiskMethod { app.profile?.preferredMethod?.domain ?? .fineKinney }
 
@@ -132,7 +133,8 @@ struct NovaPilotFindingsGate: View {
                 try await service.setDetail(try await scoped(), id: entry.id, description: draft.description,
                     measure: draft.measure, legislation: draft.legislation, responsible: draft.responsible,
                     score: draft.score)
-            })
+            },
+            download: { bucket, path in try await files.download(identity, bucket: bucket, path: path) })
     }
 
     /// Selecting a company runs the workspace availability check again, so the
@@ -350,8 +352,24 @@ struct NovaPilotFindingsGate: View {
     private var manual: some View {
         NovaManualNonconformityScreen(companies: companies,
             workplaces: { company in try await service.workplaces(try await waitForScope(company)) },
+            fileClient: fileClient,
             save: { draft in await saveManual(draft) },
             onBack: { route = .root })
+    }
+
+    private var fileClient: NovaFileLibraryClient {
+        .init(
+            catalogue: { try await files.catalogue(identity) },
+            library: { request in try await files.library(identity, query: request) },
+            companies: { try await NovaAnalysisWorkspace.companyOptions(identity: identity) },
+            file: { company, draft, data in try await files.file(identity, company: company, draft: draft, data: data) },
+            rename: { entry, title, category, note in
+                try await files.rename(identity, entry: entry, title: title, category: category, note: note) },
+            archive: { entry in try await files.archive(identity, entry: entry) },
+            cancel: { entry in try await files.cancel(identity, entry: entry) },
+            recheck: { entry in try await files.recheck(identity, entry: entry) },
+            contents: { entry in try await files.contents(identity, entry: entry) },
+            download: { bucket, path in try await files.download(identity, bucket: bucket, path: path) })
     }
 
     /// Returns nil when the record was opened, and the reason otherwise.
@@ -371,6 +389,7 @@ struct NovaPilotFindingsGate: View {
         intent.legislation = value.legislation
         intent.responsible = value.responsible
         intent.score = value.score
+        intent.evidenceAssetIDs = value.evidenceAssetIDs
         do {
             _ = try await service.open(target, intent: intent)
             boardRevision = UUID()
