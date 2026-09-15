@@ -33175,6 +33175,24 @@
         }
       }
     },
+    "localizable.nova.risk.finalize.hazard.hint": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%d years was filled in automatically from the workplace's hazard class. You can change it if needed."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşyerinin tehlike sınıfına göre %d yıl otomatik dolduruldu. Gerekirse değiştirebilirsiniz."
+          }
+        }
+      }
+    },
     "localizable.nova.risk.finalize.norules": {
       "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
       "extractionState": "manual",
@@ -33855,6 +33873,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Uzman tarafından belirlenen"
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.period.hazard": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: workplace board, version history, new version and completion popups; placeholders: %d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic, from hazard class"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tehlike sınıfına göre otomatik"
           }
         }
       }

@@ -101,10 +101,12 @@ enum NovaRiskKind: String, CaseIterable, Identifiable, Equatable {
 enum NovaRiskPeriodSource: String, Equatable {
     case ruleVersion = "rule_version"
     case unapprovedFixture = "unapproved_fixture"
+    case hazardClass = "hazard_class"
     var title: String {
         switch self {
         case .ruleVersion: return RDLocalization.string("localizable.nova.risk.period.rule", table: .localizable, fallback: "Yayımlanmış kural")
         case .unapprovedFixture: return RDLocalization.string("localizable.nova.risk.period.expert", table: .localizable, fallback: "Uzman tarafından belirlenen")
+        case .hazardClass: return RDLocalization.string("localizable.nova.risk.period.hazard", table: .localizable, fallback: "Tehlike sınıfına göre otomatik")
         }
     }
     var needsReview: Bool { self == .unapprovedFixture }
@@ -186,6 +188,11 @@ struct NovaRiskRow: Identifiable, Equatable {
     let dateNeedsReview: Bool
     let sourceDrift: Bool
     let driftNote: String?
+    /// The workplace's own hazard class (az/tehlikeli/çok tehlikeli) and the
+    /// legal renewal period it implies, so the finalize step can offer that
+    /// number before the expert ever types one.
+    let workplaceHazardClass: String?
+    let workplaceSuggestedPeriodYears: Int?
     let hasOpenDraft: Bool
     let draftVersion: Int?
     let draftKind: NovaRiskKind?
@@ -266,6 +273,9 @@ struct NovaRiskFinalizeDraft: Equatable {
     var periodYears: String = ""
     var kind: NovaRiskKind = .full
     var editRevision: Int = 0
+    /// The years the workplace's own hazard class implies, shown as a hint;
+    /// nil when the workplace has no hazard class on file yet.
+    var suggestedYears: Int?
 }
 
 enum NovaRiskFailure: Error, Equatable {

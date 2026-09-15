@@ -357,8 +357,13 @@ struct NovaRiskFinalizeSheet: View {
                                 choosingRule = false
                             }
                         }
+                    } else if let years = draft.suggestedYears {
+                        NovaHelpHint(text: String(format: RDLocalization.string("localizable.nova.risk.finalize.hazard.hint",
+                            table: .localizable,
+                            fallback: "İşyerinin tehlike sınıfına göre %d yıl otomatik dolduruldu. Gerekirse değiştirebilirsiniz."), years))
                     } else {
-                        // The honest answer while nothing is approved.
+                        // The honest answer while nothing is approved and the
+                        // workplace has no hazard class on file either.
                         NovaHelpHint(text: RDLocalization.string("localizable.nova.risk.finalize.norules",
                             table: .localizable,
                             fallback: "Onaylanmış bir süre kataloğu yok. Gireceğiniz süre \"uzman tarafından belirlenen\" olarak kaydedilir."))

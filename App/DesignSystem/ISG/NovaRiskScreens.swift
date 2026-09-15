@@ -235,8 +235,12 @@ struct NovaRiskScreen: View {
                 onCancelDraft: { detail = nil; cancelling = row },
                 onFinalize: { version in
                     detail = nil
+                    let suggested = row.workplaceSuggestedPeriodYears
                     finalizing = .init(assessmentID: row.id, version: version,
-                                       expectedCurrent: row.currentVersion, kind: row.draftKind ?? .full, editRevision: row.versions.first(where: { $0.version == version })?.editRevision ?? 0)
+                                       expectedCurrent: row.currentVersion,
+                                       periodYears: suggested.map(String.init) ?? "",
+                                       kind: row.draftKind ?? .full, editRevision: row.versions.first(where: { $0.version == version })?.editRevision ?? 0,
+                                       suggestedYears: suggested)
                 },
                 onClose: { detail = nil })
         }

@@ -74,6 +74,8 @@ import Foundation
         let date_needs_review: Bool?
         let source_drift: Bool?
         let drift_note: String?
+        let workplace_hazard_class: String?
+        let workplace_suggested_period_years: Int?
         let has_open_draft: Bool
         let draft_version: Int?
         let draft_kind: String?
@@ -124,6 +126,8 @@ import Foundation
             periodNeedsReview: entry.period_needs_review,
             dateNeedsReview: entry.date_needs_review ?? false,
             sourceDrift: entry.source_drift ?? false, driftNote: entry.drift_note,
+            workplaceHazardClass: entry.workplace_hazard_class,
+            workplaceSuggestedPeriodYears: entry.workplace_suggested_period_years,
             hasOpenDraft: entry.has_open_draft, draftVersion: entry.draft_version,
             draftKind: draftKind,
             draftAssessmentOn: entry.draft_assessment_on, draftReason: entry.draft_reason,
