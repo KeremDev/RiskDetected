@@ -159,6 +159,14 @@ struct NovaEmergencyDetailSheet: View {
 struct NovaEmergencyPlanSheet: View {
     @State var draft: NovaEmergencyPlanDraft
     let catalogue: NovaEmergencyCatalogue?
+    /// The plan attaches one of the archive's own filed entries; adding one
+    /// here opens the same upload sheet Dosyalarım uses, pinned to this plan's
+    /// company and the "emergency_plan" heading.
+    let fileClient: NovaFileLibraryClient
+    var fileCompany: UUID?
+    var fileCategories: [NovaFileCategory] = []
+    var fileAccepts: [NovaFileAcceptance] = []
+    var fileAssurance = NovaFileAssurance()
     let onSave: (NovaEmergencyPlanDraft) async -> String?
     let onClose: () -> Void
     @State private var failure: String?
@@ -167,7 +175,13 @@ struct NovaEmergencyPlanSheet: View {
     @State private var memberName = ""
     @State private var memberRole: NovaEmergencyRole = .coordinator
     @State private var memberContact = ""
+    @State private var addingFile = false
     @Environment(\.colorScheme) private var scheme
+
+    private var emergencyFileCategories: [NovaFileCategory] {
+        let scoped = fileCategories.filter { $0.code == "emergency_plan" }
+        return scoped.isEmpty ? fileCategories : scoped
+    }
 
     private var workplaceTitle: String {
         catalogue?.workplaces.first { $0.id == draft.workplaceID }?.name
@@ -225,6 +239,7 @@ struct NovaEmergencyPlanSheet: View {
                     NovaHelpHint(text: NovaEmergencyWords.periodAttribution)
 
                     teamEditor
+                    fileEditor
 
                     VStack(alignment: .leading, spacing: 4) {
                         NovaText(text: RDLocalization.string("localizable.nova.emergency.form.basis",
@@ -255,6 +270,42 @@ struct NovaEmergencyPlanSheet: View {
             }
         }
         .accessibilityIdentifier("nova.emergency.form")
+        .novaFullScreenCover(isPresented: $addingFile) {
+            NovaPopup {
+                NovaFileAddSheet(companies: [],
+                    preselected: fileCompany, categories: emergencyFileCategories,
+                    accepts: fileAccepts, assurance: fileAssurance, client: fileClient) { entry in
+                        addingFile = false
+                        if let entry { draft.assetID = entry.assetID }
+                    }
+            }
+        }
+    }
+
+    @ViewBuilder private var fileEditor: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            NovaText(text: RDLocalization.string("localizable.nova.emergency.form.file",
+                table: .localizable, fallback: "Dosya"), style: .label)
+            if draft.assetID != nil {
+                HStack(spacing: 8) {
+                    Image(systemName: "doc.fill").font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(NovaColorToken.statusSuccessInk.color(in: scheme))
+                    NovaText(text: RDLocalization.string("localizable.nova.emergency.form.file.attached",
+                        table: .localizable, fallback: "Dosya ekli"), style: .meta)
+                    Spacer(minLength: 0)
+                    Button { draft.assetID = nil } label: {
+                        Image(systemName: "xmark.circle").font(.system(size: 12))
+                    }.buttonStyle(.plain).accessibilityIdentifier("nova.emergency.form.file.remove")
+                }
+            }
+            NovaButton(label: draft.assetID == nil
+                ? RDLocalization.string("localizable.nova.emergency.form.file.add", table: .localizable,
+                    fallback: "Dosya ekle")
+                : RDLocalization.string("localizable.nova.emergency.form.file.replace", table: .localizable,
+                    fallback: "Dosyayı değiştir"),
+                symbol: "paperclip", variant: .surface, isEnabled: fileCompany != nil) { addingFile = true }
+                .accessibilityIdentifier("nova.emergency.form.file.add")
+        }
     }
 
     @ViewBuilder private var teamEditor: some View {

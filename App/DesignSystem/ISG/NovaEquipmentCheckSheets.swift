@@ -298,7 +298,7 @@ struct NovaEquipmentItemSheet: View {
         if choosingReport {
             if reports.isEmpty {
                 NovaText(text: RDLocalization.string("localizable.nova.equipment.report.empty", table: .localizable,
-                    fallback: "Bu firmada arşivlenmiş kontrol raporu yok. Diğer Dosyalar'dan ekleyebilirsiniz."),
+                    fallback: "Bu firmada arşivlenmiş kontrol raporu yok. Dosyalarım'dan ekleyebilirsiniz."),
                     style: .metaQuiet)
             } else {
                 NovaFileChooserPanel(

@@ -9,6 +9,9 @@ struct NovaEmergencyClient {
     let detail: (UUID) async throws -> NovaEmergencyPlan
     /// Publishing is the only write: a new plan, or the next version of one.
     let publish: (UUID, NovaEmergencyPlanDraft) async throws -> NovaEmergencyPlan?
+    /// The same file archive Dosyalarım reads and writes. The plan attaches one
+    /// of its own entries rather than keeping a second, separate upload path.
+    let fileClient: NovaFileLibraryClient
 }
 
 /// One counter, in the same shape the rest of the modules use.
@@ -143,6 +146,9 @@ struct NovaEmergencyPlanScreen: View {
     @State private var board: NovaEmergencyBoard?
     @State private var catalogue: NovaEmergencyCatalogue?
     @State private var companies: [NovaAnalysisCompanyOption] = []
+    @State private var fileCategories: [NovaFileCategory] = []
+    @State private var fileAccepts: [NovaFileAcceptance] = []
+    @State private var fileAssurance = NovaFileAssurance()
     @State private var query = NovaEmergencyQuery()
     @State private var loading = true
     @State private var failure: String?
@@ -187,7 +193,7 @@ struct NovaEmergencyPlanScreen: View {
                     detail = nil
                     drafting = .init(planID: plan.id, workplaceID: plan.workplaceID,
                                      scope: plan.scope, preparedOn: NovaDayField.text(Date()),
-                                     team: plan.team)
+                                     team: plan.team, assetID: plan.assetID)
                 },
                 onClose: { detail = nil })
                 .safeAreaInset(edge: .bottom) {
@@ -201,11 +207,15 @@ struct NovaEmergencyPlanScreen: View {
         .sheet(item: $drafting) { draft in
             if draft.planID != nil {
                 NovaEmergencyPlanSheet(draft: draft, catalogue: catalogue,
+                    fileClient: client.fileClient, fileCompany: draftCompany,
+                    fileCategories: fileCategories, fileAccepts: fileAccepts, fileAssurance: fileAssurance,
                     onSave: { edited in await publish(edited) }, onClose: { drafting = nil })
             } else {
             NovaCompanyCreateFlow(title: "Plan yayınla", companies: client.companies,
-                catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany) { selectedCatalogue, _ in
+                catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany) { selectedCatalogue, selectedCompany in
                 NovaEmergencyPlanSheet(draft: draft, catalogue: selectedCatalogue,
+                    fileClient: client.fileClient, fileCompany: selectedCompany,
+                    fileCategories: fileCategories, fileAccepts: fileAccepts, fileAssurance: fileAssurance,
                     onSave: { edited in await publish(edited) }, onClose: { drafting = nil })
             }
             }
@@ -348,6 +358,10 @@ struct NovaEmergencyPlanScreen: View {
         loading = true; failure = nil
         do {
             if companies.isEmpty { companies = try await client.companies() }
+            if fileCategories.isEmpty {
+                let filing = try await client.fileClient.catalogue()
+                fileCategories = filing.categories; fileAccepts = filing.accepts; fileAssurance = filing.assurance
+            }
             if query.company == nil, let initialCompany { query.company = initialCompany }
             catalogue = try await client.catalogue(query.company)
             let answer = try await client.board(query)

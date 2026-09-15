@@ -93,6 +93,12 @@ struct NovaEmergencyMember: Identifiable, Equatable {
     let contact: String?
 }
 
+/// Where a plan's attached file actually lives, once one is filed and clean.
+struct NovaEmergencyAssetDownload: Equatable {
+    let bucket: String
+    let path: String
+}
+
 /// One version of a plan, with the team, dates and scope it was published with.
 struct NovaEmergencyVersion: Identifiable, Equatable {
     var id: Int { version }
@@ -104,6 +110,7 @@ struct NovaEmergencyVersion: Identifiable, Equatable {
     let needsReview: Bool
     let reviewNote: String?
     let team: [NovaEmergencyMember]
+    let assetID: UUID?
     let createdAt: Date?
     var isActive: Bool { state == "active" }
 }
@@ -129,6 +136,8 @@ struct NovaEmergencyPlan: Identifiable, Equatable {
     let reviewNote: String?
     let team: [NovaEmergencyMember]
     let teamSize: Int
+    let assetID: UUID?
+    let assetDownload: NovaEmergencyAssetDownload?
     let versions: [NovaEmergencyVersion]
 }
 
@@ -191,6 +200,7 @@ struct NovaEmergencyPlanDraft: Equatable {
     var validUntil: String = ""
     var reviewNote: String = ""
     var team: [NovaEmergencyMember] = []
+    var assetID: UUID?
     var isRenewal: Bool { planID != nil }
 }
 

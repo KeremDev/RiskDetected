@@ -47,6 +47,9 @@ struct NovaFileAssurance: Equatable {
 
 struct NovaFileEntry: Identifiable, Equatable {
     let id: UUID
+    /// The underlying asset once a clean upload exists for this entry — the
+    /// value a module's own publish call (e.g. emergency plan) attaches.
+    var assetID: UUID?
     var companyID: UUID?
     var companyName: String?
     var category: String

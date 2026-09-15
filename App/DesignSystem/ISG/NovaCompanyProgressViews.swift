@@ -13,7 +13,7 @@ extension NovaCompanySection {
         case .accidents: return RDLocalization.string("localizable.nova.workspace.accidents", table: .localizable, fallback: "İş Kazaları")
         case .board: return RDLocalization.string("localizable.nova.workspace.board", table: .localizable, fallback: "İSG Kurulu")
         case .training: return RDLocalization.string("localizable.nova.workspace.training", table: .localizable, fallback: "Eğitimler")
-        case .files: return RDLocalization.string("localizable.nova.workspace.files", table: .localizable, fallback: "Diğer Dosyalar")
+        case .files: return RDLocalization.string("localizable.nova.workspace.files", table: .localizable, fallback: "Dosyalarım")
         case .handover: return RDLocalization.string("localizable.nova.workspace.handover", table: .localizable, fallback: "Zimmet Formları")
         }
     }

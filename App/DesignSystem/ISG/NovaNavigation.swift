@@ -58,7 +58,7 @@ enum NovaDestination: String, CaseIterable, Hashable {
         case .companies: return "Firmalar"
         case .memory: return RDLocalization.string("localizable.nova.navigation.isletme.hafizasi.c231f5c8", table: .localizable, fallback: "İşletme Hafızası")
         case .documentChecklist: return RDLocalization.string("localizable.nova.navigation.evrak.takibi.1d59a02d", table: .localizable, fallback: "Evrak Takibi")
-        case .documents: return RDLocalization.string("localizable.nova.navigation.diger.dosyalar.f5089207", table: .localizable, fallback: "Diğer Dosyalar")
+        case .documents: return RDLocalization.string("localizable.nova.navigation.diger.dosyalar.f5089207", table: .localizable, fallback: "Dosyalarım")
         case .visits: return "Ziyaretler"
         case .statistics: return RDLocalization.string("localizable.nova.navigation.istatistikler.da698529", table: .localizable, fallback: "İstatistikler")
         case .training: return RDLocalization.string("localizable.nova.navigation.egitim.ve.takip.59c46410", table: .localizable, fallback: "Eğitim ve Takip")

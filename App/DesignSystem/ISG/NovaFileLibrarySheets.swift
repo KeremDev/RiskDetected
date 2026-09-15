@@ -324,7 +324,9 @@ struct NovaFileAddSheet: View {
     let accepts: [NovaFileAcceptance]
     let assurance: NovaFileAssurance
     let client: NovaFileLibraryClient
-    let onDone: () -> Void
+    /// Carries the filed row back once known, so a caller embedding this sheet
+    /// (the emergency plan form, say) can pick up the asset it just cleared.
+    let onDone: (NovaFileEntry?) -> Void
     @Environment(\.colorScheme) private var scheme
     @State private var company: UUID?
     @State private var draft = NovaFileDraft()
@@ -478,7 +480,7 @@ struct NovaFileAddSheet: View {
                     style: .metaQuiet)
             }
             NovaButton(label: RDLocalization.string("localizable.nova.document.close", table: .localizable, fallback: "Kapat"),
-                symbol: "xmark", variant: .surface) { onDone() }
+                symbol: "xmark", variant: .surface) { onDone(entry) }
                 .accessibilityIdentifier("file.add.close")
         }
     }

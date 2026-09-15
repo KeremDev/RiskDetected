@@ -31,8 +31,10 @@ import Foundation
         let needs_review: Bool
         let review_note: String?
         let team: [MemberRow]?
+        let asset_id: UUID?
         let created_at: Date?
     }
+    private struct AssetDownloadRow: Decodable { let bucket: String; let path: String }
     private struct PlanRow: Decodable {
         let id: UUID
         var company_id: UUID?
@@ -50,6 +52,8 @@ import Foundation
         let review_note: String?
         let team: [MemberRow]?
         let team_size: Int
+        let asset_id: UUID?
+        let asset_download: AssetDownloadRow?
         let versions: [VersionRow]?
     }
     private struct WorkplaceRow: Decodable { let id: UUID; let name: String; let needs_review: Bool }
@@ -96,7 +100,8 @@ import Foundation
             NovaEmergencyVersion(version: version.version, state: version.state, scope: version.scope,
                                  preparedOn: version.prepared_on, validUntil: version.valid_until,
                                  needsReview: version.needs_review, reviewNote: version.review_note,
-                                 team: members(version.team), createdAt: version.created_at)
+                                 team: members(version.team), assetID: version.asset_id,
+                                 createdAt: version.created_at)
         }
         return NovaEmergencyPlan(
             id: entry.id, companyID: entry.company_id, companyName: entry.company_name,
@@ -105,7 +110,10 @@ import Foundation
             scope: entry.scope, preparedOn: entry.prepared_on, validUntil: entry.valid_until,
             state: state, group: NovaEmergencyGroup.of(state), noticeDays: entry.notice_days,
             needsReview: entry.needs_review, reviewNote: entry.review_note,
-            team: members(entry.team), teamSize: entry.team_size, versions: versions)
+            team: members(entry.team), teamSize: entry.team_size,
+            assetID: entry.asset_id,
+            assetDownload: entry.asset_download.map { .init(bucket: $0.bucket, path: $0.path) },
+            versions: versions)
     }
 
     private func read(_ arguments: [String: PersonnelRPCValue]) async throws -> Data {
@@ -181,6 +189,7 @@ import Foundation
             })]
         if let plan = draft.planID { payload["plan_id"] = .id(plan) }
         if NovaDayField.date(draft.validUntil) != nil { payload["valid_until"] = .string(draft.validUntil) }
+        if let asset = draft.assetID { payload["asset_id"] = .id(asset) }
         let note = draft.reviewNote.trimmingCharacters(in: .whitespacesAndNewlines)
         if !note.isEmpty { payload["review_note"] = .string(note) }
         try check(identity)

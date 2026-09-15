@@ -37,6 +37,7 @@ import Foundation
 
     private struct EntryRow: Decodable {
         let id: UUID
+        var asset_id: UUID?
         var company_id: UUID?
         var company_name: String?
         let category: String
@@ -65,7 +66,7 @@ import Foundation
         let created_at: String?
 
         enum CodingKeys: String, CodingKey {
-            case id, company_id, company_name, category, section, title, file_name, note, version
+            case id, asset_id, company_id, company_name, category, section, title, file_name, note, version
             case state, rejection_code, intent_id, intent_state, purpose
             case extension_ = "extension"
             case declared_bytes, received_bytes, detected_type
@@ -102,7 +103,7 @@ import Foundation
     /// An unknown state word is reported as a stopped upload rather than being
     /// smoothed into a calm one: the expert should look at the row.
     private func entry(_ row: EntryRow) -> NovaFileEntry {
-        .init(id: row.id, companyID: row.company_id, companyName: row.company_name,
+        .init(id: row.id, assetID: row.asset_id, companyID: row.company_id, companyName: row.company_name,
               category: row.category, section: row.section, title: row.title,
               fileName: row.file_name, note: row.note, version: row.version,
               state: NovaFileState(rawValue: row.state) ?? .scanFailed,

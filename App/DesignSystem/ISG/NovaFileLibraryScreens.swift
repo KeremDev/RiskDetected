@@ -282,7 +282,7 @@ struct NovaFileLibraryScreen: View {
             NovaPopup {
                 NovaFileAddSheet(companies: companies, preselected: company,
                     categories: offeredCategories, accepts: accepts, assurance: assurance,
-                    client: client) {
+                    client: client) { _ in
                         adding = false
                         reload = UUID()
                     }
