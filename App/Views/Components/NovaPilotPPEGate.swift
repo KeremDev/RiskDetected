@@ -9,7 +9,6 @@ struct NovaPilotPPEGate: View {
     let onBack: () -> Void
     @State private var companies: [NovaAnalysisCompanyOption] = []
     @State private var company: UUID?
-    @State private var createCompany: UUID?
     @State private var employee: UUID?
     @State private var rows: [NovaPPEHandover] = []
     @State private var item = ""
@@ -34,8 +33,8 @@ struct NovaPilotPPEGate: View {
                         if canWrite { Button { creating = true } label: { Label("Zimmet", systemImage: "plus") } }
                     }
                     Picker("Firma", selection: $company) {
-                        Text("Tüm firmalar").tag(UUID?.none)
-                        ForEach(companies) { Text($0.name).tag(Optional($0.id)) }
+                        if initialCompany == nil { Text("Tüm firmalar").tag(UUID?.none) }
+                        ForEach(companies.filter { initialCompany == nil || $0.id == initialCompany }) { Text($0.name).tag(Optional($0.id)) }
                     }.tint(.primary)
                     if loading { ProgressView("Zimmetler yükleniyor…").frame(maxWidth: .infinity) }
                     if let failure { Text(failure).font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk) }
@@ -69,14 +68,14 @@ struct NovaPilotPPEGate: View {
                 try await NovaAnalysisWorkspace.companyOptions(identity: identity)
             }, catalogue: { selected in
                 try await service.catalogue(identity, company: selected)
-            }, onSelect: { createCompany = $0; employee = nil }) { catalogue in
-                editor(catalogue)
+            }, onSelect: { _ in employee = nil }, fixedCompany: initialCompany) { catalogue, company in
+                editor(catalogue, company)
             }
         }
         .sheet(item: $pdf) { NovaFileShareSheet(url: $0) }
     }
 
-    private func editor(_ catalogue: NovaPPECatalogue) -> some View {
+    private func editor(_ catalogue: NovaPPECatalogue, _ company: UUID) -> some View {
         NovaPopup {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
@@ -92,8 +91,8 @@ struct NovaPilotPPEGate: View {
                 }
                 DatePicker("Teslim tarihi", selection: $date, in: ...Date(), displayedComponents: .date)
                 if let failure { Text(failure).font(NovaFont.font(.meta)) }
-                Button(busy ? "Kaydediliyor…" : "Zimmeti kaydet") { Task { await save() } }
-                    .disabled(busy || employee == nil || createCompany == nil || item.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || item.count > 200)
+                Button(busy ? "Kaydediliyor…" : "Zimmeti kaydet") { Task { await save(company: company) } }
+                    .disabled(busy || employee == nil || item.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || item.count > 200)
             }
                 .padding(20).novaPopupContentSize()
             }
@@ -115,8 +114,8 @@ struct NovaPilotPPEGate: View {
             rows = more ? rows + result.rows : result.rows; hasMore = result.hasMore
         } catch { failure = "Zimmetler yüklenemedi. Lütfen tekrar deneyin." }
     }
-    private func save() async {
-        guard let company = createCompany, let employee else { return }
+    private func save(company: UUID) async {
+        guard let employee else { return }
         busy = true; failure = nil
         defer { busy = false }
         let formatter = DateFormatter(); formatter.calendar = Calendar(identifier: .gregorian)

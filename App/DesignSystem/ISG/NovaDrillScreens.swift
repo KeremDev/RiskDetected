@@ -203,7 +203,7 @@ struct NovaDrillScreen: View {
         }
         .sheet(item: $planning) { draft in
             NovaCompanyCreateFlow(title: "Tatbikat planla", companies: client.companies,
-                catalogue: client.catalogue, onSelect: { draftCompany = $0 }) { selectedCatalogue in
+                catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany) { selectedCatalogue, _ in
                 NovaDrillPlanSheet(draft: draft, catalogue: selectedCatalogue,
                     onSave: { edited in await plan(edited) }, onClose: { planning = nil })
             }
@@ -296,8 +296,8 @@ struct NovaDrillScreen: View {
         return allStates
     }
     private var companyOptions: [NovaFileChooserOption] {
-        [.init(id: nil, title: allCompanies)]
-            + companies.map { .init(id: $0.id.uuidString, title: $0.name) }
+        (initialCompany == nil ? [.init(id: nil, title: allCompanies)] : [])
+            + companies.filter { initialCompany == nil || $0.id == initialCompany }.map { .init(id: $0.id.uuidString, title: $0.name) }
     }
     private var stateOptions: [NovaFileChooserOption] {
         [.init(id: nil, title: allStates)]

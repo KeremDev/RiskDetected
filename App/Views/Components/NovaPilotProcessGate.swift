@@ -16,7 +16,6 @@ struct NovaPilotProcessGate: View {
     @State private var hasMore = false
     @State private var busy = false
     @State private var failure: String?
-    @State private var createCompany: UUID?
     private var spec: NovaProcessKind { .get(kind) }
     private var service: NovaProcessService { .init(identity:identity) }
     var body: some View {
@@ -82,26 +81,14 @@ struct NovaPilotProcessGate: View {
         .font(.custom("PlusJakartaSans-Regular",size:14)).tint(.primary)
         .task { company = initialCompany; await load() }
         .onChange(of:company) { _ in Task { await load() } }
-        .sheet(isPresented:$creating,onDismiss:{createCompany = nil; Task { await load() }}) {
+        .sheet(isPresented:$creating,onDismiss:{Task { await load() }}) {
             if (parent != nil || initialCompany != nil), let company {
                 NovaProcessEditor(identity:identity,kind:kind,company:company,parent:parent,canWrite:canWrite)
             } else {
                 NovaCompanyCreateFlow(title:spec.title,companies:{try await NovaAnalysisWorkspace.companyOptions(identity:identity)},catalogue:{ selected in
                     try JSONDecoder().decode(NovaProcessPage.self,from:await service.read(kind:kind,company:selected))
-                },onSelect:{createCompany = $0}) { _ in
-                    // createCompany is set by onSelect just above, synchronously,
-                    // before this content closure can ever run with a loaded
-                    // catalogue — but a screen must never go silently blank if
-                    // that assumption is ever wrong, so the failure is visible
-                    // and recoverable instead of an empty popup.
-                    if let company = createCompany {
-                        NovaProcessEditor(identity:identity,kind:kind,company:company,parent:parent,canWrite:canWrite)
-                    } else {
-                        VStack(spacing: 12) {
-                            NovaText(text: "Firma seçimi kayboldu. Firmayı yeniden seçin.", style: .body)
-                            NovaButton(label: "Kapat", symbol: "xmark", variant: .surface) { creating = false }
-                        }.padding(20)
-                    }
+                },onSelect:{_ in}) { _, company in
+                    NovaProcessEditor(identity:identity,kind:kind,company:company,parent:parent,canWrite:canWrite)
                 }
             }
         }

@@ -204,7 +204,7 @@ struct NovaAppointmentScreen: View {
         }
         .sheet(item: $drafting) { draft in
             NovaCompanyCreateFlow(title: "Görev ver", companies: client.companies,
-                catalogue: client.catalogue, onSelect: { draftCompany = $0 }) { selectedCatalogue in
+                catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany) { selectedCatalogue, _ in
                 NovaAppointmentSheet(draft: draft, catalogue: selectedCatalogue,
                     onSave: { edited in await save(edited) }, onClose: { drafting = nil })
             }
@@ -297,8 +297,8 @@ struct NovaAppointmentScreen: View {
     }
 
     private var companyOptions: [NovaFileChooserOption] {
-        [.init(id: nil, title: allCompanies)]
-            + companies.map { .init(id: $0.id.uuidString, title: $0.name) }
+        (initialCompany == nil ? [.init(id: nil, title: allCompanies)] : [])
+            + companies.filter { initialCompany == nil || $0.id == initialCompany }.map { .init(id: $0.id.uuidString, title: $0.name) }
     }
     /// Only the roles the server accepts as a filter.
     private var roleOptions: [NovaFileChooserOption] {

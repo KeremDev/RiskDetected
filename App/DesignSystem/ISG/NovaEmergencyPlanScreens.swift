@@ -204,7 +204,7 @@ struct NovaEmergencyPlanScreen: View {
                     onSave: { edited in await publish(edited) }, onClose: { drafting = nil })
             } else {
             NovaCompanyCreateFlow(title: "Plan yayınla", companies: client.companies,
-                catalogue: client.catalogue, onSelect: { draftCompany = $0 }) { selectedCatalogue in
+                catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany) { selectedCatalogue, _ in
                 NovaEmergencyPlanSheet(draft: draft, catalogue: selectedCatalogue,
                     onSave: { edited in await publish(edited) }, onClose: { drafting = nil })
             }
@@ -296,8 +296,8 @@ struct NovaEmergencyPlanScreen: View {
         return allStates
     }
     private var companyOptions: [NovaFileChooserOption] {
-        [.init(id: nil, title: allCompanies)]
-            + companies.map { .init(id: $0.id.uuidString, title: $0.name) }
+        (initialCompany == nil ? [.init(id: nil, title: allCompanies)] : [])
+            + companies.filter { initialCompany == nil || $0.id == initialCompany }.map { .init(id: $0.id.uuidString, title: $0.name) }
     }
     private var stateOptions: [NovaFileChooserOption] {
         [.init(id: nil, title: allStates)]

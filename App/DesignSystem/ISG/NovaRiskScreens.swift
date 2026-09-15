@@ -183,7 +183,6 @@ struct NovaRiskScreen: View {
     @State private var finalizing: NovaRiskFinalizeDraft?
     @State private var opening = false
     @State private var creating = false
-    @State private var createCompany: UUID?
     @Environment(\.colorScheme) private var scheme
 
     private var allCompanies: String {
@@ -217,8 +216,8 @@ struct NovaRiskScreen: View {
         }
         .task { await load(reset: true) }
         .sheet(isPresented: $creating, onDismiss: { Task { await load(reset: true) } }) {
-            NovaCompanyCreateFlow(title: "Risk değerlendirmesi kaydı", companies: client.companies, catalogue: { co in try await client.catalogue(co) }, onSelect: { createCompany = $0 }) { catalogue in
-                if let co = createCompany { NovaRiskCreateRecord(client: client, company: co, catalogue: catalogue) { creating = false } }
+            NovaCompanyCreateFlow(title: "Risk değerlendirmesi kaydı", companies: client.companies, catalogue: { co in try await client.catalogue(co) }, onSelect: { _ in }) { catalogue, co in
+                NovaRiskCreateRecord(client: client, company: co, catalogue: catalogue) { creating = false }
             }
         }
         .sheet(item: $detail) { row in
