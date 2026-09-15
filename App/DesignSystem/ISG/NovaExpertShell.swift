@@ -368,6 +368,11 @@ struct NovaShellPanel: View {
                     ForEach(NovaDrawerGroup.all) { group in
                         drawerGroup(group)
                     }
+                    drawerDestination(.periodicChecks)
+                    drawerDestination(.training)
+                    drawerDestination(.katipContracts)
+                    drawerDestination(.workPermits)
+                    drawerDestination(.visits)
                     drawerDestination(.statistics)
                     drawerDestination(.notifications)
                 }
@@ -422,8 +427,14 @@ struct NovaShellPanel: View {
 
     private func drawerDestination(_ destination: NovaDestination, nested: Bool = false) -> some View {
         Button {
-            onDestination?(destination)
-            send(.navigate(destination))
+            // Firma Ekle opens the company-create flow directly, same as the
+            // quick-add sheet's own entry for it — it is not a pushed screen.
+            if destination == .newCompany {
+                onCompanyCreate?()
+            } else {
+                onDestination?(destination)
+                send(.navigate(destination))
+            }
         } label: {
             HStack(spacing: 12) {
                 NovaIcon(symbol: destination.symbol, size: nested ? 17 : 18).frame(width: 20)

@@ -15441,67 +15441,85 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Analiz ve Denetim"
+            "value": "Analiz"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Analysis and Inspections"
+            "value": "Analysis"
           }
         }
       },
       "comment": "nova_navigation; drawer section heading; placeholders: none; review: human_draft"
     },
-    "localizable.nova.drawer.group.documents": {
+    "localizable.nova.drawer.group.audit": {
       "extractionState": "manual",
       "localizations": {
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Evrak ve Raporlar"
+            "value": "Denetim"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Documents and Reports"
+            "value": "Inspections"
           }
         }
       },
       "comment": "nova_navigation; drawer section heading; placeholders: none; review: human_draft"
     },
-    "localizable.nova.drawer.group.people": {
+    "localizable.nova.drawer.group.company": {
       "extractionState": "manual",
       "localizations": {
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Firma ve Personel"
+            "value": "Firma"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Companies and People"
+            "value": "Company"
           }
         }
       },
       "comment": "nova_navigation; drawer section heading; placeholders: none; review: human_draft"
     },
-    "localizable.nova.drawer.group.planning": {
+    "localizable.nova.drawer.group.forms": {
       "extractionState": "manual",
       "localizations": {
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Plan ve Organizasyon"
+            "value": "Formlar"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Planning and Organization"
+            "value": "Forms"
+          }
+        }
+      },
+      "comment": "nova_navigation; drawer section heading; placeholders: none; review: human_draft"
+    },
+    "localizable.nova.drawer.group.safety": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İş Güvenliği"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Occupational Safety"
           }
         }
       },
