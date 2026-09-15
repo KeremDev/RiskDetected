@@ -204,7 +204,10 @@ struct NovaRiskRow: Identifiable, Equatable {
 
 /// What the client may offer, and what it must say about it.
 struct NovaRiskCatalogue: Equatable {
-    struct Workplace: Identifiable, Equatable { let id: UUID; let name: String; let needsReview: Bool }
+    struct Workplace: Identifiable, Equatable {
+        let id: UUID; let name: String; let needsReview: Bool
+        var hazardClass: String? = nil; var suggestedPeriodYears: Int? = nil
+    }
     struct Rule: Identifiable, Equatable {
         var id: String { ruleCode }
         let ruleCode: String
@@ -260,6 +263,7 @@ struct NovaRiskVersionDraft: Equatable {
     var expectedCurrent: Int = 0
     var versionToEdit: Int?
     var editRevision: Int = 0
+    var fileAssetID: UUID?
 }
 
 /// What the expert confirms to make a version the document that stands.

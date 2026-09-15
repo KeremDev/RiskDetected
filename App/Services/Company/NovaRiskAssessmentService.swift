@@ -84,7 +84,10 @@ import Foundation
         let source_link_count: Int?
         let versions: [VersionRow]?
     }
-    private struct WorkplaceRow: Decodable { let id: UUID; let name: String; let needs_review: Bool }
+    private struct WorkplaceRow: Decodable {
+        let id: UUID; let name: String; let needs_review: Bool
+        let hazard_class: String?; let suggested_period_years: Int?
+    }
     private struct RuleRow: Decodable { let rule_code: String; let period_kind: String; let period_length: Int? }
     private struct CatalogEnvelope: Decodable {
         let workplaces: [WorkplaceRow]
@@ -180,7 +183,8 @@ import Foundation
                                    "p_kind": .string("catalog")])
         try check(identity)
         let envelope = try JSONDecoder().decode(CatalogEnvelope.self, from: data)
-        return .init(workplaces: envelope.workplaces.map { .init(id: $0.id, name: $0.name, needsReview: $0.needs_review) },
+        return .init(workplaces: envelope.workplaces.map { .init(id: $0.id, name: $0.name, needsReview: $0.needs_review,
+                     hazardClass: $0.hazard_class, suggestedPeriodYears: $0.suggested_period_years) },
                      rules: envelope.rules.map { .init(ruleCode: $0.rule_code, periodKind: $0.period_kind,
                                                        periodLength: $0.period_length) },
                      noticeDays: envelope.notice_days,
@@ -250,6 +254,7 @@ import Foundation
         if draft.kind.needsScope { payload["scope"] = .array(draft.scope.map { .string($0) }) }
         let reason = draft.reason.trimmingCharacters(in: .whitespacesAndNewlines)
         if !reason.isEmpty { payload["reason"] = .string(reason) }
+        if let asset = draft.fileAssetID { payload["file_asset_id"] = .id(asset) }
         if let version = draft.versionToEdit {
             payload.removeValue(forKey: "kind")
             payload["version"] = .number(Int64(version))

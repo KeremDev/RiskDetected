@@ -15,6 +15,7 @@ struct NovaRiskClient {
     let draft: (UUID, NovaRiskVersionDraft) async throws -> NovaRiskRow?
     let finalize: (UUID, NovaRiskFinalizeDraft) async throws -> NovaRiskRow?
     var cancelDraft: (UUID, NovaRiskRow, NovaRiskVersion, String) async throws -> NovaRiskRow? = { _,_,_,_ in throw NovaRiskFailure.unavailable }
+    let fileClient: NovaFileLibraryClient
 }
 
 /// One counter, in the same shape the rest of the modules use.
@@ -222,7 +223,7 @@ struct NovaRiskScreen: View {
         .task { await load(reset: true) }
         .sheet(isPresented: $creating, onDismiss: { Task { await load(reset: true) } }) {
             NovaCompanyCreateFlow(title: "Risk değerlendirmesi kaydı", companies: client.companies, catalogue: { co in try await client.catalogue(co) }, onSelect: { _ in }) { catalogue, co in
-                NovaRiskCreateRecord(client: client, company: co, catalogue: catalogue) { creating = false }
+                NovaRiskQuickCreateSheet(client: client, company: co, catalogue: catalogue) { creating = false }
             }
         }
         .sheet(item: $detail) { row in
@@ -458,42 +459,234 @@ extension NovaRiskVersionDraft: Identifiable { var id: String { (assessmentID?.u
 extension NovaRiskFinalizeDraft: Identifiable { var id: String { (assessmentID?.uuidString ?? "") + "\(version)" } }
 
 
-private struct NovaRiskCreateRecord: View {
+/// One page: pick the workplace (skipped when there is only one), answer a
+/// quick "new or revise" question only when a prior assessment exists, fill
+/// in the date/period/file, save. No separate "taslak" step to come back to —
+/// draft and finalize happen back to back, behind one button and one spinner.
+private struct NovaRiskQuickCreateSheet: View {
     let client: NovaRiskClient
     let company: UUID
     let catalogue: NovaRiskCatalogue
     let onClose: () -> Void
+    @Environment(\.colorScheme) private var scheme
+
+    @State private var workplaceID: UUID?
     @State private var row: NovaRiskRow?
-    @State private var busy = false
-    @State private var error: String?
+    @State private var opening = false
+    @State private var openError: String?
+    @State private var kindChosen = false
+    @State private var kind: NovaRiskKind = .full
+    @State private var assessmentOn = NovaDayField.text(Date())
+    @State private var periodYears = ""
+    @State private var scope: [String] = []
+    @State private var scopeEntry = ""
+    @State private var reason = ""
+    @State private var assetID = ""
+    @State private var saving = false
+    @State private var saveError: String?
+
+    private var workplaces: [NovaRiskCatalogue.Workplace] { catalogue.workplaces }
+    private var suggestedYears: Int? { workplaces.first { $0.id == workplaceID }?.suggestedPeriodYears }
+    private var hasOpenDraft: Bool { row?.hasOpenDraft ?? false }
+    private var canSave: Bool {
+        guard row != nil, !saving else { return false }
+        if hasOpenDraft { return true }
+        if kind.needsScope && scope.isEmpty { return false }
+        if kind.needsReason && reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return false }
+        return true
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if let row, row.hasOpenDraft {
-                NovaText(text: "Bu işyerinin açık bir taslağı var. Kayıt ayrıntısından taslağı tamamlayabilirsiniz.", style: .body)
-                Button("Listeye dön", action: onClose)
-            } else if let row {
-                NovaRiskVersionSheet(draft: .init(assessmentID: row.id, kind: .full, assessmentOn: NovaDayField.text(Date()), expectedCurrent: row.currentVersion), catalogue: catalogue, onSave: { draft in
-                    do { _ = try await client.draft(company, draft); onClose(); return nil }
-                    catch let e as NovaRiskFailure { return e.message }
-                    catch { return NovaRiskFailure.unavailable.message }
-                }, onClose: onClose)
+            NovaText(text: RDLocalization.string("localizable.nova.risk.quick.title", table: .localizable,
+                fallback: "Risk değerlendirmesi"), style: .screenTitle)
+            if workplaces.isEmpty {
+                NovaText(text: RDLocalization.string("localizable.nova.risk.quick.noworkplace", table: .localizable,
+                    fallback: "Önce firma bilgilerinden işyeri ekleyin."), style: .body)
+            } else if workplaceID == nil, workplaces.count > 1 {
+                workplacePicker
+            } else if let openError {
+                NovaText(text: openError, style: .meta, color: NovaColorToken.statusDangerInk.color(in: scheme))
+                NovaButton(label: RDLocalization.string("localizable.nova.risk.quick.retry", table: .localizable,
+                    fallback: "Tekrar dene"), symbol: "arrow.clockwise", variant: .surface) { Task { await open() } }
+            } else if opening || row == nil {
+                ProgressView(RDLocalization.string("localizable.nova.risk.quick.opening", table: .localizable,
+                    fallback: "Kayıt açılıyor…"))
+            } else if row!.currentVersion > 0, !hasOpenDraft, !kindChosen {
+                kindChooser
             } else {
-                NovaText(text: "İşyeri seçin", style: .cardTitle)
-                if catalogue.workplaces.isEmpty { NovaText(text: "Önce firma bilgilerinden işyeri ekleyin.", style: .body) }
-                ForEach(catalogue.workplaces) { workplace in
-                    Button(workplace.name) {
-                        Task {
-                            busy = true; error = nil
-                            defer { busy = false }
-                            do { row = try await client.open(company, workplace.id) }
-                            catch let e as NovaRiskFailure { error = e.message }
-                            catch { self.error = NovaRiskFailure.unavailable.message }
-                        }
-                    }.disabled(busy)
-                }
-                if busy { ProgressView("Kayıt açılıyor…") }
-                if let error { Text(error) }
+                form
             }
-        }.novaPopupContentSize().preference(key: NovaPopupBusyKey.self, value: busy)
+            if let saveError {
+                NovaText(text: saveError, style: .meta, color: NovaColorToken.statusDangerInk.color(in: scheme))
+            }
+        }
+        .novaPopupContentSize()
+        .preference(key: NovaPopupBusyKey.self, value: opening || saving)
+        .task {
+            if workplaces.count == 1 { workplaceID = workplaces[0].id }
+        }
+        .onChange(of: workplaceID) { _ in Task { await open() } }
+    }
+
+    private var workplacePicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            NovaText(text: RDLocalization.string("localizable.nova.risk.quick.pickworkplace", table: .localizable,
+                fallback: "İşyeri seçin"), style: .cardTitle)
+            ForEach(workplaces) { workplace in
+                Button(workplace.name) { workplaceID = workplace.id }
+                    .accessibilityIdentifier("risk.quick.workplace.\(workplace.id.uuidString.lowercased())")
+            }
+        }
+    }
+
+    private var kindChooser: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            NovaText(text: RDLocalization.string("localizable.nova.risk.quick.priorexists", table: .localizable,
+                fallback: "Bu işyeri için daha önce tamamlanmış bir değerlendirme var."), style: .body)
+            HStack(spacing: 10) {
+                NovaButton(label: RDLocalization.string("localizable.nova.risk.quick.new", table: .localizable,
+                    fallback: "Yeni değerlendirme"), symbol: "doc.badge.plus", variant: .surface) {
+                    kind = .full; primeSuggestedPeriod(); kindChosen = true
+                }.accessibilityIdentifier("risk.quick.kind.new")
+                NovaButton(label: RDLocalization.string("localizable.nova.risk.quick.revise", table: .localizable,
+                    fallback: "Revize et"), symbol: "pencil", variant: .primary) {
+                    kind = .partial; kindChosen = true
+                }.accessibilityIdentifier("risk.quick.kind.revise")
+            }
+        }
+    }
+
+    @ViewBuilder private var form: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if hasOpenDraft {
+                NovaHelpHint(text: RDLocalization.string("localizable.nova.risk.quick.draftexists", table: .localizable,
+                    fallback: "Bu işyerinde açık bir taslak var. Aşağıdaki bilgilerle tamamlayabilirsiniz."))
+            } else {
+                if kind.carriesAssessmentDate {
+                    NovaDayField(label: RDLocalization.string("localizable.nova.risk.fact.assessment",
+                        table: .localizable, fallback: "Değerlendirme tarihi"),
+                        value: $assessmentOn, identifier: "risk.quick.date")
+                } else {
+                    NovaHelpHint(text: RDLocalization.string("localizable.nova.risk.version.keepdate", table: .localizable,
+                        fallback: "Bu tür, belgenin özgün değerlendirme tarihini korur."))
+                }
+                if kind.needsScope { scopeField }
+                if kind.needsReason {
+                    VStack(alignment: .leading, spacing: 4) {
+                        NovaText(text: RDLocalization.string("localizable.nova.risk.version.reason",
+                            table: .localizable, fallback: "Gerekçe"), style: .label)
+                        TextEditor(text: $reason).frame(minHeight: 70)
+                            .accessibilityIdentifier("risk.quick.reason")
+                    }
+                }
+                if kind == .full {
+                    VStack(alignment: .leading, spacing: 4) {
+                        NovaText(text: RDLocalization.string("localizable.nova.risk.finalize.years",
+                            table: .localizable, fallback: "Geçerlilik süresi (yıl)"), style: .label)
+                        TextField("", text: $periodYears).keyboardType(.numberPad)
+                            .accessibilityIdentifier("risk.quick.years")
+                    }
+                    if let years = suggestedYears {
+                        NovaHelpHint(text: String(format: RDLocalization.string("localizable.nova.risk.finalize.hazard.hint",
+                            table: .localizable,
+                            fallback: "İşyerinin tehlike sınıfına göre %d yıl otomatik dolduruldu. Gerekirse değiştirebilirsiniz."), years))
+                    }
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    NovaText(text: RDLocalization.string("localizable.nova.risk.quick.file", table: .localizable,
+                        fallback: "Dosya"), style: .label)
+                    NovaInlineFileField(category: "risk_assessment", company: company,
+                        fileClient: client.fileClient, assetID: $assetID)
+                }
+            }
+            HStack(spacing: 10) {
+                NovaButton(label: RDLocalization.string("localizable.nova.risk.cancel", table: .localizable,
+                    fallback: "Vazgeç"), symbol: "xmark", variant: .surface, action: onClose).disabled(saving)
+                NovaButton(label: saving
+                    ? RDLocalization.string("localizable.nova.risk.quick.saving", table: .localizable, fallback: "Kaydediliyor…")
+                    : RDLocalization.string("localizable.nova.risk.quick.save", table: .localizable, fallback: "Kaydet"),
+                    symbol: "checkmark.seal", variant: .primary, isEnabled: canSave) { Task { await save() } }
+                    .accessibilityIdentifier("risk.quick.save")
+            }
+        }
+    }
+
+    private var scopeField: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            NovaText(text: RDLocalization.string("localizable.nova.risk.scope", table: .localizable,
+                fallback: "Kapsam"), style: .label)
+            HStack(spacing: 8) {
+                TextField(RDLocalization.string("localizable.nova.risk.scope.add", table: .localizable,
+                    fallback: "Bölüm adı"), text: $scopeEntry)
+                    .accessibilityIdentifier("risk.quick.scope.entry")
+                NovaButton(label: RDLocalization.string("localizable.nova.risk.scope.button", table: .localizable,
+                    fallback: "Ekle"), symbol: "plus", variant: .surface) {
+                    let value = scopeEntry.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !value.isEmpty, scope.count < 50 else { return }
+                    scope.append(value); scopeEntry = ""
+                }
+            }
+            ForEach(scope, id: \.self) { entry in
+                HStack(spacing: 6) {
+                    NovaAnalysisTag(symbol: "square.dashed", text: entry, status: .info)
+                    Button { scope.removeAll { $0 == entry } } label: {
+                        Image(systemName: "xmark.circle").font(.system(size: 12))
+                    }.buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private func primeSuggestedPeriod() {
+        guard periodYears.isEmpty, let years = suggestedYears else { return }
+        periodYears = String(years)
+    }
+
+    private func open() async {
+        guard let workplaceID else { return }
+        opening = true; openError = nil
+        defer { opening = false }
+        do {
+            let opened = try await client.open(company, workplaceID)
+            row = opened
+            if let draft = opened?.versions.first(where: { $0.isDraft }) {
+                kind = draft.kind; assessmentOn = draft.assessmentOn
+                scope = draft.scope; reason = draft.reason ?? ""
+                kindChosen = true
+            } else if (opened?.currentVersion ?? 0) == 0 {
+                kind = .full; primeSuggestedPeriod(); kindChosen = true
+            }
+        } catch let e as NovaRiskFailure { openError = e.message }
+        catch { openError = NovaRiskFailure.unavailable.message }
+    }
+
+    private func save() async {
+        guard let row else { return }
+        saving = true; saveError = nil
+        defer { saving = false }
+        do {
+            var afterDraft = row
+            if !hasOpenDraft {
+                var draft = NovaRiskVersionDraft(assessmentID: row.id, kind: kind,
+                    assessmentOn: kind.carriesAssessmentDate ? assessmentOn : "",
+                    scope: scope, reason: reason, expectedCurrent: row.currentVersion)
+                if let asset = UUID(uuidString: assetID) { draft.fileAssetID = asset }
+                guard let updated = try await client.draft(company, draft) else {
+                    saveError = NovaRiskFailure.unavailable.message; return
+                }
+                afterDraft = updated
+            }
+            guard let draftVersion = afterDraft.versions.first(where: { $0.isDraft }) else {
+                saveError = NovaRiskFailure.unavailable.message; return
+            }
+            var finalize = NovaRiskFinalizeDraft(assessmentID: row.id, version: draftVersion.version,
+                expectedCurrent: afterDraft.currentVersion, kind: draftVersion.kind,
+                editRevision: draftVersion.editRevision)
+            if draftVersion.kind == .full { finalize.periodYears = periodYears }
+            _ = try await client.finalize(company, finalize)
+            onClose()
+        } catch let e as NovaRiskFailure { saveError = e.message }
+        catch { saveError = NovaRiskFailure.unavailable.message }
     }
 }
