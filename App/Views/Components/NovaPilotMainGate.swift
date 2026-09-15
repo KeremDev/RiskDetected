@@ -38,7 +38,7 @@ struct NovaPilotRoot: View {
     @EnvironmentObject private var app: AppState
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var controller = NovaWorkspaceController()
-    @State private var navigation = NovaNavigationState(epoch: UUID().uuidString, available: [.riskAssessments, .statistics, .companies, .newCompany, .findings, .newFinding, .analyses, .newAnalysis, .training, .newTraining, .documentChecklist, .documents, .periodicChecks, .emergencyPlans, .drills, .ppeHandovers, .appointments, .katipContracts, .annualWorkPlans, .boardMeetings, .visits, .workPermits, .contractors, .reports, .reportArchive, .checklists])
+    @State private var navigation = NovaNavigationState(epoch: UUID().uuidString, available: [.riskAssessments, .statistics, .companies, .newCompany, .findings, .newFinding, .analyses, .newAnalysis, .training, .newTraining, .documentChecklist, .documents, .periodicChecks, .emergencyPlans, .drills, .ppeHandovers, .appointments, .katipContracts, .annualWorkPlans, .boardMeetings, .visits, .workPermits, .contractors, .reports, .reportArchive, .checklists, .notifications])
     @State private var showingCreate = false
     @State private var notice: String?
     @State private var listRevision = UUID()
@@ -48,7 +48,14 @@ struct NovaPilotRoot: View {
     /// The account's equipment standing, for the home page's own summary. One
     /// read, and the card says nothing until it answers.
     @State private var equipmentBoard: NovaEquipmentBoard?
+    /// The header bell. Computed from the account's own records at read time;
+    /// it is never a record of a push that was sent.
+    @State private var notices = NovaNoticeFeed.empty
+    @State private var noticeRevision = UUID()
     private var overviewKey: String { "\(controller.host.navigation.epoch):\(ready):\(listRevision):\(navigation.selected)" }
+    /// The bell reloads when the session, the records or the panel change, and
+    /// after every mark.
+    private var noticeKey: String { "\(controller.host.navigation.epoch):\(ready):\(listRevision):\(noticeRevision)" }
     private var activeCompanies: [NovaPilotCompanySummary]? { ready ? overview?.filter { !$0.is_archived } : nil }
     private var metrics: [NovaMetricItem] {
         [
@@ -74,7 +81,16 @@ struct NovaPilotRoot: View {
     }
 
     var body: some View {
-        NovaExpertShell(navigation: $navigation, userName: name, connectionLabel: status,
+        NovaExpertShell(navigation: $navigation, userName: name,
+            hasUnread: notices.unread > 0, unreadCount: notices.unread,
+            notificationItems: notices.rows.map(noticeItem),
+            noticeNote: notices.rows.isEmpty ? "" : NovaNoticeWords.dismissNote,
+            onReadNotice: { key in Task { await markNotices { try await NovaNoticeService.live().read(identity, key: key) } } },
+            onDismissNotice: { key in Task { await markNotices { try await NovaNoticeService.live().dismiss(identity, key: key) } } },
+            onRestoreNotice: { key in Task { await markNotices { try await NovaNoticeService.live().restore(identity, key: key) } } },
+            connectionLabel: status,
+            onReadAll: { Task { await markNotices { try await NovaNoticeService.live().readAll(identity) } } },
+            onClearNotifications: { Task { await markNotices { try await NovaNoticeService.live().dismissAll(identity) } } },
             onCompanyCreate: { showingCreate = true },
             onDestination: { destination in
                 // The company workspace lives below the companies host rather
@@ -92,11 +108,12 @@ struct NovaPilotRoot: View {
                         trainingMessage: "Gerçekleşen eğitimler ve katılımcı kayıtları",
                         summaryMessage: activeCompanies != nil ? RDLocalization.string("localizable.nova.pilot.main.gate.pilot.firmalarinizin.guncel.kayitlari.01d48da7", table: .localizable, fallback: "Pilot firmalarınızın güncel kayıtları.") : overviewFailed ? RDLocalization.string("localizable.nova.pilot.main.gate.ozet.alinamadi.yenileyerek.tekrar.deneyin.9b6a6077", table: .localizable, fallback: "Özet alınamadı. Yenileyerek tekrar deneyin.") : RDLocalization.string("localizable.nova.pilot.main.gate.ozet.verileri.henuz.bagli.degil.4508136e", table: .localizable, fallback: "Özet verileri henüz bağlı değil.")),
                         onNavigate: navigate,
-                        onPhoto: { navigate(.newAnalysis) }, onAssistant: unavailable)
+                        onPhoto: { navigate(.newAnalysis) }, onAssistant: unavailable,
+                        trackingIdentity: ready ? identity : nil, trackingCanWrite: controller.canWrite)
                 }
             case .statistics:
                 if ready {
-                    NovaStatisticsScreen(load: { company, months in
+                    NovaStatisticsScreen(trackingIdentity: identity, trackingCanWrite: controller.canWrite, load: { company, months in
                         try await NovaStatisticsService(identity: identity).load(company: company, months: months)
                     }, onBack: { navigate(.home) }, onNavigate: navigate)
                     .id("\(identity.userID):\(identity.sessionID)")
@@ -136,8 +153,14 @@ struct NovaPilotRoot: View {
                 appointments
             case .katipContracts, .annualWorkPlans, .boardMeetings, .visits, .workPermits, .contractors:
                 if ready {
-                    NovaPilotProcessGate(identity: identity, kind: processKind(destination), onBack: { navigate(.home) })
+                    NovaPilotProcessGate(identity: identity, kind: processKind(destination), canWrite: controller.canWrite, onBack: { navigate(.home) })
                         .id(destination)
+                } else { statusCard }
+            case .notifications:
+                if ready {
+                    NovaPilotNoticeGate(identity: identity,
+                        onOpen: { target in navigate(target) },
+                        onBack: { navigate(.home) })
                 } else { statusCard }
             case .reports, .reportArchive:
                 NovaProcessArchive(identity: identity, onBack: { navigate(.home) })
@@ -171,6 +194,9 @@ struct NovaPilotRoot: View {
             Button("Tamam", role: .cancel) { notice = nil }
         } message: { Text(notice ?? "") }
         .task { if !previewOnly { await controller.observe() } }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("isgada.records.changed"))) { event in
+            if event.object as? UUID == identity.userID { listRevision = UUID() }
+        }
         .task(id: overviewKey) {
             overview = nil; overviewFailed = false
             guard ready else { return }
@@ -181,6 +207,10 @@ struct NovaPilotRoot: View {
             equipmentBoard = nil
             guard ready else { return }
             equipmentBoard = try? await NovaEquipmentCheckService.live().board(identity, query: .init(limit: 1))
+        }
+        .task(id: noticeKey) {
+            guard ready, !previewOnly else { notices = .empty; return }
+            notices = (try? await NovaNoticeService.live().feed(identity)) ?? .empty
         }
         .onChange(of: scenePhase) { phase in
             // Screenshots, permission prompts and Control Center can cause inactive → active.
@@ -363,6 +393,35 @@ struct NovaPilotRoot: View {
                 }.padding(20)
             }
         }
+    }
+
+    /// One notice as the shell draws it. The kind and the company are the
+    /// detail line; the badge says how late it is in words.
+    private func noticeItem(_ entry: NovaNoticeEntry) -> NovaNotice {
+        NovaNotice(id: entry.key, title: entry.title,
+            detail: [entry.kind.title, entry.companyName].compactMap { $0 }.joined(separator: " · "),
+            badge: noticeBadge(entry), symbol: entry.kind.symbol, tone: entry.severity.tone,
+            unread: entry.unread, dismissed: entry.dismissed, destination: entry.destination)
+    }
+
+    private func noticeBadge(_ entry: NovaNoticeEntry) -> String {
+        if entry.severity == .overdue {
+            return String(format: RDLocalization.string("localizable.nova.notice.badge.overdue",
+                table: .localizable, fallback: "%d gün geçti"), -entry.days)
+        }
+        if entry.days == 0 {
+            return RDLocalization.string("localizable.nova.notice.badge.today", table: .localizable,
+                fallback: "bugün")
+        }
+        return String(format: RDLocalization.string("localizable.nova.notice.badge.soon",
+            table: .localizable, fallback: "%d gün"), entry.days)
+    }
+
+    /// A mark is never applied locally: the server states the counts, and the
+    /// bell asks again.
+    private func markNotices(_ work: @escaping () async throws -> Void) async {
+        do { try await work() } catch { }
+        noticeRevision = UUID()
     }
 
     private func navigate(_ destination: NovaDestination) {
