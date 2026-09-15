@@ -82,6 +82,9 @@ struct NovaEducationEditor: View {
     @State private var error: String?
     @State private var notice: String?
     @State private var pending = false
+    /// True while `draft` came from a previously autosaved copy rather than
+    /// a fresh start — surfaces the notice + discard option below.
+    @State private var restoredDraft = false
     @State private var selectedCertificate: Selection?
     @State private var certificatesKnown: [NovaEducationContext.Certificate] = []
     // The picture in the manual form starts open because that is what the
@@ -117,7 +120,18 @@ struct NovaEducationEditor: View {
                         }
                         if let notice {
                             NovaCard(padding: 14) {
-                                NovaText(text: notice, style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
+                                VStack(alignment: .leading, spacing: 8) {
+                                    NovaText(text: notice, style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
+                                    // Only a plain autosave is safe to drop here — a
+                                    // `pending` draft is a mutation that may already be
+                                    // in flight server-side, and keeps its own retry
+                                    // control instead.
+                                    if restoredDraft && !pending {
+                                        NovaButton(label: RDLocalization.string("localizable.nova.education.discarddraft", table: .localizable,
+                                            fallback: "Taslağı temizle, baştan başla"), symbol: "arrow.counterclockwise", variant: .surface, action: discardDraft)
+                                            .accessibilityIdentifier("education.draft.discard")
+                                    }
+                                }
                             }
                         }
                         if pending {
@@ -427,40 +441,62 @@ struct NovaEducationEditor: View {
             saved = original; certificatesKnown = context.certificates
             if let pendingDraft = try service.pending() { draft = try service.draft(id: original?.id) ?? pendingDraft; pending = true }
             else if let preserved = try service.draft(id: original?.id) {
-                draft = preserved
+                draft = preserved; restoredDraft = true
                 if let original, preserved.expected_version != original.version {
                     notice = RDLocalization.string("localizable.nova.education.notice.staledraft", table: .localizable,
                         fallback: "Korunan taslak eski bir sürüme ait. Güncel kaydı değiştirmeden önce içeriğini karşılaştırın.")
-                }
-            } else if let original, let education = original.education {
-                draft = .init(id: original.id, expected_version: original.version, title: original.title,
-                    provider_name: education.provider_name, notes: original.notes, trainers: education.trainers, scopes: education.scopes)
-            } else if let original {
-                // Migrating a real legacy record: its own trainer field is
-                // actual historical data, not a guess, so it is fair to
-                // carry it straight over.
-                draft.trainers = [.init(name: original.trainer)]
-                draft.id = original.id; draft.expected_version = original.version; draft.title = original.title; draft.notes = original.notes
-                notice = RDLocalization.string("localizable.nova.education.notice.legacy", table: .localizable,
-                    fallback: "Eski kayıt için konuları ve gerçekleşen saatleri uzman bilgisiyle tamamlayın. Katalog geçmiş kaydı kendiliğinden değiştirmez.")
-                for company in original.companies {
-                    if let wp = context.workplaces.first(where: { $0.company_id == company.company_id }) {
-                        add(company: company.company_id, workplace: wp.id, seed: false)
-                        let i = draft.scopes.count - 1
-                        draft.scopes[i].participants = company.participants.map { .init(id: $0.id, name: $0.name) }
-                    }
+                } else {
+                    // A preserved draft restores silently otherwise — including
+                    // for a brand-new record, where it can look exactly like a
+                    // blank form that happens to already be filled in. Naming
+                    // it, with a way to drop it, matters here specifically:
+                    // it also catches a draft saved under an older build,
+                    // before what counted as "empty" for this form changed.
+                    notice = RDLocalization.string("localizable.nova.education.notice.restoreddraft", table: .localizable,
+                        fallback: "Önceki taslağınız geri yüklendi. Baştan başlamak isterseniz aşağıdan taslağı temizleyebilirsiniz.")
                 }
             } else {
-                // A genuinely new record: trainers start empty. Silently
-                // seeding the signed-in expert's own name here used to make
-                // "Eğiticiler" read as finished before anyone had chosen
-                // one — trainersStep offers the same name as a one-tap
-                // "Kendimi ekle" instead, so it stays fast but deliberate.
-                if let company = initialCompany, let wp = context.workplaces.first(where: { $0.company_id == company }) { add(company: company, workplace: wp.id) }
+                seedFreshDraft()
             }
             ready = true
             for company in Set(draft.scopes.map(\.company_id)) { await loadPeople(company) }
         } catch { self.error = NovaEducationService.message(error) }
+    }
+    /// The "no autosave to restore" branch of initialize(), split out so
+    /// discardDraft() can re-derive the same fresh state after clearing one.
+    private func seedFreshDraft() {
+        if let original, let education = original.education {
+            draft = .init(id: original.id, expected_version: original.version, title: original.title,
+                provider_name: education.provider_name, notes: original.notes, trainers: education.trainers, scopes: education.scopes)
+        } else if let original {
+            // Migrating a real legacy record: its own trainer field is
+            // actual historical data, not a guess, so it is fair to
+            // carry it straight over.
+            draft.trainers = [.init(name: original.trainer)]
+            draft.id = original.id; draft.expected_version = original.version; draft.title = original.title; draft.notes = original.notes
+            notice = RDLocalization.string("localizable.nova.education.notice.legacy", table: .localizable,
+                fallback: "Eski kayıt için konuları ve gerçekleşen saatleri uzman bilgisiyle tamamlayın. Katalog geçmiş kaydı kendiliğinden değiştirmez.")
+            for company in original.companies {
+                if let wp = context.workplaces.first(where: { $0.company_id == company.company_id }) {
+                    add(company: company.company_id, workplace: wp.id, seed: false)
+                    let i = draft.scopes.count - 1
+                    draft.scopes[i].participants = company.participants.map { .init(id: $0.id, name: $0.name) }
+                }
+            }
+        } else {
+            // A genuinely new record: trainers start empty. Silently
+            // seeding the signed-in expert's own name here used to make
+            // "Eğiticiler" read as finished before anyone had chosen
+            // one — trainersStep offers the same name as a one-tap
+            // "Kendimi ekle" instead, so it stays fast but deliberate.
+            if let company = initialCompany, let wp = context.workplaces.first(where: { $0.company_id == company }) { add(company: company, workplace: wp.id) }
+        }
+    }
+    private func discardDraft() {
+        try? service.discardDraft(id: original?.id)
+        draft = NovaEducationDraft(); restoredDraft = false; notice = nil
+        seedFreshDraft()
+        Task { for company in Set(draft.scopes.map(\.company_id)) { await loadPeople(company) } }
     }
     private func add(company: UUID, workplace: UUID, seed: Bool = true) {
         guard let wp = context.workplaces.first(where: { $0.id == workplace }) else { return }

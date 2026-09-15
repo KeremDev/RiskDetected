@@ -39,6 +39,13 @@ import Supabase
     func preserve(_ draft: NovaEducationDraft) throws {
         try check(); try storage.write(JSONEncoder().encode(draft), account: key("draft:" + (draft.id?.uuidString ?? "new")))
     }
+    /// Drops the autosaved draft for this record (or for a new one, when `id`
+    /// is nil) so the next open starts genuinely fresh instead of restoring
+    /// whatever was last typed — the escape hatch for a draft that was
+    /// preserved before a change to what counts as a "fresh" record.
+    func discardDraft(id: UUID?) throws {
+        try check(); try storage.remove(account: key("draft:" + (id?.uuidString ?? "new")))
+    }
     func pending() throws -> NovaEducationDraft? {
         try check()
         return try storage.read(account: key("pending")).map { try JSONDecoder().decode(Pending.self, from: $0).draft }

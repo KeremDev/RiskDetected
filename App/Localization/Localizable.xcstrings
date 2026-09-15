@@ -17083,6 +17083,42 @@
         }
       }
     },
+    "localizable.nova.education.notice.restoreddraft": {
+      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your previous draft was restored. Clear it below if you'd rather start over."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önceki taslağınız geri yüklendi. Baştan başlamak isterseniz aşağıdan taslağı temizleyebilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.education.discarddraft": {
+      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear draft, start over"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taslağı temizle, baştan başla"
+          }
+        }
+      }
+    },
     "localizable.nova.education.pending": {
       "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
       "extractionState": "manual",
