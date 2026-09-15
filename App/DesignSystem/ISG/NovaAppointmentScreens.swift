@@ -9,6 +9,7 @@ struct NovaAppointmentClient {
     let detail: (UUID) async throws -> NovaAppointment
     let record: (UUID, NovaAppointmentDraft) async throws -> NovaAppointment?
     let end: (UUID, NovaAppointmentEndDraft) async throws -> NovaAppointment?
+    let fileClient: NovaFileLibraryClient
 }
 
 /// One counter, in the same shape the rest of the modules use.
@@ -185,7 +186,7 @@ struct NovaAppointmentScreen: View {
         }
         .task { await load(reset: true) }
         .sheet(item: $detail) { row in
-            NovaAppointmentDetailSheet(entry: row, canWrite: canWrite,
+            NovaAppointmentDetailSheet(entry: row, canWrite: canWrite, fileClient: client.fileClient,
                 onEnd: {
                     detail = nil
                     ending = .init(appointmentID: row.id, employeeName: row.employeeName ?? "",
@@ -204,8 +205,9 @@ struct NovaAppointmentScreen: View {
         }
         .sheet(item: $drafting) { draft in
             NovaCompanyCreateFlow(title: "Görev ver", companies: client.companies,
-                catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany) { selectedCatalogue, _ in
+                catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany) { selectedCatalogue, selectedCompany in
                 NovaAppointmentSheet(draft: draft, catalogue: selectedCatalogue,
+                    fileClient: client.fileClient, fileCompany: selectedCompany,
                     onSave: { edited in await save(edited) }, onClose: { drafting = nil })
             }
         }

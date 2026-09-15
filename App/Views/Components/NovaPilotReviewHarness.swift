@@ -390,7 +390,8 @@ struct NovaPilotReviewHarness: View {
               archive: { _ in },
               cancel: { _ in },
               recheck: { entry in entry },
-              contents: { _ in Data() })
+              contents: { _ in Data() },
+              download: { _, _ in Data() })
     }
 
     private var reviewFileCategories: [NovaFileCategory] {

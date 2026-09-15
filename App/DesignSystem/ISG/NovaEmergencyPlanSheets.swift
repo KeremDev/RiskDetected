@@ -319,23 +319,15 @@ struct NovaEmergencyPlanSheet: View {
             }
         }
         .accessibilityIdentifier("nova.emergency.form")
-        .novaFullScreenCover(isPresented: $addingFile) {
-            NovaPopup {
-                NovaFileAddSheet(companies: [],
-                    preselected: fileCompany, categories: emergencyFileCategories,
-                    accepts: fileAccepts, assurance: fileAssurance, client: fileClient) { entry in
-                        addingFile = false
-                        if let entry { draft.assetID = entry.assetID }
-                    }
-            }
-        }
     }
 
+    /// The upload happens right here — no cover, no second screen. Opening it
+    /// expands the same picker/title/category fields Dosyalarım uses, inline.
     @ViewBuilder private var fileEditor: some View {
         VStack(alignment: .leading, spacing: 6) {
             NovaText(text: RDLocalization.string("localizable.nova.emergency.form.file",
                 table: .localizable, fallback: "Dosya"), style: .label)
-            if draft.assetID != nil {
+            if draft.assetID != nil && !addingFile {
                 HStack(spacing: 8) {
                     Image(systemName: "doc.fill").font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(NovaColorToken.statusSuccessInk.color(in: scheme))
@@ -347,13 +339,24 @@ struct NovaEmergencyPlanSheet: View {
                     }.buttonStyle(.plain).accessibilityIdentifier("nova.emergency.form.file.remove")
                 }
             }
-            NovaButton(label: draft.assetID == nil
-                ? RDLocalization.string("localizable.nova.emergency.form.file.add", table: .localizable,
-                    fallback: "Dosya ekle")
-                : RDLocalization.string("localizable.nova.emergency.form.file.replace", table: .localizable,
-                    fallback: "Dosyayı değiştir"),
-                symbol: "paperclip", variant: .surface, isEnabled: fileCompany != nil) { addingFile = true }
-                .accessibilityIdentifier("nova.emergency.form.file.add")
+            if addingFile {
+                NovaCard(padding: 12) {
+                    NovaFileAddInline(companies: [], preselected: fileCompany,
+                        categories: emergencyFileCategories, accepts: fileAccepts,
+                        assurance: fileAssurance, client: fileClient) { entry in
+                            if let entry { draft.assetID = entry.assetID }
+                            addingFile = false
+                        }
+                }
+            } else {
+                NovaButton(label: draft.assetID == nil
+                    ? RDLocalization.string("localizable.nova.emergency.form.file.add", table: .localizable,
+                        fallback: "Dosya ekle")
+                    : RDLocalization.string("localizable.nova.emergency.form.file.replace", table: .localizable,
+                        fallback: "Dosyayı değiştir"),
+                    symbol: "paperclip", variant: .surface, isEnabled: fileCompany != nil) { addingFile = true }
+                    .accessibilityIdentifier("nova.emergency.form.file.add")
+            }
         }
     }
 

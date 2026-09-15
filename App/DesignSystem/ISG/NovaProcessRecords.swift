@@ -20,7 +20,7 @@ struct NovaProcessKind {
         }
         let workplace = f("workplace_id", "İşyeri", "workplaces", true)
         switch code {
-        case "katip_contract": return .init(code: code, title: "İSG-KATİP Sözleşmeleri", fields: [workplace,f("counterparty","Sözleşme tarafı","text",true),f("expert_contact","Uzman / iletişim","text",true),f("scope","Hizmet kapsamı","text",true),f("starts_on","Başlangıç","date",true),f("ends_before","Bitiş (hariç)","date"),f("declared_monthly_minutes","Beyan edilen aylık dakika","number"),f("declared_note","Hizmet notu"),f("contract_location","Sözleşme konumu / referansı")])
+        case "katip_contract": return .init(code: code, title: "İSG-KATİP Sözleşmeleri", fields: [workplace,f("counterparty","Sözleşme tarafı","text",true),f("expert_contact","Uzman / iletişim","text",true),f("scope","Hizmet kapsamı","text",true),f("starts_on","Başlangıç","date",true),f("ends_before","Bitiş (hariç)","date"),f("declared_monthly_minutes","Beyan edilen aylık dakika","number"),f("declared_note","Hizmet notu"),f("asset_id","Sözleşme dosyası","file")])
         case "annual_work_plan": return .init(code: code,title:"Yıllık Çalışma Planı",fields:[workplace,f("plan_year","Plan yılı","number",true)],child:"annual_work_item")
         case "annual_work_item": return .init(code:code,title:"Plan Faaliyetleri",fields:[f("activity","Faaliyet / hedef","multiline",true),f("responsible_contact","Sorumlu"),f("planned_on","Planlanan tarih","date",true),f("state","Durum","choice",true,["planned":"Planlandı","performed":"Gerçekleşti","carried_over":"Ertelendi","cancelled":"İptal"]),f("performed_on","Gerçekleşme tarihi","date"),f("carry_over_reason","Erteleme gerekçesi","multiline")],parentKey:"plan_id")
         case "board": return .init(code:code,title:"Kurul ve Toplantılar",fields:[workplace,f("applicability","Toplantı türü","choice",true,["mandatory":"Yasal kurul (uzman beyanı)","voluntary":"Gönüllü toplantı"]),f("agenda","Gündem (her satıra bir madde)","lines",true),f("planned_on","Planlanan tarih","date",true),f("state","Durum","choice",true,["planned":"Planlandı","held":"Gerçekleşti","cancelled":"İptal"]),f("held_on","Gerçekleşme tarihi","date"),f("attendance","Katılımcılar","employees"),f("cancelled_reason","İptal gerekçesi","multiline")],child:"board_decision")
@@ -41,6 +41,8 @@ struct NovaProcessRow: Decodable, Identifiable {
     var revision: Int?
     var children: [NovaProcessRow]?
     var child_kind: String?
+    struct ChildSummary: Decodable { let total: Int; let open: Int; let overdue: Int }
+    var child_summary: ChildSummary?
     var workplace_name: String?
     var document_id: UUID?; var related_kind: String?; var related_id: UUID?
 }
@@ -72,6 +74,7 @@ struct NovaProcessPage: Decodable {
         case "training_record": return "Gerçekleşen eğitim"
         case "equipment_inspection": return "Ekipman kontrolü"
         case "nonconformity": return "Uygunsuzluk"
+        case "checklist_run": return "Tamamlanan kontrol"
         default: return NovaProcessKind.get(kind).title
         }
     }

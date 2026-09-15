@@ -5,9 +5,13 @@ import SwiftUI
 struct NovaAppointmentDetailSheet: View {
     let entry: NovaAppointment
     var canWrite: Bool = true
+    let fileClient: NovaFileLibraryClient
     let onEnd: () -> Void
     let onClose: () -> Void
     @Environment(\.colorScheme) private var scheme
+    @State private var opened: URL?
+    @State private var openFailure: String?
+    @State private var opening = false
 
     var body: some View {
         NovaPopup {
@@ -37,6 +41,7 @@ struct NovaAppointmentDetailSheet: View {
             }
         }
         .accessibilityIdentifier("nova.appointment.detail")
+        .sheet(item: $opened) { url in NovaFileShareSheet(url: url) }
     }
 
     @ViewBuilder private var facts: some View {
@@ -55,15 +60,49 @@ struct NovaAppointmentDetailSheet: View {
                     entry.basis?.title ?? RDLocalization.string("localizable.nova.appointment.unset",
                         table: .localizable, fallback: "Belirtilmedi"),
                     detail: entry.basisNote ?? "")
-                cell("person.text.rectangle", RDLocalization.string("localizable.nova.appointment.detail.letter",
-                    table: .localizable, fallback: "Atama yazısı"),
-                    entry.letterLocation ?? RDLocalization.string("localizable.nova.appointment.unset",
-                        table: .localizable, fallback: "Belirtilmedi"))
             }
             // Both said on the record itself, not only at the top of the board.
             NovaHelpHint(text: NovaAppointmentWords.noQualificationNote)
-            NovaText(text: NovaAppointmentWords.letterNote, style: .meta,
-                color: NovaColorToken.textSecondary.color(in: scheme))
+            if entry.assetDownload != nil { letterRow }
+        }
+    }
+
+    @ViewBuilder private var letterRow: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "doc.fill").font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(NovaColorToken.statusSuccessInk.color(in: scheme))
+            VStack(alignment: .leading, spacing: 1) {
+                NovaText(text: RDLocalization.string("localizable.nova.appointment.detail.letter",
+                    table: .localizable, fallback: "Atama yazısı"), style: .cardTitle)
+                if let openFailure {
+                    NovaText(text: openFailure, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme))
+                }
+            }
+            Spacer(minLength: 0)
+            NovaButton(label: RDLocalization.string("localizable.nova.file.open", table: .localizable, fallback: "Dosyayı aç"),
+                symbol: "arrow.up.right.square", variant: .surface, isEnabled: !opening, isLoading: opening) { open() }
+                .accessibilityIdentifier("nova.appointment.detail.file.open")
+        }
+    }
+
+    private func open() {
+        guard let download = entry.assetDownload else { return }
+        opening = true; openFailure = nil
+        Task {
+            do {
+                let data = try await fileClient.download(download.bucket, download.path)
+                let url = FileManager.default.temporaryDirectory
+                    .appendingPathComponent(UUID().uuidString, isDirectory: true)
+                    .appendingPathComponent(download.path.components(separatedBy: "/").last ?? "belge")
+                try FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
+                                                         withIntermediateDirectories: true)
+                try data.write(to: url, options: .completeFileProtection)
+                opened = url
+            } catch {
+                openFailure = RDLocalization.string("localizable.nova.file.failure.unavailable", table: .localizable,
+                    fallback: "Dosya servisi şu anda kullanılamıyor.")
+            }
+            opening = false
         }
     }
 
@@ -91,6 +130,8 @@ struct NovaAppointmentDetailSheet: View {
 struct NovaAppointmentSheet: View {
     @State var draft: NovaAppointmentDraft
     let catalogue: NovaAppointmentCatalogue?
+    let fileClient: NovaFileLibraryClient
+    var fileCompany: UUID?
     let onSave: (NovaAppointmentDraft) async -> String?
     let onClose: () -> Void
     @State private var failure: String?
@@ -241,11 +282,11 @@ struct NovaAppointmentSheet: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         NovaText(text: RDLocalization.string("localizable.nova.appointment.form.letter",
-                            table: .localizable, fallback: "Atama yazısı nerede"), style: .label)
-                        TextField("", text: $draft.letterLocation).textFieldStyle(.roundedBorder)
-                            .accessibilityIdentifier("nova.appointment.form.letter")
-                        NovaText(text: NovaAppointmentWords.letterNote, style: .meta,
-                            color: NovaColorToken.textSecondary.color(in: scheme))
+                            table: .localizable, fallback: "Atama yazısı"), style: .label)
+                        NovaInlineFileField(category: "personnel_document", company: fileCompany,
+                            fileClient: fileClient, assetID: Binding(
+                                get: { draft.assetID?.uuidString ?? "" },
+                                set: { draft.assetID = UUID(uuidString: $0) }))
                     }
                     NovaHelpHint(text: NovaAppointmentWords.noQualificationNote)
 

@@ -317,14 +317,78 @@ struct NovaFileRenameSheet: View {
 /// Filing a document. The company comes first, then the file itself, then what
 /// it is called and where it belongs. The screen never shows the file as filed
 /// before the server says it is.
-struct NovaFileAddSheet: View {
+/// A single "attach a file" field for a module form: shows what is attached,
+/// opens the plain upload flow inline (no cover, no second screen) when there
+/// is none, and lets the expert swap it. Self-loads the catalogue it needs, so
+/// a caller only has to hand it a company, a category and a binding.
+struct NovaInlineFileField: View {
+    let category: String
+    let company: UUID?
+    let fileClient: NovaFileLibraryClient
+    @Binding var assetID: String
+    @Environment(\.colorScheme) private var scheme
+    @State private var adding = false
+    @State private var categories: [NovaFileCategory] = []
+    @State private var accepts: [NovaFileAcceptance] = []
+    @State private var assurance = NovaFileAssurance()
+    @State private var loaded = false
+
+    private var scopedCategories: [NovaFileCategory] {
+        let scoped = categories.filter { $0.code == category }
+        return scoped.isEmpty ? categories : scoped
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if !assetID.isEmpty && !adding {
+                HStack(spacing: 8) {
+                    Image(systemName: "doc.fill").font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(NovaColorToken.statusSuccessInk.color(in: scheme))
+                    NovaText(text: RDLocalization.string("localizable.nova.emergency.form.file.attached",
+                        table: .localizable, fallback: "Dosya ekli"), style: .meta)
+                    Spacer(minLength: 0)
+                    Button { assetID = "" } label: {
+                        Image(systemName: "xmark.circle").font(.system(size: 12))
+                    }.buttonStyle(.plain).accessibilityIdentifier("nova.inline.file.remove")
+                }
+            }
+            if adding {
+                NovaCard(padding: 12) {
+                    NovaFileAddInline(companies: [], preselected: company, categories: scopedCategories,
+                        accepts: accepts, assurance: assurance, client: fileClient) { entry in
+                            if let entry, let id = entry.assetID { assetID = id.uuidString }
+                            adding = false
+                        }
+                }
+            } else {
+                NovaButton(label: assetID.isEmpty
+                    ? RDLocalization.string("localizable.nova.emergency.form.file.add", table: .localizable, fallback: "Dosya ekle")
+                    : RDLocalization.string("localizable.nova.emergency.form.file.replace", table: .localizable, fallback: "Dosyayı değiştir"),
+                    symbol: "paperclip", variant: .surface, isEnabled: company != nil) { adding = true }
+                    .accessibilityIdentifier("nova.inline.file.add")
+            }
+        }
+        .task {
+            guard !loaded else { return }
+            loaded = true
+            if let filing = try? await fileClient.catalogue() {
+                categories = filing.categories; accepts = filing.accepts; assurance = filing.assurance
+            }
+        }
+    }
+}
+
+/// The bare upload flow — file pick, title/category/note, submit, result — with
+/// no page chrome of its own, so a caller can drop it straight into an existing
+/// form or scroll view instead of pushing to a separate screen for it.
+struct NovaFileAddInline: View {
     let companies: [NovaAnalysisCompanyOption]
     var preselected: UUID?
     let categories: [NovaFileCategory]
     let accepts: [NovaFileAcceptance]
     let assurance: NovaFileAssurance
     let client: NovaFileLibraryClient
-    /// Carries the filed row back once known, so a caller embedding this sheet
+    /// Carries the filed row back once known, so a caller embedding this view
     /// (the emergency plan form, say) can pick up the asset it just cleared.
     let onDone: (NovaFileEntry?) -> Void
     @Environment(\.colorScheme) private var scheme
@@ -344,12 +408,8 @@ struct NovaFileAddSheet: View {
     private var allExtensions: [String] { accepts.flatMap(\.extensions).sorted() }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 11) {
-                NovaText(text: RDLocalization.string("localizable.nova.file.add.title", table: .localizable, fallback: "Dosya ekle"),
-                    style: .sheetTitle)
-                if let outcome { result(outcome) } else { form }
-            }.padding(16).novaPopupContentSize()
+        VStack(alignment: .leading, spacing: 11) {
+            if let outcome { result(outcome) } else { form }
         }
         .onAppear { if company == nil { company = preselected ?? companies.first?.id } }
         .fileImporter(isPresented: $picking,
@@ -534,6 +594,29 @@ struct NovaFileAddSheet: View {
             TextField(label, text: text).font(NovaFont.font(.body))
                 .frame(minHeight: 34).accessibilityIdentifier("file.add.\(id)")
         }.frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// The page-chrome wrapper around NovaFileAddInline, for a caller that really
+/// does want its own screen (Dosyalarım's own add flow).
+struct NovaFileAddSheet: View {
+    let companies: [NovaAnalysisCompanyOption]
+    var preselected: UUID?
+    let categories: [NovaFileCategory]
+    let accepts: [NovaFileAcceptance]
+    let assurance: NovaFileAssurance
+    let client: NovaFileLibraryClient
+    let onDone: (NovaFileEntry?) -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 11) {
+                NovaText(text: RDLocalization.string("localizable.nova.file.add.title", table: .localizable, fallback: "Dosya ekle"),
+                    style: .sheetTitle)
+                NovaFileAddInline(companies: companies, preselected: preselected, categories: categories,
+                    accepts: accepts, assurance: assurance, client: client, onDone: onDone)
+            }.padding(16).novaPopupContentSize()
+        }
     }
 }
 

@@ -18,6 +18,21 @@ struct NovaPilotProcessGate: View {
     @State private var failure: String?
     private var spec: NovaProcessKind { .get(kind) }
     private var service: NovaProcessService { .init(identity:identity) }
+    private var fileService: NovaFileLibraryService { .live() }
+    private var fileClient: NovaFileLibraryClient {
+        .init(
+            catalogue: { try await fileService.catalogue(identity) },
+            library: { request in try await fileService.library(identity, query: request) },
+            companies: { try await NovaAnalysisWorkspace.companyOptions(identity: identity) },
+            file: { company, draft, data in try await fileService.file(identity, company: company, draft: draft, data: data) },
+            rename: { entry, title, category, note in
+                try await fileService.rename(identity, entry: entry, title: title, category: category, note: note) },
+            archive: { entry in try await fileService.archive(identity, entry: entry) },
+            cancel: { entry in try await fileService.cancel(identity, entry: entry) },
+            recheck: { entry in try await fileService.recheck(identity, entry: entry) },
+            contents: { entry in try await fileService.contents(identity, entry: entry) },
+            download: { bucket, path in try await fileService.download(identity, bucket: bucket, path: path) })
+    }
     var body: some View {
         NovaPageSurface {
             ScrollView {
@@ -83,17 +98,17 @@ struct NovaPilotProcessGate: View {
         .onChange(of:company) { _ in Task { await load() } }
         .sheet(isPresented:$creating,onDismiss:{Task { await load() }}) {
             if (parent != nil || initialCompany != nil), let company {
-                NovaProcessEditor(identity:identity,kind:kind,company:company,parent:parent,canWrite:canWrite)
+                NovaProcessEditor(identity:identity,kind:kind,company:company,parent:parent,canWrite:canWrite,fileClient:fileClient)
             } else {
                 NovaCompanyCreateFlow(title:spec.title,companies:{try await NovaAnalysisWorkspace.companyOptions(identity:identity)},catalogue:{ selected in
                     try JSONDecoder().decode(NovaProcessPage.self,from:await service.read(kind:kind,company:selected))
                 },onSelect:{_ in}) { _, company in
-                    NovaProcessEditor(identity:identity,kind:kind,company:company,parent:parent,canWrite:canWrite)
+                    NovaProcessEditor(identity:identity,kind:kind,company:company,parent:parent,canWrite:canWrite,fileClient:fileClient)
                 }
             }
         }
         .sheet(item:$selected,onDismiss:{Task { await load() }}) { row in
-            NovaProcessEditor(identity:identity,kind:kind,company:row.company_id,parent:parent,record:row.id,canWrite:canWrite)
+            NovaProcessEditor(identity:identity,kind:kind,company:row.company_id,parent:parent,record:row.id,canWrite:canWrite,fileClient:fileClient)
         }
     }
     private func load(more:Bool = false) async {
@@ -115,6 +130,7 @@ struct NovaProcessEditor: View {
     var parent: UUID?
     var record: UUID?
     var canWrite = true
+    let fileClient: NovaFileLibraryClient
     @State private var row: NovaProcessRow?
     @State private var catalogue: NovaProcessPage?
     @State private var values: [String:NovaModuleValue] = [:]
@@ -264,11 +280,24 @@ struct NovaProcessEditor: View {
         case "datetime": return "calendar.badge.clock"
         case "multiline","lines": return "text.alignleft"
         case "number": return "number"
+        case "file": return "paperclip"
         default: return "pencil.line"
+        }
+    }
+    /// The heading a filed document is tagged with in Dosyalarım, per kind.
+    private func fileCategory(_ kind: String) -> String {
+        switch kind {
+        case "katip_contract": return "contract"
+        case "work_permit": return "permit_form"
+        case "board", "board_decision": return "board_document"
+        case "contractor", "contractor_engagement": return "contractor_document"
+        default: return "other"
         }
     }
     @ViewBuilder private func control(_ field:NovaProcessField,_ cat:NovaProcessPage) -> some View {
         switch field.type {
+        case "file":
+            NovaInlineFileField(category: fileCategory(kind), company: company, fileClient: fileClient, assetID: text(field.id))
         case "choice":
             Picker(field.title,selection:text(field.id)) {
                 Text("Seçin").tag("")

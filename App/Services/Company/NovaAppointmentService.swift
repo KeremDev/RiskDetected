@@ -33,10 +33,11 @@ import Foundation
         let state: String
         let basis: String?
         let basis_note: String?
-        let letter_stored: Bool
-        let letter_location: String?
+        let asset_id: UUID?
+        let asset_download: AssetDownloadRow?
         let qualification_verified: Bool
     }
+    private struct AssetDownloadRow: Decodable { let bucket: String; let path: String }
     private struct KindRow: Decodable { let code: String; let ordinal: Int; let usual_basis: String }
     private struct WorkplaceRow: Decodable { let id: UUID; let name: String }
     private struct EmployeeRow: Decodable { let id: UUID; let full_name: String }
@@ -47,7 +48,6 @@ import Foundation
         let employees: [EmployeeRow]
         let required_count_known: Bool
         let qualification_check_available: Bool
-        let letter_storage_available: Bool
     }
     private struct CompanyRow: Decodable { let id: UUID; let name: String; let total: Int; let counts: [String: Int] }
     private struct ListEnvelope: Decodable {
@@ -75,7 +75,8 @@ import Foundation
             state: NovaAppointmentState(rawValue: entry.state) ?? .active,
             basis: entry.basis.flatMap(NovaAppointmentBasis.init(rawValue:)),
             basisNote: entry.basis_note,
-            letterStored: entry.letter_stored, letterLocation: entry.letter_location,
+            assetID: entry.asset_id,
+            assetDownload: entry.asset_download.map { .init(bucket: $0.bucket, path: $0.path) },
             qualificationVerified: entry.qualification_verified)
     }
 
@@ -107,8 +108,7 @@ import Foundation
                      workplaces: envelope.workplaces.map { .init(id: $0.id, name: $0.name) },
                      employees: envelope.employees.map { .init(id: $0.id, fullName: $0.full_name) },
                      requiredCountKnown: envelope.required_count_known,
-                     qualificationCheckAvailable: envelope.qualification_check_available,
-                     letterStorageAvailable: envelope.letter_storage_available)
+                     qualificationCheckAvailable: envelope.qualification_check_available)
     }
 
     func board(_ identity: NovaSessionIdentity, query: NovaAppointmentQuery) async throws -> NovaAppointmentBoard {
@@ -162,8 +162,7 @@ import Foundation
         if NovaDayField.date(draft.endsBefore) != nil { payload["ends_before"] = .string(draft.endsBefore) }
         let note = draft.basisNote.trimmingCharacters(in: .whitespacesAndNewlines)
         if !note.isEmpty { payload["basis_note"] = .string(note) }
-        let location = draft.letterLocation.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !location.isEmpty { payload["letter_location"] = .string(location) }
+        if let asset = draft.assetID { payload["asset_id"] = .id(asset) }
         return try await mutate(identity, company: company, action: "record_appointment", payload: payload)
     }
 

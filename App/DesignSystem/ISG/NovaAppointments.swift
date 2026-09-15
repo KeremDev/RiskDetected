@@ -70,6 +70,13 @@ enum NovaAppointmentBasis: String, CaseIterable, Identifiable, Equatable {
     }
 }
 
+/// Where an appointment's attached letter actually lives, once one is filed
+/// and clean.
+struct NovaAppointmentAssetDownload: Equatable {
+    let bucket: String
+    let path: String
+}
+
 /// One appointment as the board sees it.
 struct NovaAppointment: Identifiable, Equatable {
     let id: UUID
@@ -89,9 +96,8 @@ struct NovaAppointment: Identifiable, Equatable {
     let state: NovaAppointmentState
     let basis: NovaAppointmentBasis?
     let basisNote: String?
-    /// The product holds no letter, only a note of where it is.
-    let letterStored: Bool
-    let letterLocation: String?
+    let assetID: UUID?
+    let assetDownload: NovaAppointmentAssetDownload?
     /// Nothing legal was checked, and there is nowhere to record that it was.
     let qualificationVerified: Bool
 }
@@ -111,7 +117,6 @@ struct NovaAppointmentCatalogue: Equatable {
     /// No approved catalogue says how many a workplace needs.
     let requiredCountKnown: Bool
     let qualificationCheckAvailable: Bool
-    let letterStorageAvailable: Bool
 }
 
 struct NovaAppointmentBoard: Equatable {
@@ -150,7 +155,7 @@ struct NovaAppointmentDraft: Equatable {
     var startsOn: String = ""
     var endsBefore: String = ""
     var basisNote: String = ""
-    var letterLocation: String = ""
+    var assetID: UUID?
 }
 
 /// What the expert fills in to end one, or to correct the date they ended it.
@@ -213,7 +218,4 @@ enum NovaAppointmentWords {
     static let noRequiredCountNote = RDLocalization.string("localizable.nova.appointment.count.note",
         table: .localizable,
         fallback: "Ürün bir işyeri için kaç kişi gerektiğini söylemez; onaylanmış bir sayı kataloğu yok.")
-    /// The sentence the letter field carries.
-    static let letterNote = RDLocalization.string("localizable.nova.appointment.letter.note", table: .localizable,
-        fallback: "Atama yazısı uygulamada saklanmaz. Burada yalnız aslının nerede tutulduğunu not edersiniz.")
 }

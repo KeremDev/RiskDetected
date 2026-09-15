@@ -15,7 +15,7 @@ struct NovaPilotEmergencyGate: View {
     var body: some View {
         NovaEmergencyPlanScreen(client: client, onBack: onBack, canWrite: canWrite,
             initialCompany: initialCompany, headingOverride: headingOverride,
-            management: { company, record in AnyView(NovaModuleEditor(identity: identity, module: "emergency_plan", company: company, record: record)) })
+            management: { company, record in AnyView(NovaModuleEditor(identity: identity, module: "emergency_plan", company: company, record: record, fileClient: fileClient)) })
     }
 
     private var client: NovaEmergencyClient {

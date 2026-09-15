@@ -10,11 +10,27 @@ struct NovaPilotDrillGate: View {
     let onBack: () -> Void
 
     private var service: NovaDrillService { .live() }
+    private var fileService: NovaFileLibraryService { .live() }
 
     var body: some View {
         NovaDrillScreen(client: client, onBack: onBack, canWrite: canWrite,
             initialCompany: initialCompany, headingOverride: headingOverride,
-            management: { company, record in AnyView(NovaModuleEditor(identity: identity, module: "drill", company: company, record: record)) })
+            management: { company, record in AnyView(NovaModuleEditor(identity: identity, module: "drill", company: company, record: record, fileClient: fileClient)) })
+    }
+
+    private var fileClient: NovaFileLibraryClient {
+        .init(
+            catalogue: { try await fileService.catalogue(identity) },
+            library: { request in try await fileService.library(identity, query: request) },
+            companies: { try await NovaAnalysisWorkspace.companyOptions(identity: identity) },
+            file: { company, draft, data in try await fileService.file(identity, company: company, draft: draft, data: data) },
+            rename: { entry, title, category, note in
+                try await fileService.rename(identity, entry: entry, title: title, category: category, note: note) },
+            archive: { entry in try await fileService.archive(identity, entry: entry) },
+            cancel: { entry in try await fileService.cancel(identity, entry: entry) },
+            recheck: { entry in try await fileService.recheck(identity, entry: entry) },
+            contents: { entry in try await fileService.contents(identity, entry: entry) },
+            download: { bucket, path in try await fileService.download(identity, bucket: bucket, path: path) })
     }
 
     private var client: NovaDrillClient {

@@ -31,6 +31,7 @@ struct NovaModuleEditor: View {
     let module: String
     let company: UUID
     let record: UUID
+    let fileClient: NovaFileLibraryClient
     struct Option: Decodable, Identifiable { let id: UUID; let name: String }
     struct Envelope: Decodable {
         let snapshot: [String: NovaModuleValue]
@@ -52,7 +53,7 @@ struct NovaModuleEditor: View {
         case "emergency_plan": return ["workplace_id","scope","prepared_on","valid_until","review_note","team_snapshot"]
         case "drill": return ["plan_id","planned_on","performed_on","participants","observation","improvement"]
         case "ppe": return ["employee_id","item","quantity","unit","handed_on","signed_copy_location"]
-        default: return ["employee_id","kind","scope_workplace_id","starts_on","ends_before","basis","basis_note","letter_location"]
+        default: return ["employee_id","kind","scope_workplace_id","starts_on","ends_before","basis","basis_note","asset_id"]
         }
     }
     var body: some View {
@@ -124,7 +125,12 @@ struct NovaModuleEditor: View {
             choices("Görev", "kind", [("representative","Çalışan temsilcisi"),("support_staff","Destek elemanı"),("team_member","Ekip üyesi"),("first_aid","İlk yardımcı"),("fire_team","Yangın ekibi")])
             field("Başlangıç tarihi (YYYY-AA-GG)", "starts_on"); field("Bitiş tarihi (isteğe bağlı)", "ends_before")
             choices("Dayanak", "basis", [("elected","Seçim"),("appointed","Atama")])
-            field("Dayanak açıklaması", "basis_note"); field("Atama yazısının bulunduğu yer", "letter_location")
+            field("Dayanak açıklaması", "basis_note")
+            VStack(alignment: .leading, spacing: 5) {
+                NovaText(text: "Atama yazısı", style: .label)
+                NovaInlineFileField(category: "personnel_document", company: company, fileClient: fileClient,
+                    assetID: binding("asset_id"))
+            }
         }
     }
     private func binding(_ key: String) -> Binding<String> {
