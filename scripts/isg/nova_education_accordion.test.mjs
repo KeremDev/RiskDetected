@@ -9,7 +9,7 @@ const editor=read('App/DesignSystem/ISG/NovaEducationEditor.swift');
 const models=read('App/Services/Company/NovaEducationModels.swift');
 const caller=read('App/DesignSystem/ISG/NovaTrainingScreens.swift');
 const reference=read('App/DesignSystem/ISG/NovaManualNonconformityScreen.swift');
-const scopeEditor=read('App/DesignSystem/ISG/NovaEducationScopeEditor.swift');
+const topicsPopup=read('App/DesignSystem/ISG/NovaEducationScopeEditor.swift');
 const catalogue=JSON.parse(read('App/Localization/Localizable.xcstrings')).strings;
 
 test('the entry screen is presented as a page, not wrapped in a popup',()=>{
@@ -39,26 +39,49 @@ test('a finished step offers the next unfinished one',()=>{
   assert.match(editor,/if draft\.isComplete\(step\), let next = draft\.nextIncomplete\(after: step\)/);
 });
 
-test('a scope expands inline; only topics and minutes open in their own popup',()=>{
-  // Everything about who the scope is for (company/workplace context,
-  // personnel, document info) happens right inside the accordion step.
-  assert.match(editor,/expandedScope = isOpen \? nil : scope\.id/);
-  assert.match(editor,/NovaEducationScopeEditor\(scope: \$scope, context: context,/);
-  assert.doesNotMatch(editor,/\.novaFullScreenCover\(item: \$editingScope/);
-  // Only the heavy half — topics, their minutes, the realized days/hours —
-  // still opens as its own popup, reached by its own link.
-  assert.match(editor,/topicsScope = \.init\(id: scope\.id\)/);
-  assert.match(editor,/\.novaFullScreenCover\(item: \$topicsScope, onDismiss: \{ topicsScope = nil \}\) \{ edit in/);
-  assert.match(editor,/NovaEducationTopicsPopup\(scope: \$draft\.scopes\[index\]/);
-  // Personnel selection is the one thing that was reported as invisible: it
-  // must be plain, always-visible content, not a second collapsed disclosure.
-  assert.doesNotMatch(scopeEditor,/DisclosureGroup\("Personeller/);
-  assert.match(scopeEditor,/openTopics: \(\) -> Void/);
+test('the record has four steps: info, schedule, trainers, participants',()=>{
+  assert.match(models,/case info, schedule, trainers, participants/);
+  assert.match(editor,/case \.info: infoStep/);
+  assert.match(editor,/case \.schedule: scheduleStep/);
+  assert.match(editor,/case \.trainers: trainersStep/);
+  assert.match(editor,/case \.participants: participantsStep/);
 });
 
-test('every step title is decoded to a real string, none of them silently blank',()=>{
-  for(const step of ['info','trainers','scopes'])
-    assert.match(editor,new RegExp(`localizable\\.nova\\.education\\.step\\.${step}`));
+test('one shared template curriculum is mirrored into every scope, not edited per scope',()=>{
+  // Cycle, topics, method, schedule and location are all edited on
+  // `template`, one place — never on an individual `draft.scopes[i]`
+  // directly from the UI, which is what made "kapsamlar" read as separate
+  // parallel trainings that happened to share a screen.
+  assert.match(editor,/@State private var template = NovaEducationScope/);
+  assert.match(editor,/\.onChange\(of: template\) \{ value in/);
+  assert.match(editor,/Picker\("", selection: \$template\.cycle\)/);
+  assert.doesNotMatch(editor,/\$scope\.cycle/);
+  assert.doesNotMatch(editor,/\$draft\.scopes\[index\]\.topics/);
+});
+
+test('adding a second company to the same record refuses a mismatched hazard class and otherwise shares the curriculum',()=>{
+  assert.match(editor,/template\.hazard_class != wp\.hazard_class/);
+  assert.match(editor,/localizable\.nova\.education\.scope\.hazardmismatch/);
+  assert.match(editor,/scope\.topics = template\.topics\.map/);
+});
+
+test('topics open in their own popup bound to the shared template, not a real scope by id',()=>{
+  assert.match(editor,/NovaEducationTopicsPopup\(scope: \$template, context: context, trainers: draft\.trainers,/);
+  assert.match(editor,/hazardLocked: !draft\.scopes\.isEmpty/);
+  assert.match(topicsPopup,/struct NovaEducationTopicsPopup: View/);
+  // A topic can be switched off for a session that only covered part of the
+  // curriculum, without deleting it from the record's definition.
+  assert.match(topicsPopup,/includedBinding/);
+  assert.doesNotMatch(topicsPopup,/struct NovaEducationScopeEditor/);
+});
+
+test('participants are grouped by company, not by a manually-added scope card',()=>{
+  assert.match(editor,/private func companySection/);
+  assert.match(editor,/private func participantBinding/);
+  assert.match(editor,/ForEach\(companies\.filter \{ writableCompanies\.contains\(\$0\.id\) \}\) \{ company in/);
+  // İşyeri ünvanı / işveren vekili are no longer typed by hand.
+  assert.doesNotMatch(editor,/TextField\("İşyeri tam unvanı/);
+  assert.doesNotMatch(editor,/TextField\("İşveren/);
 });
 
 test('the business logic functions are unchanged in name and are still the only writers',()=>{
@@ -67,15 +90,22 @@ test('the business logic functions are unchanged in name and are still the only 
   assert.equal((editor.match(/try await service\.save\(/g) ?? []).length, 3);
 });
 
+test('every step title is decoded to a real string, none of them silently blank',()=>{
+  for(const step of ['info','schedule','trainers','participants'])
+    assert.match(editor,new RegExp(`localizable\\.nova\\.education\\.step\\.${step}`));
+});
+
 test('every new education key has tr and en, and was actually translated',()=>{
-  const keys=[...editor.matchAll(/"(localizable\.nova\.education\.[a-z.]+)"/g)].map(m=>m[1]);
-  assert.ok(keys.length>=30);
+  // "Online" is the same loanword in both languages — not an untranslated copy-paste.
+  const sameInBothLanguages=new Set(['localizable.nova.education.method.online']);
+  const keys=[...`${editor}\n${topicsPopup}`.matchAll(/"(localizable\.nova\.education\.[a-z.]+)"/g)].map(m=>m[1]);
+  assert.ok(keys.length>=45);
   for(const key of new Set(keys)){
     const entry=catalogue[key];
     assert.ok(entry,`${key} missing from catalogue`);
     const tr=entry.localizations?.tr?.stringUnit?.value;
     const en=entry.localizations?.en?.stringUnit?.value;
     assert.ok(tr && en,`${key} lacks tr/en`);
-    assert.notEqual(tr,en,`${key} was never translated`);
+    if(!sameInBothLanguages.has(key)) assert.notEqual(tr,en,`${key} was never translated`);
   }
 });

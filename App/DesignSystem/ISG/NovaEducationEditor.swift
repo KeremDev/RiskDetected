@@ -61,9 +61,15 @@ struct NovaEducationEntry: View {
 }
 
 /// The accordion form: one step at a time, a progress bar that counts only
-/// finished steps, and heavy per-scope editing pushed into its own popup
-/// instead of unrolled inline. The reference is the manual nonconformity
-/// screen's own accordion.
+/// finished steps. The reference is the manual nonconformity screen's own
+/// accordion.
+///
+/// One training record is one curriculum, shared by every company/workplace
+/// attending it — `template` holds that shared curriculum, method, schedule
+/// and location, and is mirrored into every entry of `draft.scopes`
+/// (`onChange(of: template)` below) so save() keeps writing the same
+/// per-scope shape the server already expects. Participants are the one
+/// thing that is genuinely per company.
 struct NovaEducationEditor: View {
     let identity: NovaSessionIdentity
     let companies: [NovaPilotCompanySummary]
@@ -80,6 +86,9 @@ struct NovaEducationEditor: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
     @State private var draft = NovaEducationDraft()
+    @State private var template = NovaEducationScope(company_id: UUID(), workplace_id: UUID())
+    @State private var scheduleDays: [NovaEducationDay] = []
+    @State private var cycleChangePending: String?
     @State private var saved: NovaTrainingSession?
     @State private var people: [UUID: [NovaEmployeeRow]] = [:]
     @State private var ready = false
@@ -95,14 +104,12 @@ struct NovaEducationEditor: View {
     // The picture in the manual form starts open because that is what the
     // expert has in hand; here the title is what the expert types first.
     @State private var open: NovaEducationStep? = .info
-    /// One scope expanded inline at a time — everything but topics/minutes
-    /// happens right there, no second popup in the way.
-    @State private var expandedScope: UUID?
-    /// Topics and their minutes, and the realized days/hours, are the one
-    /// part heavy enough to still deserve their own popup.
-    @State private var topicsScope: ScopeEdit?
+    @State private var showingTopics = false
+    /// One company expanded at a time in the participants step, with its own
+    /// personnel search reset whenever a different company opens.
+    @State private var expandedCompany: UUID?
+    @State private var personSearch = ""
     private struct Selection: Identifiable { let id = UUID(); let scope: UUID; let person: UUID; var document: UUID?; var revision: Int? }
-    private struct ScopeEdit: Identifiable { let id: UUID }
     private var service: NovaEducationService { .init(identity: identity) }
     private var changed: Bool {
         guard let saved, let education = saved.education else { return true }
@@ -156,20 +163,40 @@ struct NovaEducationEditor: View {
             guard ready else { return }
             do { try service.preserve(value) } catch { self.error = NovaEducationService.message(error) }
         }
+        // Every edit to the shared curriculum/method/schedule/location is
+        // made on `template`; this is the one place it gets copied into
+        // every real scope, so save() keeps seeing the shape it expects.
+        .onChange(of: template) { value in
+            guard ready else { return }
+            for i in draft.scopes.indices {
+                draft.scopes[i].cycle = value.cycle; draft.scopes[i].topics = value.topics; draft.scopes[i].context_note = value.context_note
+                draft.scopes[i].lessons = value.lessons; draft.scopes[i].draft_days = value.draft_days; draft.scopes[i].location = value.location
+            }
+        }
+        .onChange(of: scheduleDays) { value in
+            guard ready else { return }
+            template.draft_days = value
+        }
         .novaFullScreenCover(item: $selectedCertificate, onDismiss: { Task { await refreshRecord() } }) { selection in
             if let saved {
                 NovaPopup { NovaEducationCertificateScreen(identity: identity, session: saved, scopeID: selection.scope, personID: selection.person, canIssue: context.certificate_enabled && canWrite, documentID: selection.document, documentRevision: selection.revision) }
             }
         }
-        // Only the heavy half — topics, minutes, realized days — opens as its
-        // own popup. Everything else about a scope is inline in the step.
-        .novaFullScreenCover(item: $topicsScope, onDismiss: { topicsScope = nil }) { edit in
-            if let index = draft.scopes.firstIndex(where: { $0.id == edit.id }) {
-                NovaEducationTopicsPopup(scope: $draft.scopes[index], context: context, trainers: draft.trainers,
-                    saveCurriculum: { Task { await saveCurriculum(draft.scopes[index]) } },
-                    onClose: { topicsScope = nil })
-            }
+        // Only topics/minutes open as their own popup, reached from the info
+        // step's link; everything else (cycle, method, schedule, location,
+        // who is attending) is a plain accordion step.
+        .novaFullScreenCover(isPresented: $showingTopics, onDismiss: { showingTopics = false }) {
+            NovaEducationTopicsPopup(scope: $template, context: context, trainers: draft.trainers,
+                hazardLocked: !draft.scopes.isEmpty,
+                saveCurriculum: draft.scopes.isEmpty ? nil : { Task { await saveCurriculum(draft.scopes[0]) } },
+                onClose: { showingTopics = false })
         }
+        .confirmationDialog(RDLocalization.string("localizable.nova.education.cycle.changed.title", table: .localizable, fallback: "Eğitim türü değişti"),
+            isPresented: Binding(get: { cycleChangePending != nil }, set: { if !$0 { cycleChangePending = nil } })) {
+            Button(RDLocalization.string("localizable.nova.education.cycle.changed.refresh", table: .localizable, fallback: "Yeni türün varsayılan konularını getir")) { refreshTemplateDefaults(); cycleChangePending = nil }
+            Button(RDLocalization.string("localizable.nova.education.cycle.changed.keep", table: .localizable, fallback: "Mevcut konuları koru")) { cycleChangePending = nil }
+            Button(RDLocalization.string("localizable.nova.education.cycle.changed.cancel", table: .localizable, fallback: "Vazgeç"), role: .cancel) { if let old = cycleChangePending { template.cycle = old }; cycleChangePending = nil }
+        } message: { Text(RDLocalization.string("localizable.nova.education.cycle.changed.message", table: .localizable, fallback: "Mevcut dakikaları değiştirmek isteğe bağlıdır; saatleri değişiklikten sonra yeniden dağıtın.")) }
     }
 
     private var header: some View {
@@ -219,8 +246,9 @@ struct NovaEducationEditor: View {
             VStack(alignment: .leading, spacing: 10) {
                 switch step {
                 case .info: infoStep
+                case .schedule: scheduleStep
                 case .trainers: trainersStep
-                case .scopes: scopesStep
+                case .participants: participantsStep
                 }
                 advance(step)
             }.frame(maxWidth: .infinity, alignment: .leading)
@@ -230,15 +258,17 @@ struct NovaEducationEditor: View {
     private func title(_ step: NovaEducationStep) -> String {
         switch step {
         case .info: return RDLocalization.string("localizable.nova.education.step.info", table: .localizable, fallback: "Eğitim ve düzenleyici")
+        case .schedule: return RDLocalization.string("localizable.nova.education.step.schedule", table: .localizable, fallback: "Tarih, saat ve yer")
         case .trainers: return RDLocalization.string("localizable.nova.education.step.trainers", table: .localizable, fallback: "Eğiticiler")
-        case .scopes: return RDLocalization.string("localizable.nova.education.step.scopes", table: .localizable, fallback: "Firma, katılımcı ve konular")
+        case .participants: return RDLocalization.string("localizable.nova.education.step.participants", table: .localizable, fallback: "Katılımcılar")
         }
     }
     private func symbol(_ step: NovaEducationStep) -> String {
         switch step {
         case .info: return "text.book.closed"
+        case .schedule: return "calendar.badge.clock"
         case .trainers: return "person.crop.rectangle"
-        case .scopes: return "building.2"
+        case .participants: return "person.3"
         }
     }
     /// A finished step offers the next unfinished one instead of leaving the
@@ -251,12 +281,14 @@ struct NovaEducationEditor: View {
         }
     }
 
+    // MARK: - Info step: title, curriculum type, method, topics link
+
     private var infoStep: some View {
         VStack(alignment: .leading, spacing: 8) {
-            NovaText(text: RDLocalization.string("localizable.nova.education.field.title.hint", table: .localizable,
-                fallback: "Konu başlıkları, süre ve katılımcılar bir sonraki 'Firma, katılımcı ve konular' adımında, firma eklendikten sonra düzenlenir."),
-                style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
             titlePicker
+            cyclePicker
+            methodQuickToggle
+            topicsLink
             field(RDLocalization.string("localizable.nova.education.field.provider", table: .localizable, fallback: "Düzenleyici kişi / kurum"),
                 $draft.provider_name, id: "education.provider")
             area(RDLocalization.string("localizable.nova.education.field.notes", table: .localizable, fallback: "Notlar"),
@@ -312,6 +344,104 @@ struct NovaEducationEditor: View {
         }
     }
 
+    private var cyclePicker: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            NovaText(text: RDLocalization.string("localizable.nova.education.field.cycle", table: .localizable, fallback: "Eğitim türü"), style: .label)
+            Picker("", selection: $template.cycle) {
+                ForEach(NovaEducationScope.cycles, id: \.0) { Text($0.1).tag($0.0) }
+            }.pickerStyle(.menu).labelsHidden().accessibilityIdentifier("education.cycle")
+                .onChange(of: template.cycle) { [old = template.cycle] _ in cycleChangePending = old }
+        }
+    }
+
+    /// A bulk shortcut over every topic's own method — the per-topic picker
+    /// inside "Konuları ve Süre" still exists for the rare session that
+    /// genuinely mixes the two.
+    private var methodQuickToggle: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            NovaText(text: RDLocalization.string("localizable.nova.education.field.method", table: .localizable, fallback: "Eğitim yöntemi"), style: .label)
+            Picker("", selection: methodBinding) {
+                Text(RDLocalization.string("localizable.nova.education.method.inperson", table: .localizable, fallback: "Yüz yüze")).tag("face_to_face")
+                Text(RDLocalization.string("localizable.nova.education.method.online", table: .localizable, fallback: "Online")).tag("online")
+            }.pickerStyle(.segmented).labelsHidden().accessibilityIdentifier("education.method")
+        }
+    }
+    private var methodBinding: Binding<String> {
+        Binding(get: { template.topics.first?.method ?? "face_to_face" },
+            set: { value in for i in template.topics.indices { template.topics[i].method = value } })
+    }
+
+    private var topicsLink: some View {
+        Button { showingTopics = true } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "list.bullet.clipboard").font(.system(size: 13, weight: .semibold))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(RDLocalization.string("localizable.nova.education.topics.title", table: .localizable, fallback: "Konuları ve Süre")).font(NovaFont.font(.bodyStrong))
+                    Text("\(template.cycleName) · \(template.net) dk").font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
+            }
+            .padding(12).frame(maxWidth: .infinity)
+            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
+        }.buttonStyle(.plain).foregroundStyle(.primary).accessibilityIdentifier("education.topics.link")
+    }
+
+    private func refreshTemplateDefaults() {
+        let curriculum = draft.scopes.first.flatMap { s in context.curricula.first {
+            $0.company_id == s.company_id && $0.workplace_id == s.workplace_id && $0.education.cycle == template.cycle && $0.education.hazard_class == (template.hazard_class ?? "low")
+        } }
+        template.topics = curriculum?.education.topics ?? context.package.topics(cycle: template.cycle, hazard: template.hazard_class ?? "low")
+        template.context_note = curriculum?.education.context_note ?? ""
+    }
+
+    // MARK: - Schedule step: realized days/hours and location
+
+    private var basicCycle: Bool { ["initial","periodic_repeat"].contains(template.cycle) }
+
+    private var scheduleStep: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            field(RDLocalization.string("localizable.nova.education.field.location", table: .localizable, fallback: "Eğitim yeri / online bağlantı açıklaması"),
+                $template.location, id: "education.location")
+            Text(String(format: RDLocalization.string("localizable.nova.education.schedule.summary", table: .localizable, fallback: "Europe/Istanbul · %1$d dk öğretim + %2$d dk ara"),
+                template.net, template.breakTotal)).font(NovaFont.font(.meta))
+            ForEach($scheduleDays) { $day in
+                VStack {
+                    DatePicker(RDLocalization.string("localizable.nova.education.schedule.daystart", table: .localizable, fallback: "Gün / başlangıç"), selection: $day.starts, in: ...Date())
+                        .environment(\.timeZone, NovaEducationClock.calendar.timeZone)
+                    Stepper(String(format: RDLocalization.string("localizable.nova.education.schedule.lessoncount", table: .localizable, fallback: "%d ders"), day.lessonCount), value: $day.lessonCount, in: 1...24)
+                    HStack {
+                        Text(RDLocalization.string("localizable.nova.education.schedule.extrabreak", table: .localizable, fallback: "Ek ara (dk)"))
+                        TextField("0", value: $day.extraBreakMinutes, format: .number).keyboardType(.numberPad)
+                        Text(RDLocalization.string("localizable.nova.education.schedule.afterlesson", table: .localizable, fallback: "Ders sonrası"))
+                        TextField("4", value: $day.extraBreakAfter, format: .number).keyboardType(.numberPad)
+                    }.font(NovaFont.font(.meta))
+                    Button(RDLocalization.string("localizable.nova.education.schedule.removeday", table: .localizable, fallback: "Günü kaldır"), role: .destructive) { scheduleDays.removeAll { $0.id == day.id } }.font(NovaFont.font(.meta))
+                }.padding(.vertical, 6)
+            }
+            Button(RDLocalization.string("localizable.nova.education.schedule.addday", table: .localizable, fallback: "Gerçekleşen gün ekle"), systemImage: "calendar.badge.plus") {
+                scheduleDays.append(.init(starts: NovaEducationClock.calendar.date(byAdding: .day, value: -1, to: Date())!, lessonCount: 1))
+            }
+            Button(RDLocalization.string("localizable.nova.education.schedule.distribute", table: .localizable, fallback: "Konuları derslere dağıt"), systemImage: "clock.arrow.circlepath") {
+                if scheduleDays.isEmpty { scheduleDays = NovaEducationClock.initialDays(minutes: template.net, basic: basicCycle) }
+                template.lessons = NovaEducationClock.distribute(topics: template.topics, days: scheduleDays, basic: basicCycle)
+            }
+            Text(RDLocalization.string("localizable.nova.education.schedule.hint", table: .localizable,
+                fallback: "Saatler uzman tarafından girilen gerçekleşmiş programdır. Tarihleri kaydetmeden önce kontrol edin."))
+                .font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
+            ForEach($template.lessons) { $lesson in
+                VStack(alignment: .leading) {
+                    DatePicker(String(format: RDLocalization.string("localizable.nova.education.schedule.lesson", table: .localizable, fallback: "%d dk ders"), lesson.instruction_minutes),
+                        selection: Binding(get: { NovaEducationClock.date(lesson.starts_at) ?? Date() }, set: { lesson.starts_at = NovaEducationClock.iso($0) }), in: ...Date())
+                        .environment(\.timeZone, NovaEducationClock.calendar.timeZone)
+                    Stepper(String(format: RDLocalization.string("localizable.nova.education.schedule.breakafter", table: .localizable, fallback: "Ardından %d dk ara"), lesson.break_minutes), value: $lesson.break_minutes, in: 0...720, step: 5).font(NovaFont.font(.meta))
+                }.padding(.vertical, 4)
+            }
+        }.disabled(!canWrite)
+    }
+
+    // MARK: - Trainers step (unchanged)
+
     private var trainersStep: some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach($draft.trainers) { $trainer in
@@ -326,6 +456,7 @@ struct NovaEducationEditor: View {
                                 role: .destructive) {
                                 draft.trainers.removeAll { $0.id == trainer.id }
                                 for s in draft.scopes.indices { for t in draft.scopes[s].topics.indices { draft.scopes[s].topics[t].trainer_ids.removeAll { $0 == trainer.id } } }
+                                for i in template.topics.indices { template.topics[i].trainer_ids.removeAll { $0 == trainer.id } }
                             }.font(NovaFont.font(.meta))
                         }
                     }
@@ -342,74 +473,116 @@ struct NovaEducationEditor: View {
         }.disabled(!canWrite)
     }
 
-    /// One scope expands inline at a time — company/workplace summary as the
-    /// header, everything but topics/minutes right there underneath.
-    private var scopesStep: some View {
+    // MARK: - Participants step: company → workplace → tick people
+
+    private var participantsStep: some View {
         VStack(alignment: .leading, spacing: 8) {
-            NovaText(text: RDLocalization.string("localizable.nova.education.scope.explainer", table: .localizable,
-                fallback: "Eğitimi hangi firma ve işyerleri için verdiğinizi burada seçersiniz. Hepsi aynı eğitimin konu başlıklarını ve süresini paylaşır; yalnız katılımcı listesi kapsama göre değişir."),
+            NovaText(text: RDLocalization.string("localizable.nova.education.participants.explainer", table: .localizable,
+                fallback: "Eğitime katılan firmaları seçin; her firmanın altında personelini arayıp tikleyerek katılımcı olarak ekleyebilirsiniz. Aynı eğitime yalnız aynı tehlike sınıfındaki firmaları ekleyebilirsiniz."),
                 style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
-            ForEach($draft.scopes) { $scope in
-                let isOpen = expandedScope == scope.id
-                NovaCard(padding: 12) {
-                    VStack(alignment: .leading, spacing: isOpen ? 14 : 0) {
-                        Button {
-                            expandedScope = isOpen ? nil : scope.id
-                        } label: {
-                            HStack(spacing: 10) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    NovaText(text: scope.company_name ?? RDLocalization.string("localizable.nova.education.scope.company",
-                                        table: .localizable, fallback: "Firma"), style: .cardTitle)
-                                    NovaText(text: "\(scope.workplace_name ?? "") · \(scope.group_name) · \(scope.participants.count) kişi · \(scope.net) dk",
-                                        style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
-                                }
-                                Spacer(minLength: 0)
-                                Image(systemName: isOpen ? "chevron.up" : "chevron.down").font(.system(size: 12, weight: .semibold))
-                            }
-                        }.buttonStyle(.plain).accessibilityIdentifier("education.scope.edit.\(scope.id)")
-                        if isOpen {
-                            NovaEducationScopeEditor(scope: $scope, context: context,
-                                people: people[scope.company_id] ?? [],
-                                excluded: Set(draft.scopes.filter { $0.id != scope.id }.flatMap { $0.participants.map(\.id) }),
-                                openTopics: { topicsScope = .init(id: scope.id) },
-                                remove: {
-                                    draft.scopes.removeAll { $0.id == scope.id }
-                                    if expandedScope == scope.id { expandedScope = nil }
-                                })
-                        }
-                    }
-                }
+            ForEach(companies.filter { writableCompanies.contains($0.id) }) { company in
+                companySection(company)
             }
-            addScopeMenu.disabled(!canWrite)
-            NovaText(text: RDLocalization.string("localizable.nova.education.scope.hint", table: .localizable,
-                fallback: "Personel yalnız bir kapsama atanır. Aynı eğitime yalnız aynı tehlike sınıfındaki işyerlerini ekleyebilirsiniz; farklı bir tehlike sınıfı için ayrı bir eğitim kaydı açın."),
-                style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
+        }.disabled(!canWrite)
+    }
+
+    private func scope(for company: UUID) -> NovaEducationScope? { draft.scopes.first { $0.company_id == company } }
+    private func scopeIndex(for company: UUID) -> Int? { draft.scopes.firstIndex { $0.company_id == company } }
+    /// Once the record already has a hazard class (from its first scope, or
+    /// the topics popup's preview picker), only same-class workplaces are
+    /// offered here — matching add()'s own guard, so the mismatch error is a
+    /// rare fallback rather than the everyday path.
+    private func eligibleWorkplaces(_ companyID: UUID) -> [NovaEducationContext.Workplace] {
+        let locked = !draft.scopes.isEmpty
+        return context.workplaces.filter { $0.company_id == companyID && (!locked || $0.hazard_class == template.hazard_class) }
+    }
+
+    @ViewBuilder private func companySection(_ company: NovaPilotCompanySummary) -> some View {
+        let isOpen = expandedCompany == company.id
+        let currentScope = scope(for: company.id)
+        NovaCard(padding: 12) {
+            VStack(alignment: .leading, spacing: isOpen ? 10 : 0) {
+                Button {
+                    expandedCompany = isOpen ? nil : company.id
+                    personSearch = ""
+                    if !isOpen, people[company.id] == nil { Task { await loadPeople(company.id) } }
+                } label: {
+                    HStack(spacing: 10) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            NovaText(text: company.name, style: .cardTitle)
+                            NovaText(text: String(format: RDLocalization.string("localizable.nova.education.participants.count", table: .localizable, fallback: "%d katılımcı"),
+                                currentScope?.participants.count ?? 0), style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: isOpen ? "chevron.up" : "chevron.down").font(.system(size: 12, weight: .semibold))
+                    }
+                }.buttonStyle(.plain).accessibilityIdentifier("education.company.\(company.id)")
+                if isOpen { companyDetail(company, currentScope: currentScope) }
+            }
         }
     }
 
-    /// Once the record already has a hazard class (from its first scope),
-    /// only same-class workplaces are offered — matching add()'s own guard,
-    /// so the mismatch error is a rare fallback rather than the everyday path.
-    private var addScopeMenu: some View {
-        let lockedHazard = draft.scopes.first?.hazard_class
-        return Menu {
-            ForEach(companies.filter { writableCompanies.contains($0.id) }) { company in
-                ForEach(context.workplaces.filter { $0.company_id == company.id && (lockedHazard == nil || $0.hazard_class == lockedHazard) }) { workplace in
-                    Button("\(company.name) · \(workplace.name)") { add(company: company.id, workplace: workplace.id) }
+    @ViewBuilder private func companyDetail(_ company: NovaPilotCompanySummary, currentScope: NovaEducationScope?) -> some View {
+        let places = eligibleWorkplaces(company.id)
+        if places.isEmpty {
+            NovaText(text: RDLocalization.string("localizable.nova.education.participants.noworkplace", table: .localizable,
+                fallback: "Bu firmada bu eğitimin tehlike sınıfına uygun işyeri yok."), style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
+        } else {
+            if places.count > 1 || currentScope == nil {
+                Menu {
+                    ForEach(places) { wp in Button(wp.name) { pick(company: company.id, workplace: wp.id) } }
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(String(format: RDLocalization.string("localizable.nova.education.participants.workplace", table: .localizable, fallback: "İşyeri: %@"),
+                            currentScope?.workplace_name ?? places.first!.name))
+                        Image(systemName: "chevron.up.chevron.down").font(.system(size: 11, weight: .semibold))
+                    }.font(NovaFont.font(.meta))
+                }.accessibilityIdentifier("education.company.\(company.id).workplace")
+            }
+            if let idx = scopeIndex(for: company.id) {
+                TextField(RDLocalization.string("localizable.nova.education.participants.search", table: .localizable, fallback: "Personel ara"), text: $personSearch)
+                    .textFieldStyle(.roundedBorder)
+                let list = people[company.id] ?? []
+                let matches = list.filter { personSearch.isEmpty || $0.name.localizedCaseInsensitiveContains(personSearch) }
+                if list.isEmpty {
+                    NovaText(text: RDLocalization.string("localizable.nova.education.participants.noone", table: .localizable,
+                        fallback: "Bu firmada aktif personel yok."), style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
+                } else {
+                    ForEach(matches) { person in
+                        Toggle(person.name, isOn: participantBinding(idx: idx, person: person))
+                    }
+                }
+            } else {
+                // Auto-pick when there is only one eligible workplace, so the
+                // expert never has to make a choice that has only one answer.
+                if places.count == 1 {
+                    Color.clear.frame(height: 0).onAppear { pick(company: company.id, workplace: places[0].id) }
+                } else {
+                    NovaText(text: RDLocalization.string("localizable.nova.education.participants.pickworkplace", table: .localizable,
+                        fallback: "İşyeri seçince personel listesi burada görünür."), style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
                 }
             }
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "plus.circle").font(.system(size: 14, weight: .semibold))
-                NovaText(text: RDLocalization.string("localizable.nova.education.scope.add", table: .localizable,
-                    fallback: "Firma / görev kapsamı ekle"), style: .button)
-            }
-            .foregroundStyle(NovaColorToken.text.color(in: scheme))
-            .padding(.horizontal, 14).frame(minHeight: 44)
-            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
         }
-        .accessibilityIdentifier("education.scope.add")
+    }
+
+    private func participantBinding(idx: Int, person: NovaEmployeeRow) -> Binding<Bool> {
+        Binding(get: { draft.scopes[idx].participants.contains { $0.id == person.id } },
+            set: { on in
+                if on { draft.scopes[idx].participants.append(.init(id: person.id, name: person.name)) }
+                else { draft.scopes[idx].participants.removeAll { $0.id == person.id } }
+            })
+    }
+
+    /// Assigns a workplace to a company already in the record, or adds the
+    /// company as a new scope if it has none yet.
+    private func pick(company: UUID, workplace: UUID) {
+        guard let wp = context.workplaces.first(where: { $0.id == workplace }) else { return }
+        if let idx = scopeIndex(for: company) {
+            draft.scopes[idx].workplace_id = workplace; draft.scopes[idx].workplace_name = wp.name
+            draft.scopes[idx].hazard_class = wp.hazard_class; draft.scopes[idx].legal_name = wp.name
+        } else {
+            add(company: company, workplace: workplace)
+        }
     }
 
     private var saveButton: some View {
@@ -488,6 +661,7 @@ struct NovaEducationEditor: View {
             if let row = latest.row, let education = row.education {
                 self.saved = row
                 draft = .init(id: row.id, expected_version: row.version, title: row.title, provider_name: education.provider_name, notes: row.notes, trainers: education.trainers, scopes: education.scopes)
+                syncTemplateFromScopes()
             }
         } catch { self.error = NovaEducationService.message(error) }
     }
@@ -514,6 +688,7 @@ struct NovaEducationEditor: View {
             } else {
                 seedFreshDraft()
             }
+            syncTemplateFromScopes()
             ready = true
             for company in Set(draft.scopes.map(\.company_id)) { await loadPeople(company) }
         } catch { self.error = NovaEducationService.message(error) }
@@ -548,10 +723,27 @@ struct NovaEducationEditor: View {
             if let company = initialCompany, let wp = context.workplaces.first(where: { $0.company_id == company }) { add(company: company, workplace: wp.id) }
         }
     }
+    /// `template` mirrors whichever real curriculum already exists (editing
+    /// or migrating), or gets a first, editable preview (a brand-new
+    /// record) so the info step's topics link has something to show right
+    /// away instead of waiting for a company to be picked.
+    private func syncTemplateFromScopes() {
+        if let first = draft.scopes.first {
+            template.cycle = first.cycle; template.topics = first.topics; template.context_note = first.context_note
+            template.lessons = first.lessons; template.draft_days = first.draft_days; template.location = first.location
+            template.hazard_class = first.hazard_class
+        } else if template.topics.isEmpty {
+            template.hazard_class = "low"
+            template.topics = context.package.topics(cycle: template.cycle, hazard: "low")
+        }
+        scheduleDays = template.draft_days ?? NovaEducationClock.days(from: template.lessons)
+    }
     private func discardDraft() {
         try? service.discardDraft(id: original?.id)
-        draft = NovaEducationDraft(); restoredDraft = false; notice = nil
+        draft = NovaEducationDraft(); template = NovaEducationScope(company_id: UUID(), workplace_id: UUID())
+        restoredDraft = false; notice = nil
         seedFreshDraft()
+        syncTemplateFromScopes()
         Task { for company in Set(draft.scopes.map(\.company_id)) { await loadPeople(company) } }
     }
     private func add(company: UUID, workplace: UUID, seed: Bool = true) {
@@ -562,35 +754,39 @@ struct NovaEducationEditor: View {
         // (Not checked for `seed == false`, the legacy-record migration
         // path, which is replaying history rather than composing a new
         // record and must not lose companies over this.)
-        if seed, let first = draft.scopes.first, first.hazard_class != wp.hazard_class {
+        if seed, !draft.scopes.isEmpty, template.hazard_class != wp.hazard_class {
             error = String(format: RDLocalization.string("localizable.nova.education.scope.hazardmismatch", table: .localizable,
                 fallback: "Bu eğitimin diğer kapsamları %1$@ sınıfında; %2$@ sınıfındaki bir işyeri aynı eğitime eklenemez — tek eğitimde tek tehlike sınıfı olur. Ayrı bir eğitim kaydı açın."),
-                hazardLabel(first.hazard_class ?? ""), hazardLabel(wp.hazard_class))
+                hazardLabel(template.hazard_class ?? ""), hazardLabel(wp.hazard_class))
             return
+        }
+        if seed, draft.scopes.isEmpty, template.hazard_class != wp.hazard_class {
+            // The first real company: the preview hazard class (a guess, or
+            // whatever was picked in the topics popup before any company
+            // existed) gives way to reality. Official cycles' topics refresh
+            // to match; a custom cycle has no hazard dependency and is left
+            // exactly as the expert defined it.
+            if template.cycle != "custom" { template.topics = context.package.topics(cycle: template.cycle, hazard: wp.hazard_class) }
+            template.hazard_class = wp.hazard_class
         }
         var scope = NovaEducationScope(company_id: company, workplace_id: workplace,
             company_name: companies.first { $0.id == company }?.name, workplace_name: wp.name, hazard_class: wp.hazard_class)
         if seed {
-            if let first = draft.scopes.first {
-                // A second (or third, or fourth) company added to the same
-                // training: share the curriculum already established for
-                // this record instead of deriving an independent one from
-                // this workplace alone.
-                scope.cycle = first.cycle
-                scope.topics = first.topics.map { var t = $0; t.trainer_ids = []; return t }
-                scope.context_note = first.context_note
-            } else {
-                let curriculum = context.curricula.first { $0.company_id == company && $0.workplace_id == workplace && $0.education.cycle == "initial" && $0.education.group_name == "Genel" && $0.education.hazard_class == wp.hazard_class }
-                scope.topics = curriculum?.education.topics ?? context.package.topics(cycle: scope.cycle, hazard: wp.hazard_class)
-                scope.context_note = curriculum?.education.context_note ?? ""
-                for i in scope.topics.indices { scope.topics[i].trainer_ids = [] }
-            }
+            scope.cycle = template.cycle
+            scope.topics = template.topics.map { var t = $0; t.trainer_ids = []; return t }
+            scope.context_note = template.context_note; scope.lessons = template.lessons; scope.draft_days = template.draft_days
+            scope.location = template.location
+            // İşyeri unvanı / işveren vekili are no longer asked for here —
+            // they should already live on the company's own record, which
+            // does not exist yet, so a real name (the workplace's own) and a
+            // plain placeholder stand in; both are still editable later if
+            // a real signer name is needed for a specific printout.
+            scope.legal_name = wp.name
+            scope.employer_name = RDLocalization.string("localizable.nova.education.scope.employerplaceholder", table: .localizable, fallback: "İşveren vekili")
         }
         draft.scopes.append(scope)
         Task { await loadPeople(company) }
-        // A newly added scope has nothing to show yet; expand it straight
-        // away instead of leaving the expert to find it in the list.
-        if seed { expandedScope = scope.id }
+        if seed { expandedCompany = company }
     }
     private func hazardLabel(_ value: String) -> String {
         ["low": RDLocalization.string("localizable.nova.education.hazard.low", table: .localizable, fallback: "az tehlikeli"),

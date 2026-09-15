@@ -148,7 +148,7 @@ enum NovaEducationClock {
 /// finished only when it carries what the record needs — the same rule the
 /// manual nonconformity form uses for its own accordion.
 enum NovaEducationStep: String, CaseIterable, Identifiable {
-    case info, trainers, scopes
+    case info, schedule, trainers, participants
     var id: String { rawValue }
 }
 
@@ -158,8 +158,9 @@ extension NovaEducationDraft {
     func isComplete(_ step: NovaEducationStep) -> Bool {
         switch step {
         case .info: return filled(title)
+        case .schedule: return scopes.contains { !$0.lessons.isEmpty }
         case .trainers: return trainers.contains { filled($0.name) }
-        case .scopes: return scopes.contains { !$0.participants.isEmpty }
+        case .participants: return scopes.contains { !$0.participants.isEmpty }
         }
     }
     var completedCount: Int { NovaEducationStep.allCases.filter { isComplete($0) }.count }
