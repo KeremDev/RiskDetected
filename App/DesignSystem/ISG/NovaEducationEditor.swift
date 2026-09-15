@@ -175,7 +175,14 @@ struct NovaEducationEditor: View {
         }
         .onChange(of: scheduleDays) { value in
             guard ready else { return }
-            template.draft_days = value
+            recomputeLessons()
+        }
+        // Trainer/method no longer vary per topic — every topic is credited
+        // to whoever is currently listed as a trainer for the record.
+        .onChange(of: draft.trainers) { value in
+            guard ready else { return }
+            let ids = value.map(\.id)
+            for i in template.topics.indices { template.topics[i].trainer_ids = ids }
         }
         .novaFullScreenCover(item: $selectedCertificate, onDismiss: { Task { await refreshRecord() } }) { selection in
             if let saved {
@@ -185,8 +192,8 @@ struct NovaEducationEditor: View {
         // Only topics/minutes open as their own popup, reached from the info
         // step's link; everything else (cycle, method, schedule, location,
         // who is attending) is a plain accordion step.
-        .novaFullScreenCover(isPresented: $showingTopics, onDismiss: { showingTopics = false }) {
-            NovaEducationTopicsPopup(scope: $template, context: context, trainers: draft.trainers,
+        .novaFullScreenCover(isPresented: $showingTopics, onDismiss: { showingTopics = false; recomputeLessons() }) {
+            NovaEducationTopicsPopup(scope: $template, context: context,
                 hazardLocked: !draft.scopes.isEmpty,
                 saveCurriculum: draft.scopes.isEmpty ? nil : { Task { await saveCurriculum(draft.scopes[0]) } },
                 onClose: { showingTopics = false })
@@ -377,7 +384,10 @@ struct NovaEducationEditor: View {
                 Image(systemName: "list.bullet.clipboard").font(.system(size: 13, weight: .semibold))
                 VStack(alignment: .leading, spacing: 1) {
                     Text(RDLocalization.string("localizable.nova.education.topics.title", table: .localizable, fallback: "Konuları ve Süre")).font(NovaFont.font(.bodyStrong))
-                    Text("\(template.cycleName) · \(template.net) dk").font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
+                    // Molalar dahil toplam süre — yalnız ders dakikası
+                    // gösterildiğinde "8 saat" gereken bir eğitim "6 saat"
+                    // gibi görünüyordu (mola dakikaları hesaba katılmadan).
+                    Text("\(template.cycleName) · \(formatDuration(template.net + template.breakTotal))").font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
@@ -393,51 +403,78 @@ struct NovaEducationEditor: View {
         } }
         template.topics = curriculum?.education.topics ?? context.package.topics(cycle: template.cycle, hazard: template.hazard_class ?? "low")
         template.context_note = curriculum?.education.context_note ?? ""
+        recomputeLessons()
+    }
+    private func formatDuration(_ minutes: Int) -> String {
+        let hours = minutes / 60; let mins = minutes % 60
+        if hours == 0 { return "\(mins) dk" }
+        if mins == 0 { return "\(hours) sa" }
+        return "\(hours) sa \(mins) dk"
     }
 
     // MARK: - Schedule step: realized days/hours and location
 
     private var basicCycle: Bool { ["initial","periodic_repeat"].contains(template.cycle) }
 
+    /// Just a date+start time per day; the end time, break placement and
+    /// lesson blocks are computed automatically from the topic minutes
+    /// (NovaEducationClock already implements the government's 45 min
+    /// instruction + 15 min break unit) — nothing here is configured by
+    /// hand. Multiple days split the total evenly.
     private var scheduleStep: some View {
         VStack(alignment: .leading, spacing: 10) {
             field(RDLocalization.string("localizable.nova.education.field.location", table: .localizable, fallback: "Eğitim yeri / online bağlantı açıklaması"),
                 $template.location, id: "education.location")
-            Text(String(format: RDLocalization.string("localizable.nova.education.schedule.summary", table: .localizable, fallback: "Europe/Istanbul · %1$d dk öğretim + %2$d dk ara"),
-                template.net, template.breakTotal)).font(NovaFont.font(.meta))
             ForEach($scheduleDays) { $day in
-                VStack {
-                    DatePicker(RDLocalization.string("localizable.nova.education.schedule.daystart", table: .localizable, fallback: "Gün / başlangıç"), selection: $day.starts, in: ...Date())
+                HStack(spacing: 10) {
+                    DatePicker("", selection: $day.starts, in: ...Date()).labelsHidden()
                         .environment(\.timeZone, NovaEducationClock.calendar.timeZone)
-                    Stepper(String(format: RDLocalization.string("localizable.nova.education.schedule.lessoncount", table: .localizable, fallback: "%d ders"), day.lessonCount), value: $day.lessonCount, in: 1...24)
-                    HStack {
-                        Text(RDLocalization.string("localizable.nova.education.schedule.extrabreak", table: .localizable, fallback: "Ek ara (dk)"))
-                        TextField("0", value: $day.extraBreakMinutes, format: .number).keyboardType(.numberPad)
-                        Text(RDLocalization.string("localizable.nova.education.schedule.afterlesson", table: .localizable, fallback: "Ders sonrası"))
-                        TextField("4", value: $day.extraBreakAfter, format: .number).keyboardType(.numberPad)
-                    }.font(NovaFont.font(.meta))
-                    Button(RDLocalization.string("localizable.nova.education.schedule.removeday", table: .localizable, fallback: "Günü kaldır"), role: .destructive) { scheduleDays.removeAll { $0.id == day.id } }.font(NovaFont.font(.meta))
-                }.padding(.vertical, 6)
+                    if let range = dayRange(day.id) {
+                        NovaText(text: range, style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
+                    }
+                    Spacer(minLength: 0)
+                    if scheduleDays.count > 1 {
+                        Button { scheduleDays.removeAll { $0.id == day.id } } label: { Image(systemName: "xmark.circle.fill") }
+                            .foregroundStyle(NovaFont.secondaryInk)
+                    }
+                }
             }
-            Button(RDLocalization.string("localizable.nova.education.schedule.addday", table: .localizable, fallback: "Gerçekleşen gün ekle"), systemImage: "calendar.badge.plus") {
-                scheduleDays.append(.init(starts: NovaEducationClock.calendar.date(byAdding: .day, value: -1, to: Date())!, lessonCount: 1))
+            Button(RDLocalization.string("localizable.nova.education.schedule.addday", table: .localizable, fallback: "Gün ekle"), systemImage: "calendar.badge.plus") {
+                let last = scheduleDays.last?.starts ?? Date()
+                scheduleDays.append(.init(starts: NovaEducationClock.calendar.date(byAdding: .day, value: 1, to: last) ?? last, lessonCount: 1))
             }
-            Button(RDLocalization.string("localizable.nova.education.schedule.distribute", table: .localizable, fallback: "Konuları derslere dağıt"), systemImage: "clock.arrow.circlepath") {
-                if scheduleDays.isEmpty { scheduleDays = NovaEducationClock.initialDays(minutes: template.net, basic: basicCycle) }
-                template.lessons = NovaEducationClock.distribute(topics: template.topics, days: scheduleDays, basic: basicCycle)
-            }
-            Text(RDLocalization.string("localizable.nova.education.schedule.hint", table: .localizable,
-                fallback: "Saatler uzman tarafından girilen gerçekleşmiş programdır. Tarihleri kaydetmeden önce kontrol edin."))
+            Text(String(format: RDLocalization.string("localizable.nova.education.schedule.total", table: .localizable, fallback: "Toplam: %@ (mola dahil)"), formatDuration(template.net + template.breakTotal)))
                 .font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
-            ForEach($template.lessons) { $lesson in
-                VStack(alignment: .leading) {
-                    DatePicker(String(format: RDLocalization.string("localizable.nova.education.schedule.lesson", table: .localizable, fallback: "%d dk ders"), lesson.instruction_minutes),
-                        selection: Binding(get: { NovaEducationClock.date(lesson.starts_at) ?? Date() }, set: { lesson.starts_at = NovaEducationClock.iso($0) }), in: ...Date())
-                        .environment(\.timeZone, NovaEducationClock.calendar.timeZone)
-                    Stepper(String(format: RDLocalization.string("localizable.nova.education.schedule.breakafter", table: .localizable, fallback: "Ardından %d dk ara"), lesson.break_minutes), value: $lesson.break_minutes, in: 0...720, step: 5).font(NovaFont.font(.meta))
-                }.padding(.vertical, 4)
-            }
         }.disabled(!canWrite)
+    }
+    /// The visible start–end range for one scheduled day, computed from the
+    /// lessons `recomputeLessons()` already placed on it.
+    private func dayRange(_ dayID: UUID) -> String? {
+        guard let day = scheduleDays.first(where: { $0.id == dayID }) else { return nil }
+        let key = NovaEducationClock.day(day.starts)
+        let dayLessons = template.lessons.filter { NovaEducationClock.date($0.starts_at).map { NovaEducationClock.day($0) } == key }
+            .sorted { $0.starts_at < $1.starts_at }
+        guard let first = dayLessons.first, let last = dayLessons.last,
+              let start = NovaEducationClock.date(first.starts_at), let lastStart = NovaEducationClock.date(last.starts_at) else { return nil }
+        let end = lastStart.addingTimeInterval(Double(last.instruction_minutes) * 60)
+        let f = DateFormatter(); f.calendar = NovaEducationClock.calendar; f.timeZone = NovaEducationClock.calendar.timeZone
+        f.locale = Locale(identifier: "tr_TR"); f.dateFormat = "HH:mm"
+        return "\(f.string(from: start)) – \(f.string(from: end))"
+    }
+    /// Splits the topic minutes evenly across whichever days are listed and
+    /// lets NovaEducationClock place the actual 45+15 lesson/break blocks —
+    /// the one place lessons/schedule get computed, called whenever the
+    /// days, the topics, or the cycle change.
+    private func recomputeLessons() {
+        guard !scheduleDays.isEmpty, template.net > 0 else { template.lessons = []; return }
+        let units = basicCycle ? max(1, Int((Double(template.net) / 45.0).rounded(.up))) : 1
+        var days = scheduleDays
+        for i in days.indices {
+            let share = units / days.count + (i < units % days.count ? 1 : 0)
+            days[i].lessonCount = max(1, share)
+        }
+        template.lessons = NovaEducationClock.distribute(topics: template.topics, days: days, basic: basicCycle)
+        template.draft_days = scheduleDays
     }
 
     // MARK: - Trainers step (unchanged)
@@ -452,12 +489,10 @@ struct NovaEducationEditor: View {
                         field(RDLocalization.string("localizable.nova.education.field.trainertitle", table: .localizable, fallback: "Unvan / belge bilgisi"),
                             $trainer.title, id: "education.trainer.title.\(trainer.id)")
                         if draft.trainers.count > 1 {
+                            // onChange(of: draft.trainers) resyncs every
+                            // topic's trainer_ids to match afterward.
                             Button(RDLocalization.string("localizable.nova.education.trainer.remove", table: .localizable, fallback: "Eğiticiyi kaldır"),
-                                role: .destructive) {
-                                draft.trainers.removeAll { $0.id == trainer.id }
-                                for s in draft.scopes.indices { for t in draft.scopes[s].topics.indices { draft.scopes[s].topics[t].trainer_ids.removeAll { $0 == trainer.id } } }
-                                for i in template.topics.indices { template.topics[i].trainer_ids.removeAll { $0 == trainer.id } }
-                            }.font(NovaFont.font(.meta))
+                                role: .destructive) { draft.trainers.removeAll { $0.id == trainer.id } }.font(NovaFont.font(.meta))
                         }
                     }
                 }
@@ -737,6 +772,12 @@ struct NovaEducationEditor: View {
             template.topics = context.package.topics(cycle: template.cycle, hazard: "low")
         }
         scheduleDays = template.draft_days ?? NovaEducationClock.days(from: template.lessons)
+        // A record with topics but nothing scheduled yet (a brand-new one,
+        // or a legacy record migrated with no realized hours) gets one
+        // default day so the duration/schedule shown is real from the
+        // start rather than waiting for the expert to open this step.
+        if scheduleDays.isEmpty { scheduleDays = [.init(starts: Date(), lessonCount: 1)] }
+        recomputeLessons()
     }
     private func discardDraft() {
         try? service.discardDraft(id: original?.id)
@@ -768,12 +809,14 @@ struct NovaEducationEditor: View {
             // exactly as the expert defined it.
             if template.cycle != "custom" { template.topics = context.package.topics(cycle: template.cycle, hazard: wp.hazard_class) }
             template.hazard_class = wp.hazard_class
+            for i in template.topics.indices { template.topics[i].trainer_ids = draft.trainers.map(\.id) }
+            recomputeLessons()
         }
         var scope = NovaEducationScope(company_id: company, workplace_id: workplace,
             company_name: companies.first { $0.id == company }?.name, workplace_name: wp.name, hazard_class: wp.hazard_class)
         if seed {
             scope.cycle = template.cycle
-            scope.topics = template.topics.map { var t = $0; t.trainer_ids = []; return t }
+            scope.topics = template.topics
             scope.context_note = template.context_note; scope.lessons = template.lessons; scope.draft_days = template.draft_days
             scope.location = template.location
             // İşyeri unvanı / işveren vekili are no longer asked for here —

@@ -62,17 +62,20 @@ test('one shared template curriculum is mirrored into every scope, not edited pe
 test('adding a second company to the same record refuses a mismatched hazard class and otherwise shares the curriculum',()=>{
   assert.match(editor,/template\.hazard_class != wp\.hazard_class/);
   assert.match(editor,/localizable\.nova\.education\.scope\.hazardmismatch/);
-  assert.match(editor,/scope\.topics = template\.topics\.map/);
+  assert.match(editor,/scope\.topics = template\.topics/);
 });
 
 test('topics open in their own popup bound to the shared template, not a real scope by id',()=>{
-  assert.match(editor,/NovaEducationTopicsPopup\(scope: \$template, context: context, trainers: draft\.trainers,/);
+  assert.match(editor,/NovaEducationTopicsPopup\(scope: \$template, context: context,/);
   assert.match(editor,/hazardLocked: !draft\.scopes\.isEmpty/);
   assert.match(topicsPopup,/struct NovaEducationTopicsPopup: View/);
   // A topic can be switched off for a session that only covered part of the
   // curriculum, without deleting it from the record's definition.
   assert.match(topicsPopup,/includedBinding/);
   assert.doesNotMatch(topicsPopup,/struct NovaEducationScopeEditor/);
+  // Trainer and yüz-yüze/online do not vary per topic anymore.
+  assert.doesNotMatch(topicsPopup,/Menu \{\s*ForEach\(trainers\)/);
+  assert.doesNotMatch(topicsPopup,/Picker\(RDLocalization\.string\("localizable\.nova\.education\.topics\.method"/);
 });
 
 test('participants are grouped by company, not by a manually-added scope card',()=>{

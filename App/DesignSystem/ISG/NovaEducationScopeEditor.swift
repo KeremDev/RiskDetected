@@ -14,7 +14,6 @@ struct NovaEducationTopicsPopup: View {
     /// caller keeps every other scope mirrored to whichever this is).
     @Binding var scope: NovaEducationScope
     let context: NovaEducationContext
-    let trainers: [NovaEducationTrainer]
     /// True once a real company/workplace exists: the hazard class is then
     /// a fact, not a guess, and is shown read-only instead of offered as a
     /// preview picker.
@@ -90,10 +89,10 @@ struct NovaEducationTopicsPopup: View {
     }
     private func topicRow(_ binding: Binding<NovaEducationTopic>) -> some View {
         let topic = binding.wrappedValue
-        return NovaEducationTopicEditor(topic: binding, trainers: trainers,
+        return NovaEducationTopicEditor(topic: binding,
             removable: topic.group == "G4" || !basic || topic.parent_code != nil,
             defaultMinutes: defaultMinutes(topic),
-            remove: { scope.topics.removeAll { $0.code == topic.code } }, split: { split(topic) })
+            remove: { scope.topics.removeAll { $0.code == topic.code } })
     }
     /// The package's own minutes for this topic, restored when the "dahil
     /// edildi" toggle is switched back on after being switched off.
@@ -104,15 +103,9 @@ struct NovaEducationTopicsPopup: View {
         let curriculum = context.curricula.first { $0.company_id == scope.company_id && $0.workplace_id == scope.workplace_id && $0.education.cycle == scope.cycle && $0.education.group_name == scope.group_name && $0.education.hazard_class == scope.hazard_class }
         scope.topics = curriculum?.education.topics ?? context.package.topics(cycle: scope.cycle, hazard: scope.hazard_class ?? "low")
         scope.context_note = curriculum?.education.context_note ?? ""
-        // Trainer IDs belong to the old event, never implicitly assign its trainer in a new event.
-        for i in scope.topics.indices { scope.topics[i].trainer_ids = scope.topics[i].trainer_ids.filter { id in trainers.contains { $0.id == id } } }
-    }
-    private func split(_ topic: NovaEducationTopic) {
-        guard let index = scope.topics.firstIndex(where: { $0.code == topic.code }) else { return }
-        let parent = topic.parent_code ?? topic.code
-        var first = topic; first.code = parent + "-" + UUID().uuidString; first.parent_code = parent
-        var second = first; second.code = parent + "-" + UUID().uuidString; second.title = "Alt konu"; second.instruction_minutes = 0
-        scope.topics.replaceSubrange(index...index, with: [first, second])
+        // Trainer assignment is session-level now (the "Eğiticiler" step),
+        // not per topic — the caller resyncs every topic's trainer_ids to
+        // match the current trainer list whenever it changes.
     }
     private func groupSummary(_ group: String) -> String {
         let minutes = scope.topics.filter { $0.group == group }.reduce(0) { $0 + $1.instruction_minutes }
@@ -133,58 +126,42 @@ struct NovaEducationTopicsPopup: View {
     }
 }
 
+/// One row: a checkbox, the subtopic's own title, and its minutes — nothing
+/// else. Trainer and method (yüz yüze/online) do not vary per topic, so
+/// they live one level up (the "Eğiticiler" step and the info step's bulk
+/// toggle) instead of being asked again here for every single row.
 private struct NovaEducationTopicEditor: View {
     @Binding var topic: NovaEducationTopic
-    let trainers: [NovaEducationTrainer]
     let removable: Bool
-    /// Restored when "Bu konu bu eğitimde işlendi" is switched back on after
-    /// being switched off — switching it off just zeroes the minutes rather
-    /// than deleting the topic, so a session that only covered part of the
-    /// curriculum (e.g. only G1 today) can say so without losing the rest.
+    /// Restored when the checkbox is switched back on after being switched
+    /// off — switching it off just zeroes the minutes rather than deleting
+    /// the topic, so a session that only covered part of the curriculum
+    /// (e.g. only G1 today) can say so without losing the rest.
     let defaultMinutes: Int
     let remove: () -> Void
-    let split: () -> Void
+    /// The minutes field always stays editable, in both directions: typing
+    /// a positive number here also switches the checkbox on, typing 0
+    /// switches it off, and the checkbox itself does the same in reverse —
+    /// one true state, shown two ways.
     private var includedBinding: Binding<Bool> {
         Binding(get: { topic.instruction_minutes > 0 }, set: { on in topic.instruction_minutes = on ? (defaultMinutes > 0 ? defaultMinutes : 30) : 0 })
     }
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Toggle("", isOn: includedBinding).labelsHidden().accessibilityLabel(
+                RDLocalization.string("localizable.nova.education.topics.included", table: .localizable, fallback: "Bu konu bu eğitimde işlendi"))
             if topic.group == "G4" || topic.parent_code != nil || topic.code.hasPrefix("CUSTOM") {
                 TextField(RDLocalization.string("localizable.nova.education.topics.topictitle", table: .localizable, fallback: "Konu başlığı"), text: $topic.title, axis: .vertical)
-            } else { Text(topic.title).font(NovaFont.font(.body)) }
-            if let parent = topic.parent_code {
-                Text(String(format: RDLocalization.string("localizable.nova.education.topics.officialtopic", table: .localizable, fallback: "Resmî konu: %@"), parent)).font(NovaFont.font(.micro))
+            } else {
+                Text(topic.title).font(NovaFont.font(.body)).frame(maxWidth: .infinity, alignment: .leading)
             }
-            Toggle(RDLocalization.string("localizable.nova.education.topics.included", table: .localizable, fallback: "Bu konu bu eğitimde işlendi"), isOn: includedBinding)
-                .font(NovaFont.font(.meta))
-            if topic.instruction_minutes > 0 {
-                HStack {
-                    Button("−5") { topic.instruction_minutes = max(0,topic.instruction_minutes - 5) }.buttonStyle(.bordered)
-                    TextField(RDLocalization.string("localizable.nova.education.topics.minutes", table: .localizable, fallback: "Dakika"), value: $topic.instruction_minutes, format: .number).keyboardType(.numberPad).frame(width: 65)
-                    Text("dk").font(NovaFont.font(.meta))
-                    Button("+5") { topic.instruction_minutes = min(1440,topic.instruction_minutes + 5) }.buttonStyle(.bordered)
-                }
-                Picker(RDLocalization.string("localizable.nova.education.topics.method", table: .localizable, fallback: "Yöntem"), selection: $topic.method) {
-                    Text(RDLocalization.string("localizable.nova.education.method.inperson", table: .localizable, fallback: "Yüz yüze")).tag("face_to_face")
-                    Text(RDLocalization.string("localizable.nova.education.method.online", table: .localizable, fallback: "Online")).tag("online")
-                }.pickerStyle(.segmented)
-                Menu {
-                    ForEach(trainers) { trainer in
-                        Toggle(trainer.name.isEmpty ? RDLocalization.string("localizable.nova.education.topics.unnamedtrainer", table: .localizable, fallback: "Adsız eğitici") : trainer.name,
-                            isOn: Binding(get: { topic.trainer_ids.contains(trainer.id) }, set: { selected in
-                            topic.trainer_ids.removeAll { $0 == trainer.id }; if selected { topic.trainer_ids.append(trainer.id) }
-                        }))
-                    }
-                } label: {
-                    Label(topic.trainer_ids.isEmpty ? RDLocalization.string("localizable.nova.education.topics.picktrainers", table: .localizable, fallback: "Eğiticileri seç")
-                        : trainers.filter { topic.trainer_ids.contains($0.id) }.map(\.name).joined(separator: ", "), systemImage: "person")
-                }.font(NovaFont.font(.meta))
+            TextField(RDLocalization.string("localizable.nova.education.topics.minutes", table: .localizable, fallback: "Dakika"), value: $topic.instruction_minutes, format: .number)
+                .keyboardType(.numberPad).multilineTextAlignment(.trailing).frame(width: 48)
+            Text("dk").font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
+            if removable {
+                Button { remove() } label: { Image(systemName: "trash").font(.system(size: 13)) }.foregroundStyle(.red)
+                    .accessibilityLabel(RDLocalization.string("localizable.nova.education.topics.removetopic", table: .localizable, fallback: "Kaldır"))
             }
-            HStack {
-                if topic.group != "G4" { Button(RDLocalization.string("localizable.nova.education.topics.split", table: .localizable, fallback: "Alt konulara ayır"), action: split) }
-                Spacer(); if removable { Button(RDLocalization.string("localizable.nova.education.topics.removetopic", table: .localizable, fallback: "Kaldır"), role: .destructive, action: remove) }
-            }.font(NovaFont.font(.meta))
-            Divider()
-        }.padding(.vertical, 6)
+        }.padding(.vertical, 4)
     }
 }
