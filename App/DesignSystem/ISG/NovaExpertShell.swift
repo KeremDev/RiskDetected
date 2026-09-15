@@ -712,10 +712,6 @@ struct NovaDashboardScreen: View {
         ScrollView {
             VStack(spacing: 0) {
                 welcome.padding(.horizontal, 20).padding(.bottom, 20)
-                if let trackingIdentity {
-                    NovaModuleTrackingCard(identity: trackingIdentity, canWrite: trackingCanWrite)
-                        .padding(.horizontal, 20).padding(.bottom, 16)
-                }
                 HStack {
                     NovaText(text: RDLocalization.string("localizable.nova.expert.shell.ozet.79587bac", table: .localizable, fallback: "Özet"), style: .sectionTitle)
                     Spacer()
@@ -777,6 +773,10 @@ struct NovaDashboardScreen: View {
                             }.buttonStyle(.plain).disabled(onFinding == nil).accessibilityIdentifier("nova.recent.\(finding.id)")
                         }
                     }.padding(.horizontal, 20).padding(.top, 14)
+                }
+                if let trackingIdentity {
+                    NovaModuleTrackingCard(identity: trackingIdentity, canWrite: trackingCanWrite)
+                        .padding(.horizontal, 20).padding(.top, 22)
                 }
             }.padding(.bottom, 122)
         }.background(NovaColorToken.canvas.color(in: scheme)).accessibilityIdentifier("nova.home.scroll")
