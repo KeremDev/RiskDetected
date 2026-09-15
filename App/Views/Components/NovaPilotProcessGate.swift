@@ -23,11 +23,26 @@ struct NovaPilotProcessGate: View {
         NovaPageSurface {
             ScrollView {
                 VStack(alignment:.leading,spacing:14) {
-                    HStack {
+                    HStack(spacing: 8) {
                         NovaBackButton(action: onBack)
+                        // Some of these titles ("Yıllık Çalışma Planı") are long
+                        // enough to push an unstyled trailing button off the
+                        // right edge on a phone-width screen — it looked like
+                        // the add action simply did nothing. Scale the title
+                        // down instead of letting it claim unlimited width.
                         NovaText(text:spec.title,style:.screenTitle)
-                        Spacer()
-                        Button { creating = true } label: { Label("Ekle",systemImage:"plus") }.disabled(!canWrite)
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                        Spacer(minLength: 8)
+                        Button { creating = true } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "plus").font(.system(size: 13, weight: .bold))
+                                Text("Ekle").font(.system(size: 13, weight: .semibold))
+                            }
+                            .padding(.horizontal, 14).frame(minHeight: 44)
+                            .background(Color.accentColor.opacity(canWrite ? 1 : 0.4), in: Capsule())
+                            .foregroundStyle(.white)
+                        }.buttonStyle(.plain).disabled(!canWrite)
+                            .accessibilityIdentifier("process.add")
                     }
                     if parent == nil && initialCompany == nil {
                         Picker("Firma",selection:$company) {
@@ -49,6 +64,12 @@ struct NovaPilotProcessGate: View {
                                 VStack(alignment:.leading,spacing:8) {
                                     NovaText(text:row.title.replacingOccurrences(of:"[\"",with:"").replacingOccurrences(of:"\"]",with:""),style:.cardTitle)
                                     NovaText(text:row.company_name + " · " + String(row.date.prefix(10)),style:.meta)
+                                    if let state = row.values["state"]?.text, !state.isEmpty {
+                                        NovaText(text: spec.fields.first(where: { $0.id == "state" })?.choices[state] ?? ["active":"Aktif", "closed":"Kapalı"][state] ?? state, style: .meta)
+                                    }
+                                    if let summary = row.child_summary {
+                                        NovaText(text: "\(summary.total) alt kayıt · \(summary.open) açık · \(summary.overdue) gecikmiş", style: .meta)
+                                    }
                                     Label("Aç / Düzenle",systemImage:"chevron.right").font(NovaFont.font(.meta))
                                 }.frame(maxWidth:.infinity,alignment:.leading)
                             }
@@ -61,14 +82,26 @@ struct NovaPilotProcessGate: View {
         .font(.custom("PlusJakartaSans-Regular",size:14)).tint(.primary)
         .task { company = initialCompany; await load() }
         .onChange(of:company) { _ in Task { await load() } }
-        .sheet(isPresented:$creating,onDismiss:{Task { await load() }}) {
+        .sheet(isPresented:$creating,onDismiss:{createCompany = nil; Task { await load() }}) {
             if (parent != nil || initialCompany != nil), let company {
                 NovaProcessEditor(identity:identity,kind:kind,company:company,parent:parent,canWrite:canWrite)
             } else {
                 NovaCompanyCreateFlow(title:spec.title,companies:{try await NovaAnalysisWorkspace.companyOptions(identity:identity)},catalogue:{ selected in
                     try JSONDecoder().decode(NovaProcessPage.self,from:await service.read(kind:kind,company:selected))
                 },onSelect:{createCompany = $0}) { _ in
-                    if let company = createCompany { NovaProcessEditor(identity:identity,kind:kind,company:company,parent:parent,canWrite:canWrite) }
+                    // createCompany is set by onSelect just above, synchronously,
+                    // before this content closure can ever run with a loaded
+                    // catalogue — but a screen must never go silently blank if
+                    // that assumption is ever wrong, so the failure is visible
+                    // and recoverable instead of an empty popup.
+                    if let company = createCompany {
+                        NovaProcessEditor(identity:identity,kind:kind,company:company,parent:parent,canWrite:canWrite)
+                    } else {
+                        VStack(spacing: 12) {
+                            NovaText(text: "Firma seçimi kayboldu. Firmayı yeniden seçin.", style: .body)
+                            NovaButton(label: "Kapat", symbol: "xmark", variant: .surface) { creating = false }
+                        }.padding(20)
+                    }
                 }
             }
         }
@@ -162,7 +195,7 @@ struct NovaProcessEditor: View {
         .confirmationDialog("Kayıt aktif listeden kaldırılacak. Geçmişi korunur.",isPresented:$deletePrompt,titleVisibility:.visible) {
             Button("Sil",role:.destructive) { Task { await remove() } }
         }
-        .sheet(isPresented:$children) {
+        .sheet(isPresented:$children, onDismiss: { Task { await load() } }) {
             if let child = spec.child, let row {
                 NovaPilotProcessGate(identity:identity,kind:child,initialCompany:company,parent:row.id,canWrite:canWrite,onBack:{children = false})
             }
@@ -322,7 +355,7 @@ private struct NovaProcessLinkPicker: View {
     @State private var hasMore = false
     @State private var loading = false
     @State private var error: String?
-    private let kinds = ["training_record", "equipment_inspection", "nonconformity", "site_visit", "board", "work_permit", "katip_contract", "annual_work_plan", "contractor"]
+    private let kinds = ["checklist_run", "training_record", "equipment_inspection", "nonconformity", "site_visit", "board", "work_permit", "katip_contract", "annual_work_plan", "contractor"]
     var body: some View {
         NovaPopup {
             ScrollView {
