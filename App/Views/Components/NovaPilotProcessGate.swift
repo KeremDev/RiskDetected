@@ -145,26 +145,48 @@ struct NovaProcessEditor: View {
     @State private var deletePrompt = false
     @State private var children = false
     @State private var pdf: URL?
+    @State private var cancelling = false
+    @State private var cancelReason = ""
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var scheme
     private var spec: NovaProcessKind { .get(kind) }
     private var service: NovaProcessService { .init(identity:identity) }
+    /// Board meetings drop the planning fields from the form — the expert
+    /// records what happened, not what is scheduled — and cancelling is its
+    /// own action instead of a state choice sitting in the general form.
+    private var visibleFields: [NovaProcessField] {
+        guard kind == "board" else { return spec.fields }
+        return spec.fields.filter { !["applicability","state","held_on","cancelled_reason"].contains($0.id) }
+    }
     var body: some View {
         NovaPopup {
             ScrollView {
                 VStack(alignment:.leading,spacing:10) {
                     HStack(spacing: 10) {
-                        Image(systemName: kindSymbol).font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.white).frame(width: 34, height: 34)
-                            .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 10))
+                        Image(systemName: kindSymbol).font(.system(size: 19, weight: .regular))
+                            .foregroundStyle(NovaColorToken.text.color(in: scheme)).frame(width: 34, height: 34)
                         NovaText(text:spec.title,style:.screenTitle)
                         Spacer(minLength: 0)
                     }
                     if kind == "katip_contract" { NovaText(text:"Uzmanın sözleşme kaydıdır; resmî İSG-KATİP işlemi yapılmaz.",style:.meta) }
                     if kind == "work_permit" { NovaText(text:"Form hazırlama aracıdır. Çalışmayı başlatma veya saha onayı vermez.",style:.meta) }
+                    if kind == "board", values["state"]?.text == "cancelled" {
+                        NovaCard(padding: 12) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                NovaText(text: "Bu toplantı iptal edildi.", style: .label, color: NovaColorToken.statusDangerInk.color(in: scheme))
+                                if let reason = values["cancelled_reason"]?.text, !reason.isEmpty {
+                                    NovaText(text: reason, style: .metaQuiet)
+                                }
+                            }.frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
                     if loading { ProgressView("Kayıt yükleniyor…") }
                     if let catalogue, !loading {
-                        ForEach(spec.fields) { field in
-                            fieldRow(field) { control(field,catalogue) }
+                        if kind == "board" { boardCompactFields(catalogue) }
+                        else {
+                            ForEach(visibleFields) { field in
+                                fieldRow(field) { control(field,catalogue) }
+                            }
                         }
                         NovaCard(padding: 12) {
                             fieldIcon("doc.text") {
@@ -190,6 +212,26 @@ struct NovaProcessEditor: View {
                                         }.disabled(!canWrite)
                                     }
                                 }
+                            }
+                        }
+                        if kind == "board", row != nil, values["state"]?.text != "cancelled" {
+                            NovaCard(padding: 12) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    if cancelling {
+                                        NovaText(text: "İptal gerekçesi", style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
+                                        TextField("İptal gerekçesi", text: $cancelReason, axis: .vertical).lineLimit(2...4)
+                                        HStack(spacing: 10) {
+                                            NovaButton(label: "Vazgeç", symbol: "xmark", variant: .surface) { cancelling = false; cancelReason = "" }
+                                            NovaButton(label: "Toplantıyı iptal et", symbol: "xmark.seal", variant: .primary,
+                                                isEnabled: !cancelReason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
+                                                Task { await cancelMeeting() }
+                                            }
+                                        }
+                                    } else {
+                                        Button("Toplantıyı iptal et") { cancelling = true }
+                                            .disabled(!canWrite)
+                                    }
+                                }.frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
                         if row != nil {
@@ -251,13 +293,12 @@ struct NovaProcessEditor: View {
         default: return "briefcase"
         }
     }
-    /// A compact icon chip in front of one field's label+control, matching
-    /// the manual nonconformity screen's field styling.
+    /// A plain line icon in front of one field's label+control — no tint, no
+    /// background chip, just the glyph.
     @ViewBuilder private func fieldIcon<V: View>(_ symbol: String, @ViewBuilder _ content: @escaping () -> V) -> some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: symbol).font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Color.accentColor).frame(width: 26, height: 26)
-                .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+            Image(systemName: symbol).font(.system(size: 15, weight: .regular))
+                .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme)).frame(width: 20, height: 22)
             content().frame(maxWidth: .infinity, alignment: .leading)
         }
     }
@@ -270,6 +311,41 @@ struct NovaProcessEditor: View {
                 }
             }
         }
+    }
+    /// Board's own compact layout: workplace and date share a row, the rest
+    /// stay full width. Kept separate from the generic ForEach instead of
+    /// building a generic pairing mechanism that would reach every other kind.
+    @ViewBuilder private func boardCompactFields(_ catalogue: NovaProcessPage) -> some View {
+        if let workplaceField = spec.fields.first(where: { $0.id == "workplace_id" }),
+           let dateField = spec.fields.first(where: { $0.id == "planned_on" }) {
+            HStack(alignment: .top, spacing: 8) {
+                NovaCard(padding: 12) {
+                    fieldIcon(fieldSymbol(workplaceField)) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            NovaText(text: workplaceField.title + " *", style: .label)
+                            control(workplaceField, catalogue)
+                        }
+                    }
+                }.frame(maxWidth: .infinity)
+                NovaCard(padding: 12) {
+                    fieldIcon(fieldSymbol(dateField)) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            NovaText(text: dateField.title + " *", style: .label)
+                            control(dateField, catalogue)
+                        }
+                    }
+                }.frame(maxWidth: .infinity)
+            }
+        }
+        ForEach(visibleFields.filter { $0.id != "workplace_id" && $0.id != "planned_on" }) { field in
+            fieldRow(field) { control(field, catalogue) }
+        }
+    }
+    private func cancelMeeting() async {
+        values["state"] = .string("cancelled")
+        values["cancelled_reason"] = .string(cancelReason.trimmingCharacters(in: .whitespacesAndNewlines))
+        await save()
+        cancelling = false
     }
     private func fieldSymbol(_ field: NovaProcessField) -> String {
         switch field.type {
@@ -365,8 +441,13 @@ struct NovaProcessEditor: View {
                 let today = NovaDayField.text(Date())
                 for key in ["starts_on","planned_on","visited_on"] where spec.fields.contains(where:{$0.id == key}) { values[key] = .string(today) }
                 if kind == "annual_work_plan" { values["plan_year"] = .string(String(Calendar.current.component(.year,from:Date()))) }
-                if kind == "board" { values["applicability"] = .string("voluntary") }
-                if spec.fields.contains(where:{$0.id == "state"}) { values["state"] = .string(kind == "board_decision" ? "open" : "planned") }
+                if kind == "board" {
+                    // No planning workflow: a board record is entered as a
+                    // meeting that already happened, not one being scheduled.
+                    values["applicability"] = .string("mandatory")
+                    values["state"] = .string("held")
+                    values["held_on"] = .string(today)
+                } else if spec.fields.contains(where:{$0.id == "state"}) { values["state"] = .string(kind == "board_decision" ? "open" : "planned") }
                 if kind == "work_permit" { values["template_code"] = .string("general") }
                 if let key = spec.parentKey, let parent { values[key] = .string(parent.uuidString) }
                 if kind == "contractor_engagement", let parent { values["organization_id"] = .string(parent.uuidString) }
@@ -386,7 +467,8 @@ struct NovaProcessEditor: View {
         }
         if let key = spec.parentKey { selected[key] = values[key]?.rpc ?? .null }
         if kind == "board" {
-            if values["state"]?.text != "held" { selected["held_on"] = .null; selected["attendance"] = .null }
+            if values["state"]?.text == "held" { selected["held_on"] = selected["planned_on"] }
+            else { selected["held_on"] = .null; selected["attendance"] = .null }
             if values["state"]?.text != "cancelled" { selected["cancelled_reason"] = .null }
         }
         if kind == "annual_work_item" {
