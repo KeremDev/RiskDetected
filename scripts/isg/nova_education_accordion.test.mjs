@@ -81,7 +81,8 @@ test('topics open in their own popup bound to the shared template, not a real sc
 test('participants are grouped by company, not by a manually-added scope card',()=>{
   assert.match(editor,/private func companySection/);
   assert.match(editor,/private func participantBinding/);
-  assert.match(editor,/ForEach\(companies\.filter \{ writableCompanies\.contains\(\$0\.id\) \}\) \{ company in/);
+  assert.match(editor,/let added = companies\.filter \{ writableCompanies\.contains\(\$0\.id\) && scope\(for: \$0\.id\) != nil \}/);
+  assert.match(editor,/ForEach\(added\) \{ company in companySection\(company\) \}/);
   // İşyeri ünvanı / işveren vekili are no longer typed by hand.
   assert.doesNotMatch(editor,/TextField\("İşyeri tam unvanı/);
   assert.doesNotMatch(editor,/TextField\("İşveren/);

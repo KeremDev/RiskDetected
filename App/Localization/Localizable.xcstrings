@@ -16795,96 +16795,6 @@
         }
       }
     },
-    "localizable.nova.education.catalog.official": {
-      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Registered trainings"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kayıtlı eğitimler"
-          }
-        }
-      }
-    },
-    "localizable.nova.education.catalog.custom": {
-      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Previously defined by me"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Daha önce tanımladıklarım"
-          }
-        }
-      }
-    },
-    "localizable.nova.education.catalog.new": {
-      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Define a new training name…"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Yeni eğitim adı tanımla…"
-          }
-        }
-      }
-    },
-    "localizable.nova.education.catalog.pick": {
-      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choose a training"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eğitim seçin"
-          }
-        }
-      }
-    },
-    "localizable.nova.education.catalog.newhint": {
-      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This name isn't in the registered training list yet; for now it will only be used for this record."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bu ad henüz kayıtlı eğitim listesinde yok; şimdilik yalnız bu kayıt için kullanılır."
-          }
-        }
-      }
-    },
     "localizable.nova.education.hazard.low": {
       "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
       "extractionState": "manual",
@@ -17061,24 +16971,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Düzenleyici kişi / kurum"
-          }
-        }
-      }
-    },
-    "localizable.nova.education.field.title": {
-      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Training title"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eğitim başlığı"
           }
         }
       }
@@ -42578,13 +42470,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Training type"
+            "value": "Training:"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eğitim türü"
+            "value": "Eğitim:"
           }
         }
       }
@@ -42837,24 +42729,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "İşveren vekili"
-          }
-        }
-      }
-    },
-    "localizable.nova.education.close": {
-      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/schedule/trainers/participants), shared curriculum template mirrored into every scope, topics popup opens from the info step; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Close"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kapat"
           }
         }
       }
@@ -43215,6 +43089,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Toplam: %@ (mola dahil)"
+          }
+        }
+      }
+    },
+    "localizable.nova.education.participants.companysearch": {
+      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/schedule/trainers/participants), shared curriculum template mirrored into every scope, topics popup opens from the info step; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search and add a company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firma ara ve ekle"
+          }
+        }
+      }
+    },
+    "localizable.nova.education.participants.companynomatch": {
+      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/schedule/trainers/participants), shared curriculum template mirrored into every scope, topics popup opens from the info step; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching company."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşleşen firma yok."
+          }
+        }
+      }
+    },
+    "localizable.nova.education.participants.removecompany": {
+      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/schedule/trainers/participants), shared curriculum template mirrored into every scope, topics popup opens from the info step; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove company"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Firmayı kaldır"
+          }
+        }
+      }
+    },
+    "localizable.nova.education.savedraft": {
+      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/schedule/trainers/participants), shared curriculum template mirrored into every scope, topics popup opens from the info step; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save as draft"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taslak olarak kaydet"
           }
         }
       }

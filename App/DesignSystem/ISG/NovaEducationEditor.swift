@@ -22,8 +22,7 @@ struct NovaEducationEntry: View {
                 NovaPageSurface { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
             } else if let context, original?.education != nil || (context.catalog_enabled && (original == nil || migrate)) {
                 NovaEducationEditor(identity: identity, companies: companies, initialCompany: initialCompany,
-                    original: context.row ?? original, context: context, canWrite: canWrite && context.catalog_enabled, writableCompanies: writableCompanies,
-                    catalog: catalog)
+                    original: context.row ?? original, context: context, canWrite: canWrite && context.catalog_enabled, writableCompanies: writableCompanies)
             } else if original?.education == nil {
                 // The pre-catalogue path: a simpler, single-session record.
                 // Kept in its own card rather than reworked here.
@@ -78,10 +77,6 @@ struct NovaEducationEditor: View {
     let context: NovaEducationContext
     let canWrite: Bool
     let writableCompanies: Set<UUID>
-    /// Official + the expert's own previously-defined training names, already
-    /// fetched by the caller for the legacy editor — reused here read-only as
-    /// the title picker's source instead of free typing every time.
-    let catalog: [NovaTrainingCatalog]
     @EnvironmentObject private var app: AppState
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
@@ -109,6 +104,7 @@ struct NovaEducationEditor: View {
     /// personnel search reset whenever a different company opens.
     @State private var expandedCompany: UUID?
     @State private var personSearch = ""
+    @State private var companySearch = ""
     private struct Selection: Identifiable { let id = UUID(); let scope: UUID; let person: UUID; var document: UUID?; var revision: Int? }
     private var service: NovaEducationService { .init(identity: identity) }
     private var changed: Bool {
@@ -195,8 +191,7 @@ struct NovaEducationEditor: View {
         .novaFullScreenCover(isPresented: $showingTopics, onDismiss: { showingTopics = false; recomputeLessons() }) {
             NovaEducationTopicsPopup(scope: $template, context: context,
                 hazardLocked: !draft.scopes.isEmpty,
-                saveCurriculum: draft.scopes.isEmpty ? nil : { Task { await saveCurriculum(draft.scopes[0]) } },
-                onClose: { showingTopics = false })
+                saveCurriculum: draft.scopes.isEmpty ? nil : { Task { await saveCurriculum(draft.scopes[0]) } })
         }
         .confirmationDialog(RDLocalization.string("localizable.nova.education.cycle.changed.title", table: .localizable, fallback: "Eğitim türü değişti"),
             isPresented: Binding(get: { cycleChangePending != nil }, set: { if !$0 { cycleChangePending = nil } })) {
@@ -292,7 +287,6 @@ struct NovaEducationEditor: View {
 
     private var infoStep: some View {
         VStack(alignment: .leading, spacing: 8) {
-            titlePicker
             cyclePicker
             methodQuickToggle
             topicsLink
@@ -303,61 +297,21 @@ struct NovaEducationEditor: View {
         }.disabled(!canWrite)
     }
 
-    /// True once `draft.title` is not one of the catalog's known names — a
-    /// new record starts here (empty title matches nothing), and choosing a
-    /// catalog entry below always sets `draft.title` to that entry's exact
-    /// title, so this flips back to false the moment one is picked.
-    private var titleIsCustom: Bool { !catalog.contains { $0.title == draft.title } }
-    private var officialCatalog: [NovaTrainingCatalog] { catalog.filter { $0.owner_id == nil } }
-    private var customCatalog: [NovaTrainingCatalog] { catalog.filter { $0.owner_id != nil } }
-    /// The expert picks a name instead of typing one, the same way the
-    /// pre-catalogue training screen already offered a "Kayıtlı eğitim
-    /// seçimi" — official names plus anything they have named before. Typing
-    /// a genuinely new name is still one tap away, for training that has no
-    /// match yet; it is not written back into the shared catalog from here.
-    private var titlePicker: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            NovaText(text: RDLocalization.string("localizable.nova.education.field.title", table: .localizable, fallback: "Eğitim başlığı"), style: .label)
-            Menu {
-                if !officialCatalog.isEmpty {
-                    Section(RDLocalization.string("localizable.nova.education.catalog.official", table: .localizable, fallback: "Kayıtlı eğitimler")) {
-                        ForEach(officialCatalog) { entry in Button(entry.title) { draft.title = entry.title } }
-                    }
-                }
-                if !customCatalog.isEmpty {
-                    Section(RDLocalization.string("localizable.nova.education.catalog.custom", table: .localizable, fallback: "Daha önce tanımladıklarım")) {
-                        ForEach(customCatalog) { entry in Button(entry.title) { draft.title = entry.title } }
-                    }
-                }
-                Button(RDLocalization.string("localizable.nova.education.catalog.new", table: .localizable, fallback: "Yeni eğitim adı tanımla…")) { draft.title = "" }
-            } label: {
-                HStack {
-                    Text(draft.title.isEmpty ? RDLocalization.string("localizable.nova.education.catalog.pick", table: .localizable, fallback: "Eğitim seçin")
-                        : draft.title).foregroundStyle(draft.title.isEmpty ? NovaFont.secondaryInk : .primary)
-                    Spacer(minLength: 8)
-                    Image(systemName: "chevron.up.chevron.down").font(.system(size: 12, weight: .semibold))
-                }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                    .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 10))
-            }.buttonStyle(.plain).accessibilityIdentifier("education.title.picker")
-            if titleIsCustom {
-                TextField(RDLocalization.string("localizable.nova.education.field.title", table: .localizable, fallback: "Eğitim başlığı"), text: $draft.title)
-                    .textFieldStyle(.roundedBorder).accessibilityIdentifier("education.title")
-                if !draft.title.isEmpty {
-                    NovaText(text: RDLocalization.string("localizable.nova.education.catalog.newhint", table: .localizable,
-                        fallback: "Bu ad henüz kayıtlı eğitim listesinde yok; şimdilik yalnız bu kayıt için kullanılır."),
-                        style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
-                }
-            }
-        }
-    }
-
+    /// "Eğitim başlığı" as a separately-typed name had no effect on
+    /// anything — the topics, minutes and hazard-class rules all come from
+    /// the cycle, not from a title. Removed; the cycle picker is the one
+    /// choice that actually does something, so it is the only one asked
+    /// for, and the record's title is just its cycle's own name.
     private var cyclePicker: some View {
         VStack(alignment: .leading, spacing: 4) {
-            NovaText(text: RDLocalization.string("localizable.nova.education.field.cycle", table: .localizable, fallback: "Eğitim türü"), style: .label)
+            NovaText(text: RDLocalization.string("localizable.nova.education.field.cycle", table: .localizable, fallback: "Eğitim:"), style: .label)
             Picker("", selection: $template.cycle) {
                 ForEach(NovaEducationScope.cycles, id: \.0) { Text($0.1).tag($0.0) }
             }.pickerStyle(.menu).labelsHidden().accessibilityIdentifier("education.cycle")
-                .onChange(of: template.cycle) { [old = template.cycle] _ in cycleChangePending = old }
+                .onChange(of: template.cycle) { [old = template.cycle] _ in
+                    cycleChangePending = old
+                    draft.title = template.cycleName
+                }
         }
     }
 
@@ -433,7 +387,7 @@ struct NovaEducationEditor: View {
                         NovaText(text: range, style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
                     }
                     Spacer(minLength: 0)
-                    if scheduleDays.count > 1 {
+                    if scheduleDays.count > neededScheduleDays {
                         Button { scheduleDays.removeAll { $0.id == day.id } } label: { Image(systemName: "xmark.circle.fill") }
                             .foregroundStyle(NovaFont.secondaryInk)
                     }
@@ -465,9 +419,23 @@ struct NovaEducationEditor: View {
     /// lets NovaEducationClock place the actual 45+15 lesson/break blocks —
     /// the one place lessons/schedule get computed, called whenever the
     /// days, the topics, or the cycle change.
-    private func recomputeLessons() {
-        guard !scheduleDays.isEmpty, template.net > 0 else { template.lessons = []; return }
+    /// A training that cannot fit in one working day (more than 8
+    /// lesson-units, ~8 saat) needs at least this many days — a 16-hour
+    /// training is two days no matter what the schedule step currently
+    /// lists, not just once the expert notices it does not fit.
+    private var neededScheduleDays: Int {
+        guard template.net > 0 else { return 1 }
         let units = basicCycle ? max(1, Int((Double(template.net) / 45.0).rounded(.up))) : 1
+        return max(1, (units + 7) / 8)
+    }
+    private func recomputeLessons() {
+        guard template.net > 0 else { template.lessons = []; return }
+        let units = basicCycle ? max(1, Int((Double(template.net) / 45.0).rounded(.up))) : 1
+        if scheduleDays.isEmpty { scheduleDays = [.init(starts: Date(), lessonCount: 1)] }
+        while scheduleDays.count < neededScheduleDays {
+            let last = scheduleDays.last?.starts ?? Date()
+            scheduleDays.append(.init(starts: NovaEducationClock.calendar.date(byAdding: .day, value: 1, to: last) ?? last, lessonCount: 1))
+        }
         var days = scheduleDays
         for i in days.indices {
             let share = units / days.count + (i < units % days.count ? 1 : 0)
@@ -510,15 +478,55 @@ struct NovaEducationEditor: View {
 
     // MARK: - Participants step: company → workplace → tick people
 
+    /// A hesap can have a hundred companies on it — listing all of them
+    /// unconditionally does not scale. Search adds a company; only added
+    /// companies (i.e. companies that already have a scope) stay listed
+    /// below, so the visible list only ever grows as large as the training
+    /// actually needs.
     private var participantsStep: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        let added = companies.filter { writableCompanies.contains($0.id) && scope(for: $0.id) != nil }
+        let matches = companySearch.isEmpty ? [] : companies.filter {
+            writableCompanies.contains($0.id) && scope(for: $0.id) == nil && $0.name.localizedCaseInsensitiveContains(companySearch)
+        }
+        return VStack(alignment: .leading, spacing: 8) {
             NovaText(text: RDLocalization.string("localizable.nova.education.participants.explainer", table: .localizable,
-                fallback: "Eğitime katılan firmaları seçin; her firmanın altında personelini arayıp tikleyerek katılımcı olarak ekleyebilirsiniz. Aynı eğitime yalnız aynı tehlike sınıfındaki firmaları ekleyebilirsiniz."),
+                fallback: "Firma arayıp ekleyin; her firmanın altında personelini arayıp tikleyerek katılımcı olarak ekleyebilirsiniz. Aynı eğitime yalnız aynı tehlike sınıfındaki firmaları ekleyebilirsiniz."),
                 style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
-            ForEach(companies.filter { writableCompanies.contains($0.id) }) { company in
-                companySection(company)
+            HStack {
+                Image(systemName: "magnifyingglass")
+                TextField(RDLocalization.string("localizable.nova.education.participants.companysearch", table: .localizable, fallback: "Firma ara ve ekle"), text: $companySearch)
+            }.padding(10).background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 10))
+                .accessibilityIdentifier("education.participants.companysearch")
+            if !companySearch.isEmpty {
+                if matches.isEmpty {
+                    NovaText(text: RDLocalization.string("localizable.nova.education.participants.companynomatch", table: .localizable,
+                        fallback: "Eşleşen firma yok."), style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
+                } else {
+                    ForEach(matches) { company in
+                        Button { addCompany(company) } label: {
+                            HStack {
+                                NovaText(text: company.name, style: .body)
+                                Spacer(minLength: 8)
+                                Image(systemName: "plus.circle").font(.system(size: 16))
+                            }.padding(10).frame(maxWidth: .infinity)
+                                .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 10))
+                        }.buttonStyle(.plain).accessibilityIdentifier("education.participants.add.\(company.id)")
+                    }
+                }
             }
+            ForEach(added) { company in companySection(company) }
         }.disabled(!canWrite)
+    }
+    /// Adds a company straight from the search results: with one eligible
+    /// workplace it is picked automatically (still changeable afterward via
+    /// the workplace menu below); with more than one, the company opens
+    /// expanded so the expert chooses there instead of a second prompt here.
+    private func addCompany(_ company: NovaPilotCompanySummary) {
+        companySearch = ""
+        let places = eligibleWorkplaces(company.id)
+        expandedCompany = company.id
+        if people[company.id] == nil { Task { await loadPeople(company.id) } }
+        if let first = places.first { pick(company: company.id, workplace: first.id) }
     }
 
     private func scope(for company: UUID) -> NovaEducationScope? { draft.scopes.first { $0.company_id == company } }
@@ -587,6 +595,10 @@ struct NovaEducationEditor: View {
                         Toggle(person.name, isOn: participantBinding(idx: idx, person: person))
                     }
                 }
+                Button(RDLocalization.string("localizable.nova.education.participants.removecompany", table: .localizable, fallback: "Firmayı kaldır"), role: .destructive) {
+                    draft.scopes.removeAll { $0.company_id == company.id }
+                    if expandedCompany == company.id { expandedCompany = nil }
+                }.font(NovaFont.font(.meta))
             } else {
                 // Auto-pick when there is only one eligible workplace, so the
                 // expert never has to make a choice that has only one answer.
@@ -621,10 +633,20 @@ struct NovaEducationEditor: View {
     }
 
     private var saveButton: some View {
-        NovaButton(label: RDLocalization.string("localizable.nova.education.save", table: .localizable, fallback: "Gerçekleşen eğitimi kaydet"),
-            symbol: "checkmark", variant: .primary) { Task { await save() } }
-            .disabled(!canWrite || busy || pending || draft.scopes.isEmpty || !ready)
-            .accessibilityIdentifier("education.save")
+        VStack(spacing: 8) {
+            NovaButton(label: RDLocalization.string("localizable.nova.education.save", table: .localizable, fallback: "Gerçekleşen eğitimi kaydet"),
+                symbol: "checkmark", variant: .primary) { Task { await save() } }
+                .disabled(!canWrite || busy || pending || draft.scopes.isEmpty || !ready)
+                .accessibilityIdentifier("education.save")
+            // The draft is already autosaved on every edit — this button
+            // just makes that explicit and lets the expert leave knowing
+            // it, instead of only ever finding out on the next visit's
+            // "taslağınız geri yüklendi" notice.
+            NovaButton(label: RDLocalization.string("localizable.nova.education.savedraft", table: .localizable, fallback: "Taslak olarak kaydet"),
+                symbol: "tray.and.arrow.down", variant: .surface) {
+                try? service.preserve(draft); dismiss()
+            }.disabled(!canWrite || busy).accessibilityIdentifier("education.savedraft")
+        }
     }
 
     @ViewBuilder private var certificates: some View {
@@ -755,6 +777,8 @@ struct NovaEducationEditor: View {
             // "Eğiticiler" read as finished before anyone had chosen
             // one — trainersStep offers the same name as a one-tap
             // "Kendimi ekle" instead, so it stays fast but deliberate.
+            // The title is not asked for anymore; it just names the cycle.
+            draft.title = template.cycleName
             if let company = initialCompany, let wp = context.workplaces.first(where: { $0.company_id == company }) { add(company: company, workplace: wp.id) }
         }
     }

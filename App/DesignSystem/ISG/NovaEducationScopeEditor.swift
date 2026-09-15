@@ -21,7 +21,6 @@ struct NovaEducationTopicsPopup: View {
     /// nil until a real scope exists — "firma varsayılanı" has no firma to
     /// save against before that.
     let saveCurriculum: (() -> Void)?
-    let onClose: () -> Void
     private var basic: Bool { ["initial","periodic_repeat"].contains(scope.cycle) }
     private var hazardBinding: Binding<String> {
         Binding(get: { scope.hazard_class ?? "low" }, set: { scope.hazard_class = $0; defaults() })
@@ -29,12 +28,11 @@ struct NovaEducationTopicsPopup: View {
     var body: some View {
         NovaPopup {
             ScrollView {
+                // NovaPopup already draws its own close X (top trailing,
+                // with space reserved above content for it) — a second
+                // "Kapat" button here just duplicated it.
                 VStack(alignment: .leading, spacing: 16) {
-                    HStack {
-                        NovaText(text: RDLocalization.string("localizable.nova.education.topics.title", table: .localizable, fallback: "Konuları ve Süre"), style: .screenTitle)
-                        Spacer()
-                        NovaButton(label: RDLocalization.string("localizable.nova.education.close", table: .localizable, fallback: "Kapat"), symbol: "xmark", variant: .surface, action: onClose)
-                    }
+                    NovaText(text: RDLocalization.string("localizable.nova.education.topics.title", table: .localizable, fallback: "Konuları ve Süre"), style: .screenTitle)
                     if hazardLocked {
                         Text(String(format: RDLocalization.string("localizable.nova.education.topics.hazard.locked", table: .localizable, fallback: "Tehlike sınıfı: %@ (eklenen işyerinden)"),
                             hazardName(scope.hazard_class ?? ""))).font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
@@ -147,17 +145,29 @@ private struct NovaEducationTopicEditor: View {
         Binding(get: { topic.instruction_minutes > 0 }, set: { on in topic.instruction_minutes = on ? (defaultMinutes > 0 ? defaultMinutes : 30) : 0 })
     }
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Toggle("", isOn: includedBinding).labelsHidden().accessibilityLabel(
+        HStack(alignment: .center, spacing: 8) {
+            // A compact checkbox, not a full-size iOS switch — this row
+            // repeats up to ~20 times on screen, so the control needs to
+            // read as a small "seçim kutusu", not a row of pill switches.
+            Button { includedBinding.wrappedValue.toggle() } label: {
+                Image(systemName: includedBinding.wrappedValue ? "checkmark.square.fill" : "square")
+                    .font(.system(size: 18)).foregroundStyle(includedBinding.wrappedValue ? Color.accentColor : NovaFont.secondaryInk)
+            }.buttonStyle(.plain).accessibilityLabel(
                 RDLocalization.string("localizable.nova.education.topics.included", table: .localizable, fallback: "Bu konu bu eğitimde işlendi"))
             if topic.group == "G4" || topic.parent_code != nil || topic.code.hasPrefix("CUSTOM") {
                 TextField(RDLocalization.string("localizable.nova.education.topics.topictitle", table: .localizable, fallback: "Konu başlığı"), text: $topic.title, axis: .vertical)
             } else {
                 Text(topic.title).font(NovaFont.font(.body)).frame(maxWidth: .infinity, alignment: .leading)
             }
-            TextField(RDLocalization.string("localizable.nova.education.topics.minutes", table: .localizable, fallback: "Dakika"), value: $topic.instruction_minutes, format: .number)
-                .keyboardType(.numberPad).multilineTextAlignment(.trailing).frame(width: 48)
-            Text("dk").font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
+            // A visible box around the minutes field — otherwise it reads
+            // as plain, non-interactive text next to the title.
+            HStack(spacing: 3) {
+                TextField(RDLocalization.string("localizable.nova.education.topics.minutes", table: .localizable, fallback: "Dakika"), value: $topic.instruction_minutes, format: .number)
+                    .keyboardType(.numberPad).multilineTextAlignment(.trailing).frame(width: 34)
+                Text("dk").font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
+            }.padding(.horizontal, 8).padding(.vertical, 6)
+                .background(Color.white, in: RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.black.opacity(0.08)))
             if removable {
                 Button { remove() } label: { Image(systemName: "trash").font(.system(size: 13)) }.foregroundStyle(.red)
                     .accessibilityLabel(RDLocalization.string("localizable.nova.education.topics.removetopic", table: .localizable, fallback: "Kaldır"))
