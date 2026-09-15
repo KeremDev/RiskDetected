@@ -22,7 +22,7 @@ import Foundation
         let analysis_id: UUID
         let finding_id: UUID
         let source_version: Int
-        let selected_at: Date?
+        let selected_at: String?
     }
     private struct ImpactRow: Decodable {
         let id: UUID
@@ -42,7 +42,7 @@ import Foundation
         let scope: [String]?
         let reason: String?
         let state: String
-        let finalized_at: Date?
+        let finalized_at: String?
         let period_years: Int?
         let period_source: String?
         let period_needs_review: Bool?

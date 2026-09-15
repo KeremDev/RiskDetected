@@ -111,7 +111,7 @@ struct NovaEmergencyVersion: Identifiable, Equatable {
     let reviewNote: String?
     let team: [NovaEmergencyMember]
     let assetID: UUID?
-    let createdAt: Date?
+    let createdAt: String?
     var isActive: Bool { state == "active" }
 }
 

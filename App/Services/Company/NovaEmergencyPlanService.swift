@@ -32,7 +32,7 @@ import Foundation
         let review_note: String?
         let team: [MemberRow]?
         let asset_id: UUID?
-        let created_at: Date?
+        let created_at: String?
     }
     private struct AssetDownloadRow: Decodable { let bucket: String; let path: String }
     private struct PlanRow: Decodable {

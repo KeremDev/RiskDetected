@@ -119,7 +119,7 @@ struct NovaRiskSource: Identifiable, Equatable {
     let analysisID: UUID
     let findingID: UUID
     let sourceVersion: Int
-    let selectedAt: Date?
+    let selectedAt: String?
 }
 
 /// One consequence the expert recorded for a scoped revision.
@@ -149,7 +149,7 @@ struct NovaRiskVersion: Identifiable, Equatable {
     let scope: [String]
     let reason: String?
     let state: String
-    let finalizedAt: Date?
+    let finalizedAt: String?
     let periodYears: Int?
     let periodSource: NovaRiskPeriodSource?
     let periodNeedsReview: Bool
