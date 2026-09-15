@@ -18686,13 +18686,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Equipment"
+            "value": "Add Equipment"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ekipman"
+            "value": "Ekipman Ekle"
           }
         }
       }
@@ -20457,6 +20457,24 @@
           "stringUnit": {
             "state": "translated",
             "value": "Seri/kod veya tür ara"
+          }
+        }
+      }
+    },
+    "localizable.nova.equipment.section.add": {
+      "comment": "nova_equipment_checks; Periyodik Kontroller: company picker, counters, item popup, period form and add flow; the company detail strip's own add action skips straight to the add sheet; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add equipment"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekipman ekle"
           }
         }
       }

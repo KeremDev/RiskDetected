@@ -82,6 +82,9 @@ struct NovaEquipmentCheckScreen: View {
     var canWrite = true
     /// Opened from a company page: that company is already the answer.
     var initialCompany: UUID?
+    /// Opened from the company page's own "Ekipman ekle" action: skip
+    /// straight to the add sheet instead of landing on the inventory first.
+    var startInAddMode = false
     var headingOverride: String?
     @Environment(\.colorScheme) private var scheme
     @State private var board: NovaEquipmentBoard?
@@ -195,7 +198,7 @@ struct NovaEquipmentCheckScreen: View {
                 Button { adding = true } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "plus").font(.system(size: 13, weight: .bold))
-                        NovaText(text: RDLocalization.string("localizable.nova.equipment.add.short", table: .localizable, fallback: "Ekipman"),
+                        NovaText(text: RDLocalization.string("localizable.nova.equipment.add.short", table: .localizable, fallback: "Ekipman Ekle"),
                             style: .buttonSm, color: NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
                     }
                     .foregroundStyle(NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
@@ -552,6 +555,7 @@ struct NovaEquipmentCheckScreen: View {
             started = true
             company = initialCompany
             companies = (try? await client.companies()) ?? []
+            if startInAddMode && company != nil { adding = true }
         }
         if let answer = try? await client.catalogue(company) {
             suggestions = answer.suggestions
@@ -580,6 +584,8 @@ struct NovaEquipmentSectionStrip: View {
     let counts: [NovaEquipmentState: Int]
     var isLoading = false
     let onOpen: () -> Void
+    /// Straight to the add sheet, without a stop at the inventory first.
+    var onAdd: (() -> Void)? = nil
     @Environment(\.colorScheme) private var scheme
 
     private func count(_ group: NovaEquipmentGroup) -> Int {
@@ -620,9 +626,16 @@ struct NovaEquipmentSectionStrip: View {
                     }
                 }
             }
-            NovaButton(label: RDLocalization.string("localizable.nova.equipment.section.open", table: .localizable, fallback: "Periyodik kontrolleri aç"),
-                symbol: "checkmark.shield", variant: .surface, action: onOpen)
-                .accessibilityIdentifier("company.section.equipment.open")
+            HStack(spacing: 8) {
+                NovaButton(label: RDLocalization.string("localizable.nova.equipment.section.open", table: .localizable, fallback: "Periyodik kontrolleri aç"),
+                    symbol: "checkmark.shield", variant: .surface, action: onOpen)
+                    .accessibilityIdentifier("company.section.equipment.open")
+                if let onAdd {
+                    NovaButton(label: RDLocalization.string("localizable.nova.equipment.section.add", table: .localizable, fallback: "Ekipman ekle"),
+                        symbol: "plus", variant: .primary, action: onAdd)
+                        .accessibilityIdentifier("company.section.equipment.add")
+                }
+            }
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 }

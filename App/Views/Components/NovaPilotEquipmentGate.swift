@@ -8,6 +8,8 @@ struct NovaPilotEquipmentGate: View {
     /// Opened from a company page: the module starts on that company.
     var initialCompany: UUID?
     var headingOverride: String?
+    /// Opened from the company page's own "Ekipman ekle" action.
+    var startInAddMode = false
     let onBack: () -> Void
 
     private var service: NovaEquipmentCheckService { .live() }
@@ -15,7 +17,7 @@ struct NovaPilotEquipmentGate: View {
 
     var body: some View {
         NovaEquipmentCheckScreen(client: client, onBack: onBack, canWrite: canWrite,
-            initialCompany: initialCompany, headingOverride: headingOverride)
+            initialCompany: initialCompany, startInAddMode: startInAddMode, headingOverride: headingOverride)
     }
 
     private var client: NovaEquipmentCheckClient {

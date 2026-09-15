@@ -58,7 +58,7 @@ struct NovaCompanyWorkspace: View {
     @State private var sheet: Sheet?
     @State private var personnelPage = false
     @State private var processKind: String?
-    @State private var processesExpanded = false
+    @State private var processTracking: NovaModuleTrackingSnapshot?
     @State private var companyExpanded = false
     @State private var completedTrainings = 0
     @State private var expandedSections = Set<NovaCompanySection>()
@@ -79,15 +79,18 @@ struct NovaCompanyWorkspace: View {
     @State private var equipment: NovaEquipmentBoard?
     @State private var equipmentLoading = false
     @State private var equipmentSection: NovaCompanySection?
+    /// Set when the strip's own "Ekipman ekle" action opened the module, so
+    /// it can skip straight to the add sheet instead of the inventory.
+    @State private var equipmentAdding = false
     private var documentIdentity: NovaSessionIdentity { .init(userID: scope.ownerID, sessionID: scope.sessionID) }
     private enum Sheet: Identifiable {
         case personnel, addPersonnel, editCompany, deleteCompany, training, directory(NovaDirectoryKind)
         var id: String { switch self { case .personnel: return "personnel"; case .addPersonnel: return "add-personnel"; case .editCompany: return "edit-company"; case .deleteCompany: return "delete-company"; case .training: return "training"; case .directory(let kind): return kind.rawValue } }
     }
     private var progress: NovaCompanyProgress {
-        // Empty headings are visibly incomplete in the pilot preview. This keeps
-        // the score and status pills useful before mutation endpoints are wired.
-        var result = NovaCompanyProgress(states: Dictionary(uniqueKeysWithValues: NovaCompanySection.allCases.map { ($0, NovaCompletionState.missing) }))
+        // Unmeasured sections stay unknown. A record count is not proof that a
+        // company's obligation is complete.
+        var result = NovaCompanyProgress(states: Dictionary(uniqueKeysWithValues: NovaCompanySection.allCases.map { ($0, NovaCompletionState.unknown) }))
         if let summary { result.states[.personnel] = summary.personnel_count > 0 ? .complete : .missing }
         result.states[.training] = completedTrainings > 0 ? .complete : .missing
         return result
@@ -113,11 +116,7 @@ struct NovaCompanyWorkspace: View {
                             }
                             }
                         }
-                        NovaCompanyAccordion(title: "Firma süreçleri", symbol: "square.grid.2x2", identifier: "company.processes", expanded: $processesExpanded) {
-                            ForEach(["katip_contract", "annual_work_plan", "board", "site_visit", "work_permit", "contractor"], id: \.self) { kind in
-                                NovaButton(label: NovaProcessKind.get(kind).title, symbol: "chevron.right", variant: .surface) { processKind = kind }
-                            }
-                        }
+                        NovaModuleTrackingCard(identity: documentIdentity, company: scope.companyID, canWrite: canWrite, onLoaded: { processTracking = $0 })
                         ForEach(Array(NovaCompanySection.allCases.dropFirst(2))) { section in sectionView(section) }
                     }.padding(.horizontal, 18).padding(.top, 4).padding(.bottom, 18)
                 }
@@ -128,6 +127,11 @@ struct NovaCompanyWorkspace: View {
                     catch { if !Task.isCancelled { summaryFailed = true } }
                 }
         }.navigationBarBackButtonHidden(true)
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("isgada.records.changed"))) { event in
+            if event.object as? UUID == scope.ownerID { summaryRevision = UUID() }
+        }
+        .onChange(of: processKind) { value in if value == nil { summaryRevision = UUID() } }
+
         .task(id: summaryRevision) {
             completedTrainings = 0
             let service = NovaTrainingService(identity: .init(userID: scope.ownerID, sessionID: scope.sessionID))
@@ -153,9 +157,12 @@ struct NovaCompanyWorkspace: View {
             equipment = try? await NovaEquipmentCheckService.live().board(documentIdentity,
                 query: .init(company: scope.companyID, limit: 1))
         }
-        .novaFullScreenCover(item: $equipmentSection, onDismiss: { summaryRevision = UUID() }) { section in
+        .novaFullScreenCover(item: $equipmentSection, onDismiss: {
+            summaryRevision = UUID(); equipmentAdding = false
+        }) { section in
             NovaPilotEquipmentGate(identity: documentIdentity, canWrite: canWrite,
                 initialCompany: scope.companyID, headingOverride: section.title,
+                startInAddMode: equipmentAdding,
                 onBack: { equipmentSection = nil })
         }
         .novaFullScreenCover(item: $fileSection, onDismiss: { summaryRevision = UUID() }) { section in
@@ -183,7 +190,7 @@ struct NovaCompanyWorkspace: View {
             if processKind == "risk" {
                 NovaPilotRiskGate(identity: documentIdentity, canWrite: canWrite, initialCompany: scope.companyID, onBack: { processKind = nil })
             } else if let kind = processKind {
-                NovaPilotProcessGate(identity: documentIdentity, kind: kind, initialCompany: scope.companyID, canWrite: canWrite, onBack: { processKind = nil })
+                NovaTrackedModuleDestination(identity: documentIdentity, kind: kind, company: scope.companyID, canWrite: canWrite, onBack: { processKind = nil })
             }
         }
         .navigationDestination(isPresented: $personnelPage) {
@@ -214,6 +221,15 @@ struct NovaCompanyWorkspace: View {
             }
         }
     }
+    private func moduleKind(_ section: NovaCompanySection) -> String? {
+        switch section {
+        case .representative, .support: return "appointment"
+        case .emergency: return "emergency_plan"
+        case .board: return "board"
+        case .handover: return "ppe"
+        default: return nil
+        }
+    }
     private func sectionView(_ section: NovaCompanySection, outlinesWhenExpanded: Bool = true) -> some View {
         NovaCompanyAccordion(title: section.title, symbol: section.symbol, state: progress[section],
             identifier: "company.section.\(section.rawValue)",
@@ -233,12 +249,23 @@ struct NovaCompanyWorkspace: View {
                     NovaHelpHint(text: "Gerçekleşen eğitimleri personel seçerek kaydedin ve eğitim geçmişini görüntüleyin.")
                     NovaButton(label: "Eğitimleri aç", symbol: "graduationcap", variant: .surface) { sheet = .training }
                 }
+                if let kind = moduleKind(section) {
+                    if let row = processTracking?.summaries.first(where: { $0.id == kind }), row.available {
+                        NovaText(text: "\(row.total) kayıt · \(row.overdue) tarihi geçmiş · \(row.upcoming) yaklaşan", style: .meta)
+                    }
+                    NovaButton(label: kind == "appointment" ? "Atamaları aç" : "Kayıtları aç", symbol: "chevron.right", variant: .surface) { processKind = kind }
+                    if section == .emergency {
+                        NovaButton(label: "Tatbikatları aç", symbol: "figure.run", variant: .surface) { processKind = "drill" }
+                    }
+                }
                 // Periodic checks are the whole of this heading, so the
                 // inventory comes first and the obligation and file strips
                 // follow it.
                 if section == .inspections {
                     NovaEquipmentSectionStrip(counts: equipment?.counts ?? [:],
-                        isLoading: equipment == nil && equipmentLoading) { equipmentSection = section }
+                        isLoading: equipment == nil && equipmentLoading,
+                        onOpen: { equipmentSection = section },
+                        onAdd: { equipmentAdding = true; equipmentSection = section })
                 }
                 if let kinds = NovaDocumentSectionMap.kinds(for: section) {
                     NovaDocumentSectionStrip(counts: documents?.counts(forKinds: kinds) ?? [:],
@@ -253,7 +280,7 @@ struct NovaCompanyWorkspace: View {
                         isLoading: files == nil && filesLoading) { fileSection = section }
                 }
                 if NovaDocumentSectionMap.kinds(for: section) == nil && categories.isEmpty
-                    && section != .personnel && section != .training && section != .inspections && section != .risk {
+                    && section != .personnel && section != .training && section != .inspections && section != .risk && moduleKind(section) == nil {
                     NovaHelpHint(text: RDLocalization.string("localizable.nova.workspace.section.pending", table: .localizable, fallback: "Bu bölümün kayıt servisi henüz bağlanmadı. Eksik veya tamamlandı bilgisi doğrulanamıyor."))
                 }
             }
