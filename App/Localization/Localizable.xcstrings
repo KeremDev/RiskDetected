@@ -16795,6 +16795,168 @@
         }
       }
     },
+    "localizable.nova.education.catalog.official": {
+      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registered trainings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlı eğitimler"
+          }
+        }
+      }
+    },
+    "localizable.nova.education.catalog.custom": {
+      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previously defined by me"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha önce tanımladıklarım"
+          }
+        }
+      }
+    },
+    "localizable.nova.education.catalog.new": {
+      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Define a new training name…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni eğitim adı tanımla…"
+          }
+        }
+      }
+    },
+    "localizable.nova.education.catalog.pick": {
+      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a training"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitim seçin"
+          }
+        }
+      }
+    },
+    "localizable.nova.education.catalog.newhint": {
+      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This name isn't in the registered training list yet; for now it will only be used for this record."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu ad henüz kayıtlı eğitim listesinde yok; şimdilik yalnız bu kayıt için kullanılır."
+          }
+        }
+      }
+    },
+    "localizable.nova.education.hazard.low": {
+      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "low hazard"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "az tehlikeli"
+          }
+        }
+      }
+    },
+    "localizable.nova.education.hazard.medium": {
+      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "hazardous"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tehlikeli"
+          }
+        }
+      }
+    },
+    "localizable.nova.education.hazard.high": {
+      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "very hazardous"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "çok tehlikeli"
+          }
+        }
+      }
+    },
+    "localizable.nova.education.scope.hazardmismatch": {
+      "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The rest of this training is %1$@; a workplace that is %2$@ cannot join the same record — one training has one hazard class. Open a separate record instead."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu eğitimin diğer kapsamları %1$@ sınıfında; %2$@ sınıfındaki bir işyeri aynı eğitime eklenemez — tek eğitimde tek tehlike sınıfı olur. Ayrı bir eğitim kaydı açın."
+          }
+        }
+      }
+    },
     "localizable.nova.education.certificates.title": {
       "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/trainers/scopes), per-scope editing opens in its own popup, certificates section after save; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
       "extractionState": "manual",

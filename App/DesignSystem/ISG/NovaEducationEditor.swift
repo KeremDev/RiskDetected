@@ -22,7 +22,8 @@ struct NovaEducationEntry: View {
                 NovaPageSurface { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
             } else if let context, original?.education != nil || (context.catalog_enabled && (original == nil || migrate)) {
                 NovaEducationEditor(identity: identity, companies: companies, initialCompany: initialCompany,
-                    original: context.row ?? original, context: context, canWrite: canWrite && context.catalog_enabled, writableCompanies: writableCompanies)
+                    original: context.row ?? original, context: context, canWrite: canWrite && context.catalog_enabled, writableCompanies: writableCompanies,
+                    catalog: catalog)
             } else if original?.education == nil {
                 // The pre-catalogue path: a simpler, single-session record.
                 // Kept in its own card rather than reworked here.
@@ -71,6 +72,10 @@ struct NovaEducationEditor: View {
     let context: NovaEducationContext
     let canWrite: Bool
     let writableCompanies: Set<UUID>
+    /// Official + the expert's own previously-defined training names, already
+    /// fetched by the caller for the legacy editor — reused here read-only as
+    /// the title picker's source instead of free typing every time.
+    let catalog: [NovaTrainingCatalog]
     @EnvironmentObject private var app: AppState
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
@@ -251,13 +256,60 @@ struct NovaEducationEditor: View {
             NovaText(text: RDLocalization.string("localizable.nova.education.field.title.hint", table: .localizable,
                 fallback: "Konu başlıkları, süre ve katılımcılar bir sonraki 'Firma, katılımcı ve konular' adımında, firma eklendikten sonra düzenlenir."),
                 style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
-            field(RDLocalization.string("localizable.nova.education.field.title", table: .localizable, fallback: "Eğitim başlığı"),
-                $draft.title, id: "education.title", placeholder: "Temel İSG Eğitimi")
+            titlePicker
             field(RDLocalization.string("localizable.nova.education.field.provider", table: .localizable, fallback: "Düzenleyici kişi / kurum"),
                 $draft.provider_name, id: "education.provider")
             area(RDLocalization.string("localizable.nova.education.field.notes", table: .localizable, fallback: "Notlar"),
                 $draft.notes, id: "education.notes")
         }.disabled(!canWrite)
+    }
+
+    /// True once `draft.title` is not one of the catalog's known names — a
+    /// new record starts here (empty title matches nothing), and choosing a
+    /// catalog entry below always sets `draft.title` to that entry's exact
+    /// title, so this flips back to false the moment one is picked.
+    private var titleIsCustom: Bool { !catalog.contains { $0.title == draft.title } }
+    private var officialCatalog: [NovaTrainingCatalog] { catalog.filter { $0.owner_id == nil } }
+    private var customCatalog: [NovaTrainingCatalog] { catalog.filter { $0.owner_id != nil } }
+    /// The expert picks a name instead of typing one, the same way the
+    /// pre-catalogue training screen already offered a "Kayıtlı eğitim
+    /// seçimi" — official names plus anything they have named before. Typing
+    /// a genuinely new name is still one tap away, for training that has no
+    /// match yet; it is not written back into the shared catalog from here.
+    private var titlePicker: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            NovaText(text: RDLocalization.string("localizable.nova.education.field.title", table: .localizable, fallback: "Eğitim başlığı"), style: .label)
+            Menu {
+                if !officialCatalog.isEmpty {
+                    Section(RDLocalization.string("localizable.nova.education.catalog.official", table: .localizable, fallback: "Kayıtlı eğitimler")) {
+                        ForEach(officialCatalog) { entry in Button(entry.title) { draft.title = entry.title } }
+                    }
+                }
+                if !customCatalog.isEmpty {
+                    Section(RDLocalization.string("localizable.nova.education.catalog.custom", table: .localizable, fallback: "Daha önce tanımladıklarım")) {
+                        ForEach(customCatalog) { entry in Button(entry.title) { draft.title = entry.title } }
+                    }
+                }
+                Button(RDLocalization.string("localizable.nova.education.catalog.new", table: .localizable, fallback: "Yeni eğitim adı tanımla…")) { draft.title = "" }
+            } label: {
+                HStack {
+                    Text(draft.title.isEmpty ? RDLocalization.string("localizable.nova.education.catalog.pick", table: .localizable, fallback: "Eğitim seçin")
+                        : draft.title).foregroundStyle(draft.title.isEmpty ? NovaFont.secondaryInk : .primary)
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.up.chevron.down").font(.system(size: 12, weight: .semibold))
+                }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                    .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 10))
+            }.buttonStyle(.plain).accessibilityIdentifier("education.title.picker")
+            if titleIsCustom {
+                TextField(RDLocalization.string("localizable.nova.education.field.title", table: .localizable, fallback: "Eğitim başlığı"), text: $draft.title)
+                    .textFieldStyle(.roundedBorder).accessibilityIdentifier("education.title")
+                if !draft.title.isEmpty {
+                    NovaText(text: RDLocalization.string("localizable.nova.education.catalog.newhint", table: .localizable,
+                        fallback: "Bu ad henüz kayıtlı eğitim listesinde yok; şimdilik yalnız bu kayıt için kullanılır."),
+                        style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
+                }
+            }
+        }
     }
 
     private var trainersStep: some View {
@@ -295,7 +347,7 @@ struct NovaEducationEditor: View {
     private var scopesStep: some View {
         VStack(alignment: .leading, spacing: 8) {
             NovaText(text: RDLocalization.string("localizable.nova.education.scope.explainer", table: .localizable,
-                fallback: "Eğitimi hangi firma ve işyeri için verdiğinizi burada seçersiniz. Her kapsam kendi konu başlıklarını, süresini ve katılımcı listesini taşır."),
+                fallback: "Eğitimi hangi firma ve işyerleri için verdiğinizi burada seçersiniz. Hepsi aynı eğitimin konu başlıklarını ve süresini paylaşır; yalnız katılımcı listesi kapsama göre değişir."),
                 style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
             ForEach($draft.scopes) { $scope in
                 let isOpen = expandedScope == scope.id
@@ -330,15 +382,19 @@ struct NovaEducationEditor: View {
             }
             addScopeMenu.disabled(!canWrite)
             NovaText(text: RDLocalization.string("localizable.nova.education.scope.hint", table: .localizable,
-                fallback: "Aynı firmada farklı görev ve içerik için ayrı kapsam ekleyebilirsiniz. Personel yalnız bir kapsama atanır."),
+                fallback: "Personel yalnız bir kapsama atanır. Aynı eğitime yalnız aynı tehlike sınıfındaki işyerlerini ekleyebilirsiniz; farklı bir tehlike sınıfı için ayrı bir eğitim kaydı açın."),
                 style: .metaQuiet, color: NovaColorToken.textSecondary.color(in: scheme))
         }
     }
 
+    /// Once the record already has a hazard class (from its first scope),
+    /// only same-class workplaces are offered — matching add()'s own guard,
+    /// so the mismatch error is a rare fallback rather than the everyday path.
     private var addScopeMenu: some View {
-        Menu {
+        let lockedHazard = draft.scopes.first?.hazard_class
+        return Menu {
             ForEach(companies.filter { writableCompanies.contains($0.id) }) { company in
-                ForEach(context.workplaces.filter { $0.company_id == company.id }) { workplace in
+                ForEach(context.workplaces.filter { $0.company_id == company.id && (lockedHazard == nil || $0.hazard_class == lockedHazard) }) { workplace in
                     Button("\(company.name) · \(workplace.name)") { add(company: company.id, workplace: workplace.id) }
                 }
             }
@@ -500,19 +556,46 @@ struct NovaEducationEditor: View {
     }
     private func add(company: UUID, workplace: UUID, seed: Bool = true) {
         guard let wp = context.workplaces.first(where: { $0.id == workplace }) else { return }
+        // One training session is one curriculum: a company at "az
+        // tehlikeli" and one at "çok tehlikeli" cannot sit in the same
+        // record, since the mandated topics/minutes genuinely differ.
+        // (Not checked for `seed == false`, the legacy-record migration
+        // path, which is replaying history rather than composing a new
+        // record and must not lose companies over this.)
+        if seed, let first = draft.scopes.first, first.hazard_class != wp.hazard_class {
+            error = String(format: RDLocalization.string("localizable.nova.education.scope.hazardmismatch", table: .localizable,
+                fallback: "Bu eğitimin diğer kapsamları %1$@ sınıfında; %2$@ sınıfındaki bir işyeri aynı eğitime eklenemez — tek eğitimde tek tehlike sınıfı olur. Ayrı bir eğitim kaydı açın."),
+                hazardLabel(first.hazard_class ?? ""), hazardLabel(wp.hazard_class))
+            return
+        }
         var scope = NovaEducationScope(company_id: company, workplace_id: workplace,
             company_name: companies.first { $0.id == company }?.name, workplace_name: wp.name, hazard_class: wp.hazard_class)
         if seed {
-            let curriculum = context.curricula.first { $0.company_id == company && $0.workplace_id == workplace && $0.education.cycle == "initial" && $0.education.group_name == "Genel" && $0.education.hazard_class == wp.hazard_class }
-            scope.topics = curriculum?.education.topics ?? context.package.topics(cycle: scope.cycle, hazard: wp.hazard_class)
-            scope.context_note = curriculum?.education.context_note ?? ""
-            for i in scope.topics.indices { scope.topics[i].trainer_ids = [] }
+            if let first = draft.scopes.first {
+                // A second (or third, or fourth) company added to the same
+                // training: share the curriculum already established for
+                // this record instead of deriving an independent one from
+                // this workplace alone.
+                scope.cycle = first.cycle
+                scope.topics = first.topics.map { var t = $0; t.trainer_ids = []; return t }
+                scope.context_note = first.context_note
+            } else {
+                let curriculum = context.curricula.first { $0.company_id == company && $0.workplace_id == workplace && $0.education.cycle == "initial" && $0.education.group_name == "Genel" && $0.education.hazard_class == wp.hazard_class }
+                scope.topics = curriculum?.education.topics ?? context.package.topics(cycle: scope.cycle, hazard: wp.hazard_class)
+                scope.context_note = curriculum?.education.context_note ?? ""
+                for i in scope.topics.indices { scope.topics[i].trainer_ids = [] }
+            }
         }
         draft.scopes.append(scope)
         Task { await loadPeople(company) }
         // A newly added scope has nothing to show yet; expand it straight
         // away instead of leaving the expert to find it in the list.
         if seed { expandedScope = scope.id }
+    }
+    private func hazardLabel(_ value: String) -> String {
+        ["low": RDLocalization.string("localizable.nova.education.hazard.low", table: .localizable, fallback: "az tehlikeli"),
+         "medium": RDLocalization.string("localizable.nova.education.hazard.medium", table: .localizable, fallback: "tehlikeli"),
+         "high": RDLocalization.string("localizable.nova.education.hazard.high", table: .localizable, fallback: "çok tehlikeli")][value] ?? value
     }
     private func loadPeople(_ company: UUID) async {
         guard people[company] == nil else { return }
