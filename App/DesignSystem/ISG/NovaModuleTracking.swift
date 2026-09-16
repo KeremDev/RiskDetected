@@ -183,15 +183,16 @@ struct NovaTrackedModuleDestination: View {
     let kind: String
     let company: UUID?
     let canWrite: Bool
+    var startInAddMode = false
     let onBack: () -> Void
     var body: some View {
         switch kind {
-        case "emergency_plan": NovaPilotEmergencyGate(identity: identity, canWrite: canWrite, initialCompany: company, onBack: onBack)
+        case "emergency_plan": NovaPilotEmergencyGate(identity: identity, canWrite: canWrite, initialCompany: company, startInAddMode: startInAddMode, onBack: onBack)
         case "drill": NovaPilotDrillGate(identity: identity, canWrite: canWrite, initialCompany: company, onBack: onBack)
-        case "appointment": NovaPilotAppointmentGate(identity: identity, canWrite: canWrite, initialCompany: company, onBack: onBack)
+        case "appointment": NovaPilotAppointmentGate(identity: identity, canWrite: canWrite, initialCompany: company, startInAddMode: startInAddMode, onBack: onBack)
         case "checklist_run": NovaPilotChecklistGate(identity: identity, canWrite: canWrite, initialCompany: company, onBack: onBack)
-        case "ppe": NovaPilotPPEGate(identity: identity, canWrite: canWrite, initialCompany: company, onBack: onBack)
-        default: NovaPilotProcessGate(identity: identity, kind: kind, initialCompany: company, canWrite: canWrite, onBack: onBack)
+        case "ppe": NovaPilotPPEGate(identity: identity, canWrite: canWrite, initialCompany: company, startInAddMode: startInAddMode, onBack: onBack)
+        default: NovaPilotProcessGate(identity: identity, kind: kind, initialCompany: company, canWrite: canWrite, startInAddMode: startInAddMode, onBack: onBack)
         }
     }
 }

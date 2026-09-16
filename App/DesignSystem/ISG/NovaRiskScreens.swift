@@ -175,6 +175,8 @@ struct NovaRiskScreen: View {
     /// shell chrome at all, such as the company-management cover, where this
     /// is the only way back.
     var showBackButton = true
+    /// Opened from the company page's own empty-state "Ekle" action.
+    var startInAddMode = false
 
     @State private var board: NovaRiskBoard?
     @State private var catalogue: NovaRiskCatalogue?
@@ -221,8 +223,9 @@ struct NovaRiskScreen: View {
             }
         }
         .task { await load(reset: true) }
+        .onAppear { if startInAddMode && canWrite { creating = true } }
         .sheet(isPresented: $creating, onDismiss: { Task { await load(reset: true) } }) {
-            NovaCompanyCreateFlow(title: "Risk değerlendirmesi kaydı", companies: client.companies, catalogue: { co in try await client.catalogue(co) }, onSelect: { _ in }) { catalogue, co in
+            NovaCompanyCreateFlow(title: "Risk değerlendirmesi kaydı", companies: client.companies, catalogue: { co in try await client.catalogue(co) }, onSelect: { _ in }, fixedCompany: initialCompany) { catalogue, co in
                 NovaRiskQuickCreateSheet(client: client, company: co, catalogue: catalogue) { creating = false }
             }
         }

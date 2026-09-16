@@ -35941,6 +35941,24 @@
         }
       }
     },
+    "localizable.nova.workspace.section.empty": {
+      "comment": "nova_general_check_2026-09-16; company detail per-section empty state; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not added yet. Add a file or record from this section."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz eklenmemiştir, ilgili alandan dosya/bilgi ekleyebilirsiniz."
+          }
+        }
+      }
+    },
     "localizable.nova.workspace.section.pending": {
       "extractionState": "manual",
       "localizations": {

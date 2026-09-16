@@ -6,6 +6,8 @@ struct NovaPilotPPEGate: View {
     let canWrite: Bool
     var initialCompany: UUID?
     var headingOverride: String?
+    /// Opened from the company page's own empty-state "Ekle" action.
+    var startInAddMode = false
     let onBack: () -> Void
     @State private var companies: [NovaAnalysisCompanyOption] = []
     @State private var company: UUID?
@@ -63,6 +65,7 @@ struct NovaPilotPPEGate: View {
         .foregroundStyle(NovaColorToken.text.color(in: scheme))
         .task { company = initialCompany; await load() }
         .onChange(of: company) { _ in Task { await load() } }
+        .onAppear { if startInAddMode && canWrite { creating = true } }
         .sheet(isPresented: $creating) {
             NovaCompanyCreateFlow(title: "KKD zimmeti", companies: {
                 try await NovaAnalysisWorkspace.companyOptions(identity: identity)

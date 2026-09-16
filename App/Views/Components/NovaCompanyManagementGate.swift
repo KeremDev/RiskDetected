@@ -82,6 +82,13 @@ struct NovaCompanyWorkspace: View {
     /// Set when the strip's own "Ekipman ekle" action opened the module, so
     /// it can skip straight to the add sheet instead of the inventory.
     @State private var equipmentAdding = false
+    /// The risk module's own per-company tally (state → count), fetched the
+    /// same lightweight way as equipment/documents/files, so the heading
+    /// never claims "Eksik" while a record actually exists.
+    @State private var riskSummary: (total: Int, counts: [String: Int])?
+    /// Set when a section's own empty-state "Ekle" action opened the module,
+    /// so it can skip straight to the add form instead of the record list.
+    @State private var processAdding = false
     private var documentIdentity: NovaSessionIdentity { .init(userID: scope.ownerID, sessionID: scope.sessionID) }
     private enum Sheet: Identifiable {
         case personnel, addPersonnel, editCompany, deleteCompany, training, directory(NovaDirectoryKind)
@@ -93,6 +100,14 @@ struct NovaCompanyWorkspace: View {
         var result = NovaCompanyProgress(states: Dictionary(uniqueKeysWithValues: NovaCompanySection.allCases.map { ($0, NovaCompletionState.unknown) }))
         if let summary { result.states[.personnel] = summary.personnel_count > 0 ? .complete : .missing }
         result.states[.training] = completedTrainings > 0 ? .complete : .missing
+        for section in NovaCompanySection.allCases {
+            guard let kind = moduleKind(section) else { continue }
+            if let row = processTracking?.summaries.first(where: { $0.id == kind }), row.available {
+                result.states[section] = row.total > 0 ? .complete : .missing
+            }
+        }
+        if let riskSummary { result.states[.risk] = riskSummary.total > 0 ? .complete : .missing }
+        if let equipment { result.states[.inspections] = equipment.total > 0 ? .complete : .missing }
         return result
     }
     var body: some View {
@@ -157,6 +172,12 @@ struct NovaCompanyWorkspace: View {
             equipment = try? await NovaEquipmentCheckService.live().board(documentIdentity,
                 query: .init(company: scope.companyID, limit: 1))
         }
+        .task(id: summaryRevision) {
+            let board = try? await NovaRiskAssessmentService.live().board(documentIdentity,
+                query: .init(company: scope.companyID, limit: 1))
+            let mine = board?.companies.first { $0.id == scope.companyID }
+            riskSummary = board.map { _ in (mine?.total ?? 0, mine?.counts ?? [:]) }
+        }
         .novaFullScreenCover(item: $equipmentSection, onDismiss: {
             summaryRevision = UUID(); equipmentAdding = false
         }) { section in
@@ -186,11 +207,15 @@ struct NovaCompanyWorkspace: View {
                 initialKinds: NovaDocumentSectionMap.kinds(for: section),
                 headingOverride: section.title)
         }
-        .novaFullScreenCover(isPresented: Binding(get: { processKind != nil }, set: { if !$0 { processKind = nil } })) {
+        .novaFullScreenCover(isPresented: Binding(get: { processKind != nil }, set: { if !$0 { processKind = nil } }), onDismiss: {
+            processAdding = false
+        }) {
             if processKind == "risk" {
-                NovaPilotRiskGate(identity: documentIdentity, canWrite: canWrite, initialCompany: scope.companyID, onBack: { processKind = nil })
+                NovaPilotRiskGate(identity: documentIdentity, canWrite: canWrite, initialCompany: scope.companyID,
+                    startInAddMode: processAdding, onBack: { processKind = nil })
             } else if let kind = processKind {
-                NovaTrackedModuleDestination(identity: documentIdentity, kind: kind, company: scope.companyID, canWrite: canWrite, onBack: { processKind = nil })
+                NovaTrackedModuleDestination(identity: documentIdentity, kind: kind, company: scope.companyID, canWrite: canWrite,
+                    startInAddMode: processAdding, onBack: { processKind = nil })
             }
         }
         .navigationDestination(isPresented: $personnelPage) {
@@ -230,6 +255,41 @@ struct NovaCompanyWorkspace: View {
         default: return nil
         }
     }
+    private func moduleTag(overdue: Int, upcoming: Int, total: Int) -> (String, NovaStatus)? {
+        guard total > 0 else { return nil }
+        if overdue > 0 { return ("Süresi geçti", .danger) }
+        if upcoming > 0 { return ("Yaklaşıyor", .warning) }
+        return ("Güncel", .success)
+    }
+    /// `counts` is the risk module's per-state tally for this company. The
+    /// worst state present wins, same priority the risk board itself sorts by.
+    private func riskTag(_ counts: [String: Int]) -> (String, NovaStatus)? {
+        if (counts["expired"] ?? 0) > 0 { return (NovaRiskGroup.expired.title, .danger) }
+        if (counts["due_soon"] ?? 0) > 0 { return (NovaRiskGroup.dueSoon.title, .warning) }
+        if (counts["never_assessed"] ?? 0) > 0 || (counts["period_unknown"] ?? 0) > 0 { return (NovaRiskGroup.untracked.title, .info) }
+        if (counts["valid"] ?? 0) > 0 { return (NovaRiskGroup.current.title, .success) }
+        return nil
+    }
+    /// A record is already on file: show what's on it and let the row itself
+    /// open the module, instead of a generic "aç" button.
+    private func moduleFilledRow(summary: String, tag: (String, NovaStatus)?, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                NovaText(text: summary, style: .meta).frame(maxWidth: .infinity, alignment: .leading)
+                if let tag { NovaStatusPill(label: tag.0, status: tag.1) }
+                Image(systemName: "chevron.right").font(.system(size: 11))
+            }.frame(minHeight: 40).contentShape(Rectangle())
+        }.buttonStyle(.plain)
+    }
+    /// Nothing on file yet — say so plainly and offer the one action that
+    /// fixes it, instead of a bare "aç" into an empty list.
+    private func moduleEmptyState(addLabel: String, action: @escaping () -> Void) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            NovaText(text: RDLocalization.string("localizable.nova.workspace.section.empty", table: .localizable,
+                fallback: "Henüz eklenmemiştir, ilgili alandan dosya/bilgi ekleyebilirsiniz."), style: .meta)
+            NovaButton(label: addLabel, symbol: "plus", variant: .surface, isEnabled: canWrite, action: action)
+        }
+    }
     private func sectionView(_ section: NovaCompanySection, outlinesWhenExpanded: Bool = true) -> some View {
         NovaCompanyAccordion(title: section.title, symbol: section.symbol, state: progress[section],
             identifier: "company.section.\(section.rawValue)",
@@ -244,8 +304,16 @@ struct NovaCompanyWorkspace: View {
                             .accessibilityIdentifier("company.personnel.add")
                     }
                 } else if section == .risk {
-                    NovaButton(label: RDLocalization.string("localizable.nova.workspace.section.risk.open", table: .localizable, fallback: "Değerlendirmeleri aç"),
-                        symbol: "shield", variant: .surface) { processKind = "risk" }
+                    if let riskSummary {
+                        if riskSummary.total > 0 {
+                            moduleFilledRow(summary: "\(riskSummary.total) kayıt", tag: riskTag(riskSummary.counts)) { processKind = "risk" }
+                        } else {
+                            moduleEmptyState(addLabel: section.title + " Ekle") { processAdding = true; processKind = "risk" }
+                        }
+                    } else {
+                        NovaButton(label: RDLocalization.string("localizable.nova.workspace.section.risk.open", table: .localizable, fallback: "Değerlendirmeleri aç"),
+                            symbol: "shield", variant: .surface) { processKind = "risk" }
+                    }
                 } else if section == .training {
                     NovaHelpHint(text: RDLocalization.string("localizable.nova.workspace.section.training.hint", table: .localizable,
                         fallback: "Gerçekleşen eğitimleri personel seçerek kaydedin ve eğitim geçmişini görüntüleyin."))
@@ -254,13 +322,19 @@ struct NovaCompanyWorkspace: View {
                 }
                 if let kind = moduleKind(section) {
                     if let row = processTracking?.summaries.first(where: { $0.id == kind }), row.available {
-                        NovaText(text: String(format: RDLocalization.string("localizable.nova.workspace.section.tracking.summary", table: .localizable,
-                            fallback: "%1$d kayıt · %2$d tarihi geçmiş · %3$d yaklaşan"), row.total, row.overdue, row.upcoming), style: .meta)
+                        if row.total > 0 {
+                            let summary = String(format: RDLocalization.string("localizable.nova.workspace.section.tracking.summary", table: .localizable,
+                                fallback: "%1$d kayıt · %2$d tarihi geçmiş · %3$d yaklaşan"), row.total, row.overdue, row.upcoming)
+                            moduleFilledRow(summary: summary, tag: moduleTag(overdue: row.overdue, upcoming: row.upcoming, total: row.total)) { processKind = kind }
+                        } else {
+                            moduleEmptyState(addLabel: section.title + " Ekle") { processAdding = true; processKind = kind }
+                        }
+                    } else {
+                        NovaButton(label: kind == "appointment"
+                            ? RDLocalization.string("localizable.nova.workspace.section.appointments.open", table: .localizable, fallback: "Atamaları aç")
+                            : RDLocalization.string("localizable.nova.workspace.section.records.open", table: .localizable, fallback: "Kayıtları aç"),
+                            symbol: "chevron.right", variant: .surface) { processKind = kind }
                     }
-                    NovaButton(label: kind == "appointment"
-                        ? RDLocalization.string("localizable.nova.workspace.section.appointments.open", table: .localizable, fallback: "Atamaları aç")
-                        : RDLocalization.string("localizable.nova.workspace.section.records.open", table: .localizable, fallback: "Kayıtları aç"),
-                        symbol: "chevron.right", variant: .surface) { processKind = kind }
                     if section == .emergency {
                         NovaButton(label: RDLocalization.string("localizable.nova.workspace.section.drills.open", table: .localizable, fallback: "Tatbikatları aç"),
                             symbol: "figure.run", variant: .surface) { processKind = "drill" }

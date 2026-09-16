@@ -6,6 +6,8 @@ struct NovaPilotProcessGate: View {
     var initialCompany: UUID?
     var parent: UUID?
     var canWrite = true
+    /// Opened from the company page's own empty-state "Ekle" action.
+    var startInAddMode = false
     let onBack: () -> Void
     @State private var company: UUID?
     @State private var companies: [NovaAnalysisCompanyOption] = []
@@ -95,6 +97,7 @@ struct NovaPilotProcessGate: View {
         }
         .font(.custom("PlusJakartaSans-Regular",size:14)).tint(.primary)
         .task { company = initialCompany; await load() }
+        .onAppear { if startInAddMode && canWrite { creating = true } }
         .onChange(of:company) { _ in Task { await load() } }
         .sheet(isPresented:$creating,onDismiss:{Task { await load() }}) {
             if (parent != nil || initialCompany != nil), let company {

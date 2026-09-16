@@ -137,6 +137,8 @@ struct NovaAppointmentScreen: View {
     var canWrite: Bool = true
     var initialCompany: UUID?
     var headingOverride: String?
+    /// Opened from the company page's own empty-state "Ekle" action.
+    var startInAddMode = false
     var management: ((UUID, UUID) -> AnyView)?
     @State private var draftCompany: UUID?
 
@@ -185,6 +187,7 @@ struct NovaAppointmentScreen: View {
             }
         }
         .task { await load(reset: true) }
+        .onAppear { if startInAddMode && canWrite { startCreate() } }
         .sheet(item: $detail) { row in
             NovaAppointmentDetailSheet(entry: row, canWrite: canWrite, fileClient: client.fileClient,
                 onEnd: {
