@@ -462,3 +462,49 @@ struct NovaChecklistAuthoring: View {
         catch { return "İşlem tamamlanamadı. Yeniden deneyin." }
     }
 }
+
+
+struct NovaChecklistStartForm: View {
+    let catalogue: NovaChecklistCatalogue
+    let onStart: (UUID, String, String) async -> String?
+    @State private var workplace: UUID?
+    @State private var template = ""
+    @State private var day = Date()
+    @State private var busy = false
+    @State private var failure: String?
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaText(text: "Kontrol başlat", style: .cardTitle)
+            if catalogue.starters.isEmpty {
+                NovaText(text: "Önce Listelerim bölümünden sorularınızı ekleyip listeyi yayımlayın.", style: .body)
+            } else if catalogue.workplaces.isEmpty {
+                NovaText(text: "Önce firma detayından işyeri ekleyin.", style: .body)
+            } else {
+                // A company with exactly one workplace has nothing to ask —
+                // only a real choice among several is shown as a picker.
+                if catalogue.workplaces.count > 1 {
+                    Picker("İşyeri", selection: $workplace) {
+                        Text("İşyeri seçin").tag(UUID?.none)
+                        ForEach(catalogue.workplaces) { Text($0.name).tag(Optional($0.id)) }
+                    }
+                }
+                Picker("Kontrol listesi", selection: $template) {
+                    Text("Liste seçin").tag("")
+                    ForEach(catalogue.starters) { Text($0.title + " · v\($0.version)").tag($0.templateCode) }
+                }
+                DatePicker("Kontrol tarihi", selection: $day, in: ...Date(), displayedComponents: .date)
+                if let failure { NovaText(text: failure, style: .body) }
+                NovaButton(label: busy ? "Başlatılıyor…" : "Başlat", symbol: "play", variant: .primary) {
+                    guard let workplace else { return }
+                    Task {
+                        busy = true
+                        failure = await onStart(workplace, template, NovaDayField.text(day))
+                        busy = false
+                    }
+                }.disabled(busy || workplace == nil || template.isEmpty)
+            }
+        }.padding(20).novaPopupContentSize().disabled(busy)
+            .preference(key: NovaPopupBusyKey.self, value: busy)
+            .task { if catalogue.workplaces.count == 1 { workplace = catalogue.workplaces.first?.id } }
+    }
+}
