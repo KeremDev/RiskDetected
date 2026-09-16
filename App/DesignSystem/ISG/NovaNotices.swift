@@ -13,6 +13,8 @@ enum NovaNoticeKind: String, CaseIterable, Identifiable, Equatable {
     case riskAssessment = "risk_assessment"
     case equipment
     case document
+    case personnelCertificate = "personnel_certificate"
+    case training
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -25,6 +27,8 @@ enum NovaNoticeKind: String, CaseIterable, Identifiable, Equatable {
         case .boardDecision: return RDLocalization.string("localizable.nova.notice.kind.decision", table: .localizable, fallback: "Kurul kararı")
         case .riskAssessment: return RDLocalization.string("localizable.nova.notice.kind.risk", table: .localizable, fallback: "Risk değerlendirmesi")
         case .equipment: return RDLocalization.string("localizable.nova.notice.kind.equipment", table: .localizable, fallback: "Periyodik kontrol")
+        case .personnelCertificate: return "Personel belgesi"
+        case .training: return "Eğitim"
         case .document: return RDLocalization.string("localizable.nova.notice.kind.document", table: .localizable, fallback: "Evrak")
         }
     }
@@ -39,6 +43,8 @@ enum NovaNoticeKind: String, CaseIterable, Identifiable, Equatable {
         case .boardDecision: return "checkmark.seal"
         case .riskAssessment: return "shield.lefthalf.filled"
         case .equipment: return "checkmark.shield"
+        case .personnelCertificate: return "person.text.rectangle"
+        case .training: return "graduationcap"
         case .document: return "doc.text"
         }
     }

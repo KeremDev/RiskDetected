@@ -1,17 +1,63 @@
 import SwiftUI
 
-/// Install on the session-owned root, above sheets. Call only after a verified commit.
+enum NovaSuccessMessage {
+    static let companyCreated = "Firma başarıyla eklendi!"
+    static let companyUpdated = "Firma bilgileri başarıyla güncellendi!"
+    static let companyLogoAdded = "Firma logosu başarıyla eklendi!"
+    static let personnelCreated = "Personel başarıyla eklendi!"
+    static let personnelUpdated = "Personel bilgileri başarıyla güncellendi!"
+    static let personnelArchived = "Personel başarıyla arşivlendi!"
+    static let findingCreated = "Uygunsuzluk başarıyla eklendi!"
+    static let trainingSaved = "Eğitim başarıyla kaydedildi!"
+    static let emergencyPlanSaved = "Acil durum planı başarıyla kaydedildi!"
+    static let periodicInspectionSaved = "Periyodik kontrol başarıyla kaydedildi!"
+    static let equipmentCreated = "Ekipman başarıyla eklendi!"
+    static let fileAdded = "Dosya başarıyla eklendi!"
+    static func recordSaved(_ name: String) -> String { "\(name) başarıyla kaydedildi!" }
+
+    static func normalized(_ text: String) -> String {
+        let value = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return "İşlem başarıyla tamamlandı!" }
+        return value.last == "!" || value.last == "." ? value : value + "!"
+    }
+}
+
+/// One session-owned event survives a form closing and is visible above an open popup.
+@MainActor final class NovaSuccessStore: ObservableObject {
+    struct Event: Identifiable { let id = UUID(); let text: String }
+    @Published var event: Event?
+    func show(_ text: String) { event = Event(text: NovaSuccessMessage.normalized(text)) }
+}
+private struct NovaSuccessStoreKey: EnvironmentKey { static let defaultValue: NovaSuccessStore? = nil }
+extension EnvironmentValues {
+    var novaSuccessStore: NovaSuccessStore? {
+        get { self[NovaSuccessStoreKey.self] }
+        set { self[NovaSuccessStoreKey.self] = newValue }
+    }
+}
 struct NovaSuccessPresentation: ViewModifier {
-    private struct Event: Identifiable { let id = UUID(); let text: String }
-    @State private var event: Event?
+    var account: UUID?
+    @StateObject private var store = NovaSuccessStore()
+    func body(content: Content) -> some View {
+        content.environment(\.novaSuccessStore, store)
+            .environment(\.novaCelebrate, { store.show($0) })
+            .overlay { NovaSuccessOverlay(store: store) }
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("isgada.mutation.succeeded"))) { event in
+                guard let account, event.object as? UUID == account,
+                      let message = event.userInfo?["message"] as? String else { return }
+                store.show(message)
+            }
+    }
+}
+struct NovaSuccessOverlay: View {
+    @ObservedObject var store: NovaSuccessStore
     @State private var appeared = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var scheme
-    func body(content: Content) -> some View {
-        content
-            .environment(\.novaCelebrate, { event = Event(text: $0) })
+    var body: some View {
+        Color.clear
             .overlay {
-                if let event {
+                if let event = store.event {
                     ZStack {
                         Color.black.opacity(0.30).ignoresSafeArea()
                         NovaCard(padding: 24) {
@@ -22,6 +68,20 @@ struct NovaSuccessPresentation: ViewModifier {
                                         .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
                                     Image(systemName: "party.popper").font(NovaFont.font(.sectionTitle)).foregroundStyle(.purple)
                                 }.accessibilityHidden(true)
+                                    .overlay {
+                                        if !reduceMotion {
+                                            ForEach(0..<12) { index in
+                                                RoundedRectangle(cornerRadius: 1)
+                                                    .fill(index.isMultiple(of: 3) ? NovaColorToken.accent.color(in: scheme) : NovaColorToken.text.color(in: scheme).opacity(0.3))
+                                                    .frame(width: 4, height: 7)
+                                                    .rotationEffect(.degrees(appeared ? Double(index * 37) : 0))
+                                                    .offset(x: appeared ? CGFloat(index - 6) * 17 : 0, y: appeared ? CGFloat((index * 23) % 80) - 35 : 0)
+                                                    .opacity(appeared ? 0 : 0.9)
+                                                    .animation(.easeOut(duration: 1.4).delay(Double(index % 3) * 0.06), value: appeared)
+                                            }
+                                        }
+                                    }
+                                NovaText(text: "Tebrikler", style: .sectionTitle)
                                 NovaText(text: event.text, style: .cardTitle)
                                     .multilineTextAlignment(.center)
                             }.frame(maxWidth: .infinity)
@@ -35,9 +95,9 @@ struct NovaSuccessPresentation: ViewModifier {
                         withAnimation(reduceMotion ? nil : .spring(response: 0.35)) { appeared = true }
                         UIAccessibility.post(notification: .announcement, argument: event.text)
                         do { try await Task.sleep(nanoseconds: 2_500_000_000) } catch { return }
-                        if self.event?.id == event.id { self.event = nil }
+                        if store.event?.id == event.id { store.event = nil }
                     }
                 }
-            }
+            }.allowsHitTesting(store.event != nil)
     }
 }

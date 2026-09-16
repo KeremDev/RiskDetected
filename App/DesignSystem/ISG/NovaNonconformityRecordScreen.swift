@@ -74,7 +74,7 @@ struct NovaNonconformityRecordSheet: View {
                 }
             }.padding(20).novaPopupContentSize()
         }
-        .background(NovaKeyboardDismissArea())
+
         .task { await reload() }
         .sheet(item: $opened) { url in NovaFileShareSheet(url: url) }
     }

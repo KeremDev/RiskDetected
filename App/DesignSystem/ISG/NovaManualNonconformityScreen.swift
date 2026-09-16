@@ -30,7 +30,7 @@ struct NovaManualNonconformityScreen: View {
     @State private var preview: NovaPreviewImage?
 
     var body: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: saving ? nil : onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     header
@@ -47,7 +47,7 @@ struct NovaManualNonconformityScreen: View {
                 }.padding(20).padding(.bottom, novaTabBarInset)
             }
         }
-        .background(NovaKeyboardDismissArea())
+
         .confirmationDialog(RDLocalization.string("localizable.nova.photo.intake.source", table: .localizable, fallback: "Fotoğrafı nereden ekleyelim?"),
             isPresented: $choosing, titleVisibility: .visible) {
             Button(RDLocalization.string("localizable.nova.photo.intake.camera", table: .localizable, fallback: "Kamera")) { camera = true }

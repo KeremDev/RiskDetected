@@ -22,6 +22,7 @@ struct NovaNonconformityListScreen: View {
     @Environment(\.colorScheme) private var scheme
     @State private var entries: [NovaNonconformityEntry]?
     @State private var pictures: [UUID: UIImage] = [:]
+    @State private var openFilter: String?
     @State private var filter = NovaNonconformityFilter()
     @State private var error: String?
     @State private var reload = UUID()
@@ -34,7 +35,7 @@ struct NovaNonconformityListScreen: View {
     }
 
     var body: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 10) {
                     header
@@ -45,7 +46,7 @@ struct NovaNonconformityListScreen: View {
                 }.padding(20).padding(.bottom, novaTabBarInset)
             }
         }
-        .background(NovaKeyboardDismissArea())
+
         .task(id: reload) { await load() }
     }
 
@@ -90,73 +91,48 @@ struct NovaNonconformityListScreen: View {
 
     // MARK: filters
 
-    /// Three dropdowns side by side. Each one opens its own list instead of
-    /// filling the page with chips.
     private var filters: some View {
-        HStack(spacing: 7) {
-            dropdown(label: RDLocalization.string("localizable.nova.nonconformity.filter.company", table: .localizable, fallback: "Firma"),
-                     value: companies.first { $0.id == filter.companyID }?.name,
-                     identifier: "company") {
-                Button(allLabel) { filter.companyID = nil }
-                ForEach(companies) { company in
-                    Button(company.name) { filter.companyID = company.id }
-                }
+        VStack(spacing: 8) {
+            HStack(spacing: 7) {
+                filterButton("Firma", key: "company", value: companies.first { $0.id == filter.companyID }?.name)
+                filterButton("Durum", key: "state", value: filter.overdueOnly ? "Termini geçen" : filter.state.map { NovaNonconformityWords.state($0.rawValue) })
+                filterButton("Kayıt türü", key: "kind", value: filter.kind.map(NovaNonconformityWords.recordKind))
             }
-            dropdown(label: RDLocalization.string("localizable.nova.nonconformity.filter.state", table: .localizable, fallback: "Durum"),
-                     value: stateValue, identifier: "state") {
-                Button(allLabel) { filter.state = nil; filter.overdueOnly = false }
-                Button(String(format: RDLocalization.string("localizable.nova.nonconformity.filter.overdue", table: .localizable,
-                    fallback: "Termini geçen · %d"), overdueCount)) { filter.overdueOnly = true; filter.state = nil }
-                ForEach([NovaNonconformityState.draft, .open, .assigned, .in_progress,
-                         .pending_verification, .closed, .reopened, .cancelled], id: \.rawValue) { value in
-                    Button(NovaNonconformityWords.state(value.rawValue)) { filter.state = value; filter.overdueOnly = false }
-                }
-            }
-            dropdown(label: RDLocalization.string("localizable.nova.analysis.file.kind", table: .localizable, fallback: "Kayıt türü"),
-                     value: filter.kind.map(NovaNonconformityWords.recordKind), identifier: "kind") {
-                Button(allLabel) { filter.kind = nil }
-                ForEach(NovaNonconformityRecordKind.allCases) { value in
-                    Button(NovaNonconformityWords.recordKind(value)) { filter.kind = value }
+            if let openFilter {
+                NovaFileChooserPanel(options: filterOptions(openFilter), selected: filterSelection(openFilter),
+                    identifier: "nonconformity.filter.\(openFilter).options") { value in
+                    switch openFilter {
+                    case "company": filter.companyID = value.flatMap(UUID.init(uuidString:))
+                    case "state":
+                        filter.overdueOnly = value == "overdue"
+                        filter.state = value.flatMap(NovaNonconformityState.init(rawValue:))
+                    default: filter.kind = value.flatMap(NovaNonconformityRecordKind.init(rawValue:))
+                    }
+                    self.openFilter = nil
                 }
             }
         }
     }
-
-    private var allLabel: String {
-        RDLocalization.string("localizable.nova.nonconformity.filter.all", table: .localizable, fallback: "Tümü")
+    private func filterButton(_ label: String, key: String, value: String?) -> some View {
+        NovaFileChooserButton(label: label, value: value ?? "Tümü", isOpen: openFilter == key,
+            identifier: "nonconformity.filter.\(key)") { openFilter = openFilter == key ? nil : key }
     }
-    private var stateValue: String? {
-        if filter.overdueOnly {
-            return RDLocalization.string("localizable.nova.nonconformity.overdue", table: .localizable, fallback: "Termini geçti")
+    private func filterSelection(_ key: String) -> String? {
+        switch key {
+        case "company": return filter.companyID?.uuidString
+        case "state": return filter.overdueOnly ? "overdue" : filter.state?.rawValue
+        default: return filter.kind?.rawValue
         }
-        return filter.state.map { NovaNonconformityWords.state($0.rawValue) }
     }
-
-    private func dropdown<Content: View>(label: String, value: String?, identifier: String,
-                                         @ViewBuilder content: () -> Content) -> some View {
-        let isOn = value != nil
-        return Menu {
-            content()
-        } label: {
-            HStack(spacing: 5) {
-                VStack(alignment: .leading, spacing: 1) {
-                    NovaText(text: label, style: .micro,
-                        color: NovaColorToken.textTertiary.color(in: scheme))
-                    NovaText(text: value ?? allLabel, style: .meta,
-                        color: isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.text.color(in: scheme))
-                        .lineLimit(1)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
-            }
-            .padding(.horizontal, 11).frame(maxWidth: .infinity, minHeight: 46)
-            .background(isOn ? NovaColorToken.statusSuccessBg.color(in: scheme) : NovaColorToken.surface.color(in: scheme),
-                in: RoundedRectangle(cornerRadius: 14))
+    private func filterOptions(_ key: String) -> [NovaFileChooserOption] {
+        let all = [NovaFileChooserOption(id: nil, title: "Tümü")]
+        switch key {
+        case "company": return all + companies.map { .init(id: $0.id.uuidString, title: $0.name) }
+        case "state":
+            return all + [.init(id: "overdue", title: "Termini geçen", count: overdueCount)] +
+                [NovaNonconformityState.draft, .open, .assigned, .in_progress, .pending_verification, .closed, .reopened, .cancelled].map { .init(id: $0.rawValue, title: NovaNonconformityWords.state($0.rawValue)) }
+        default: return all + NovaNonconformityRecordKind.allCases.map { .init(id: $0.rawValue, title: NovaNonconformityWords.recordKind($0)) }
         }
-        .accessibilityIdentifier("nonconformity.filter.\(identifier)")
-        .accessibilityLabel(Text(verbatim: label))
-        .accessibilityValue(Text(verbatim: value ?? allLabel))
     }
 
     @ViewBuilder private var summary: some View {
@@ -188,12 +164,14 @@ struct NovaNonconformityListScreen: View {
                 NovaText(text: RDLocalization.string("localizable.nova.nonconformity.loading", table: .localizable, fallback: "Kayıtlar yükleniyor"), style: .metaQuiet)
             }
         } else if visible.isEmpty {
-            NovaCard(padding: 16) {
-                NovaText(text: filter.isEmpty
-                    ? RDLocalization.string("localizable.nova.nonconformity.empty", table: .localizable, fallback: "Henüz uygunsuzluk kaydı yok.")
-                    : RDLocalization.string("localizable.nova.nonconformity.empty.filtered", table: .localizable,
-                        fallback: "Bu filtrelerle eşleşen kayıt yok."), style: .metaQuiet)
-            }
+            NovaEmptyState(title: filter.isEmpty
+                ? RDLocalization.string("localizable.nova.nonconformity.empty", table: .localizable,
+                    fallback: "Henüz uygunsuzluk kaydı yok")
+                : RDLocalization.string("localizable.nova.nonconformity.empty.filtered", table: .localizable,
+                    fallback: "Bu filtrelerle eşleşen kayıt yok"),
+                message: filter.isEmpty
+                    ? "Hızlıca uygunsuzluk ekleyebilir, düzeltme sürecini ve terminleri dijital ortamda takip edebilirsiniz."
+                    : "Arama veya filtreleri değiştirerek diğer uygunsuzluk kayıtlarını görüntüleyebilirsiniz.")
         } else {
             ForEach(visible) { entry in card(entry) }
         }
@@ -280,10 +258,10 @@ struct NovaNonconformityListScreen: View {
         do { entries = try await client.load() }
         catch is CancellationError { }
         catch let failure as NovaNonconformityFailure {
-            entries = []
+            entries = nil
             error = NovaNonconformityWords.failure(failure)
         } catch {
-            entries = []
+            entries = nil
             self.error = RDLocalization.string("localizable.nova.nonconformity.error.list", table: .localizable,
                 fallback: "Uygunsuzluklar yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin.")
         }

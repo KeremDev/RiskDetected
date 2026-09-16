@@ -10,6 +10,7 @@ struct NovaDirectoryDestination: View {
     var canWrite = true
     @Environment(\.dismiss) private var dismiss
     @Environment(\.isNovaPopup) private var isNovaPopup
+    @Environment(\.novaCelebrate) private var celebrate
     @State private var rows: [NovaDirectoryRow] = []
     @State private var next: UUID?
     @State private var page: UUID?
@@ -28,11 +29,18 @@ struct NovaDirectoryDestination: View {
     }
     private struct Editor: Identifiable { let id = UUID(); let row: NovaDirectoryRow? }
     private struct Key: Equatable { let scope: NovaPersonnelScope; let kind: NovaDirectoryKind; let parent: UUID?; let page: UUID?; let archived: Bool; let refresh: UUID }
+    private var edgeBack: (() -> Void)? {
+        guard editor == nil else { return nil }
+        return { if let onBack { onBack() } else { dismiss() } }
+    }
     var body: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: edgeBack) {
             if let editor, canWrite {
                 NovaDirectoryEditor(scope: scope, kind: kind, parent: parent, parentVersion: parentVersion, original: editor.row, history: rows, client: client,
-                    onBack: { self.editor = nil; refresh = UUID() }, onSaved: { self.editor = nil; page = nil; refresh = UUID() }).id(editor.id)
+                    onBack: { self.editor = nil; refresh = UUID() }, onSaved: {
+                        celebrate(NovaSuccessMessage.recordSaved(kind.title))
+                        self.editor = nil; page = nil; refresh = UUID()
+                    }).id(editor.id)
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 14) {
@@ -87,7 +95,14 @@ struct NovaDirectoryDestination: View {
                             }
                         }
                         if loading { ProgressView().frame(maxWidth: .infinity) }
-                        if !loading && filteredRows.isEmpty && error == nil { NovaCard(padding: 14) { NovaText(text: query.isEmpty ? RDLocalization.string("localizable.nova.directory.screens.henuz.kayit.yok.282330e3", table: .localizable, fallback: "Henüz kayıt yok.") : RDLocalization.string("localizable.nova.directory.search.empty", table: .localizable, fallback: "Aramanızla eşleşen kayıt yok.")).frame(maxWidth: .infinity, minHeight: 24, alignment: .leading) } }
+                        if !loading && filteredRows.isEmpty && error == nil {
+                            NovaEmptyState(title: query.isEmpty
+                                ? RDLocalization.string("localizable.nova.directory.screens.henuz.kayit.yok.282330e3", table: .localizable, fallback: "Henüz kayıt yok.")
+                                : RDLocalization.string("localizable.nova.directory.search.empty", table: .localizable, fallback: "Aramanızla eşleşen kayıt yok."),
+                                message: query.isEmpty
+                                    ? "Yeni kayıt ekleyerek bu başlıktaki firma bilgilerini dijital ortamda düzenli ve erişilebilir tutabilirsiniz."
+                                    : "Arama ifadesini değiştirerek veya arşiv filtresini kontrol ederek kayda yeniden ulaşabilirsiniz.")
+                        }
                         if let next { NovaButton(label: RDLocalization.string("localizable.nova.directory.screens.daha.fazla.f2dbe624", table: .localizable, fallback: "Daha fazla"), symbol: "chevron.down", variant: .surface, isEnabled: !loading) { page = next } }
                     }.padding(.horizontal, 18).padding(.top, 4).padding(.bottom, 18)
                         .novaPopupContentSize()
@@ -108,7 +123,11 @@ struct NovaDirectoryDestination: View {
                 }
                 .task(id: recovering) {
                     guard canWrite, recovering, let pending else { return }
-                    do { _ = try await client.save(pending); try Task.checkCancellation(); self.pending = nil; recovering = false; refresh = UUID() }
+                    do {
+                        _ = try await client.save(pending); try Task.checkCancellation()
+                        celebrate(NovaSuccessMessage.recordSaved(kind.title))
+                        self.pending = nil; recovering = false; refresh = UUID()
+                    }
                     catch { if !Task.isCancelled { recovering = false; self.error = RDLocalization.string("localizable.nova.directory.error.not.verified.yet", table: .localizable, fallback: "İşlem henüz doğrulanamadı."); refresh = UUID() } }
                 }
             }
@@ -197,7 +216,7 @@ private struct NovaDirectoryEditor: View {
                 .novaPopupContentSize()
         }
         .scrollDismissesKeyboard(.interactively)
-        .background(NovaKeyboardDismissArea())
+
         .task {
             fields = original?.fields.reduce(into: [:]) { result, entry in result[entry.key] = entry.value.text ?? "" } ?? [:]
             if kind == .jobs { fields["name"] = original?.fields["title"]?.text ?? "" }

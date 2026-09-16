@@ -171,7 +171,7 @@ test('the inspection points at a filed report instead of carrying a copy',()=>{
 
 test('the company page reads the module from the same tally the module uses',()=>{
   assert.match(company,/NovaEquipmentSectionStrip\(counts: equipment\?\.counts \?\? \[:\]/);
-  assert.match(company,/NovaEquipmentCheckService\.live\(\)\.board\(documentIdentity,\n?\s*query: \.init\(company: scope\.companyID, limit: 1\)\)/);
+  assert.match(company,/NovaEquipmentCheckService\.live\(\)\.board\(documentIdentity,\n?\s*query: \.init\(company: scope\.companyID, limit: 5\)\)/);
   assert.match(company,/NovaPilotEquipmentGate\(identity: documentIdentity, canWrite: canWrite,/);
 });
 

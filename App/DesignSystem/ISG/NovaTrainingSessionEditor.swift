@@ -62,7 +62,7 @@ struct NovaTrainingSessionEditor: View {
                     }
                 }
             }.padding(18).novaPopupContentSize()
-        }.scrollDismissesKeyboard(.interactively).background(NovaKeyboardDismissArea())
+        }.scrollDismissesKeyboard(.interactively)
             .task { await load() }
             .alert("Eğitim silinsin mi?", isPresented: $deleteConfirmation) {
                 Button("Sil", role: .destructive) { Task { await remove() } }
@@ -201,7 +201,7 @@ struct NovaTrainingSessionEditor: View {
     }
     private func submit(_ value: NovaTrainingSessionDraft) async {
         busy = true
-        do { _ = try await service.save(value); dismiss(); celebrate(value.action == "delete" ? "Eğitim kaldırıldı" : "Eğitim başarıyla kaydedildi!") }
+        do { _ = try await service.save(value); dismiss(); celebrate(value.action == "delete" ? "Eğitim başarıyla kaldırıldı!" : NovaSuccessMessage.trainingSaved) }
         catch { self.error = NovaTrainingSessionService.message(error); uncertain = (try? service.pending()) != nil }
         busy = false
     }
@@ -210,7 +210,7 @@ struct NovaTrainingSessionEditor: View {
         do {
             let result = try await service.retry()
             if let item = result.catalog { choices.removeAll { $0.id == item.id }; choices.append(item); selectedCatalog = item.id; custom = false; uncertain = false }
-            else { dismiss(); celebrate("İşlem tamamlandı") }
+            else { dismiss(); celebrate("İşlem başarıyla tamamlandı!") }
         } catch { self.error = NovaTrainingSessionService.message(error); uncertain = (try? service.pending()) != nil }
         busy = false
     }

@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 /// The legacy management view remains the fallback when rollout/RPC/auth is unavailable.
 struct NovaCompanyManagementGate<Fallback: View>: View {
@@ -11,12 +12,16 @@ struct NovaCompanyManagementGate<Fallback: View>: View {
     var body: some View {
         Group {
             if controller.resolving {
-                NovaPageSurface { VStack(spacing: 18) { ProgressView(); NovaText(text: RDLocalization.string("localizable.nova.company.management.gate.firma.erisimi.dogrulaniyor.3bf732f2", table: .localizable, fallback: "Firma erişimi doğrulanıyor…")); NovaButton(label: RDLocalization.string("localizable.nova.company.management.gate.kapat.3148ed17", table: .localizable, fallback: "Kapat"), symbol: "xmark", variant: .surface, action: onClose) }.padding(18) }
+                NovaPageSurface(onEdgeBack: onClose) { VStack(spacing: 18) { ProgressView(); NovaText(text: RDLocalization.string("localizable.nova.company.management.gate.firma.erisimi.dogrulaniyor.3bf732f2", table: .localizable, fallback: "Firma erişimi doğrulanıyor…")); NovaButton(label: RDLocalization.string("localizable.nova.company.management.gate.kapat.3148ed17", table: .localizable, fallback: "Kapat"), symbol: "xmark", variant: .surface, action: onClose) }.padding(18) }
             } else if controller.isAvailable && !legacyRequested {
                 NavigationStack {
                     if let scope = controller.scope {
                         NovaCompanyWorkspace(scope: scope, companyName: controller.capability?.company_name ?? "Firma", canWrite: controller.canWrite,
-                            personnel: controller.personnelClient, directory: controller.directoryClient, onBack: { controller.select(nil) })
+                            personnel: controller.personnelClient, directory: controller.directoryClient,
+                            onBack: { controller.select(nil) },
+                            loadNonconformities: {
+                                try await NovaNonconformityService.live(currentScope: { controller.scope }).list(scope)
+                            })
                     } else {
                         VStack(spacing: 0) {
                             NovaCompanyDestination(host: Binding(get: { controller.host }, set: { _ in }),
@@ -51,22 +56,35 @@ struct NovaCompanyWorkspace: View {
     let directory: NovaDirectoryClient
     let onBack: () -> Void
     var loadSummary: (() async throws -> NovaPilotCompanySummary?)? = nil
+    /// The company overview RPC predates the new nonconformity store and does
+    /// not own this count. Read the records from their authoritative service.
+    var loadNonconformities: (() async throws -> [NovaNonconformityRow])? = nil
+    var onOpenNonconformities: (() -> Void)? = nil
     @State private var summary: NovaPilotCompanySummary?
     @State private var summaryFailed = false
     @State private var summaryRevision = UUID()
+    @State private var companyRecord: Company?
+    @State private var companyRecordLoaded = false
+    @State private var companyLogo: UIImage?
+    @State private var companyLogoPicker: PhotosPickerItem?
+    @State private var companyLogoSaving = false
+    @State private var companyLogoError: String?
+    @State private var personnelRows: [NovaEmployeeRow] = []
+    @State private var personnelQuery = ""
+    @State private var personnelLoading = false
+    @State private var personnelError: String?
+    @State private var nonconformities: [NovaNonconformityRow]?
+    @State private var nonconformityError: String?
+    @State private var nonconformityExpanded = false
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.novaCelebrate) private var celebrate
     @State private var sheet: Sheet?
     @State private var personnelPage = false
     @State private var processKind: String?
     @State private var processTracking: NovaModuleTrackingSnapshot?
     @State private var companyExpanded = false
-    @State private var completedTrainings = 0
+    @State private var completedTrainings: Int?
     @State private var expandedSections = Set<NovaCompanySection>()
-    /// The tracker's own counts for this company, so a heading and the tracker
-    /// can never disagree about what is on file.
-    @State private var documents: NovaDocumentPortfolio?
-    @State private var documentsLoading = false
-    @State private var documentSection: NovaCompanySection?
     /// The archive's own counts for this company, so a heading and the archive
     /// can never disagree about which files are on it.
     @State private var files: NovaFileLibrary?
@@ -82,9 +100,9 @@ struct NovaCompanyWorkspace: View {
     @State private var equipment: NovaEquipmentBoard?
     @State private var equipmentLoading = false
     @State private var equipmentSection: NovaCompanySection?
-    /// Set when the strip's own "Ekipman ekle" action opened the module, so
-    /// it can skip straight to the add sheet instead of the inventory.
-    @State private var equipmentAdding = false
+    /// Set when the strip's "Kontrol ekle" action opens the module directly
+    /// in equipment selection and control entry.
+    @State private var equipmentInspectionAdding = false
     /// The risk module's own board for this company (one lightweight fetch:
     /// total, per-state tally and the one row itself), so the heading can
     /// show the real assessment instead of a bare count.
@@ -98,6 +116,7 @@ struct NovaCompanyWorkspace: View {
     /// so it can skip straight to the add form instead of the record list.
     @State private var processAdding = false
     private struct PersonnelRoute: Identifiable { let id: UUID }
+    private struct PersonnelLoadKey: Equatable { let query: String; let revision: UUID }
     /// Opened from a role row's own employee name, straight to that person.
     @State private var personnelDetail: PersonnelRoute?
     private var documentIdentity: NovaSessionIdentity { .init(userID: scope.ownerID, sessionID: scope.sessionID) }
@@ -109,8 +128,9 @@ struct NovaCompanyWorkspace: View {
         // Unmeasured sections stay unknown. A record count is not proof that a
         // company's obligation is complete.
         var result = NovaCompanyProgress(states: Dictionary(uniqueKeysWithValues: NovaCompanySection.allCases.map { ($0, NovaCompletionState.unknown) }))
+        if companyRecordLoaded { result.states[.logo] = companyRecord?.logoPath?.isEmpty == false ? .complete : .missing }
         if let summary { result.states[.personnel] = summary.personnel_count > 0 ? .complete : .missing }
-        result.states[.training] = completedTrainings > 0 ? .complete : .missing
+        if let completedTrainings { result.states[.training] = completedTrainings > 0 ? .complete : .missing }
         for section in NovaCompanySection.allCases where section != .representative && section != .support {
             guard let kind = moduleKind(section) else { continue }
             if let row = processTracking?.summaries.first(where: { $0.id == kind }), row.available {
@@ -126,27 +146,25 @@ struct NovaCompanyWorkspace: View {
     }
     private var accidentCategories: [String] { NovaFileSectionMap.categories(for: .accidents, in: fileCategories) }
     var body: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
                         NovaPageHeading(title: RDLocalization.string("localizable.nova.company.detail.title", table: .localizable, fallback: "Firma Detayı"), onBack: onBack)
                         companyCard
-                        HStack(spacing: 10) {
-                            NovaButton(label: RDLocalization.string("localizable.nova.company.management.gate.dosya.ekle.b9bb8c93", table: .localizable, fallback: "Dosya Ekle"), symbol: "folder.badge.plus", isEnabled: canWrite) { addingFile = true }
-                            NovaButton(label: RDLocalization.string("localizable.nova.company.management.gate.evrak.ekle.386b7009", table: .localizable, fallback: "Evrak Ekle"), symbol: "doc.badge.plus", isEnabled: canWrite) { documentSection = .files }
-                        }
+                        companyStats
+                        nonconformityCard
                         if !canWrite { NovaCard(padding: 16) { Label(RDLocalization.string("localizable.nova.company.management.gate.salt.okunur.kayitlariniz.korunuyor.2cc72e1b", table: .localizable, fallback: "Salt okunur · kayıtlarınız korunuyor"), systemImage: "lock"); NovaText(text: RDLocalization.string("localizable.nova.company.management.gate.yeni.kayit.ve.duzenleme.su.anda.kullanilamiyor.d83e8253", table: .localizable, fallback: "Yeni kayıt ve düzenleme şu anda kullanılamıyor."), style: .metaQuiet) } }
-                        NovaCompanyAccordion(title: RDLocalization.string("localizable.nova.workspace.company.info", table: .localizable, fallback: "Firma Bilgileri"), symbol: "building.2", expanded: $companyExpanded) {
-                            ForEach([NovaCompanySection.logo, .personnel]) { section in
-                                sectionView(section, outlinesWhenExpanded: false)
-                            }
+                        NovaCompanyAccordion(title: RDLocalization.string("localizable.nova.workspace.company.info", table: .localizable, fallback: "Firma Bilgileri"),
+                            symbol: "building.2", state: companyRecordLoaded ? progress[.logo] : nil,
+                            identifier: "company.section.info", expanded: $companyExpanded) {
+                            companyLogoRow
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 145), spacing: 10)], spacing: 10) {
                             ForEach([NovaDirectoryKind.workplaces, .departments, .jobs, .contractors], id: \.self) { kind in
                                 entry(kind.title, kind.symbol, tone: kind == .departments ? .statusWarningInk : .accentInk) { sheet = .directory(kind) }
                             }
                             }
                         }
-                        NovaModuleTrackingCard(identity: documentIdentity, company: scope.companyID, canWrite: canWrite, onLoaded: { processTracking = $0 })
+                        sectionView(.personnel)
                         ForEach(Array(NovaCompanySection.allCases.dropFirst(2))) { section in sectionView(section) }
                     }.padding(.horizontal, 18).padding(.top, 4).padding(.bottom, 18)
                 }
@@ -163,15 +181,34 @@ struct NovaCompanyWorkspace: View {
         .onChange(of: processKind) { value in if value == nil { summaryRevision = UUID() } }
 
         .task(id: summaryRevision) {
-            completedTrainings = 0
+            completedTrainings = nil
             let service = NovaTrainingService(identity: .init(userID: scope.ownerID, sessionID: scope.sessionID))
             if let page = try? await service.list(scope.companyID), !Task.isCancelled { completedTrainings = page.completed ?? 0 }
         }
         .task(id: summaryRevision) {
-            documentsLoading = true
-            defer { documentsLoading = false }
-            let service = NovaDocumentTrackingService.live(currentScope: { scope })
-            documents = try? await service.portfolio(documentIdentity, company: scope.companyID, limit: 1)
+            nonconformityError = nil
+            guard let loadNonconformities else { return }
+            do {
+                let rows = try await loadNonconformities()
+                try Task.checkCancellation()
+                nonconformities = rows
+            } catch is CancellationError {
+                return
+            } catch {
+                nonconformities = nil
+                nonconformityError = "Uygunsuzluk kayıtları alınamadı."
+            }
+        }
+        .task(id: summaryRevision) {
+            processTracking = try? await NovaModuleTrackingLoader.load(identity: documentIdentity, company: scope.companyID)
+        }
+        .task(id: summaryRevision) { await loadCompanyRecord() }
+        .task(id: PersonnelLoadKey(query: personnelQuery, revision: summaryRevision)) {
+            await loadPersonnelRows(query: personnelQuery)
+        }
+        .onChange(of: companyLogoPicker) { item in
+            guard let item else { return }
+            Task { await saveCompanyLogo(item) }
         }
         .task(id: summaryRevision) {
             filesLoading = true
@@ -185,7 +222,7 @@ struct NovaCompanyWorkspace: View {
             equipmentLoading = true
             defer { equipmentLoading = false }
             equipment = try? await NovaEquipmentCheckService.live().board(documentIdentity,
-                query: .init(company: scope.companyID, limit: 1))
+                query: .init(company: scope.companyID, limit: 5))
         }
         .task(id: summaryRevision) {
             riskBoard = try? await NovaRiskAssessmentService.live().board(documentIdentity,
@@ -200,11 +237,11 @@ struct NovaCompanyWorkspace: View {
                 query: .init(company: scope.companyID, role: NovaAppointmentKind.supportStaff.rawValue, limit: 1))
         }
         .novaFullScreenCover(item: $equipmentSection, onDismiss: {
-            summaryRevision = UUID(); equipmentAdding = false
+            summaryRevision = UUID(); equipmentInspectionAdding = false
         }) { section in
             NovaPilotEquipmentGate(identity: documentIdentity, canWrite: canWrite,
                 initialCompany: scope.companyID, headingOverride: section.title,
-                startInAddMode: equipmentAdding,
+                startInInspectionMode: equipmentInspectionAdding,
                 onBack: { equipmentSection = nil })
         }
         .novaFullScreenCover(item: $fileSection, onDismiss: { summaryRevision = UUID(); fileSectionAdding = false }) { section in
@@ -224,14 +261,6 @@ struct NovaCompanyWorkspace: View {
             NovaPersonnelDestination(scope: scope, companyName: companyName, client: personnel,
                 onBack: { personnelDetail = nil }, directory: directory, canWrite: canWrite, preview: false,
                 initialEmployee: route.id)
-        }
-        .novaFullScreenCover(item: $documentSection) { section in
-            NovaPilotDocumentGate(identity: documentIdentity, scope: scope, canWrite: canWrite,
-                select: { _ in }, currentScope: { scope },
-                onBack: { documentSection = nil }, onCompanies: { documentSection = nil },
-                initialCompany: scope.companyID,
-                initialKinds: NovaDocumentSectionMap.kinds(for: section),
-                headingOverride: section.title)
         }
         .novaFullScreenCover(isPresented: Binding(get: { processKind != nil }, set: { if !$0 { processKind = nil } }), onDismiss: {
             processAdding = false
@@ -255,7 +284,15 @@ struct NovaCompanyWorkspace: View {
                 case .training:
                     NovaTrainingCompanyScreen(scope: scope, companyName: companyName, personnel: personnel, canWrite: canWrite)
                 case .editCompany:
-                    NovaCompanyVisualEditor(name: summary?.name ?? companyName, sector: summary?.sector ?? "", email: summary?.email ?? "", hazard: summary?.hazard_class ?? "medium")
+                    NovaCompanyLiveEditor(company: companyRecord, fallbackID: scope.companyID,
+                        fallbackName: summary?.name ?? companyName,
+                        fallbackHazard: summary?.hazard_class ?? "medium") { saved in
+                            companyRecord = saved
+                            companyRecordLoaded = true
+                            await loadCompanyLogo(from: saved.logoPath)
+                            sheet = nil
+                            summaryRevision = UUID()
+                        }
                 case .deleteCompany:
                     NovaCompanyVisualDelete(name: summary?.name ?? companyName)
                 case .addPersonnel:
@@ -302,9 +339,10 @@ struct NovaCompanyWorkspace: View {
     /// fixes it, instead of a bare "aç" into an empty list.
     private func moduleEmptyState(addLabel: String, action: @escaping () -> Void) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            NovaText(text: RDLocalization.string("localizable.nova.workspace.section.empty", table: .localizable,
-                fallback: "Henüz eklenmemiştir, ilgili alandan dosya/bilgi ekleyebilirsiniz."), style: .meta)
-            NovaButton(label: addLabel, symbol: "plus", variant: .surface, isEnabled: canWrite, action: action)
+            NovaEmptyState(title: "Henüz kayıt yok",
+                message: "İlk kaydı ekleyerek bu başlığın durumunu ve yaklaşan tarihlerini firma üzerinden takip edebilirsiniz.")
+            NovaCompactActionButton(title: addLabel, symbol: "plus", prominent: true,
+                enabled: canWrite, action: action)
         }
     }
     private func appointmentStatus(_ state: NovaAppointmentState) -> NovaStatus {
@@ -366,6 +404,33 @@ struct NovaCompanyWorkspace: View {
             }.frame(minHeight: 40).contentShape(Rectangle())
         }.buttonStyle(.plain)
     }
+    private func statStrip(_ items: [(String, String, Int)], identifier: String) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                    NovaListStat(title: item.0, symbol: item.1, value: item.2).frame(width: 98)
+                }
+            }.padding(.vertical, 2)
+        }.accessibilityIdentifier(identifier)
+    }
+    private func appointmentStats(_ board: NovaAppointmentBoard) -> some View {
+        statStrip([
+            ("Aktif", "checkmark.circle", board.count(.active)),
+            ("Yaklaşan", "clock", board.count(.upcoming)),
+            ("Sona eren", "calendar.badge.exclamationmark", board.count(.ended))
+        ], identifier: "company.section.appointment.stats")
+    }
+    private func riskStats(_ board: NovaRiskBoard) -> some View {
+        statStrip(NovaRiskGroup.allCases.map { ($0.title, $0.symbol, board.count($0)) },
+            identifier: "company.section.risk.stats")
+    }
+    private func trackingStats(_ row: NovaModuleTrackingSnapshot.Summary, identifier: String) -> some View {
+        statStrip([
+            ("Kayıt", "doc.text", row.total),
+            ("Süresi geçti", "exclamationmark.triangle", row.overdue),
+            ("Yaklaşan", "clock", row.upcoming)
+        ], identifier: identifier)
+    }
     private func sectionView(_ section: NovaCompanySection, outlinesWhenExpanded: Bool = true) -> some View {
         NovaCompanyAccordion(title: section.title, symbol: section.symbol, state: progress[section],
             identifier: "company.section.\(section.rawValue)",
@@ -379,33 +444,31 @@ struct NovaCompanyWorkspace: View {
                 // those track a different, unrelated document obligation.
                 let hasDedicatedRow = moduleKind(section) != nil || section == .risk || section == .accidents
                 if section == .personnel {
-                    HStack(spacing: 8) {
-                        NovaButton(label: "Personeller", symbol: "person.2", variant: .muted) { sheet = .personnel }
-                        NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.personel.ekle.565c83dd", table: .localizable, fallback: "Personel Ekle"), symbol: "plus", isEnabled: canWrite) { sheet = .addPersonnel }
-                            .accessibilityIdentifier("company.personnel.add")
-                    }
+                    personnelSection
                 } else if section == .representative || section == .support {
                     let board = section == .representative ? representativeAppointment : supportAppointment
                     if let board {
+                        appointmentStats(board)
                         if let appointment = board.rows.first {
                             appointmentRow(appointment)
                         } else {
                             moduleEmptyState(addLabel: section.title + " Ekle") { processAdding = true; processKind = "appointment" }
                         }
                     } else {
-                        NovaButton(label: RDLocalization.string("localizable.nova.workspace.section.appointments.open", table: .localizable, fallback: "Atamaları aç"),
-                            symbol: "chevron.right", variant: .surface) { processKind = "appointment" }
+                        NovaCompactActionButton(title: RDLocalization.string("localizable.nova.workspace.section.appointments.open", table: .localizable,
+                            fallback: "Atamaları aç"), symbol: "person.badge.plus") { processKind = "appointment" }
                     }
                 } else if section == .risk {
                     if let riskBoard {
+                        riskStats(riskBoard)
                         if let row = riskBoard.rows.first {
                             riskRow(row)
                         } else {
                             moduleEmptyState(addLabel: section.title + " Ekle") { processAdding = true; processKind = "risk" }
                         }
                     } else {
-                        NovaButton(label: RDLocalization.string("localizable.nova.workspace.section.risk.open", table: .localizable, fallback: "Değerlendirmeleri aç"),
-                            symbol: "shield", variant: .surface) { processKind = "risk" }
+                        NovaCompactActionButton(title: RDLocalization.string("localizable.nova.workspace.section.risk.open", table: .localizable,
+                            fallback: "Değerlendirmeleri aç"), symbol: "shield") { processKind = "risk" }
                     }
                 } else if section == .accidents, !accidentCategories.isEmpty {
                     if let files {
@@ -419,13 +482,14 @@ struct NovaCompanyWorkspace: View {
                         NovaText(text: RDLocalization.string("localizable.nova.file.loading", table: .localizable, fallback: "Dosyalar yükleniyor…"), style: .metaQuiet)
                     }
                 } else if section == .training {
-                    NovaHelpHint(text: RDLocalization.string("localizable.nova.workspace.section.training.hint", table: .localizable,
-                        fallback: "Gerçekleşen eğitimleri personel seçerek kaydedin ve eğitim geçmişini görüntüleyin."))
-                    NovaButton(label: RDLocalization.string("localizable.nova.workspace.section.training.open", table: .localizable, fallback: "Eğitimleri aç"),
-                        symbol: "graduationcap", variant: .surface) { sheet = .training }
+                    statStrip([("Tamamlanan", "checkmark.circle", completedTrainings ?? 0)],
+                        identifier: "company.section.training.stats")
+                    NovaCompactActionButton(title: RDLocalization.string("localizable.nova.workspace.section.training.open", table: .localizable,
+                        fallback: "Eğitimleri aç"), symbol: "graduationcap") { sheet = .training }
                 }
                 if let kind = moduleKind(section), section != .representative, section != .support {
                     if let row = processTracking?.summaries.first(where: { $0.id == kind }), row.available {
+                        trackingStats(row, identifier: "company.section.\(section.rawValue).stats")
                         if row.total > 0 {
                             let summary = String(format: RDLocalization.string("localizable.nova.workspace.section.tracking.summary", table: .localizable,
                                 fallback: "%1$d kayıt · %2$d tarihi geçmiş · %3$d yaklaşan"), row.total, row.overdue, row.upcoming)
@@ -434,12 +498,12 @@ struct NovaCompanyWorkspace: View {
                             moduleEmptyState(addLabel: section.title + " Ekle") { processAdding = true; processKind = kind }
                         }
                     } else {
-                        NovaButton(label: RDLocalization.string("localizable.nova.workspace.section.records.open", table: .localizable, fallback: "Kayıtları aç"),
-                            symbol: "chevron.right", variant: .surface) { processKind = kind }
+                        NovaCompactActionButton(title: RDLocalization.string("localizable.nova.workspace.section.records.open", table: .localizable,
+                            fallback: "Kayıtları aç"), symbol: "arrow.right") { processKind = kind }
                     }
                     if section == .emergency {
-                        NovaButton(label: RDLocalization.string("localizable.nova.workspace.section.drills.open", table: .localizable, fallback: "Tatbikatları aç"),
-                            symbol: "figure.run", variant: .surface) { processKind = "drill" }
+                        NovaCompactActionButton(title: RDLocalization.string("localizable.nova.workspace.section.drills.open", table: .localizable,
+                            fallback: "Tatbikatları aç"), symbol: "figure.run") { processKind = "drill" }
                     }
                 }
                 // Periodic checks are the whole of this heading, so the
@@ -447,17 +511,13 @@ struct NovaCompanyWorkspace: View {
                 // follow it.
                 if section == .inspections {
                     NovaEquipmentSectionStrip(counts: equipment?.counts ?? [:],
+                        rows: equipment?.rows ?? [],
                         isLoading: equipment == nil && equipmentLoading,
                         onOpen: { equipmentSection = section },
-                        onAdd: { equipmentAdding = true; equipmentSection = section })
+                        onAdd: { equipmentInspectionAdding = true; equipmentSection = section })
                 }
-                if !hasDedicatedRow, let kinds = NovaDocumentSectionMap.kinds(for: section) {
-                    NovaDocumentSectionStrip(counts: documents?.counts(forKinds: kinds) ?? [:],
-                        isLoading: documents == nil && documentsLoading) { documentSection = section }
-                }
-                // The archive is a second, separate thing from the tracker: the
-                // tracker says what is owed, the archive holds the files that
-                // were actually filed under this heading.
+                // Files remain available in their real module. Generic evrak
+                // tracker redirects do not belong under company process cards.
                 let categories = NovaFileSectionMap.categories(for: section, in: fileCategories)
                 if !hasDedicatedRow, !categories.isEmpty {
                     NovaFileSectionStrip(counts: files?.counts(forCategories: categories) ?? [:],
@@ -469,27 +529,119 @@ struct NovaCompanyWorkspace: View {
                 }
             }
     }
+    private var personnelSection: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            statStrip([
+                ("Toplam personel", "person.2", summary?.personnel_count ?? personnelRows.count),
+                (personnelQuery.isEmpty ? "Listelenen" : "Arama sonucu", "magnifyingglass", personnelRows.count)
+            ], identifier: "company.section.personnel.stats")
+            HStack(spacing: 9) {
+                Image(systemName: "magnifyingglass").font(.system(size: 15))
+                TextField("Personel ara…", text: $personnelQuery)
+                    .font(NovaFont.font(.body))
+                    .textInputAutocapitalization(.words)
+                    .submitLabel(.search)
+                    .accessibilityIdentifier("company.personnel.search")
+                if !personnelQuery.isEmpty {
+                    Button { personnelQuery = "" } label: {
+                        Image(systemName: "xmark.circle.fill").frame(width: 36, height: 36)
+                    }.buttonStyle(.plain).accessibilityLabel("Aramayı temizle")
+                }
+            }
+            .padding(.horizontal, 12).frame(minHeight: 46)
+            .novaControlBackground(cornerRadius: 14)
+            if personnelLoading && personnelRows.isEmpty {
+                HStack(spacing: 9) {
+                    ProgressView().controlSize(.small)
+                    NovaText(text: "Personeller yükleniyor…", style: .metaQuiet)
+                }.frame(maxWidth: .infinity, minHeight: 48)
+            } else if let personnelError {
+                NovaEmptyState(title: "Personel listesi alınamadı", message: personnelError)
+            } else if personnelRows.isEmpty {
+                NovaEmptyState(title: personnelQuery.isEmpty ? "Henüz personel yok" : "Eşleşen personel yok",
+                    message: personnelQuery.isEmpty
+                        ? "Personel ekleyerek eğitim, atama ve zimmet işlemlerinde doğrudan seçim yapabilirsiniz."
+                        : "Ad, departman veya görev bilgisiyle farklı bir arama yapabilirsiniz.")
+            } else {
+                ForEach(personnelRows.prefix(6)) { row in
+                    Button { personnelDetail = .init(id: row.id) } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "person").font(.system(size: 14)).frame(width: 32, height: 32)
+                                .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 10))
+                            VStack(alignment: .leading, spacing: 2) {
+                                NovaText(text: row.name, style: .bodyStrong)
+                                let detail = [row.departmentName, row.jobTitle].compactMap { $0 }.joined(separator: " · ")
+                                NovaText(text: detail.isEmpty ? "Departman veya görev belirtilmedi" : detail,
+                                    style: .micro, color: NovaColorToken.textMuted.color(in: scheme))
+                            }
+                            Spacer(minLength: 0)
+                            Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold))
+                        }
+                        .padding(.horizontal, 10).frame(maxWidth: .infinity, minHeight: 48)
+                        .novaControlBackground(cornerRadius: 13)
+                        .contentShape(Rectangle())
+                    }.buttonStyle(.plain)
+                }
+            }
+            HStack(spacing: 8) {
+                NovaCompactActionButton(title: "Tüm personel", symbol: "person.2") { sheet = .personnel }
+                NovaCompactActionButton(title: "Personel ekle", symbol: "plus", prominent: true,
+                    enabled: canWrite) { sheet = .addPersonnel }
+                    .accessibilityIdentifier("company.personnel.add")
+            }
+        }
+    }
+    @MainActor private func loadPersonnelRows(query: String) async {
+        if personnelRows.isEmpty { personnelLoading = true }
+        personnelError = nil
+        defer { personnelLoading = false }
+        do {
+            try await Task.sleep(nanoseconds: 180_000_000)
+            let result = try await personnel.employees(scope, query, false, nil)
+            try Task.checkCancellation()
+            guard result.rows.count <= 50,
+                  result.rows.allSatisfy({ $0.ownerID == scope.ownerID && $0.companyID == scope.companyID && !$0.isArchived }),
+                  Set(result.rows.map(\.id)).count == result.rows.count else { throw NovaPersonnelFailure.unavailable }
+            personnelRows = result.rows
+        } catch is CancellationError {
+            return
+        } catch {
+            personnelError = "Bağlantınızı kontrol edip tekrar deneyin."
+        }
+    }
     private var companyCard: some View {
-        NovaCard(padding: 14, tint: NovaColorToken.surfaceMuted.color(in: scheme)) {
+        NovaCard(padding: 16) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .center, spacing: 12) {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(spacing: 8) {
-                            NovaIcon(symbol: "building.2", size: 24).foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+                            companyMark
                             NovaSizedText(text: summary?.name ?? companyName, size: 17, weight: "Bold")
                         }
                         // Fixed two-column grid: six compact tags in three rows.
                         LazyVGrid(columns: [GridItem(.flexible(minimum: 70), spacing: 6), GridItem(.flexible(minimum: 70), spacing: 6)], alignment: .leading, spacing: 4) {
-                            badge("Tehlike", value: summary.flatMap { CompanyHazardClass(rawValue: $0.hazard_class)?.title }, icon: "exclamationmark.triangle", tone: .statusWarningInk)
-                            badge(RDLocalization.string("localizable.nova.company.sector", table: .localizable, fallback: "Sektör"), value: summary?.sector, icon: "square.grid.2x2", tone: .statusInfoInk)
-                            badge("Personel", value: summary.map { String($0.personnel_count) }, icon: "person.2", tone: .accentInk)
-                            badge("Uygunsuzluk", value: summary?.finding_count.map(String.init), icon: "risk", tone: .statusDangerInk)
-                            badge("Evrak", value: summary?.document_count.map(String.init), icon: "doc.text", tone: .statusInfoInk)
-                            badge("Tamamlanma", value: progress.score.map(String.init), icon: "chart.bar", tone: .statusSuccessInk)
+                            badge("Tehlike", value: summary.flatMap { CompanyHazardClass(rawValue: $0.hazard_class)?.title }, icon: "exclamationmark.triangle", tone: .text)
+                            badge(RDLocalization.string("localizable.nova.company.sector", table: .localizable, fallback: "Sektör"), value: summary?.sector, icon: "square.grid.2x2", tone: .text)
+                            badge("Personel", value: summary.map { String($0.personnel_count) }, icon: "person.2", tone: .text)
+                            badge("Uygunsuzluk", value: nonconformityCount.map(String.init), icon: "checklist", tone: .text)
+                            badge("Dosya", value: summary?.document_count.map(String.init), icon: "folder", tone: .text)
+                            badge("Tamamlanan", value: "\(progress.completed)/\(progress.total)", icon: "chart.bar", tone: .text)
                         }
                     }
                     Spacer(minLength: 0)
                     NovaCompanyScoreRing(progress: progress).accessibilityIdentifier("company.score.ring")
+                }
+                if let contact = summary?.responsible_name {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Label(contact, systemImage: "person").font(NovaFont.font(.body))
+                        if let phone = summary?.responsible_phone {
+                            Label(phone, systemImage: "phone").font(NovaFont.font(.meta))
+                        }
+                        if let email = summary?.responsible_email {
+                            Label(email, systemImage: "envelope").font(NovaFont.font(.meta))
+                        }
+                    }.foregroundStyle(NovaColorToken.text.color(in: scheme))
+                        .textSelection(.enabled)
                 }
                 HStack(spacing: 4) {
                     Spacer()
@@ -504,13 +656,185 @@ struct NovaCompanyWorkspace: View {
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
     }
+    @ViewBuilder private var companyMark: some View {
+        if let companyLogo {
+            Image(uiImage: companyLogo).resizable().scaledToFit().padding(5)
+                .frame(width: 42, height: 42)
+                .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 11))
+                .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
+                .accessibilityLabel("Firma logosu")
+        } else {
+            NovaIcon(symbol: "building.2", size: 22).foregroundStyle(Color.black)
+                .frame(width: 42, height: 42)
+                .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 11))
+        }
+    }
+    private var companyLogoRow: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            NovaCard(padding: 10) {
+                HStack(spacing: 11) {
+                    companyMark
+                    VStack(alignment: .leading, spacing: 2) {
+                        NovaText(text: companyRecord?.logoPath?.isEmpty == false ? "Firma logosu" : "Logo ekleyin", style: .bodyStrong)
+                        NovaText(text: companyLogoSaving ? "Logo yükleniyor…" : "Firma kartında ve raporlarda kullanılır.", style: .micro,
+                            color: NovaColorToken.textMuted.color(in: scheme))
+                    }
+                    Spacer(minLength: 0)
+                    if companyLogoSaving {
+                        ProgressView().controlSize(.small).frame(width: 44, height: 44)
+                    } else {
+                        PhotosPicker(selection: $companyLogoPicker, matching: .images) {
+                            HStack(spacing: 5) {
+                                Image(systemName: companyLogo == nil ? "plus" : "arrow.triangle.2.circlepath")
+                                Text(companyLogo == nil ? "Logo seç" : "Değiştir")
+                            }
+                            .font(.custom("PlusJakartaSans-SemiBold", size: 10))
+                            .foregroundStyle(Color.black)
+                            .padding(.horizontal, 10).frame(minHeight: 44)
+                            .background(NovaColorToken.surfaceMuted.color(in: scheme), in: Capsule())
+                            .contentShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!canWrite || companyRecord == nil)
+                        .accessibilityIdentifier("company.logo.picker")
+                    }
+                }.frame(maxWidth: .infinity, minHeight: 52)
+            }
+            if let companyLogoError {
+                NovaText(text: companyLogoError, style: .micro,
+                    color: NovaColorToken.statusDangerInk.color(in: scheme))
+            }
+        }
+    }
+    @MainActor private func loadCompanyRecord() async {
+        companyRecordLoaded = false
+        guard let record = try? await CompanyService.shared.listCompanies(includeArchived: true)
+            .first(where: { $0.id == scope.companyID }) else {
+            companyRecord = nil; companyLogo = nil; return
+        }
+        guard !Task.isCancelled else { return }
+        companyRecord = record
+        companyRecordLoaded = true
+        await loadCompanyLogo(from: record.logoPath)
+    }
+    @MainActor private func loadCompanyLogo(from path: String?) async {
+        companyLogo = nil
+        guard let path, !path.isEmpty,
+              let image = try? await CompanyService.shared.logoImage(path: path), !Task.isCancelled else { return }
+        companyLogo = image
+    }
+    @MainActor private func saveCompanyLogo(_ item: PhotosPickerItem) async {
+        guard canWrite, let company = companyRecord else {
+            companyLogoError = "Firma kaydı yüklenmeden logo eklenemez."
+            companyLogoPicker = nil
+            return
+        }
+        companyLogoSaving = true; companyLogoError = nil
+        defer { companyLogoSaving = false; companyLogoPicker = nil }
+        do {
+            guard let data = try await item.loadTransferable(type: Data.self),
+                  let image = UIImage(data: data) else { throw NovaPersonnelFailure.validation }
+            let path = try await CompanyService.shared.uploadLogo(image, companyID: company.id)
+            var draft = CompanyDraft()
+            draft.id = company.id; draft.name = company.name; draft.hazardClass = company.hazardClass
+            draft.logoPath = path; draft.address = company.address ?? ""
+            draft.contactPerson = company.contactPerson ?? ""; draft.department = company.department ?? ""
+            draft.defaultResponsible = company.defaultResponsible ?? ""
+            draft.defaultDueDaysText = company.defaultDueDays.map(String.init) ?? ""
+            let saved = try await CompanyService.shared.saveCompany(draft)
+            companyRecord = saved; companyRecordLoaded = true; companyLogo = image
+            celebrate(NovaSuccessMessage.companyLogoAdded)
+        } catch {
+            companyLogoError = "Logo eklenemedi. Bağlantınızı kontrol edip tekrar deneyin."
+        }
+    }
     private func badge(_ label: String, value: String?, icon: String, tone: NovaColorToken) -> some View {
         HStack(spacing: 5) {
-            NovaIcon(symbol: icon, size: 14).foregroundStyle(tone.color(in: scheme))
-            Text(value ?? "—").font(.custom("PlusJakartaSans-Medium", size: 10)).lineLimit(1).minimumScaleFactor(0.75)
+            NovaIcon(symbol: icon, size: 13).foregroundStyle(Color.black)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(label).font(.custom("PlusJakartaSans-Medium", size: 8)).foregroundStyle(NovaColorToken.textMuted.color(in: scheme))
+                Text(value ?? "—").font(.custom("PlusJakartaSans-SemiBold", size: 10)).lineLimit(1).minimumScaleFactor(0.75)
+            }
         }.padding(.vertical, 1).frame(maxWidth: .infinity, minHeight: 22, alignment: .leading)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("\(label) · \(value ?? "—")")
+    }
+    private var companyStats: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                NovaListStat(title: "Personel", symbol: "person.2", value: summary?.personnel_count ?? 0) { sheet = .personnel }.frame(width: 94)
+                NovaListStat(title: "Uygunsuzluk", symbol: "checklist",
+                    value: nonconformityCount.map(String.init) ?? "—",
+                    onTap: onOpenNonconformities).frame(width: 94)
+                NovaListStat(title: "Ekipman", symbol: "shippingbox", value: equipment?.total ?? 0) { equipmentSection = .inspections }.frame(width: 94)
+                NovaListStat(title: "Kontrol", symbol: "calendar.badge.checkmark",
+                    value: max(0, (equipment?.total ?? 0) - (equipment?.counts[.neverInspected] ?? 0))) {
+                        equipmentInspectionAdding = true; equipmentSection = .inspections
+                    }.frame(width: 94)
+            }
+        }
+    }
+    private var nonconformityCount: Int? {
+        nonconformities.map { rows in rows.filter { $0.kind == .nonconformity }.count }
+    }
+    private var openNonconformityCount: Int {
+        (nonconformities ?? []).filter {
+            $0.kind == .nonconformity && !["closed", "cancelled"].contains($0.state)
+        }.count
+    }
+    private var overdueNonconformityCount: Int {
+        let today = NovaAnalysisWorkspace.todayISO()
+        return (nonconformities ?? []).filter {
+            $0.kind == .nonconformity && !["closed", "cancelled"].contains($0.state)
+                && ($0.due_on.map { $0 < today } ?? false)
+        }.count
+    }
+    private var nonconformityCard: some View {
+        NovaCompanyAccordion(title: "Uygunsuzluklar", symbol: "checklist", state: nil,
+            identifier: "company.section.nonconformities", expanded: $nonconformityExpanded) {
+            VStack(alignment: .leading, spacing: 9) {
+                if let rows = nonconformities {
+                    statStrip([
+                        ("Toplam", "checklist", nonconformityCount ?? 0),
+                        ("Açık", "circle.dotted", openNonconformityCount),
+                        ("Süresi geçti", "exclamationmark.triangle", overdueNonconformityCount)
+                    ], identifier: "company.section.nonconformities.stats")
+                    let records = rows.filter { $0.kind == .nonconformity }
+                    if records.isEmpty {
+                        NovaEmptyState(title: "Henüz uygunsuzluk kaydı yok",
+                            message: "Analiz bulgularını firmaya aktarabilir veya yeni bir uygunsuzluk kaydı açabilirsiniz.")
+                    } else {
+                        ForEach(records.prefix(3)) { row in
+                            Button { onOpenNonconformities?() } label: {
+                                HStack(spacing: 10) {
+                                    NovaIcon(symbol: row.camefromFinding ? "sparkles" : "checklist", size: 15)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        NovaText(text: row.title, style: .bodyStrong).lineLimit(2)
+                                        NovaText(text: "\(NovaNonconformityWords.state(row.state)) · \(row.opened_on)",
+                                            style: .micro, color: NovaColorToken.textMuted.color(in: scheme))
+                                    }
+                                    Spacer(minLength: 0)
+                                    Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold))
+                                }
+                                .padding(.horizontal, 10).frame(maxWidth: .infinity, minHeight: 48)
+                                .novaControlBackground(cornerRadius: 13).contentShape(Rectangle())
+                            }.buttonStyle(.plain).disabled(onOpenNonconformities == nil)
+                        }
+                    }
+                    if let onOpenNonconformities {
+                        NovaCompactActionButton(title: "Tüm uygunsuzlukları aç", symbol: "arrow.right",
+                            action: onOpenNonconformities)
+                    }
+                } else if let nonconformityError {
+                    NovaEmptyState(title: "Uygunsuzluklar yüklenemedi", message: nonconformityError)
+                } else {
+                    HStack(spacing: 9) {
+                        ProgressView().controlSize(.small)
+                        NovaText(text: "Uygunsuzluklar yükleniyor…", style: .metaQuiet)
+                    }.frame(maxWidth: .infinity, minHeight: 48)
+                }
+            }
+        }
     }
     private func entry(_ title: String, _ icon: String, tone: NovaColorToken, action: @escaping () -> Void) -> some View {
         Button(action: action) {

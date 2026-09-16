@@ -14,7 +14,7 @@ struct NovaFileLibraryClient {
     /// The companies a file can be filed under.
     let companies: () async throws -> [NovaAnalysisCompanyOption]
     /// Opens the upload, puts the bytes and asks the worker to inspect them.
-    let file: (UUID, NovaFileDraft, Data) async throws -> NovaFileEntry
+    let file: (UUID?, NovaFileDraft, Data) async throws -> NovaFileEntry
     let rename: (NovaFileEntry, String, String, String) async throws -> NovaFileEntry
     let archive: (NovaFileEntry) async throws -> Void
     let cancel: (NovaFileEntry) async throws -> Void
@@ -32,45 +32,11 @@ struct NovaFileStatCard: View {
     let value: Int
     var isSelected = false
     let onTap: () -> Void
-    @Environment(\.colorScheme) private var scheme
-    @Environment(\.dynamicTypeSize) private var typeSize
-
-    private var tone: NovaColorToken {
-        switch group {
-        case .filed: return .statusSuccessInk
-        case .working: return .statusInfoInk
-        case .rejected: return .statusDangerInk
-        case .unchecked: return .statusWarningInk
-        }
-    }
-
     var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Image(systemName: group.symbol).font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(tone.color(in: scheme))
-                    NovaSizedText(text: "\(value)", size: 19, weight: "ExtraBold")
-                }
-                NovaSizedText(text: group.title, size: 10, weight: "Medium",
-                    color: NovaColorToken.textMuted.color(in: scheme))
-                    // "Denetlenemedi" is one word wider than the card, so it is
-                    // scaled down rather than broken across two lines.
-                    .lineLimit(2).minimumScaleFactor(0.82)
-                    .frame(maxWidth: .infinity, minHeight: 24, alignment: .topLeading)
-                NovaSizedText(text: group.footer, size: 9.5, weight: "Bold",
-                    color: value > 0 ? tone.color(in: scheme) : NovaColorToken.textMuted.color(in: scheme))
-                    .lineLimit(1).minimumScaleFactor(0.8)
-            }
-            .padding(.horizontal, 10).padding(.vertical, 11)
-            .frame(width: typeSize.isAccessibilitySize ? 160 : 86,
-                   height: typeSize.isAccessibilitySize ? nil : 86, alignment: .topLeading)
-            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 18))
-            .overlay(RoundedRectangle(cornerRadius: 18)
-                .strokeBorder(isSelected ? tone.color(in: scheme) : .clear, lineWidth: 1.5))
-        }.buttonStyle(.plain)
+        NovaListStat(title: group.title, symbol: group.symbol, value: value,
+            isSelected: isSelected, onTap: onTap)
+            .frame(width: 92)
             .accessibilityIdentifier("file.stat.\(group.rawValue)")
-            .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -102,16 +68,15 @@ struct NovaFileChooserButton: View {
     var body: some View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 2) {
-                NovaSizedText(text: label, size: 9.5, weight: "Bold",
-                    color: NovaColorToken.textTertiary.color(in: scheme))
+                Text(verbatim: label).font(.custom("PlusJakartaSans-Medium", size: 10, relativeTo: .caption))
+                    .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
                 HStack(spacing: 6) {
                     if let symbol {
                         Image(systemName: symbol).font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
                     }
-                    NovaSizedText(text: value, size: 13, weight: isAnswered ? "Bold" : "Medium",
-                        color: isAnswered ? NovaColorToken.text.color(in: scheme)
-                                          : NovaColorToken.textTertiary.color(in: scheme))
+                    Text(verbatim: value).font(.custom("PlusJakartaSans-Medium", size: 13, relativeTo: .body))
+                        .foregroundStyle(NovaColorToken.text.color(in: scheme))
                         .lineLimit(1).minimumScaleFactor(0.78)
                     Spacer(minLength: 0)
                     Image(systemName: "chevron.down").font(.system(size: 10, weight: .bold))
@@ -121,7 +86,7 @@ struct NovaFileChooserButton: View {
             }
             .padding(.horizontal, 12).padding(.vertical, 9)
             .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
-            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
+            .novaControlBackground(cornerRadius: 14)
             .overlay(RoundedRectangle(cornerRadius: 14)
                 .strokeBorder(isOpen ? NovaColorToken.accentInk.color(in: scheme)
                                      : NovaColorToken.border.color(in: scheme),
@@ -132,49 +97,78 @@ struct NovaFileChooserButton: View {
     }
 }
 
-/// The open half: the options as a compact two-column grid, the count on the
-/// right and the chosen one marked. One panel is open at a time.
+/// Search stays visible while compact choices scroll within a bounded panel.
 struct NovaFileChooserPanel: View {
     let options: [NovaFileChooserOption]
     let selected: String?
     let identifier: String
     let onPick: (String?) -> Void
     @Environment(\.colorScheme) private var scheme
-    @Environment(\.dynamicTypeSize) private var typeSize
+    @ScaledMetric(relativeTo: .body) private var rowHeight = 44.0
+    @State private var search = ""
+
+    private var matches: [NovaFileChooserOption] {
+        let query = search.trimmingCharacters(in: .whitespacesAndNewlines)
+        return query.isEmpty ? options : options.filter { $0.title.localizedStandardContains(query) }
+    }
+    private var panelHeight: CGFloat { min(CGFloat(max(options.count, 1)) * rowHeight, 220) }
 
     var body: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 240 : 150),
-                                     spacing: 7)], spacing: 7) {
-            ForEach(options) { option in cell(option) }
+        VStack(spacing: 6) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass").font(.system(size: 14)).accessibilityHidden(true)
+                TextField("Ara…", text: $search)
+                    .font(.custom("PlusJakartaSans-Regular", size: 13, relativeTo: .body))
+                    .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    .accessibilityLabel("Seçeneklerde ara")
+                    .accessibilityIdentifier("\(identifier).search")
+                if !search.isEmpty {
+                    Button { search = "" } label: { Image(systemName: "xmark").frame(width: 32, height: 36) }
+                        .accessibilityLabel("Aramayı temizle")
+                }
+            }
+            .foregroundStyle(NovaColorToken.text.color(in: scheme))
+            .padding(.horizontal, 10).frame(minHeight: 40)
+            .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 10))
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    if matches.isEmpty {
+                        NovaText(text: "Sonuç bulunamadı", style: .metaQuiet)
+                            .frame(maxWidth: .infinity, minHeight: rowHeight)
+                    }
+                    ForEach(matches, id: \.identity) { option in cell(option) }
+                }
+            }
+            .frame(height: panelHeight)
+            .scrollDismissesKeyboard(.interactively)
         }
-        .padding(9)
-        .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 16))
+        .padding(10)
+        .novaControlBackground(cornerRadius: 16)
+        .onChange(of: identifier) { _ in search = "" }
     }
 
     private func cell(_ option: NovaFileChooserOption) -> some View {
         let isOn = selected == option.id
-        let palette = option.tone.tokens
         return Button { onPick(option.id) } label: {
-            HStack(spacing: 7) {
-                Image(systemName: isOn ? "checkmark.circle.fill" : (option.symbol ?? "circle"))
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(isOn ? NovaColorToken.accentInk.color(in: scheme)
-                                          : palette.ink.color(in: scheme))
-                NovaSizedText(text: option.title, size: 12, weight: isOn ? "Bold" : "Medium")
-                    .lineLimit(1).minimumScaleFactor(0.75)
-                Spacer(minLength: 0)
-                if let count = option.count {
-                    NovaSizedText(text: "\(count)", size: 12, weight: "Bold",
-                        color: count > 0 ? NovaColorToken.textSecondary.color(in: scheme)
-                                         : NovaColorToken.textMuted.color(in: scheme))
+            HStack(spacing: 8) {
+                if let symbol = option.symbol {
+                    Image(systemName: symbol).font(.system(size: 14, weight: .regular)).frame(width: 18)
                 }
+                Text(verbatim: option.title)
+                    .font(.custom(isOn ? "PlusJakartaSans-SemiBold" : "PlusJakartaSans-Regular", size: 13, relativeTo: .body))
+                    .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 4)
+                if let count = option.count {
+                    NovaText(text: "\(count)", style: .micro)
+                }
+                Image(systemName: "checkmark").font(.system(size: 12, weight: .semibold))
+                    .opacity(isOn ? 1 : 0).frame(width: 18)
             }
-            .padding(.horizontal, 10).frame(minHeight: 40)
-            .background(isOn ? NovaColorToken.statusSuccessBg.color(in: scheme)
-                             : NovaColorToken.surface.color(in: scheme),
-                        in: RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(isOn ? NovaColorToken.accentInk.color(in: scheme) : .clear, lineWidth: 1.2))
+            .foregroundStyle(NovaColorToken.text.color(in: scheme))
+            .padding(.horizontal, 10).padding(.vertical, 7).frame(minHeight: rowHeight)
+            .background(isOn ? NovaColorToken.surfaceMuted.color(in: scheme) : .clear,
+                in: RoundedRectangle(cornerRadius: 10))
+            .contentShape(Rectangle())
         }.buttonStyle(.plain)
             .accessibilityIdentifier("\(identifier).\(option.identity)")
             .accessibilityAddTraits(isOn ? .isSelected : [])
@@ -212,6 +206,7 @@ struct NovaFileLibraryScreen: View {
     @State private var shown = NovaFileQuery().limit
     @State private var inspecting: NovaFileEntry?
     @State private var adding = false
+    @State private var choosingCompanyFilter = false
     @State private var loading = false
     @State private var reload = UUID()
     @State private var started = false
@@ -258,11 +253,12 @@ struct NovaFileLibraryScreen: View {
     }
 
     var body: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 11) {
                     header
-                    if company == nil { picker } else { archive }
+                    NovaHelpHint(text: "Modüllerdeki ve ayrıca yüklediğiniz dosyaları firma ve başlığa göre bulun.")
+                    archive
                 }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
             }
         }
@@ -276,6 +272,17 @@ struct NovaFileLibraryScreen: View {
             query = ""
             openChooser = nil
             reload = UUID()
+        }
+        .novaPopup(isPresented: $choosingCompanyFilter) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    NovaText(text: "Firma filtresi", style: .sheetTitle)
+                    NovaButton(label: "Tüm dosyalar", symbol: "folder", variant: .surface) {
+                        company = nil; choosingCompanyFilter = false
+                    }
+                    picker
+                }.padding(16).novaPopupContentSize()
+            }
         }
         .novaFullScreenCover(item: $inspecting) { row in
             NovaPopup {
@@ -304,8 +311,8 @@ struct NovaFileLibraryScreen: View {
                 if let selectedName { NovaText(text: selectedName, style: .metaQuiet) }
             }
             Spacer(minLength: 0)
-            // Filing needs a company, so the control appears once there is one.
-            if canWrite && company != nil {
+            // Personal and company files share one archive.
+            if canWrite {
                 Button { adding = true } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "plus").font(.system(size: 13, weight: .bold))
@@ -324,16 +331,13 @@ struct NovaFileLibraryScreen: View {
 
     @ViewBuilder private var picker: some View {
         companyField
-        NovaHelpHint(text: RDLocalization.string("localizable.nova.file.pick.company", table: .localizable,
-            fallback: "İlk önce firma seçimi yapın. Seçtiğiniz firmanın dosya arşivi hemen aşağıda açılır."))
         if let error {
             NovaCard(padding: 16) { NovaText(text: error, style: .metaQuiet) }
         } else if companies.isEmpty {
             NovaCard(padding: 16) {
                 NovaText(text: loading
                     ? RDLocalization.string("localizable.nova.file.loading", table: .localizable, fallback: "Dosyalar yükleniyor…")
-                    : RDLocalization.string("localizable.nova.file.company.empty", table: .localizable,
-                        fallback: "Dosya arşivi için önce bir firma ekleyin."), style: .metaQuiet)
+                    : "Henüz firma yok. Kişisel dosyalarınızı firma eklemeden yükleyebilirsiniz.", style: .metaQuiet)
             }
         } else if offered.isEmpty {
             NovaCard(padding: 16) {
@@ -374,7 +378,7 @@ struct NovaFileLibraryScreen: View {
     /// with the counts in view rather than blind.
     private func companyRow(_ option: NovaAnalysisCompanyOption) -> some View {
         let summary = board?.companies.first { $0.id == option.id }
-        return Button { company = option.id; searchingCompany = false } label: {
+        return Button { company = option.id; searchingCompany = false; choosingCompanyFilter = false } label: {
             NovaCard(padding: 11) {
                 VStack(alignment: .leading, spacing: 7) {
                     HStack(spacing: 9) {
@@ -430,30 +434,14 @@ struct NovaFileLibraryScreen: View {
     @ViewBuilder private var archive: some View {
         if !isCompanyLocked { chosenCompany }
         stats
-        hint
         search
         filters
         list
     }
 
     private var chosenCompany: some View {
-        HStack(spacing: 9) {
-            NovaIcon(symbol: "building.2", size: 14)
-                .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
-            NovaText(text: selectedName ?? "", style: .cardTitle).lineLimit(1)
-            Spacer(minLength: 0)
-            Button { company = nil; companyQuery = "" } label: {
-                HStack(spacing: 5) {
-                    Image(systemName: "arrow.left.arrow.right").font(.system(size: 10, weight: .bold))
-                    NovaText(text: RDLocalization.string("localizable.nova.document.company.change", table: .localizable, fallback: "Firma değiştir"),
-                        style: .meta, color: NovaColorToken.accentInk.color(in: scheme))
-                }.foregroundStyle(NovaColorToken.accentInk.color(in: scheme)).frame(minHeight: 36)
-            }.buttonStyle(.plain).accessibilityIdentifier("file.company.change")
-        }
-        .padding(.horizontal, 12).padding(.vertical, 4)
-        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16)
-            .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
+        NovaFilterField(label: "Firma", options: [.init(id: nil, title: "Tüm firmalar")] + companies.map { .init(id: $0.id.uuidString, title: $0.name) },
+            selected: company?.uuidString, identifier: "file.company.filter") { company = $0.flatMap(UUID.init(uuidString:)) }
     }
 
     /// Four counters in the home page's own card shape. Tapping one is the same
@@ -560,19 +548,16 @@ struct NovaFileLibraryScreen: View {
                     fallback: "Dosyalar yükleniyor…"), style: .metaQuiet)
             }
         } else if board?.rows.isEmpty ?? true {
-            NovaCard(padding: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    NovaText(text: filedHere == 0
-                        ? RDLocalization.string("localizable.nova.file.empty", table: .localizable,
-                            fallback: "Bu firmada arşivlenmiş dosya yok. Saklamak istediğiniz belgeyi ekleyin.")
-                        : RDLocalization.string("localizable.nova.file.empty.filtered", table: .localizable,
-                            fallback: "Bu filtreye uyan dosya yok."), style: .metaQuiet)
-                    if canWrite && filedHere == 0 {
-                        NovaButton(label: RDLocalization.string("localizable.nova.file.add.title", table: .localizable, fallback: "Dosya ekle"),
-                            symbol: "folder.badge.plus") { adding = true }
-                            .accessibilityIdentifier("file.library.empty.add")
-                    }
-                }.frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 10) {
+                NovaEmptyState(title: filedHere == 0 ? "Henüz dosya yok" : "Bu filtreye uyan dosya yok",
+                    message: filedHere == 0
+                        ? "Dosya ekleyerek belgelerinizi etiket, not ve bağlı kayıt bilgileriyle tek arşivde saklayabilirsiniz."
+                        : "Arama veya filtreleri değiştirerek diğer dosyaları görüntüleyebilirsiniz.")
+                if canWrite && filedHere == 0 {
+                    NovaButton(label: RDLocalization.string("localizable.nova.file.add.title", table: .localizable,
+                        fallback: "Dosya ekle"), symbol: "folder.badge.plus") { adding = true }
+                        .accessibilityIdentifier("file.library.empty.add")
+                }
             }
         } else if let board {
             ForEach(board.rows) { row in card(row) }
@@ -670,14 +655,12 @@ struct NovaFileLibraryScreen: View {
     }
 }
 
-/// One company-page heading's filed documents: four counters and the way in.
-/// The counts are the archive's own, so the heading and the archive can never
-/// disagree about what is on file.
+/// One company-page heading's filed documents: the shared four-card counter
+/// standard and the way into the archive.
 struct NovaFileSectionStrip: View {
     let counts: [NovaFileState: Int]
     var isLoading = false
     let onOpen: () -> Void
-    @Environment(\.colorScheme) private var scheme
 
     private func count(_ group: NovaFileGroup) -> Int {
         group.states.reduce(0) { $0 + (counts[$1] ?? 0) }
@@ -690,26 +673,19 @@ struct NovaFileSectionStrip: View {
                 NovaText(text: RDLocalization.string("localizable.nova.file.loading", table: .localizable,
                     fallback: "Dosyalar yükleniyor…"), style: .metaQuiet)
             } else if total == 0 {
-                NovaText(text: RDLocalization.string("localizable.nova.file.section.empty", table: .localizable,
-                    fallback: "Bu başlık için arşivlenmiş dosya yok."), style: .metaQuiet)
+                NovaEmptyState(title: "Henüz dosya yok",
+                    message: "Bu başlığa dosya ekleyerek kayıtları tek yerde saklayabilir ve gerektiğinde hızlıca açabilirsiniz.")
             } else {
-                HStack(spacing: 6) {
-                    ForEach(NovaFileGroup.allCases) { group in
-                        let palette = NovaFileScreenWords.tone(group).tokens
-                        VStack(spacing: 2) {
-                            NovaText(text: "\(count(group))", style: .cardTitle,
-                                color: palette.ink.color(in: scheme))
-                            NovaText(text: group.title, style: .micro,
-                                color: NovaColorToken.textTertiary.color(in: scheme)).lineLimit(1)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(NovaFileGroup.allCases) { group in
+                            NovaListStat(title: group.title, symbol: group.symbol, value: count(group)).frame(width: 98)
                         }
-                        .frame(maxWidth: .infinity).padding(.vertical, 7)
-                        .background(palette.background.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
-                        .accessibilityElement(children: .combine)
-                    }
+                    }.padding(.vertical, 2)
                 }
             }
-            NovaButton(label: RDLocalization.string("localizable.nova.file.section.open", table: .localizable, fallback: "Dosyaları aç"),
-                symbol: "folder", variant: .surface, action: onOpen)
+            NovaCompactActionButton(title: RDLocalization.string("localizable.nova.file.section.open", table: .localizable,
+                fallback: "Dosyaları aç"), symbol: "folder", action: onOpen)
                 .accessibilityIdentifier("company.section.files.open")
         }.frame(maxWidth: .infinity, alignment: .leading)
     }

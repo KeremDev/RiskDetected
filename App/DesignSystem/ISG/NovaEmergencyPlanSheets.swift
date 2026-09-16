@@ -18,7 +18,7 @@ struct NovaEmergencyDetailSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     VStack(alignment: .leading, spacing: 4) {
-                        NovaText(text: plan.scope, style: .screenTitle)
+                        NovaPopupHeading(text: plan.scope, symbol: "shield")
                         NovaText(text: [plan.workplaceName, plan.companyName]
                             .compactMap { $0 }.joined(separator: " · "), style: .meta,
                             color: NovaColorToken.textSecondary.color(in: scheme))
@@ -34,8 +34,6 @@ struct NovaEmergencyDetailSheet: View {
                             NovaButton(label: RDLocalization.string("localizable.nova.emergency.detail.renew",
                                 table: .localizable, fallback: "Yeni sürüm yayımla"),
                                 symbol: "arrow.triangle.2.circlepath", variant: .primary, action: onRenew)
-                            NovaText(text: NovaEmergencyWords.renewalNote, style: .meta,
-                                color: NovaColorToken.textSecondary.color(in: scheme))
                         }
                     }
                     history
@@ -108,12 +106,6 @@ struct NovaEmergencyDetailSheet: View {
                         table: .localizable, fallback: "%d sürüm"), plan.versionsTotal))
                 cell("person.2", RDLocalization.string("localizable.nova.emergency.row.team",
                     table: .localizable, fallback: "Ekip"), "\(plan.teamSize)")
-            }
-            if plan.needsReview {
-                NovaHelpHint(text: NovaEmergencyWords.reviewNote)
-            } else if let note = plan.reviewNote, !note.isEmpty {
-                NovaHelpHint(text: String(format: RDLocalization.string("localizable.nova.emergency.detail.basis",
-                    table: .localizable, fallback: "Dayanak: %@"), note))
             }
         }
     }
@@ -216,11 +208,19 @@ struct NovaEmergencyPlanSheet: View {
     var fileCategories: [NovaFileCategory] = []
     var fileAccepts: [NovaFileAcceptance] = []
     var fileAssurance = NovaFileAssurance()
+    var employees: (UUID, String, UUID?) async throws -> NovaEmployeePage = { _,_,_ in
+        throw NovaPersonnelFailure.unavailable
+    }
     let onSave: (NovaEmergencyPlanDraft) async -> String?
     let onClose: () -> Void
     @State private var failure: String?
     @State private var saving = false
     @State private var choosingWorkplace = false
+    @State private var choosingEmployee = false
+    @State private var personnel: [NovaEmployeeRow] = []
+    @State private var personnelLoading = false
+    @State private var personnelFailure: String?
+    @State private var selectedEmployeeID: UUID?
     @State private var memberName = ""
     @State private var memberRole: NovaEmergencyRole = .coordinator
     @State private var memberContact = ""
@@ -255,14 +255,10 @@ struct NovaEmergencyPlanSheet: View {
         NovaPopup {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    NovaText(text: draft.isRenewal
+                    NovaPopupHeading(text: draft.isRenewal
                         ? RDLocalization.string("localizable.nova.emergency.form.renew", table: .localizable,
                             fallback: "Yeni sürüm")
-                        : RDLocalization.string("localizable.nova.emergency.form.new", table: .localizable,
-                            fallback: "Plan yayımla"), style: .screenTitle)
-                    if draft.isRenewal {
-                        NovaHelpHint(text: NovaEmergencyWords.renewalNote)
-                    }
+                        : "Plan Ekle", symbol: "shield")
 
                     // The workplace of a renewal is the plan's own and does not
                     // move, so it is shown rather than offered. A company with
@@ -302,38 +298,20 @@ struct NovaEmergencyPlanSheet: View {
                     }
 
                     NovaCard(padding: 12) {
-                        fieldIcon("text.alignleft") {
-                            VStack(alignment: .leading, spacing: 4) {
-                                NovaText(text: RDLocalization.string("localizable.nova.emergency.form.scope",
-                                    table: .localizable, fallback: "Kapsam"), style: .label)
-                                TextField("", text: $draft.scope)
-                                    .preference(key: NovaPopupBusyKey.self, value: saving)
-                                    .accessibilityIdentifier("nova.emergency.form.scope")
-                            }
+                        VStack(spacing: 4) {
+                            compactDateRow(label: RDLocalization.string("localizable.nova.emergency.row.prepared",
+                                table: .localizable, fallback: "Hazırlanma"), symbol: "calendar",
+                                value: $draft.preparedOn, identifier: "nova.emergency.form.prepared")
+                            Divider().opacity(0.45)
+                            compactDateRow(label: RDLocalization.string("localizable.nova.emergency.row.until",
+                                table: .localizable, fallback: "Geçerlilik"), symbol: "calendar.badge.clock",
+                                value: $draft.validUntil, identifier: "nova.emergency.form.until", isClearable: true)
                         }
-                    }
-                    HStack(alignment: .top, spacing: 8) {
-                        NovaCard(padding: 12) {
-                            fieldIcon("calendar") {
-                                NovaDayField(label: RDLocalization.string("localizable.nova.emergency.row.prepared",
-                                    table: .localizable, fallback: "Hazırlanma"),
-                                    value: $draft.preparedOn, identifier: "nova.emergency.form.prepared")
-                            }
-                        }.frame(maxWidth: .infinity)
-                        NovaCard(padding: 12) {
-                            fieldIcon("calendar.badge.clock") {
-                                NovaDayField(label: RDLocalization.string("localizable.nova.emergency.row.until",
-                                    table: .localizable, fallback: "Geçerlilik"),
-                                    value: $draft.validUntil, identifier: "nova.emergency.form.until", isClearable: true)
-                            }
-                        }.frame(maxWidth: .infinity)
                     }
                     if let years = suggestedYears {
                         NovaHelpHint(text: String(format: RDLocalization.string("localizable.nova.emergency.form.hazard.hint",
                             table: .localizable,
                             fallback: "İşyerinin tehlike sınıfına göre %d yıl otomatik dolduruldu. Gerekirse değiştirebilirsiniz."), years))
-                    } else {
-                        NovaHelpHint(text: NovaEmergencyWords.periodAttribution)
                     }
 
                     NovaCard(padding: 12) {
@@ -341,19 +319,6 @@ struct NovaEmergencyPlanSheet: View {
                     }
                     NovaCard(padding: 12) {
                         fieldIcon("paperclip") { fileEditor }
-                    }
-
-                    NovaCard(padding: 12) {
-                        fieldIcon("doc.text") {
-                            VStack(alignment: .leading, spacing: 4) {
-                                NovaText(text: RDLocalization.string("localizable.nova.emergency.form.basis",
-                                    table: .localizable, fallback: "Dayanak"), style: .label)
-                                TextField("", text: $draft.reviewNote)
-                                    .accessibilityIdentifier("nova.emergency.form.basis")
-                                NovaText(text: NovaEmergencyWords.reviewNote, style: .meta,
-                                    color: NovaColorToken.textSecondary.color(in: scheme))
-                            }
-                        }
                     }
 
                     if let failure {
@@ -384,6 +349,7 @@ struct NovaEmergencyPlanSheet: View {
         }
         .onChange(of: draft.workplaceID) { _ in fillSuggestedValidity() }
         .onChange(of: draft.preparedOn) { _ in fillSuggestedValidity() }
+        .task(id: fileCompany) { await loadPersonnel() }
     }
 
     /// A plain line icon in front of one field group — no tint, no background
@@ -394,6 +360,36 @@ struct NovaEmergencyPlanSheet: View {
                 .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme)).frame(width: 20, height: 22)
             content().frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    @ViewBuilder private func compactDateRow(label: String, symbol: String, value: Binding<String>,
+                                              identifier: String, isClearable: Bool = false) -> some View {
+        HStack(spacing: 9) {
+            Image(systemName: symbol).font(.system(size: 14, weight: .regular))
+                .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
+                .frame(width: 19)
+            NovaText(text: label, style: .label)
+            Spacer(minLength: 6)
+            if isClearable && value.wrappedValue.isEmpty {
+                Button { value.wrappedValue = NovaDayField.text(Date()) } label: {
+                    NovaText(text: "Belirtilmedi", style: .meta)
+                }.buttonStyle(.plain).accessibilityIdentifier("\(identifier).set")
+            } else {
+                DatePicker("", selection: Binding(
+                    get: { NovaDayField.date(value.wrappedValue) ?? Date() },
+                    set: { value.wrappedValue = NovaDayField.text($0) }), displayedComponents: .date)
+                    .labelsHidden().datePickerStyle(.compact)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .accessibilityIdentifier(identifier)
+                    .accessibilityLabel(Text(verbatim: label))
+                if isClearable {
+                    Button { value.wrappedValue = "" } label: {
+                        Image(systemName: "xmark.circle").font(.system(size: 13)).frame(width: 28, height: 34)
+                    }.buttonStyle(.plain).accessibilityIdentifier("\(identifier).clear")
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 42)
     }
 
     /// The upload happens right here — no cover, no second screen. Opening it
@@ -420,14 +416,12 @@ struct NovaEmergencyPlanSheet: View {
             } else if fileCompany != nil {
                 // The upload area shows up on its own — no "Dosya ekle" tap
                 // needed first.
-                NovaCard(padding: 12) {
-                    NovaFileAddInline(companies: [], preselected: fileCompany,
-                        categories: emergencyFileCategories, accepts: fileAccepts,
-                        assurance: fileAssurance, client: fileClient) { entry in
-                            if let entry { draft.assetID = entry.assetID }
-                            addingFile = false
-                        }
-                }
+                NovaFileAddInline(companies: [], preselected: fileCompany,
+                    categories: emergencyFileCategories, accepts: fileAccepts,
+                    assurance: fileAssurance, client: fileClient) { entry in
+                        if let entry { draft.assetID = entry.assetID }
+                        addingFile = false
+                    }
             }
         }
     }
@@ -441,7 +435,24 @@ struct NovaEmergencyPlanSheet: View {
                     table: .localizable, fallback: "En az bir kişi gerekli."), style: .meta,
                     color: NovaColorToken.textSecondary.color(in: scheme))
             }
-            supportStaffPicker
+            NovaFileChooserButton(label: "Firma personeli",
+                value: personnel.first { $0.id == selectedEmployeeID }?.name ?? "Personel seçin",
+                symbol: "person", isOpen: choosingEmployee,
+                isAnswered: selectedEmployeeID != nil,
+                identifier: "nova.emergency.form.employee") { choosingEmployee.toggle() }
+            if choosingEmployee {
+                NovaFileChooserPanel(options: personnel.filter { employee in
+                    !draft.team.contains { $0.fullName == employee.name }
+                }.map { .init(id: $0.id.uuidString, title: $0.name) },
+                    selected: selectedEmployeeID?.uuidString,
+                    identifier: "nova.emergency.form.employee.options") { value in
+                    selectedEmployeeID = value.flatMap(UUID.init(uuidString:))
+                    memberName = personnel.first { $0.id == selectedEmployeeID }?.name ?? ""
+                    choosingEmployee = false
+                }
+            }
+            if personnelLoading { ProgressView().controlSize(.small) }
+            if let personnelFailure { NovaText(text: personnelFailure, style: .metaQuiet) }
             ForEach(draft.team) { member in
                 HStack(spacing: 6) {
                     Image(systemName: member.role.symbol).font(.system(size: 11, weight: .semibold))
@@ -452,10 +463,6 @@ struct NovaEmergencyPlanSheet: View {
                     }.buttonStyle(.plain)
                 }
             }
-            TextField(RDLocalization.string("localizable.nova.emergency.form.name",
-                table: .localizable, fallback: "Ad soyad"), text: $memberName)
-                .frame(minHeight: 36)
-                .accessibilityIdentifier("nova.emergency.form.name")
             // Only the roles the schema knows, so the snapshot cannot carry one
             // the server would refuse.
             ScrollView(.horizontal, showsIndicators: false) {
@@ -490,43 +497,28 @@ struct NovaEmergencyPlanSheet: View {
                 let contact = memberContact.trimmingCharacters(in: .whitespacesAndNewlines)
                 draft.team.append(.init(fullName: name, role: memberRole,
                                         contact: contact.isEmpty ? nil : contact))
-                memberName = ""; memberContact = ""
+                memberName = ""; memberContact = ""; selectedEmployeeID = nil
             }
+            .disabled(selectedEmployeeID == nil)
         }
     }
 
-    /// Firmanın Atama ve Temsilciler'de kayıtlı destek elemanları. Bir isme
-    /// dokunmak yalnız ad alanını doldurur; ekip yine de düz bir liste olarak
-    /// donar, atamaya bağlı bir işaretçi tutulmaz.
-    @ViewBuilder private var supportStaffPicker: some View {
-        let candidates = catalogue?.supportStaff ?? []
-        if !candidates.isEmpty {
-            VStack(alignment: .leading, spacing: 5) {
-                NovaText(text: RDLocalization.string("localizable.nova.emergency.form.supportstaff",
-                    table: .localizable, fallback: "Destek elemanlarından seç"), style: .meta,
-                    color: NovaColorToken.textSecondary.color(in: scheme))
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(candidates) { person in
-                            Button {
-                                memberName = person.fullName
-                                memberRole = .other
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "person.fill.checkmark").font(.system(size: 10, weight: .semibold))
-                                    NovaSizedText(text: person.fullName, size: 11, weight: "Medium")
-                                }
-                                .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
-                                .padding(.vertical, 6).padding(.horizontal, 10)
-                                .background(NovaColorToken.statusSuccessBg.color(in: scheme),
-                                    in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            }
-                            .buttonStyle(.plain).disabled(draft.team.contains { $0.fullName == person.fullName })
-                            .accessibilityIdentifier("nova.emergency.form.supportstaff.\(person.id)")
-                        }
-                    }
-                }
-            }
+    @MainActor private func loadPersonnel() async {
+        guard let company = fileCompany else { return }
+        personnelLoading = true; personnelFailure = nil
+        do {
+            var rows: [NovaEmployeeRow] = []
+            var cursor: UUID?
+            repeat {
+                let page = try await employees(company, "", cursor)
+                rows.append(contentsOf: page.rows)
+                cursor = page.next
+            } while cursor != nil && rows.count < 1_000
+            personnel = rows
+            if rows.isEmpty { personnelFailure = "Bu firmada henüz aktif personel yok." }
+        } catch {
+            personnelFailure = "Firma personelleri yüklenemedi. Yeniden deneyin."
         }
+        personnelLoading = false
     }
 }

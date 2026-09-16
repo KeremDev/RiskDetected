@@ -39,6 +39,7 @@ struct NovaAnalysisDetailScreen: View {
     @State private var deleting: NovaAnalysisItem?
     @State private var preview: NovaPreviewImage?
     @State private var filing = false
+    @State private var fileAfterDetail = false
     @State private var reporting = false
     @State private var assigning = false
     @State private var notice: String?
@@ -51,9 +52,11 @@ struct NovaAnalysisDetailScreen: View {
     private var selectable: Bool { section.isFileable && canWrite }
 
     var body: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
             VStack(spacing: 0) {
                 header
+                NovaHelpHint(text: "Bulguyu inceleyin; seçtiğiniz firmaya uygunsuzluk olarak ekleyin veya rapor oluşturun.")
+                    .padding(.horizontal, 16)
                 if data == nil && loadError == nil {
                     NovaLoadingView(message: RDLocalization.string("localizable.nova.analysis.loading", table: .localizable,
                         fallback: "Analiz yükleniyor…"))
@@ -61,8 +64,17 @@ struct NovaAnalysisDetailScreen: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
                         if let loadError {
-                            NovaCard(padding: 16) { NovaText(text: loadError, style: .metaQuiet) }
+                            NovaCard(padding: 16) {
+                                VStack(spacing: 12) {
+                                    NovaText(text: loadError, style: .body)
+                                    Button { reload = UUID() } label: {
+                                        NovaText(text: RDLocalization.string("localizable.nova.analysis.retry", table: .localizable,
+                                            fallback: "Tekrar dene"), style: .buttonSm)
+                                    }.accessibilityIdentifier("nova.analysis.retry")
+                                }
+                            }
                         } else if let data {
+                            summaryCard(data)
                             tabs(data)
                         } else {
                             NovaCard(padding: 16) {
@@ -77,7 +89,9 @@ struct NovaAnalysisDetailScreen: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) { if data != nil { actionBar } }
         .task(id: reload) { await load() }
-        .novaFullScreenCover(item: $inspecting) { item in
+        .novaFullScreenCover(item: $inspecting, onDismiss: {
+            if fileAfterDetail { fileAfterDetail = false; filing = true }
+        }) { item in
             NovaPopup {
                 NovaAnalysisItemSheet(item: item, section: section, method: method,
                     photo: photo(for: item), analysisTitle: data?.title ?? "",
@@ -88,7 +102,8 @@ struct NovaAnalysisDetailScreen: View {
                         reactions[item.id] = value
                     },
                     onEdit: { inspecting = nil; editing = item },
-                    onDelete: { inspecting = nil; deleting = item })
+                    onDelete: { inspecting = nil; deleting = item },
+                    onFile: { selected = [item.id]; fileAfterDetail = true; inspecting = nil })
             }
         }
         .novaFullScreenCover(item: $editing) { item in
@@ -115,14 +130,16 @@ struct NovaAnalysisDetailScreen: View {
         .novaFullScreenCover(item: $preview) { item in
             NovaPopup { NovaImageViewer(image: item.image) }
         }
-        .novaFullScreenCover(isPresented: $filing) {
-            NovaPopup {
-                if let data, let company = data.companyID {
-                    NovaAnalysisFileSheet(items: selectedItems(), section: section, method: method,
-                        loadWorkplaces: { try await client.workplaces(company) },
-                        file: client.file, onFinished: { selected = []; filing = false },
-                        record: { id, outcome in outcomes[id] = outcome })
-                }
+        .novaPopup(isPresented: $filing) {
+            NovaCompanyCreateFlow(title: "Firmaya Uygunsuzluk Ekle", companies: client.companies,
+                catalogue: { company in
+                    guard let company else { return [NovaNonconformityWorkplace]() }
+                    return try await client.workplaces(company)
+                }, onSelect: { _ in }) { workplaces, company in
+                NovaAnalysisFileSheet(items: selectedItems(), section: section, method: method,
+                    targetCompany: company, loadWorkplaces: { workplaces },
+                    file: client.file, onFinished: { selected = []; filing = false },
+                    record: { id, outcome in outcomes[id] = outcome })
             }
         }
         .novaFullScreenCover(isPresented: $reporting) {
@@ -153,6 +170,7 @@ struct NovaAnalysisDetailScreen: View {
 
     private func load() async {
         loadError = nil
+        data = nil
         do {
             let value = try await client.load()
             data = value
@@ -226,7 +244,7 @@ struct NovaAnalysisDetailScreen: View {
                 }
                 if data.isProjectionMissing {
                     NovaText(text: RDLocalization.string("localizable.nova.analysis.projection.missing", table: .localizable,
-                        fallback: "Bu analizin bölümleri henüz hazır değil. Biraz sonra tekrar açın."), style: .metaQuiet)
+                        fallback: "Bu eski analizde ek öneri bölümleri bulunmuyor; kayıtlı risk bulguları gösteriliyor."), style: .metaQuiet)
                 }
             }.frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -372,7 +390,7 @@ struct NovaAnalysisDetailScreen: View {
         if data?.companyID == nil && canWrite && section.isFileable && !selected.isEmpty {
             NovaAnalysisTag(symbol: "building.2.crop.circle",
                 text: RDLocalization.string("localizable.nova.analysis.file.needs.company", table: .localizable,
-                    fallback: "Uygunsuzluk açmak için önce analizi bir firmaya atayın."), status: .info)
+                    fallback: "Firmaya Aktar ile hedef firmayı seçebilirsiniz."), status: .info)
         }
     }
 
@@ -434,11 +452,11 @@ struct NovaAnalysisDetailScreen: View {
                     }
                     .foregroundStyle(NovaColorToken.text.color(in: scheme))
                     .frame(width: 74, height: 54)
-                    .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 18))
+                    .novaControlBackground(cornerRadius: 18)
                     .overlay(RoundedRectangle(cornerRadius: 18)
                         .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
                 }.buttonStyle(.plain).accessibilityIdentifier("analysis.detail.back")
-                if selectable && !selected.isEmpty && data?.companyID != nil {
+                if selectable && !selected.isEmpty {
                     primary(RDLocalization.string("localizable.nova.analysis.file.run.short", table: .localizable, fallback: "Firmaya Aktar"),
                             symbol: "arrow.right.doc.on.clipboard", id: "file") { filing = true }
                 } else {

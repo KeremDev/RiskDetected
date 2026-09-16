@@ -1,0 +1,48 @@
+{
+  "backend_isolated_postgres17": {
+    "passed": true,
+    "log_tail": "\n------------\n \n(1 row)\n\n save_issue \n------------\n \n(1 row)\n\n save_issue \n------------\n \n(1 row)\n\n save_issue \n------------\n \n(1 row)\n\n denied \n--------\n \n(1 row)\n\n denied \n--------\n \n(1 row)\n\n denied \n--------\n \n(1 row)\n\n denied \n--------\n \n(1 row)\n\n denied \n--------\n \n(1 row)\n\nDO\nINSERT 0 1\nINSERT 0 1\nINSERT 0 1\nDO\n ok \n----\n \n(1 row)\n\n ok \n----\n \n(1 row)\n\n            ?column?            \n--------------------------------\n EDU expanded acceptance passed\n(1 row)\n\n\nPASS: two PostgreSQL connections issue distinct numbers for different companies\n"
+  },
+  "ios_renderer": {
+    "snapshots": 10,
+    "standard_pages": 2,
+    "long_pages": 6,
+    "logo_variants": 3,
+    "turkish_text": true,
+    "istanbul_midnight": true,
+    "lesson_370_minutes": {
+      "lessons": 8,
+      "last_minutes": 55
+    }
+  },
+  "android": {
+    "assemble_debug": true,
+    "rules_tests": 4,
+    "api33_pdf_instrumentation": true,
+    "frozen_snapshots_tested": 8
+  },
+  "regression": {
+    "auth_billing_p07_session": 43,
+    "analysis_quota": 11,
+    "personnel": 40,
+    "failures": 0
+  },
+  "live_pilot": {
+    "migration": "20260914162507_isg_education_curriculum_certificates",
+    "controls_enabled": true,
+    "existing_training_hashes_unchanged": true,
+    "probe_writes_rolled_back": true
+  },
+  "physical_user_acceptance": {
+    "share_to_recipient": "not_executed",
+    "print_to_device": "not_executed"
+  },
+  "ios_physical": {
+    "version": "2.0.3",
+    "build": 101,
+    "build_succeeded": true,
+    "installed": true,
+    "launched": true,
+    "bundle_id": "com.riskdetected.app"
+  }
+}

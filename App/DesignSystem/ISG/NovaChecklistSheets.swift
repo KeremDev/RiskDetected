@@ -19,7 +19,7 @@ struct NovaChecklistRunSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     VStack(alignment: .leading, spacing: 4) {
-                        NovaText(text: run.templateTitle ?? run.templateCode, style: .screenTitle)
+                        NovaPopupHeading(text: run.templateTitle ?? run.templateCode, symbol: "checklist")
                         NovaText(text: [run.workplaceName, run.companyName]
                             .compactMap { $0 }.joined(separator: " · "), style: .meta,
                             color: NovaColorToken.textSecondary.color(in: scheme))
@@ -44,7 +44,7 @@ struct NovaChecklistRunSheet: View {
                 .padding(20).novaPopupContentSize()
             }
         }
-        .sheet(item: $draft) { entry in
+        .novaPopup(item: $draft) { entry in
             NovaChecklistAnswerSheet(draft: entry,
                 onSave: { edited in
                     let error = await onAnswer(edited)
@@ -153,7 +153,7 @@ struct NovaChecklistAnswerSheet: View {
         NovaPopup {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    NovaText(text: draft.prompt, style: .screenTitle)
+                    NovaPopupHeading(text: draft.prompt, symbol: "checklist")
                     if !draft.allowsNotApplicable {
                         NovaHelpHint(text: RDLocalization.string("localizable.nova.checklist.answer.nona",
                             table: .localizable,
@@ -281,8 +281,8 @@ struct NovaChecklistTemplateSheet: View {
         NovaPopup {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    NovaText(text: RDLocalization.string("localizable.nova.checklist.templates.title",
-                        table: .localizable, fallback: "Kontrol listelerim"), style: .screenTitle)
+                    NovaPopupHeading(text: RDLocalization.string("localizable.nova.checklist.templates.title",
+                        table: .localizable, fallback: "Kontrol listelerim"), symbol: "checklist")
                     NovaText(text: NovaChecklistWords.noProductList, style: .meta,
                         color: NovaColorToken.textSecondary.color(in: scheme))
                     if let failure {
@@ -473,8 +473,9 @@ struct NovaChecklistStartForm: View {
     @State private var busy = false
     @State private var failure: String?
     var body: some View {
+        ScrollView {
         VStack(alignment: .leading, spacing: 12) {
-            NovaText(text: "Kontrol başlat", style: .cardTitle)
+            NovaPopupHeading(text: "Kontrol başlat", symbol: "checklist")
             if catalogue.starters.isEmpty {
                 NovaText(text: "Önce Listelerim bölümünden sorularınızı ekleyip listeyi yayımlayın.", style: .body)
             } else if catalogue.workplaces.isEmpty {
@@ -504,6 +505,7 @@ struct NovaChecklistStartForm: View {
                 }.disabled(busy || workplace == nil || template.isEmpty)
             }
         }.padding(20).novaPopupContentSize().disabled(busy)
+        }
             .preference(key: NovaPopupBusyKey.self, value: busy)
             .task { if catalogue.workplaces.count == 1 { workplace = catalogue.workplaces.first?.id } }
     }

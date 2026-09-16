@@ -1,0 +1,23 @@
+BEGIN;
+ALTER TABLE private_isg.file_assets ALTER COLUMN company_id DROP NOT NULL;
+SELECT set_config('test.actor','20000000-0000-0000-0000-000000000001',true);
+SELECT set_config('test.pilot','true',true);
+SELECT set_config('test.pilot_write','true',true);
+UPDATE private_isg.rollout SET read_enabled=true,write_enabled=true;
+UPDATE private_isg.module_registry SET read_enabled=true,write_enabled=true;
+DO $$ DECLARE a uuid:=gen_random_uuid(); actor uuid:=private_isg.active_actor(); co uuid:='10000000-0000-0000-0000-000000000001'; r jsonb; p jsonb; f uuid; BEGIN
+ INSERT INTO private_isg.file_assets(asset_id,owner_id,company_id,detected_type,scan_status) VALUES(a,actor,NULL,'image/png','clean');
+ INSERT INTO private_isg.file_library_entries(asset_id,owner_id,company_id) VALUES(a,actor,NULL);
+ p:=jsonb_build_object('kind','approved_notebook','values',jsonb_build_object('title','Defter görseli','asset_id',a));
+ BEGIN PERFORM public.isg_pilot_process_mutate_v1(co,'save',gen_random_uuid(),gen_random_uuid(),p); RAISE EXCEPTION 'personal file without company filing'; EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'ACCESS_DENIED' THEN RAISE; END IF; END;
+ INSERT INTO private_isg.file_library_entries(asset_id,owner_id,company_id) VALUES(a,actor,co) RETURNING entry_id INTO f;
+ r:=public.isg_pilot_process_mutate_v1(co,'save',gen_random_uuid(),gen_random_uuid(),p);
+ IF public.isg_pilot_process_attachment_v1('approved_notebook',(r->>'id')::uuid,'asset_id')->>'entry_id'<>f::text THEN RAISE EXCEPTION 'file link read'; END IF;
+ p:=jsonb_build_object('kind','completed_drill','values',jsonb_build_object('workplace_id','40000000-0000-0000-0000-000000000001','held_on','2026-01-01','drill_type','fire','announcement','announced','scenario','Tahliye','photo_ids',jsonb_build_array(a)));
+ r:=public.isg_pilot_process_mutate_v1(co,'save',gen_random_uuid(),gen_random_uuid(),p);
+ IF public.isg_pilot_process_attachment_v1('completed_drill',(r->>'id')::uuid,'photo_ids:'||a::text)->>'entry_id'<>f::text THEN RAISE EXCEPTION 'drill photo link read'; END IF;
+ UPDATE private_isg.file_library_entries SET is_archived=true WHERE entry_id=f;
+ BEGIN PERFORM public.isg_pilot_process_mutate_v1(co,'save',gen_random_uuid(),gen_random_uuid(),p); RAISE EXCEPTION 'archived filing'; EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'ACCESS_DENIED' THEN RAISE; END IF; END;
+ RAISE NOTICE 'ok shared owner blob / explicit company filing required / notebook and drill writes / matching file links / archived filing denied';
+END $$;
+ROLLBACK;

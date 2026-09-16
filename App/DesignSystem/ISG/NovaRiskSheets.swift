@@ -18,9 +18,8 @@ struct NovaRiskDetailSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     VStack(alignment: .leading, spacing: 4) {
-                        NovaText(text: row.workplaceName ?? RDLocalization.string(
-                            "localizable.nova.risk.row.workplace", table: .localizable, fallback: "İşyeri"),
-                            style: .screenTitle)
+                        NovaPopupHeading(text: row.workplaceName ?? RDLocalization.string(
+                            "localizable.nova.risk.row.workplace", table: .localizable, fallback: "İşyeri"), symbol: "checkmark.shield")
                         if let company = row.companyName {
                             NovaText(text: company, style: .meta,
                                 color: NovaColorToken.textSecondary.color(in: scheme))
@@ -57,10 +56,6 @@ struct NovaRiskDetailSheet: View {
                     table: .localizable, fallback: "Yürürlükteki sürüm"),
                     row.currentVersion > 0 ? "v\(row.currentVersion)" : unset,
                     detail: row.currentKind?.title ?? "")
-            }
-            if row.periodSource?.needsReview == true {
-                NovaHelpHint(text: RDLocalization.string("localizable.nova.risk.fact.review", table: .localizable,
-                    fallback: "Bu süre uzmanın kendi kararıdır; mevzuat gereği olarak sunulmaz."))
             }
             if row.sourceDrift {
                 NovaHelpHint(text: row.driftNote ?? RDLocalization.string("localizable.nova.risk.fact.drift",
@@ -218,8 +213,8 @@ struct NovaRiskVersionSheet: View {
         NovaPopup {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    NovaText(text: draft.versionToEdit != nil ? "Taslağı düzenle" : RDLocalization.string("localizable.nova.risk.version.title",
-                        table: .localizable, fallback: "Yeni sürüm"), style: .screenTitle)
+                    NovaPopupHeading(text: draft.versionToEdit != nil ? "Taslağı düzenle" : RDLocalization.string("localizable.nova.risk.version.title",
+                        table: .localizable, fallback: "Yeni sürüm"), symbol: "checkmark.shield")
                     NovaFileChooserButton(
                         label: RDLocalization.string("localizable.nova.risk.version.kind",
                             table: .localizable, fallback: "Sürüm türü"),
@@ -333,8 +328,8 @@ struct NovaRiskFinalizeSheet: View {
         NovaPopup {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    NovaText(text: RDLocalization.string("localizable.nova.risk.finalize.title",
-                        table: .localizable, fallback: "Sürümü tamamla"), style: .screenTitle)
+                    NovaPopupHeading(text: RDLocalization.string("localizable.nova.risk.finalize.title",
+                        table: .localizable, fallback: "Sürümü tamamla"), symbol: "checkmark.shield")
                     NovaHelpHint(text: RDLocalization.string("localizable.nova.risk.finalize.note",
                         table: .localizable,
                         fallback: "Tamamlanan sürüm yürürlüğe girer ve bir daha değiştirilemez. Doğrulama sizin beyanınızdır."))
@@ -370,12 +365,14 @@ struct NovaRiskFinalizeSheet: View {
                     }
 
                     if draft.ruleCode.isEmpty {
-                        VStack(alignment: .leading, spacing: 4) {
-                            NovaText(text: RDLocalization.string("localizable.nova.risk.finalize.years",
-                                table: .localizable, fallback: "Geçerlilik süresi (yıl)"), style: .label)
-                            TextField("", text: $draft.periodYears)
-                                .keyboardType(.numberPad).textFieldStyle(.roundedBorder)
-                                .accessibilityIdentifier("nova.risk.finalize.years")
+                        NovaFormValueRow(label: "Geçerlilik süresi", symbol: "clock") {
+                            HStack(spacing: 6) {
+                                TextField("", text: $draft.periodYears).keyboardType(.numberPad)
+                                    .font(NovaFont.font(.body)).multilineTextAlignment(.trailing).frame(width: 46).frame(minHeight: 36)
+                                    .accessibilityLabel("Geçerlilik süresi, yıl")
+                                    .accessibilityIdentifier("nova.risk.finalize.years")
+                                NovaText(text: "yıl", style: .meta)
+                            }
                         }
                     }
                     } else {
@@ -415,7 +412,7 @@ struct NovaRiskCancelDraftSheet: View {
         NovaPopup {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    NovaText(text: "Taslağı iptal et", style: .screenTitle)
+                    NovaPopupHeading(text: "Taslağı iptal et", symbol: "checkmark.shield")
                     NovaText(text: "Taslak geçmişte korunur. Yürürlükteki sürüm ve tarihleri değişmez.", style: .body)
                     TextField("İptal gerekçesi (en az 10 karakter)", text: $reason, axis: .vertical).lineLimit(3...6)
                     if let failure { NovaText(text: failure, style: .meta) }

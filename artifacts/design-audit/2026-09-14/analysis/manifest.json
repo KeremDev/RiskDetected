@@ -1,0 +1,53 @@
+[
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D6FB4CCC-BD17-42EE-80B7-F49563834BAF",
+        "deviceName" : "iPhone 17 Pro",
+        "exportedFileName" : "580217BC-9045-4ED2-8876-C32C427D3BBE.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "03-analysis-approved_notebook_0_C08BDC39-0D70-479C-AD69-BDF5DB3A11B7.png",
+        "timestamp" : 1789408568.788
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D6FB4CCC-BD17-42EE-80B7-F49563834BAF",
+        "deviceName" : "iPhone 17 Pro",
+        "exportedFileName" : "8801A463-6EF1-4737-A878-2CDC841867CA.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "03-analysis-training_recommendations_0_DF93F94D-2AE1-4317-BFD3-DEA52F63C68B.png",
+        "timestamp" : 1789408567.252
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D6FB4CCC-BD17-42EE-80B7-F49563834BAF",
+        "deviceName" : "iPhone 17 Pro",
+        "exportedFileName" : "35D14C0C-F131-49A4-BC58-FBEC42B4666D.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "03-analysis-expert_recommendations_0_6543779F-F593-4AE5-932E-ADAD6439FC01.png",
+        "timestamp" : 1789408565.713
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D6FB4CCC-BD17-42EE-80B7-F49563834BAF",
+        "deviceName" : "iPhone 17 Pro",
+        "exportedFileName" : "2B6AE944-416C-42DB-B3D7-4F9905146FD0.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "02-analysis-result-risk_0_9C75DA1B-2CCD-4504-94E9-199608E1ED87.png",
+        "timestamp" : 1789408564.141
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D6FB4CCC-BD17-42EE-80B7-F49563834BAF",
+        "deviceName" : "iPhone 17 Pro",
+        "exportedFileName" : "45C8AFFA-F5E8-475D-8AF6-0F91AAE68D8B.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "01-analysis-list_0_64483E7D-FC2D-4197-B2EB-5E64A0DE4FAD.png",
+        "timestamp" : 1789408562.592
+      }
+    ],
+    "testIdentifier" : "NovaDesignAuditUITests/testAnalysisResultAndSectionSurfaces()",
+    "testIdentifierURL" : "test://com.apple.xcode/RiskDetected/RiskDetectedUITests/NovaDesignAuditUITests/testAnalysisResultAndSectionSurfaces"
+  }
+]

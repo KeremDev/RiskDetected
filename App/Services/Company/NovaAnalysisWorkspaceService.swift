@@ -6,6 +6,20 @@ import UIKit
 /// renderer or the nonconformity boundary; it only carries them.
 @MainActor
 enum NovaAnalysisWorkspace {
+    /// The original analysis item behind a filed nonconformity. Keeping this
+    /// presentation model here lets the board reuse the exact finding sheet
+    /// instead of rebuilding a reduced copy of it from the record projection.
+    struct RecordFindingPresentation {
+        let analysisID: UUID
+        let item: NovaAnalysisItem
+        let section: NovaAnalysisSectionKind
+        let method: NovaRiskMethod
+        let photo: UIImage?
+        let analysisTitle: String
+        let companyName: String
+        let createdOn: String
+    }
+
     private static let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "tr_TR")
@@ -119,6 +133,48 @@ enum NovaAnalysisWorkspace {
         return await thumbnail(analysisID: analysis)
     }
 
+    /// Resolves the durable source reference saved on a nonconformity back to
+    /// the item shown on the analysis result page. The board can therefore show
+    /// the same finding detail UI, including its original photo and factors.
+    static func recordFinding(_ entry: NovaNonconformityEntry, identity: NovaSessionIdentity,
+                              preferredMethod: RiskMethod) async throws -> RecordFindingPresentation {
+        try Task.checkCancellation()
+        guard novaCurrentSessionIdentity() == identity,
+              entry.row.camefromFinding,
+              let reference = entry.row.source_ref,
+              let findingID = UUID(uuidString: reference) else {
+            throw NovaNonconformityFailure.denied
+        }
+        struct Link: Decodable { let analysis_id: UUID }
+        let raw = try await SupabaseService.shared.client.from("findings")
+            .select("analysis_id").eq("id", value: findingID.uuidString).limit(1).execute().data
+        guard novaCurrentSessionIdentity() == identity,
+              let link = try JSONDecoder().decode([Link].self, from: raw).first else {
+            throw NovaNonconformityFailure.unavailable
+        }
+        let detail = try await self.detail(analysisID: link.analysis_id, identity: identity,
+                                           method: preferredMethod, methodLabel: preferredMethod.label)
+        var source: (NovaAnalysisSectionKind, NovaAnalysisItem)?
+        for section in detail.sections {
+            if let item = section.items.first(where: { $0.id == findingID }) {
+                source = (section.kind, item)
+                break
+            }
+        }
+        guard let (section, item) = source else { throw NovaNonconformityFailure.unavailable }
+        let pictures = await photos(analysisID: link.analysis_id)
+        let photo: UIImage?
+        if let index = item.photoIndices.first, index >= 1, index <= pictures.count {
+            photo = pictures[index - 1]
+        } else {
+            photo = pictures.first
+        }
+        let method: NovaRiskMethod = preferredMethod == .matrix5x5 ? .matrix5x5 : .fineKinney
+        return .init(analysisID: link.analysis_id, item: item, section: section, method: method,
+                     photo: photo, analysisTitle: detail.title, companyName: entry.companyName,
+                     createdOn: detail.createdOn)
+    }
+
     /// Every picture of one analysis, in order.
     static func photos(analysisID: UUID) async -> [UIImage] {
         guard let bundle = try? await AnalysisService.shared.result(analysisID: analysisID) else { return [] }
@@ -140,7 +196,8 @@ enum NovaAnalysisWorkspace {
 
     /// The record board reads every company the account can still read, one at
     /// a time, re-checking the session between calls exactly as the company
-    /// loader does. A company that fails its own check is left out, not faked.
+    /// loader does. A failed company read must fail the board: returning the
+    /// other rows would turn an incomplete result into a convincing zero/count.
     static func board(identity: NovaSessionIdentity) async throws -> [NovaNonconformityEntry] {
         func check() throws {
             try Task.checkCancellation()
@@ -151,8 +208,8 @@ enum NovaAnalysisWorkspace {
         var result: [NovaNonconformityEntry] = []
         for company in companies {
             try check()
-            guard let places = try? await read(company: company.id, kind: "workplaces", decoding: WorkplaceEnvelope.self),
-                  let list = try? await read(company: company.id, kind: "list", decoding: ListEnvelope.self) else { continue }
+            let list = try await read(company: company.id, kind: "list", decoding: ListEnvelope.self)
+            let places = try await read(company: company.id, kind: "workplaces", decoding: WorkplaceEnvelope.self)
             try check()
             let names = Dictionary(uniqueKeysWithValues: places.rows.map { ($0.id, $0.name) })
             result.append(contentsOf: list.rows.map { row in
@@ -187,55 +244,114 @@ enum NovaAnalysisWorkspace {
         }
     }
 
-    /// Reads the four sections through the existing result-hub function and the
-    /// analysis row itself. A missing projection is reported, never faked.
+    /// Reads the analysis row first, then enriches it with the newer result-hub
+    /// projection when one exists. Analyses created before that projection was
+    /// introduced still open from their durable finding rows.
     static func detail(analysisID: UUID, identity: NovaSessionIdentity,
                        method: RiskMethod, methodLabel: String) async throws -> NovaAnalysisDetailData {
         let bundle = try await AnalysisService.shared.result(analysisID: analysisID)
-        let hub = try await AnalysisResultHubService.shared.loadWhenReady(analysisID: analysisID, language: .current)
-        // A disabled or incomplete projection is not an empty analysis.
-        guard hub.enabled, NovaAnalysisSectionKind.allCases.allSatisfy({ kind in
-            hub.sections.contains { $0.id.rawValue == kind.rawValue }
-        }) else { throw URLError(.badServerResponse) }
+        let isFreshResult = date(bundle.analysis.createdAt).map {
+            abs(Date().timeIntervalSince($0)) < 120
+        } ?? false
+        let loadedHub: AnalysisResultHubResponse?
+        if isFreshResult {
+            loadedHub = try? await AnalysisResultHubService.shared.loadWhenReady(
+                analysisID: analysisID,
+                language: .current
+            )
+        } else {
+            // Historical rows will not gain a missing projection by polling;
+            // one request is enough before falling back to their saved findings.
+            loadedHub = try? await AnalysisResultHubService.shared.load(
+                analysisID: analysisID,
+                language: .current
+            )
+        }
         let companies = (try? await loadNovaPilotOverview(identity: identity)) ?? []
         let name = bundle.analysis.companyID.flatMap { id in companies.first { $0.id == id }?.name }
-        let sections = self.sections(hub: hub, bundle: bundle)
+        return detailData(bundle: bundle, hub: loadedHub, companyName: name,
+            method: method, methodLabel: methodLabel)
+    }
+
+    /// Pure assembly point used by the live loader and the legacy regression
+    /// fixture. Keeping the fallback here prevents a missing enrichment from
+    /// ever turning a readable analysis into an error screen again.
+    static func detailData(bundle: AnalysisResultBundle, hub loadedHub: AnalysisResultHubResponse?,
+                           companyName: String?, method: RiskMethod,
+                           methodLabel: String) -> NovaAnalysisDetailData {
+        let hub = loadedHub?.enabled == true ? loadedHub : nil
+        let projectionComplete = hub.map { value in
+            NovaAnalysisSectionKind.allCases.allSatisfy { kind in
+                value.sections.contains { $0.id.rawValue == kind.rawValue }
+            }
+        } ?? false
+        let resolvedSections = self.sections(hub: hub, bundle: bundle)
         let focuses = bundle.analysis.canvas.split(separator: ",").map(String.init)
             .compactMap { id in AnalysisCanvas.all.first { $0.id == id.trimmingCharacters(in: .whitespaces) }?.title }
-        return .init(analysisID: analysisID, title: bundle.analysis.title, createdOn: day(bundle.analysis.createdAt),
+        return .init(analysisID: bundle.analysis.id, title: bundle.analysis.title, createdOn: day(bundle.analysis.createdAt),
             methodLabel: methodLabel, method: method == .fineKinney ? .fineKinney : .matrix5x5,
-            companyID: bundle.analysis.companyID, companyName: name, sections: sections,
-            isProjectionMissing: false,
+            companyID: bundle.analysis.companyID, companyName: companyName, sections: resolvedSections,
+            isProjectionMissing: !projectionComplete,
             photoCount: bundle.photos.count,
             sectorLabel: bundle.analysis.analysisSectorID?.label(),
             focusLabels: focuses)
     }
 
-    /// The hub is the product's own projection. When it is not available the
-    /// scored findings still come from the analysis itself, and the three
-    /// judgement sections are shown as empty rather than invented.
+    /// The hub is the product's full projection. When it is unavailable the
+    /// durable finding rows still contain the split between scored findings
+    /// and unscored specialist observations, so preserve that split instead of
+    /// putting every row under Risk Analizi.
     private static func sections(hub: AnalysisResultHubResponse?, bundle: AnalysisResultBundle) -> [NovaAnalysisSection] {
-        NovaAnalysisSectionKind.allCases.map { kind in
+        let findings = bundle.findings.sorted { $0.ordinal < $1.ordinal }
+        return NovaAnalysisSectionKind.allCases.map { kind in
             if let section = hub?.sections.first(where: { $0.id.rawValue == kind.rawValue }) {
                 return .init(kind: kind, items: section.items.enumerated().map { at, item in
                     self.item(item, at: at, kind: kind)
                 }, isTeaser: section.access == .teaser)
             }
-            guard kind == .riskAnalysis else { return .init(kind: kind, items: [], isTeaser: false) }
-            return .init(kind: kind, items: bundle.findings.sorted { $0.ordinal < $1.ordinal }.map { finding in
-                var item = NovaAnalysisItem(id: finding.id, ordinal: finding.ordinal, title: finding.title,
-                    category: finding.category, body: finding.description ?? "",
-                    measure: finding.recommendedAction, references: finding.referencesText)
-                item.rootCause = finding.rootCauseText
-                item.measures = measures(finding.recommendedMeasures)
-                item.photoIndices = finding.sourcePhotoIndices ?? []
-                item.fineKinney = fineKinney(band: finding.fkBand, score: finding.fkScore,
-                    probability: finding.fkProbability, frequency: finding.fkFrequency, severity: finding.fkSeverity)
-                item.matrix = matrix(band: finding.m5Band, score: finding.m5Score,
-                    probability: finding.m5Probability, severity: finding.m5Severity)
-                return item
+            let fallbackRows: [FindingRow]
+            switch kind {
+            case .riskAnalysis:
+                fallbackRows = findings.filter(isScoredFinding)
+            case .expertRecommendations:
+                fallbackRows = findings.filter { !isScoredFinding($0) }
+            case .approvedNotebook, .trainingRecommendations:
+                fallbackRows = []
+            }
+            return .init(kind: kind, items: fallbackRows.map {
+                fallbackItem($0, kind: kind)
             }, isTeaser: false)
         }
+    }
+
+    /// Mirrors the server's `findingSection` rule. `is_scored` is authoritative;
+    /// item class keeps rows from older V4 payloads correctly classified when
+    /// that boolean was not yet written.
+    private static func isScoredFinding(_ finding: FindingRow) -> Bool {
+        if let isScored = finding.isScored { return isScored }
+        switch finding.itemClass?.lowercased() {
+        case "assurance_requirement", "verification_request", "positive_control", "not_assessable":
+            return false
+        default:
+            return true
+        }
+    }
+
+    private static func fallbackItem(_ finding: FindingRow,
+                                     kind: NovaAnalysisSectionKind) -> NovaAnalysisItem {
+        var item = NovaAnalysisItem(id: finding.id, ordinal: finding.ordinal, title: finding.title,
+            category: finding.category, body: finding.description ?? "",
+            measure: finding.recommendedAction, references: finding.referencesText)
+        item.rootCause = finding.rootCauseText
+        item.measures = measures(finding.recommendedMeasures)
+        item.photoIndices = finding.sourcePhotoIndices ?? []
+        if kind.isScored {
+            item.fineKinney = fineKinney(band: finding.fkBand, score: finding.fkScore,
+                probability: finding.fkProbability, frequency: finding.fkFrequency, severity: finding.fkSeverity)
+            item.matrix = matrix(band: finding.m5Band, score: finding.m5Score,
+                probability: finding.m5Probability, severity: finding.m5Severity)
+        }
+        return item
     }
 
     private static func item(_ value: AnalysisResultHubItem, at index: Int,

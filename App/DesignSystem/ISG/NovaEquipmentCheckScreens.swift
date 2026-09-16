@@ -32,44 +32,11 @@ struct NovaEquipmentStatCard: View {
     let value: Int
     var isSelected = false
     let onTap: () -> Void
-    @Environment(\.colorScheme) private var scheme
-    @Environment(\.dynamicTypeSize) private var typeSize
-
-    private var tone: NovaColorToken {
-        switch group {
-        case .overdue: return .statusDangerInk
-        case .failed: return .statusDangerInk
-        case .untracked: return .statusWarningInk
-        case .dueSoon: return .statusInfoInk
-        case .current: return .statusSuccessInk
-        }
-    }
-
     var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Image(systemName: group.symbol).font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(tone.color(in: scheme))
-                    NovaSizedText(text: "\(value)", size: 19, weight: "ExtraBold")
-                }
-                NovaSizedText(text: group.title, size: 10, weight: "Medium",
-                    color: NovaColorToken.textMuted.color(in: scheme))
-                    .lineLimit(2).minimumScaleFactor(0.82)
-                    .frame(maxWidth: .infinity, minHeight: 24, alignment: .topLeading)
-                NovaSizedText(text: group.footer, size: 9.5, weight: "Bold",
-                    color: value > 0 ? tone.color(in: scheme) : NovaColorToken.textMuted.color(in: scheme))
-                    .lineLimit(1).minimumScaleFactor(0.8)
-            }
-            .padding(.horizontal, 10).padding(.vertical, 11)
-            .frame(width: typeSize.isAccessibilitySize ? 160 : 86,
-                   height: typeSize.isAccessibilitySize ? nil : 86, alignment: .topLeading)
-            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 18))
-            .overlay(RoundedRectangle(cornerRadius: 18)
-                .strokeBorder(isSelected ? tone.color(in: scheme) : .clear, lineWidth: 1.5))
-        }.buttonStyle(.plain)
+        NovaListStat(title: group.title, symbol: group.symbol, value: value,
+            isSelected: isSelected, onTap: onTap)
+            .frame(width: 102)
             .accessibilityIdentifier("equipment.stat.\(group.rawValue)")
-            .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -86,6 +53,8 @@ struct NovaEquipmentCheckScreen: View {
     /// Opened from the company page's own "Ekipman ekle" action: skip
     /// straight to the add sheet instead of landing on the inventory first.
     var startInAddMode = false
+    /// Opened from a company page's "Kontrol ekle" action.
+    var startInInspectionMode = false
     var headingOverride: String?
     @Environment(\.colorScheme) private var scheme
     @State private var board: NovaEquipmentBoard?
@@ -103,10 +72,14 @@ struct NovaEquipmentCheckScreen: View {
     @State private var shown = NovaEquipmentQuery().limit
     @State private var inspecting: NovaEquipmentItem?
     @State private var adding = false
+    @State private var addingInspection = false
+    @State private var inspectionItems: [NovaEquipmentItem] = []
     @State private var editingPeriods = false
     @State private var loading = false
     @State private var reload = UUID()
     @State private var started = false
+    @State private var openedInitialInspection = false
+    @State private var pendingInspectionStart = false
     @State private var openChooser: String?
     @FocusState private var searchingCompany: Bool
 
@@ -140,10 +113,13 @@ struct NovaEquipmentCheckScreen: View {
     private func rule(for type: String) -> NovaEquipmentRule? { rules.first { $0.equipmentType == type } }
 
     var body: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 11) {
                     header
+                    NovaHelpHint(text: company == nil
+                        ? "Firmayı seçin; ekipmanı ve kontrol raporunu tek akışta ekleyin."
+                        : "Ekipmanı seçin; kontrol sonucu, tarih ve rapor geçmişine kaydedilsin.")
                     if company == nil { picker } else { inventory }
                 }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
             }
@@ -151,10 +127,14 @@ struct NovaEquipmentCheckScreen: View {
         .task(id: reload) { await refresh() }
         .onChange(of: group) { _ in shown = NovaEquipmentQuery().limit; reload = UUID() }
         .onChange(of: equipmentType) { _ in shown = NovaEquipmentQuery().limit; reload = UUID() }
-        .onChange(of: company) { _ in
+        .onChange(of: company) { value in
             shown = NovaEquipmentQuery().limit
             group = nil; equipmentType = nil; query = ""; openChooser = nil
             reload = UUID()
+            if value != nil && pendingInspectionStart {
+                pendingInspectionStart = false
+                Task { await openInspection() }
+            }
         }
         .novaFullScreenCover(item: $inspecting) { row in
             NovaPopup {
@@ -170,6 +150,25 @@ struct NovaEquipmentCheckScreen: View {
                         adding = false
                         reload = UUID()
                     }
+            }
+        }
+        .novaFullScreenCover(isPresented: $addingInspection) {
+            NovaPopup {
+                if let company {
+                    NovaEquipmentInspectionFlow(
+                        // A full-screen cover can render on the same update in
+                        // which the dedicated inspection list arrives. The
+                        // visible board already holds this company's inventory,
+                        // so keep it as the immediate source instead of briefly
+                        // presenting an incorrect "add your first equipment" state.
+                        items: inspectionItems.isEmpty ? (board?.rows ?? []) : inspectionItems,
+                        companies: companies, company: company,
+                        suggestions: suggestions, rules: rules, workplaces: workplaces, client: client,
+                        canWrite: canWrite, onChanged: {
+                            reload = UUID()
+                            Task { await loadInspectionItems() }
+                        })
+                }
             }
         }
         .novaFullScreenCover(isPresented: $editingPeriods) {
@@ -195,17 +194,24 @@ struct NovaEquipmentCheckScreen: View {
                 if let selectedName { NovaText(text: selectedName, style: .metaQuiet) }
             }
             Spacer(minLength: 0)
-            if canWrite && company != nil {
-                Button { adding = true } label: {
+            if canWrite {
+                Button {
+                    if company == nil {
+                        pendingInspectionStart = true
+                        searchingCompany = true
+                    } else {
+                        Task { await openInspection() }
+                    }
+                } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "plus").font(.system(size: 13, weight: .bold))
-                        NovaText(text: RDLocalization.string("localizable.nova.equipment.add.short", table: .localizable, fallback: "Ekipman Ekle"),
+                        NovaText(text: "Ekle",
                             style: .buttonSm, color: NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
                     }
                     .foregroundStyle(NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
                     .padding(.horizontal, 14).frame(minHeight: 44)
                     .background(NovaColorToken.accent.color(in: scheme), in: Capsule())
-                }.buttonStyle(.plain).accessibilityIdentifier("equipment.new")
+                }.buttonStyle(.plain).accessibilityIdentifier("equipment.inspection.new")
             }
         }
     }
@@ -214,8 +220,6 @@ struct NovaEquipmentCheckScreen: View {
 
     @ViewBuilder private var picker: some View {
         companyField
-        NovaHelpHint(text: RDLocalization.string("localizable.nova.equipment.pick.company", table: .localizable,
-            fallback: "İlk önce firma seçimi yapın. Seçtiğiniz firmanın ekipman envanteri hemen aşağıda açılır."))
         if let error {
             NovaCard(padding: 16) { NovaText(text: error, style: .metaQuiet) }
         } else if companies.isEmpty {
@@ -266,8 +270,8 @@ struct NovaEquipmentCheckScreen: View {
             NovaCard(padding: 11) {
                 VStack(alignment: .leading, spacing: 7) {
                     HStack(spacing: 9) {
-                        NovaIcon(symbol: "checkmark.shield", size: 15)
-                            .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+                        NovaIcon(symbol: "building.2", size: 17)
+                            .foregroundStyle(Color.black)
                             .frame(width: 36, height: 36)
                         VStack(alignment: .leading, spacing: 2) {
                             NovaText(text: option.name, style: .cardTitle).lineLimit(1)
@@ -316,11 +320,33 @@ struct NovaEquipmentCheckScreen: View {
     @ViewBuilder private var inventory: some View {
         if !isCompanyLocked { chosenCompany }
         stats
-        hint
-        periodsRow
+        managementActions
         search
         filters
         list
+    }
+
+    private var managementActions: some View {
+        NovaCard(padding: 8) {
+            HStack(spacing: 8) {
+                compactAction("Ekipman ekle", symbol: "shippingbox.badge.plus", enabled: canWrite) { adding = true }
+                compactAction("Kontrol süreleri", symbol: "hourglass", enabled: canWrite) { editingPeriods = true }
+            }
+        }
+    }
+
+    private func compactAction(_ title: String, symbol: String, enabled: Bool,
+                               action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 7) {
+                Image(systemName: symbol).font(.system(size: 14, weight: .semibold))
+                NovaText(text: title, style: .buttonSm).lineLimit(1).minimumScaleFactor(0.78)
+            }
+            .foregroundStyle(NovaColorToken.text.color(in: scheme))
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 13))
+            .contentShape(RoundedRectangle(cornerRadius: 13))
+        }.buttonStyle(.plain).disabled(!enabled)
     }
 
     private var chosenCompany: some View {
@@ -338,7 +364,7 @@ struct NovaEquipmentCheckScreen: View {
             }.buttonStyle(.plain).accessibilityIdentifier("equipment.company.change")
         }
         .padding(.horizontal, 12).padding(.vertical, 4)
-        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 16))
+        .novaControlBackground(cornerRadius: 16)
         .overlay(RoundedRectangle(cornerRadius: 16)
             .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
     }
@@ -386,7 +412,7 @@ struct NovaEquipmentCheckScreen: View {
                     .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
             }
             .padding(.horizontal, 12).frame(minHeight: 48)
-            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
+            .novaControlBackground(cornerRadius: 14)
             .overlay(RoundedRectangle(cornerRadius: 14)
                 .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
         }.buttonStyle(.plain).accessibilityIdentifier("equipment.periods.open")
@@ -460,19 +486,16 @@ struct NovaEquipmentCheckScreen: View {
                     fallback: "Ekipman kayıtları yükleniyor…"), style: .metaQuiet)
             }
         } else if board?.rows.isEmpty ?? true {
-            NovaCard(padding: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    NovaText(text: trackedHere == 0
-                        ? RDLocalization.string("localizable.nova.equipment.empty", table: .localizable,
-                            fallback: "Bu firmada kayıtlı ekipman yok. Periyodik kontrole giren ekipmanları ekleyin.")
-                        : RDLocalization.string("localizable.nova.equipment.empty.filtered", table: .localizable,
-                            fallback: "Bu filtreye uyan ekipman yok."), style: .metaQuiet)
-                    if canWrite && trackedHere == 0 {
-                        NovaButton(label: RDLocalization.string("localizable.nova.equipment.add.title", table: .localizable, fallback: "Ekipman ekle"),
-                            symbol: "plus") { adding = true }
-                            .accessibilityIdentifier("equipment.empty.add")
-                    }
-                }.frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 10) {
+                NovaEmptyState(title: trackedHere == 0 ? "Henüz ekipman kaydı yok" : "Bu filtreye uyan ekipman yok",
+                    message: trackedHere == 0
+                        ? "Periyodik kontrole giren ekipmanları ekleyerek kontrol tarihlerini ve raporlarını takip edebilirsiniz."
+                        : "Arama veya filtreleri değiştirerek diğer ekipman kayıtlarını görüntüleyebilirsiniz.")
+                if canWrite && trackedHere == 0 {
+                    NovaButton(label: RDLocalization.string("localizable.nova.equipment.add.title", table: .localizable,
+                        fallback: "Ekipman ekle"), symbol: "plus") { adding = true }
+                        .accessibilityIdentifier("equipment.empty.add")
+                }
             }
         } else if let board {
             ForEach(board.rows) { row in card(row) }
@@ -564,7 +587,13 @@ struct NovaEquipmentCheckScreen: View {
             workplaces = answer.workplaces
             noticeDays = answer.noticeDays
         }
-        do { board = try await client.board(request) }
+        do {
+            board = try await client.board(request)
+            if startInInspectionMode && !openedInitialInspection {
+                openedInitialInspection = true
+                await openInspection()
+            }
+        }
         catch is CancellationError { }
         catch let failure as NovaEquipmentFailure {
             board = .init()
@@ -576,6 +605,18 @@ struct NovaEquipmentCheckScreen: View {
                 fallback: "Ekipman kayıtları alınamadı. Bağlantınızı kontrol edip tekrar deneyin.")
         }
     }
+
+    private func loadInspectionItems() async {
+        guard let company else { inspectionItems = []; return }
+        if let page = try? await client.board(.init(company: company, limit: 50)) {
+            inspectionItems = page.rows
+        }
+    }
+
+    private func openInspection() async {
+        await loadInspectionItems()
+        addingInspection = true
+    }
 }
 
 /// One company-page heading's equipment standing: five counters and the way in.
@@ -583,6 +624,7 @@ struct NovaEquipmentCheckScreen: View {
 /// disagree about what is on record.
 struct NovaEquipmentSectionStrip: View {
     let counts: [NovaEquipmentState: Int]
+    var rows: [NovaEquipmentItem] = []
     var isLoading = false
     let onOpen: () -> Void
     /// Straight to the add sheet, without a stop at the inventory first.
@@ -593,49 +635,56 @@ struct NovaEquipmentSectionStrip: View {
         group.states.reduce(0) { $0 + (counts[$1] ?? 0) }
     }
     private var total: Int { NovaEquipmentState.allCases.reduce(0) { $0 + (counts[$1] ?? 0) } }
-    private func tone(_ group: NovaEquipmentGroup) -> NovaStatus {
-        switch group {
-        case .overdue, .failed: return .danger
-        case .untracked: return .warning
-        case .dueSoon: return .info
-        case .current: return .success
-        }
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if isLoading {
                 NovaText(text: RDLocalization.string("localizable.nova.equipment.loading", table: .localizable,
                     fallback: "Ekipman kayıtları yükleniyor…"), style: .metaQuiet)
-            } else if total == 0 {
-                NovaText(text: RDLocalization.string("localizable.nova.equipment.section.empty", table: .localizable,
-                    fallback: "Bu firmada kayıtlı ekipman yok."), style: .metaQuiet)
             } else {
-                HStack(spacing: 6) {
-                    ForEach(NovaEquipmentGroup.allCases) { group in
-                        let palette = tone(group).tokens
-                        VStack(spacing: 2) {
-                            NovaText(text: "\(count(group))", style: .cardTitle,
-                                color: palette.ink.color(in: scheme))
-                            NovaText(text: group.title, style: .micro,
-                                color: NovaColorToken.textTertiary.color(in: scheme))
-                                .lineLimit(1).minimumScaleFactor(0.7)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(NovaEquipmentGroup.allCases) { group in
+                            NovaListStat(title: group.title, symbol: group.symbol, value: count(group))
+                                .frame(width: 98)
                         }
-                        .frame(maxWidth: .infinity).padding(.vertical, 7)
-                        .background(palette.background.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
-                        .accessibilityElement(children: .combine)
+                    }.padding(.vertical, 2)
+                }.accessibilityIdentifier("company.section.equipment.stats")
+
+                if total == 0 {
+                    NovaEmptyState(title: "Henüz ekipman kaydı yok",
+                        message: "Ekipmanı ekleyip ilk kontrolünü kaydederek tarih ve rapor takibini başlatabilirsiniz.")
+                } else {
+                    ForEach(rows.prefix(3)) { row in
+                        HStack(spacing: 9) {
+                            Image(systemName: row.group.symbol).font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(NovaColorToken.text.color(in: scheme))
+                                .frame(width: 30, height: 30)
+                                .background(NovaColorToken.surfaceMuted.color(in: scheme),
+                                    in: RoundedRectangle(cornerRadius: 10))
+                            VStack(alignment: .leading, spacing: 2) {
+                                NovaText(text: NovaEquipmentWords.type(row.equipmentType), style: .meta)
+                                NovaText(text: row.serialTag, style: .micro,
+                                    color: NovaColorToken.textTertiary.color(in: scheme))
+                            }
+                            Spacer(minLength: 0)
+                            VStack(alignment: .trailing, spacing: 2) {
+                                NovaText(text: row.lastPerformedOn.map { "Son: \($0)" } ?? "Kontrol yok", style: .micro)
+                                NovaText(text: row.nextDueOn.map { "Sonraki: \($0)" } ?? "Sonraki tarih yok", style: .micro,
+                                    color: NovaColorToken.textTertiary.color(in: scheme))
+                            }
+                        }
+                        .padding(.horizontal, 10).padding(.vertical, 7)
+                        .novaControlBackground(cornerRadius: 12)
                     }
                 }
             }
             HStack(spacing: 8) {
-                NovaButton(label: RDLocalization.string("localizable.nova.equipment.section.open", table: .localizable, fallback: "Periyodik kontrolleri aç"),
-                    symbol: "checkmark.shield", variant: .surface, action: onOpen)
-                    .accessibilityIdentifier("company.section.equipment.open")
                 if let onAdd {
-                    NovaButton(label: RDLocalization.string("localizable.nova.equipment.section.add", table: .localizable, fallback: "Ekipman ekle"),
-                        symbol: "plus", variant: .primary, action: onAdd)
+                    NovaCompactActionButton(title: "Kontrol ekle", symbol: "plus", prominent: true, action: onAdd)
                         .accessibilityIdentifier("company.section.equipment.add")
                 }
+                NovaCompactActionButton(title: "Ekipmanları yönet", symbol: "shippingbox", action: onOpen)
+                    .accessibilityIdentifier("company.section.equipment.open")
             }
         }.frame(maxWidth: .infinity, alignment: .leading)
     }

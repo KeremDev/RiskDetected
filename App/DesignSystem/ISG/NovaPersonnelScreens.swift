@@ -81,8 +81,20 @@ private struct PersonnelContent: View {
         self.initialEmployee = initialEmployee
         _route = State(initialValue: initialEmployee.map { .detail($0) } ?? .list)
     }
+    private var edgeBack: (() -> Void)? {
+        switch route {
+        case .list:
+            return onBack
+        case .detail:
+            return { route = .list }
+        case .advanced(let id, _):
+            return { route = .detail(id) }
+        case .create, .edit, .archive:
+            return nil
+        }
+    }
     var body: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: edgeBack) {
             switch route {
             case .list: list
             case .create:
@@ -148,7 +160,10 @@ private struct PersonnelContent: View {
                 }
                 if !canWrite { NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.salt.okunur.yeni.kayit.ve.duzenleme.kullanilamiy.7c6bdf36", table: .localizable, fallback: "Salt okunur · yeni kayıt ve düzenleme kullanılamıyor."), style: .metaQuiet) }
                 if let error { NovaCard(padding: 16) { NovaText(text: error); NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.tekrar.dene.c2d238eb", table: .localizable, fallback: "Tekrar dene"), symbol: "arrow.clockwise", variant: .surface, action: { generation = UUID() }) } }
-                if !loading && error == nil && rows.isEmpty { NovaCard(padding: 18) { NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.henuz.personel.yok.d4c4f866", table: .localizable, fallback: "Henüz personel yok.")) } }
+                if !loading && error == nil && rows.isEmpty {
+                    NovaEmptyState(title: RDLocalization.string("localizable.nova.personnel.screens.henuz.personel.yok.d4c4f866", table: .localizable, fallback: "Henüz personel yok."),
+                        message: "Firma personelini ekleyerek eğitim, ekip, zimmet ve diğer İSG kayıtlarında doğrudan seçim yapabilirsiniz.")
+                }
                 ForEach(preview ? Array(rows.prefix(5)) : rows) { row in
                     Button { route = .detail(row.id) } label: {
                         NovaCard(padding: 16) {
@@ -268,13 +283,10 @@ private struct NovaEmployeeDetail: View {
                             let placement = [row.departmentName, row.jobTitle].compactMap { $0 }.joined(separator: " · ")
                             HStack(spacing: 7) { NovaIcon(symbol: "building.2", size: 18); NovaText(text: placement.isEmpty ? RDLocalization.string("localizable.nova.personnel.no.department.selected", table: .localizable, fallback: "Departman seçilmedi") : placement, style: .metaQuiet) }
                             HStack(spacing: 7) { NovaIcon(symbol: "building.2", size: 15).foregroundStyle(NovaColorToken.accentInk.color(in: scheme)); NovaText(text: companyName, style: .metaQuiet) }
-                            HStack(spacing: 7) {
-                                employeeTag("graduationcap", RDLocalization.string("localizable.nova.personnel.tag.training.empty", table: .localizable, fallback: "Eğitim · —"), tone: .statusInfoInk)
-                                employeeTag("person.crop.rectangle", RDLocalization.string("localizable.nova.personnel.tag.representative.no", table: .localizable, fallback: "Temsilci · Hayır"), tone: .statusWarningInk)
-                                employeeTag("person.3", RDLocalization.string("localizable.nova.personnel.tag.support.no", table: .localizable, fallback: "Destek · Hayır"), tone: .accentInk)
-                            }
+
                         }.frame(maxWidth: .infinity, alignment: .leading)
                     }.accessibilityIdentifier("personnel.detail")
+                    NovaEmployeeLearningCard(identity: .init(userID: scope.ownerID, sessionID: scope.sessionID), company: scope.companyID, employee: employeeID, canWrite: canWrite && !row.isArchived)
                     if canWrite { NovaButton(label: row.isArchived ? RDLocalization.string("localizable.nova.personnel.reactivate", table: .localizable, fallback: "Yeniden etkinleştir") : RDLocalization.string("localizable.nova.personnel.edit", table: .localizable, fallback: "Düzenle"), symbol: row.isArchived ? "arrow.uturn.backward" : "pencil", action: { onEdit(row) }).accessibilityIdentifier(row.isArchived ? "personnel.restore" : "personnel.edit") }
                     if let onDirectory {
                         NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.gorevlendirme.gecmisi.b56428ce", table: .localizable, fallback: "Görevlendirme geçmişi"), symbol: "clock.arrow.circlepath", variant: .surface) { onDirectory(.assignments) }.accessibilityIdentifier("personnel.assignments")
@@ -391,7 +403,7 @@ private struct NovaEmployeeEditor: View {
                 .background { Color.clear.contentShape(Rectangle()).onTapGesture { focusedField = nil } }
         }
         .scrollDismissesKeyboard(.interactively)
-        .background(NovaKeyboardDismissArea())
+
         .interactiveDismissDisabled(state.phase == .submitting || state.phase == .uncertain)
         .onAppear {
             if let original, state.name.isEmpty {
@@ -403,7 +415,7 @@ private struct NovaEmployeeEditor: View {
         .novaFullScreenCover(isPresented: $confirmation) {
             NovaPersonnelPopupBackdrop {
                 ZStack {
-                    Color(red: 15/255, green: 15/255, blue: 17/255).opacity(0.34).ignoresSafeArea().onTapGesture { confirmation = false }
+                    Color.black.opacity(NovaPopupStyle.dimOpacity).ignoresSafeArea().onTapGesture { confirmation = false }
                     NovaPopupSurface {
                         VStack(alignment: .leading, spacing: 16) {
                             NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.personel.arsivlensin.mi.f0b5b5c4", table: .localizable, fallback: "Personel arşivlensin mi?"), style: .sectionTitle)
@@ -436,8 +448,10 @@ private struct NovaEmployeeEditor: View {
             do {
                 let result = try await client.save(intent); try Task.checkCancellation()
                 if state.complete(intent, row: result, scope: scope) {
-                    if intent.action == .create {
-                        celebrate(RDLocalization.string("localizable.nova.personnel.created.success", table: .localizable, fallback: "Personel başarıyla eklendi!"))
+                    switch intent.action {
+                    case .create, .restore: celebrate(NovaSuccessMessage.personnelCreated)
+                    case .edit: celebrate(NovaSuccessMessage.personnelUpdated)
+                    case .archive: celebrate(NovaSuccessMessage.personnelArchived)
                     }
                     onSaved(result)
                 }
@@ -460,7 +474,7 @@ private struct NovaPersonnelPopupBackdrop<Content: View>: View {
     var body: some View {
         if #available(iOS 16.4, *) {
             content().background {
-                if !reduceTransparency { Rectangle().fill(.ultraThinMaterial).ignoresSafeArea() }
+                if !reduceTransparency { Rectangle().fill(.thinMaterial).opacity(NovaPopupStyle.materialOpacity).ignoresSafeArea() }
             }.presentationBackground(.clear)
         } else {
             // iOS 16.0–16.3 has no public transparent presentation API.

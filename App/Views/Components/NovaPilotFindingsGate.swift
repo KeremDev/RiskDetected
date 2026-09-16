@@ -41,6 +41,7 @@ struct NovaPilotFindingsGate: View {
     @State private var boardRevision = UUID()
 
     private var service: NovaNonconformityService { .live(currentScope: currentScope) }
+    private var analysisFilingService: NovaNonconformityService { .live(identity: identity) }
     private var files: NovaFileLibraryService { .live() }
     private var today: String { NovaAnalysisWorkspace.todayISO() }
     private var method: RiskMethod { app.profile?.preferredMethod?.domain ?? .fineKinney }
@@ -76,7 +77,12 @@ struct NovaPilotFindingsGate: View {
         }
         .novaFullScreenCover(item: $record) { entry in
             NovaPopup {
-                NovaNonconformityRecordSheet(entry: entry, client: recordClient(entry), canWrite: canWrite)
+                if entry.row.camefromFinding {
+                    NovaFiledFindingSheet(entry: entry, identity: identity, preferredMethod: method,
+                        fallbackClient: recordClient(entry), canWrite: canWrite)
+                } else {
+                    NovaNonconformityRecordSheet(entry: entry, client: recordClient(entry), canWrite: canWrite)
+                }
             }
         }
         .alert(notice ?? "", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
@@ -107,30 +113,33 @@ struct NovaPilotFindingsGate: View {
             client: .init(
                 load: { try await NovaAnalysisWorkspace.board(identity: identity) },
                 thumbnail: { await NovaAnalysisWorkspace.recordThumbnail($0) },
-                open: { entry in select(entry.companyID); record = entry },
+                // Opening a record must not rebuild the whole workspace first.
+                // Doing that cleared `record` before the full-screen cover could
+                // present, so the row looked as if it did not respond to taps.
+                open: { entry in record = entry },
                 create: { onNavigate(.newFinding) }),
             companies: companies, today: today, onBack: onHome)
             .id(boardRevision)
     }
 
     private func recordClient(_ entry: NovaNonconformityEntry) -> NovaNonconformityRecordClient {
-        func scoped() async throws -> NovaPersonnelScope { try await waitForScope(entry.companyID) }
+        let recordScope = analysisFilingScope(entry.companyID)
         return .init(
-            load: { try await service.detail(scoped(), id: entry.id) },
+            load: { try await analysisFilingService.detail(recordScope, id: entry.id) },
             transition: { state, reason, assignee in
-                let current = try await service.detail(scoped(), id: entry.id)
-                return try await service.transition(try await scoped(), id: entry.id, to: state,
+                let current = try await analysisFilingService.detail(recordScope, id: entry.id)
+                return try await analysisFilingService.transition(recordScope, id: entry.id, to: state,
                     expectedVersion: current.version, reason: reason, assignee: assignee)
             },
             addAction: { description, assignee, due in
-                try await service.addAction(try await scoped(), id: entry.id, description: description,
+                try await analysisFilingService.addAction(recordScope, id: entry.id, description: description,
                     assignee: assignee, dueOn: due)
             },
             verify: { accepted, note in
-                try await service.verify(try await scoped(), id: entry.id, accepted: accepted, note: note)
+                try await analysisFilingService.verify(recordScope, id: entry.id, accepted: accepted, note: note)
             },
             saveDetail: { draft in
-                try await service.setDetail(try await scoped(), id: entry.id, description: draft.description,
+                try await analysisFilingService.setDetail(recordScope, id: entry.id, description: draft.description,
                     measure: draft.measure, legislation: draft.legislation, responsible: draft.responsible,
                     score: draft.score)
             },
@@ -153,7 +162,7 @@ struct NovaPilotFindingsGate: View {
     // MARK: add a nonconformity
 
     private var addFinding: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: { onNavigate(.findings) }) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack(spacing: 10) {
@@ -292,6 +301,7 @@ struct NovaPilotFindingsGate: View {
     private func detail(_ analysisID: UUID) -> some View {
         NovaAnalysisDetailScreen(analysisID: analysisID, client: detailClient(analysisID),
             onBack: { openAnalysis = nil; boardRevision = UUID() }, canWrite: true)
+            .modifier(NovaSuccessPresentation())
     }
 
     private func detailClient(_ analysisID: UUID) -> NovaAnalysisDetailClient {
@@ -304,7 +314,7 @@ struct NovaPilotFindingsGate: View {
                 try await NovaAnalysisWorkspace.assign(analysisID: analysisID, companyID: company)
                 select(company)
             },
-            workplaces: { company in try await service.workplaces(try await waitForScope(company)) },
+            workplaces: { company in try await analysisFilingService.workplaces(analysisFilingScope(company)) },
             file: { request in await file(request) },
             edit: { try await NovaAnalysisWorkspace.edit($0) },
             remove: { try await NovaAnalysisWorkspace.remove(analysisID: analysisID, findingID: $0.id) },
@@ -318,25 +328,41 @@ struct NovaPilotFindingsGate: View {
             })
     }
 
-    /// The item identifier is the mutation key, so filing the same item twice
-    /// replays instead of opening a second record.
+    /// The server serializes company/source and returns an existing record on repeat clicks.
     private func file(_ request: NovaAnalysisFileRequest) async -> NovaFindingOutcome {
-        guard let current = currentScope() else {
+        guard let company = request.companyID ?? currentScope()?.companyID else {
             return .failed(NovaNonconformityWords.failure(.denied))
         }
+        let current = analysisFilingScope(company)
         var intent = NovaNonconformityIntent(origin: request.section.isScored ? .finding : .expertItem,
             workplaceID: request.workplaceID, title: request.item.title)
         intent.severity = request.severity
         intent.recordKind = request.recordKind
         if request.section.isScored {
             intent.findingID = request.item.id
+            intent.sourceMethod = request.sourceMethod
             if request.severity == nil { intent.riskBand = request.band }
         } else {
             intent.expertItemID = request.item.id
             intent.hazardDescription = request.item.body
         }
         do {
-            let result = try await service.open(current, intent: intent, mutationID: request.item.id)
+            let result = try await analysisFilingService.open(current, intent: intent)
+            // An analysis finding has already been reviewed and deliberately
+            // assigned to a company. It enters the actionable queue as Open;
+            // Draft is reserved for unfinished manual entry.
+            let filedRow = result.row.state == NovaNonconformityState.draft.rawValue
+                ? try await analysisFilingService.transition(current, id: result.row.id, to: .open,
+                    expectedVersion: result.row.version, reason: "")
+                : result.row
+            // Do not celebrate a write until the same read path used by the
+            // board can see it. This catches a contract/read projection drift
+            // instead of telling the user a record exists while hiding it.
+            let visible = try await analysisFilingService.list(current)
+            guard visible.contains(where: { $0.id == filedRow.id && $0.state == filedRow.state }) else {
+                return .failed(RDLocalization.string("localizable.nova.bridge.outcome.verify.failed", table: .localizable,
+                    fallback: "Kayıt oluşturuldu ancak listede doğrulanamadı. Listeyi yenileyip tekrar kontrol edin."))
+            }
             boardRevision = UUID()
             return result.alreadyOpen ? .alreadyOpen : .opened
         } catch let failure as NovaNonconformityFailure {
@@ -345,6 +371,11 @@ struct NovaPilotFindingsGate: View {
             return .failed(RDLocalization.string("localizable.nova.bridge.outcome.failed", table: .localizable,
                 fallback: "Bu bulgu için kayıt açılamadı. Aynı işlemi tekrar deneyin."))
         }
+    }
+
+    private func analysisFilingScope(_ company: UUID) -> NovaPersonnelScope {
+        .init(ownerID: identity.userID, sessionID: identity.sessionID, companyID: company,
+              epoch: "analysis-filing:\(company.uuidString.lowercased())")
     }
 
     // MARK: manual
@@ -391,7 +422,16 @@ struct NovaPilotFindingsGate: View {
         intent.score = value.score
         intent.evidenceAssetIDs = value.evidenceAssetIDs
         do {
-            _ = try await service.open(target, intent: intent)
+            let result = try await service.open(target, intent: intent)
+            let visible = try await service.list(target)
+            guard visible.contains(where: { $0.id == result.row.id }) else {
+                return RDLocalization.string("localizable.nova.bridge.outcome.verify.failed", table: .localizable,
+                    fallback: "Kayıt oluşturuldu ancak listede doğrulanamadı. Listeyi yenileyip tekrar kontrol edin.")
+            }
+            if !result.alreadyOpen {
+                NotificationCenter.default.post(name: Notification.Name("isgada.mutation.succeeded"), object: identity.userID,
+                    userInfo: ["message": NovaSuccessMessage.findingCreated])
+            }
             boardRevision = UUID()
             onNavigate(.findings)
             return nil

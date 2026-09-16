@@ -8288,13 +8288,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The sections of this analysis are not ready yet. Open it again shortly."
+            "value": "This older analysis is shown from its saved findings; some additional recommendation sections may be unavailable."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bu analizin bölümleri henüz hazır değil. Biraz sonra tekrar açın."
+            "value": "Bu eski analiz kayıtlı bulgularından gösteriliyor; bazı ek öneri bölümleri bulunmayabilir."
           }
         }
       }

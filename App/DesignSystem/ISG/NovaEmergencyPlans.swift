@@ -198,7 +198,7 @@ struct NovaEmergencyPlanDraft: Equatable {
     /// Empty means a new plan; set means the next version of that plan.
     var planID: UUID?
     var workplaceID: UUID?
-    var scope: String = ""
+    var scope: String = "Acil Durum Planı"
     var preparedOn: String = ""
     var validUntil: String = ""
     var reviewNote: String = ""

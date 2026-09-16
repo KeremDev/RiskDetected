@@ -18,7 +18,7 @@ struct NovaPhotoIntakeScreen: View {
     @State private var notice: String?
 
     var body: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack(spacing: 10) {

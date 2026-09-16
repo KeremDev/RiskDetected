@@ -18,7 +18,7 @@ enum NovaModuleValue: Codable, Equatable {
         case .number(let v): try c.encode(v); case .bool(let v): try c.encode(v)
         case .array(let v): try c.encode(v); case .object(let v): try c.encode(v) }
     }
-    var text: String { if case .string(let v) = self { return v }; if case .number(let v) = self { return String(v) }; return "" }
+    var text: String { if case .string(let v) = self { return v }; if case .number(let v) = self { return v.rounded() == v ? String(format: "%.0f", v) : String(v) }; if case .bool(let v) = self { return v ? "true" : "false" }; return "" }
     var rpc: PersonnelRPCValue {
         switch self { case .string(let v): return .string(v); case .number(let v): return .string(String(v))
         case .bool(let v): return .string(v ? "true" : "false"); case .null: return .null
@@ -57,42 +57,27 @@ struct NovaModuleEditor: View {
         }
     }
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
+                    NovaPageHeading(title: "Kaydı düzenle", onBack: { dismiss() })
                     if let data = envelope {
                         NovaText(text: data.company_name, style: .cardTitle)
                         NovaCard(padding: 16) {
                             VStack(alignment: .leading, spacing: 14) { fields(data) }
                         }
-                        NovaCard(padding: 16) {
-                            VStack(alignment: .leading, spacing: 12) {
-                                NovaText(text: "Bağlı evrak", style: .cardTitle)
-                                Picker("Firma evrakı", selection: $document) {
-                                    Text("Bağlantı yok").tag("")
-                                    ForEach(data.documents) { Text($0.name).tag($0.id.uuidString.lowercased()) }
-                                }
-                                NovaText(text: "Firmanın evrak takip kaydını bu kayda bağlar.", style: .metaQuiet)
-                                NovaButton(label: "Evrak bağlantısını kaydet", symbol: "link", variant: .surface) {
-                                    Task { await save("link_document", close: false) }
-                                }
-                                NovaButton(label: "Firma evraklarını aç / ekle", symbol: "folder", variant: .surface) { showingDocuments = true }
-                            }
-                        }
                         NovaButton(label: "Değişiklikleri kaydet", symbol: "checkmark", variant: .primary) { Task { await save("update", close: true) } }
                         NovaButton(label: "Kaydı sil", symbol: "trash", variant: .surface) { confirmDelete = true }
                     } else if busy { ProgressView("Kayıt yükleniyor…").frame(maxWidth: .infinity) }
                     if let failure { NovaText(text: failure, style: .body) }
-                }.padding(20).disabled(busy)
+                }.padding(20).novaPopupContentSize().disabled(busy)
             }
             .background(NovaColorToken.canvas.color(in: .light))
-            .navigationTitle("Kaydı düzenle").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Kapat") { dismiss() } } }
             .task { await load() }
             .confirmationDialog("Kayıt listeden kaldırılacak. İşlem geçmişi korunacak.", isPresented: $confirmDelete, titleVisibility: .visible) {
                 Button("Kaydı sil", role: .destructive) { Task { await save("delete", close: true) } }
             }
-            .sheet(isPresented: $showingDocuments, onDismiss: { Task { await load(preserveValues: true) } }) {
+            .novaPopup(isPresented: $showingDocuments, onDismiss: { Task { await load(preserveValues: true) } }) {
                 NovaModuleDocumentsHost(identity: identity, company: company, onClose: { showingDocuments = false })
             }
         }
@@ -117,8 +102,7 @@ struct NovaModuleEditor: View {
             field("Gözlemler", "observation"); field("İyileştirmeler", "improvement")
         case "ppe":
             options("Personel", "employee_id", data.employees)
-            field("KKD adı", "item"); field("Miktar", "quantity")
-            choices("Birim", "unit", [("piece","Adet"),("pair","Çift"),("set","Takım"),("metre","Metre"),("litre","Litre")])
+            field("KKD adı", "item")
             field("Teslim tarihi (YYYY-AA-GG)", "handed_on"); field("Belgenin bulunduğu yer", "signed_copy_location")
         default:
             options("Personel", "employee_id", data.employees); options("İşyeri", "scope_workplace_id", data.workplaces)
@@ -243,7 +227,7 @@ struct NovaModuleManageAction: View {
     var body: some View {
         NovaButton(label:"Düzenle · Evrak bağla · Sil",symbol:"slider.horizontal.3",variant:.surface) { showing=true }
             .padding(12).frame(maxWidth:.infinity).background(Color.white)
-            .sheet(isPresented:$showing,onDismiss:onDone,content:content)
+            .novaPopup(isPresented:$showing,onDismiss:onDone,content:content)
     }
 }
 

@@ -9,6 +9,7 @@ struct NovaEquipmentItemSheet: View {
     let workplaces: [NovaDocumentWorkplace]
     let client: NovaEquipmentCheckClient
     var canWrite = true
+    var startRecording = false
     let onChanged: () -> Void
     let onClosed: () -> Void
     @Environment(\.colorScheme) private var scheme
@@ -28,6 +29,8 @@ struct NovaEquipmentItemSheet: View {
     @State private var error: String?
     @State private var opened: URL?
     @State private var opening: UUID?
+    @State private var appliedStartMode = false
+    @State private var inspectionSection = "control"
 
     private var row: NovaEquipmentItem { current ?? item }
     private var tone: NovaStatus {
@@ -44,15 +47,20 @@ struct NovaEquipmentItemSheet: View {
             VStack(alignment: .leading, spacing: 10) {
                 heading
                 chips
-                explanation
-                facts
-                periodCard
-                if canWrite { recordPanel }
-                history
+                if startRecording {
+                    compactPeriod
+                    if canWrite { recordPanel }
+                } else {
+                    explanation
+                    facts
+                    periodCard
+                    if canWrite { recordPanel }
+                    history
+                }
                 if let error {
                     NovaText(text: error, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme))
                 }
-                controls
+                if !startRecording { controls }
             }.padding(16).novaPopupContentSize()
         }
         .task {
@@ -62,6 +70,11 @@ struct NovaEquipmentItemSheet: View {
             if let filing = try? await client.fileClient.catalogue() {
                 fileCategories = filing.categories; fileAccepts = filing.accepts; fileAssurance = filing.assurance
             }
+        }
+        .onAppear {
+            guard startRecording, !appliedStartMode else { return }
+            appliedStartMode = true
+            recording = true
         }
         .novaFullScreenCover(isPresented: $editing) {
             NovaPopup {
@@ -210,23 +223,56 @@ struct NovaEquipmentItemSheet: View {
         }
     }
 
+    private var compactPeriod: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "hourglass").font(.system(size: 13, weight: .semibold))
+            NovaText(text: row.periodMonths.map { "Kontrol aralığı · \($0) ay" } ?? "Kontrol aralığı tanımlı değil", style: .meta)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12).frame(minHeight: 42)
+        .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 13))
+    }
+
     /// Recording a report, in the same popup. The next date is the server's
     /// answer; this panel never previews one it worked out itself.
     @ViewBuilder private var recordPanel: some View {
         if recording {
-            VStack(alignment: .leading, spacing: 8) {
-                NovaDayField(label: RDLocalization.string("localizable.nova.equipment.field.performed", table: .localizable, fallback: "Kontrol tarihi"),
-                    value: $draft.performedOn, identifier: "equipment.inspection.performed")
-                resultPicker
-                nextDueField
-                field(RDLocalization.string("localizable.nova.equipment.field.inspector", table: .localizable, fallback: "Kontrolü yapan"),
-                      $draft.inspector, id: "inspector")
-                katipField
-                field(RDLocalization.string("localizable.nova.equipment.field.ref", table: .localizable, fallback: "Rapor no"),
-                      $draft.externalRef, id: "ref")
-                reportPicker
-                field(RDLocalization.string("localizable.nova.document.field.note", table: .localizable, fallback: "Not"),
-                      $draft.note, id: "note")
+            VStack(alignment: .leading, spacing: 9) {
+                inspectionStep("control", title: "1 · Kontrol", symbol: "calendar.badge.checkmark",
+                    summary: NovaEquipmentWords.result(draft.result)) {
+                    HStack(alignment: .top, spacing: 8) {
+                        compactInspectionDate(label: "Kontrol", value: $draft.performedOn,
+                            identifier: "equipment.inspection.performed")
+                            .frame(maxWidth: .infinity)
+                        if draft.result == "fail" {
+                            NovaCard(padding: 10, tint: NovaColorToken.surfaceMuted.color(in: scheme)) {
+                                NovaText(text: "Sonraki tarih yok", style: .metaQuiet).frame(maxWidth: .infinity, minHeight: 40)
+                            }.frame(maxWidth: .infinity)
+                        } else {
+                            compactInspectionDate(label: "Sonraki", value: $draft.nextDueOn,
+                                identifier: "equipment.inspection.due", isClearable: true)
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    resultPicker
+                    NovaButton(label: "Detaylara geç", symbol: "chevron.down", variant: .surface) {
+                        withAnimation { inspectionSection = "details" }
+                    }
+                }
+                inspectionStep("details", title: "2 · Detaylar", symbol: "text.justify.left",
+                    summary: draft.inspector.isEmpty ? "İsteğe bağlı" : draft.inspector) {
+                    field("Kontrolü yapan", $draft.inspector, id: "inspector")
+                    field("Rapor no", $draft.externalRef, id: "ref")
+                    katipField
+                    field("Not", $draft.note, id: "note")
+                    NovaButton(label: "Rapora geç", symbol: "chevron.down", variant: .surface) {
+                        withAnimation { inspectionSection = "report" }
+                    }
+                }
+                inspectionStep("report", title: "3 · Rapor", symbol: "doc",
+                    summary: draft.evidenceTitle ?? "İsteğe bağlı") {
+                    reportPicker
+                }
                 HStack(spacing: 8) {
                     NovaButton(label: RDLocalization.string("localizable.nova.document.cancel", table: .localizable, fallback: "Vazgeç"),
                         symbol: "xmark", variant: .surface) { recording = false }
@@ -235,8 +281,6 @@ struct NovaEquipmentItemSheet: View {
                         .accessibilityIdentifier("equipment.inspection.save")
                 }
             }
-            .padding(10)
-            .background(NovaColorToken.statusSuccessBg.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
             .onAppear {
             if draft.performedOn.isEmpty { draft.performedOn = NovaDayField.text(Date()) }
             fillNextDue()
@@ -248,6 +292,74 @@ struct NovaEquipmentItemSheet: View {
                 symbol: "plus.circle") { recording = true }
                 .accessibilityIdentifier("equipment.record.open")
         }
+    }
+
+    private func inspectionStep<Content: View>(_ id: String, title: String, symbol: String,
+                                                summary: String,
+                                                @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { inspectionSection = inspectionSection == id ? "" : id }
+            } label: {
+                HStack(spacing: 9) {
+                    Image(systemName: symbol).font(.system(size: 14, weight: .semibold)).frame(width: 20)
+                    NovaText(text: title, style: .bodyStrong)
+                    Spacer(minLength: 0)
+                    NovaText(text: summary, style: .micro, color: NovaColorToken.textMuted.color(in: scheme)).lineLimit(1)
+                    Image(systemName: inspectionSection == id ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 10, weight: .bold))
+                }.frame(minHeight: 42).contentShape(Rectangle())
+            }.buttonStyle(.plain)
+            if inspectionSection == id {
+                content().padding(.top, 2)
+            }
+        }
+        .padding(11)
+        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 15))
+        .overlay(RoundedRectangle(cornerRadius: 15).strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
+    }
+
+    /// The general date row is intentionally wide. Inspection dates sit in a
+    /// two-column step, so they use a vertical caption and let both controls
+    /// share the popup width without growing the sheet beyond the display.
+    private func compactInspectionDate(label: String, value: Binding<String>,
+                                       identifier: String, isClearable: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 5) {
+                Image(systemName: "calendar").font(.system(size: 12, weight: .semibold))
+                NovaText(text: label, style: .micro,
+                    color: NovaColorToken.textTertiary.color(in: scheme))
+            }
+            HStack(spacing: 2) {
+                if isClearable && value.wrappedValue.isEmpty {
+                    Button { value.wrappedValue = NovaDayField.text(Date()) } label: {
+                        NovaText(text: "Belirtilmedi", style: .meta).frame(minHeight: 32)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("\(identifier).set")
+                } else {
+                    DatePicker("", selection: Binding(
+                        get: { NovaDayField.date(value.wrappedValue) ?? Date() },
+                        set: { value.wrappedValue = NovaDayField.text($0) }), displayedComponents: .date)
+                        .labelsHidden().datePickerStyle(.compact)
+                        .accessibilityIdentifier(identifier)
+                        .accessibilityLabel(Text(verbatim: label))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                if isClearable && !value.wrappedValue.isEmpty {
+                    Button { value.wrappedValue = "" } label: {
+                        Image(systemName: "xmark.circle").font(.system(size: 13))
+                            .frame(width: 26, height: 32)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("\(identifier).clear")
+                    .accessibilityLabel("Temizle")
+                }
+            }
+        }
+        .padding(9)
+        .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
+        .novaControlBackground(cornerRadius: 13)
     }
 
     /// The next date, filled from the type's period as soon as a report date is
@@ -288,9 +400,8 @@ struct NovaEquipmentItemSheet: View {
             field(RDLocalization.string("localizable.nova.equipment.katip.note", table: .localizable, fallback: "Atama notu"),
                   $draft.katipNote, id: "katip")
         }
-        NovaText(text: RDLocalization.string("localizable.nova.equipment.katip.hint", table: .localizable,
-            fallback: "Bu işaret uzmanın kendi beyanıdır. Uygulama İSG-KATİP üzerinde sorgulama veya işlem yapmaz."),
-            style: .micro, color: NovaColorToken.textTertiary.color(in: scheme))
+        NovaText(text: "İsteğe bağlı uzman beyanı.", style: .micro,
+            color: NovaColorToken.textTertiary.color(in: scheme))
     }
 
     private var resultPicker: some View {
@@ -340,8 +451,7 @@ struct NovaEquipmentItemSheet: View {
                     }
             }
             if addingReport {
-                NovaCard(padding: 12) {
-                    NovaFileAddInline(companies: [], preselected: row.companyID,
+                NovaFileAddInline(companies: [], preselected: row.companyID,
                         categories: {
                             let scoped = fileCategories.filter { $0.code == "inspection_report" }
                             return scoped.isEmpty ? fileCategories : scoped
@@ -354,7 +464,6 @@ struct NovaEquipmentItemSheet: View {
                             }
                             addingReport = false; choosingReport = false
                         }
-                }
             } else {
                 NovaButton(label: RDLocalization.string("localizable.nova.equipment.report.add", table: .localizable,
                     fallback: "Yeni dosya ekle"), symbol: "plus", variant: .surface) { addingReport = true }
@@ -627,6 +736,90 @@ struct NovaEquipmentReportEditSheet: View {
             TextField(label, text: text).font(NovaFont.font(.body))
                 .frame(minHeight: 34).accessibilityIdentifier("equipment.report.\(id)")
         }.frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// Starts a periodic control from the action the user asked for: first pick
+/// the company's equipment, then enter that equipment's control and report.
+/// Equipment registration remains available as the prerequisite when the
+/// company has no inventory yet.
+struct NovaEquipmentInspectionFlow: View {
+    let items: [NovaEquipmentItem]
+    let companies: [NovaAnalysisCompanyOption]
+    let company: UUID
+    let suggestions: [NovaEquipmentCheckService.Suggestion]
+    let rules: [NovaEquipmentRule]
+    let workplaces: [NovaDocumentWorkplace]
+    let client: NovaEquipmentCheckClient
+    var canWrite = true
+    let onChanged: () -> Void
+    @Environment(\.colorScheme) private var scheme
+    @State private var selected: NovaEquipmentItem?
+    @State private var addingEquipment = false
+    @State private var query = ""
+
+    private var filtered: [NovaEquipmentItem] {
+        query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? items : items.filter { $0.matches(query) }
+    }
+
+    var body: some View {
+        if let selected {
+            NovaEquipmentItemSheet(item: selected,
+                rule: rules.first { $0.equipmentType == selected.equipmentType },
+                workplaces: workplaces, client: client, canWrite: canWrite,
+                startRecording: true, onChanged: onChanged,
+                onClosed: { self.selected = nil })
+        } else if addingEquipment {
+            NovaEquipmentAddSheet(companies: companies, preselected: company,
+                suggestions: suggestions, rules: rules, workplaces: workplaces, client: client) {
+                    addingEquipment = false
+                    onChanged()
+                }
+        } else {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 10) {
+                    NovaPopupHeading(text: "Periyodik kontrol ekle", symbol: "checkmark.shield",
+                        subtitle: "Kontrolün uygulanacağı ekipmanı seçin.")
+                    if !items.isEmpty {
+                        NovaAnalysisSearchField(text: $query, placeholder: "Ekipman türü veya seri/kod ara",
+                            identifier: "equipment.inspection.search")
+                    }
+                    if filtered.isEmpty {
+                        NovaEmptyState(title: items.isEmpty ? "Önce ekipman ekleyin" : "Bu aramaya uyan ekipman yok",
+                            message: items.isEmpty
+                                ? "Ekipman firmaya bir kez kaydedilir; sonraki tüm periyodik kontroller ve raporlar bu ekipmanın geçmişine eklenir."
+                                : "Aramayı temizleyerek firmanın diğer ekipmanlarını görüntüleyebilirsiniz.")
+                    } else {
+                        ForEach(filtered) { item in
+                            Button { selected = item } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "shippingbox").font(.system(size: 16))
+                                        .frame(width: 34, height: 34)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        NovaText(text: NovaEquipmentWords.type(item.equipmentType), style: .cardTitle)
+                                        NovaText(text: item.serialTag, style: .metaQuiet)
+                                    }
+                                    Spacer(minLength: 0)
+                                    VStack(alignment: .trailing, spacing: 2) {
+                                        NovaText(text: item.lastPerformedOn.map { "Son: \($0)" } ?? "Henüz kontrol yok", style: .micro)
+                                        NovaText(text: item.nextDueOn.map { "Sonraki: \($0)" } ?? "Sonraki tarih yok", style: .micro,
+                                            color: NovaColorToken.textTertiary.color(in: scheme))
+                                    }
+                                    Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
+                                }
+                                .foregroundStyle(NovaColorToken.text.color(in: scheme))
+                                .padding(11).frame(maxWidth: .infinity, alignment: .leading)
+                                .novaControlBackground(cornerRadius: 14)
+                            }.buttonStyle(.plain)
+                                .accessibilityIdentifier("equipment.inspection.choice.\(item.id.uuidString.lowercased())")
+                        }
+                    }
+                    NovaButton(label: items.isEmpty ? "İlk ekipmanı ekle" : "Yeni ekipman ekle",
+                        symbol: "plus", variant: .surface, isEnabled: canWrite) { addingEquipment = true }
+                }.padding(16).novaPopupContentSize()
+            }
+        }
     }
 }
 
@@ -949,7 +1142,7 @@ struct NovaEquipmentPeriodSheet: View {
                             Spacer(minLength: 0)
                         }
                         .padding(.horizontal, 10).frame(minHeight: 40)
-                        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 11))
+                        .novaControlBackground(cornerRadius: 11)
                     }.buttonStyle(.plain)
                         .accessibilityIdentifier("equipment.period.source.\(value.rawValue)")
                         .accessibilityAddTraits(draft.source == value ? .isSelected : [])

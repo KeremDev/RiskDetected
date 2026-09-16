@@ -3,6 +3,8 @@ import SwiftUI
 /// All values are server aggregates. Current stock and period activity have
 /// separate headings; unavailable sources never become a zero or a score.
 struct NovaStatisticsScreen: View {
+    var trackingIdentity: NovaSessionIdentity?
+    var trackingCanWrite = false
     let load: (UUID?, Int) async throws -> NovaStatisticsSnapshot
     let onBack: () -> Void
     let onNavigate: (NovaDestination) -> Void
@@ -20,11 +22,16 @@ struct NovaStatisticsScreen: View {
     private var companyName: String { companyOptions.first { $0.id == company }?.name ?? "Tüm firmalar" }
 
     var body: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     heading
                     filters
+                    if let trackingIdentity {
+                        NovaVisitPeriodCard(identity: trackingIdentity, company: company, months: months)
+                        NovaFollowupSummaryCard(identity: trackingIdentity, company: company, canWrite: trackingCanWrite)
+                        NovaModuleTrackingCard(identity: trackingIdentity, company: company, canWrite: trackingCanWrite)
+                    }
                     if loading { loadingCard }
                     else if failed { failureCard }
                     else if let data = snapshot {
@@ -42,6 +49,9 @@ struct NovaStatisticsScreen: View {
             .refreshable { revision += 1 }
             .task(id: requestKey) { await refresh(key: requestKey) }
         }.accessibilityIdentifier("nova.statistics.screen")
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("isgada.records.changed"))) { event in
+            if let trackingIdentity, event.object as? UUID == trackingIdentity.userID { revision += 1 }
+        }
     }
     private var heading: some View {
         HStack(alignment: .top) {
@@ -57,19 +67,10 @@ struct NovaStatisticsScreen: View {
     }
     private var filters: some View {
         VStack(spacing: 10) {
-            Menu {
-                Button("Tüm firmalar") { company = nil }
-                ForEach(companyOptions) { item in Button(item.name) { company = item.id } }
-            } label: {
-                HStack {
-                    Image(systemName: "building.2")
-                    NovaText(text: companyName, style: .bodyStrong)
-                    Spacer(); Image(systemName: "chevron.down").font(NovaFont.font(.meta))
-                }.padding(14).background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
-            }.accessibilityIdentifier("nova.statistics.company")
-            Picker("Dönem", selection: $months) {
-                Text("Bu ay").tag(1); Text("3 ay").tag(3); Text("6 ay").tag(6); Text("12 ay").tag(12)
-            }.pickerStyle(.segmented).accessibilityIdentifier("nova.statistics.period")
+            NovaFilterField(label: "Firma", options: [.init(id: nil, title: "Tüm firmalar")] + companyOptions.map { .init(id: $0.id.uuidString, title: $0.name) },
+                selected: company?.uuidString, identifier: "nova.statistics.company") { company = $0.flatMap(UUID.init(uuidString:)) }
+            NovaFilterField(label: "Dönem", options: [.init(id: "1", title: "Bu ay"), .init(id: "3", title: "3 ay"), .init(id: "6", title: "6 ay"), .init(id: "12", title: "12 ay")],
+                selected: String(months), identifier: "nova.statistics.period") { if let value = $0.flatMap(Int.init) { months = value } }
         }
     }
     private var loadingCard: some View {
@@ -83,48 +84,30 @@ struct NovaStatisticsScreen: View {
         } }
     }
     private func overview(_ data: NovaStatisticsSnapshot) -> some View {
-        NovaCard(padding: 20, tint: NovaColorToken.inverse.color(in: scheme)) {
-            VStack(alignment: .leading, spacing: 18) {
-                HStack {
-                    NovaText(text: "PORTFÖYÜNÜZ", style: .overline, color: NovaColorToken.onInverse.color(in: scheme))
-                    Spacer(); Image(systemName: "chart.bar.xaxis").foregroundStyle(NovaColorToken.accent.color(in: scheme))
-                }
-                HStack(alignment: .firstTextBaseline, spacing: 0) {
-                    heroNumber(data.company_count, "Aktif firma")
-                    heroNumber(data.personnel, "Personel")
-                    heroNumber(data.workplaces, "İşyeri")
-                }
-                NovaText(text: "Bugünkü kayıtlar · dönem filtresinden bağımsız", style: .meta, color: NovaColorToken.onInverse.color(in: scheme).opacity(0.65))
+        VStack(alignment: .leading, spacing: 10) {
+            sectionTitle("Portföyünüz", subtitle: "Bugünkü kayıtlar · dönem filtresinden bağımsız")
+            HStack(spacing: 8) {
+                NovaListStat(title: "Aktif firma", symbol: "building.2", value: data.company_count)
+                NovaListStat(title: "Personel", symbol: "person.2", value: data.personnel)
+                NovaListStat(title: "İşyeri", symbol: "building", value: data.workplaces)
             }
         }
-    }
-    private func heroNumber(_ count: Int, _ label: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(count.formatted()).font(.custom("PlusJakartaSans-ExtraBold", size: 30)).foregroundStyle(NovaColorToken.onInverse.color(in: scheme)).minimumScaleFactor(0.6).lineLimit(1)
-            NovaText(text: label, style: .meta, color: NovaColorToken.onInverse.color(in: scheme).opacity(0.8))
-        }.frame(maxWidth: .infinity, alignment: .leading)
     }
     private func periodCards(_ data: NovaStatisticsSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             sectionTitle("Seçili dönemde", subtitle: "\(NovaStatisticsSnapshot.dayLabel(data.from_day)) – \(NovaStatisticsSnapshot.dayLabel(data.today))")
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                metric("Fotoğraf analizi", value: data.analyses, symbol: "viewfinder", tone: .statusInfoInk, note: "Tamamlanan", destination: .analyses)
-                metric("Eğitim", value: data.trainings, symbol: "graduationcap", tone: .accentInk, note: "Gerçekleşen eğitim", destination: .training)
-                metric("Eğitim alan kişi", value: data.trained_people, symbol: "person.2", tone: .accentInk, note: "Tekil personel", destination: .training)
-                metric("Eğitim kaydı", value: data.training_enrollments, symbol: "person.crop.rectangle.stack", tone: .statusInfoInk, note: "Kişi × eğitim", destination: .training)
+                metric("Fotoğraf analizi", value: data.analyses, symbol: "viewfinder", destination: .analyses)
+                metric("Eğitim", value: data.trainings, symbol: "graduationcap", destination: .training)
+                metric("Eğitim alan kişi", value: data.trained_people, symbol: "person.2", destination: .training)
+                metric("Eğitim kaydı", value: data.training_enrollments, symbol: "person.crop.rectangle.stack", destination: .training)
             }
             NovaText(text: "Aynı eğitimdeki farklı firmalar eğitim sayısını artırmaz. Bir kişi farklı eğitimlerde birden fazla kişi × eğitim kaydı oluşturabilir.", style: .metaQuiet)
         }
     }
-    private func metric(_ title: String, value: Int, symbol: String, tone: NovaColorToken, note: String, destination: NovaDestination) -> some View {
-        Button { onNavigate(destination) } label: {
-            NovaCard(padding: 15) { VStack(alignment: .leading, spacing: 9) {
-                HStack { Image(systemName: symbol).foregroundStyle(tone.color(in: scheme)); Spacer(); Image(systemName: "arrow.up.right").font(NovaFont.font(.micro)).foregroundStyle(NovaFont.secondaryInk) }
-                Text(value.formatted()).font(.custom("PlusJakartaSans-ExtraBold", size: 27)).foregroundStyle(NovaColorToken.text.color(in: scheme))
-                NovaText(text: title, style: .bodyStrong)
-                NovaText(text: note, style: .micro)
-            }.frame(maxWidth: .infinity, alignment: .leading) }
-        }.buttonStyle(.plain).accessibilityLabel("\(title): \(value). Tüm kayıtları aç")
+    private func metric(_ title: String, value: Int, symbol: String, destination: NovaDestination) -> some View {
+        NovaListStat(title: title, symbol: symbol, value: value) { onNavigate(destination) }
+            .accessibilityLabel("\(title): \(value). Tüm kayıtları aç")
     }
     private func activity(_ data: NovaStatisticsSnapshot) -> some View {
         NovaCard(padding: 18) {
@@ -165,9 +148,9 @@ struct NovaStatisticsScreen: View {
             sectionTitle("Uygunsuzluklar", subtitle: "Bugünkü açık kayıtların durumu")
             if let findings = data.findings {
                 HStack(spacing: 8) {
-                    statusNumber("Açık", findings.open, .text)
-                    statusNumber("Gecikmiş", findings.overdue, .statusDangerInk)
-                    statusNumber("Doğrulamada", findings.pending, .statusWarningInk)
+                    NovaListStat(title: "Açık", symbol: "exclamationmark.circle", value: findings.open)
+                    NovaListStat(title: "Gecikmiş", symbol: "clock.badge.exclamationmark", value: findings.overdue)
+                    NovaListStat(title: "Doğrulamada", symbol: "checkmark.circle.badge.questionmark", value: findings.pending)
                 }
                 Divider()
                 ForEach(["critical", "high", "medium", "low"], id: \.self) { key in
@@ -213,9 +196,6 @@ struct NovaStatisticsScreen: View {
     }
     private func sectionTitle(_ title: String, subtitle: String) -> some View {
         VStack(alignment: .leading, spacing: 4) { NovaText(text: title, style: .sectionTitle); NovaText(text: subtitle, style: .metaQuiet) }
-    }
-    private func statusNumber(_ title: String, _ count: Int, _ tone: NovaColorToken) -> some View {
-        VStack(alignment: .leading, spacing: 5) { NovaText(text: count.formatted(), style: .screenTitle, color: tone.color(in: scheme)); NovaText(text: title, style: .micro) }.frame(maxWidth: .infinity, alignment: .leading)
     }
     private func distribution(_ title: String, count: Int, total: Int, tone: NovaColorToken) -> some View {
         VStack(spacing: 6) {

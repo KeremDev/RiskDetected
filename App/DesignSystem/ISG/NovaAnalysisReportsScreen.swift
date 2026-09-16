@@ -40,7 +40,7 @@ struct NovaAnalysisReportsScreen: View {
     }
 
     var body: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 11) {
                     header
@@ -108,10 +108,9 @@ struct NovaAnalysisReportsScreen: View {
             NovaLoadingView(message: RDLocalization.string("localizable.nova.analysis.reports.loading", table: .localizable,
                 fallback: "Raporlar yükleniyor…")).frame(minHeight: 280)
         } else if visible.isEmpty {
-            NovaCard(padding: 16) {
-                NovaText(text: RDLocalization.string("localizable.nova.analysis.reports.empty", table: .localizable,
-                    fallback: "Henüz analizden rapor oluşturmadınız."), style: .metaQuiet)
-            }
+            NovaEmptyState(title: RDLocalization.string("localizable.nova.analysis.reports.empty", table: .localizable,
+                fallback: "Henüz analizden rapor oluşturmadınız."),
+                message: "Bir analizin raporunu oluşturarak PDF ve Excel çıktılarını denetimlerde hızlıca bulabilir, firma bazında saklayabilirsiniz.")
         } else {
             ForEach(visible) { row in card(row) }
         }

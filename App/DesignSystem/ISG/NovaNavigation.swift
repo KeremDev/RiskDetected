@@ -7,7 +7,7 @@ enum NovaTab: String, CaseIterable, Hashable {
     var title: String {
         switch self {
         case .home: return RDLocalization.string("localizable.nova.navigation.ana.sayfa.32b7f210", table: .localizable, fallback: "Ana Sayfa")
-        case .findings: return "Uygunsuzluk"
+        case .findings: return "Denetim"
         case .companies: return "Firmalar"
         case .profile: return "Profil"
         }

@@ -45,6 +45,7 @@ import Foundation
         let title: String
         let file_name: String
         let note: String?
+        let tags: [String]?
         let version: Int
         let state: String
         let rejection_code: String?
@@ -66,7 +67,7 @@ import Foundation
         let created_at: String?
 
         enum CodingKeys: String, CodingKey {
-            case id, asset_id, company_id, company_name, category, section, title, file_name, note, version
+            case id, asset_id, company_id, company_name, category, section, title, file_name, note, tags, version
             case state, rejection_code, intent_id, intent_state, purpose
             case extension_ = "extension"
             case declared_bytes, received_bytes, detected_type
@@ -113,7 +114,7 @@ import Foundation
               uploadBucket: row.upload_bucket, uploadPath: row.upload_path,
               downloadBucket: row.download_bucket, downloadPath: row.download_path,
               scanner: row.scanner, scanFinding: row.scan_finding, assurance: row.assurance,
-              malwareScanned: row.malware_scanned, createdAt: row.created_at)
+              malwareScanned: row.malware_scanned, createdAt: row.created_at, tags: row.tags ?? [])
     }
 
     private static func states(_ raw: [String: Int]) -> [NovaFileState: Int] {
@@ -131,7 +132,7 @@ import Foundation
             "p_category": .null, "p_state": .null, "p_id": .null,
             "p_limit": .null, "p_offset": .null]
         for (key, value) in arguments { payload[key] = value }
-        return try await rpc("isg_file_library_read_v1", payload)
+        return try await rpc("isg_pilot_file_library_read_v2", payload)
     }
 
     // MARK: reads
@@ -186,10 +187,10 @@ import Foundation
 
     // MARK: writes
 
-    private func mutate(company: UUID, action: String, payload: [String: PersonnelRPCValue],
+    private func mutate(company: UUID?, action: String, payload: [String: PersonnelRPCValue],
                         operationID: UUID = UUID(), mutationID: UUID = UUID()) async throws -> NovaFileEntry {
-        let data = try await rpc("isg_file_library_mutate_v1", [
-            "p_company": .id(company), "p_action": .string(action),
+        let data = try await rpc("isg_pilot_file_library_mutate_v2", [
+            "p_company": company.map { .id($0) } ?? .null, "p_action": .string(action),
             "p_operation": .id(operationID), "p_mutation": .id(mutationID),
             "p_payload": .object(payload)])
         return entry(try JSONDecoder().decode(MutationEnvelope.self, from: data).row)
@@ -206,7 +207,7 @@ import Foundation
     /// already on file as an upload that never finished, and if the inspection
     /// cannot run the entry says so instead of showing a file that is not there.
     /// `progress` is called after each step with the row as the server sees it.
-    func file(_ identity: NovaSessionIdentity, company: UUID, draft: NovaFileDraft, data: Data,
+    func file(_ identity: NovaSessionIdentity, company: UUID?, draft: NovaFileDraft, data: Data,
               mutationID: UUID = UUID(),
               progress: ((NovaFileEntry) -> Void)? = nil) async throws -> NovaFileEntry {
         try check(identity)
@@ -215,6 +216,7 @@ import Foundation
             "title": .string(draft.title.trimmingCharacters(in: .whitespacesAndNewlines)),
             "category": .string(category),
             "file_name": .string(draft.fileName.trimmingCharacters(in: .whitespacesAndNewlines)),
+            "tags": .array(draft.parsedTags.map(PersonnelRPCValue.string)),
             "note": Self.trimmed(draft.note).map { .string($0) } ?? .null,
             "extension": .string(draft.fileExtension.lowercased()),
             "bytes": .number(Int64(draft.bytes)),
@@ -231,34 +233,50 @@ import Foundation
         try check(identity)
         try await inspect(opened.id)
         try check(identity)
-        return try await detail(identity, entry: opened.id)
+        let filed = try await detail(identity, entry: opened.id)
+        if filed.state.isFiled {
+            NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: identity.userID)
+            NotificationCenter.default.post(name: Notification.Name("isgada.mutation.succeeded"), object: identity.userID,
+                userInfo: ["message": NovaSuccessMessage.fileAdded])
+        }
+        return filed
     }
 
     func rename(_ identity: NovaSessionIdentity, entry target: NovaFileEntry,
                 title: String, category: String, note: String) async throws -> NovaFileEntry {
         try check(identity)
-        guard let company = target.companyID else { throw NovaFileFailure.denied }
-        return try await mutate(company: company, action: "rename_entry", payload: [
+        let company = target.companyID
+        let result = try await mutate(company: company, action: "rename_entry", payload: [
             "entry_id": .id(target.id), "expected_version": .number(Int64(target.version)),
             "title": .string(title.trimmingCharacters(in: .whitespacesAndNewlines)),
             "category": .string(category),
+            "tags": .array(target.tags.map(PersonnelRPCValue.string)),
             "note": Self.trimmed(note).map { .string($0) } ?? .null])
+        try check(identity)
+        NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: identity.userID)
+        NotificationCenter.default.post(name: Notification.Name("isgada.mutation.succeeded"), object: identity.userID,
+            userInfo: ["message": NovaSuccessMessage.recordSaved("Dosya")])
+        return result
     }
 
     func archive(_ identity: NovaSessionIdentity, entry target: NovaFileEntry) async throws {
         try check(identity)
-        guard let company = target.companyID else { throw NovaFileFailure.denied }
+        let company = target.companyID
         _ = try await mutate(company: company, action: "archive_entry", payload: [
             "entry_id": .id(target.id), "expected_version": .number(Int64(target.version))])
+        try check(identity)
+        NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: identity.userID)
     }
 
     /// Abandons an upload that never became a file. A filed document is put away
     /// by archiving it, not by cancelling something that already finished.
     func cancel(_ identity: NovaSessionIdentity, entry target: NovaFileEntry) async throws {
         try check(identity)
-        guard let company = target.companyID else { throw NovaFileFailure.denied }
+        let company = target.companyID
         _ = try await mutate(company: company, action: "cancel_upload", payload: [
             "entry_id": .id(target.id), "expected_version": .number(Int64(target.version))])
+        try check(identity)
+        NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: identity.userID)
     }
 
     /// Retries the inspection of an upload that is still on its way. It cannot

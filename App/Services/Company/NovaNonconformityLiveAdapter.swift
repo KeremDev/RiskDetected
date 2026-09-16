@@ -3,6 +3,22 @@ import Supabase
 
 extension NovaNonconformityService {
     static func live(currentScope: @escaping () -> NovaPersonnelScope?) -> NovaNonconformityService {
+        makeLive { scope in
+            guard currentScope() == scope else { return false }
+            return novaCurrentSessionIdentity() == .init(userID: scope.ownerID, sessionID: scope.sessionID)
+        }
+    }
+
+    /// The analysis result has its own company picker. Its write must not race
+    /// the Firmalar tab's global selection; the RPC verifies the company again.
+    static func live(identity: NovaSessionIdentity) -> NovaNonconformityService {
+        makeLive { scope in
+            scope.ownerID == identity.userID && scope.sessionID == identity.sessionID
+                && novaCurrentSessionIdentity() == identity
+        }
+    }
+
+    private static func makeLive(isCurrent: @escaping (NovaPersonnelScope) -> Bool) -> NovaNonconformityService {
         let client = SupabaseService.shared.client
         return NovaNonconformityService(rpc: { function, args in
             do { return try await client.rpc(function, params: args).execute().data }
@@ -22,9 +38,6 @@ extension NovaNonconformityService {
                 default: throw NovaNonconformityFailure.unavailable
                 }
             }
-        }, isCurrent: { scope in
-            guard currentScope() == scope, let session = client.auth.currentSession, session.user.id == scope.ownerID else { return false }
-            return NovaPersonnelService.sessionID(session.accessToken) == scope.sessionID
-        })
+        }, isCurrent: isCurrent)
     }
 }

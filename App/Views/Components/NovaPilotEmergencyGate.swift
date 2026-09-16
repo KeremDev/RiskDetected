@@ -26,7 +26,13 @@ struct NovaPilotEmergencyGate: View {
             companies: { try await NovaAnalysisWorkspace.companyOptions(identity: identity) },
             detail: { plan in try await service.detail(identity, plan: plan) },
             publish: { company, draft in try await service.publish(identity, company: company, draft: draft) },
-            fileClient: fileClient)
+            fileClient: fileClient,
+            employees: { company, query, cursor in
+                let scope = NovaPersonnelScope(ownerID: identity.userID, sessionID: identity.sessionID,
+                    companyID: company, epoch: "emergency-team")
+                let personnel = NovaPersonnelService.live(currentScope: { scope }).client
+                return try await personnel.employees(scope, query, false, cursor)
+            })
     }
 
     private var fileClient: NovaFileLibraryClient {

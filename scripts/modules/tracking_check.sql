@@ -1,0 +1,24 @@
+BEGIN;
+SELECT set_config('test.actor','20000000-0000-0000-0000-000000000001',true);
+UPDATE private_isg.rollout SET read_enabled=true,write_enabled=true WHERE feature='modules';
+UPDATE private_isg.module_registry SET read_enabled=true,write_enabled=true;
+DO $$ DECLARE co uuid:='10000000-0000-0000-0000-000000000001'; actor uuid:='20000000-0000-0000-0000-000000000001'; wp uuid:='40000000-0000-0000-0000-000000000001'; plan uuid; item uuid; result jsonb; row_ jsonb; before_ int; BEGIN
+SELECT (r->>'pending')::int INTO before_ FROM jsonb_array_elements(public.isg_pilot_module_tracking_v1(co)->'rows') r WHERE r->>'kind'='annual_work_item';
+INSERT INTO private_isg.annual_work_plans(company_id,owner_id,workplace_id,plan_year) VALUES(co,actor,wp,2099) RETURNING plan_id INTO plan;
+INSERT INTO private_isg.annual_work_plan_items(plan_id,activity,planned_on) VALUES(plan,'Tracking regression',current_date-2) RETURNING item_id INTO item;
+result:=public.isg_pilot_module_tracking_v1(co);
+IF jsonb_array_length(result->'rows')<>12 THEN RAISE EXCEPTION 'Incomplete tracking'; END IF;
+SELECT r INTO row_ FROM jsonb_array_elements(result->'rows') r WHERE r->>'kind'='annual_work_item';
+IF (row_->>'pending')::int<>before_+1 OR (row_->>'overdue')::int<1 THEN RAISE EXCEPTION 'Open/overdue missing'; END IF;
+UPDATE private_isg.annual_work_plan_items SET state='performed',performed_on=current_date WHERE item_id=item;
+SELECT r INTO row_ FROM jsonb_array_elements(public.isg_pilot_module_tracking_v1(co)->'rows') r WHERE r->>'kind'='annual_work_item';
+IF (row_->>'pending')::int<>before_ THEN RAISE EXCEPTION 'Completion did not refresh'; END IF;
+UPDATE private_isg.annual_work_plan_items SET is_deleted=true WHERE item_id=item;
+UPDATE private_isg.module_registry SET read_enabled=false,write_enabled=false WHERE module='annual_work_plan';
+SELECT r INTO row_ FROM jsonb_array_elements(public.isg_pilot_module_tracking_v1(co)->'rows') r WHERE r->>'kind'='annual_work_item';
+IF row_->>'available'<>'false' OR row_->>'total' IS NOT NULL THEN RAISE EXCEPTION 'Disabled source became zero'; END IF;
+BEGIN PERFORM public.isg_pilot_module_tracking_v1('10000000-0000-0000-0000-000000000002');RAISE EXCEPTION 'Foreign company allowed'; EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'ACCESS_DENIED' THEN RAISE;END IF;END;
+IF EXISTS(SELECT 1 FROM jsonb_array_elements(public.isg_pilot_module_tracking_v1(NULL)->'rows') r WHERE (r->>'company_id')::uuid<>co) THEN RAISE EXCEPTION 'Portfolio scope leak';END IF;
+RAISE NOTICE 'ok tracking live derived counts/completion/disabled source/owner isolation/12 domains';
+END $$;
+ROLLBACK;

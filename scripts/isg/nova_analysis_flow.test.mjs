@@ -169,16 +169,87 @@ test('the board reads every company through its own availability check', () => {
   const service = read('App/Services/Company/NovaAnalysisWorkspaceService.swift');
   assert.match(service, /static func board\(identity: NovaSessionIdentity\)/);
   assert.match(service, /guard novaCurrentSessionIdentity\(\) == identity else \{ throw NovaNonconformityFailure\.denied \}/);
-  // A company whose own read fails is left out of the board, never faked.
-  assert.match(service, /else \{ continue \}/);
+  // A failed company read cannot be presented as a complete zero/count.
+  const board = service.slice(service.indexOf('static func board(identity:'), service.indexOf('private struct ListEnvelope'));
+  assert.match(board, /let list = try await read/);
+  assert.match(board, /let places = try await read/);
+  assert.doesNotMatch(board, /try\?|else \{ continue \}/);
 });
 
-test('filing an item is keyed by that item, so a second press replays', () => {
+test('filing a source uses server deduplication without reusing a key across companies', () => {
   const gate = read('App/Views/Components/NovaPilotFindingsGate.swift');
-  assert.match(gate, /service\.open\(current, intent: intent, mutationID: request\.item\.id\)/);
+  assert.match(gate, /analysisFilingService\.open\(current, intent: intent\)/);
+  const source = read('supabase/pilot-release/candidates/20260916143000_isg_pilot_finding_source.sql');
+  assert.match(source, /pg_advisory_xact_lock/);
+  assert.match(source, /open_nonconformity_record/);
+  assert.match(source, /IF NOT coalesce\(\(outcome->>'replayed'\)::boolean,false\) THEN/);
   assert.match(gate, /result\.alreadyOpen \? \.alreadyOpen : \.opened/);
-  // The analysis and its findings are referenced, never copied or rewritten.
+  // The analysis itself remains unchanged; the server saves a source snapshot.
   assert.doesNotMatch(gate, /deleteFinding|deleteAnalysis/);
+});
+
+test('filing only reports success after the company read path sees the record', () => {
+  const gate = read('App/Views/Components/NovaPilotFindingsGate.swift');
+  assert.match(gate, /let visible = try await analysisFilingService\.list\(current\)/);
+  assert.match(gate, /let visible = try await service\.list\(target\)/);
+  assert.match(gate, /visible\.contains\(where: \{ \$0\.id == filedRow\.id && \$0\.state == filedRow\.state \}\)/);
+  assert.match(gate, /visible\.contains\(where: \{ \$0\.id == result\.row\.id \}\)/);
+  assert.match(gate, /guard visible\.contains[\s\S]{0,500}?boardRevision = UUID\(\)/);
+  const list = read('App/DesignSystem/ISG/NovaNonconformityListScreen.swift');
+  assert.doesNotMatch(list, /catch let failure as NovaNonconformityFailure \{\s*entries = \[\]/);
+  assert.doesNotMatch(list, /catch \{\s*entries = \[\]/);
+});
+
+test('analysis filing uses its selected company without racing the global company scope', () => {
+  const gate = read('App/Views/Components/NovaPilotFindingsGate.swift');
+  assert.match(gate, /analysisFilingService: NovaNonconformityService \{ \.live\(identity: identity\) \}/);
+  assert.match(gate, /analysisFilingService\.workplaces\(analysisFilingScope\(company\)\)/);
+  const fileBlock = gate.slice(gate.indexOf('private func file(_ request:'), gate.indexOf('// MARK: manual'));
+  assert.match(fileBlock, /analysisFilingService\.open\(current, intent: intent\)/);
+  assert.match(fileBlock, /analysisFilingService\.list\(current\)/);
+  assert.doesNotMatch(fileBlock, /waitForScope/);
+  const adapter = read('App/Services/Company/NovaNonconformityLiveAdapter.swift');
+  assert.match(adapter, /static func live\(identity: NovaSessionIdentity\)/);
+  assert.match(adapter, /novaCurrentSessionIdentity\(\) == identity/);
+});
+
+test('nonconformity rows open their popup without rebuilding company scope', () => {
+  const gate = read('App/Views/Components/NovaPilotFindingsGate.swift');
+  assert.match(gate, /open: \{ entry in record = entry \}/);
+  const client = gate.slice(gate.indexOf('private func recordClient'), gate.indexOf('private func waitForScope'));
+  assert.match(client, /let recordScope = analysisFilingScope\(entry\.companyID\)/);
+  assert.match(client, /analysisFilingService\.detail\(recordScope/);
+  assert.doesNotMatch(client, /select\(|waitForScope|service\./);
+});
+
+test('analysis findings enter the actionable queue as open, not draft', () => {
+  const gate = read('App/Views/Components/NovaPilotFindingsGate.swift');
+  const fileBlock = gate.slice(gate.indexOf('private func file(_ request:'), gate.indexOf('// MARK: manual'));
+  assert.match(fileBlock, /result\.row\.state == NovaNonconformityState\.draft\.rawValue/);
+  assert.match(fileBlock, /analysisFilingService\.transition\(current, id: result\.row\.id, to: \.open/);
+  assert.match(fileBlock, /\$0\.id == filedRow\.id && \$0\.state == filedRow\.state/);
+});
+
+test('a filed finding reuses the analysis detail sheet without another filing action', () => {
+  const gate = read('App/Views/Components/NovaPilotFindingsGate.swift');
+  assert.match(gate, /if entry\.row\.camefromFinding \{[\s\S]{0,300}?NovaFiledFindingSheet/);
+  const sheets = read('App/DesignSystem/ISG/NovaAnalysisSheets.swift');
+  const filed = sheets.slice(sheets.indexOf('struct NovaFiledFindingSheet'), sheets.indexOf('/// Editing one scored finding'));
+  assert.match(filed, /NovaAnalysisItemSheet\(item: source\.item/);
+  assert.match(filed, /onEdit: \{ mode = \.edit \}, onDelete: \{ mode = \.delete \}, onFile: nil/);
+  assert.doesNotMatch(filed, /Firmaya Uygunsuzluk Olarak Ekle/);
+  const workspace = read('App/Services/Company/NovaAnalysisWorkspaceService.swift');
+  const sourceLookup = workspace.slice(workspace.indexOf('static func recordFinding('), workspace.indexOf('/// Every picture of one analysis'));
+  assert.match(sourceLookup, /section\.items\.first\(where: \{ \$0\.id == findingID \}\)/);
+});
+
+test('successful filing closes the popup and celebrates only after readback', () => {
+  const sheet = read('App/DesignSystem/ISG/NovaAnalysisSheets.swift');
+  assert.match(sheet, /case \.opened, \.alreadyOpen: succeeded = true/);
+  assert.match(sheet, /if succeeded && !failed \{\s*celebrate\(NovaSuccessMessage\.findingCreated\)\s*onFinished\(\)/);
+  assert.match(sheet, /loaded\.count == 1,[\s\S]{0,140}?ready\.count == items\.count[\s\S]{0,100}?await run\(target: only\.id\)/);
+  const gate = read('App/Views/Components/NovaPilotFindingsGate.swift');
+  assert.match(gate, /\.modifier\(NovaSuccessPresentation\(\)\)/);
 });
 
 test('the method toggle reads a band, it never converts one', () => {
@@ -214,9 +285,9 @@ test('every count on the analysis pages is counted from the rows on screen', () 
   // The band distribution is counted over the section's own items, under the
   // method being read, not taken from anywhere else.
   assert.match(model, /items\.filter \{ \$0\.band\(method\) == band \}\.count/);
-  const section = read('App/DesignSystem/ISG/NovaAnalysisSectionViews.swift');
-  // The scored section's own total is the length of the list it just drew.
-  assert.match(section, /"\\\(section\.items\.count\)"/);
+  const screen = read('App/DesignSystem/ISG/NovaAnalysisDetailScreens.swift');
+  // Counts are now in the section navigation, after removal of the large summary card.
+  assert.match(screen, /caption: NovaAnalysisWords\.unit\(entry\.kind, entry\.items\.count\)/);
 });
 
 test('the report archive page reads the photo analyses it claims to list', () => {
@@ -232,13 +303,13 @@ test('the report archive page reads the photo analyses it claims to list', () =>
 test('the analysis detail owns the bottom of its own page', () => {
   const screen = read('App/DesignSystem/ISG/NovaAnalysisDetailScreens.swift');
   // The bar is pinned, so scrolling never takes the two controls away.
-  assert.match(screen, /\.safeAreaInset\(edge: \.bottom\) \{ actionBar \}/);
+  assert.match(screen, /\.safeAreaInset\(edge: \.bottom, spacing: 0\) \{ if data != nil \{ actionBar \} \}/);
   assert.match(screen, /accessibilityIdentifier\("analysis\.detail\.back"\)/);
   assert.match(screen, /symbol: "slider\.horizontal\.3", id: "report"/);
   assert.match(screen, /accessibilityIdentifier\("analysis\.detail\.\\\(id\)"\)/);
   // The page is presented over the shell, so the shell's tab bar is not under it.
   const gate = read('App/Views/Components/NovaPilotFindingsGate.swift');
-  assert.match(gate, /\.fullScreenCover\(item: \$openAnalysis\) \{ target in detail\(target\.id\) \}/);
+  assert.match(gate, /\.novaFullScreenCover\(item: \$openAnalysis\) \{ target in\s+detail\(target\.id\)/);
   // Risk analysis is what the detail opens on.
   assert.match(screen, /@State private var section: NovaAnalysisSectionKind = \.riskAnalysis/);
 });

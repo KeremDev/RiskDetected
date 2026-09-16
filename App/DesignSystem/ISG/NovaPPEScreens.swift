@@ -18,46 +18,10 @@ struct NovaPPEStatCard: View {
     let value: Int
     var isSelected = false
     let onTap: () -> Void
-    @Environment(\.colorScheme) private var scheme
-
-    private var tone: NovaColorToken {
-        switch state {
-        case .outstanding: return .statusWarningInk
-        case .partial: return .statusInfoInk
-        case .closed: return .statusSuccessInk
-        }
-    }
-
     var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Image(systemName: state.symbol).font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(tone.color(in: scheme))
-                    NovaSizedText(text: "\(value)", size: 19, weight: "ExtraBold")
-                }
-                NovaSizedText(text: state.title, size: 10, weight: "Medium",
-                    color: NovaColorToken.textMuted.color(in: scheme))
-                    .lineLimit(2).minimumScaleFactor(0.82)
-                    .frame(maxWidth: .infinity, minHeight: 24, alignment: .topLeading)
-                NovaSizedText(text: state.footer, size: 9.5, weight: "Bold",
-                    color: value > 0 ? tone.color(in: scheme) : NovaColorToken.textMuted.color(in: scheme))
-                    .lineLimit(1).minimumScaleFactor(0.8)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 10).padding(.horizontal, 11)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(NovaColorToken.surface.color(in: scheme))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(isSelected ? tone.color(in: scheme)
-                                : NovaColorToken.hairline.color(in: scheme),
-                                lineWidth: isSelected ? 1.6 : 1))
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("nova.ppe.stat.\(state.rawValue)")
+        NovaListStat(title: state.title, symbol: state.symbol, value: value,
+            isSelected: isSelected, onTap: onTap)
+            .accessibilityIdentifier("nova.ppe.stat.\(state.rawValue)")
     }
 }
 
@@ -166,7 +130,7 @@ struct NovaPPEScreen: View {
     }
 
     var body: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
@@ -188,7 +152,7 @@ struct NovaPPEScreen: View {
             }
         }
         .task { await load(reset: true) }
-        .sheet(item: $detail) { row in
+        .novaPopup(item: $detail) { row in
             NovaPPEDetailSheet(handover: row, canWrite: canWrite,
                 onReturn: {
                     detail = nil
@@ -206,31 +170,21 @@ struct NovaPPEScreen: View {
                     }
                 }
         }
-        .sheet(item: $handing) { draft in
+        .novaPopup(item: $handing) { draft in
             NovaPPEHandoverSheet(draft: draft, catalogue: catalogue,
                 onSave: { edited in await save(edited) }, onClose: { handing = nil })
         }
-        .sheet(item: $returning) { draft in
+        .novaPopup(item: $returning) { draft in
             NovaPPEReturnSheet(draft: draft, catalogue: catalogue,
                 onSave: { edited in await giveBack(edited) }, onClose: { returning = nil })
         }
     }
 
-    @ViewBuilder private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 10) {
-                NovaBackButton(action: onBack)
-                NovaText(text: headingOverride ?? NovaDestination.ppeHandovers.title, style: .screenTitle)
-                Spacer(minLength: 0)
-                if canWrite {
-                    NovaButton(label: RDLocalization.string("localizable.nova.ppe.new",
-                        table: .localizable, fallback: "Zimmet ver"), symbol: "plus",
-                        variant: .primary) { startCreate() }
-                }
+    private var header: some View {
+        NovaListHeading(title: headingOverride ?? NovaDestination.ppeHandovers.title, onBack: onBack) {
+            if canWrite {
+                NovaButton(label: "Zimmet Ekle", symbol: "plus", compact: true) { startCreate() }
             }
-            // Said once, at the top, rather than discovered in a form.
-            NovaText(text: NovaPPEWords.signedCopyNote, style: .meta,
-                color: NovaColorToken.textSecondary.color(in: scheme))
         }
     }
 
@@ -304,15 +258,9 @@ struct NovaPPEScreen: View {
 
     @ViewBuilder private func list(_ board: NovaPPEBoard) -> some View {
         if board.rows.isEmpty {
-            NovaCard(padding: 18) {
-                VStack(alignment: .leading, spacing: 6) {
-                    NovaText(text: RDLocalization.string("localizable.nova.ppe.empty.title", table: .localizable,
-                        fallback: "Zimmet kaydı yok"), style: .cardTitle)
-                    NovaText(text: RDLocalization.string("localizable.nova.ppe.empty.body", table: .localizable,
-                        fallback: "Bir firma seçip personele verilen ekipmanı kaydedin."),
-                        style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
-                }
-            }
+            NovaEmptyState(title: RDLocalization.string("localizable.nova.ppe.empty.title",
+                table: .localizable, fallback: "Henüz zimmet kaydı yok"),
+                message: "Firma personeline verilen kişisel koruyucu donanımı kaydedebilir ve zimmet formunu oluşturabilirsiniz.")
         } else {
             VStack(spacing: 10) {
                 ForEach(board.rows) { row in

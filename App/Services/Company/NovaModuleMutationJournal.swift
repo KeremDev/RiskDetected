@@ -29,6 +29,31 @@ import CryptoKit
         try validate()
         let answer = try decode(data)
         try storage.remove(account: account)
+        NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: identity.userID)
+        if let message = successMessage(function: function, action: action) {
+            NotificationCenter.default.post(name: Notification.Name("isgada.mutation.succeeded"),
+                object: identity.userID, userInfo: ["message": message])
+        }
         return answer
     }
+    /// Terminal, user-requested saves only: opening a draft/upload, per-field autosaves,
+    /// notification reads and file exports must not celebrate a record that is not saved.
+    private static func successMessage(function: String, action: String) -> String? {
+        switch action {
+        case "record_appointment": return NovaSuccessMessage.recordSaved("Atama")
+        case "register_equipment": return NovaSuccessMessage.equipmentCreated
+        case "record_inspection": return NovaSuccessMessage.periodicInspectionSaved
+        case "publish_plan": return NovaSuccessMessage.emergencyPlanSaved
+        case "record_result": return NovaSuccessMessage.recordSaved("Tatbikat sonucu")
+        case "record_handover", "create_form": return NovaSuccessMessage.recordSaved("KKD zimmeti")
+        case "submit_run": return NovaSuccessMessage.recordSaved("Kontrol")
+        case "publish_template": return NovaSuccessMessage.recordSaved("Kontrol listesi")
+        case "record_contract": return NovaSuccessMessage.recordSaved("Sözleşme")
+        case "finalize_version": return NovaSuccessMessage.recordSaved("Risk analizi")
+        case "save", "create", "update", "update_equipment", "update_inspection", "rename_entry":
+            return NovaSuccessMessage.recordSaved("Kayıt")
+        default: return nil
+        }
+    }
+
 }

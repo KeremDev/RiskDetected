@@ -18,9 +18,8 @@ struct NovaDrillDetailSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     VStack(alignment: .leading, spacing: 4) {
-                        NovaText(text: drill.planScope ?? RDLocalization.string(
-                            "localizable.nova.drill.row.plan", table: .localizable, fallback: "Acil durum planı"),
-                            style: .screenTitle)
+                        NovaPopupHeading(text: drill.planScope ?? RDLocalization.string(
+                            "localizable.nova.drill.row.plan", table: .localizable, fallback: "Acil durum planı"), symbol: "figure.walk")
                         NovaText(text: [drill.workplaceName, drill.companyName]
                             .compactMap { $0 }.joined(separator: " · "), style: .meta,
                             color: NovaColorToken.textSecondary.color(in: scheme))
@@ -167,8 +166,8 @@ struct NovaDrillPlanSheet: View {
         NovaPopup {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    NovaText(text: RDLocalization.string("localizable.nova.drill.form.title",
-                        table: .localizable, fallback: "Tatbikat planla"), style: .screenTitle)
+                    NovaPopupHeading(text: RDLocalization.string("localizable.nova.drill.form.title",
+                        table: .localizable, fallback: "Tatbikat planla"), symbol: "figure.walk")
                     if catalogue?.plans.isEmpty ?? true {
                         NovaHelpHint(text: RDLocalization.string("localizable.nova.drill.empty.noplan",
                             table: .localizable,
@@ -244,8 +243,8 @@ struct NovaDrillResultSheet: View {
         NovaPopup {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    NovaText(text: RDLocalization.string("localizable.nova.drill.result.title",
-                        table: .localizable, fallback: "Tatbikat kaydı"), style: .screenTitle)
+                    NovaPopupHeading(text: RDLocalization.string("localizable.nova.drill.result.title",
+                        table: .localizable, fallback: "Tatbikat kaydı"), symbol: "figure.walk")
                     if !draft.planScope.isEmpty {
                         NovaText(text: draft.planScope, style: .meta,
                             color: NovaColorToken.textSecondary.color(in: scheme))

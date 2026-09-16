@@ -62,7 +62,7 @@ struct NovaAnalysisIntakePopup: View {
                 }
                 footer
             }.padding(20).novaPopupContentSize()
-        }.background(NovaKeyboardDismissArea())
+        }
     }
 
     private var header: some View {

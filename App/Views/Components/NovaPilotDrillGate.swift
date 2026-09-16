@@ -12,8 +12,20 @@ struct NovaPilotDrillGate: View {
     private var service: NovaDrillService { .live() }
     private var fileService: NovaFileLibraryService { .live() }
 
+    @State private var legacy = false
     var body: some View {
-        NovaDrillScreen(client: client, onBack: onBack, canWrite: canWrite,
+        if legacy {
+            legacyScreen
+        } else {
+            VStack(spacing: 0) {
+                NovaPilotProcessGate(identity: identity, kind: "completed_drill", initialCompany: initialCompany, canWrite: canWrite, onBack: onBack)
+                Button("Önceki tatbikat kayıtları") { legacy = true }
+                    .font(NovaFont.font(.meta)).padding(8)
+            }
+        }
+    }
+    private var legacyScreen: some View {
+        NovaDrillScreen(client: client, onBack: { legacy = false }, canWrite: false,
             initialCompany: initialCompany, headingOverride: headingOverride,
             management: { company, record in AnyView(NovaModuleEditor(identity: identity, module: "drill", company: company, record: record, fileClient: fileClient)) })
     }

@@ -17,6 +17,9 @@ struct NovaPilotCompanySummary: Decodable, Identifiable {
     let finding_count: Int?
     let document_count: Int?
     let completion_score: Double?
+    var responsible_name: String? = nil
+    var responsible_phone: String? = nil
+    var responsible_email: String? = nil
 }
 
 @MainActor func loadNovaPilotOverview(identity: NovaSessionIdentity, companyID: UUID? = nil) async throws -> [NovaPilotCompanySummary] {
@@ -25,7 +28,7 @@ struct NovaPilotCompanySummary: Decodable, Identifiable {
         guard novaCurrentSessionIdentity() == identity else { throw NovaPersonnelFailure.denied }
     }
     try check()
-    let data = try await SupabaseService.shared.client.rpc("isg_pilot_overview_v1",
+    let data = try await SupabaseService.shared.client.rpc("isg_pilot_overview_v2",
         params: ["p_company": PersonnelRPCValue.id(companyID)]).execute().data
     try check()
     guard data.count <= 1_048_576 else { throw NovaPersonnelFailure.unavailable }
@@ -33,7 +36,7 @@ struct NovaPilotCompanySummary: Decodable, Identifiable {
         let schema_version: Int; let owner_id: UUID; let company_id: UUID?; let companies: [NovaPilotCompanySummary]
     }
     let response = try JSONDecoder().decode(Response.self, from: data)
-    guard response.schema_version == 1, response.owner_id == identity.userID, response.company_id == companyID,
+    guard response.schema_version == 2, response.owner_id == identity.userID, response.company_id == companyID,
           Set(response.companies.map(\.id)).count == response.companies.count,
           response.companies.allSatisfy({ $0.owner_id == identity.userID && (companyID == nil || $0.id == companyID) &&
               $0.personnel_count >= 0 && $0.workplace_count >= 0 && $0.department_count >= 0 && ["low", "medium", "high"].contains($0.hazard_class) })

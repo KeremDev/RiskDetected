@@ -1,5 +1,80 @@
 import SwiftUI
 
+/// The company-detail editor writes through the existing CompanyService and
+/// uploads the selected logo to the company's own storage path.
+struct NovaCompanyLiveEditor: View {
+    let company: Company?
+    let fallbackID: UUID
+    let fallbackName: String
+    let fallbackHazard: String
+    let onSaved: (Company) async -> Void
+    @State private var draft: CompanyDraft
+    @State private var saving = false
+    @State private var error: String?
+    @Environment(\.novaCelebrate) private var celebrate
+
+    init(company: Company?, fallbackID: UUID, fallbackName: String, fallbackHazard: String,
+         onSaved: @escaping (Company) async -> Void) {
+        self.company = company; self.fallbackID = fallbackID; self.fallbackName = fallbackName
+        self.fallbackHazard = fallbackHazard; self.onSaved = onSaved
+        var value = CompanyDraft()
+        value.id = company?.id ?? fallbackID
+        value.name = company?.name ?? fallbackName
+        value.hazardClass = company?.hazardClass ?? CompanyHazardClass(rawValue: fallbackHazard) ?? .medium
+        value.logoPath = company?.logoPath
+        value.address = company?.address ?? ""
+        value.contactPerson = company?.contactPerson ?? ""
+        value.department = company?.department ?? ""
+        value.defaultResponsible = company?.defaultResponsible ?? ""
+        value.defaultDueDaysText = company?.defaultDueDays.map(String.init) ?? ""
+        _draft = State(initialValue: value)
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                NovaText(text: "Firma Bilgilerini Güncelle", style: .sectionTitle)
+                NovaCard(padding: 14) {
+                    VStack(spacing: 14) {
+                        field("Firma adı", text: $draft.name, symbol: "building.2")
+                        Picker("Tehlike sınıfı", selection: $draft.hazardClass) {
+                            ForEach(CompanyHazardClass.allCases) { value in Text(value.title).tag(value) }
+                        }.font(NovaFont.font(.body))
+                        field("Adres", text: $draft.address, symbol: "mappin")
+                        field("İlgili kişi", text: $draft.contactPerson, symbol: "person")
+                        field("Departman / ekip", text: $draft.department, symbol: "person.3")
+                    }
+                }
+                if let error { NovaHelpHint(text: error) }
+                NovaButton(label: saving ? "Kaydediliyor…" : "Kaydet", symbol: saving ? "hourglass" : "checkmark",
+                    isEnabled: !saving && draft.isValid) { save() }
+            }.padding(18).novaPopupContentSize()
+        }
+        .scrollDismissesKeyboard(.interactively)
+    }
+
+    private func field(_ title: String, text: Binding<String>, symbol: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: symbol).frame(width: 20)
+            TextField(title, text: text).font(NovaFont.font(.body))
+        }.frame(minHeight: 42)
+    }
+
+    private func save() {
+        saving = true; error = nil
+        Task {
+            do {
+                let saved = try await CompanyService.shared.saveCompany(draft)
+                celebrate(NovaSuccessMessage.companyUpdated)
+                await onSaved(saved)
+            } catch {
+                self.error = error.localizedDescription
+                saving = false
+            }
+        }
+    }
+}
+
 /// Explicitly visual-only until scoped pilot mutation endpoints are connected.
 struct NovaCompanyVisualEditor: View {
     @State var name: String
@@ -32,7 +107,7 @@ struct NovaCompanyVisualEditor: View {
                 NovaText(text: RDLocalization.string("localizable.nova.visual.15", table: .localizable, fallback: "Tasarım önizlemesi · Değişiklikler henüz kaydedilmez."), style: .metaQuiet)
                 NovaButton(label: RDLocalization.string("localizable.nova.visual.2", table: .localizable, fallback: "Güncelle"), symbol: "checkmark") { notice = true }
             }.padding(18).novaPopupContentSize()
-        }.scrollDismissesKeyboard(.interactively).background(NovaKeyboardDismissArea())
+        }.scrollDismissesKeyboard(.interactively)
             .alert(RDLocalization.string("localizable.nova.visual.16", table: .localizable, fallback: "Tasarım önizlemesi"), isPresented: $notice) {
                 Button(RDLocalization.string("localizable.nova.visual.17", table: .localizable, fallback: "Tamam"), role: .cancel) { }
             } message: { Text(RDLocalization.string("localizable.nova.visual.18", table: .localizable, fallback: "Sunucu bağlantısı henüz yok. Firma bilgileriniz değiştirilmedi.")) }

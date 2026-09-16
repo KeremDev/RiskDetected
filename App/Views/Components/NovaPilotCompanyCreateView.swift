@@ -12,9 +12,10 @@ struct NovaPilotCompanyCreateView: View {
     @State private var sector = ""
     @State private var email = ""
     @State private var employeeCount = ""
-    @State private var registryNumber = ""
     @State private var addResponsible = false
     @State private var responsibleName = ""
+    @State private var responsiblePhone = ""
+    @State private var responsibleEmail = ""
     @Environment(\.colorScheme) private var scheme
     @State private var pending: NovaPilotCompanyIntent?
     @State private var loaded = false
@@ -28,11 +29,12 @@ struct NovaPilotCompanyCreateView: View {
         return (!addResponsible || !responsibleName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) && (try? makeIntent()) != nil
     }
     private func makeIntent() throws -> NovaPilotCompanyIntent {
-        try .makeProfile(ownerID: identity.userID, name: name, hazard: hazard.rawValue, sector: sector,
-            email: email, employeeCount: employeeCount, responsibleName: addResponsible ? responsibleName : "")
+        try .makeContactProfile(ownerID: identity.userID, name: name, hazard: hazard.rawValue, sector: sector,
+            email: email, employeeCount: employeeCount, responsibleName: addResponsible ? responsibleName : "",
+            responsiblePhone: addResponsible ? responsiblePhone : "", responsibleEmail: addResponsible ? responsibleEmail : "")
     }
     var body: some View {
-        NavigationStack {
+        Group {
             NovaPageSurface {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
@@ -43,7 +45,7 @@ struct NovaPilotCompanyCreateView: View {
                                 Divider()
                                 HStack(alignment: .center, spacing: 10) {
                                     HStack(spacing: 7) {
-                                        NovaIcon(symbol: "exclamationmark.triangle", size: 17).foregroundStyle(NovaColorToken.statusWarningInk.color(in: scheme))
+                                        NovaIcon(symbol: "exclamationmark.triangle", size: 17).foregroundStyle(NovaColorToken.text.color(in: scheme))
                                         Picker(RDLocalization.string("localizable.nova.pilot.company.create.view.tehlike.sinifi.837c3a63", table: .localizable, fallback: "Tehlike sınıfı *"), selection: $hazard) {
                                             ForEach(CompanyHazardClass.allCases) { item in Text(item.title).tag(item) }
                                         }.font(NovaFont.font(.body)).tint(NovaColorToken.text.color(in: scheme))
@@ -62,19 +64,18 @@ struct NovaPilotCompanyCreateView: View {
                                 Divider()
                                 field(RDLocalization.string("localizable.nova.pilot.company.create.view.calisan.sayisi.4465d142", table: .localizable, fallback: "Çalışan sayısı"), symbol: "person.2", text: $employeeCount, id: "employeeCount", keyboard: .numberPad)
                                 Divider()
-                                field(RDLocalization.string("localizable.nova.pilot.company.create.view.sicil.no.dc1d6d14", table: .localizable, fallback: "Sicil No"), symbol: "number", text: $registryNumber, id: "registryNumber")
-                                Divider()
                                 Toggle(isOn: $addResponsible) {
                                     Label(RDLocalization.string("localizable.nova.pilot.company.create.view.sorumlu.personel.ekle.779d3a3d", table: .localizable, fallback: "Sorumlu personel ekle"), systemImage: "person.badge.plus").font(NovaFont.font(.body))
                                 }.tint(NovaColorToken.accent.color(in: scheme))
                                 if addResponsible {
                                     field(RDLocalization.string("localizable.nova.pilot.company.create.view.ad.soyad.54b1adca", table: .localizable, fallback: "Ad soyad"), symbol: "person", text: $responsibleName, id: "responsible")
+                                    field("Telefon *", symbol: "phone", text: $responsiblePhone, id: "responsiblePhone", keyboard: .phonePad)
+                                    field("E-posta *", symbol: "envelope", text: $responsibleEmail, id: "responsibleEmail", keyboard: .emailAddress)
                                     NovaText(text: RDLocalization.string("localizable.nova.pilot.company.create.view.bu.kisi.firmanin.personel.listesine.de.eklenir.196763c7", table: .localizable, fallback: "Bu kişi firmanın personel listesine de eklenir."), style: .metaQuiet)
                                 }
                             }
                         }.disabled(!loaded || submitting || pending != nil || storageFailed)
-                        Label(RDLocalization.string("localizable.nova.pilot.company.create.view.yalnizca.pilot.kapsamina.eklenir.mevcut.firmalar.b99c355c", table: .localizable, fallback: "Yalnızca pilot kapsamına eklenir. Mevcut firmalarınız değişmez; firma limitiniz geçerlidir."), systemImage: "checkmark.shield")
-                            .font(NovaFont.font(.meta)).foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
+                        NovaHelpHint(text: "Firma bilgilerini girin. Sorumlu personel eklediğinizde ad, telefon ve e-posta bilgisini birlikte kaydedin.")
                         if pending != nil {
                             NovaText(text: RDLocalization.string("localizable.nova.pilot.company.create.view.bekleyen.islemi.ayni.bilgilerle.tekrar.kontrol.e.1b29313f", table: .localizable, fallback: "Bekleyen işlemi aynı bilgilerle tekrar kontrol edin. İkinci bir firma oluşturulmaz."), style: .metaQuiet)
                         }
@@ -84,7 +85,7 @@ struct NovaPilotCompanyCreateView: View {
                     .novaPopupContentSize(extra: 76)
                     .background { Color.clear.contentShape(Rectangle()).onTapGesture { focusedField = nil } }
                 }.scrollDismissesKeyboard(.interactively)
-                    .background(NovaKeyboardDismissArea())
+
                     .safeAreaInset(edge: .bottom) {
                         NovaButton(label: pending == nil ? RDLocalization.string("localizable.nova.pilot.company.create.view.firmayi.kaydet.f24d4369", table: .localizable, fallback: "Firmayı kaydet") : RDLocalization.string("localizable.nova.pilot.company.create.view.ayni.kaydi.tekrar.dene.26e3002b", table: .localizable, fallback: "Aynı kaydı tekrar dene"), symbol: "checkmark",
                             isEnabled: loaded && !storageFailed, isLoading: submitting) {
@@ -109,6 +110,7 @@ struct NovaPilotCompanyCreateView: View {
                     name = pending.name; hazard = CompanyHazardClass(rawValue: pending.hazard) ?? .medium
                     sector = pending.sector ?? ""; email = pending.email ?? ""
                     employeeCount = pending.employeeCount.map(String.init) ?? ""
+                    responsiblePhone = pending.responsiblePhone ?? ""; responsibleEmail = pending.responsibleEmail ?? ""
                     responsibleName = pending.responsibleName ?? ""; addResponsible = pending.responsibleName != nil
                 }
                 loaded = true
@@ -125,7 +127,7 @@ struct NovaPilotCompanyCreateView: View {
                 pending = intent
                 let companyID = try await service.create(intent, identity: identity)
                 try Task.checkCancellation()
-                celebrate(RDLocalization.string("localizable.nova.pilot.company.create.view.firmaniz.basariyla.eklendi.72430314", table: .localizable, fallback: "Firmanız başarıyla eklendi!"))
+                celebrate(NovaSuccessMessage.companyCreated)
                 onCreated(companyID); dismiss()
             } catch is CancellationError {
                 return
@@ -137,7 +139,7 @@ struct NovaPilotCompanyCreateView: View {
 
     private func field(_ title: String, symbol: String, text: Binding<String>, id: String, keyboard: UIKeyboardType = .default) -> some View {
         HStack(alignment: .center, spacing: 12) {
-            NovaIcon(symbol: symbol, size: 18).foregroundStyle(NovaColorToken.accentInk.color(in: scheme)).frame(width: 22)
+            NovaIcon(symbol: symbol, size: 18).foregroundStyle(NovaColorToken.text.color(in: scheme)).frame(width: 22)
                 TextField(title, text: text).font(NovaFont.font(.body))
                     .foregroundStyle(NovaColorToken.text.color(in: scheme))
                     .textInputAutocapitalization(keyboard == .emailAddress ? .never : .words)

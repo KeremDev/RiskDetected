@@ -84,7 +84,7 @@ struct NovaCompanyScoreCard: View {
 struct NovaCompanyScoreRing: View {
     let progress: NovaCompanyProgress
     @Environment(\.colorScheme) private var scheme
-    private var ink: Color { (progress.score.map { $0 >= 80 } == true ? NovaColorToken.accentInk : .statusInfoInk).color(in: scheme) }
+    private var ink: Color { NovaColorToken.text.color(in: scheme) }
     var body: some View {
         ZStack {
             Circle().stroke(ink.opacity(0.15), lineWidth: 5)

@@ -11,6 +11,7 @@ struct NovaExpertShell<Content: View>: View {
     /// The bell's own note, shown under the list. Empty hides it.
     var noticeNote = ""
     var onReadNotice: ((String) -> Void)?
+    var onOpenNotice: ((String) -> Void)?
     var onDismissNotice: ((String) -> Void)?
     var onRestoreNotice: ((String) -> Void)?
     var connectionLabel = RDLocalization.string("localizable.nova.shell.connection.unknown", table: .localizable, fallback: "Bağlantı bilgisi yok")
@@ -30,7 +31,8 @@ struct NovaExpertShell<Content: View>: View {
         let send: (NovaNavigationEvent) -> Void = { navigation.apply($0, from: epoch) }
         GeometryReader { geometry in
             ZStack {
-                VStack(spacing: 0) {
+                ZStack(alignment: .bottom) {
+                    VStack(spacing: 0) {
                     NovaShellTopBar(current: navigation.current, userName: userName, hasUnread: hasUnread,
                         unreadCount: unreadCount,
                         canGoBack: !(navigation.paths[navigation.selected] ?? []).isEmpty,
@@ -50,19 +52,18 @@ struct NovaExpertShell<Content: View>: View {
                             }.tag(tab)
                         }
                     }
-                    // Keep the bar in layout: TabView resets inherited bottom insets,
-                    // which otherwise puts a child screen's sticky action under the bar.
+                    }
                     NovaShellTabBar(selected: navigation.selected, canOpen: navigation.canOpen, send: send,
                         onDestination: guardedDestination(onDestination, epoch: epoch))
                         .accessibilityHidden(navigation.overlay != nil)
                         .allowsHitTesting(navigation.overlay == nil)
                         .padding(.horizontal, NovaDimensionToken.layoutTabBarInset.value)
                         .padding(.top, 8)
-                        .padding(.bottom, max(10 - geometry.safeAreaInsets.bottom, 0) + 16)
+                        .padding(.bottom, max(10, geometry.safeAreaInsets.bottom + 6))
                 }
                 .allowsHitTesting(navigation.overlay == nil)
                 .accessibilityHidden(navigation.overlay != nil)
-                .blur(radius: navigation.overlay == .quickAdd && !reduceTransparency ? 7 : 0)
+                .blur(radius: navigation.overlay == .quickAdd && !reduceTransparency ? NovaPopupStyle.sourceBlur : 0)
 
                 if let panel = navigation.overlay {
                     NovaShellPanel(panel: panel, selected: navigation.current, canOpen: navigation.canOpen,
@@ -70,6 +71,7 @@ struct NovaExpertShell<Content: View>: View {
                         noticeNote: noticeNote,
                         onReadAll: guarded(onReadAll, epoch: epoch), onClear: guarded(onClearNotifications, epoch: epoch),
                         onReadNotice: guardedKey(onReadNotice, epoch: epoch),
+                        onOpenNotice: guardedKey(onOpenNotice, epoch: epoch),
                         onDismissNotice: guardedKey(onDismissNotice, epoch: epoch),
                         onRestoreNotice: guardedKey(onRestoreNotice, epoch: epoch),
                         onCompanyCreate: guarded(onCompanyCreate, epoch: epoch),
@@ -81,6 +83,14 @@ struct NovaExpertShell<Content: View>: View {
         // Caller replaces the state on Auth/session-epoch change; local child state must not leak.
         .id(navigation.epoch)
         .environment(\.novaHasHeader, true)
+        .environment(\.novaPresentationEpoch, epoch)
+        .environment(\.novaHeaderContext, NovaHeaderContext(current: navigation.current,
+            userName: userName, unreadCount: unreadCount, hasUnread: hasUnread,
+            notificationsAvailable: navigation.canOpen(.notifications), send: { event in
+                guard navigation.epoch == epoch else { return }
+                NotificationCenter.default.post(name: Notification.Name("isgada.shell.navigate"), object: epoch)
+                send(event)
+            }))
     }
 
     private func guarded(_ action: (() -> Void)?, epoch: String) -> (() -> Void)? {
@@ -115,8 +125,7 @@ struct NovaShellTopBar: View {
     var body: some View {
         VStack(spacing: 8) {
         HStack(spacing: 10) {
-            icon(canGoBack ? "chevron.left" : "line.3.horizontal", label: canGoBack ? RDLocalization.string("localizable.nova.shell.back", table: .localizable, fallback: "Geri") : RDLocalization.string("localizable.nova.shell.open.menu", table: .localizable, fallback: "Menüyü aç"),
-                 id: canGoBack ? "nova.back" : "nova.menu") { send(canGoBack ? .back : .open(.drawer)) }
+            icon("line.3.horizontal", label: "Menüyü aç", id: "nova.menu") { send(.open(.drawer)) }
             if typeSize.isAccessibilitySize { Spacer() } else { brand }
             icon("bell", label: hasUnread ? RDLocalization.string("localizable.nova.shell.notifications.with.new", table: .localizable, fallback: "Bildirimler, yeni bildirim var") : RDLocalization.string("localizable.nova.shell.notifications", table: .localizable, fallback: "Bildirimler"), id: "nova.notifications") {
                 send(.open(.notifications))
@@ -171,41 +180,68 @@ struct NovaShellTabBar: View {
     let send: (NovaNavigationEvent) -> Void
     var onDestination: ((NovaDestination) -> Void)? = nil
     @Environment(\.colorScheme) private var scheme
-    @Environment(\.dynamicTypeSize) private var typeSize
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var expandedDrawerGroup: String?
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
         Group {
-            if typeSize.isAccessibilitySize {
-                ScrollViewReader { proxy in
-                    ScrollView(.horizontal, showsIndicators: true) {
-                        NovaShellTabStrip(selected: selected, canOpen: canOpen, send: send,
-                            onDestination: onDestination, expanded: true)
+            if #available(iOS 26.0, *) {
+                GlassEffectContainer(spacing: 10) {
+                    HStack(spacing: 10) {
+                        strip
+                            .padding(5)
+                            .glassEffect(.regular.interactive(), in: Capsule())
+                        quickAdd
+                            .background(Circle().fill(Color.black))
+                            .glassEffect(.clear.interactive(), in: Circle())
                     }
-                    .accessibilityIdentifier("nova.tabs.scroll")
-                    .onAppear { proxy.scrollTo(selected.rawValue, anchor: .center) }
-                    .onChange(of: selected) { value in proxy.scrollTo(value.rawValue, anchor: .center) }
-                }.fixedSize(horizontal: false, vertical: true)
+                }
             } else {
-                NovaShellTabStrip(selected: selected, canOpen: canOpen, send: send, onDestination: onDestination)
+                HStack(spacing: 10) {
+                    strip
+                        .padding(5)
+                        .background {
+                            if reduceTransparency {
+                                Capsule().fill(NovaColorToken.surface.color(in: scheme))
+                            } else {
+                                Capsule().fill(.ultraThinMaterial)
+                                    .overlay(Capsule().fill(NovaColorToken.glass.color(in: scheme)))
+                            }
+                        }
+                        .overlay(Capsule().strokeBorder(Color.white.opacity(0.78), lineWidth: 1))
+                    quickAdd
+                        .background(Circle().fill(Color.black))
+                        .overlay(Circle().strokeBorder(Color.white.opacity(0.35), lineWidth: 1))
+                }
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 6)
-        .frame(minHeight: NovaDimensionToken.layoutTabBarHeight.value)
-        .background {
-            if reduceTransparency {
-                RoundedRectangle(cornerRadius: NovaDimensionToken.radiusTabBar.value).fill(NovaColorToken.surface.color(in: scheme))
-            } else {
-                RoundedRectangle(cornerRadius: NovaDimensionToken.radiusTabBar.value).fill(.ultraThinMaterial)
-                    .overlay(RoundedRectangle(cornerRadius: NovaDimensionToken.radiusTabBar.value).fill(NovaColorToken.glass.color(in: scheme)))
-            }
-        }
-        .overlay(RoundedRectangle(cornerRadius: NovaDimensionToken.radiusTabBar.value).strokeBorder(NovaColorToken.glassBorder.color(in: scheme)))
-        .shadow(color: .black.opacity(0.025), radius: 16, x: 0, y: 4)
+        .frame(maxWidth: .infinity)
+        .frame(height: 62)
+        .shadow(color: .black.opacity(0.07), radius: 18, x: 0, y: 7)
     }
 
+    private var strip: some View {
+        NovaShellTabStrip(selected: selected, canOpen: canOpen, send: send,
+            onDestination: onDestination)
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+    }
+
+    private var quickAdd: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+            send(.open(.quickAdd))
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 24, weight: .medium, design: .rounded))
+                .foregroundStyle(Color.white)
+                .frame(width: 62, height: 62)
+                .contentShape(Circle())
+        }
+        .buttonStyle(NovaGlassPressStyle())
+        .accessibilityLabel("Ekle")
+        .accessibilityIdentifier("nova.add")
+        .id("add")
+    }
 }
 
 struct NovaShellTabStrip: View {
@@ -213,42 +249,73 @@ struct NovaShellTabStrip: View {
     let canOpen: (NovaDestination) -> Bool
     let send: (NovaNavigationEvent) -> Void
     var onDestination: ((NovaDestination) -> Void)? = nil
-    var expanded = false
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Namespace private var selectionHighlight
 
     var body: some View {
-        HStack(alignment: .top, spacing: 0) {
+        HStack(spacing: 2) {
             tab(.home)
-            tab(.findings)
-            Button { send(.open(.quickAdd)) } label: {
-                VStack(spacing: 2) {
-                    Image(systemName: "plus").font(.system(size: 21, weight: .semibold))
-                        .foregroundStyle(NovaColorToken.text.color(in: scheme))
-                        .frame(width: 42, height: 42)
-                    NovaText(text: "Ekle", style: .tab, color: NovaColorToken.accent.color(in: scheme)).lineLimit(1)
-                }.frame(minWidth: 44, maxWidth: expanded ? nil : .infinity, minHeight: 52)
-                    .padding(.horizontal, expanded ? 12 : 0).contentShape(Rectangle())
-            }.buttonStyle(.plain).accessibilityLabel("Ekle").accessibilityIdentifier("nova.add").id("add")
             tab(.companies)
+            tab(.findings)
             tab(.profile)
         }
     }
 
     private func tab(_ tab: NovaTab) -> some View {
-        Button { onDestination?(tab.root); send(.select(tab)) } label: {
-            VStack(spacing: 2) {
-                NovaIcon(symbol: tab.root.symbol, size: 19)
-                    .frame(width: 34, height: 42)
-                NovaText(text: tab.title, style: .tab, color: NovaColorToken.text.color(in: scheme))
-                    .lineLimit(1).minimumScaleFactor(expanded ? 1 : 0.75)
-            }.foregroundStyle(NovaColorToken.text.color(in: scheme))
-                .frame(minWidth: 44, maxWidth: expanded ? nil : .infinity, minHeight: 52)
-                .padding(.horizontal, expanded ? 12 : 0).contentShape(Rectangle())
-                .opacity(canOpen(tab.root) ? (selected == tab ? 1 : 0.45) : 0.3)
-        }.buttonStyle(.plain).disabled(!canOpen(tab.root))
+        let isSelected = selected == tab
+        return Button {
+            UISelectionFeedbackGenerator().selectionChanged()
+            withAnimation(reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.78)) {
+                onDestination?(tab.root)
+                send(.select(tab))
+            }
+        } label: {
+            ZStack {
+                if isSelected {
+                    Capsule()
+                        .fill(Color.white.opacity(scheme == .dark ? 0.18 : 0.82))
+                        .overlay(Capsule().strokeBorder(Color.white.opacity(0.86), lineWidth: 0.8))
+                        .matchedGeometryEffect(id: "nova-tab-selection", in: selectionHighlight)
+                }
+                HStack(spacing: 7) {
+                    Image(systemName: symbol(tab))
+                        .font(.system(size: 20, weight: isSelected ? .semibold : .regular))
+                        .symbolRenderingMode(.monochrome)
+                    if isSelected {
+                        NovaSizedText(text: tab.title, size: 12.5, weight: "Bold", color: Color.black)
+                            .lineLimit(1).minimumScaleFactor(0.82)
+                            .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                    }
+                }
+                .foregroundStyle(Color.black)
+                .padding(.horizontal, isSelected ? 14 : 9)
+            }
+            .frame(width: isSelected ? 116 : 45, height: 48)
+            .contentShape(Capsule())
+            .opacity(canOpen(tab.root) ? 1 : 0.3)
+        }.buttonStyle(NovaGlassPressStyle()).disabled(!canOpen(tab.root))
             .accessibilityLabel(Text(verbatim: tab.title))
-            .accessibilityAddTraits(selected == tab ? .isSelected : [])
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
             .accessibilityIdentifier("nova.tab.\(tab.rawValue)").id(tab.rawValue)
+    }
+
+    private func symbol(_ tab: NovaTab) -> String {
+        switch tab {
+        case .home: return "house"
+        case .companies: return "building.2"
+        case .findings: return "checklist"
+        case .profile: return "person"
+        }
+    }
+}
+
+private struct NovaGlassPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.93 : 1)
+            .opacity(configuration.isPressed ? 0.72 : 1)
+            .animation(.spring(response: 0.2, dampingFraction: 0.72), value: configuration.isPressed)
     }
 }
 
@@ -262,11 +329,12 @@ struct NovaPopupSurface<Content: View>: View {
             content().fixedSize(horizontal: false, vertical: true)
             ScrollView { content() }.accessibilityIdentifier("nova.panel.scroll")
         }
+        .environment(\.isNovaPopup, !isPopover)
         .padding(isPopover ? 14 : 16)
         .background {
             if isPopover {
                 RoundedRectangle(cornerRadius: 26).fill(.regularMaterial)
-            } else { RoundedRectangle(cornerRadius: 30).fill(NovaColorToken.canvasSheet.color(in: scheme)) }
+            } else { RoundedRectangle(cornerRadius: 30).fill(NovaPopupStyle.background(in: scheme)) }
         }
         .overlay(RoundedRectangle(cornerRadius: isPopover ? 26 : 30).strokeBorder(NovaColorToken.glassBorder.color(in: scheme), lineWidth: isPopover ? 0 : 1))
     }
@@ -304,6 +372,7 @@ struct NovaShellPanel: View {
     var onReadAll: (() -> Void)?
     var onClear: (() -> Void)?
     var onReadNotice: ((String) -> Void)?
+    var onOpenNotice: ((String) -> Void)?
     var onDismissNotice: ((String) -> Void)?
     var onRestoreNotice: ((String) -> Void)?
     var onCompanyCreate: (() -> Void)?
@@ -317,7 +386,7 @@ struct NovaShellPanel: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: panel == .drawer ? .leading : panel == .notifications ? .top : .center) {
-                (panel == .quickAdd ? Color(red: 15 / 255, green: 15 / 255, blue: 17 / 255).opacity(0.34) : NovaColorToken.scrim.color(in: scheme)).ignoresSafeArea()
+                (panel == .quickAdd ? Color.black.opacity(NovaPopupStyle.dimOpacity) : NovaColorToken.scrim.color(in: scheme)).ignoresSafeArea()
                     .onTapGesture { send(.dismiss) }.accessibilityHidden(true)
                 if panel == .drawer {
                     drawer
@@ -340,10 +409,7 @@ struct NovaShellPanel: View {
     }
 
     private var close: some View {
-        Button { send(.dismiss) } label: {
-            Image(systemName: "xmark").font(.system(size: 17)).frame(width: 44, height: 44).contentShape(Rectangle())
-        }.buttonStyle(.plain).foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
-            .accessibilityLabel(RDLocalization.string("localizable.nova.expert.shell.kapat.73fe721a", table: .localizable, fallback: "Kapat")).accessibilityIdentifier("nova.panel.close")
+        NovaPopupCloseButton(identifier: "nova.panel.close") { send(.dismiss) }
     }
 
     private var drawer: some View {
@@ -479,7 +545,7 @@ struct NovaShellPanel: View {
                         Image(systemName: "chevron.right").font(.system(size: 12))
                             .foregroundStyle(NovaColorToken.borderStrong.color(in: scheme))
                     }.padding(.horizontal, 14).padding(.vertical, 13).frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
-                        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 20))
+                        .novaControlBackground(cornerRadius: 20)
                 }.buttonStyle(.plain).disabled(!canOpen(destination)).opacity(canOpen(destination) ? 1 : 0.4)
                     .accessibilityIdentifier("nova.destination.\(destination.rawValue)")
             }
@@ -543,7 +609,8 @@ struct NovaShellPanel: View {
             Button {
                 // Opening a notice is reading it.
                 onReadNotice?(notice.id)
-                send(.navigate(notice.destination))
+                if let onOpenNotice { send(.dismiss); onOpenNotice(notice.id) }
+                else { send(.navigate(notice.destination)) }
             } label: {
                 HStack(alignment: .top, spacing: 10) {
                     NovaIcon(symbol: notice.symbol, size: 19)
@@ -582,7 +649,7 @@ struct NovaShellPanel: View {
                 }
             }
         }.padding(.horizontal, 12).padding(.vertical, 11).frame(maxWidth: .infinity, alignment: .leading)
-            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 20))
+            .novaControlBackground(cornerRadius: 20)
             .opacity(notice.dismissed ? 0.55 : 1)
             .padding(.bottom, 7)
     }
@@ -720,22 +787,11 @@ struct NovaDashboardScreen: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(alignment: .top, spacing: 8) {
                         ForEach(data.metrics) { metric in
-                            Button { onNavigate(metric.destination) } label: {
-                                VStack(alignment: .leading, spacing: 3) {
-                                    HStack(spacing: 6) {
-                                        NovaIcon(symbol: metric.symbol, size: 15)
-                                            .foregroundStyle(NovaColorToken.text.color(in: scheme))
-                                        NovaText(text: metric.value, style: .cardTitle)
-                                    }
-                                    NovaText(text: metric.label, style: .meta)
-                                        .lineLimit(2).frame(maxWidth: .infinity, minHeight: 24, alignment: .topLeading)
-                                    NovaText(text: metric.footer, style: .micro,
-                                        color: metric.id == "open" ? metric.tone.color(in: scheme) : nil)
-                                        .lineLimit(1).minimumScaleFactor(0.8)
-                                }.padding(.horizontal, 10).padding(.vertical, 11)
-                                    .frame(width: typeSize.isAccessibilitySize ? 160 : 86, height: typeSize.isAccessibilitySize ? nil : 86, alignment: .topLeading)
-                                    .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 18))
-                            }.buttonStyle(.plain).accessibilityIdentifier("nova.metric.\(metric.id)")
+                            NovaListStat(title: metric.label, symbol: metric.symbol, value: metric.value) {
+                                onNavigate(metric.destination)
+                            }
+                            .frame(width: typeSize.isAccessibilitySize ? 160 : 86)
+                            .accessibilityIdentifier("nova.metric.\(metric.id)")
                         }
                     }.padding(.horizontal, 16)
                 }.padding(.bottom, 18)
@@ -750,7 +806,7 @@ struct NovaDashboardScreen: View {
                         Spacer(minLength: 0)
                         Image(systemName: "chevron.right").font(.system(size: 18)).foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
                     }.padding(.horizontal, 14).padding(.vertical, 13).frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
-                        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 24))
+                        .novaControlBackground(cornerRadius: 24)
                 }.buttonStyle(.plain).padding(.horizontal, 18).padding(.bottom, 10).accessibilityIdentifier("nova.home.training")
                 HStack(spacing: 10) {
                     Image(systemName: "line.3.horizontal.decrease").foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
@@ -787,7 +843,7 @@ struct NovaDashboardScreen: View {
             HStack(spacing: 12) { greeting; assistant }
             VStack(alignment: .leading, spacing: 12) { greeting; assistant }
         }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
-            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 22))
+            .novaControlBackground(cornerRadius: 22)
     }
     private var greeting: some View {
         VStack(alignment: .leading, spacing: 3) {
@@ -830,7 +886,7 @@ struct NovaDashboardScreen: View {
                 }.frame(minHeight: 30)
             }.disabled(data.activity == nil)
         }.buttonStyle(.plain).padding(12).padding(.vertical, 3)
-            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 24))
+            .novaControlBackground(cornerRadius: 24)
     }
     private var capture: some View {
         VStack(spacing: 0) {
@@ -869,7 +925,7 @@ struct NovaDashboardScreen: View {
                     .shadow(color: NovaColorToken.accent.color(in: scheme).opacity(0.18), radius: 18, x: 0, y: 9)
             }.buttonStyle(.plain).padding(.top, 14).accessibilityIdentifier("nova.home.addFinding")
         }.padding(18)
-            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 26))
+            .novaControlBackground(cornerRadius: 26)
     }
 }
 
@@ -946,7 +1002,7 @@ struct NovaCompaniesScreen: View {
                             .accessibilityLabel(RDLocalization.string("localizable.nova.expert.shell.aramayi.temizle.e3d82e8b", table: .localizable, fallback: "Aramayı temizle")).accessibilityIdentifier("nova.companies.clear")
                     }
                 }.padding(.horizontal, 14).frame(minHeight: 44)
-                    .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 16))
+                    .novaControlBackground(cornerRadius: 16)
                 if isLoading {
                     Label(RDLocalization.string("localizable.nova.expert.shell.firmalar.yukleniyor.af61acb2", table: .localizable, fallback: "Firmalar yükleniyor"), systemImage: "hourglass").padding(14)
                 } else if let error {
@@ -973,12 +1029,13 @@ struct NovaCompaniesScreen: View {
                                 Spacer(minLength: 0)
                                 Image(systemName: "chevron.right").font(.system(size: 13)).foregroundStyle(NovaColorToken.borderStrong.color(in: scheme))
                             }.padding(14).frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
-                                .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 22))
+                                .novaControlBackground(cornerRadius: 22)
                         }.accessibilityIdentifier("nova.company.\(company.id)")
                     }
                 }
             }.padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 24)
         }.buttonStyle(.plain).background(NovaColorToken.canvas.color(in: scheme))
+            .novaEdgeBackGesture(action: onBack)
     }
 }
 

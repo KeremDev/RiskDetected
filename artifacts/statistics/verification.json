@@ -1,0 +1,24 @@
+{
+  "migration": "20260914170954_isg_statistics_read",
+  "sha256": "1f0746548dcda514892beb25d2c3d9bca5f064374bdab1aaa2badb0df1329a6a",
+  "isolated_database": "passed",
+  "live_authenticated_read": "passed",
+  "swift_model": "passed",
+  "ui_tests": {
+    "passed": 2,
+    "failed": 0,
+    "final_chart_filter_navigation_retest": "passed"
+  },
+  "security_advisor_statistics_findings": 0,
+  "ios_version": "2.0.3",
+  "ios_build": 102,
+  "platform_scope": "iOS NOVA pilot",
+  "optional_sources_live": {
+    "nonconformities": "not installed",
+    "document_tracking": "not installed"
+  },
+  "physical_install": {
+    "statistics_screen_installed_and_launched": true,
+    "final_12_month_layout_install": "device connection timed out; awaiting reconnect"
+  }
+}

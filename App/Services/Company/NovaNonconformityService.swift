@@ -64,6 +64,7 @@ import Foundation
         case .finding:
             guard let finding = intent.findingID else { throw NovaNonconformityFailure.validation }
             payload["finding_id"] = .id(finding)
+            payload["risk_method"] = .string((intent.sourceMethod ?? .fineKinney).rawValue)
             // Without an explicit severity the server maps the legacy band, and
             // refuses rather than guessing when that band is unreadable.
             if intent.severity == nil {
@@ -88,12 +89,13 @@ import Foundation
                 payload["evidence_asset_ids"] = .array(intent.evidenceAssetIDs.map { .id($0) })
             }
         }
-        let data = try await rpc("isg_nonconformity_mutate_v1", [
+        let data = try await rpc(intent.origin == .finding ? "isg_pilot_finding_file_v1" : "isg_nonconformity_mutate_v1", [
             "p_company": .id(scope.companyID), "p_action": .string(intent.action),
             "p_operation": .id(operationID), "p_mutation": .id(mutationID),
             "p_payload": .object(payload)])
         try check(scope)
         let envelope = try JSONDecoder().decode(MutationEnvelope.self, from: data)
+        NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: scope.ownerID)
         return .init(row: envelope.row, alreadyOpen: envelope.outcome?.replayed ?? false)
     }
 

@@ -18,46 +18,10 @@ struct NovaAppointmentStatCard: View {
     let value: Int
     var isSelected = false
     let onTap: () -> Void
-    @Environment(\.colorScheme) private var scheme
-
-    private var tone: NovaColorToken {
-        switch state {
-        case .active: return .statusSuccessInk
-        case .upcoming: return .statusInfoInk
-        case .ended: return .textMuted
-        }
-    }
-
     var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Image(systemName: state.symbol).font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(tone.color(in: scheme))
-                    NovaSizedText(text: "\(value)", size: 19, weight: "ExtraBold")
-                }
-                NovaSizedText(text: state.title, size: 10, weight: "Medium",
-                    color: NovaColorToken.textMuted.color(in: scheme))
-                    .lineLimit(2).minimumScaleFactor(0.82)
-                    .frame(maxWidth: .infinity, minHeight: 24, alignment: .topLeading)
-                NovaSizedText(text: state.footer, size: 9.5, weight: "Bold",
-                    color: value > 0 ? tone.color(in: scheme) : NovaColorToken.textMuted.color(in: scheme))
-                    .lineLimit(1).minimumScaleFactor(0.8)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 10).padding(.horizontal, 11)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(NovaColorToken.surface.color(in: scheme))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(isSelected ? tone.color(in: scheme)
-                                : NovaColorToken.hairline.color(in: scheme),
-                                lineWidth: isSelected ? 1.6 : 1))
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("nova.appointment.stat.\(state.rawValue)")
+        NovaListStat(title: state.title, symbol: state.symbol, value: value,
+            isSelected: isSelected, onTap: onTap)
+            .accessibilityIdentifier("nova.appointment.stat.\(state.rawValue)")
     }
 }
 
@@ -171,10 +135,11 @@ struct NovaAppointmentScreen: View {
         if startInAddMode {
             addFlow(.init(startsOn: NovaDayField.text(Date())))
         } else {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
+                    NovaHelpHint(text: "Firmayı ve personeli seçerek görevlendirme kaydı oluşturun; belgesini aynı kayda ekleyin.")
                     if let board { counters(board) }
                     filters
                     if loading && board == nil {
@@ -193,7 +158,7 @@ struct NovaAppointmentScreen: View {
             }
         }
         .task { await load(reset: true) }
-        .sheet(item: $detail) { row in
+        .novaPopup(item: $detail) { row in
             NovaAppointmentDetailSheet(entry: row, canWrite: canWrite, fileClient: client.fileClient,
                 onEnd: {
                     detail = nil
@@ -211,8 +176,8 @@ struct NovaAppointmentScreen: View {
                     }
                 }
         }
-        .sheet(item: $drafting) { draft in addFlow(draft) }
-        .sheet(item: $ending) { draft in
+        .novaPopup(item: $drafting) { draft in addFlow(draft) }
+        .novaPopup(item: $ending) { draft in
             NovaAppointmentEndSheet(draft: draft,
                 onSave: { edited in await finish(edited) }, onClose: { ending = nil })
         }
@@ -228,21 +193,11 @@ struct NovaAppointmentScreen: View {
         }
     }
 
-    @ViewBuilder private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 10) {
-                NovaBackButton(action: onBack)
-                NovaText(text: headingOverride ?? NovaDestination.appointments.title, style: .screenTitle)
-                Spacer(minLength: 0)
-                if canWrite {
-                    NovaButton(label: RDLocalization.string("localizable.nova.appointment.new",
-                        table: .localizable, fallback: "Görev ver"), symbol: "plus",
-                        variant: .primary) { startCreate() }
-                }
+    private var header: some View {
+        NovaListHeading(title: headingOverride ?? NovaDestination.appointments.title, onBack: onBack) {
+            if canWrite {
+                NovaButton(label: "Atama Ekle", symbol: "plus", compact: true) { startCreate() }
             }
-            // Said once, at the top, rather than discovered in a form.
-            NovaText(text: NovaAppointmentWords.noQualificationNote, style: .meta,
-                color: NovaColorToken.textSecondary.color(in: scheme))
         }
     }
 
@@ -259,9 +214,6 @@ struct NovaAppointmentScreen: View {
                     }
                 }
             }
-            // A count of who holds a role, never a count against a requirement.
-            NovaText(text: NovaAppointmentWords.noRequiredCountNote, style: .meta,
-                color: NovaColorToken.textMuted.color(in: scheme))
         }
     }
 
@@ -322,15 +274,9 @@ struct NovaAppointmentScreen: View {
 
     @ViewBuilder private func list(_ board: NovaAppointmentBoard) -> some View {
         if board.rows.isEmpty {
-            NovaCard(padding: 18) {
-                VStack(alignment: .leading, spacing: 6) {
-                    NovaText(text: RDLocalization.string("localizable.nova.appointment.empty.title", table: .localizable,
-                        fallback: "Atama kaydı yok"), style: .cardTitle)
-                    NovaText(text: RDLocalization.string("localizable.nova.appointment.empty.body", table: .localizable,
-                        fallback: "Bir firma seçip temsilci, destek elemanı veya ekip üyesi görevini kaydedin."),
-                        style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
-                }
-            }
+            NovaEmptyState(title: RDLocalization.string("localizable.nova.appointment.empty.title",
+                table: .localizable, fallback: "Henüz atama kaydı yok"),
+                message: "Firma personelinden temsilci, destek elemanı veya ekip üyesi seçerek görev süresini takip edebilirsiniz.")
         } else {
             VStack(spacing: 10) {
                 ForEach(board.rows) { row in

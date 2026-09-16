@@ -26,6 +26,7 @@ struct NovaAnalysisItemSheet: View {
     let react: (NovaAnalysisReaction) async throws -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
+    var onFile: (() -> Void)?
     @Environment(\.colorScheme) private var scheme
     @State private var chosen: NovaAnalysisReaction = .none
     @State private var busy = false
@@ -42,6 +43,10 @@ struct NovaAnalysisItemSheet: View {
             VStack(alignment: .leading, spacing: 11) {
                 hero
                 if isEditable { controls }
+                if canWrite, section.isFileable, let onFile {
+                    NovaButton(label: "Firmaya Uygunsuzluk Olarak Ekle", symbol: "building.2", variant: .surface, action: onFile)
+                        .accessibilityIdentifier("analysis.finding.file")
+                }
                 scoreCard
                 fields
                 if let error {
@@ -245,7 +250,7 @@ struct NovaAnalysisItemSheet: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
-            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 16))
+            .novaControlBackground(cornerRadius: 16)
             .overlay(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 2).fill(palette.ink.color(in: scheme).opacity(0.55))
                     .frame(width: 3).padding(.vertical, 12).padding(.leading, 1)
@@ -253,6 +258,75 @@ struct NovaAnalysisItemSheet: View {
             .overlay(RoundedRectangle(cornerRadius: 16)
                 .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
         }
+    }
+}
+
+/// A finding opened from the nonconformity board. It deliberately reuses the
+/// analysis item sheet; the only filing-specific change is that an item already
+/// attached to a company has no "add to company" action.
+struct NovaFiledFindingSheet: View {
+    let entry: NovaNonconformityEntry
+    let identity: NovaSessionIdentity
+    let preferredMethod: RiskMethod
+    let fallbackClient: NovaNonconformityRecordClient
+    var canWrite = true
+    @State private var source: NovaAnalysisWorkspace.RecordFindingPresentation?
+    @State private var failed = false
+    @State private var mode: Mode = .read
+    @State private var reload = UUID()
+
+    private enum Mode { case read, edit, delete }
+
+    var body: some View {
+        Group {
+            if let source {
+                switch mode {
+                case .read:
+                    NovaAnalysisItemSheet(item: source.item, section: source.section, method: source.method,
+                        photo: source.photo, analysisTitle: source.analysisTitle,
+                        companyName: source.companyName, createdOn: source.createdOn,
+                        reaction: source.item.reaction, canWrite: canWrite,
+                        react: { value in
+                            try await NovaAnalysisWorkspace.react(analysisID: source.analysisID,
+                                itemID: source.item.id, section: source.section, reaction: value)
+                        },
+                        onEdit: { mode = .edit }, onDelete: { mode = .delete }, onFile: nil)
+                case .edit:
+                    NovaAnalysisEditSheet(item: source.item, method: source.method) { values in
+                        try await NovaAnalysisWorkspace.edit(.init(analysisID: source.analysisID,
+                            findingID: source.item.id, title: values.title, category: values.category,
+                            body: values.body, measure: values.measure, references: values.references,
+                            score: values.score))
+                        mode = .read
+                        reload = UUID()
+                    }
+                case .delete:
+                    NovaAnalysisDeleteSheet(item: source.item) {
+                        try await NovaAnalysisWorkspace.remove(analysisID: source.analysisID,
+                                                               findingID: source.item.id)
+                        self.source = nil
+                        failed = true
+                        mode = .read
+                    }
+                }
+            } else if failed {
+                NovaNonconformityRecordSheet(entry: entry, client: fallbackClient, canWrite: canWrite)
+            } else {
+                NovaLoadingView(message: RDLocalization.string("localizable.nova.analysis.loading", table: .localizable,
+                    fallback: "Bulgu yükleniyor…"))
+                    .padding(20).novaPopupContentSize()
+            }
+        }
+        .task(id: reload) { await load() }
+    }
+
+    private func load() async {
+        failed = false
+        do {
+            source = try await NovaAnalysisWorkspace.recordFinding(entry, identity: identity,
+                                                                    preferredMethod: preferredMethod)
+        } catch is CancellationError { }
+        catch { failed = true }
     }
 }
 
@@ -509,11 +583,13 @@ struct NovaAnalysisFileSheet: View {
     /// The method the expert is reading the analysis with. The band that
     /// travels with a scored item is that method's band, never the other's.
     let method: NovaRiskMethod
+    var targetCompany: UUID? = nil
     let loadWorkplaces: () async throws -> [NovaNonconformityWorkplace]
     let file: (NovaAnalysisFileRequest) async -> NovaFindingOutcome
     let onFinished: () -> Void
     let record: (UUID, NovaFindingOutcome) -> Void
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.novaCelebrate) private var celebrate
     @State private var workplaces: [NovaNonconformityWorkplace] = []
     @State private var workplace: UUID?
     @State private var kind: NovaNonconformityRecordKind = .nonconformity
@@ -546,8 +622,20 @@ struct NovaAnalysisFileSheet: View {
                 footer
             }.padding(16).novaPopupContentSize()
         }
+        .preference(key: NovaPopupBusyKey.self, value: running)
         .task {
-            do { workplaces = try await loadWorkplaces(); workplace = workplaces.first?.id }
+            do {
+                let loaded = try await loadWorkplaces()
+                workplaces = loaded
+                workplace = loaded.count == 1 ? loaded.first?.id : nil
+                // "Firmaya Aktar" plus one company and one workplace is a
+                // complete instruction. Do not make the user discover and tap
+                // a second confirmation for an already-scored finding.
+                if let only = loaded.first, loaded.count == 1,
+                   !items.isEmpty, ready.count == items.count {
+                    await run(target: only.id)
+                }
+            }
             catch {
                 self.error = RDLocalization.string("localizable.nova.nonconformity.error.workplaces", table: .localizable,
                     fallback: "İşyeri listesi alınamadı. Tekrar deneyin.")
@@ -608,12 +696,13 @@ struct NovaAnalysisFileSheet: View {
                             fallback: "Bu bulgunun risk bandı okunamadı. Önem derecesini siz seçin.")
                         : RDLocalization.string("localizable.nova.analysis.file.unscored", table: .localizable,
                             fallback: "Bu madde skorsuz geliyor. Önem derecesini siz seçin."), style: .metaQuiet)
-                    Picker("", selection: Binding(get: { severity[item.id] ?? .medium },
-                                                  set: { severity[item.id] = $0 })) {
+                    Picker("Önem derecesi", selection: Binding<NovaNonconformitySeverity?>(
+                        get: { severity[item.id] }, set: { severity[item.id] = $0 })) {
+                        Text("Önem derecesi seçin").tag(NovaNonconformitySeverity?.none)
                         ForEach(NovaNonconformitySeverity.allCases) { value in
-                            Text(verbatim: NovaNonconformityWords.severity(value)).tag(value)
+                            Text(verbatim: NovaNonconformityWords.severity(value)).tag(Optional(value))
                         }
-                    }.pickerStyle(.segmented).disabled(running)
+                    }.pickerStyle(.menu).disabled(running)
                         .accessibilityIdentifier("analysis.file.severity.\(item.id.uuidString.lowercased())")
                 } else if let band = item.band(method) {
                     NovaStatusPill(label: NovaNonconformityWords.band(band), status: NovaNonconformityWords.tone(band))
@@ -653,19 +742,31 @@ struct NovaAnalysisFileSheet: View {
         }
     }
 
-    private func run() async {
-        guard let target = workplace else { return }
+    private func run(target explicitTarget: UUID? = nil) async {
+        guard !running, let target = explicitTarget ?? workplace else { return }
         running = true
+        var failed = false
+        var succeeded = false
         for item in ready {
-            let outcome = await file(.init(item: item, section: section, workplaceID: target,
+            let outcome = await file(.init(companyID: targetCompany, item: item, section: section, workplaceID: target,
                 recordKind: section.isScored ? .nonconformity : kind,
                 band: section.isScored ? item.band(method) : nil,
-                severity: severity[item.id]))
+                severity: severity[item.id], sourceMethod: section.isScored ? method : nil))
             outcomes[item.id] = outcome
             record(item.id, outcome)
+            switch outcome {
+            case .opened, .alreadyOpen: succeeded = true
+            case .failed: failed = true
+            case .untouched: break
+            }
         }
         running = false
-        finished = true
+        if succeeded && !failed {
+            celebrate(NovaSuccessMessage.findingCreated)
+            onFinished()
+        } else {
+            finished = true
+        }
     }
 }
 
@@ -746,7 +847,7 @@ struct NovaAnalysisReportSheet: View {
                     .foregroundStyle(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.borderStrong.color(in: scheme))
             }
             .frame(maxWidth: .infinity, alignment: .leading).padding(12)
-            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 18))
+            .novaControlBackground(cornerRadius: 18)
             .overlay(RoundedRectangle(cornerRadius: 18)
                 .strokeBorder(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.border.color(in: scheme),
                               lineWidth: isOn ? 1.5 : 1))

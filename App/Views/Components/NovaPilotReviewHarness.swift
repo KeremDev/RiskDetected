@@ -16,7 +16,8 @@ struct NovaPilotReviewHarness: View {
     private static let employee = UUID(uuidString: "00000000-0000-4000-8000-000000000004")!
     @State private var selected = false
     @State private var create = false
-    @State private var navigation = NovaNavigationState(epoch: "review-only", available: [.statistics, .companies, .findings, .newFinding, .analyses, .newAnalysis, .documentChecklist, .documents, .periodicChecks])
+    @State private var riskPopup = false
+    @State private var navigation = NovaNavigationState(epoch: "review-only", available: [.riskAssessments, .emergencyPlans, .statistics, .companies, .findings, .newFinding, .analyses, .newAnalysis, .documentChecklist, .documents, .periodicChecks])
     @State private var draft = NovaAnalysisIntakeDraft()
     @State private var showingReviewReports = false
     @State private var reviewImages: [UIImage] = []
@@ -46,6 +47,31 @@ struct NovaPilotReviewHarness: View {
               sector: "Metal sanayi", email: "info@example.test", declared_employee_count: 25, responsible_employee_id: Self.employee,
               personnel_count: 1, workplace_count: 1, department_count: 0, finding_count: nil, document_count: nil, completion_score: nil)
     }
+    private var reviewRiskRow: NovaRiskRow {
+        .init(id: Self.employee, companyID: Self.company, companyName: "Örnek Metal A.Ş.",
+            workplaceID: Self.company, workplaceName: "Örnek Metal A.Ş.", currentVersion: CommandLine.arguments.contains("RD_UI_TEST_POPUP_NEW") ? 0 : 1,
+            baseAssessmentOn: "2026-01-01", validUntil: "2028-01-01", state: .valid, group: .current,
+            noticeDays: 30, currentKind: .full, currentAssessmentOn: "2026-01-01", currentRevisionOn: nil,
+            currentFileAssetID: nil, periodYears: 2, periodSource: nil, periodNeedsReview: false,
+            dateNeedsReview: false, sourceDrift: false, driftNote: nil, workplaceHazardClass: "high",
+            workplaceSuggestedPeriodYears: 2, hasOpenDraft: false, draftVersion: nil, draftKind: nil,
+            draftAssessmentOn: nil, draftReason: nil, sourceLinkCount: 0, versions: [])
+    }
+    private var reviewRiskClient: NovaRiskClient {
+        .init(catalogue: { _ in .init(workplaces: [.init(id: Self.company, name: "Merkez", needsReview: false, hazardClass: "high", suggestedPeriodYears: 2)], rules: [], noticeDays: 30, expertPeriodNeedsReview: false) },
+            board: { query in
+                let matches = (query.company == nil || query.company == Self.company) && (query.state == nil || query.state == "valid" || query.state == "current")
+                return .init(rows: matches ? [reviewRiskRow] : [], counts: ["valid": 1], companies: [], total: matches ? 1 : 0, hasMore: false, offset: 0, noticeDays: 30)
+            },
+            companies: { reviewCompanies }, detail: { _ in reviewRiskRow }, open: { _,_ in reviewRiskRow },
+            draft: { _,_ in reviewRiskRow }, finalize: { _,_ in reviewRiskRow }, fileClient: reviewFileClient)
+    }
+    private var reviewEmergencyClient: NovaEmergencyClient {
+        .init(catalogue: { _ in .init(workplaces: [], roles: [], supportStaff: [], noticeDays: 30, periodDefaultsOffered: true) },
+            board: { _ in .init(rows: [], counts: [:], companies: [], total: 0, hasMore: false, offset: 0, noticeDays: 30) },
+            companies: { reviewCompanies }, detail: { _ in throw NovaEmergencyFailure.unavailable },
+            publish: { _,_ in throw NovaEmergencyFailure.unavailable }, fileClient: reviewFileClient)
+    }
     var body: some View {
         Group {
         if CommandLine.arguments.contains("RD_UI_TEST_AUDIT_ANALYSIS") {
@@ -56,7 +82,11 @@ struct NovaPilotReviewHarness: View {
         NovaExpertShell(navigation: $navigation, userName: "Tasarım Provası", connectionLabel: "Sentetik veriler · canlı bağlantı yok",
             onCompanyCreate: { create = true },
             onDestination: { destination in if destination == .companies { selected = false } }) { destination in
-            if destination == .statistics {
+            if destination == .riskAssessments {
+                NovaRiskScreen(client: reviewRiskClient, onBack: { navigation.apply(.navigate(.home), from: navigation.epoch) })
+            } else if destination == .emergencyPlans {
+                NovaEmergencyPlanScreen(client: reviewEmergencyClient, onBack: { navigation.apply(.navigate(.home), from: navigation.epoch) })
+            } else if destination == .statistics {
                 NovaStatisticsScreen(load: { company, months in
                     if CommandLine.arguments.contains("RD_UI_TEST_STATISTICS_ERROR") { throw NovaPersonnelFailure.unavailable }
                     return NovaStatisticsReview.snapshot(owner: Self.owner, company: company, months: months,
@@ -67,7 +97,9 @@ struct NovaPilotReviewHarness: View {
                 analysisReview(destination)
             } else if selected {
                 NovaCompanyWorkspace(scope: scope, companyName: summary.name, canWrite: true, personnel: personnel, directory: directory,
-                    onBack: { selected = false }, loadSummary: { summary })
+                    onBack: { selected = false }, loadSummary: { summary },
+                    loadNonconformities: { reviewEntries.map(\.row) },
+                    onOpenNonconformities: { navigation.apply(.navigate(.findings), from: navigation.epoch) })
             } else {
                 NovaCompaniesScreen(companies: [.init(id: Self.company.uuidString, name: summary.name, detail: "Metal sanayi · Çok tehlikeli")],
                     isOwnedList: true, onSelect: { _ in selected = true }, onBack: {}, onRetry: {}, onCreate: { create = true })
@@ -78,15 +110,26 @@ struct NovaPilotReviewHarness: View {
         .novaFullScreenCover(isPresented: $create) {
             NovaPopup {
             NovaPilotCompanyCreateView(identity: identity,
-                service: .init(rpc: { _, _ in
-                    Data("{\"schema_version\":2,\"company\":{\"id\":\"\(Self.company)\",\"user_id\":\"\(Self.owner)\",\"name\":\"Fixture company\",\"hazard_class\":\"medium\",\"is_archived\":false},\"replayed\":false}".utf8)
+                service: .init(rpc: { endpoint, _ in
+                    Data("{\"schema_version\":\(endpoint.hasSuffix("v3") ? 3 : 2),\"company\":{\"id\":\"\(Self.company)\",\"user_id\":\"\(Self.owner)\",\"name\":\"Fixture company\",\"hazard_class\":\"medium\",\"is_archived\":false},\"replayed\":false}".utf8)
                 }, currentIdentity: { identity }, storage: NovaReviewStorage()), onCreated: { _ in })
             }
         }
+        .novaFullScreenCover(isPresented: $riskPopup) {
+            NovaRiskScreen(client: reviewRiskClient, onBack: { riskPopup = false },
+                initialCompany: CommandLine.arguments.contains("RD_UI_TEST_POPUP_SELECTED") ? Self.company : nil,
+                startInAddMode: true)
+        }
         .modifier(NovaSuccessPresentation())
         .onAppear {
+            if CommandLine.arguments.contains("RD_UI_TEST_RISK_LIST") { navigation.apply(.navigate(.riskAssessments), from: navigation.epoch) }
+            if CommandLine.arguments.contains("RD_UI_TEST_EMERGENCY_LIST") { navigation.apply(.navigate(.emergencyPlans), from: navigation.epoch) }
+            if CommandLine.arguments.contains("RD_UI_TEST_RISK_POPUP") { riskPopup = true }
+            if CommandLine.arguments.contains("RD_UI_TEST_USABILITY_POPUP") { create = true }
             if CommandLine.arguments.contains("RD_UI_TEST_STATISTICS") {
                 navigation.apply(.navigate(.statistics), from: navigation.epoch)
+            } else if CommandLine.arguments.contains("RD_UI_TEST_PERIODIC") {
+                navigation.apply(.navigate(.periodicChecks), from: navigation.epoch)
             } else if CommandLine.arguments.contains("RD_UI_TEST_AUDIT_ANALYSIS") {
                 navigation.apply(.navigate(.analyses), from: navigation.epoch)
             } else if CommandLine.arguments.contains("RD_UI_TEST_AUDIT_FINDING") {
@@ -215,7 +258,14 @@ struct NovaPilotReviewHarness: View {
                analysisID: nil, createdAt: nil)]
     }
     private var reviewDetailClient: NovaAnalysisDetailClient {
-        .init(load: { reviewDetail }, photos: { [Self.fixturePhoto] }, companies: { reviewCompanies },
+        .init(load: {
+            if CommandLine.arguments.contains("RD_UI_TEST_LEGACY_ANALYSIS_DETAIL") {
+                let bundle = try await AnalysisService.shared.result(analysisID: Self.analysis)
+                return NovaAnalysisWorkspace.detailData(bundle: bundle, hub: nil,
+                    companyName: nil, method: .fineKinney, methodLabel: "Fine-Kinney")
+            }
+            return reviewDetail
+        }, photos: { [Self.fixturePhoto] }, companies: { reviewCompanies },
               assign: { _ in reviewAssigned = true }, workplaces: { _ in reviewWorkplaces },
               file: { _ in .opened }, edit: { _ in }, remove: { _ in }, react: { _, _, _ in },
               report: { _ in "ornek-rapor.pdf" })

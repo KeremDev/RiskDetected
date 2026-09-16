@@ -1,0 +1,92 @@
+[
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D6FB4CCC-BD17-42EE-80B7-F49563834BAF",
+        "deviceName" : "iPhone 17 Pro",
+        "exportedFileName" : "B5A52738-8653-40A0-9D90-B0CF160857D9.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "03-analysis-training_recommendations_0_27D8DA75-657D-478D-A69E-3D2987ED521D.png",
+        "timestamp" : 1789424796.289
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D6FB4CCC-BD17-42EE-80B7-F49563834BAF",
+        "deviceName" : "iPhone 17 Pro",
+        "exportedFileName" : "9CEF7BDB-619B-465F-804E-66D9F6C87626.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "03-analysis-expert_recommendations_0_FA9896D5-73D6-4045-8667-10272F2ED585.png",
+        "timestamp" : 1789424794.735
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D6FB4CCC-BD17-42EE-80B7-F49563834BAF",
+        "deviceName" : "iPhone 17 Pro",
+        "exportedFileName" : "95DBC616-A4D4-4C11-84B8-10B6CA9D2A6A.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "04-analysis-finding-detail_0_0313B4E1-E098-46CE-8555-52E414BAFB5E.png",
+        "timestamp" : 1789424792.785
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D6FB4CCC-BD17-42EE-80B7-F49563834BAF",
+        "deviceName" : "iPhone 17 Pro",
+        "exportedFileName" : "9B171B84-34CC-4F70-B04B-53EE9FBC1375.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "02-analysis-result-risk_0_270DBCC2-EEB4-495E-8D9F-5A3B60B89E52.png",
+        "timestamp" : 1789424790.009
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D6FB4CCC-BD17-42EE-80B7-F49563834BAF",
+        "deviceName" : "iPhone 17 Pro",
+        "exportedFileName" : "F00979CE-540B-4D1F-BD8C-6D39C03A8895.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "01-analysis-list_0_9379586C-6326-42B2-BE8C-C3D28833805F.png",
+        "timestamp" : 1789424788.442
+      }
+    ],
+    "testIdentifier" : "NovaDesignAuditUITests/testAnalysisResultAndSectionSurfaces()",
+    "testIdentifierURL" : "test://com.apple.xcode/RiskDetected/RiskDetectedUITests/NovaDesignAuditUITests/testAnalysisResultAndSectionSurfaces"
+  },
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D6FB4CCC-BD17-42EE-80B7-F49563834BAF",
+        "deviceName" : "iPhone 17 Pro",
+        "exportedFileName" : "45C4FFC6-D586-4964-92B3-FEA9E3413A48.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "06-finding-detail_0_87CE8810-CA9F-4910-8246-F9B70EE4786C.png",
+        "timestamp" : 1789424802.447
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D6FB4CCC-BD17-42EE-80B7-F49563834BAF",
+        "deviceName" : "iPhone 17 Pro",
+        "exportedFileName" : "826BAECA-E422-4703-8851-3C6A6FA185C0.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "05-findings-list_0_A30DA41B-ED31-4CDB-B0BA-8F3CCDED220D.png",
+        "timestamp" : 1789424800.909
+      }
+    ],
+    "testIdentifier" : "NovaDesignAuditUITests/testFindingDetailSurface()",
+    "testIdentifierURL" : "test://com.apple.xcode/RiskDetected/RiskDetectedUITests/NovaDesignAuditUITests/testFindingDetailSurface"
+  },
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D6FB4CCC-BD17-42EE-80B7-F49563834BAF",
+        "deviceName" : "iPhone 17 Pro",
+        "exportedFileName" : "741DCCDF-2026-4B69-AC03-4D5ABBDFB123.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "NOVA-centered-personnel-popup_0_32AFDD11-6CC2-4D07-BF1B-C9DFF026A475.png",
+        "timestamp" : 1789424811.95
+      }
+    ],
+    "testIdentifier" : "NovaPilotUITests/testDirectPersonnelSheetPreservesCompanyAccordion()",
+    "testIdentifierURL" : "test://com.apple.xcode/RiskDetected/RiskDetectedUITests/NovaPilotUITests/testDirectPersonnelSheetPreservesCompanyAccordion"
+  }
+]

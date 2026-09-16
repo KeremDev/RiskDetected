@@ -1,0 +1,21 @@
+BEGIN;
+DO $$ DECLARE pkg jsonb; s jsonb; r jsonb; t jsonb; BEGIN
+ SELECT content_package INTO pkg FROM private_isg.training_catalog_versions LIMIT 1;
+ s:='{"id":"scope-a","workplace_id":"workplace-a","workplace_name":"Ana işyeri","group_name":"Üretim","cycle":"initial","preset_code":"initial_very_hazardous","instruction_minutes":180,"held_on":"2026-09-01","valid_until":"2027-09-01","issues":[],"context_note":"Üretim riskleri","topics":[{"code":"G1-A","group":"G1","instruction_minutes":180,"method":"face_to_face"}]}';
+ r:=private_isg.pilot_learning_totals(jsonb_build_array(s),pkg)->0;
+ IF r->>'remaining_minutes'<>'540' OR r->>'required_minutes'<>'720' OR jsonb_array_length(r->'missing_topics')<>20 OR (r->>'complete')::bool THEN RAISE EXCEPTION 'partial 4/16 hour calculation %',r; END IF;
+ r:=private_isg.pilot_learning_totals(jsonb_build_array(s,jsonb_set(s,'{id}','"scope-b"')),pkg)->0;
+ IF r->>'received_minutes'<>'360' THEN RAISE EXCEPTION 'cumulative minutes'; END IF;
+ r:=private_isg.pilot_learning_totals(jsonb_build_array(s||'{"issues":["LESSON_TOPIC_MISMATCH"]}'),pkg)->0;
+ IF r->>'received_minutes'<>'0' OR r->>'excluded_sessions'<>'1' THEN RAISE EXCEPTION 'invalid lesson credited'; END IF;
+ s:=jsonb_set(s,'{topics}','[{"code":"G4-S1","group":"G4","instruction_minutes":180,"method":"online"}]');
+ r:=private_isg.pilot_learning_totals(jsonb_build_array(s),pkg)->0;
+ IF r->>'received_minutes'<>'0' OR r->>'context_missing'<>'true' THEN RAISE EXCEPTION 'online G4 credited'; END IF;
+ s:=jsonb_set(s,'{topics}','[{"code":"G1-A","group":"G1","instruction_minutes":12,"method":"face_to_face"}]');
+ r:=private_isg.pilot_learning_totals(jsonb_build_array(s),pkg)->0;
+ IF r->>'received_minutes'<>'12' THEN RAISE EXCEPTION 'minute rounded'; END IF;
+ r:=private_isg.pilot_learning_totals(jsonb_build_array(s,s||'{"group_name":"Ofis"}'),pkg);
+ IF jsonb_array_length(r)<>2 THEN RAISE EXCEPTION 'different G4 groups merged'; END IF;
+ RAISE NOTICE 'ok employee learning 4/16 hours, cumulative instruction, no breaks, missing topics, invalid schedule, G4 method, exact minutes, separate scopes';
+END $$;
+ROLLBACK;

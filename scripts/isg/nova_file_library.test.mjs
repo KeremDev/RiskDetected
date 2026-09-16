@@ -47,7 +47,8 @@ test('the archive never claims a malware scan it did not run',()=>{
   assert.match(sheets,/if !row\.malwareScanned \{/);
   assert.match(sheets,/localizable\.nova\.file\.assurance\.no\.malware/);
   assert.match(screen,/localizable\.nova\.file\.hint\b/);
-  assert.match(sheets,/localizable\.nova\.file\.add\.no\.malware/);
+  assert.match(sheets,/if !assurance\.malwareScanningAvailable/);
+  assert.match(sheets,/virüs taraması yapılmaz/);
   // Nothing on this side sets the flag or invents an assurance level.
   for(const [path,source] of [['model',model],['screen',screen],['sheets',sheets],['service',service]]){
     assert.doesNotMatch(code(source),/malwareScanned\s*=\s*true/,path);
@@ -69,7 +70,8 @@ test('the upload is three separate steps and none of them is skipped',()=>{
   assert.ok(file.indexOf('open_upload')<file.indexOf('try await upload('),'open before put');
   assert.ok(file.indexOf('try await upload(')<file.indexOf('try await inspect('),'put before inspect');
   // What comes back is read from the server, not assembled on this side.
-  assert.match(file,/return try await detail\(identity, entry: opened\.id\)/);
+  assert.match(file,/let filed = try await detail\(identity, entry: opened\.id\)/);
+  assert.match(file,/return filed/);
   // The bucket has no update policy, so a replayed open never puts again.
   assert.match(file,/guard let bucket = opened\.uploadBucket, let path = opened\.uploadPath else \{/);
   assert.match(adapter,/upsert: false/);
@@ -125,12 +127,15 @@ test('the company page reads the archive from the same tally the archive uses',(
 
 test('Diğer Dosyalar is reachable from the menu and from the company page',()=>{
   assert.match(main,/case \.documents:\n\s*files/);
-  assert.match(main,/NovaPilotFileGate\(identity: identity, canWrite: controller\.canWrite/);
+  assert.match(main,/NovaPilotFileGate\(identity: identity, canWrite: ready/);
   // Its position in the drawer list belongs to whichever slice added the
   // newest entry, so only its presence is pinned here.
   assert.match(main,/available: \[[^\]]*\.documents[,\]]/);
-  // The company page's own Dosya Ekle button is live and scoped to that company.
-  assert.match(company,/fallback: "Dosya Ekle"\), symbol: "folder\.badge\.plus", isEnabled: canWrite\) \{ addingFile = true \}/);
+  // Company detail opens the relevant file heading directly in add mode; the
+  // removed global button must not return and bypass that context.
+  assert.match(company,/startInAddMode: fileSectionAdding/);
+  assert.match(company,/fileSectionAdding = true; fileSection = \.accidents/);
+  assert.doesNotMatch(company,/fallback: "Dosya Ekle"\), symbol: "folder\.badge\.plus", isEnabled: canWrite/);
   assert.match(company,/initialCompany: scope\.companyID,/);
 });
 
@@ -175,8 +180,7 @@ test('the picker offers what the server declared, not a list of its own',()=>{
   assert.match(screen,/static func contentTypes\(_ accepts: \[NovaFileAcceptance\]\) -> \[UTType\]/);
   assert.match(sheets,/allowedContentTypes: NovaFileScreenWords\.contentTypes\(accepts\)/);
   assert.match(sheets,/guard allExtensions\.contains\(fileExtension\) else \{/);
-  // The size shown is the server's candidate limit, and the screen says so.
-  assert.match(sheets,/localizable\.nova\.file\.accepts/);
-  const value=catalogue.strings['localizable.nova.file.accepts'];
-  assert.match(value.localizations.tr.stringUnit.value,/onaylanmamış/);
+  // Compact details still show the server-declared formats and actual upload limit.
+  assert.match(sheets,/allExtensions\.joined/);
+  assert.match(sheets,/NovaFileWords\.size\(maxBytes\)/);
 });

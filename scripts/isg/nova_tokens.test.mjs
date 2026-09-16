@@ -136,3 +136,54 @@ test('hosted UI tests assert actual content, fonts and hittability instead of on
   assert.equal((info.match(/\.ttf<\/string>/g) ?? []).length, 5);
   assert.doesNotMatch(info, /CFBundleURLTypes|NSCameraUsageDescription|NSPhotoLibraryUsageDescription|NSAppTransportSecurity/);
 });
+
+test('list statistics and empty states stay on the shared application standard', () => {
+  const components = read('App/DesignSystem/ISG/NovaListComponents.swift').toString();
+  assert.match(components, /struct NovaListStat: View/);
+  assert.match(components, /struct NovaEmptyState: View/);
+  assert.match(components, /Image\(systemName: "lightbulb"\)/);
+
+  for (const path of [
+    'App/DesignSystem/ISG/NovaExpertShell.swift',
+    'App/DesignSystem/ISG/NovaStatisticsScreen.swift',
+    'App/DesignSystem/ISG/NovaDocumentTrackingScreens.swift',
+    'App/DesignSystem/ISG/NovaNoticeCenterScreen.swift',
+    'App/DesignSystem/ISG/NovaAnalysisListScreen.swift',
+    'App/DesignSystem/ISG/NovaFollowupScreen.swift',
+    'App/DesignSystem/ISG/NovaFileLibraryScreens.swift',
+  ]) {
+    assert.match(read(path).toString(), /NovaListStat\(/, path);
+  }
+
+  for (const path of [
+    'App/DesignSystem/ISG/NovaNonconformityListScreen.swift',
+    'App/DesignSystem/ISG/NovaRiskScreens.swift',
+    'App/DesignSystem/ISG/NovaEmergencyPlanScreens.swift',
+    'App/DesignSystem/ISG/NovaAnalysisReportsScreen.swift',
+    'App/DesignSystem/ISG/NovaPersonnelScreens.swift',
+    'App/DesignSystem/ISG/NovaDirectoryScreens.swift',
+  ]) {
+    assert.match(read(path).toString(), /NovaEmptyState\(/, path);
+  }
+});
+
+test('iPhone back navigation uses one shared left-edge gesture without stealing content drags', () => {
+  const components = read('App/DesignSystem/ISG/NovaComponents.swift').toString();
+  assert.match(components, /value\.startLocation\.x <= 28/);
+  assert.match(components, /value\.translation\.width >= 72/);
+  assert.match(components, /value\.predictedEndTranslation\.width >= 96/);
+  assert.match(components, /abs\(value\.translation\.width\) > abs\(value\.translation\.height\) \* 1\.25/);
+  assert.match(components, /!isNovaPopup && onEdgeBack != nil/);
+  assert.match(components, /including: isEnabled \? \.all : \.none/);
+
+  for (const path of [
+    'App/DesignSystem/ISG/NovaNonconformityListScreen.swift',
+    'App/DesignSystem/ISG/NovaRiskScreens.swift',
+    'App/DesignSystem/ISG/NovaEmergencyPlanScreens.swift',
+    'App/DesignSystem/ISG/NovaAnalysisListScreen.swift',
+    'App/DesignSystem/ISG/NovaPersonnelScreens.swift',
+    'App/Views/Components/NovaCompanyManagementGate.swift',
+  ]) {
+    assert.match(read(path).toString(), /NovaPageSurface\(onEdgeBack:/, path);
+  }
+});

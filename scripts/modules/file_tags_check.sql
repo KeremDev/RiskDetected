@@ -1,0 +1,23 @@
+BEGIN;
+SELECT set_config('test.actor','20000000-0000-0000-0000-000000000001',true);
+SELECT set_config('test.pilot','true',true);
+SELECT set_config('test.pilot_write','true',true);
+UPDATE private_isg.rollout SET read_enabled=true,write_enabled=true;
+UPDATE private_isg.module_registry SET read_enabled=true,write_enabled=true;
+DO $$ DECLARE op uuid:=gen_random_uuid(); m uuid:=gen_random_uuid(); payload jsonb; r jsonb; again jsonb; BEGIN
+ payload:=jsonb_build_object('title','Dosya','category','other','file_name','test.pdf','note','Not','extension','pdf','bytes',42,'sha256',repeat('a',64),'tags',jsonb_build_array(' Arşiv ','Belge','Arşiv'));
+ r:=public.isg_pilot_file_library_mutate_v2('10000000-0000-0000-0000-000000000001','open_upload',op,m,payload);
+ again:=public.isg_pilot_file_library_mutate_v2('10000000-0000-0000-0000-000000000001','open_upload',op,m,payload);
+ IF r->'row' IS DISTINCT FROM again->'row' OR r->'row'->'tags'<>'["Arşiv","Belge"]'::jsonb THEN RAISE EXCEPTION 'tag normalization/replay %',r; END IF;
+ BEGIN PERFORM public.isg_pilot_file_library_mutate_v2('10000000-0000-0000-0000-000000000001','open_upload',op,m,payload||'{"tags":["Farklı"]}');RAISE EXCEPTION 'tag retry changed'; EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'IDEMPOTENCY_CONFLICT' THEN RAISE; END IF; END;
+ payload:=jsonb_build_object('entry_id',r->>'entry_id','expected_version',1,'tags',jsonb_build_array('Yeni'),'note','Yeni not');
+ r:=public.isg_pilot_file_library_mutate_v2('10000000-0000-0000-0000-000000000001','rename_entry',gen_random_uuid(),gen_random_uuid(),payload);
+ IF r->'row'->'tags'<>'["Yeni"]'::jsonb OR r->'row'->>'note'<>'Yeni not' THEN RAISE EXCEPTION 'tag edit'; END IF;
+ IF (SELECT count(*) FROM private_isg.file_library_entries)<>1 THEN RAISE EXCEPTION 'duplicate file'; END IF;
+ IF public.isg_pilot_file_sources_v1((r->>'entry_id')::uuid)<>'[]'::jsonb THEN RAISE EXCEPTION 'unattached file source'; END IF;
+ IF jsonb_array_length(private_isg.read_file_library(NULL,'list','Yeni',NULL,NULL,NULL,30,0)->'rows')<>1 THEN RAISE EXCEPTION 'tag search'; END IF;
+ PERFORM set_config('test.pilot','false',true);
+ BEGIN PERFORM public.isg_pilot_file_library_mutate_v2('10000000-0000-0000-0000-000000000001','rename_entry',gen_random_uuid(),gen_random_uuid(),payload);RAISE EXCEPTION 'nonpilot tag write'; EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM NOT IN ('FEATURE_UNAVAILABLE','ACCESS_DENIED') THEN RAISE; END IF; END;
+ RAISE NOTICE 'ok file tag normalization / original note / atomic edit / durable replay / conflict / pilot write gate';
+END $$;
+ROLLBACK;

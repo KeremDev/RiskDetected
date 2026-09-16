@@ -306,6 +306,36 @@ async function bookEntryID(
   }-${value.slice(20, 32)}`;
 }
 
+/**
+ * The worker persists training and notebook projections independently from
+ * this endpoint. They are a safe recovery source when one of the optional
+ * projector RPCs is temporarily unavailable; a notebook failure must never
+ * erase otherwise valid expert or training sections from the mobile result.
+ */
+async function loadPersistedProjections(context: Context): Promise<{
+  training: Record<string, unknown>[];
+  notebook: Record<string, unknown>[];
+}> {
+  const { data, error } = await context.supabase.rpc(
+    "admin_analysis_result_detail_v1",
+    { p_analysis_id: context.analysis.id },
+  );
+  if (error) {
+    console.warn(
+      "persisted result projection unavailable",
+      cleanString(error.message, 180),
+    );
+    return { training: [], notebook: [] };
+  }
+  const detail = safeObject(data);
+  const rows = (key: string) =>
+    (Array.isArray(detail[key]) ? detail[key] : []).map(safeObject);
+  return {
+    training: rows("trainingRecommendations"),
+    notebook: rows("approvedNotebook"),
+  };
+}
+
 async function loadAuthoritativeSections(context: Context) {
   const { data: findingData, error: findingsError } = await context.supabase
     .from("findings")
@@ -329,8 +359,12 @@ async function loadAuthoritativeSections(context: Context) {
       p_analysis_id: context.analysis.id,
     });
   if (metadataError) {
-    throw new Error(`metadata_fetch_failed:${metadataError.message}`);
+    console.warn(
+      "metadata projection unavailable",
+      cleanString(metadataError.message, 180),
+    );
   }
+  const metadataAvailable = !metadataError;
   const metadata =
     (Array.isArray(metadataData) ? metadataData : []) as V4ResultMetadata[];
 
@@ -341,45 +375,55 @@ async function loadAuthoritativeSections(context: Context) {
       p_language: context.language,
     });
   if (advisoryError) {
-    throw new Error(`notebook_advisory_fetch_failed:${advisoryError.message}`);
+    console.warn(
+      "notebook advisory unavailable",
+      cleanString(advisoryError.message, 180),
+    );
   }
+  const advisoryAvailable = !advisoryError;
   const advisories =
     (Array.isArray(advisoryData)
       ? advisoryData
       : []) as ApprovedNotebookAdvisoryRow[];
 
-  const projected = await projectApprovedNotebookEntries({
-    analysisID: String(context.analysis.id),
-    language: context.language,
-    findings: findings as ProjectorFinding[],
-    metadata,
-    advisories,
-  });
   const templateVersion = context.language === "tr"
     ? APPROVED_NOTEBOOK_TEMPLATE_TR
     : SAFETY_LOG_TEMPLATE_EN;
-  const { data: notebookData, error: notebookError } = await context.supabase
-    .rpc("result_hub_upsert_notebook_entries", {
-      p_user_id: context.userID,
-      p_analysis_id: context.analysis.id,
-      p_language: context.language,
-      p_projection_version: APPROVED_NOTEBOOK_PROJECTION_VERSION,
-      p_template_version: templateVersion,
-      p_entries: projected,
-    });
-  if (notebookError) {
-    throw new Error(`notebook_projection_failed:${notebookError.message}`);
+  let notebookRows: Record<string, unknown>[] = [];
+  if (metadataAvailable && advisoryAvailable) {
+    try {
+      const projected = await projectApprovedNotebookEntries({
+        analysisID: String(context.analysis.id),
+        language: context.language,
+        findings: findings as ProjectorFinding[],
+        metadata,
+        advisories,
+      });
+      const { data: notebookData, error: notebookError } = await context
+        .supabase
+        .rpc("result_hub_upsert_notebook_entries", {
+          p_user_id: context.userID,
+          p_analysis_id: context.analysis.id,
+          p_language: context.language,
+          p_projection_version: APPROVED_NOTEBOOK_PROJECTION_VERSION,
+          p_template_version: templateVersion,
+          p_entries: projected,
+        });
+      if (notebookError) throw notebookError;
+      notebookRows = (Array.isArray(notebookData) ? notebookData : [])
+        .map(safeObject)
+        .filter((row) => row.is_suppressed !== true)
+        // The shadow projection writes rows beside these under its own version.
+        .filter((row) =>
+          row.projection_version === APPROVED_NOTEBOOK_PROJECTION_VERSION
+        );
+    } catch (error) {
+      console.warn(
+        "notebook projection unavailable",
+        cleanString(error instanceof Error ? error.message : error, 180),
+      );
+    }
   }
-  const notebookRows = (Array.isArray(notebookData) ? notebookData : [])
-    .map(safeObject)
-    .filter((row) => row.is_suppressed !== true)
-    // The shadow projection writes rows beside these under its own version.
-    // The list RPC does not filter by version, so the filter lives here: a
-    // shadow paragraph must never reach a reader while its catalogues are
-    // still being tuned.
-    .filter((row) =>
-      row.projection_version === APPROVED_NOTEBOOK_PROJECTION_VERSION
-    );
 
   // The v1 book engine writes one paragraph per mechanism code, and its
   // catalogue predates the free engine's broader hazard vocabulary. On
@@ -407,26 +451,37 @@ async function loadAuthoritativeSections(context: Context) {
   // photograph shows. It arrives only from a company the user bound to this
   // analysis; without one the card states all three classes rather than
   // asserting a class nobody declared.
-  const training = buildTrainingCardSnapshots({
-    analysisID: String(context.analysis.id),
-    sectorID: cleanString(context.analysis.analysis_sector, 64) || null,
-    hazardClass: safeObject(context.analysis.companies).hazard_class,
-    rows: metadata as unknown as TrainingItemRow[],
-  });
-  try {
-    await persistTrainingCardSnapshots(context.supabase, {
-      userID: context.userID,
+  const generatedTraining = metadataAvailable
+    ? buildTrainingCardSnapshots({
       analysisID: String(context.analysis.id),
-      cards: training,
-    });
-  } catch (error) {
-    // Snapshot availability must not hide otherwise valid mobile results. The
-    // analysis workers write the same snapshot, and this path self-heals gaps.
-    console.warn(
-      "training snapshot refresh skipped",
-      cleanString(error instanceof Error ? error.message : error, 180),
-    );
+      sectorID: cleanString(context.analysis.analysis_sector, 64) || null,
+      hazardClass: safeObject(context.analysis.companies).hazard_class,
+      rows: metadata as unknown as TrainingItemRow[],
+    })
+    : [];
+  if (generatedTraining.length > 0) {
+    try {
+      await persistTrainingCardSnapshots(context.supabase, {
+        userID: context.userID,
+        analysisID: String(context.analysis.id),
+        cards: generatedTraining,
+      });
+    } catch (error) {
+      // Snapshot availability must not hide otherwise valid mobile results.
+      console.warn(
+        "training snapshot refresh skipped",
+        cleanString(error instanceof Error ? error.message : error, 180),
+      );
+    }
   }
+
+  const persisted = generatedTraining.length === 0 || notebookRows.length === 0
+    ? await loadPersistedProjections(context)
+    : { training: [], notebook: [] };
+  const training = generatedTraining.length > 0
+    ? generatedTraining
+    : persisted.training;
+  if (notebookRows.length === 0) notebookRows = persisted.notebook;
 
   const { data: feedbackData } = await context.supabase
     .rpc("result_hub_feedback_for_analysis", {

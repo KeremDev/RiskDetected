@@ -23,47 +23,10 @@ struct NovaKatipStatCard: View {
     let value: Int
     var isSelected = false
     let onTap: () -> Void
-    @Environment(\.colorScheme) private var scheme
-
-    private var tone: NovaColorToken {
-        switch group {
-        case .expired: return .statusDangerInk
-        case .expiring: return .statusWarningInk
-        case .current: return .statusSuccessInk
-        case .archived: return .textMuted
-        }
-    }
-
     var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Image(systemName: group.symbol).font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(tone.color(in: scheme))
-                    NovaSizedText(text: "\(value)", size: 19, weight: "ExtraBold")
-                }
-                NovaSizedText(text: group.title, size: 10, weight: "Medium",
-                    color: NovaColorToken.textMuted.color(in: scheme))
-                    .lineLimit(2).minimumScaleFactor(0.82)
-                    .frame(maxWidth: .infinity, minHeight: 24, alignment: .topLeading)
-                NovaSizedText(text: group.footer, size: 9.5, weight: "Bold",
-                    color: value > 0 ? tone.color(in: scheme) : NovaColorToken.textMuted.color(in: scheme))
-                    .lineLimit(1).minimumScaleFactor(0.8)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 10).padding(.horizontal, 11)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(NovaColorToken.surface.color(in: scheme))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(isSelected ? tone.color(in: scheme)
-                                : NovaColorToken.hairline.color(in: scheme),
-                                lineWidth: isSelected ? 1.6 : 1))
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("nova.katip.stat.\(group.rawValue)")
+        NovaListStat(title: group.title, symbol: group.symbol, value: value,
+            isSelected: isSelected, onTap: onTap)
+            .accessibilityIdentifier("nova.katip.stat.\(group.rawValue)")
     }
 }
 
@@ -140,6 +103,7 @@ struct NovaKatipScreen: View {
     var initialCompany: UUID?
     var headingOverride: String?
 
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var board: NovaKatipBoard?
     @State private var catalogue: NovaKatipCatalogue?
     @State private var companies: [NovaAnalysisCompanyOption] = []
@@ -162,10 +126,11 @@ struct NovaKatipScreen: View {
     }
 
     var body: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
+                    NovaHelpHint(text: "Firmanın sözleşmesini kaydedin; hizmet süresini ve belgesini takip edin.")
                     if let board { counters(board) }
                     filters
                     if pending && canWrite {
@@ -195,7 +160,7 @@ struct NovaKatipScreen: View {
             }
         }
         .task { await load(reset: true) }
-        .sheet(item: $detail) { row in
+        .novaPopup(item: $detail) { row in
             NovaKatipDetailSheet(entry: row, canWrite: canWrite,
                 onEnd: {
                     detail = nil
@@ -218,36 +183,26 @@ struct NovaKatipScreen: View {
         }
         .onChange(of: drafting == nil) { _ in pending = (try? client.hasPending()) ?? pending }
         .onChange(of: ending == nil) { _ in pending = (try? client.hasPending()) ?? pending }
-        .sheet(item: $drafting) { draft in
+        .novaPopup(item: $drafting) { draft in
             NovaKatipContractSheet(draft: draft, catalogue: catalogue,
                 onSave: { edited in await save(edited) }, onClose: { drafting = nil })
         }
-        .sheet(item: $ending) { draft in
+        .novaPopup(item: $ending) { draft in
             NovaKatipEndSheet(draft: draft,
                 onSave: { edited in await finish(edited) }, onClose: { ending = nil })
         }
     }
 
-    @ViewBuilder private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 10) {
-                NovaBackButton(action: onBack)
-                NovaText(text: headingOverride ?? NovaDestination.katipContracts.title, style: .screenTitle)
-                Spacer(minLength: 0)
-                if canWrite, query.company != nil {
-                    NovaButton(label: RDLocalization.string("localizable.nova.katip.new",
-                        table: .localizable, fallback: "Sözleşme ekle"), symbol: "plus",
-                        variant: .primary) { drafting = .init(startsOn: NovaDayField.text(Date())) }
-                }
+    private var header: some View {
+        NovaListHeading(title: headingOverride ?? NovaDestination.katipContracts.title, onBack: onBack) {
+            if canWrite, query.company != nil {
+                NovaButton(label: "Sözleşme Ekle", symbol: "plus", compact: true) { drafting = .init(startsOn: NovaDayField.text(Date())) }
             }
-            // The hardest promise this module makes, said before anything else.
-            NovaText(text: NovaKatipWords.noIntegrationNote, style: .meta,
-                color: NovaColorToken.textSecondary.color(in: scheme))
         }
     }
 
     @ViewBuilder private func counters(_ board: NovaKatipBoard) -> some View {
-        let columns = [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: typeSize.isAccessibilitySize ? 2 : 4)
         LazyVGrid(columns: columns, spacing: 8) {
             ForEach(NovaKatipGroup.allCases) { group in
                 NovaKatipStatCard(group: group, value: board.count(group),
@@ -317,21 +272,15 @@ struct NovaKatipScreen: View {
         [.init(id: nil, title: allStates)]
             + NovaKatipGroup.allCases.map {
                 .init(id: $0.rawValue, title: $0.title, count: board?.count($0), symbol: $0.symbol) }
-            + NovaKatipState.allCases.map {
+            + NovaKatipState.allCases.filter { state in !NovaKatipGroup.allCases.contains { $0.rawValue == state.rawValue } }.map {
                 .init(id: $0.rawValue, title: $0.title, count: board?.counts[$0.rawValue]) }
     }
 
     @ViewBuilder private func list(_ board: NovaKatipBoard) -> some View {
         if board.rows.isEmpty {
-            NovaCard(padding: 18) {
-                VStack(alignment: .leading, spacing: 6) {
-                    NovaText(text: RDLocalization.string("localizable.nova.katip.empty.title", table: .localizable,
-                        fallback: "Sözleşme kaydı yok"), style: .cardTitle)
-                    NovaText(text: RDLocalization.string("localizable.nova.katip.empty.body", table: .localizable,
-                        fallback: "Bir firma seçip İSG hizmeti sözleşmesini kendi kaydınıza ekleyin."),
-                        style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
-                }
-            }
+            NovaEmptyState(title: RDLocalization.string("localizable.nova.katip.empty.title",
+                table: .localizable, fallback: "Henüz sözleşme kaydı yok"),
+                message: "İSG hizmeti sözleşmesini ekleyerek başlangıç, bitiş ve bağlı dosya bilgilerini takip edebilirsiniz.")
         } else {
             VStack(spacing: 10) {
                 ForEach(board.rows) { row in

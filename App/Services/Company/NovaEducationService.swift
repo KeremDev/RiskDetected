@@ -69,6 +69,10 @@ import Supabase
                   result.row == nil || result.row?.owner_id == identity.userID else { throw NovaPersonnelFailure.denied }
             try storage.remove(account: key("pending"))
             if draft.action != "curriculum" { try storage.remove(account: key("draft:" + (draft.id?.uuidString ?? "new"))) }
+            NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: identity.userID)
+            NotificationCenter.default.post(name: Notification.Name("isgada.mutation.succeeded"), object: identity.userID,
+                userInfo: ["message": draft.action == "delete" ? "Eğitim başarıyla kaldırıldı!" : draft.action == "curriculum"
+                    ? NovaSuccessMessage.recordSaved("Firma müfredatı") : NovaSuccessMessage.trainingSaved])
             return result
         } catch let error as PostgrestError {
             if ["P0001","28000","22007","22008","22P02","23514","23502"].contains(error.code ?? "") { try storage.remove(account: key("pending")) }

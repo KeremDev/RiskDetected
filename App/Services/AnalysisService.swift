@@ -2830,6 +2830,7 @@ final class AnalysisService {
             default:
                 defaultSourcePhotoIndices = [1]
             }
+            let isScored = finding.id != 3 && finding.id != 4
             return FindingRow(
                 id: rowID,
                 analysisID: analysisID,
@@ -2856,7 +2857,10 @@ final class AnalysisService {
                 lastUserEditAt: appliesPatch || rowID == deletedFindingID ? ISO8601DateFormatter().string(from: Date()) : nil,
                 userEditCount: appliesPatch ? 1 : nil,
                 findingVersion: appliesPatch ? 2 : 1,
-                displayOrder: finding.id
+                displayOrder: finding.id,
+                itemClass: isScored ? "observed_finding" :
+                    (finding.id == 3 ? "verification_request" : "assurance_requirement"),
+                isScored: isScored
             )
         }
         var analysis = AnalysisRow(

@@ -18,9 +18,8 @@ struct NovaAppointmentDetailSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     VStack(alignment: .leading, spacing: 4) {
-                        NovaText(text: entry.employeeName ?? RDLocalization.string(
-                            "localizable.nova.appointment.row.person", table: .localizable, fallback: "Personel"),
-                            style: .screenTitle)
+                        NovaPopupHeading(text: entry.employeeName ?? RDLocalization.string(
+                            "localizable.nova.appointment.row.person", table: .localizable, fallback: "Personel"), symbol: "person.badge.plus")
                         NovaText(text: [entry.kind.title, entry.workplaceName, entry.companyName]
                             .compactMap { $0 }.joined(separator: " · "), style: .meta,
                             color: NovaColorToken.textSecondary.color(in: scheme))
@@ -178,8 +177,8 @@ struct NovaAppointmentSheet: View {
         NovaPopup {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    NovaText(text: RDLocalization.string("localizable.nova.appointment.form.title",
-                        table: .localizable, fallback: "Görev ver"), style: .screenTitle)
+                    NovaPopupHeading(text: RDLocalization.string("localizable.nova.appointment.form.title",
+                        table: .localizable, fallback: "Görev ver"), symbol: "person.badge.plus")
 
                     fieldCard("person.2") {
                         NovaFileChooserButton(
@@ -386,11 +385,11 @@ struct NovaAppointmentEndSheet: View {
         NovaPopup {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    NovaText(text: draft.isCorrection
+                    NovaPopupHeading(text: draft.isCorrection
                         ? RDLocalization.string("localizable.nova.appointment.detail.fix",
                             table: .localizable, fallback: "Bitiş tarihini düzelt")
                         : RDLocalization.string("localizable.nova.appointment.detail.end",
-                            table: .localizable, fallback: "Görevi sonlandır"), style: .screenTitle)
+                            table: .localizable, fallback: "Görevi sonlandır"), symbol: "person.badge.plus")
                     if !draft.employeeName.isEmpty {
                         NovaText(text: draft.employeeName, style: .meta,
                             color: NovaColorToken.textSecondary.color(in: scheme))

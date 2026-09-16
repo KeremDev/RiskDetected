@@ -10,53 +10,28 @@ struct NovaAnalysisOverviewCard: View {
     let headlineCaption: String
     let figures: [NovaAnalysisOverviewFigure]
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        NovaCard(padding: 12, tint: NovaColorToken.statusSuccessBg.color(in: scheme)) {
-            VStack(spacing: 10) {
-                HStack(alignment: .top, spacing: 10) {
-                    NovaIcon(symbol: symbol, size: 19)
-                        .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
-                        .frame(width: 42, height: 42)
-                    VStack(alignment: .leading, spacing: 3) {
-                        NovaText(text: title, style: .sheetTitle)
-                        NovaText(text: detail, style: .metaQuiet,
-                            color: NovaColorToken.textSecondary.color(in: scheme))
-                    }
-                    Spacer(minLength: 0)
-                    VStack(spacing: 0) {
-                        NovaText(text: headline, style: .screenTitle, color: NovaColorToken.onInverse.color(in: scheme))
-                        NovaText(text: headlineCaption, style: .micro,
-                            color: NovaColorToken.onInverse.color(in: scheme).opacity(0.7))
-                    }
-                    .frame(minWidth: 74).padding(.horizontal, 10).padding(.vertical, 11)
-                    .background(NovaColorToken.inverse.color(in: scheme), in: RoundedRectangle(cornerRadius: 16))
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                NovaIcon(symbol: symbol, size: 19)
+                    .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
+                    .frame(width: 42, height: 42)
+                VStack(alignment: .leading, spacing: 3) {
+                    NovaText(text: title, style: .sheetTitle)
+                    NovaText(text: detail, style: .metaQuiet,
+                        color: NovaColorToken.textSecondary.color(in: scheme))
                 }
-                if !figures.isEmpty {
-                    HStack(spacing: 7) {
-                        ForEach(figures) { figure in chip(figure) }
-                    }
+            }
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8),
+                                     count: typeSize.isAccessibilitySize ? 2 : 4), spacing: 8) {
+                NovaListStat(title: headlineCaption, symbol: symbol, value: headline)
+                ForEach(figures) { figure in
+                    NovaListStat(title: figure.label, symbol: figure.symbol, value: figure.value)
                 }
             }
         }
-    }
-
-    private func chip(_ figure: NovaAnalysisOverviewFigure) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: figure.symbol).font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(NovaColorToken.inverse.color(in: scheme))
-                .frame(width: 28, height: 28)
-            VStack(alignment: .leading, spacing: 0) {
-                NovaText(text: figure.value, style: .cardTitle, color: NovaColorToken.onInverse.color(in: scheme))
-                NovaText(text: figure.label, style: .micro,
-                    color: NovaColorToken.onInverse.color(in: scheme).opacity(0.7)).lineLimit(1)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 8).padding(.vertical, 7)
-        .frame(maxWidth: .infinity)
-        .background(NovaColorToken.inverse.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
-        .accessibilityElement(children: .combine)
     }
 }
 
@@ -178,7 +153,7 @@ struct NovaAnalysisListScreen: View {
     }
 
     var body: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 11) {
                     header
@@ -242,12 +217,12 @@ struct NovaAnalysisListScreen: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(11)
-        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 18))
+        .novaControlBackground(cornerRadius: 18)
         .accessibilityElement(children: .combine)
     }
 
     private var search: some View {
-        HStack(spacing: 8) {
+        VStack(spacing: 8) {
             NovaAnalysisSearchField(text: $query,
                 placeholder: RDLocalization.string("localizable.nova.analysis.search.placeholder", table: .localizable, fallback: "Analiz ara"),
                 identifier: "analysis.list.search")
@@ -256,30 +231,14 @@ struct NovaAnalysisListScreen: View {
     }
 
     private var companyMenu: some View {
-        Menu {
-            Button(RDLocalization.string("localizable.nova.nonconformity.filter.all", table: .localizable, fallback: "Tümü")) { company = nil }
-            ForEach(companyNames, id: \.self) { name in
-                Button(name) { company = name }
-            }
-        } label: {
-            Image(systemName: company == nil ? "building.2" : "building.2.fill").font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(company == nil ? NovaColorToken.text.color(in: scheme) : NovaColorToken.accentInk.color(in: scheme))
-                .frame(width: 44, height: 44)
-                .overlay(RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
-        }
-        .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.nonconformity.filter.company", table: .localizable, fallback: "Firma")))
-        .accessibilityIdentifier("analysis.list.company")
+        NovaFilterField(label: "Firma", options: [.init(id: nil, title: "Tüm firmalar")] + companyNames.map { .init(id: $0, title: $0) },
+            selected: company, identifier: "analysis.list.company") { company = $0 }
     }
 
     private var chips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 7) {
-                ForEach(Filter.allCases) { value in
-                    NovaAnalysisFilterChip(title: value.title, isOn: filter == value,
-                        identifier: "analysis.list.filter.\(value.rawValue)") { filter = value }
-                }
-            }
+        NovaFilterField(label: "Durum", options: Filter.allCases.map { .init(id: $0.rawValue, title: $0.title) },
+            selected: filter.rawValue, identifier: "analysis.list.filter") { value in
+            if let value, let selection = Filter(rawValue: value) { filter = selection }
         }
     }
 
@@ -291,10 +250,9 @@ struct NovaAnalysisListScreen: View {
                 fallback: "Analizler yükleniyor…"))
                 .frame(minHeight: 280)
         } else if visible.isEmpty {
-            NovaCard(padding: 16) {
-                NovaText(text: RDLocalization.string("localizable.nova.analysis.list.empty", table: .localizable,
-                    fallback: "Görüntülenecek analiz yok."), style: .metaQuiet)
-            }
+            NovaEmptyState(title: RDLocalization.string("localizable.nova.analysis.list.empty", table: .localizable,
+                fallback: "Henüz analiz kaydı yok"),
+                message: "Fotoğraf veya metin analizi oluşturarak riskleri, uzman görüşlerini ve önerileri dijital ortamda saklayabilirsiniz.")
         } else {
             ForEach(visible) { row in card(row) }
             // Only offered on an unfiltered, unsearched view of the account's

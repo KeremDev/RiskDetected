@@ -92,6 +92,7 @@ struct NovaNonconformityIntent: Equatable, Codable {
     var severity: NovaNonconformitySeverity?
     var riskBand: String?
     var findingID: UUID?
+    var sourceMethod: NovaRiskMethod?
     var expertItemID: UUID?
     var recordKind: NovaNonconformityRecordKind = .nonconformity
     var dueOn: String?

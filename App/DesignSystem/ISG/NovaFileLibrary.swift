@@ -78,6 +78,7 @@ struct NovaFileEntry: Identifiable, Equatable {
     /// What the server says about this row. It never claims more than ran.
     var malwareScanned: Bool = false
     var createdAt: String?
+    var tags: [String] = []
 
     var canDownload: Bool { downloadPath != nil && downloadBucket != nil }
     var bytes: Int { receivedBytes ?? declaredBytes }
@@ -85,7 +86,7 @@ struct NovaFileEntry: Identifiable, Equatable {
     func matches(_ query: String) -> Bool {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !needle.isEmpty else { return true }
-        return [title, fileName, category, companyName ?? "", note ?? ""]
+        return [title, fileName, category, companyName ?? "", note ?? "", tags.joined(separator: " ")]
             .contains { $0.lowercased().contains(needle) }
     }
 }
@@ -210,6 +211,8 @@ struct NovaFileQuery: Equatable {
 
 /// What the file form collects before an upload is opened.
 struct NovaFileDraft: Equatable {
+    var tags = ""
+    var parsedTags: [String] { Array(Set(tags.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty })).sorted() }
     var title = ""
     var category: String?
     var note = ""
@@ -221,6 +224,7 @@ struct NovaFileDraft: Equatable {
     var sha256 = ""
 
     var isReady: Bool {
+        guard parsedTags.count <= 12, parsedTags.allSatisfy({ $0.count <= 40 }) else { return false }
         guard category != nil, !title.trimmingCharacters(in: .whitespaces).isEmpty else { return false }
         return !fileExtension.isEmpty && bytes > 0 && sha256.count == 64
     }

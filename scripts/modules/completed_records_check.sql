@@ -1,0 +1,32 @@
+BEGIN;
+SELECT set_config('test.actor','20000000-0000-0000-0000-000000000001',true);
+SELECT set_config('test.pilot','true',true);
+SELECT set_config('test.pilot_write','true',true);
+UPDATE private_isg.rollout SET read_enabled=true,write_enabled=true;
+UPDATE private_isg.module_registry SET read_enabled=true,write_enabled=true;
+CREATE FUNCTION pg_temp.save_record(k text,v jsonb,r jsonb DEFAULT NULL) RETURNS jsonb LANGUAGE sql AS $$ SELECT public.isg_pilot_process_mutate_v1('10000000-0000-0000-0000-000000000001','save',gen_random_uuid(),gen_random_uuid(),jsonb_build_object('kind',k,'values',v,'id',r->>'id','expected',r->>'expected')) $$;
+DO $$ DECLARE r jsonb; c jsonb; v jsonb; person uuid; bad jsonb; BEGIN
+ SELECT id INTO person FROM private_isg.employees WHERE company_id='10000000-0000-0000-0000-000000000001' AND NOT is_archived LIMIT 1;
+ v:='{"workplace_id":"40000000-0000-0000-0000-000000000001","held_on":"2024-02-29","drill_type":"fire","announcement":"unannounced","bekra":true,"duration_minutes":12,"scenario":"Tahliye ve yangın","photo_ids":[],"valid_until":null,"due_override":false}';
+ r:=pg_temp.save_record('completed_drill',v);
+ IF r->'values'->>'valid_until'<>'2025-02-28' OR r->'values'->>'period_months'<>'12' THEN RAISE EXCEPTION 'drill calendar due %',r; END IF;
+ IF EXISTS(SELECT 1 FROM private_isg.drill_records WHERE drill_id=(r->>'id')::uuid) THEN RAISE EXCEPTION 'planned drill created'; END IF;
+ r:=pg_temp.save_record('completed_drill','{"note":"Düzenleme","due_override":true,"valid_until":"2025-01-01"}',r);
+ IF r->'values'->>'valid_until'<>'2025-01-01' THEN RAISE EXCEPTION 'override lost'; END IF;
+ FOR bad IN SELECT x FROM jsonb_array_elements('[{"held_on":"2099-01-01"},{"photo_ids":["50000000-0000-0000-0000-000000000099"]}]') x LOOP
+  BEGIN PERFORM pg_temp.save_record('completed_drill',v||bad); RAISE EXCEPTION 'bad drill accepted';
+  EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM NOT IN ('FUTURE_DATE','ACCESS_DENIED') THEN RAISE; END IF; END;
+ END LOOP;
+ v:=jsonb_build_object('employee_id',person,'certificate_kind','first_aid','title','İlk Yardım Belgesi','issued_on','2024-02-29','valid_until',null,'due_override',false);
+ c:=pg_temp.save_record('personnel_certificate',v);
+ IF c->'values'->>'valid_until'<>'2027-02-28' OR c->'values'->>'asset_id' IS NOT NULL THEN RAISE EXCEPTION 'certificate date or optional file'; END IF;
+ IF jsonb_array_length(public.isg_pilot_process_read_v1('personnel_certificate',NULL,NULL,person,NULL,0)->'rows')<>1 THEN RAISE EXCEPTION 'employee filter'; END IF;
+ IF jsonb_array_length(public.isg_pilot_process_read_v1('personnel_certificate',NULL,NULL,gen_random_uuid(),NULL,0)->'rows')<>0 THEN RAISE EXCEPTION 'wrong employee rows'; END IF;
+ BEGIN PERFORM pg_temp.save_record('personnel_certificate',v||jsonb_build_object('employee_id',gen_random_uuid())); RAISE EXCEPTION 'foreign employee accepted'; EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'ACCESS_DENIED' THEN RAISE; END IF; END;
+ PERFORM public.isg_pilot_process_mutate_v1('10000000-0000-0000-0000-000000000001','delete',gen_random_uuid(),gen_random_uuid(),jsonb_build_object('kind','personnel_certificate','id',c->>'id','expected',c->>'expected'));
+ IF jsonb_array_length(public.isg_pilot_process_read_v1('personnel_certificate',NULL,NULL,person,NULL,0)->'rows')<>0 THEN RAISE EXCEPTION 'deleted cert visible'; END IF;
+ PERFORM set_config('test.pilot','false',true);
+ BEGIN PERFORM public.isg_pilot_process_read_v1('completed_drill',NULL,NULL,NULL,NULL,0);RAISE EXCEPTION 'nonpilot access'; EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'FEATURE_UNAVAILABLE' THEN RAISE; END IF; END;
+ RAISE NOTICE 'ok completed drills / leap-year dates / no planning / override / future rejection / certificates / employee scope / optional asset / deletion / pilot gate';
+END $$;
+ROLLBACK;

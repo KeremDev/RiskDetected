@@ -31,7 +31,7 @@ struct NovaKatipDetailSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     VStack(alignment: .leading, spacing: 4) {
-                        NovaText(text: entry.counterparty, style: .screenTitle)
+                        NovaPopupHeading(text: entry.counterparty, symbol: "doc.text")
                         NovaText(text: [entry.scope, entry.workplaceName, entry.companyName]
                             .compactMap { $0 }.joined(separator: " · "), style: .meta,
                             color: NovaColorToken.textSecondary.color(in: scheme))
@@ -255,8 +255,8 @@ struct NovaKatipContractSheet: View {
         NovaPopup {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    NovaText(text: RDLocalization.string("localizable.nova.katip.form.title",
-                        table: .localizable, fallback: "Sözleşme kaydet"), style: .screenTitle)
+                    NovaPopupHeading(text: RDLocalization.string("localizable.nova.katip.form.title",
+                        table: .localizable, fallback: "Sözleşme kaydet"), symbol: "doc.text")
                     // First thing on the form, before any field.
                     NovaHelpHint(text: NovaKatipWords.noIntegrationNote)
 
@@ -390,11 +390,11 @@ struct NovaKatipEndSheet: View {
         NovaPopup {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    NovaText(text: draft.isCorrection
+                    NovaPopupHeading(text: draft.isCorrection
                         ? RDLocalization.string("localizable.nova.katip.detail.fix",
                             table: .localizable, fallback: "Bitiş tarihini düzelt")
                         : RDLocalization.string("localizable.nova.katip.detail.end",
-                            table: .localizable, fallback: "Sözleşmeyi bitir"), style: .screenTitle)
+                            table: .localizable, fallback: "Sözleşmeyi bitir"), symbol: "doc.text")
                     if !draft.counterparty.isEmpty {
                         NovaText(text: draft.counterparty, style: .meta,
                             color: NovaColorToken.textSecondary.color(in: scheme))

@@ -153,7 +153,7 @@ struct NovaEducationEditor: View {
                 }.padding(20).padding(.bottom, novaTabBarInset)
             }
         }
-        .background(NovaKeyboardDismissArea())
+
         .task { await initialize() }
         .onChange(of: draft) { value in
             guard ready else { return }
@@ -509,7 +509,7 @@ struct NovaEducationEditor: View {
                                 Spacer(minLength: 8)
                                 Image(systemName: "plus.circle").font(.system(size: 16))
                             }.padding(10).frame(maxWidth: .infinity)
-                                .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 10))
+                                .novaControlBackground(cornerRadius: 10)
                         }.buttonStyle(.plain).accessibilityIdentifier("education.participants.add.\(company.id)")
                     }
                 }

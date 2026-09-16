@@ -31,19 +31,16 @@ struct NovaPilotPPEGate: View {
         if startInAddMode {
             addFlow
         } else {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    HStack {
-                        Button(action: onBack) { Image(systemName: "chevron.left").frame(width: 44, height: 44) }
-                        NovaText(text: headingOverride ?? "KKD Zimmetleri", style: .cardTitle)
-                        Spacer()
-                        if canWrite { Button { creating = true } label: { Label("Zimmet", systemImage: "plus") } }
+                    NovaListHeading(title: headingOverride ?? "KKD Zimmetleri", onBack: onBack) {
+                        if canWrite { NovaButton(label: "Zimmet Ekle", symbol: "plus", compact: true) { creating = true } }
                     }
-                    Picker("Firma", selection: $company) {
-                        if initialCompany == nil { Text("Tüm firmalar").tag(UUID?.none) }
-                        ForEach(companies.filter { initialCompany == nil || $0.id == initialCompany }) { Text($0.name).tag(Optional($0.id)) }
-                    }.tint(.primary)
+                    if initialCompany == nil {
+                        NovaFilterField(label: "Firma", options: [.init(id: nil, title: "Tüm firmalar")] + companies.map { .init(id: $0.id.uuidString, title: $0.name) },
+                            selected: company?.uuidString, identifier: "ppe.company") { company = $0.flatMap(UUID.init(uuidString:)) }
+                    }
                     if loading { ProgressView("Zimmetler yükleniyor…").frame(maxWidth: .infinity) }
                     if let failure { Text(failure).font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk) }
                     if rows.isEmpty && !loading {
@@ -71,7 +68,7 @@ struct NovaPilotPPEGate: View {
         .foregroundStyle(NovaColorToken.text.color(in: scheme))
         .task { company = initialCompany; await load() }
         .onChange(of: company) { _ in Task { await load() } }
-        .sheet(isPresented: $creating) { addFlow }
+        .novaPopup(isPresented: $creating) { addFlow }
         .sheet(item: $pdf) { NovaFileShareSheet(url: $0) }
         }
     }
@@ -89,7 +86,7 @@ struct NovaPilotPPEGate: View {
         NovaPopup {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                NovaText(text: "KKD zimmeti", style: .screenTitle)
+                NovaPopupHeading(text: "KKD zimmeti", symbol: "person.crop.rectangle.badge.checkmark")
                 Picker("Personel", selection: $employee) {
                     Text("Personel seçin").tag(UUID?.none)
                     ForEach(catalogue.employees) { Text($0.fullName).tag(Optional($0.id)) }

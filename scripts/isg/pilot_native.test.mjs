@@ -48,7 +48,7 @@ test('native pilot create: durable retry, owner/session isolation and fail-close
   assert.equal(result.status, 0, result.stderr);
   const executed = spawnSync(binary, [], {encoding: 'utf8', timeout: 10000});
   assert.equal(executed.status, 0, executed.stderr);
-  assert.match(executed.stdout, /34 pilot company checks PASS/);
+  assert.match(executed.stdout, /44 pilot company checks PASS/);
 });
 
 test('pilot UI is private-build-only and has no legacy write/store escape', () => {

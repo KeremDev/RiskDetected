@@ -18,47 +18,10 @@ struct NovaDrillStatCard: View {
     let value: Int
     var isSelected = false
     let onTap: () -> Void
-    @Environment(\.colorScheme) private var scheme
-
-    private var tone: NovaColorToken {
-        switch group {
-        case .overdue: return .statusDangerInk
-        case .dueSoon: return .statusInfoInk
-        case .scheduled: return .statusWarningInk
-        case .closed: return .statusSuccessInk
-        }
-    }
-
     var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Image(systemName: group.symbol).font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(tone.color(in: scheme))
-                    NovaSizedText(text: "\(value)", size: 19, weight: "ExtraBold")
-                }
-                NovaSizedText(text: group.title, size: 10, weight: "Medium",
-                    color: NovaColorToken.textMuted.color(in: scheme))
-                    .lineLimit(2).minimumScaleFactor(0.82)
-                    .frame(maxWidth: .infinity, minHeight: 24, alignment: .topLeading)
-                NovaSizedText(text: group.footer, size: 9.5, weight: "Bold",
-                    color: value > 0 ? tone.color(in: scheme) : NovaColorToken.textMuted.color(in: scheme))
-                    .lineLimit(1).minimumScaleFactor(0.8)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 10).padding(.horizontal, 11)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(NovaColorToken.surface.color(in: scheme))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(isSelected ? tone.color(in: scheme)
-                                : NovaColorToken.hairline.color(in: scheme),
-                                lineWidth: isSelected ? 1.6 : 1))
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("nova.drill.stat.\(group.rawValue)")
+        NovaListStat(title: group.title, symbol: group.symbol, value: value,
+            isSelected: isSelected, onTap: onTap)
+            .accessibilityIdentifier("nova.drill.stat.\(group.rawValue)")
     }
 }
 
@@ -142,6 +105,7 @@ struct NovaDrillScreen: View {
     var management: ((UUID, UUID) -> AnyView)?
     @State private var draftCompany: UUID?
 
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var board: NovaDrillBoard?
     @State private var catalogue: NovaDrillCatalogue?
     @State private var companies: [NovaAnalysisCompanyOption] = []
@@ -162,10 +126,11 @@ struct NovaDrillScreen: View {
     }
 
     var body: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
+                    NovaHelpHint(text: "Firmanın tatbikat kayıtlarını ve gerçekleşme sonuçlarını inceleyin.")
                     if let board { counters(board) }
                     filters
                     if loading && board == nil {
@@ -184,7 +149,7 @@ struct NovaDrillScreen: View {
             }
         }
         .task { await load(reset: true) }
-        .sheet(item: $detail) { drill in
+        .novaPopup(item: $detail) { drill in
             NovaDrillDetailSheet(drill: drill, canWrite: canWrite,
                 onRecord: {
                     detail = nil
@@ -201,39 +166,29 @@ struct NovaDrillScreen: View {
                     }
                 }
         }
-        .sheet(item: $planning) { draft in
+        .novaPopup(item: $planning) { draft in
             NovaCompanyCreateFlow(title: "Tatbikat planla", companies: client.companies,
                 catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany) { selectedCatalogue, _ in
                 NovaDrillPlanSheet(draft: draft, catalogue: selectedCatalogue,
                     onSave: { edited in await plan(edited) }, onClose: { planning = nil })
             }
         }
-        .sheet(item: $recording) { draft in
+        .novaPopup(item: $recording) { draft in
             NovaDrillResultSheet(draft: draft, catalogue: catalogue,
                 onSave: { edited in await record(edited) }, onClose: { recording = nil })
         }
     }
 
-    @ViewBuilder private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 10) {
-                NovaBackButton(action: onBack)
-                NovaText(text: headingOverride ?? NovaDestination.drills.title, style: .screenTitle)
-                Spacer(minLength: 0)
-                if canWrite {
-                    NovaButton(label: RDLocalization.string("localizable.nova.drill.new",
-                        table: .localizable, fallback: "Tatbikat planla"), symbol: "plus",
-                        variant: .primary) { startCreate() }
-                }
+    private var header: some View {
+        NovaListHeading(title: headingOverride ?? NovaDestination.drills.title, onBack: onBack) {
+            if canWrite {
+                NovaButton(label: "Tatbikat Ekle", symbol: "plus", compact: true) { startCreate() }
             }
-            // Said once, at the top, rather than implied by a colour.
-            NovaText(text: NovaDrillWords.planningIsNotPerforming, style: .meta,
-                color: NovaColorToken.textSecondary.color(in: scheme))
         }
     }
 
     @ViewBuilder private func counters(_ board: NovaDrillBoard) -> some View {
-        let columns = [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: typeSize.isAccessibilitySize ? 2 : 4)
         LazyVGrid(columns: columns, spacing: 8) {
             ForEach(NovaDrillGroup.allCases) { group in
                 NovaDrillStatCard(group: group, value: board.count(group),
@@ -303,24 +258,15 @@ struct NovaDrillScreen: View {
         [.init(id: nil, title: allStates)]
             + NovaDrillGroup.allCases.map {
                 .init(id: $0.rawValue, title: $0.title, count: board?.count($0), symbol: $0.symbol) }
-            + NovaDrillState.allCases.map {
+            + NovaDrillState.allCases.filter { state in !NovaDrillGroup.allCases.contains { $0.rawValue == state.rawValue } }.map {
                 .init(id: $0.rawValue, title: NovaDrillWords.state($0), count: board?.counts[$0.rawValue]) }
     }
 
     @ViewBuilder private func list(_ board: NovaDrillBoard) -> some View {
         if board.rows.isEmpty {
-            NovaCard(padding: 18) {
-                VStack(alignment: .leading, spacing: 6) {
-                    NovaText(text: RDLocalization.string("localizable.nova.drill.empty.title", table: .localizable,
-                        fallback: "Tatbikat kaydı yok"), style: .cardTitle)
-                    NovaText(text: (catalogue?.plans.isEmpty ?? true)
-                        ? RDLocalization.string("localizable.nova.drill.empty.noplan", table: .localizable,
-                            fallback: "Önce bir acil durum planı yayımlayın; tatbikat bir plan sürümünü prova eder.")
-                        : RDLocalization.string("localizable.nova.drill.empty.body", table: .localizable,
-                            fallback: "Yayımlanmış bir planı seçip tatbikat planlayın."),
-                        style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
-                }
-            }
+            NovaEmptyState(title: RDLocalization.string("localizable.nova.drill.empty.title",
+                table: .localizable, fallback: "Henüz tatbikat kaydı yok"),
+                message: "Gerçekleşen tatbikatı fotoğraf, dosya, süre ve senaryo bilgileriyle kaydedip takip edebilirsiniz.")
         } else {
             VStack(spacing: 10) {
                 ForEach(board.rows) { drill in

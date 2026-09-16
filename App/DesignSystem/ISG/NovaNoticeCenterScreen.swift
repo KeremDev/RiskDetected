@@ -98,7 +98,7 @@ struct NovaNoticeCenterScreen: View {
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
@@ -146,28 +146,13 @@ struct NovaNoticeCenterScreen: View {
 
     @ViewBuilder private var counters: some View {
         HStack(spacing: 8) {
-            counter(RDLocalization.string("localizable.nova.notice.count.overdue", table: .localizable,
-                fallback: "Geçmiş"), feed.overdue, .statusDangerInk)
-            counter(RDLocalization.string("localizable.nova.notice.count.unread", table: .localizable,
-                fallback: "Okunmamış"), feed.unread, .statusWarningInk)
-            counter(RDLocalization.string("localizable.nova.notice.count.total", table: .localizable,
-                fallback: "Açık"), feed.total, .textMuted)
+            NovaListStat(title: RDLocalization.string("localizable.nova.notice.count.overdue", table: .localizable,
+                fallback: "Geçmiş"), symbol: "exclamationmark.triangle", value: feed.overdue) {}
+            NovaListStat(title: RDLocalization.string("localizable.nova.notice.count.unread", table: .localizable,
+                fallback: "Okunmamış"), symbol: "envelope.badge", value: feed.unread) {}
+            NovaListStat(title: RDLocalization.string("localizable.nova.notice.count.total", table: .localizable,
+                fallback: "Açık"), symbol: "bell", value: feed.total) {}
         }
-    }
-
-    @ViewBuilder private func counter(_ label: String, _ value: Int, _ tone: NovaColorToken) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            NovaSizedText(text: "\(value)", size: 19, weight: "ExtraBold", color: tone.color(in: scheme))
-            NovaSizedText(text: label, size: 10, weight: "Medium",
-                color: NovaColorToken.textMuted.color(in: scheme))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 10).padding(.horizontal, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(NovaColorToken.surface.color(in: scheme))
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(NovaColorToken.hairline.color(in: scheme), lineWidth: 1)))
     }
 
     @ViewBuilder private var scopes: some View {

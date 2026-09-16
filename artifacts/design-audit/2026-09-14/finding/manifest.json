@@ -1,0 +1,26 @@
+[
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D6FB4CCC-BD17-42EE-80B7-F49563834BAF",
+        "deviceName" : "iPhone 17 Pro",
+        "exportedFileName" : "94A201F0-B775-43B4-89D5-4BEA8A954956.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "06-finding-detail_0_3F1C9351-3C2C-42CF-9C96-4BF6FE83C2CE.png",
+        "timestamp" : 1789408533.302
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "D6FB4CCC-BD17-42EE-80B7-F49563834BAF",
+        "deviceName" : "iPhone 17 Pro",
+        "exportedFileName" : "BD540BB6-5AB1-49B7-B45F-20DFC759BA06.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "05-findings-list_0_49563828-D8D4-4A74-8359-313D2381738E.png",
+        "timestamp" : 1789408531.772
+      }
+    ],
+    "testIdentifier" : "NovaDesignAuditUITests/testFindingDetailSurface()",
+    "testIdentifierURL" : "test://com.apple.xcode/RiskDetected/RiskDetectedUITests/NovaDesignAuditUITests/testFindingDetailSurface"
+  }
+]

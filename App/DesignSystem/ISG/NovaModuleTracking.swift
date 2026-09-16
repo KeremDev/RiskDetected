@@ -74,6 +74,18 @@ struct NovaModuleTrackingSnapshot: Decodable {
     }
 }
 
+@MainActor enum NovaModuleTrackingLoader {
+    static func load(identity: NovaSessionIdentity, company: UUID?) async throws -> NovaModuleTrackingSnapshot {
+        try Task.checkCancellation()
+        guard novaCurrentSessionIdentity() == identity else { throw NovaPersonnelFailure.denied }
+        let data = try await SupabaseService.shared.client.rpc("isg_pilot_module_tracking_v2",
+            params: ["p_company": company.map(PersonnelRPCValue.id) ?? .null]).execute().data
+        try Task.checkCancellation()
+        guard novaCurrentSessionIdentity() == identity else { throw NovaPersonnelFailure.denied }
+        return try JSONDecoder().decode(NovaModuleTrackingSnapshot.self, from: data)
+    }
+}
+
 /// Shared, read-time projection for company, home and statistics. No legal score.
 struct NovaModuleTrackingCard: View {
     let identity: NovaSessionIdentity
@@ -168,11 +180,7 @@ struct NovaModuleTrackingCard: View {
     @MainActor private func refresh() async {
         snapshot = nil; failed = false; onLoaded?(nil)
         do {
-            guard novaCurrentSessionIdentity() == identity else { throw NovaPersonnelFailure.denied }
-            let data = try await SupabaseService.shared.client.rpc("isg_pilot_module_tracking_v1", params: ["p_company": company.map(PersonnelRPCValue.id) ?? .null]).execute().data
-            try Task.checkCancellation()
-            guard novaCurrentSessionIdentity() == identity else { throw NovaPersonnelFailure.denied }
-            snapshot = try JSONDecoder().decode(NovaModuleTrackingSnapshot.self, from: data)
+            snapshot = try await NovaModuleTrackingLoader.load(identity: identity, company: company)
             onLoaded?(snapshot)
         } catch { if !Task.isCancelled { failed = true } }
     }

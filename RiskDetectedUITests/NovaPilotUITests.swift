@@ -1,22 +1,113 @@
 import XCTest
 
 final class NovaPilotUITests: XCTestCase {
-    func testVisualCompanyFormsResizeWithoutWriting() throws {
+    func testCompanyDetailShowsCompactSectionsWithoutTrackingCard() throws {
+        #if NOVA_PILOT_BUILD
+        let app = XCUIApplication()
+        app.launchArguments = ["RD_UI_TEST_MAIN", "RD_UI_TEST_NOVA_REVIEW", "RD_UI_TEST_LIGHT_MODE"]
+        app.launch(); defer { app.terminate() }
+
+        let company = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "nova.company.")).firstMatch
+        XCTAssertTrue(company.waitForExistence(timeout: 20)); company.tap()
+        XCTAssertTrue(app.staticTexts["Firma Detayı"].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["Dosya Ekle"].exists)
+        XCTAssertFalse(app.buttons["Evrak Takibi"].exists)
+        XCTAssertFalse(app.staticTexts["Evrak süreleri"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label BEGINSWITH %@", "Personel,")).firstMatch.waitForExistence(timeout: 8))
+        XCTAssertTrue(app.descendants(matching: .any)["Uygunsuzluk, 1"].waitForExistence(timeout: 8))
+        let nonconformities = app.buttons["company.section.nonconformities"]
+        XCTAssertTrue(nonconformities.waitForExistence(timeout: 8)); nonconformities.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["company.section.nonconformities.stats"]
+            .waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Korkuluk eksik"].exists)
+
+        let top = XCTAttachment(screenshot: app.screenshot())
+        top.name = "İSGADA-company-detail-summary"
+        top.lifetime = .keepAlways
+        add(top)
+
+        XCTAssertFalse(app.staticTexts["Firma Takibi"].exists)
+        let inspections = app.buttons["company.section.inspections"]
+        for _ in 0..<10 where !inspections.exists { app.swipeUp() }
+        XCTAssertTrue(inspections.exists); inspections.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["company.section.equipment.stats"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["company.section.equipment.add"].exists)
+        XCTAssertTrue(app.buttons["company.section.equipment.open"].exists)
+        XCTAssertFalse(app.staticTexts["Süreçler ve Takip"].exists)
+
+        let bottom = XCTAttachment(screenshot: app.screenshot())
+        bottom.name = "İSGADA-company-detail-tracking-bottom"
+        bottom.lifetime = .keepAlways
+        add(bottom)
+        #else
+        throw XCTSkip("Requires private pilot build")
+        #endif
+    }
+
+    func testPeriodicControlUsesCompactAccordion() throws {
+        #if NOVA_PILOT_BUILD
+        let app = XCUIApplication()
+        app.launchArguments = ["RD_UI_TEST_MAIN", "RD_UI_TEST_NOVA_REVIEW", "RD_UI_TEST_PERIODIC", "RD_UI_TEST_LIGHT_MODE"]
+        app.launch(); defer { app.terminate() }
+
+        let company = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "equipment.company.")).firstMatch
+        XCTAssertTrue(company.waitForExistence(timeout: 20)); company.tap()
+        XCTAssertTrue(app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "equipment.stat.")).firstMatch.waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["Ekipman ekle"].exists)
+        XCTAssertTrue(app.buttons["Kontrol süreleri"].exists)
+        let addButton = app.buttons["equipment.inspection.new"]
+        XCTAssertTrue(addButton.waitForExistence(timeout: 8)); addButton.tap()
+        XCTAssertTrue(app.staticTexts["Periyodik kontrol ekle"].waitForExistence(timeout: 8))
+        let serials = app.staticTexts.matching(NSPredicate(format: "label == %@", "KRN-001"))
+        XCTAssertTrue(serials.firstMatch.waitForExistence(timeout: 8))
+        guard let serial = serials.allElementsBoundByIndex.min(by: { $0.frame.minY < $1.frame.minY }) else {
+            XCTFail("No equipment choice")
+            return
+        }
+        app.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: serial.frame.midX, dy: serial.frame.midY)).tap()
+
+        let dateButtons = app.buttons.matching(NSPredicate(format: "label == %@", "Tarih Seçici"))
+        XCTAssertTrue(dateButtons.firstMatch.waitForExistence(timeout: 8))
+        XCTAssertEqual(dateButtons.count, 2)
+        let dates = dateButtons.allElementsBoundByIndex.sorted { $0.frame.minX < $1.frame.minX }
+        let performed = dates[0]
+        let due = dates[1]
+        XCTAssertLessThan(abs(performed.frame.midY - due.frame.midY), 12)
+        XCTAssertLessThanOrEqual(due.frame.maxX, app.frame.maxX - 12)
+        XCTAssertTrue(app.staticTexts["2 · Detaylar"].exists)
+        XCTAssertTrue(app.staticTexts["3 · Rapor"].exists)
+        XCTAssertFalse(app.buttons["Düzenle"].exists)
+        XCTAssertFalse(app.buttons["Envanterden çıkar"].exists)
+
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "İSGADA-periodic-control-accordion"
+        shot.lifetime = .keepAlways
+        add(shot)
+        #else
+        throw XCTSkip("Requires private pilot build")
+        #endif
+    }
+
+    func testCompanyCardExposesDirectLogoPickerAndLargePopupCloseTarget() throws {
         #if NOVA_PILOT_BUILD
         let app = XCUIApplication()
         app.launchArguments = ["RD_UI_TEST_MAIN", "RD_UI_TEST_NOVA_REVIEW"]
         app.launch(); defer { app.terminate() }
         let company = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "nova.company.")).firstMatch
         XCTAssertTrue(company.waitForExistence(timeout: 20)); company.tap()
+        app.buttons["company.section.info"].tap()
+        XCTAssertTrue(app.buttons["company.logo.picker"].waitForExistence(timeout: 5))
+        let logo = XCTAttachment(screenshot: app.screenshot()); logo.name = "İSGADA-company-direct-logo-picker"; logo.lifetime = .keepAlways; add(logo)
         app.buttons["company.edit"].tap()
-        let toggle = app.switches["Sorumlu personel"]
-        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
-        let before = app.buttons["nova.popup.close"].frame.minY
-        toggle.tap()
-        XCTAssertTrue(app.textFields["Ad soyad"].waitForExistence(timeout: 5))
-        XCTAssertLessThan(app.buttons["nova.popup.close"].frame.minY, before)
-        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "İSGADA-dynamic-company-preview"; shot.lifetime = .keepAlways; add(shot)
-        app.buttons["nova.popup.close"].tap()
+        let close = app.buttons["nova.popup.close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 5))
+        XCTAssertGreaterThanOrEqual(close.frame.width, 47)
+        XCTAssertGreaterThanOrEqual(close.frame.height, 47)
+        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "İSGADA-company-editor"; shot.lifetime = .keepAlways; add(shot)
+        close.tap()
         app.buttons["company.delete"].tap()
         XCTAssertTrue(app.buttons["Firmayı sil"].waitForExistence(timeout: 5))
         app.buttons["Firmayı sil"].tap()
@@ -36,10 +127,9 @@ final class NovaPilotUITests: XCTestCase {
         app.launch(); defer { app.terminate() }
         let company = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "nova.company.")).firstMatch
         XCTAssertTrue(company.waitForExistence(timeout: 20)); company.tap()
-        XCTAssertEqual(app.buttons["company.accordion"].value as? String, "Kapalı")
-        app.buttons["company.accordion"].tap()
         let section = app.buttons["company.section.personnel"]
         XCTAssertTrue(section.waitForExistence(timeout: 5)); section.tap()
+        XCTAssertTrue(app.textFields["company.personnel.search"].waitForExistence(timeout: 5))
         let create = app.buttons["company.personnel.add"]
         XCTAssertTrue(create.waitForExistence(timeout: 5)); create.tap()
         XCTAssertTrue(app.textFields["personnel.name"].waitForExistence(timeout: 5))
@@ -74,7 +164,7 @@ final class NovaPilotUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Aramanızla eşleşen kayıt yok."].waitForExistence(timeout: 5))
         app.buttons["directory.back"].tap()
         app.buttons["company.section.personnel"].tap()
-        app.buttons["Personeller"].tap()
+        app.buttons["Tüm personel"].tap()
         let add = app.buttons["personnel.add"]
         XCTAssertTrue(add.waitForExistence(timeout: 5)); add.tap()
         XCTAssertTrue(app.textFields["personnel.name"].waitForExistence(timeout: 5))
@@ -202,6 +292,36 @@ final class NovaPilotUITests: XCTestCase {
 /// supplies deterministic fixture data and never writes to a live account.
 final class NovaDesignAuditUITests: XCTestCase {
     private let analysisID = "00000000-0000-4000-8000-000000000006"
+
+    func testLegacyAnalysisOpensFromSavedFindingsWithoutProjection() throws {
+        #if NOVA_PILOT_BUILD
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "RD_UI_TEST_MAIN", "RD_UI_TEST_NOVA_REVIEW", "RD_UI_TEST_AUDIT_ANALYSIS",
+            "RD_UI_TEST_LEGACY_ANALYSIS_DETAIL", "RD_UI_TEST_RESULT_HUB_MISSING", "RD_UI_TEST_LIGHT_MODE"
+        ]
+        app.launch()
+        defer { app.terminate() }
+
+        let row = app.buttons["analysis.list.row.\(analysisID)"]
+        XCTAssertTrue(row.waitForExistence(timeout: 20))
+        row.tap()
+        XCTAssertTrue(app.staticTexts["UI Test Saha Analizi"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts[
+            "Bu eski analiz kayıtlı bulgularından gösteriliyor; bazı ek öneri bölümleri bulunmayabilir."
+        ].exists)
+        XCTAssertTrue(app.staticTexts["3 Bulgu"].exists)
+        XCTAssertTrue(app.staticTexts["2 Görüş"].exists)
+        XCTAssertTrue(app.buttons["analysis.detail.select.all"].exists)
+
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "İSGADA-legacy-analysis-fallback"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        #else
+        throw XCTSkip("Requires private pilot build")
+        #endif
+    }
 
     func testAnalysisResultAndSectionSurfaces() throws {
         #if NOVA_PILOT_BUILD

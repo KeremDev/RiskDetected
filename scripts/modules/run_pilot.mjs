@@ -27,6 +27,23 @@ try {
  sql+='BEGIN;\n'+read('scripts/modules/training_reference_fixture.sql')+'\n'+read('supabase/migrations/20260914220753_isg_pilot_cross_module_links.sql')+'\nCOMMIT;\n'+read('scripts/modules/cross_links_check.sql');
  sql+='BEGIN;\n'+read('supabase/migrations/20260914221301_isg_pilot_risk_records.sql')+'\nCOMMIT;\n'+read('scripts/modules/risk_pilot_check.sql');
  sql+='BEGIN;\n'+"CREATE SCHEMA auth; CREATE TABLE auth.users(id uuid PRIMARY KEY); INSERT INTO auth.users SELECT id FROM public.profiles;\n"+read('supabase/migrations/20260914222916_isg_pilot_risk_draft_management.sql')+'\nCOMMIT;\n'+read('scripts/modules/risk_draft_check.sql');
+ sql+='BEGIN;\n'+read('supabase/migrations/20260915090001_isg_pilot_module_tracking.sql')+'\nCOMMIT;\n'+read('scripts/modules/tracking_check.sql');
+ sql+='BEGIN;\n'+read('supabase/migrations/20260915090002_isg_pilot_checklist_plan_board.sql')+'\nCOMMIT;\n'+read('scripts/modules/checklist_plan_board_check.sql');
+ if(process.argv.includes('--visit-details') || process.argv.includes('--completed-records')) {
+  sql+='BEGIN;\n'+read('scripts/modules/visit_file_fixture.sql')+'\n'+read('supabase/pilot-release/candidates/20260916093000_isg_pilot_visit_meeting_details.sql')+'\nCOMMIT;\n'+read('scripts/modules/visit_details_check.sql');
+  sql+='BEGIN;\n'+read('supabase/pilot-release/candidates/20260916094500_isg_pilot_notebook_images.sql')+'\nCOMMIT;\n'+read('scripts/modules/notebook_images_check.sql');
+ }
+ if(process.argv.includes('--completed-records')) {
+  sql+='BEGIN;\n'+read('supabase/pilot-release/candidates/20260916110000_isg_pilot_completed_drills_certificates.sql')+'\nCOMMIT;\n'+read('scripts/modules/completed_records_check.sql');
+  sql+='BEGIN;\n'+read('scripts/modules/learning_fixture.sql')+'\n'+read('supabase/pilot-release/candidates/20260916113000_isg_pilot_employee_learning.sql')+'\nCOMMIT;\n'+read('scripts/modules/employee_learning_check.sql');
+  sql+='ALTER TABLE private_isg.file_library_entries ADD COLUMN title text DEFAULT \'Dosya\';\nBEGIN;\n'+read('supabase/migrations/20260915240000_isg_pilot_notice_feed.sql')+'\nCOMMIT;\nBEGIN;\n'+read('supabase/pilot-release/candidates/20260916120000_isg_pilot_unified_followup.sql')+'\nCOMMIT;\n'+read('scripts/modules/unified_followup_check.sql');
+  sql+='BEGIN;\n'+read('scripts/modules/file_tags_fixture.sql')+'\n'+read('supabase/pilot-release/candidates/20260916123000_isg_pilot_file_tags.sql')+'\nCOMMIT;\n'+read('scripts/modules/file_tags_check.sql');
+  sql+='BEGIN;\n'+read('supabase/pilot-release/candidates/20260916124500_isg_pilot_board_inline_decisions.sql')+'\nCOMMIT;\n'+read('scripts/modules/board_inline_check.sql');
+  sql+='BEGIN;\n'+read('supabase/pilot-release/candidates/20260916130000_isg_pilot_learning_read_gate.sql')+'\nCOMMIT;\n'+read('scripts/modules/employee_learning_scope_check.sql');
+  sql+="CREATE FUNCTION private_isg.file_library_gate(w bool) RETURNS void LANGUAGE plpgsql AS $$ BEGIN IF NOT EXISTS(SELECT 1 FROM private_isg.rollout WHERE feature='modules' AND read_enabled AND (NOT w OR write_enabled)) THEN RAISE EXCEPTION 'FEATURE_UNAVAILABLE'; END IF; END $$;\nBEGIN;\n"+read('supabase/pilot-release/candidates/20260916140000_isg_pilot_personal_files.sql')+'\nCOMMIT;\n'+read('scripts/modules/personal_files_check.sql');
+  sql+='BEGIN;\n'+read('scripts/modules/finding_source_fixture.sql')+'\n'+read('supabase/pilot-release/candidates/20260916143000_isg_pilot_finding_source.sql')+'\nCOMMIT;\n'+read('scripts/modules/finding_source_check.sql');
+  sql+='BEGIN;\n'+read('supabase/pilot-release/candidates/20260916144500_isg_pilot_shared_file_assets.sql')+'\nCOMMIT;\n'+read('scripts/modules/shared_file_assets_check.sql');
+ }
  const out=run(['exec','-i',container,'psql','-U','postgres','-X','-v','ON_ERROR_STOP=1'],sql);
  console.log(out.split('\n').filter(l=>/NOTICE:.*ok|PASSED/.test(l)).join('\n'));
  console.log('PASS: pilot operational module regression');

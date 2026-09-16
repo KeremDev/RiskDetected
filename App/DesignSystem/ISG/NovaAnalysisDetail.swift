@@ -233,6 +233,7 @@ struct NovaAnalysisFindingEdit: Equatable {
 
 /// One item on its way to becoming a record on a company.
 struct NovaAnalysisFileRequest: Equatable {
+    var companyID: UUID? = nil
     let item: NovaAnalysisItem
     let section: NovaAnalysisSectionKind
     let workplaceID: UUID
@@ -244,6 +245,7 @@ struct NovaAnalysisFileRequest: Equatable {
     /// Set when the expert chose it. For a scored finding with a readable band
     /// this stays nil and the server maps the band itself.
     let severity: NovaNonconformitySeverity?
+    var sourceMethod: NovaRiskMethod? = nil
 }
 
 /// What the expert said about one item. `none` withdraws an earlier answer.

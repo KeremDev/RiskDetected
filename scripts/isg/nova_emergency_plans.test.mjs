@@ -34,7 +34,7 @@ test('only the roles the schema knows are offered',()=>{
 });
 
 test('publishing is the only write on this side too',()=>{
-  const calls=[...service.matchAll(/"p_action": \.string\("([a-z_]+)"\)/g)].map(m=>m[1]);
+  const calls=[...service.matchAll(/action: "([a-z_]+)"/g)].map(m=>m[1]);
   assert.deepEqual([...new Set(calls)],['publish_plan']);
   // There is no edit sheet, only a publish one.
   assert.doesNotMatch(sheets,/struct NovaEmergencyEditSheet/);
@@ -42,10 +42,9 @@ test('publishing is the only write on this side too',()=>{
 
 test('a renewal keeps the plan it renews and says what it does',()=>{
   assert.match(models,/var isRenewal: Bool \{ planID != nil \}/);
-  assert.match(models,/static let renewalNote/);
-  assert.match(sheets,/if draft\.isRenewal \{\n\s+NovaHelpHint\(text: NovaEmergencyWords\.renewalNote\)/);
   // The workplace of a renewal is shown rather than offered.
-  assert.match(sheets,/if draft\.isRenewal \{\n\s+NovaText\(text: workplaceTitle, style: \.label\)/);
+  assert.match(sheets,/if draft\.isRenewal \|\| workplaces\.count == 1/);
+  assert.match(screens,/draftCompany = plan\.companyID/);
 });
 
 test('the review flag is explained and has no control',()=>{
@@ -57,10 +56,20 @@ test('the review flag is explained and has no control',()=>{
   assert.doesNotMatch(sheets,/needsReview = /);
 });
 
-test('the date is attributed to the expert wherever it is shown',()=>{
-  assert.match(models,/static let periodAttribution/);
-  assert.match(screens,/NovaEmergencyWords\.periodAttribution/);
-  assert.match(sheets,/NovaEmergencyWords\.periodAttribution/);
+test('dates are compact and the hazard-class suggestion stays editable',()=>{
+  assert.match(sheets,/compactDateRow\(label:/);
+  assert.match(sheets,/suggestedPeriodYears/);
+  assert.match(sheets,/DatePicker\("", selection:/);
+  assert.match(sheets,/if isClearable/);
+});
+
+test('the form selects company personnel and avoids duplicate file cards',()=>{
+  assert.match(screens,/employees: client\.employees/);
+  assert.match(sheets,/NovaFileChooserButton\(label: "Firma personeli"/);
+  assert.match(sheets,/await employees\(company, "", cursor\)/);
+  assert.doesNotMatch(sheets,/fieldIcon\("text\.alignleft"\)/);
+  const file=sheets.match(/private var fileEditor:[\s\S]*?\n    \}/)[0];
+  assert.doesNotMatch(file,/NovaCard\(padding:/);
 });
 
 test('every state carries a reason, so no row is a colour with no explanation',()=>{

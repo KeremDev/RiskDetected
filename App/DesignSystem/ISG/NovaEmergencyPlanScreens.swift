@@ -12,6 +12,11 @@ struct NovaEmergencyClient {
     /// The same file archive Dosyalarım reads and writes. The plan attaches one
     /// of its own entries rather than keeping a second, separate upload path.
     let fileClient: NovaFileLibraryClient
+    /// Active personnel belonging to the selected company. The chosen name is
+    /// copied into the immutable plan-team snapshot when the plan is saved.
+    var employees: (UUID, String, UUID?) async throws -> NovaEmployeePage = { _,_,_ in
+        throw NovaPersonnelFailure.unavailable
+    }
 }
 
 /// One counter, in the same shape the rest of the modules use.
@@ -20,47 +25,10 @@ struct NovaEmergencyStatCard: View {
     let value: Int
     var isSelected = false
     let onTap: () -> Void
-    @Environment(\.colorScheme) private var scheme
-
-    private var tone: NovaColorToken {
-        switch group {
-        case .expired: return .statusDangerInk
-        case .untracked: return .statusWarningInk
-        case .dueSoon: return .statusInfoInk
-        case .current: return .statusSuccessInk
-        }
-    }
-
     var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Image(systemName: group.symbol).font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(tone.color(in: scheme))
-                    NovaSizedText(text: "\(value)", size: 19, weight: "ExtraBold")
-                }
-                NovaSizedText(text: group.title, size: 10, weight: "Medium",
-                    color: NovaColorToken.textMuted.color(in: scheme))
-                    .lineLimit(2).minimumScaleFactor(0.82)
-                    .frame(maxWidth: .infinity, minHeight: 24, alignment: .topLeading)
-                NovaSizedText(text: group.footer, size: 9.5, weight: "Bold",
-                    color: value > 0 ? tone.color(in: scheme) : NovaColorToken.textMuted.color(in: scheme))
-                    .lineLimit(1).minimumScaleFactor(0.8)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 10).padding(.horizontal, 11)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(NovaColorToken.surface.color(in: scheme))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(isSelected ? tone.color(in: scheme)
-                                : NovaColorToken.hairline.color(in: scheme),
-                                lineWidth: isSelected ? 1.6 : 1))
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("nova.emergency.stat.\(group.rawValue)")
+        NovaListStat(title: group.title, symbol: group.symbol, value: value,
+            isSelected: isSelected, onTap: onTap)
+            .accessibilityIdentifier("nova.emergency.stat.\(group.rawValue)")
     }
 }
 
@@ -87,14 +55,12 @@ struct NovaEmergencyPlanCard: View {
                         VStack(alignment: .leading, spacing: 2) {
                             NovaText(text: plan.scope, style: .cardTitle)
                             NovaText(text: [plan.workplaceName, plan.companyName]
-                                .compactMap { $0 }.joined(separator: " · "), style: .meta,
+                                .compactMap { $0 }.reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }.joined(separator: " · "), style: .meta,
                                 color: NovaColorToken.textSecondary.color(in: scheme))
                         }
                         Spacer(minLength: 0)
                         NovaStatusPill(label: NovaEmergencyWords.state(plan.state), status: status)
                     }
-                    NovaText(text: NovaEmergencyWords.explain(plan), style: .meta,
-                        color: NovaColorToken.textSecondary.color(in: scheme))
                     HStack(spacing: 10) {
                         fact("calendar", RDLocalization.string("localizable.nova.emergency.row.prepared",
                             table: .localizable, fallback: "Hazırlanma"), plan.preparedOn)
@@ -106,12 +72,6 @@ struct NovaEmergencyPlanCard: View {
                             table: .localizable, fallback: "Ekip"), "\(plan.teamSize)")
                         fact("number", RDLocalization.string("localizable.nova.emergency.row.version",
                             table: .localizable, fallback: "Sürüm"), "v\(plan.version)")
-                    }
-                    if plan.needsReview {
-                        NovaAnalysisTag(symbol: "exclamationmark.circle",
-                            text: RDLocalization.string("localizable.nova.emergency.row.review",
-                                table: .localizable, fallback: "Dayanağı yazılmamış · gözden geçirin"),
-                            status: .warning)
                     }
                 }
             }
@@ -145,6 +105,7 @@ struct NovaEmergencyPlanScreen: View {
     var management: ((UUID, UUID) -> AnyView)?
     @State private var draftCompany: UUID?
 
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var board: NovaEmergencyBoard?
     @State private var catalogue: NovaEmergencyCatalogue?
     @State private var companies: [NovaAnalysisCompanyOption] = []
@@ -173,10 +134,11 @@ struct NovaEmergencyPlanScreen: View {
         if startInAddMode {
             addFlow(.init(preparedOn: NovaDayField.text(Date())))
         } else {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
+                    NovaHelpHint(text: "Firmanın acil durum planını ve dosyasını ekleyin; geçerlilik tarihini buradan takip edin.")
                     if let board { counters(board) }
                     filters
                     if loading && board == nil {
@@ -195,10 +157,11 @@ struct NovaEmergencyPlanScreen: View {
             }
         }
         .task { await load(reset: true) }
-        .sheet(item: $detail) { plan in
+        .novaPopup(item: $detail) { plan in
             NovaEmergencyDetailSheet(plan: plan, canWrite: canWrite, fileClient: client.fileClient,
                 onRenew: {
                     detail = nil
+                    draftCompany = plan.companyID
                     drafting = .init(planID: plan.id, workplaceID: plan.workplaceID,
                                      scope: plan.scope, preparedOn: NovaDayField.text(Date()),
                                      team: plan.team, assetID: plan.assetID)
@@ -212,11 +175,12 @@ struct NovaEmergencyPlanScreen: View {
                     }
                 }
         }
-        .sheet(item: $drafting) { draft in
+        .novaPopup(item: $drafting) { draft in
             if draft.planID != nil {
                 NovaEmergencyPlanSheet(draft: draft, catalogue: catalogue,
                     fileClient: client.fileClient, fileCompany: draftCompany,
                     fileCategories: fileCategories, fileAccepts: fileAccepts, fileAssurance: fileAssurance,
+                    employees: client.employees,
                     onSave: { edited in await publish(edited) }, onClose: { drafting = nil })
             } else {
                 addFlow(draft)
@@ -225,38 +189,27 @@ struct NovaEmergencyPlanScreen: View {
         }
     }
     private func addFlow(_ draft: NovaEmergencyPlanDraft) -> some View {
-        NovaCompanyCreateFlow(title: "Plan yayınla", companies: client.companies,
+        NovaCompanyCreateFlow(title: "Plan Ekle", companies: client.companies,
             catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany) { selectedCatalogue, selectedCompany in
             NovaEmergencyPlanSheet(draft: draft, catalogue: selectedCatalogue,
                 fileClient: client.fileClient, fileCompany: selectedCompany,
                 fileCategories: fileCategories, fileAccepts: fileAccepts, fileAssurance: fileAssurance,
+                employees: client.employees,
                 onSave: { edited in await publish(edited) },
                 onClose: { if startInAddMode { onBack() } else { drafting = nil } })
         }
     }
 
-    @ViewBuilder private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 10) {
-                NovaBackButton(action: onBack)
-                NovaText(text: headingOverride ?? NovaDestination.emergencyPlans.title, style: .screenTitle)
-                Spacer(minLength: 0)
-                if canWrite {
-                    NovaButton(label: RDLocalization.string("localizable.nova.emergency.new",
-                        table: .localizable, fallback: "Plan yayımla"), symbol: "plus",
-                        variant: .primary) {
-                        startCreate()
-                    }
-                }
+    private var header: some View {
+        NovaListHeading(title: headingOverride ?? NovaDestination.emergencyPlans.title, onBack: onBack) {
+            if canWrite {
+                NovaButton(label: "Plan Ekle", symbol: "plus", compact: true) { startCreate() }
             }
-            // Said once, at the top, rather than implied by a colour.
-            NovaText(text: NovaEmergencyWords.periodAttribution, style: .meta,
-                color: NovaColorToken.textSecondary.color(in: scheme))
         }
     }
 
     @ViewBuilder private func counters(_ board: NovaEmergencyBoard) -> some View {
-        let columns = [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)]
+        let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: typeSize.isAccessibilitySize ? 2 : 4)
         LazyVGrid(columns: columns, spacing: 8) {
             ForEach(NovaEmergencyGroup.allCases) { group in
                 NovaEmergencyStatCard(group: group, value: board.count(group),
@@ -326,21 +279,15 @@ struct NovaEmergencyPlanScreen: View {
         [.init(id: nil, title: allStates)]
             + NovaEmergencyGroup.allCases.map {
                 .init(id: $0.rawValue, title: $0.title, count: board?.count($0), symbol: $0.symbol) }
-            + NovaEmergencyState.allCases.map {
+            + NovaEmergencyState.allCases.filter { state in !NovaEmergencyGroup.allCases.contains { $0.rawValue == state.rawValue } }.map {
                 .init(id: $0.rawValue, title: NovaEmergencyWords.state($0), count: board?.counts[$0.rawValue]) }
     }
 
     @ViewBuilder private func list(_ board: NovaEmergencyBoard) -> some View {
         if board.rows.isEmpty {
-            NovaCard(padding: 18) {
-                VStack(alignment: .leading, spacing: 6) {
-                    NovaText(text: RDLocalization.string("localizable.nova.emergency.empty.title", table: .localizable,
-                        fallback: "Plan yok"), style: .cardTitle)
-                    NovaText(text: RDLocalization.string("localizable.nova.emergency.empty.body", table: .localizable,
-                        fallback: "Bir firma seçip o işyeri için acil durum planını yayımlayın."),
-                        style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
-                }
-            }
+            NovaEmptyState(title: RDLocalization.string("localizable.nova.emergency.empty.title",
+                table: .localizable, fallback: "Henüz acil durum planı yok"),
+                message: "Plan ekleyerek ekibi, dosyayı ve geçerlilik tarihini dijital ortamda takip edebilirsiniz.")
         } else {
             VStack(spacing: 10) {
                 ForEach(board.rows) { plan in

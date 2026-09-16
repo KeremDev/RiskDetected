@@ -50,6 +50,8 @@ struct NovaPilotRoot: View {
     @State private var equipmentBoard: NovaEquipmentBoard?
     /// The header bell. Computed from the account's own records at read time;
     /// it is never a record of a push that was sent.
+    @State private var noticeSource: NovaFollowupPage.Row?
+    @State private var trainingNoticeSource: NovaFollowupPage.Row?
     @State private var notices = NovaNoticeFeed.empty
     @State private var noticeRevision = UUID()
     private var overviewKey: String { "\(controller.host.navigation.epoch):\(ready):\(listRevision):\(navigation.selected)" }
@@ -86,6 +88,7 @@ struct NovaPilotRoot: View {
             notificationItems: notices.rows.map(noticeItem),
             noticeNote: notices.rows.isEmpty ? "" : NovaNoticeWords.dismissNote,
             onReadNotice: { key in Task { await markNotices { try await NovaNoticeService.live().read(identity, key: key) } } },
+            onOpenNotice: { key in Task { await openNotice(key) } },
             onDismissNotice: { key in Task { await markNotices { try await NovaNoticeService.live().dismiss(identity, key: key) } } },
             onRestoreNotice: { key in Task { await markNotices { try await NovaNoticeService.live().restore(identity, key: key) } } },
             connectionLabel: status,
@@ -167,15 +170,28 @@ struct NovaPilotRoot: View {
             case .reports, .reportArchive:
                 NovaProcessArchive(identity: identity, onBack: { navigate(.home) })
             case .profile:
-                VStack(spacing: 0) {
-                    NovaPageHeading(title: "Profil", onBack: { navigate(.home) }).padding(.horizontal, 20)
-                    ProfileView()
+                NovaPageSurface(onEdgeBack: { navigate(.home) }) {
+                    VStack(spacing: 0) {
+                        NovaPageHeading(title: "Profil", onBack: { navigate(.home) }).padding(.horizontal, 20)
+                        ProfileView()
+                    }
                 }
             default:
                 NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.bu.modul.hazirlaniyor.henuz.canli.islem.yapmiyor.b652656a", table: .localizable, fallback: "Bu modül hazırlanıyor; henüz canlı işlem yapmıyor.")).padding(20)
             }
         }
         .preferredColorScheme(.light)
+        .overlay {
+            if controller.resolving && !previewOnly {
+                ZStack {
+                    NovaColorToken.canvas.color(in: .light).opacity(0.96).ignoresSafeArea()
+                    NovaLoadingView(message: "Verileriniz güncelleniyor…")
+                }
+                .transition(.opacity)
+                .zIndex(500)
+                .accessibilityAddTraits(.isModal)
+            }
+        }
         .overlay(alignment: .topLeading) {
             // A container identifier propagates to SwiftUI toolbar/tab descendants.
             // Keep the QA marker separate so each button retains its own identifier.
@@ -192,6 +208,12 @@ struct NovaPilotRoot: View {
             }
             }
         }
+        .novaFullScreenCover(item: $trainingNoticeSource) { source in
+            NovaFollowupDestination(identity: identity, row: source, canWrite: ready, onBack: { trainingNoticeSource = nil })
+        }
+        .novaPopup(item: $noticeSource) { source in
+            NovaFollowupDestination(identity: identity, row: source, canWrite: ready, onBack: { noticeSource = nil })
+        }
         .alert(RDLocalization.string("localizable.nova.pilot.main.gate.nova.pilot.d20fb7f1", table: .localizable, fallback: "İSGADA pilot"), isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
             Button("Tamam", role: .cancel) { notice = nil }
         } message: { Text(notice ?? "") }
@@ -200,18 +222,17 @@ struct NovaPilotRoot: View {
             if event.object as? UUID == identity.userID { listRevision = UUID() }
         }
         .task(id: overviewKey) {
-            overview = nil; overviewFailed = false
             guard ready else { return }
+            overviewFailed = false
             do { overview = try await loadNovaPilotOverview(identity: identity) }
             catch { if !Task.isCancelled { overviewFailed = true } }
         }
         .task(id: overviewKey) {
-            equipmentBoard = nil
             guard ready else { return }
             equipmentBoard = try? await NovaEquipmentCheckService.live().board(identity, query: .init(limit: 1))
         }
         .task(id: noticeKey) {
-            guard ready, !previewOnly else { notices = .empty; return }
+            guard ready, !previewOnly else { return }
             notices = (try? await NovaNoticeService.live().feed(identity)) ?? .empty
         }
         .onChange(of: scenePhase) { phase in
@@ -222,9 +243,9 @@ struct NovaPilotRoot: View {
             }
         }
         .onChange(of: controller.host.identity) { next in
-            if next != identity { showingCreate = false; notice = nil }
+            if next != identity { showingCreate = false; notice = nil; noticeSource = nil; trainingNoticeSource = nil }
         }
-        .modifier(NovaSuccessPresentation())
+        .modifier(NovaSuccessPresentation(account: identity.userID))
     }
 
     private var statusCard: some View {
@@ -244,7 +265,7 @@ struct NovaPilotRoot: View {
     /// Evrak takibi reads one company at a time and says which one.
     @ViewBuilder private var documents: some View {
         if ready {
-            NovaPilotDocumentGate(identity: identity, scope: controller.scope, canWrite: controller.canWrite,
+            NovaPilotDocumentGate(identity: identity, scope: controller.scope, canWrite: ready,
                 select: { controller.select($0) }, currentScope: { controller.scope },
                 onBack: { navigate(.home) }, onCompanies: { navigate(.companies) })
         } else {
@@ -256,7 +277,7 @@ struct NovaPilotRoot: View {
     /// when the expert picks one.
     @ViewBuilder private var risk: some View {
         if ready {
-            NovaPilotRiskGate(identity: identity, canWrite: ready, showBackButton: false,
+            NovaPilotRiskGate(identity: identity, canWrite: ready, showBackButton: true,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
@@ -341,7 +362,7 @@ struct NovaPilotRoot: View {
     /// the expert picks one.
     @ViewBuilder private func files(startInAddMode: Bool = false) -> some View {
         if ready {
-            NovaPilotFileGate(identity: identity, canWrite: controller.canWrite,
+            NovaPilotFileGate(identity: identity, canWrite: ready,
                 startInAddMode: startInAddMode, onBack: { navigate(.home) })
                 .id(startInAddMode)
         } else {
@@ -374,7 +395,11 @@ struct NovaPilotRoot: View {
             NovaCompanyWorkspace(scope: scope, companyName: controller.capability?.company_name ?? "Firma",
                 canWrite: controller.canWrite, personnel: controller.personnelClient, directory: controller.directoryClient,
                 onBack: { controller.select(nil) },
-                loadSummary: { try await loadNovaPilotOverview(identity: identity, companyID: scope.companyID).first })
+                loadSummary: { try await loadNovaPilotOverview(identity: identity, companyID: scope.companyID).first },
+                loadNonconformities: {
+                    try await NovaNonconformityService.live(currentScope: { controller.scope }).list(scope)
+                },
+                onOpenNonconformities: { navigate(.findings) })
                 .id(scope.epoch)
         } else if ready && controller.selectedCompanyID == nil {
             VStack(spacing: 0) {
@@ -405,6 +430,24 @@ struct NovaPilotRoot: View {
             detail: [entry.kind.title, entry.companyName].compactMap { $0 }.joined(separator: " · "),
             badge: noticeBadge(entry), symbol: entry.kind.symbol, tone: entry.severity.tone,
             unread: entry.unread, dismissed: entry.dismissed, destination: entry.destination)
+    }
+
+    private func openNotice(_ key: String) async {
+        guard ready, let entry = notices.rows.first(where: { $0.id == key }),
+              let company = entry.companyID, let record = entry.recordID else { return }
+        let owner = identity
+        if entry.kind == .training {
+            do {
+                let page = try await NovaFollowupService(identity: owner).load(company: company, query: String(entry.title.prefix(100)))
+                guard ready, identity == owner else { return }
+                if let source = page.rows.first(where: { $0.record_id == record }) { trainingNoticeSource = source }
+                else { navigate(entry.destination) }
+            } catch { if identity == owner { notice = "Bildirim kaydı açılamadı. Yeniden deneyin." } }
+        } else {
+            noticeSource = .init(kind: entry.kind == .drill ? "completed_drill" : entry.kind.rawValue, company_id: company,
+                company_name: entry.companyName ?? "", record_id: record, source_id: record, title: entry.title,
+                due_on: entry.dueOn, status: entry.severity == .overdue ? "expired" : "soon")
+        }
     }
 
     private func noticeBadge(_ entry: NovaNoticeEntry) -> String {

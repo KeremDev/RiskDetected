@@ -16,6 +16,7 @@ struct NovaPilotProcessGate: View {
     @State private var selected: NovaProcessRow?
     @State private var search = ""
     @State private var hasMore = false
+    @State private var visitSummary: NovaVisitSummary?
     @State private var busy = false
     @State private var failure: String?
     private var spec: NovaProcessKind { .get(kind) }
@@ -42,34 +43,30 @@ struct NovaPilotProcessGate: View {
         if startInAddMode, let initialCompany {
             NovaProcessEditor(identity: identity, kind: kind, company: initialCompany, parent: parent, canWrite: canWrite, fileClient: fileClient)
         } else {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment:.leading,spacing:14) {
-                    HStack(spacing: 8) {
-                        NovaBackButton(action: onBack)
-                        // Some of these titles ("Yıllık Çalışma Planı") are long
-                        // enough to push an unstyled trailing button off the
-                        // right edge on a phone-width screen — it looked like
-                        // the add action simply did nothing. Scale the title
-                        // down instead of letting it claim unlimited width.
-                        NovaText(text:spec.title,style:.screenTitle)
-                            .lineLimit(1).minimumScaleFactor(0.7)
-                        Spacer(minLength: 8)
-                        Button { creating = true } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "plus").font(.system(size: 13, weight: .bold))
-                                Text("Ekle").font(.system(size: 13, weight: .semibold))
-                            }
-                            .padding(.horizontal, 14).frame(minHeight: 44)
-                            .background(Color.accentColor.opacity(canWrite ? 1 : 0.4), in: Capsule())
-                            .foregroundStyle(.white)
-                        }.buttonStyle(.plain).disabled(!canWrite)
+                    NovaListHeading(title: spec.title, onBack: onBack) {
+                        NovaButton(label: "Ekle", symbol: "plus", isEnabled: canWrite, compact: true) { creating = true }
                             .accessibilityIdentifier("process.add")
                     }
+                    NovaHelpHint(text: spec.help)
                     if parent == nil && initialCompany == nil {
-                        Picker("Firma",selection:$company) {
-                            Text("Tüm firmalar").tag(UUID?.none)
-                            ForEach(companies) { Text($0.name).tag(Optional($0.id)) }
+                        NovaFilterField(label: "Firma", options: [.init(id: nil, title: "Tüm firmalar")] + companies.map { .init(id: $0.id.uuidString, title: $0.name) },
+                            selected: company?.uuidString, identifier: "process.company") { company = $0.flatMap(UUID.init(uuidString:)) }
+                    }
+                    if kind == "site_visit", let summary = visitSummary {
+                        NovaCard(padding: 14) {
+                            HStack(alignment: .top, spacing: 20) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Label("\(summary.visits)", systemImage: "figure.walk").font(NovaFont.font(.cardTitle))
+                                    NovaText(text: "Toplam ziyaret", style: .meta)
+                                }
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Label(summary.recorded_minutes.map { "\($0) dk" } ?? "—", systemImage: "clock").font(NovaFont.font(.cardTitle))
+                                    NovaText(text: "\(summary.timed_visits) kayıtta süre belirtilmiş", style: .meta)
+                                }
+                            }.frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
                     HStack {
@@ -79,13 +76,23 @@ struct NovaPilotProcessGate: View {
                     }.padding(12).background(.white,in:RoundedRectangle(cornerRadius:14))
                     if busy { ProgressView("Yükleniyor…") }
                     if let failure { Text(failure).font(NovaFont.font(.meta)); Button("Yeniden dene") { Task { await load() } } }
-                    if rows.isEmpty && !busy && failure == nil { NovaText(text:"Henüz kayıt yok. Ekle düğmesiyle başlayabilirsiniz.",style:.body) }
+                    if rows.isEmpty && !busy && failure == nil {
+                        NovaEmptyState(title: spec.emptyTitle, message: spec.emptyMessage)
+                    }
                     ForEach(rows) { row in
                         Button { selected = row } label: {
                             NovaCard(padding:16) {
                                 VStack(alignment:.leading,spacing:8) {
                                     NovaText(text:row.title.replacingOccurrences(of:"[\"",with:"").replacingOccurrences(of:"\"]",with:""),style:.cardTitle)
                                     NovaText(text:row.company_name + " · " + String(row.date.prefix(10)),style:.meta)
+                                    if kind == "site_visit" {
+                                        if let duration = row.values["duration_minutes"], !duration.text.isEmpty {
+                                            NovaText(text: duration.text + " dk", style: .meta)
+                                        }
+                                        if let contact = row.values["responsible_contact"]?.text, !contact.isEmpty {
+                                            NovaText(text: "Görüşülen: " + contact, style: .meta)
+                                        }
+                                    }
                                     if let state = row.values["state"]?.text, !state.isEmpty {
                                         NovaText(text: spec.fields.first(where: { $0.id == "state" })?.choices[state] ?? ["active":"Aktif", "closed":"Kapalı"][state] ?? state, style: .meta)
                                     }
@@ -104,7 +111,7 @@ struct NovaPilotProcessGate: View {
         .font(.custom("PlusJakartaSans-Regular",size:14)).tint(.primary)
         .task { company = initialCompany; await load() }
         .onChange(of:company) { _ in Task { await load() } }
-        .sheet(isPresented:$creating,onDismiss:{Task { await load() }}) {
+        .novaPopup(isPresented:$creating,onDismiss:{Task { await load() }}) {
             if (parent != nil || initialCompany != nil), let company {
                 NovaProcessEditor(identity:identity,kind:kind,company:company,parent:parent,canWrite:canWrite,fileClient:fileClient)
             } else {
@@ -115,19 +122,25 @@ struct NovaPilotProcessGate: View {
                 }
             }
         }
-        .sheet(item:$selected,onDismiss:{Task { await load() }}) { row in
+        .novaPopup(item:$selected,onDismiss:{Task { await load() }}) { row in
             NovaProcessEditor(identity:identity,kind:kind,company:row.company_id,parent:parent,record:row.id,canWrite:canWrite,fileClient:fileClient)
         }
         }
     }
     private func load(more:Bool = false) async {
         let scope = company; busy = true; failure = nil
+        if !more { visitSummary = nil }
         defer { busy = false }
         do {
             if companies.isEmpty { companies = try await NovaAnalysisWorkspace.companyOptions(identity:identity) }
             let page = try JSONDecoder().decode(NovaProcessPage.self,from:await service.read(kind:kind,company:scope,parent:parent,query:search,offset:more ? rows.count : 0))
             guard company == scope else { return }
             rows = more ? rows + page.rows : page.rows; hasMore = page.has_more
+            if kind == "site_visit" {
+                let summary = try await service.visitSummary(company: scope)
+                guard company == scope else { return }
+                visitSummary = summary
+            }
         } catch { failure = NovaProcessService.message(error) }
     }
 }
@@ -154,7 +167,10 @@ struct NovaProcessEditor: View {
     @State private var deletePrompt = false
     @State private var children = false
     @State private var pdf: URL?
+    @State private var attachment: NovaFileEntry?
     @State private var cancelling = false
+    @State private var personSearch = ""
+    @State private var photoDraft = ""
     @State private var cancelReason = ""
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
@@ -164,8 +180,15 @@ struct NovaProcessEditor: View {
     /// records what happened, not what is scheduled — and cancelling is its
     /// own action instead of a state choice sitting in the general form.
     private var visibleFields: [NovaProcessField] {
+        if kind == "completed_drill" || kind == "personnel_certificate" {
+            return spec.fields.filter { field in
+                if field.id == "valid_until" { return !automaticDeadline || values["due_override"]?.text == "true" }
+                if field.id == "due_override" { return automaticDeadline }
+                return true
+            }
+        }
         guard kind == "board" else { return spec.fields }
-        return spec.fields.filter { !["applicability","state","held_on","cancelled_reason"].contains($0.id) }
+        return spec.fields.filter { !["applicability","state","held_on","cancelled_reason"].contains($0.id) && ($0.id != "initial_decisions" || record == nil) }
     }
     var body: some View {
         NovaPopup {
@@ -174,7 +197,7 @@ struct NovaProcessEditor: View {
                     HStack(spacing: 10) {
                         Image(systemName: kindSymbol).font(.system(size: 19, weight: .regular))
                             .foregroundStyle(NovaColorToken.text.color(in: scheme)).frame(width: 34, height: 34)
-                        NovaText(text:spec.title,style:.screenTitle)
+                        NovaText(text:spec.title,style:.sheetTitle)
                         Spacer(minLength: 0)
                     }
                     if kind == "katip_contract" { NovaText(text:"Uzmanın sözleşme kaydıdır; resmî İSG-KATİP işlemi yapılmaz.",style:.meta) }
@@ -192,21 +215,13 @@ struct NovaProcessEditor: View {
                     if loading { ProgressView("Kayıt yükleniyor…") }
                     if let catalogue, !loading {
                         if kind == "board" { boardCompactFields(catalogue) }
+                        else if kind == "katip_contract" { katipCompactFields(catalogue) }
                         else {
+                            if automaticDeadline {
+                                NovaHelpHint(text: deadlineHint)
+                            }
                             ForEach(visibleFields) { field in
                                 fieldRow(field) { control(field,catalogue) }
-                            }
-                        }
-                        NovaCard(padding: 12) {
-                            fieldIcon("doc.text") {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    NovaText(text:"Firma evrak kaydı",style:.label)
-                                    Picker("",selection:$document) {
-                                        Text("Bağlantı yok").tag("")
-                                        ForEach(catalogue.documents) { Text($0.name).tag($0.id.uuidString) }
-                                    }.labelsHidden()
-                                    if catalogue.documents.isEmpty { NovaText(text:"Evrak Takibi bölümüne eklediğiniz firma kayıtları burada seçilebilir.",style:.meta) }
-                                }
                             }
                         }
                         if kind == "annual_work_item" || kind == "board_decision" || kind == "site_observation" {
@@ -247,8 +262,10 @@ struct NovaProcessEditor: View {
                             if let child = spec.child {
                                 Button(NovaProcessKind.get(child).title) { children = true }
                             }
+                            if !["approved_notebook", "personnel_certificate"].contains(kind) {
                             Button { Task { await export() } } label:{Label("PDF indir",systemImage:"arrow.down.doc")}
                             Button("Excel indir") { Task { await export(excel: true) } }
+                            }
                             Button("Kaydı sil",role:.destructive) { deletePrompt = true }.disabled(!canWrite)
                         }
                         NovaButton(label:busy ? "Kaydediliyor…" : "Kaydet",symbol:"checkmark",variant:.primary) { Task { await save() } }
@@ -260,23 +277,50 @@ struct NovaProcessEditor: View {
         }
         .preference(key:NovaPopupBusyKey.self,value:busy)
         .task { await load() }
+        .onChange(of: values["certificate_kind"]?.text) { new in
+            guard kind == "personnel_certificate", row == nil else { return }
+            let defaults = ["first_aid":"İlk Yardım Belgesi", "myk":"MYK Belgesi", "custom":""]
+            let current = values["title"]?.text ?? ""
+            if current.isEmpty || defaults.values.contains(current) { values["title"] = .string(defaults[new ?? ""] ?? "") }
+        }
         .confirmationDialog("Kayıt aktif listeden kaldırılacak. Geçmişi korunur.",isPresented:$deletePrompt,titleVisibility:.visible) {
             Button("Sil",role:.destructive) { Task { await remove() } }
         }
-        .sheet(isPresented:$children, onDismiss: { Task { await load() } }) {
+        .novaPopup(isPresented:$children, onDismiss: { Task { await load() } }) {
             if let child = spec.child, let row {
                 NovaPilotProcessGate(identity:identity,kind:child,initialCompany:company,parent:row.id,canWrite:canWrite,onBack:{children = false})
             }
         }
-        .sheet(isPresented: $choosingRelated) {
+        .novaPopup(isPresented: $choosingRelated) {
             NovaProcessLinkPicker(identity: identity, company: company, excluding: record) { selected, selectedKind in
                 relatedID = selected.id.uuidString; relatedKind = selectedKind; relatedTitle = selected.title
             }
         }
+        .novaPopup(item: $attachment) { file in
+            NovaFileEntrySheet(entry: file, catalogue: [], assurance: .init(), client: fileClient,
+                canWrite: false, onChanged: {}, onClosed: { attachment = nil })
+        }
         .sheet(item:$pdf) { NovaFileShareSheet(url:$0) }
     }
+    private var automaticDeadline: Bool { kind == "completed_drill" || (kind == "personnel_certificate" && values["certificate_kind"]?.text == "first_aid") }
+    private var deadlineHint: String {
+        let start = values[kind == "completed_drill" ? "held_on" : "issued_on"]?.text ?? ""
+        let months = kind == "completed_drill" ? Int(row?.values["period_months"]?.text ?? "12") ?? 12 : 36
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Istanbul")!
+        let due = NovaDayField.date(start).flatMap { calendar.date(byAdding: .month, value: months, to: $0) }.map(NovaDayField.text) ?? "—"
+        return kind == "completed_drill" ? "Otomatik takip: \(due). Genel aralık 12 ay; kayıtlı maden işyerinde sunucu 6 ay uygular. Gerektiğinde tarihi değiştirebilirsiniz." : "İlk yardım belgesi için 3 yıl: \(due). Belgenizdeki tarih farklıysa değiştirebilirsiniz."
+    }
+    private var photoIDs: [String] {
+        if case .array(let items) = values["photo_ids"] { return items.map(\.text) }; return []
+    }
     private var valid: Bool {
-        spec.fields.filter(\.required).allSatisfy { field in
+        if kind == "personnel_certificate" && (!automaticDeadline || values["due_override"]?.text == "true") && (values["valid_until"]?.text.isEmpty ?? true) { return false }
+
+        if kind == "site_visit", let duration = values["duration_minutes"]?.text, !duration.isEmpty {
+            guard let minutes = Int(duration), (1...1440).contains(minutes) else { return false }
+        }
+        return spec.fields.filter(\.required).allSatisfy { field in
             if case .array(let list) = values[field.id] { return !list.isEmpty }
             return !(values[field.id]?.text.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty ?? true)
         }
@@ -296,6 +340,7 @@ struct NovaProcessEditor: View {
         case "board": return "person.3"
         case "board_decision": return "checkmark.seal"
         case "site_visit": return "figure.walk"
+        case "approved_notebook": return "book.closed"
         case "site_observation": return "eye"
         case "work_permit": return "doc.badge.gearshape"
         case "contractor": return "building.2.crop.circle"
@@ -312,42 +357,63 @@ struct NovaProcessEditor: View {
         }
     }
     @ViewBuilder private func fieldRow<V: View>(_ field: NovaProcessField, @ViewBuilder _ value: @escaping () -> V) -> some View {
-        NovaCard(padding: 12) {
-            fieldIcon(fieldSymbol(field)) {
-                VStack(alignment: .leading, spacing: 4) {
-                    NovaText(text: field.title + (field.required ? " *" : ""), style: .label)
-                    value()
+        if field.type == "date" {
+            NovaDayField(label: field.title + (field.required ? " *" : ""), value: text(field.id), identifier: "process.date.\(field.id)", isClearable: !field.required)
+        } else if ["file", "photo", "pdf", "photos"].contains(field.type) {
+            value()
+        } else {
+            NovaCard(padding: 12) {
+                fieldIcon(fieldSymbol(field)) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        NovaText(text: field.title + (field.required ? " *" : ""), style: .label)
+                        value()
+                    }
                 }
             }
         }
     }
-    /// Board's own compact layout: workplace and date share a row, the rest
-    /// stay full width. Kept separate from the generic ForEach instead of
-    /// building a generic pairing mechanism that would reach every other kind.
+    /// Keep the company scope and meeting date first, with enough width for each control.
     @ViewBuilder private func boardCompactFields(_ catalogue: NovaProcessPage) -> some View {
-        if let workplaceField = spec.fields.first(where: { $0.id == "workplace_id" }),
-           let dateField = spec.fields.first(where: { $0.id == "planned_on" }) {
-            HStack(alignment: .top, spacing: 8) {
-                NovaCard(padding: 12) {
-                    fieldIcon(fieldSymbol(workplaceField)) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            NovaText(text: workplaceField.title + " *", style: .label)
-                            control(workplaceField, catalogue)
-                        }
-                    }
-                }.frame(maxWidth: .infinity)
-                NovaCard(padding: 12) {
-                    fieldIcon(fieldSymbol(dateField)) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            NovaText(text: dateField.title + " *", style: .label)
-                            control(dateField, catalogue)
-                        }
-                    }
-                }.frame(maxWidth: .infinity)
-            }
+        if let workplaceField = spec.fields.first(where: { $0.id == "workplace_id" }) {
+            fieldRow(workplaceField) { control(workplaceField, catalogue) }
+        }
+        if let dateField = spec.fields.first(where: { $0.id == "planned_on" }) {
+            fieldRow(dateField) { control(dateField, catalogue) }
         }
         ForEach(visibleFields.filter { $0.id != "workplace_id" && $0.id != "planned_on" }) { field in
             fieldRow(field) { control(field, catalogue) }
+        }
+    }
+    /// KATİP is entered often, so its text fields use their placeholder as the
+    /// only caption. Dates remain labelled and share one compact row.
+    @ViewBuilder private func katipCompactFields(_ catalogue: NovaProcessPage) -> some View {
+        let dates = visibleFields.filter { ["starts_on", "ends_before"].contains($0.id) }
+        let beforeDates = visibleFields.filter { ["workplace_id", "counterparty", "expert_contact", "scope"].contains($0.id) }
+        let afterDates = visibleFields.filter { !["workplace_id", "counterparty", "expert_contact", "scope", "starts_on", "ends_before"].contains($0.id) }
+        ForEach(beforeDates) { field in
+            if field.type == "file" || field.type == "photo" || field.type == "pdf" || field.type == "workplaces" {
+                fieldRow(field) { control(field, catalogue) }
+            } else {
+                NovaCard(padding: 12) {
+                    fieldIcon(fieldSymbol(field)) { control(field, catalogue) }
+                }
+            }
+        }
+        HStack(alignment: .top, spacing: 8) {
+            ForEach(dates) { field in
+                NovaDayField(label: field.title + (field.required ? " *" : ""), value: text(field.id),
+                    identifier: "process.date.\(field.id)", isClearable: !field.required)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        ForEach(afterDates) { field in
+            if field.type == "file" || field.type == "photo" || field.type == "pdf" {
+                fieldRow(field) { control(field, catalogue) }
+            } else {
+                NovaCard(padding: 12) {
+                    fieldIcon(fieldSymbol(field)) { control(field, catalogue) }
+                }
+            }
         }
     }
     private func cancelMeeting() async {
@@ -365,7 +431,7 @@ struct NovaProcessEditor: View {
         case "datetime": return "calendar.badge.clock"
         case "multiline","lines": return "text.alignleft"
         case "number": return "number"
-        case "file": return "paperclip"
+        case "file","photo": return "paperclip"
         default: return "pencil.line"
         }
     }
@@ -381,8 +447,45 @@ struct NovaProcessEditor: View {
     }
     @ViewBuilder private func control(_ field:NovaProcessField,_ cat:NovaProcessPage) -> some View {
         switch field.type {
-        case "file":
-            NovaInlineFileField(category: fileCategory(kind), company: company, fileClient: fileClient, assetID: text(field.id))
+        case "lines":
+            NovaNumberedItemsEditor(title: field.title, value: text(field.id))
+        case "bool":
+            Toggle(field.title, isOn: Binding(get: { values[field.id]?.text == "true" }, set: { values[field.id] = .bool($0) })).labelsHidden()
+        case "employee":
+            TextField("Personel ara", text: $personSearch)
+            ForEach(cat.employees.filter { personSearch.isEmpty || $0.name.localizedStandardContains(personSearch) }) { person in
+                Button { values[field.id] = .string(person.id.uuidString) } label: {
+                    HStack { Text(person.name); Spacer(); Image(systemName: values[field.id]?.text.lowercased() == person.id.uuidString.lowercased() ? "checkmark.circle" : "circle") }
+                        .font(NovaFont.font(.body)).padding(.vertical, 6)
+                }.buttonStyle(.plain)
+            }
+        case "photos":
+            ForEach(Array(photoIDs.enumerated()), id: \.element) { index, id in
+                HStack {
+                    Label("Fotoğraf \(index + 1)", systemImage: "photo")
+                    Spacer()
+                    if row != nil { Button("Aç") { Task { await openAttachment("photo_ids:" + id, row!.id) } } }
+                    Button { values["photo_ids"] = .array(photoIDs.filter { $0 != id }.map(NovaModuleValue.string)) } label: { Image(systemName: "xmark") }
+                }
+            }
+            if photoIDs.count < 10 {
+                NovaInlineFileField(imagesOnly: true, category: "other", company: company, fileClient: fileClient, assetID: $photoDraft)
+                    .id(photoIDs.count)
+                    .onChange(of: photoDraft) { value in
+                        guard !value.isEmpty else { return }
+                        if !photoIDs.contains(value) { values["photo_ids"] = .array((photoIDs + [value]).map(NovaModuleValue.string)) }
+                        photoDraft = ""
+                    }
+            }
+        case "file","photo","pdf":
+            NovaInlineFileField(imagesOnly: field.type == "photo", pdfOnly: field.type == "pdf",
+                label: field.title, category: fileCategory(kind), company: company,
+                fileClient: fileClient, assetID: text(field.id))
+            if let row, let saved = row.values[field.id]?.text, !saved.isEmpty, saved == values[field.id]?.text {
+                Button { Task { await openAttachment(field.id, row.id) } } label: {
+                    Label("Ekli dosyayı aç", systemImage: "doc.viewfinder")
+                }
+            }
         case "choice":
             Picker(field.title,selection:text(field.id)) {
                 Text("Seçin").tag("")
@@ -425,10 +528,15 @@ struct NovaProcessEditor: View {
                     .labelsHidden()
             }
         default:
-            TextField(field.title,text:text(field.id),axis:field.type == "multiline" || field.type == "lines" ? .vertical : .horizontal)
+            TextField(field.title + (field.required ? " *" : ""),text:text(field.id),axis:field.type == "multiline" || field.type == "lines" ? .vertical : .horizontal)
                 .lineLimit(field.type == "multiline" || field.type == "lines" ? 3...8 : 1...1)
                 .keyboardType(field.type == "number" ? .numberPad : .default)
         }
+    }
+    private func openAttachment(_ field: String, _ record: UUID) async {
+        busy = true; failure = nil; defer { busy = false }
+        do { attachment = try await service.attachment(kind: kind, record: record, field: field) }
+        catch { failure = NovaProcessService.message(error) }
     }
     private func dateBinding(_ field: NovaProcessField) -> Binding<Date> {
         Binding(get: {
@@ -457,10 +565,13 @@ struct NovaProcessEditor: View {
                 }
             } else {
                 for field in spec.fields {
-                    values[field.id] = field.type == "employees" ? .array([]) : .string("")
+                    values[field.id] = ["employees","photos"].contains(field.type) ? .array([]) : field.type == "bool" ? .bool(false) : .string("")
                 }
                 let today = NovaDayField.text(Date())
-                for key in ["starts_on","planned_on","visited_on"] where spec.fields.contains(where:{$0.id == key}) { values[key] = .string(today) }
+                for key in ["starts_on","planned_on","visited_on","held_on","issued_on"] where spec.fields.contains(where:{$0.id == key}) { values[key] = .string(today) }
+                if kind == "completed_drill" { values["drill_type"] = .string("emergency"); values["announcement"] = .string("announced") }
+                if kind == "personnel_certificate" { values["certificate_kind"] = .string("first_aid"); values["title"] = .string("İlk Yardım Belgesi"); if let parent { values["employee_id"] = .string(parent.uuidString) } }
+                if kind == "approved_notebook" { values["title"] = .string("Onaylı Defter") }
                 if kind == "annual_work_plan" { values["plan_year"] = .string(String(Calendar.current.component(.year,from:Date()))) }
                 if kind == "board" {
                     // No planning workflow: a board record is entered as a
@@ -489,8 +600,9 @@ struct NovaProcessEditor: View {
                 selected[field.id] = .array(lines.map(PersonnelRPCValue.string))
             } else if field.type == "number", case .number(let n) = value {
                 selected[field.id] = .string(String(Int(n)))
-            } else { selected[field.id] = value.text.isEmpty && field.type != "employees" ? .null : value.rpc }
+            } else { selected[field.id] = value.text.isEmpty && !["employees","photos","bool"].contains(field.type) ? .null : value.rpc }
         }
+        if automaticDeadline && values["due_override"]?.text != "true" { selected["valid_until"] = .null }
         if let key = spec.parentKey { selected[key] = values[key]?.rpc ?? .null }
         if kind == "board" {
             if values["state"]?.text == "held" { selected["held_on"] = selected["planned_on"] }

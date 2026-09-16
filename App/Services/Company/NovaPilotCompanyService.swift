@@ -11,6 +11,28 @@ struct NovaPilotCompanyIntent: Codable, Equatable {
     var email: String? = nil
     var employeeCount: Int? = nil
     var responsibleName: String? = nil
+    var responsiblePhone: String? = nil
+    var responsibleEmail: String? = nil
+    var contactVersion: Int? = nil
+
+    static func makeContactProfile(ownerID: UUID, name: String, hazard: String, sector: String,
+                                   email: String, employeeCount: String, responsibleName: String,
+                                   responsiblePhone: String, responsibleEmail: String) throws -> Self {
+        var intent = try makeProfile(ownerID: ownerID, name: name, hazard: hazard, sector: sector,
+                                     email: email, employeeCount: employeeCount, responsibleName: responsibleName)
+        intent.contactVersion = 3
+        if intent.responsibleName != nil {
+            let phone = responsiblePhone.replacingOccurrences(of: "[ ()-]", with: "", options: .regularExpression)
+            let mail = responsibleEmail.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard phone.range(of: "^[+]?[0-9]{7,15}$", options: .regularExpression) != nil,
+                  mail.utf8.count <= 254, mail.range(of: "^[^\\s@]+@[^\\s@]+[.][^\\s@]+$", options: .regularExpression) != nil
+            else { throw NovaPersonnelFailure.validation }
+            intent.responsiblePhone = phone; intent.responsibleEmail = mail
+        } else if !responsiblePhone.isEmpty || !responsibleEmail.isEmpty {
+            throw NovaPersonnelFailure.validation
+        }
+        return intent
+    }
 
     static func makeProfile(ownerID: UUID, name: String, hazard: String, sector: String,
                             email: String, employeeCount: String, responsibleName: String) throws -> Self {
@@ -35,6 +57,15 @@ struct NovaPilotCompanyIntent: Codable, Equatable {
     }
 
     func validate() throws {
+        if let contactVersion {
+            guard contactVersion == 3, let sector else { throw NovaPersonnelFailure.validation }
+            let normalized = try Self.makeContactProfile(ownerID: ownerID, name: name, hazard: hazard, sector: sector,
+                email: email ?? "", employeeCount: employeeCount.map(String.init) ?? "", responsibleName: responsibleName ?? "",
+                responsiblePhone: responsiblePhone ?? "", responsibleEmail: responsibleEmail ?? "")
+            guard normalized.responsiblePhone == responsiblePhone, normalized.responsibleEmail == responsibleEmail else {
+                throw NovaPersonnelFailure.validation
+            }
+        } else if responsiblePhone != nil || responsibleEmail != nil { throw NovaPersonnelFailure.validation }
         if let sector {
             let normalized = try Self.makeProfile(ownerID: ownerID, name: name, hazard: hazard, sector: sector,
                 email: email ?? "", employeeCount: employeeCount.map(String.init) ?? "", responsibleName: responsibleName ?? "")
@@ -100,7 +131,13 @@ struct NovaPilotCompanyIntent: Codable, Equatable {
             args["p_employee_count"] = intent.employeeCount.map { .number(Int64($0)) } ?? .null
             args["p_responsible_name"] = intent.responsibleName.map(PersonnelRPCValue.string) ?? .null
         }
-        let data = try await rpc(intent.sector == nil ? "isg_pilot_company_create_v1" : "isg_pilot_company_create_v2", args)
+        if intent.contactVersion == 3 {
+            args["p_responsible_phone"] = intent.responsiblePhone.map(PersonnelRPCValue.string) ?? .null
+            args["p_responsible_email"] = intent.responsibleEmail.map(PersonnelRPCValue.string) ?? .null
+        }
+        let version = intent.contactVersion ?? (intent.sector == nil ? 1 : 2)
+        let endpoint = version == 3 ? "isg_pilot_company_create_v3" : (version == 2 ? "isg_pilot_company_create_v2" : "isg_pilot_company_create_v1")
+        let data = try await rpc(endpoint, args)
         try check(identity)
         guard data.count <= 16384 else { throw NovaPersonnelFailure.unavailable }
         struct Receipt: Decodable {
@@ -108,7 +145,7 @@ struct NovaPilotCompanyIntent: Codable, Equatable {
             let schema_version: Int; let company: Row; let replayed: Bool
         }
         let receipt = try JSONDecoder().decode(Receipt.self, from: data)
-        guard receipt.schema_version == (intent.sector == nil ? 1 : 2), receipt.company.user_id == identity.userID,
+        guard receipt.schema_version == version, receipt.company.user_id == identity.userID,
               !receipt.company.is_archived, !receipt.company.name.isEmpty,
               ["low", "medium", "high"].contains(receipt.company.hazard_class) else { throw NovaPersonnelFailure.unavailable }
         // A replay returns the current row, whose name may have changed since creation.

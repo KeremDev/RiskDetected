@@ -19,8 +19,10 @@ struct NovaPilotDocumentGate: View {
     private var service: NovaDocumentTrackingService { .live(currentScope: currentScope) }
 
     var body: some View {
-        NovaDocumentTrackingScreen(client: client, onBack: onBack, canWrite: canWrite,
-            initialCompany: initialCompany, initialKinds: initialKinds, headingOverride: headingOverride)
+        NovaFollowupScreen(identity: identity, initialCompany: initialCompany, canWrite: canWrite, onBack: onBack, legacy: { company in
+            AnyView(NovaDocumentTrackingScreen(client: client, onBack: onBack, canWrite: false,
+                initialCompany: company, initialKinds: initialKinds, headingOverride: "Önceki Evrak Kayıtları"))
+        })
     }
 
     /// Selecting a company runs the workspace availability check again, so the

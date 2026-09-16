@@ -37,89 +37,43 @@ struct NovaDayField: View {
     static func date(_ text: String) -> Date? { formatter.date(from: text) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 6) {
-                NovaText(text: label, style: .label, color: NovaColorToken.textTertiary.color(in: scheme))
-                Spacer(minLength: 0)
-                if isClearable && !value.isEmpty {
-                    Button { value = "" } label: {
-                        NovaText(text: RDLocalization.string("localizable.nova.document.date.clear", table: .localizable, fallback: "Temizle"),
-                            style: .micro, color: NovaColorToken.accentInk.color(in: scheme))
-                    }.buttonStyle(.plain).accessibilityIdentifier("\(identifier).clear")
-                }
-            }
-            // An optional day that has not been set shows as unset. A picker
-            // defaulted to today would read as a date the expert chose.
-            if isClearable && value.isEmpty {
-                Button { value = Self.text(Date()) } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "calendar").font(.system(size: 11, weight: .semibold))
-                        NovaText(text: RDLocalization.string("localizable.nova.document.date.unset", table: .localizable, fallback: "Belirtilmedi"),
-                            style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
+        NovaFormValueRow(label: label) {
+            HStack(spacing: 4) {
+                if isClearable && value.isEmpty {
+                    Button { value = Self.text(Date()) } label: {
+                        NovaText(text: RDLocalization.string("localizable.nova.document.date.unset", table: .localizable, fallback: "Belirtilmedi"), style: .meta)
+                            .frame(minHeight: 36)
+                    }.buttonStyle(.plain).accessibilityIdentifier("\(identifier).set")
+                } else {
+                    DatePicker("", selection: Binding(
+                        get: { Self.date(value) ?? Date() },
+                        set: { value = Self.text($0) }), displayedComponents: .date)
+                        .labelsHidden().datePickerStyle(.compact)
+                        .accessibilityIdentifier(identifier)
+                        .accessibilityLabel(Text(verbatim: label))
+                    if isClearable {
+                        Button { value = "" } label: {
+                            Image(systemName: "xmark.circle").font(.system(size: 14))
+                                .frame(width: 32, height: 36)
+                        }.buttonStyle(.plain).accessibilityIdentifier("\(identifier).clear")
+                            .accessibilityLabel(RDLocalization.string("localizable.nova.document.date.clear", table: .localizable, fallback: "Temizle"))
                     }
-                    .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
-                    .padding(.horizontal, 11).frame(minHeight: 36)
-                    .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 10))
-                    .overlay(RoundedRectangle(cornerRadius: 10)
-                        .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
-                }.buttonStyle(.plain).accessibilityIdentifier("\(identifier).set")
-            } else {
-                DatePicker("", selection: Binding(
-                    get: { Self.date(value) ?? Date() },
-                    set: { value = Self.text($0) }), displayedComponents: .date)
-                    .labelsHidden().datePickerStyle(.compact)
-                    .accessibilityIdentifier(identifier)
-                    .accessibilityLabel(Text(verbatim: label))
+                }
             }
         }
     }
 }
 
-/// One counter, in the same shape the home page uses for its summary: a toned
-/// icon beside the number, the name under it and a short factual footer.
+/// Document tracking uses the same counter primitive as every module list.
 struct NovaDocumentStatCard: View {
     let status: NovaDocumentStatus
     let value: Int
     var isSelected = false
     let onTap: () -> Void
-    @Environment(\.colorScheme) private var scheme
-    @Environment(\.dynamicTypeSize) private var typeSize
-
-    /// What the count means, stated as a fact rather than as an instruction.
-    private var footer: String {
-        switch status {
-        case .missing: return RDLocalization.string("localizable.nova.document.stat.missing", table: .localizable, fallback: "kopya yok")
-        case .dueSoon: return RDLocalization.string("localizable.nova.document.stat.due.soon", table: .localizable, fallback: "bitişe yakın")
-        case .expired: return RDLocalization.string("localizable.nova.document.stat.expired", table: .localizable, fallback: "bitiş geçti")
-        case .valid: return RDLocalization.string("localizable.nova.document.stat.valid", table: .localizable, fallback: "dosyada")
-        }
-    }
-
     var body: some View {
-        let tone = NovaDocumentWords.tone(status).tokens.ink
-        return Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Image(systemName: NovaDocumentWords.symbol(status)).font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(tone.color(in: scheme))
-                    NovaSizedText(text: "\(value)", size: 19, weight: "ExtraBold")
-                }
-                NovaSizedText(text: NovaDocumentWords.status(status), size: 10, weight: "Medium",
-                    color: NovaColorToken.textMuted.color(in: scheme))
-                    .lineLimit(2).frame(maxWidth: .infinity, minHeight: 24, alignment: .topLeading)
-                NovaSizedText(text: footer, size: 9.5, weight: "Bold",
-                    color: value > 0 ? tone.color(in: scheme) : NovaColorToken.textMuted.color(in: scheme))
-                    .lineLimit(1).minimumScaleFactor(0.8)
-            }
-            .padding(.horizontal, 10).padding(.vertical, 11)
-            .frame(width: typeSize.isAccessibilitySize ? 160 : 86,
-                   height: typeSize.isAccessibilitySize ? nil : 86, alignment: .topLeading)
-            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 18))
-            .overlay(RoundedRectangle(cornerRadius: 18)
-                .strokeBorder(isSelected ? tone.color(in: scheme) : .clear, lineWidth: 1.5))
-        }.buttonStyle(.plain)
+        NovaListStat(title: NovaDocumentWords.status(status), symbol: NovaDocumentWords.symbol(status),
+            value: value, isSelected: isSelected, onTap: onTap)
             .accessibilityIdentifier("document.stat.\(status.rawValue)")
-            .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -185,10 +139,11 @@ struct NovaDocumentTrackingScreen: View {
     }
 
     var body: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 11) {
                     header
+                    NovaHelpHint(text: "Firma evraklarının güncel, yaklaşan ve süresi geçmiş kayıtlarını inceleyin.")
                     if company == nil { picker } else { tracker }
                 }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
             }
@@ -362,7 +317,7 @@ struct NovaDocumentTrackingScreen: View {
             }.buttonStyle(.plain).accessibilityIdentifier("document.company.change")
         }
         .padding(.horizontal, 12).padding(.vertical, 4)
-        .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 16))
+        .novaControlBackground(cornerRadius: 16)
         .overlay(RoundedRectangle(cornerRadius: 16)
             .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
     }
@@ -416,19 +371,16 @@ struct NovaDocumentTrackingScreen: View {
                     fallback: "Evrak takibi yükleniyor…"), style: .metaQuiet)
             }
         } else if board?.rows.isEmpty ?? true {
-            NovaCard(padding: 16) {
-                VStack(alignment: .leading, spacing: 8) {
-                    NovaText(text: trackedHere == 0
-                        ? RDLocalization.string("localizable.nova.document.empty", table: .localizable,
-                            fallback: "Bu firmada takibe alınmış evrak yok. Takip etmek istediğiniz evrakı ekleyin.")
-                        : RDLocalization.string("localizable.nova.document.empty.filtered", table: .localizable,
-                            fallback: "Bu filtreye uyan kayıt yok."), style: .metaQuiet)
-                    if canWrite && trackedHere == 0 {
-                        NovaButton(label: RDLocalization.string("localizable.nova.document.add.title", table: .localizable, fallback: "Takibe evrak ekle"),
-                            symbol: "plus") { adding = true }
-                            .accessibilityIdentifier("document.tracking.empty.add")
-                    }
-                }.frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 10) {
+                NovaEmptyState(title: trackedHere == 0 ? "Henüz takip edilen evrak yok" : "Bu filtreye uyan kayıt yok",
+                    message: trackedHere == 0
+                        ? "Modüllere eklediğiniz süreli belgelerin güncel, yaklaşan ve süresi geçen durumlarını burada izleyebilirsiniz."
+                        : "Filtreyi değiştirerek diğer evrak takip kayıtlarını görüntüleyebilirsiniz.")
+                if canWrite && trackedHere == 0 {
+                    NovaButton(label: RDLocalization.string("localizable.nova.document.add.title", table: .localizable,
+                        fallback: "Takibe evrak ekle"), symbol: "plus") { adding = true }
+                        .accessibilityIdentifier("document.tracking.empty.add")
+                }
             }
         } else if let board {
             ForEach(board.rows) { row in card(row) }

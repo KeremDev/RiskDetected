@@ -35,13 +35,15 @@ struct NovaFileEntrySheet: View {
                 if let error {
                     NovaText(text: error, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme))
                 }
+                NovaFileSourceLinks(entry: row, canWrite: canWrite)
                 controls
             }.padding(16).novaPopupContentSize()
         }
         .novaFullScreenCover(isPresented: $editing) {
             NovaPopup {
-                NovaFileRenameSheet(entry: row, catalogue: catalogue) { title, category, note in
-                    current = try await client.rename(row, title, category, note)
+                NovaFileRenameSheet(entry: row, catalogue: catalogue) { title, category, note, tags in
+                    var updated = row; updated.tags = tags
+                    current = try await client.rename(updated, title, category, note)
                     editing = false
                     onChanged()
                 }
@@ -107,6 +109,7 @@ struct NovaFileEntrySheet: View {
                 cell("clock", RDLocalization.string("localizable.nova.file.field.added", table: .localizable, fallback: "Eklendi"),
                      row.createdAt.map { String($0.prefix(10)) } ?? "—")
             }
+            if !row.tags.isEmpty { NovaText(text: row.tags.map { "#" + $0 }.joined(separator: " · "), style: .meta) }
             if let note = row.note, !note.isEmpty {
                 VStack(alignment: .leading, spacing: 2) {
                     NovaText(text: RDLocalization.string("localizable.nova.document.field.note", table: .localizable, fallback: "Not"),
@@ -245,21 +248,23 @@ struct NovaFileEntrySheet: View {
 struct NovaFileRenameSheet: View {
     let entry: NovaFileEntry
     let catalogue: [NovaFileCategory]
-    let save: (String, String, String) async throws -> Void
+    let save: (String, String, String, [String]) async throws -> Void
     @Environment(\.colorScheme) private var scheme
     @State private var title: String
     @State private var category: String
     @State private var note: String
+    @State private var tags: String
     @State private var busy = false
     @State private var error: String?
     @State private var choosing = false
 
     init(entry: NovaFileEntry, catalogue: [NovaFileCategory],
-         save: @escaping (String, String, String) async throws -> Void) {
+         save: @escaping (String, String, String, [String]) async throws -> Void) {
         self.entry = entry; self.catalogue = catalogue; self.save = save
         _title = State(initialValue: entry.title)
         _category = State(initialValue: entry.category)
         _note = State(initialValue: entry.note ?? "")
+        _tags = State(initialValue: entry.tags.joined(separator: ", "))
     }
 
     var body: some View {
@@ -270,6 +275,7 @@ struct NovaFileRenameSheet: View {
                 NovaText(text: entry.fileName, style: .metaQuiet)
                 field(RDLocalization.string("localizable.nova.file.field.title", table: .localizable, fallback: "Başlık"), $title, id: "title")
                 categoryPicker
+                field("Etiketler · virgülle ayırın", $tags, id: "tags")
                 field(RDLocalization.string("localizable.nova.document.field.note", table: .localizable, fallback: "Not"), $note, id: "note")
                 if let error {
                     NovaText(text: error, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme))
@@ -279,7 +285,7 @@ struct NovaFileRenameSheet: View {
                     isLoading: busy) {
                     Task {
                         busy = true; error = nil
-                        do { try await save(title, category, note) }
+                        do { try await save(title, category, note, tags.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }) }
                         catch let failure as NovaFileFailure { error = NovaFileScreenWords.failure(failure) }
                         catch { self.error = NovaFileScreenWords.failure(.validation) }
                         busy = false
@@ -322,6 +328,9 @@ struct NovaFileRenameSheet: View {
 /// is none, and lets the expert swap it. Self-loads the catalogue it needs, so
 /// a caller only has to hand it a company, a category and a binding.
 struct NovaInlineFileField: View {
+    var imagesOnly = false
+    var pdfOnly = false
+    var label = "Dosya seç"
     let category: String
     let company: UUID?
     let fileClient: NovaFileLibraryClient
@@ -344,8 +353,7 @@ struct NovaInlineFileField: View {
                 HStack(spacing: 8) {
                     Image(systemName: "doc.fill").font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(NovaColorToken.statusSuccessInk.color(in: scheme))
-                    NovaText(text: RDLocalization.string("localizable.nova.emergency.form.file.attached",
-                        table: .localizable, fallback: "Dosya ekli"), style: .meta)
+                    NovaText(text: "\(label) ekli", style: .meta)
                     Spacer(minLength: 0)
                     NovaButton(label: RDLocalization.string("localizable.nova.emergency.form.file.replace",
                         table: .localizable, fallback: "Dosyayı değiştir"), symbol: "arrow.triangle.2.circlepath",
@@ -355,23 +363,30 @@ struct NovaInlineFileField: View {
                         Image(systemName: "xmark.circle").font(.system(size: 12))
                     }.buttonStyle(.plain).accessibilityIdentifier("nova.inline.file.remove")
                 }
+                .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                .novaControlBackground(cornerRadius: 16)
             } else {
                 // No file yet: the upload area itself is the first thing shown,
                 // not a button that reveals it — one tap fewer to attach one.
-                NovaCard(padding: 12) {
-                    NovaFileAddInline(companies: [], preselected: company, categories: scopedCategories,
-                        accepts: accepts, assurance: assurance, client: fileClient) { entry in
-                            if let entry, let id = entry.assetID { assetID = id.uuidString }
-                            adding = false
-                        }
-                }
+                NovaFileAddInline(companies: [], preselected: company, pickerLabel: label, categories: scopedCategories,
+                    accepts: accepts, assurance: assurance, client: fileClient) { entry in
+                        if let entry, let id = entry.assetID { assetID = id.uuidString }
+                        adding = false
+                    }
             }
         }
         .task {
             guard !loaded else { return }
             loaded = true
             if let filing = try? await fileClient.catalogue() {
-                categories = filing.categories; accepts = filing.accepts; assurance = filing.assurance
+                categories = filing.categories
+                if imagesOnly { accepts = filing.accepts.filter { $0.purpose == "evidence_photo" } }
+                else if pdfOnly { accepts = filing.accepts.compactMap { item in
+                    var pdf = item; pdf.extensions = item.extensions.filter { $0.lowercased() == "pdf" }
+                    return pdf.extensions.isEmpty ? nil : pdf
+                } }
+                else { accepts = filing.accepts }
+                assurance = filing.assurance
             }
         }
     }
@@ -383,6 +398,7 @@ struct NovaInlineFileField: View {
 struct NovaFileAddInline: View {
     let companies: [NovaAnalysisCompanyOption]
     var preselected: UUID?
+    var pickerLabel = "Dosya seç"
     let categories: [NovaFileCategory]
     let accepts: [NovaFileAcceptance]
     let assurance: NovaFileAssurance
@@ -410,39 +426,39 @@ struct NovaFileAddInline: View {
         VStack(alignment: .leading, spacing: 11) {
             if let outcome { result(outcome) } else { form }
         }
-        .onAppear { if company == nil { company = preselected ?? companies.first?.id } }
+        .onAppear { if company == nil { company = preselected } }
         .fileImporter(isPresented: $picking,
                       allowedContentTypes: NovaFileScreenWords.contentTypes(accepts),
                       allowsMultipleSelection: false) { answer in take(answer) }
     }
 
     @ViewBuilder private var form: some View {
-        if companies.count > 1 && preselected == nil { companyPicker }
+        if preselected == nil { companyPicker }
         filePicker
         if payload != nil {
             field(RDLocalization.string("localizable.nova.file.field.title", table: .localizable, fallback: "Başlık"),
                   $draft.title, id: "title")
             categoryPicker
+            field("Etiketler · virgülle ayırın", $draft.tags, id: "tags")
             field(RDLocalization.string("localizable.nova.document.field.note", table: .localizable, fallback: "Not"),
                   $draft.note, id: "note")
         }
-        // What the server will accept, as the server declared it. The size is a
-        // candidate limit and the screen says so rather than promising it.
-        NovaHelpHint(text: String(format: RDLocalization.string("localizable.nova.file.accepts", table: .localizable,
-            fallback: "Kabul edilen türler: %1$@. Üst sınır %2$@ (henüz onaylanmamış aday sınır)."),
-            allExtensions.joined(separator: ", ").uppercased(), NovaFileWords.size(maxBytes)))
-        if !assurance.malwareScanningAvailable {
-            NovaText(text: RDLocalization.string("localizable.nova.file.add.no.malware", table: .localizable,
-                fallback: "Dosya biçim denetiminden geçirilir; virüs taraması yapılmaz."),
-                style: .micro, color: NovaColorToken.statusWarningInk.color(in: scheme))
-        }
+        DisclosureGroup {
+            NovaText(text: "\(allExtensions.joined(separator: ", ").uppercased()) · En fazla \(NovaFileWords.size(maxBytes))", style: .metaQuiet)
+                .fixedSize(horizontal: false, vertical: true)
+            if !assurance.malwareScanningAvailable {
+                NovaText(text: "Dosya biçimi kontrol edilir; virüs taraması yapılmaz.", style: .metaQuiet)
+            }
+        } label: {
+            Label("Dosya bilgileri", systemImage: "info.circle").font(NovaFont.font(.meta))
+        }.tint(NovaColorToken.textSecondary.color(in: scheme))
         if let error {
             NovaText(text: error, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme))
         }
-        NovaButton(label: RDLocalization.string("localizable.nova.file.add.save", table: .localizable, fallback: "Yükle ve denetle"),
-            symbol: "arrow.up.doc", isEnabled: !busy && draft.isReady && payload != nil && company != nil,
-            isLoading: busy) { send() }
-            .accessibilityIdentifier("file.add.save")
+        if payload != nil {
+            NovaButton(label: "Dosyayı ekle", symbol: "arrow.up.doc", isEnabled: !busy && draft.isReady,
+                isLoading: busy) { send() }.accessibilityIdentifier("file.add.save")
+        }
     }
 
     /// The same chooser as the heading, so a long company list stays reachable.
@@ -450,12 +466,12 @@ struct NovaFileAddInline: View {
         NovaFileChooserButton(
             label: RDLocalization.string("localizable.nova.file.field.company", table: .localizable, fallback: "Firma"),
             value: companies.first { $0.id == company }?.name
-                ?? RDLocalization.string("localizable.nova.file.company.choose", table: .localizable, fallback: "Firma seçin"),
-            symbol: "building.2", isOpen: choosingCompany, isAnswered: company != nil,
+                ?? "Kişisel dosya",
+            symbol: "building.2", isOpen: choosingCompany, isAnswered: true,
             identifier: "file.add.company") { choosingCompany.toggle() }
         if choosingCompany {
             NovaFileChooserPanel(
-                options: companies.map { .init(id: $0.id.uuidString, title: $0.name, symbol: "building.2") },
+                options: [NovaFileChooserOption(id: nil, title: "Kişisel dosya", symbol: "person")] + companies.map { .init(id: $0.id.uuidString, title: $0.name, symbol: "building.2") },
                 selected: company?.uuidString, identifier: "file.add.company") { picked in
                     company = picked.flatMap(UUID.init(uuidString:))
                     choosingCompany = false
@@ -464,29 +480,11 @@ struct NovaFileAddInline: View {
     }
 
     private var filePicker: some View {
-        Button { picking = true } label: {
-            HStack(spacing: 10) {
-                NovaIcon(symbol: payload == nil ? "folder.badge.plus" : "doc", size: 17)
-                    .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
-                    .frame(width: 42, height: 42)
-                VStack(alignment: .leading, spacing: 2) {
-                    NovaText(text: payload == nil
-                        ? RDLocalization.string("localizable.nova.file.pick", table: .localizable, fallback: "Cihazdan dosya seçin")
-                        : draft.fileName, style: .cardTitle).lineLimit(1)
-                    NovaText(text: payload == nil
-                        ? RDLocalization.string("localizable.nova.file.pick.hint", table: .localizable, fallback: "PDF, Word, Excel veya fotoğraf")
-                        : NovaFileWords.size(draft.bytes), style: .micro,
-                        color: NovaColorToken.textTertiary.color(in: scheme))
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
-            }
-            .padding(11)
-            .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
-        }.buttonStyle(.plain).accessibilityIdentifier("file.add.pick")
+        NovaPopupOption(title: payload == nil ? pickerLabel : draft.fileName,
+            symbol: payload == nil ? "folder.badge.plus" : "doc",
+            subtitle: payload == nil ? "PDF, belge veya fotoğraf" : NovaFileWords.size(draft.bytes)) {
+                picking = true
+            }.accessibilityIdentifier("file.add.pick")
     }
 
     /// The heading the file will be filed under. A chooser rather than a strip
@@ -577,7 +575,7 @@ struct NovaFileAddInline: View {
     }
 
     private func send() {
-        guard let company, let data = payload else { return }
+        guard let data = payload else { return }
         Task {
             busy = true; error = nil
             do { outcome = try await client.file(company, draft, data) }

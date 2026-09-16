@@ -44,6 +44,7 @@ struct RiskDetectedApp: App {
                 RootView()
                 #endif
             }
+                .background(RDKeyboardDismissBehavior())
                 .font(RDTypography.font(17, .regular))
                 .environmentObject(appState)
                 .environmentObject(networkMonitor)

@@ -18,6 +18,7 @@ struct NovaTrainingHub: View {
             NovaTrainingRegister(identity: identity, personnel: personnel, canWrite: canWrite,
                 initialCompany: nil, createOnOpen: createOnOpen)
         }
+        .novaEdgeBackGesture(action: onBack)
     }
 }
 
@@ -53,6 +54,7 @@ struct NovaTrainingRegister: View {
     @State private var revision = UUID()
     @State private var didOpen = false
     @State private var initializedFilter = false
+    @State private var employeeTotal: Int?
     @State private var editor: Editor?
     private struct Editor: Identifiable { let id = UUID(); let session: NovaTrainingSession? }
     private var service: NovaTrainingSessionService { .init(identity: identity) }
@@ -63,37 +65,41 @@ struct NovaTrainingRegister: View {
             (cycleFilter.isEmpty || $0.education?.scopes.contains { $0.cycle == cycleFilter } == true) }
         .sorted { $0.held_on > $1.held_on }
     }
+    private var completedScopes: [NovaTrainingSession.Company] {
+        sessions.flatMap(\.companies).filter { row in
+            row.state == "completed" && (company == nil || row.company_id == company)
+        }
+    }
+    private var trainedPeople: Set<UUID> {
+        Set(completedScopes.flatMap { $0.participants.filter(\.attended).map(\.id) })
+    }
+    private var trainingMinutes: Int { completedScopes.reduce(0) { $0 + $1.duration_minutes } }
+    private var personMinutes: Int {
+        completedScopes.reduce(0) { $0 + $1.duration_minutes * $1.participants.filter(\.attended).count }
+    }
+    private func hours(_ minutes: Int) -> String {
+        let value = Double(minutes) / 60
+        return value.rounded() == value ? String(Int(value)) : String(format: "%.1f", value)
+    }
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Menu {
-                        Button("Tüm firmalar") { company = nil }
-                        ForEach(companies) { value in Button(value.name) { company = value.id } }
-                    } label: {
-                        HStack {
-                            Image(systemName: "building.2")
-                            Text(companies.first { $0.id == company }?.name ?? "Tüm firmalar").lineLimit(2)
-                            Spacer(minLength: 4)
-                            Image(systemName: "chevron.down").font(NovaFont.font(.meta))
-                        }.font(NovaFont.font(.body)).padding(12).background(.background, in: RoundedRectangle(cornerRadius: 16))
-                    }.tint(.primary).accessibilityIdentifier("training.company")
+                VStack(alignment: .leading, spacing: 8) {
+                    NovaFilterField(label: "Firma", options: [.init(id: nil, title: "Tüm firmalar")] + companies.map { .init(id: $0.id.uuidString, title: $0.name) },
+                        selected: company?.uuidString, identifier: "training.company") { company = $0.flatMap(UUID.init(uuidString:)) }
                     Button { editor = Editor(session: nil) } label: {
                         Label("Eğitim Ekle", systemImage: "plus").font(.system(size: 13))
                             .padding(.horizontal, 16).frame(minHeight: 36).background(Color.green, in: Capsule()).foregroundStyle(.black)
                     }.disabled(!canWrite || loading || pending || error != nil || writableCompanies.isEmpty)
                 }
                 NovaHelpHint(text: "Gerçekleşen eğitimi ve katılımcılarını kaydedin. Aynı eğitimde birden fazla firmanın personelini seçebilirsiniz.")
+                trainingStats
                 NovaCard(padding: 12) {
                     HStack { Image(systemName: "magnifyingglass"); TextField("Eğitim veya eğitmen ara…", text: $query) }
                 }
-                HStack {
-                    Picker("Eğitim türü", selection: $cycleFilter) {
-                        Text("Tüm eğitim türleri").tag("")
-                        ForEach(NovaEducationScope.cycles, id: \.0) { Text($0.1).tag($0.0) }
-                    }
-                    TextField("Tarih (YYYY-AA-GG)", text: $dateFilter).font(NovaFont.font(.meta))
-                }
+                NovaFilterField(label: "Eğitim türü", options: [.init(id: nil, title: "Tüm eğitim türleri")] + NovaEducationScope.cycles.map { .init(id: $0.0, title: $0.1) },
+                    selected: cycleFilter.isEmpty ? nil : cycleFilter, identifier: "training.cycle") { cycleFilter = $0 ?? "" }
+                TextField("Tarih (YYYY-AA-GG)", text: $dateFilter).font(NovaFont.font(.meta))
                 Text("\(visible.count) eğitim").font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
                 if pending {
                     NovaHelpHint(text: "Önceki işlemin sonucu bekleniyor. Aynı kaydı güvenle tamamlayın.")
@@ -104,7 +110,8 @@ struct NovaTrainingRegister: View {
                 if let error { NovaHelpHint(text: error); Button("Yenile") { revision = UUID() } }
                 if loading { ProgressView().frame(maxWidth: .infinity) }
                 if !loading && error == nil && visible.isEmpty {
-                    NovaCard { Label("Henüz eğitim kaydı yok.", systemImage: "graduationcap").frame(maxWidth: .infinity) }
+                    NovaEmptyState(title: "Henüz eğitim kaydı yok",
+                        message: "Gerçekleşen eğitimi ekleyerek katılımcıları, süreleri ve eksik eğitim konularını personel bazında takip edebilirsiniz.")
                 }
                 ForEach(visible) { session in
                     Button { editor = Editor(session: session) } label: {
@@ -133,6 +140,7 @@ struct NovaTrainingRegister: View {
                 }
             }.padding(18).novaPopupContentSize()
         }.task(id: revision) { await load() }
+            .task(id: company) { await loadEmployeeTotal() }
             .onAppear { if !initializedFilter { company = initialCompany; initializedFilter = true } }
             .refreshable { revision = UUID() }
             .novaFullScreenCover(item: $editor, onDismiss: { revision = UUID() }) { value in
@@ -144,6 +152,23 @@ struct NovaTrainingRegister: View {
                     canWrite: canWrite && (value.session?.companies.allSatisfy { writableCompanies.contains($0.company_id) } ?? !writableCompanies.isEmpty),
                     writableCompanies: writableCompanies)
             }
+    }
+    private var trainingStats: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                NovaListStat(title: "Eğitim saati", symbol: "clock", value: hours(trainingMinutes)).frame(width: 104)
+                NovaListStat(title: "Eğitim alan", symbol: "person.2", value: trainedPeople.count).frame(width: 104)
+                NovaListStat(title: "Adam × saat", symbol: "person.badge.clock", value: hours(personMinutes)).frame(width: 104)
+                NovaListStat(title: "Eğitimi eksik", symbol: "person.crop.circle.badge.exclamationmark",
+                    value: employeeTotal.map { max(0, $0 - trainedPeople.count) }.map(String.init) ?? "—")
+                    .frame(width: 104)
+            }.padding(.vertical, 2)
+        }.accessibilityIdentifier("training.stats")
+    }
+    @MainActor private func loadEmployeeTotal() async {
+        employeeTotal = nil
+        guard let company else { return }
+        employeeTotal = try? await service.employees(company: company).count
     }
     private func load() async {
         loading = true; error = nil

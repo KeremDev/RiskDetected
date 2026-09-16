@@ -24,46 +24,10 @@ struct NovaChecklistStatCard: View {
     let value: Int
     var isSelected = false
     let onTap: () -> Void
-    @Environment(\.colorScheme) private var scheme
-
-    private var tone: NovaColorToken {
-        switch state {
-        case .open: return .statusInfoInk
-        case .submitted: return .statusSuccessInk
-        case .cancelled: return .textMuted
-        }
-    }
-
     var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Image(systemName: state.symbol).font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(tone.color(in: scheme))
-                    NovaSizedText(text: "\(value)", size: 19, weight: "ExtraBold")
-                }
-                NovaSizedText(text: state.title, size: 10, weight: "Medium",
-                    color: NovaColorToken.textMuted.color(in: scheme))
-                    .lineLimit(2).minimumScaleFactor(0.82)
-                    .frame(maxWidth: .infinity, minHeight: 24, alignment: .topLeading)
-                NovaSizedText(text: state.footer, size: 9.5, weight: "Bold",
-                    color: value > 0 ? tone.color(in: scheme) : NovaColorToken.textMuted.color(in: scheme))
-                    .lineLimit(1).minimumScaleFactor(0.8)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 10).padding(.horizontal, 11)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(NovaColorToken.surface.color(in: scheme))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(isSelected ? tone.color(in: scheme)
-                                : NovaColorToken.hairline.color(in: scheme),
-                                lineWidth: isSelected ? 1.6 : 1))
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("nova.checklist.stat.\(state.rawValue)")
+        NovaListStat(title: state.title, symbol: state.symbol, value: value,
+            isSelected: isSelected, onTap: onTap)
+            .accessibilityIdentifier("nova.checklist.stat.\(state.rawValue)")
     }
 }
 
@@ -161,10 +125,11 @@ struct NovaChecklistScreen: View {
     }
 
     var body: some View {
-        NovaPageSurface {
+        NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
+                    NovaHelpHint(text: "Kontrol listesini seçin, soruları yanıtlayın ve sonucu kaydedin.")
                     if let board { counters(board) }
                     filters
                     if loading && board == nil {
@@ -184,7 +149,7 @@ struct NovaChecklistScreen: View {
             }
         }
         .task { await load(reset: true) }
-        .sheet(isPresented: $showingStart, onDismiss: {
+        .novaPopup(isPresented: $showingStart, onDismiss: {
             if let startedRun { detail = startedRun; self.startedRun = nil }
             Task { await load(reset: true) }
         }) {
@@ -203,14 +168,14 @@ struct NovaChecklistScreen: View {
                 }
             }
         }
-        .sheet(item: $detail) { run in
+        .novaPopup(item: $detail) { run in
             NovaChecklistRunSheet(run: run, canWrite: canWrite,
                 onAnswer: { draft in await answer(draft) },
                 onSubmit: { await submit(run) },
                 onCancel: { await cancel(run) },
                 onClose: { detail = nil })
         }
-        .sheet(isPresented: $showingTemplates, onDismiss: { Task { await load(reset: true) } }) {
+        .novaPopup(isPresented: $showingTemplates, onDismiss: { Task { await load(reset: true) } }) {
             NovaCompanyCreateFlow(title: "Kontrol Listeleri", companies: client.companies,
                 catalogue: client.catalogue, onSelect: { _ in }, fixedCompany: initialCompany) { _, company in
                 NovaChecklistAuthoring(client: client, company: company, onClose: { showingTemplates = false })
@@ -218,25 +183,17 @@ struct NovaChecklistScreen: View {
         }
     }
 
-    @ViewBuilder private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 10) {
-                NovaBackButton(action: onBack)
-                NovaText(text: headingOverride ?? NovaDestination.checklists.title, style: .screenTitle)
-                Spacer(minLength: 0)
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            NovaListHeading(title: headingOverride ?? NovaDestination.checklists.title, onBack: onBack) {
                 if canWrite {
-                    NovaButton(label: RDLocalization.string("localizable.nova.checklist.templates",
-                        table: .localizable, fallback: "Listelerim"), symbol: "list.bullet.rectangle",
-                        variant: .surface) { showingTemplates = true }
+                    NovaButton(label: "Listelerim", symbol: "list.bullet.rectangle", variant: .surface, compact: true) { showingTemplates = true }
                 }
             }
             if canWrite {
-                NovaButton(label: "Kontrol başlat", symbol: "play", variant: .primary) { showingStart = true }
+                NovaButton(label: "Kontrol başlat", symbol: "play", compact: true) { showingStart = true }
                     .accessibilityIdentifier("nova.checklist.start")
             }
-            // Said once, at the top, rather than implied by an empty screen.
-            NovaText(text: NovaChecklistWords.noProductList, style: .meta,
-                color: NovaColorToken.textSecondary.color(in: scheme))
         }
     }
 
@@ -310,15 +267,9 @@ struct NovaChecklistScreen: View {
 
     @ViewBuilder private func list(_ board: NovaChecklistBoard) -> some View {
         if board.rows.isEmpty {
-            NovaCard(padding: 18) {
-                VStack(alignment: .leading, spacing: 6) {
-                    NovaText(text: RDLocalization.string("localizable.nova.checklist.empty.title", table: .localizable,
-                        fallback: "Kontrol kaydı yok"), style: .cardTitle)
-                    NovaText(text: RDLocalization.string("localizable.nova.checklist.empty.body", table: .localizable,
-                        fallback: "Önce bir liste yazıp yayımlayın, sonra bir işyeri için kontrol başlatın."),
-                        style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
-                }
-            }
+            NovaEmptyState(title: RDLocalization.string("localizable.nova.checklist.empty.title",
+                table: .localizable, fallback: "Henüz kontrol kaydı yok"),
+                message: "Bir kontrol listesi seçerek işyeri denetimini başlatabilir ve sonuçları dijital ortamda saklayabilirsiniz.")
         } else {
             VStack(spacing: 10) {
                 ForEach(board.rows) { run in

@@ -1,0 +1,30 @@
+BEGIN;
+SELECT set_config('test.actor','20000000-0000-0000-0000-000000000001',true);
+SELECT set_config('test.pilot','true',true);
+SELECT set_config('test.pilot_write','true',true);
+UPDATE private_isg.rollout SET read_enabled=true,write_enabled=true;
+DO $$ DECLARE co uuid:='10000000-0000-0000-0000-000000000001'; actor uuid:=private_isg.active_actor(); aid uuid:=gen_random_uuid(); fid uuid:=gen_random_uuid(); op uuid:=gen_random_uuid(); mut uuid:=gen_random_uuid(); p jsonb; r jsonb; again jsonb; id uuid; BEGIN
+ INSERT INTO public.analyses VALUES(aid,actor);
+ INSERT INTO public.findings(id,analysis_id,user_id,title,description,recommended_action,references_text,responsible,fk_probability,fk_frequency,fk_severity,fk_score,fk_band,m5_probability,m5_severity,m5_score,m5_band)
+ VALUES(fid,aid,actor,'Gerçek bulgu',repeat('Açıklama ',300),'Koruyucu takın','Kaynak mevzuat','Sorumlu',3,6,15,270,'high',2,2,4,'low');
+ p:=jsonb_build_object('finding_id',fid,'workplace_id','40000000-0000-0000-0000-000000000001','title','Sahte başlık','risk_band','critical','risk_method','matrix_5x5');
+ r:=public.isg_pilot_finding_file_v1(co,'open_from_finding',op,mut,p); id:=(r->'row'->>'id')::uuid;
+ IF r->'row'->>'title'<>'Gerçek bulgu' OR r->'row'->>'severity'<>'low' OR (r->'row'->'detail'->>'risk_score')::numeric<>4 THEN RAISE EXCEPTION 'untrusted title/band or method %',r; END IF;
+ IF (SELECT control_measure FROM private_isg.nonconformity_details WHERE nonconformity_id=id)<>'Koruyucu takın' THEN RAISE EXCEPTION 'measure not copied'; END IF;
+ IF (SELECT length(snapshot->>'description') FROM private_isg.pilot_finding_sources WHERE nonconformity_id=id)<>2700 THEN RAISE EXCEPTION 'full snapshot lost'; END IF;
+ again:=public.isg_pilot_finding_file_v1(co,'open_from_finding',op,mut,p);
+ IF again->'row' IS DISTINCT FROM r->'row' OR again->>'replayed'<>'true' THEN RAISE EXCEPTION 'network retry'; END IF;
+ BEGIN PERFORM public.isg_pilot_finding_file_v1(co,'open_from_finding',op,mut,p||'{"severity":"critical"}'); RAISE EXCEPTION 'mutation conflict bypass'; EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'IDEMPOTENCY_CONFLICT' THEN RAISE; END IF; END;
+ UPDATE public.findings SET title='Sonradan değişti',recommended_action='Yeni önlem',finding_version=2 WHERE public.findings.id=fid;
+ again:=public.isg_pilot_finding_file_v1(co,'open_from_finding',gen_random_uuid(),gen_random_uuid(),p);
+ IF again->'outcome'->>'replayed'<>'true' OR again->'row'->>'id'<>id::text OR again->'row'->>'title'<>'Gerçek bulgu' THEN RAISE EXCEPTION 'second click replaced record'; END IF;
+ IF (SELECT finding_version FROM private_isg.pilot_finding_sources WHERE nonconformity_id=id)<>1 THEN RAISE EXCEPTION 'snapshot mutated'; END IF;
+ UPDATE public.findings SET is_user_deleted=true WHERE public.findings.id=fid;
+ BEGIN PERFORM public.isg_pilot_finding_file_v1(co,'open_from_finding',gen_random_uuid(),gen_random_uuid(),p); RAISE EXCEPTION 'deleted source'; EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'ACCESS_DENIED' THEN RAISE; END IF; END;
+ UPDATE public.findings SET is_user_deleted=false,user_id='20000000-0000-0000-0000-000000000002' WHERE public.findings.id=fid;
+ BEGIN PERFORM public.isg_pilot_finding_file_v1(co,'open_from_finding',gen_random_uuid(),gen_random_uuid(),p); RAISE EXCEPTION 'foreign source'; EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'ACCESS_DENIED' THEN RAISE; END IF; END;
+ PERFORM set_config('test.pilot','false',true);
+ BEGIN PERFORM public.isg_pilot_finding_file_v1(co,'open_from_finding',gen_random_uuid(),gen_random_uuid(),p); RAISE EXCEPTION 'nonpilot file'; EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM NOT IN ('ACCESS_DENIED','FEATURE_UNAVAILABLE') THEN RAISE; END IF; END;
+ RAISE NOTICE 'ok finding source ownership / server title and score / full immutable snapshot / text and measure / repeat-click and network retry / deleted source / pilot isolation';
+END $$;
+ROLLBACK;

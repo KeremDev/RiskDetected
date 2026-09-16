@@ -4,7 +4,7 @@ import Foundation
     static func main() {
         var progress = NovaCompanyProgress()
         precondition(progress.score == nil && progress.fraction == nil)
-        precondition(progress.completed == 0 && progress.total == 12)
+        precondition(progress.completed == 0 && progress.total == 0)
         for section in NovaCompanySection.allCases { progress.states[section] = .missing }
         precondition(progress.score == 0 && progress.fraction == 0)
         for section in NovaCompanySection.allCases.prefix(6) { progress.states[section] = .complete }
@@ -20,9 +20,9 @@ import Foundation
         progress.states[.risk] = .needsReview
         precondition(progress.score == 83)
         progress.states[.risk] = .unknown
-        precondition(progress.score == nil)
+        precondition(progress.score == 91 && progress.total == 11)
         progress.states[.risk] = nil
-        precondition(progress.score == nil)
+        precondition(progress.score == 91 && progress.total == 11)
         print("11 company score checks PASS")
     }
 }

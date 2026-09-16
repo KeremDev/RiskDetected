@@ -11,42 +11,6 @@ extension EnvironmentValues {
     }
 }
 
-/// Dismiss on a non-input tap inside this form, including its empty scroll area.
-/// Does not consume button taps or steal focus from text fields / the keyboard.
-struct NovaKeyboardDismissArea: UIViewRepresentable {
-    func makeUIView(context: Context) -> Surface { Surface() }
-    func updateUIView(_ uiView: Surface, context: Context) {}
-    static func dismantleUIView(_ uiView: Surface, coordinator: ()) { uiView.detach() }
-
-    final class Surface: UIView, UIGestureRecognizerDelegate {
-        private weak var attachedWindow: UIWindow?
-        private lazy var tap = UITapGestureRecognizer(target: self, action: #selector(endInput))
-        override func didMoveToWindow() {
-            super.didMoveToWindow()
-            detach()
-            guard let window else { return }
-            isUserInteractionEnabled = false
-            tap.cancelsTouchesInView = false
-            tap.delegate = self
-            window.addGestureRecognizer(tap)
-            attachedWindow = window
-        }
-        func detach() { attachedWindow?.removeGestureRecognizer(tap); attachedWindow = nil }
-        @objc private func endInput() { attachedWindow?.endEditing(true) }
-        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-            guard bounds.contains(touch.location(in: self)) else { return false }
-            var candidate = touch.view
-            while let view = candidate {
-                if view is UITextField || view is UITextView { return false }
-                candidate = view.superview
-            }
-            return true
-        }
-        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
-            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool { true }
-    }
-}
-
 // Additive expert-only primitives. No global appearance, services or app route changes.
 extension NovaRGBA {
     var color: Color {
@@ -130,7 +94,7 @@ struct NovaText: View {
     @ScaledMetric(relativeTo: .body) private var scale = 1.0
 
     var body: some View {
-        let spec = style.spec
+        let spec = NovaFont.spec(style)
         Text(verbatim: text)
             .font(.custom(typographyFamily.fontName(for: spec.weight) ?? spec.fontName,
                          size: spec.size, relativeTo: .body))
@@ -148,13 +112,14 @@ struct NovaCard<Content: View>: View {
     var tint: Color? = nil
     @ViewBuilder let content: () -> Content
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.isNovaPopup) private var inPopup
 
     var body: some View {
         content()
             .padding(padding)
             .background {
                 RoundedRectangle(cornerRadius: NovaDimensionToken.radiusCard.value)
-                    .fill(tint ?? NovaColorToken.surface.color(in: scheme))
+                    .fill(tint ?? NovaPopupStyle.controlBackground(in: scheme, inPopup: inPopup))
                     .shadow(color: .black.opacity(0.04), radius: 10, x: 0, y: 2)
             }
             .overlay(RoundedRectangle(cornerRadius: NovaDimensionToken.radiusCard.value)
@@ -165,11 +130,17 @@ struct NovaCard<Content: View>: View {
 /// Every İSGADA root and pushed destination owns an opaque canvas, not a system-white page.
 /// White belongs to NovaCard/content surfaces; List/Form defaults must not cover the canvas.
 struct NovaPageSurface<Content: View>: View {
+    var onEdgeBack: (() -> Void)? = nil
     @ViewBuilder let content: () -> Content
     @Environment(\.colorScheme) private var scheme
     @Environment(\.isNovaPopup) private var isNovaPopup
     @Environment(\.novaCanvasStyle) private var canvasStyle
     @Environment(\.novaHasHeader) private var hasHeader
+
+    init(onEdgeBack: (() -> Void)? = nil, @ViewBuilder content: @escaping () -> Content) {
+        self.onEdgeBack = onEdgeBack
+        self.content = content
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -181,8 +152,42 @@ struct NovaPageSurface<Content: View>: View {
             .foregroundStyle(NovaColorToken.text.color(in: scheme))
             .tint(NovaColorToken.text.color(in: scheme))
             .scrollContentBackground(.hidden)
-            .background(canvasStyle.color(in: scheme).ignoresSafeArea())
+            .background((isNovaPopup ? NovaPopupStyle.background(in: scheme) : canvasStyle.color(in: scheme)).ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar, .tabBar)
+            .novaEdgeBackGesture(isEnabled: !isNovaPopup && onEdgeBack != nil) {
+                onEdgeBack?()
+            }
+    }
+}
+
+/// Mirrors the native iPhone back gesture for pages that own custom routing.
+/// It only accepts a rightward drag that begins at the physical left edge, so
+/// charts, horizontal lists, date controls and ordinary scrolling keep their
+/// own gestures.
+private struct NovaEdgeBackGestureModifier: ViewModifier {
+    let isEnabled: Bool
+    let action: () -> Void
+
+    func body(content: Content) -> some View {
+        content.simultaneousGesture(
+            DragGesture(minimumDistance: 14, coordinateSpace: .global)
+                .onEnded { value in
+                    guard isEnabled,
+                          value.startLocation.x <= 28,
+                          value.translation.width >= 72,
+                          value.predictedEndTranslation.width >= 96,
+                          abs(value.translation.width) > abs(value.translation.height) * 1.25
+                    else { return }
+                    action()
+                },
+            including: isEnabled ? .all : .none
+        )
+    }
+}
+
+extension View {
+    func novaEdgeBackGesture(isEnabled: Bool = true, action: @escaping () -> Void) -> some View {
+        modifier(NovaEdgeBackGestureModifier(isEnabled: isEnabled, action: action))
     }
 }
 
@@ -196,7 +201,7 @@ struct NovaBackButton: View {
             Image(systemName: "chevron.left").font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(NovaColorToken.text.color(in: scheme))
                 .frame(width: 44, height: 44)
-
+                .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }.buttonStyle(.plain).disabled(!isEnabled)
             .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.shell.back", table: .localizable, fallback: "Geri")))
     }
@@ -279,9 +284,11 @@ struct NovaButton: View {
     var variant: NovaButtonVariant = .primary
     var isEnabled = true
     var isLoading = false
+    var compact = false
     var loadingDescription = RDLocalization.string("localizable.nova.components.loading.description", table: .localizable, fallback: "İşlem sürüyor")
     let action: () -> Void
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.isNovaPopup) private var inPopup
 
     private var palette: (Color, Color) {
         if !isEnabled || isLoading {
@@ -291,7 +298,7 @@ struct NovaButton: View {
         case .primary:
             // Recorded accessibility adaptation: white on #2ed256 is only ~2:1.
             return (NovaColorToken.accent.color(in: scheme), NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
-        case .surface: return (NovaColorToken.surface.color(in: scheme), NovaColorToken.text.color(in: scheme))
+        case .surface: return (NovaPopupStyle.controlBackground(in: scheme, inPopup: inPopup), NovaColorToken.text.color(in: scheme))
         case .muted: return (NovaColorToken.surfaceMuted.color(in: scheme), NovaColorToken.textSecondary.color(in: scheme))
         case .danger: return (NovaColorToken.statusDangerBg.color(in: scheme), NovaColorToken.statusDangerInk.color(in: scheme))
         }
@@ -303,12 +310,14 @@ struct NovaButton: View {
                 if isLoading {
                     NovaSpinner(color: palette.1).accessibilityHidden(true)
                 } else if let symbol {
-                    Image(systemName: symbol).foregroundStyle(palette.1).accessibilityHidden(true)
+                    Image(systemName: symbol).font(.system(size: compact ? 14 : (inPopup ? 16 : 18), weight: .regular)).foregroundStyle(palette.1).accessibilityHidden(true)
                 }
-                NovaText(text: label, style: .button, color: palette.1)
+                NovaText(text: label, style: (compact || inPopup) ? .buttonSm : .button, color: palette.1)
+                    .multilineTextAlignment(.center).lineLimit((compact || inPopup) ? 2 : nil)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.horizontal, 18).padding(.vertical, 12)
-            .frame(maxWidth: .infinity, minHeight: 52)
+            .padding(.horizontal, (compact || inPopup) ? 12 : 18).padding(.vertical, compact ? 8 : (inPopup ? 10 : 12))
+            .frame(maxWidth: compact ? nil : .infinity, minHeight: compact ? 44 : (inPopup ? 46 : 52))
             .background(palette.0, in: Capsule())
             .contentShape(Capsule())
         }

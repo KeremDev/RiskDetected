@@ -8,7 +8,8 @@ final class NovaStatisticsUITests: XCTestCase {
         app.launch(); defer { app.terminate() }
         XCTAssertTrue(app.staticTexts["PORTFÖYÜNÜZ"].waitForExistence(timeout: 20))
         capture(app,"statistics-overview")
-        app.segmentedControls["nova.statistics.period"].buttons["12 ay"].tap()
+        app.buttons["nova.statistics.period"].tap()
+        app.buttons["nova.statistics.period.options.12"].tap()
         XCTAssertTrue(app.staticTexts["01.10.2025 – 14.09.2026"].waitForExistence(timeout: 5))
         app.swipeUp()
         let annualChart = app.descendants(matching: .any).matching(identifier:"nova.statistics.chart").firstMatch
@@ -16,7 +17,8 @@ final class NovaStatisticsUITests: XCTestCase {
         annualChart.swipeLeft()
         capture(app,"statistics-12-months")
         app.swipeDown()
-        app.segmentedControls["nova.statistics.period"].buttons["3 ay"].tap()
+        app.buttons["nova.statistics.period"].tap()
+        app.buttons["nova.statistics.period.options.3"].tap()
         XCTAssertTrue(app.staticTexts["01.07.2026 – 14.09.2026"].waitForExistence(timeout: 5))
         app.buttons["nova.statistics.company"].tap()
         app.buttons["Atlas Metal Sanayi"].tap()

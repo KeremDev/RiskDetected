@@ -22,6 +22,10 @@ final class AnalysisResultHubService {
 
     func load(analysisID: UUID, language: RDLanguage) async throws -> AnalysisResultHubResponse {
         #if DEBUG
+        if CommandLine.arguments.contains("RD_UI_TEST_RESULT_HUB_MISSING") ||
+            ProcessInfo.processInfo.environment["RD_UI_TEST_RESULT_HUB_MISSING"] == "1" {
+            throw URLError(.resourceUnavailable)
+        }
         if CommandLine.arguments.contains("RD_UI_TEST_RESULT_HUB") ||
             ProcessInfo.processInfo.environment["RD_UI_TEST_RESULT_HUB"] == "1" {
             return try uiTestFixture(analysisID: analysisID, language: language)

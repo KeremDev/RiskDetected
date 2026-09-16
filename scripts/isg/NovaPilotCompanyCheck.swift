@@ -102,6 +102,32 @@ enum RDLocalization {
         }, currentIdentity: { current }, storage: storage)
         check(try await v2.create(profile, identity: relogin) == company)
         check(try v2.pending(identity: relogin) == nil)
+        let contact = try NovaPilotCompanyIntent.makeContactProfile(ownerID: identity.userID, name: "Firma", hazard: "high",
+            sector: "Metal", email: "", employeeCount: "", responsibleName: "Ada Kaya",
+            responsiblePhone: "+90 (532) 123-4567", responsibleEmail: " ada@example.test ")
+        check(contact.responsiblePhone == "+905321234567" && contact.responsibleEmail == "ada@example.test")
+        check(try JSONDecoder().decode(NovaPilotCompanyIntent.self, from: JSONEncoder().encode(contact)) == contact)
+        for (phone, mail) in [("", "a@example.test"), ("123", "a@example.test"), ("+905321234567", "bad"), ("+905321234567", "")] {
+            check((try? NovaPilotCompanyIntent.makeContactProfile(ownerID: identity.userID, name: "Firma", hazard: "high",
+                sector: "Metal", email: "", employeeCount: "", responsibleName: "Ada Kaya", responsiblePhone: phone, responsibleEmail: mail)) == nil)
+        }
+        var contactRequests: [[String: PersonnelRPCValue]] = []
+        var contactTimeout = true
+        let v3 = NovaPilotCompanyService(rpc: { endpoint, args in
+            precondition(endpoint == "isg_pilot_company_create_v3")
+            precondition(args["p_responsible_phone"] == .string("+905321234567") && args["p_responsible_email"] == .string("ada@example.test"))
+            contactRequests.append(args)
+            if contactTimeout { throw URLError(.timedOut) }
+            var json = try JSONSerialization.jsonObject(with: response(owner: identity.userID)) as! [String: Any]
+            json["schema_version"] = 3
+            return try JSONSerialization.data(withJSONObject: json)
+        }, currentIdentity: { current }, storage: storage)
+        do { _ = try await v3.create(contact, identity: relogin); preconditionFailure() } catch {}
+        check(try v3.pending(identity: relogin) == contact)
+        contactTimeout = false
+        check(try await v3.create(contact, identity: relogin) == company)
+        check(contactRequests.count == 2 && contactRequests[0] == contactRequests[1])
+        check(try v3.pending(identity: relogin) == nil)
         print("\(checks) pilot company checks PASS")
     }
 }
