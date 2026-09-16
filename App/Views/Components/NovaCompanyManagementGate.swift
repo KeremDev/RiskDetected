@@ -74,6 +74,9 @@ struct NovaCompanyWorkspace: View {
     @State private var filesLoading = false
     @State private var fileSection: NovaCompanySection?
     @State private var addingFile = false
+    /// Set when a section's own empty-state "Ekle" action opened the archive,
+    /// so it can skip straight to the upload form for that category.
+    @State private var fileSectionAdding = false
     /// The module's own counts for this company, so the Periyodik Kontroller
     /// heading and the module can never disagree about what is on record.
     @State private var equipment: NovaEquipmentBoard?
@@ -82,13 +85,21 @@ struct NovaCompanyWorkspace: View {
     /// Set when the strip's own "Ekipman ekle" action opened the module, so
     /// it can skip straight to the add sheet instead of the inventory.
     @State private var equipmentAdding = false
-    /// The risk module's own per-company tally (state → count), fetched the
-    /// same lightweight way as equipment/documents/files, so the heading
-    /// never claims "Eksik" while a record actually exists.
-    @State private var riskSummary: (total: Int, counts: [String: Int])?
+    /// The risk module's own board for this company (one lightweight fetch:
+    /// total, per-state tally and the one row itself), so the heading can
+    /// show the real assessment instead of a bare count.
+    @State private var riskBoard: NovaRiskBoard?
+    /// The appointment actually holding each of these two roles for this
+    /// company — a company can have at most one of each at a time — so the
+    /// heading can name who it is instead of a bare count.
+    @State private var representativeAppointment: NovaAppointmentBoard?
+    @State private var supportAppointment: NovaAppointmentBoard?
     /// Set when a section's own empty-state "Ekle" action opened the module,
     /// so it can skip straight to the add form instead of the record list.
     @State private var processAdding = false
+    private struct PersonnelRoute: Identifiable { let id: UUID }
+    /// Opened from a role row's own employee name, straight to that person.
+    @State private var personnelDetail: PersonnelRoute?
     private var documentIdentity: NovaSessionIdentity { .init(userID: scope.ownerID, sessionID: scope.sessionID) }
     private enum Sheet: Identifiable {
         case personnel, addPersonnel, editCompany, deleteCompany, training, directory(NovaDirectoryKind)
@@ -100,16 +111,20 @@ struct NovaCompanyWorkspace: View {
         var result = NovaCompanyProgress(states: Dictionary(uniqueKeysWithValues: NovaCompanySection.allCases.map { ($0, NovaCompletionState.unknown) }))
         if let summary { result.states[.personnel] = summary.personnel_count > 0 ? .complete : .missing }
         result.states[.training] = completedTrainings > 0 ? .complete : .missing
-        for section in NovaCompanySection.allCases {
+        for section in NovaCompanySection.allCases where section != .representative && section != .support {
             guard let kind = moduleKind(section) else { continue }
             if let row = processTracking?.summaries.first(where: { $0.id == kind }), row.available {
                 result.states[section] = row.total > 0 ? .complete : .missing
             }
         }
-        if let riskSummary { result.states[.risk] = riskSummary.total > 0 ? .complete : .missing }
+        if let representativeAppointment { result.states[.representative] = representativeAppointment.total > 0 ? .complete : .missing }
+        if let supportAppointment { result.states[.support] = supportAppointment.total > 0 ? .complete : .missing }
+        if let riskBoard { result.states[.risk] = (riskBoard.companies.first { $0.id == scope.companyID }?.total ?? 0) > 0 ? .complete : .missing }
         if let equipment { result.states[.inspections] = equipment.total > 0 ? .complete : .missing }
+        if let files, !accidentCategories.isEmpty { result.states[.accidents] = files.counts(forCategories: accidentCategories).values.reduce(0, +) > 0 ? .complete : .missing }
         return result
     }
+    private var accidentCategories: [String] { NovaFileSectionMap.categories(for: .accidents, in: fileCategories) }
     var body: some View {
         NovaPageSurface {
                 ScrollView {
@@ -173,10 +188,16 @@ struct NovaCompanyWorkspace: View {
                 query: .init(company: scope.companyID, limit: 1))
         }
         .task(id: summaryRevision) {
-            let board = try? await NovaRiskAssessmentService.live().board(documentIdentity,
+            riskBoard = try? await NovaRiskAssessmentService.live().board(documentIdentity,
                 query: .init(company: scope.companyID, limit: 1))
-            let mine = board?.companies.first { $0.id == scope.companyID }
-            riskSummary = board.map { _ in (mine?.total ?? 0, mine?.counts ?? [:]) }
+        }
+        .task(id: summaryRevision) {
+            representativeAppointment = try? await NovaAppointmentService.live().board(documentIdentity,
+                query: .init(company: scope.companyID, role: NovaAppointmentKind.representative.rawValue, limit: 1))
+        }
+        .task(id: summaryRevision) {
+            supportAppointment = try? await NovaAppointmentService.live().board(documentIdentity,
+                query: .init(company: scope.companyID, role: NovaAppointmentKind.supportStaff.rawValue, limit: 1))
         }
         .novaFullScreenCover(item: $equipmentSection, onDismiss: {
             summaryRevision = UUID(); equipmentAdding = false
@@ -186,11 +207,11 @@ struct NovaCompanyWorkspace: View {
                 startInAddMode: equipmentAdding,
                 onBack: { equipmentSection = nil })
         }
-        .novaFullScreenCover(item: $fileSection, onDismiss: { summaryRevision = UUID() }) { section in
+        .novaFullScreenCover(item: $fileSection, onDismiss: { summaryRevision = UUID(); fileSectionAdding = false }) { section in
             NovaPilotFileGate(identity: documentIdentity, canWrite: canWrite,
                 initialCompany: scope.companyID,
                 initialCategories: NovaFileSectionMap.categories(for: section, in: fileCategories),
-                headingOverride: section.title,
+                headingOverride: section.title, startInAddMode: fileSectionAdding,
                 onBack: { fileSection = nil })
         }
         .novaFullScreenCover(isPresented: $addingFile, onDismiss: { summaryRevision = UUID() }) {
@@ -198,6 +219,11 @@ struct NovaCompanyWorkspace: View {
                 initialCompany: scope.companyID,
                 headingOverride: NovaCompanySection.files.title,
                 onBack: { addingFile = false })
+        }
+        .novaFullScreenCover(item: $personnelDetail) { route in
+            NovaPersonnelDestination(scope: scope, companyName: companyName, client: personnel,
+                onBack: { personnelDetail = nil }, directory: directory, canWrite: canWrite, preview: false,
+                initialEmployee: route.id)
         }
         .novaFullScreenCover(item: $documentSection) { section in
             NovaPilotDocumentGate(identity: documentIdentity, scope: scope, canWrite: canWrite,
@@ -261,15 +287,6 @@ struct NovaCompanyWorkspace: View {
         if upcoming > 0 { return ("Yaklaşıyor", .warning) }
         return ("Güncel", .success)
     }
-    /// `counts` is the risk module's per-state tally for this company. The
-    /// worst state present wins, same priority the risk board itself sorts by.
-    private func riskTag(_ counts: [String: Int]) -> (String, NovaStatus)? {
-        if (counts["expired"] ?? 0) > 0 { return (NovaRiskGroup.expired.title, .danger) }
-        if (counts["due_soon"] ?? 0) > 0 { return (NovaRiskGroup.dueSoon.title, .warning) }
-        if (counts["never_assessed"] ?? 0) > 0 || (counts["period_unknown"] ?? 0) > 0 { return (NovaRiskGroup.untracked.title, .info) }
-        if (counts["valid"] ?? 0) > 0 { return (NovaRiskGroup.current.title, .success) }
-        return nil
-    }
     /// A record is already on file: show what's on it and let the row itself
     /// open the module, instead of a generic "aç" button.
     private func moduleFilledRow(summary: String, tag: (String, NovaStatus)?, action: @escaping () -> Void) -> some View {
@@ -290,6 +307,62 @@ struct NovaCompanyWorkspace: View {
             NovaButton(label: addLabel, symbol: "plus", variant: .surface, isEnabled: canWrite, action: action)
         }
     }
+    private func appointmentStatus(_ state: NovaAppointmentState) -> NovaStatus {
+        switch state {
+        case .active: return .success
+        case .upcoming: return .info
+        case .ended: return .danger
+        }
+    }
+    /// Names who actually holds the role, not just how many rows exist. The
+    /// name itself is the personnel-detail link; the rest of the row opens it too.
+    private func appointmentRow(_ appointment: NovaAppointment) -> some View {
+        Button {
+            if let employeeID = appointment.employeeID { personnelDetail = .init(id: employeeID) }
+        } label: {
+            HStack(alignment: .top, spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    NovaText(text: appointment.employeeName ?? "Personel", style: .bodyStrong)
+                    NovaText(text: "Atanma: " + NovaStatisticsSnapshot.dayLabel(appointment.startsOn), style: .micro)
+                    if appointment.assetDownload != nil {
+                        NovaText(text: "Evrak eklendi", style: .micro)
+                    }
+                }
+                Spacer(minLength: 0)
+                NovaStatusPill(label: appointment.state.title, status: appointmentStatus(appointment.state))
+                Image(systemName: "chevron.right").font(.system(size: 11))
+            }.frame(minHeight: 40).contentShape(Rectangle())
+        }.buttonStyle(.plain).disabled(appointment.employeeID == nil)
+    }
+    private func riskGroupStatus(_ group: NovaRiskGroup) -> NovaStatus {
+        switch group {
+        case .expired: return .danger
+        case .dueSoon: return .warning
+        case .untracked: return .info
+        case .current: return .success
+        }
+    }
+    /// The assessment's own date, not a bare count — a file's presence isn't
+    /// known from the list read, so this says what actually is known.
+    private func riskRow(_ row: NovaRiskRow) -> some View {
+        Button { processKind = "risk" } label: {
+            HStack(alignment: .top, spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    if let assessedOn = row.currentAssessmentOn {
+                        NovaText(text: "Değerlendirme: " + NovaStatisticsSnapshot.dayLabel(assessedOn), style: .bodyStrong)
+                    } else {
+                        NovaText(text: "Risk analizi eklendi", style: .bodyStrong)
+                    }
+                    if let validUntil = row.validUntil {
+                        NovaText(text: "Geçerlilik: " + NovaStatisticsSnapshot.dayLabel(validUntil), style: .micro)
+                    }
+                }
+                Spacer(minLength: 0)
+                NovaStatusPill(label: row.group.title, status: riskGroupStatus(row.group))
+                Image(systemName: "chevron.right").font(.system(size: 11))
+            }.frame(minHeight: 40).contentShape(Rectangle())
+        }.buttonStyle(.plain)
+    }
     private func sectionView(_ section: NovaCompanySection, outlinesWhenExpanded: Bool = true) -> some View {
         NovaCompanyAccordion(title: section.title, symbol: section.symbol, state: progress[section],
             identifier: "company.section.\(section.rawValue)",
@@ -297,16 +370,33 @@ struct NovaCompanyWorkspace: View {
             expanded: Binding(get: { expandedSections.contains(section) }, set: { value in
                 if value { expandedSections.insert(section) } else { expandedSections.remove(section) }
             })) {
+                // These headings each have a real record behind them, shown
+                // as its own row (who/when/status) instead of the generic
+                // evrak-takip/dosya-arşivi strips every other heading gets —
+                // those track a different, unrelated document obligation.
+                let hasDedicatedRow = moduleKind(section) != nil || section == .risk || section == .accidents
                 if section == .personnel {
                     HStack(spacing: 8) {
                         NovaButton(label: "Personeller", symbol: "person.2", variant: .muted) { sheet = .personnel }
                         NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.personel.ekle.565c83dd", table: .localizable, fallback: "Personel Ekle"), symbol: "plus", isEnabled: canWrite) { sheet = .addPersonnel }
                             .accessibilityIdentifier("company.personnel.add")
                     }
+                } else if section == .representative || section == .support {
+                    let board = section == .representative ? representativeAppointment : supportAppointment
+                    if let board {
+                        if let appointment = board.rows.first {
+                            appointmentRow(appointment)
+                        } else {
+                            moduleEmptyState(addLabel: section.title + " Ekle") { processAdding = true; processKind = "appointment" }
+                        }
+                    } else {
+                        NovaButton(label: RDLocalization.string("localizable.nova.workspace.section.appointments.open", table: .localizable, fallback: "Atamaları aç"),
+                            symbol: "chevron.right", variant: .surface) { processKind = "appointment" }
+                    }
                 } else if section == .risk {
-                    if let riskSummary {
-                        if riskSummary.total > 0 {
-                            moduleFilledRow(summary: "\(riskSummary.total) kayıt", tag: riskTag(riskSummary.counts)) { processKind = "risk" }
+                    if let riskBoard {
+                        if let row = riskBoard.rows.first {
+                            riskRow(row)
                         } else {
                             moduleEmptyState(addLabel: section.title + " Ekle") { processAdding = true; processKind = "risk" }
                         }
@@ -314,13 +404,24 @@ struct NovaCompanyWorkspace: View {
                         NovaButton(label: RDLocalization.string("localizable.nova.workspace.section.risk.open", table: .localizable, fallback: "Değerlendirmeleri aç"),
                             symbol: "shield", variant: .surface) { processKind = "risk" }
                     }
+                } else if section == .accidents, !accidentCategories.isEmpty {
+                    if let files {
+                        let total = files.counts(forCategories: accidentCategories).values.reduce(0, +)
+                        if total > 0 {
+                            moduleFilledRow(summary: "\(total) dosya", tag: ("Güncel", .success)) { fileSection = .accidents }
+                        } else {
+                            moduleEmptyState(addLabel: section.title + " Ekle") { fileSectionAdding = true; fileSection = .accidents }
+                        }
+                    } else {
+                        NovaText(text: RDLocalization.string("localizable.nova.file.loading", table: .localizable, fallback: "Dosyalar yükleniyor…"), style: .metaQuiet)
+                    }
                 } else if section == .training {
                     NovaHelpHint(text: RDLocalization.string("localizable.nova.workspace.section.training.hint", table: .localizable,
                         fallback: "Gerçekleşen eğitimleri personel seçerek kaydedin ve eğitim geçmişini görüntüleyin."))
                     NovaButton(label: RDLocalization.string("localizable.nova.workspace.section.training.open", table: .localizable, fallback: "Eğitimleri aç"),
                         symbol: "graduationcap", variant: .surface) { sheet = .training }
                 }
-                if let kind = moduleKind(section) {
+                if let kind = moduleKind(section), section != .representative, section != .support {
                     if let row = processTracking?.summaries.first(where: { $0.id == kind }), row.available {
                         if row.total > 0 {
                             let summary = String(format: RDLocalization.string("localizable.nova.workspace.section.tracking.summary", table: .localizable,
@@ -330,9 +431,7 @@ struct NovaCompanyWorkspace: View {
                             moduleEmptyState(addLabel: section.title + " Ekle") { processAdding = true; processKind = kind }
                         }
                     } else {
-                        NovaButton(label: kind == "appointment"
-                            ? RDLocalization.string("localizable.nova.workspace.section.appointments.open", table: .localizable, fallback: "Atamaları aç")
-                            : RDLocalization.string("localizable.nova.workspace.section.records.open", table: .localizable, fallback: "Kayıtları aç"),
+                        NovaButton(label: RDLocalization.string("localizable.nova.workspace.section.records.open", table: .localizable, fallback: "Kayıtları aç"),
                             symbol: "chevron.right", variant: .surface) { processKind = kind }
                     }
                     if section == .emergency {
@@ -349,7 +448,7 @@ struct NovaCompanyWorkspace: View {
                         onOpen: { equipmentSection = section },
                         onAdd: { equipmentAdding = true; equipmentSection = section })
                 }
-                if let kinds = NovaDocumentSectionMap.kinds(for: section) {
+                if !hasDedicatedRow, let kinds = NovaDocumentSectionMap.kinds(for: section) {
                     NovaDocumentSectionStrip(counts: documents?.counts(forKinds: kinds) ?? [:],
                         isLoading: documents == nil && documentsLoading) { documentSection = section }
                 }
@@ -357,7 +456,7 @@ struct NovaCompanyWorkspace: View {
                 // tracker says what is owed, the archive holds the files that
                 // were actually filed under this heading.
                 let categories = NovaFileSectionMap.categories(for: section, in: fileCategories)
-                if !categories.isEmpty {
+                if !hasDedicatedRow, !categories.isEmpty {
                     NovaFileSectionStrip(counts: files?.counts(forCategories: categories) ?? [:],
                         isLoading: files == nil && filesLoading) { fileSection = section }
                 }

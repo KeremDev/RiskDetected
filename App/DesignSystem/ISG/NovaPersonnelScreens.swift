@@ -42,7 +42,10 @@ struct NovaPersonnelDestination: View {
     /// Preview mode is used in the company accordion: five rows and a Tümü action.
     var preview = false
     var onShowAll: (() -> Void)? = nil
-    var body: some View { PersonnelContent(scope: scope, companyName: companyName, client: client, onBack: onBack, directory: directory, canWrite: canWrite, preview: preview, onShowAll: onShowAll).id(scope).id(canWrite).id(preview) }
+    /// Opened straight onto one employee — the row that sent us here already
+    /// knew who, no need to make the expert find them again in the list.
+    var initialEmployee: UUID? = nil
+    var body: some View { PersonnelContent(scope: scope, companyName: companyName, client: client, onBack: onBack, directory: directory, canWrite: canWrite, preview: preview, onShowAll: onShowAll, initialEmployee: initialEmployee).id(scope).id(canWrite).id(preview) }
 }
 
 private struct PersonnelContent: View {
@@ -54,6 +57,7 @@ private struct PersonnelContent: View {
     let canWrite: Bool
     let preview: Bool
     let onShowAll: (() -> Void)?
+    var initialEmployee: UUID? = nil
     @Environment(\.colorScheme) private var scheme
     @State private var rows: [NovaEmployeeRow] = []
     @State private var query = ""
@@ -61,7 +65,7 @@ private struct PersonnelContent: View {
     @State private var next: UUID?
     @State private var loading = false
     @State private var error: String?
-    @State private var route: Route = .list
+    @State private var route: Route
     @State private var generation = UUID()
     @State private var requestedPage: UUID?
     @State private var pending: NovaEmployeeIntent?
@@ -70,6 +74,13 @@ private struct PersonnelContent: View {
     @State private var showingCreate = false
     private enum Route: Equatable { case list, create, detail(UUID), edit(NovaEmployeeRow), archive(NovaEmployeeRow), advanced(UUID, NovaDirectoryKind) }
     private struct Key: Equatable { let query: String; let archived: Bool; let generation: UUID; let page: UUID? }
+    init(scope: NovaPersonnelScope, companyName: String, client: NovaPersonnelClient, onBack: @escaping () -> Void,
+         directory: NovaDirectoryClient?, canWrite: Bool, preview: Bool, onShowAll: (() -> Void)?, initialEmployee: UUID? = nil) {
+        self.scope = scope; self.companyName = companyName; self.client = client; self.onBack = onBack
+        self.directory = directory; self.canWrite = canWrite; self.preview = preview; self.onShowAll = onShowAll
+        self.initialEmployee = initialEmployee
+        _route = State(initialValue: initialEmployee.map { .detail($0) } ?? .list)
+    }
     var body: some View {
         NovaPageSurface {
             switch route {
