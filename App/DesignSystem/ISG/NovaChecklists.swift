@@ -93,7 +93,7 @@ struct NovaChecklistRun: Identifiable, Equatable {
     let templateVersion: Int
     let state: NovaChecklistRunState
     let startedOn: String
-    let submittedAt: Date?
+    let submittedAt: String?
     let expected: Int
     let answered: Int
     let remaining: Int
@@ -120,7 +120,7 @@ struct NovaChecklistTemplateVersion: Identifiable, Equatable {
     var id: Int { version }
     let version: Int
     let status: String
-    let publishedAt: Date?
+    let publishedAt: String?
     let approvalNote: String?
     let items: [NovaChecklistTemplateItem]
     var isDraft: Bool { status == "draft" }

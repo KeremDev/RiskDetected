@@ -37,7 +37,7 @@ import Foundation
         let template_version: Int
         let state: String
         let started_on: String
-        let submitted_at: Date?
+        let submitted_at: String?
         let expected: Int
         let answered: Int
         let remaining: Int
@@ -69,7 +69,7 @@ import Foundation
     private struct TemplateVersionRow: Decodable {
         let version: Int
         let status: String
-        let published_at: Date?
+        let published_at: String?
         let approval_note: String?
         let items: [TemplateItemRow]?
     }
