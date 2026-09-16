@@ -25,6 +25,12 @@ struct NovaPilotPPEGate: View {
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
+        // Opened straight into "add": the create flow alone is the entire
+        // cover, so it blurs the real company page instead of an empty
+        // intermediate list screen. See NovaPopup's own doc comment.
+        if startInAddMode {
+            addFlow
+        } else {
         NovaPageSurface {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
@@ -65,17 +71,18 @@ struct NovaPilotPPEGate: View {
         .foregroundStyle(NovaColorToken.text.color(in: scheme))
         .task { company = initialCompany; await load() }
         .onChange(of: company) { _ in Task { await load() } }
-        .onAppear { if startInAddMode && canWrite { creating = true } }
-        .sheet(isPresented: $creating) {
-            NovaCompanyCreateFlow(title: "KKD zimmeti", companies: {
-                try await NovaAnalysisWorkspace.companyOptions(identity: identity)
-            }, catalogue: { selected in
-                try await service.catalogue(identity, company: selected)
-            }, onSelect: { _ in employee = nil }, fixedCompany: initialCompany) { catalogue, company in
-                editor(catalogue, company)
-            }
-        }
+        .sheet(isPresented: $creating) { addFlow }
         .sheet(item: $pdf) { NovaFileShareSheet(url: $0) }
+        }
+    }
+    private var addFlow: some View {
+        NovaCompanyCreateFlow(title: "KKD zimmeti", companies: {
+            try await NovaAnalysisWorkspace.companyOptions(identity: identity)
+        }, catalogue: { selected in
+            try await service.catalogue(identity, company: selected)
+        }, onSelect: { _ in employee = nil }, fixedCompany: initialCompany) { catalogue, company in
+            editor(catalogue, company)
+        }
     }
 
     private func editor(_ catalogue: NovaPPECatalogue, _ company: UUID) -> some View {
@@ -126,7 +133,8 @@ struct NovaPilotPPEGate: View {
         do {
             try await service.createForm(identity, company: company, employee: employee,
                 item: item.trimmingCharacters(in: .whitespacesAndNewlines), date: formatter.string(from: date))
-            creating = false; item = ""; await load()
+            item = ""
+            if startInAddMode { onBack() } else { creating = false; await load() }
         } catch { failure = "Zimmet kaydedilemedi. Bilgileri kontrol edip tekrar deneyin." }
     }
     private func download(_ id: UUID) async {

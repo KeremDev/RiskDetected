@@ -68,6 +68,7 @@ import Foundation
         let current_kind: String?
         let current_assessment_on: String?
         let current_revision_on: String?
+        let current_file_asset_id: UUID?
         let period_years: Int?
         let period_source: String?
         let period_needs_review: Bool?
@@ -124,6 +125,7 @@ import Foundation
             currentKind: kind,
             currentAssessmentOn: entry.current_assessment_on,
             currentRevisionOn: entry.current_revision_on,
+            currentFileAssetID: entry.current_file_asset_id,
             periodYears: entry.period_years,
             periodSource: source,
             periodNeedsReview: entry.period_needs_review,

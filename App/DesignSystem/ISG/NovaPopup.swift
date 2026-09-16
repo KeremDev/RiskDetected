@@ -14,6 +14,19 @@ extension EnvironmentValues {
 }
 
 /// A centered, keyboard-safe modal. The native presentation retains dismissal and focus semantics.
+///
+/// The blur/dim behind the card only ever shows whatever is directly behind
+/// THIS presentation layer — not the screen the user actually came from, if
+/// there's another cover or sheet stacked in between. So every "open straight
+/// into this form" entry point (a company page's own empty-state "Ekle", a
+/// home-card row, a drawer shortcut) must present the NovaPopup-wrapped form
+/// as its OWN single cover directly from that origin screen — never render a
+/// full intermediate board/list screen first and then layer the form as a
+/// second, nested presentation on top of it. See the `startInAddMode` screens
+/// (NovaRiskScreen, NovaAppointmentScreen, NovaEmergencyPlanScreen,
+/// NovaPilotProcessGate, NovaPilotPPEGate) for the pattern: the whole `body`
+/// branches to return just the NovaPopup content when opened this way,
+/// instead of mounting the normal screen and opening a child sheet on it.
 struct NovaPopup<Content: View>: View {
     @ViewBuilder let content: () -> Content
     @Environment(\.dismiss) private var dismiss
@@ -28,7 +41,7 @@ struct NovaPopup<Content: View>: View {
         GeometryReader { geometry in
             ZStack {
                 Rectangle().fill(.ultraThinMaterial).ignoresSafeArea()
-                Color.black.opacity(0.28).ignoresSafeArea()
+                Color.black.opacity(0.16).ignoresSafeArea()
                 ZStack(alignment: .topTrailing) {
                     // Reserve the close-control row so headings and their
                     // trailing actions never sit underneath the X button.

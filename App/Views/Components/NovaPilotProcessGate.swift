@@ -36,6 +36,12 @@ struct NovaPilotProcessGate: View {
             download: { bucket, path in try await fileService.download(identity, bucket: bucket, path: path) })
     }
     var body: some View {
+        // Opened straight into "add": the editor alone (already NovaPopup)
+        // is the entire cover, so it blurs the real company page instead of
+        // an empty intermediate list screen. See NovaPopup's own doc comment.
+        if startInAddMode, let initialCompany {
+            NovaProcessEditor(identity: identity, kind: kind, company: initialCompany, parent: parent, canWrite: canWrite, fileClient: fileClient)
+        } else {
         NovaPageSurface {
             ScrollView {
                 VStack(alignment:.leading,spacing:14) {
@@ -97,7 +103,6 @@ struct NovaPilotProcessGate: View {
         }
         .font(.custom("PlusJakartaSans-Regular",size:14)).tint(.primary)
         .task { company = initialCompany; await load() }
-        .onAppear { if startInAddMode && canWrite { creating = true } }
         .onChange(of:company) { _ in Task { await load() } }
         .sheet(isPresented:$creating,onDismiss:{Task { await load() }}) {
             if (parent != nil || initialCompany != nil), let company {
@@ -112,6 +117,7 @@ struct NovaPilotProcessGate: View {
         }
         .sheet(item:$selected,onDismiss:{Task { await load() }}) { row in
             NovaProcessEditor(identity:identity,kind:kind,company:row.company_id,parent:parent,record:row.id,canWrite:canWrite,fileClient:fileClient)
+        }
         }
     }
     private func load(more:Bool = false) async {

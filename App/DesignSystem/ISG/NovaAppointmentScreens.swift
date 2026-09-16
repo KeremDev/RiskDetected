@@ -165,6 +165,12 @@ struct NovaAppointmentScreen: View {
     }
 
     var body: some View {
+        // Opened straight into "add": the create flow alone is the entire
+        // cover, so it blurs the real company page instead of an empty
+        // intermediate board screen. See NovaPopup's own doc comment.
+        if startInAddMode {
+            addFlow(.init(startsOn: NovaDayField.text(Date())))
+        } else {
         NovaPageSurface {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
@@ -187,7 +193,6 @@ struct NovaAppointmentScreen: View {
             }
         }
         .task { await load(reset: true) }
-        .onAppear { if startInAddMode && canWrite { startCreate() } }
         .sheet(item: $detail) { row in
             NovaAppointmentDetailSheet(entry: row, canWrite: canWrite, fileClient: client.fileClient,
                 onEnd: {
@@ -206,17 +211,20 @@ struct NovaAppointmentScreen: View {
                     }
                 }
         }
-        .sheet(item: $drafting) { draft in
-            NovaCompanyCreateFlow(title: "Görev ver", companies: client.companies,
-                catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany) { selectedCatalogue, selectedCompany in
-                NovaAppointmentSheet(draft: draft, catalogue: selectedCatalogue,
-                    fileClient: client.fileClient, fileCompany: selectedCompany,
-                    onSave: { edited in await save(edited) }, onClose: { drafting = nil })
-            }
-        }
+        .sheet(item: $drafting) { draft in addFlow(draft) }
         .sheet(item: $ending) { draft in
             NovaAppointmentEndSheet(draft: draft,
                 onSave: { edited in await finish(edited) }, onClose: { ending = nil })
+        }
+        }
+    }
+    private func addFlow(_ draft: NovaAppointmentDraft) -> some View {
+        NovaCompanyCreateFlow(title: "Görev ver", companies: client.companies,
+            catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany) { selectedCatalogue, selectedCompany in
+            NovaAppointmentSheet(draft: draft, catalogue: selectedCatalogue,
+                fileClient: client.fileClient, fileCompany: selectedCompany,
+                onSave: { edited in await save(edited) },
+                onClose: { if startInAddMode { onBack() } else { drafting = nil } })
         }
     }
 

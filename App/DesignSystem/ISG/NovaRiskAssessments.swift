@@ -182,6 +182,7 @@ struct NovaRiskRow: Identifiable, Equatable {
     let currentKind: NovaRiskKind?
     let currentAssessmentOn: String?
     let currentRevisionOn: String?
+    let currentFileAssetID: UUID?
     let periodYears: Int?
     let periodSource: NovaRiskPeriodSource?
     let periodNeedsReview: Bool?

@@ -201,35 +201,37 @@ struct NovaRiskScreen: View {
     }
 
     var body: some View {
-        NovaPageSurface {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    header
-                    if let board { counters(board) }
-                    filters
-                    if loading && board == nil {
-                        ProgressView().frame(maxWidth: .infinity).padding(.vertical, 30)
-                    } else if let failure {
-                        NovaCard(padding: 16) {
-                            NovaText(text: failure, style: .body,
-                                color: NovaColorToken.statusDangerInk.color(in: scheme))
+        // Opened straight into "add": skip mounting the whole board behind a
+        // second sheet — the create flow itself, alone, is the entire cover,
+        // so it blurs the real company page behind it instead of an empty
+        // intermediate screen. See NovaPopup's own doc comment.
+        if startInAddMode {
+            addFlow
+        } else {
+            NovaPageSurface {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
+                        header
+                        if let board { counters(board) }
+                        filters
+                        if loading && board == nil {
+                            ProgressView().frame(maxWidth: .infinity).padding(.vertical, 30)
+                        } else if let failure {
+                            NovaCard(padding: 16) {
+                                NovaText(text: failure, style: .body,
+                                    color: NovaColorToken.statusDangerInk.color(in: scheme))
+                            }
+                        } else if let board {
+                            list(board)
                         }
-                    } else if let board {
-                        list(board)
                     }
+                    .padding(.horizontal, 20).padding(.top, 12)
+                    .padding(.bottom, 24 + novaTabBarInset)
                 }
-                .padding(.horizontal, 20).padding(.top, 12)
-                .padding(.bottom, 24 + novaTabBarInset)
             }
-        }
-        .task { await load(reset: true) }
-        .onAppear { if startInAddMode && canWrite { creating = true } }
-        .sheet(isPresented: $creating, onDismiss: { Task { await load(reset: true) } }) {
-            NovaCompanyCreateFlow(title: "Risk değerlendirmesi kaydı", companies: client.companies, catalogue: { co in try await client.catalogue(co) }, onSelect: { _ in }, fixedCompany: initialCompany) { catalogue, co in
-                NovaRiskQuickCreateSheet(client: client, company: co, catalogue: catalogue) { creating = false }
-            }
-        }
-        .sheet(item: $detail) { row in
+            .task { await load(reset: true) }
+            .sheet(isPresented: $creating, onDismiss: { Task { await load(reset: true) } }) { addFlow }
+            .sheet(item: $detail) { row in
             NovaRiskDetailSheet(row: row, canWrite: canWrite,
                 onNewVersion: { start(from: row) },
                 onEdit: { version in
@@ -263,6 +265,14 @@ struct NovaRiskScreen: View {
         .sheet(item: $finalizing) { draft in
             NovaRiskFinalizeSheet(draft: draft, catalogue: catalogue,
                 onSave: { edited in await confirm(edited) }, onClose: { finalizing = nil })
+        }
+        }
+    }
+    private var addFlow: some View {
+        NovaCompanyCreateFlow(title: "Risk değerlendirmesi kaydı", companies: client.companies, catalogue: { co in try await client.catalogue(co) }, onSelect: { _ in }, fixedCompany: initialCompany) { catalogue, co in
+            NovaRiskQuickCreateSheet(client: client, company: co, catalogue: catalogue) {
+                if startInAddMode { onBack() } else { creating = false }
+            }
         }
     }
 

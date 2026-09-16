@@ -342,13 +342,16 @@ struct NovaCompanyWorkspace: View {
         case .current: return .success
         }
     }
-    /// The assessment's own date, not a bare count — a file's presence isn't
-    /// known from the list read, so this says what actually is known.
+    /// The server doesn't return a human filename for the attached asset —
+    /// only its id — so the id itself stands in for the name, per the
+    /// expert's own call on how to label this until a real name exists.
     private func riskRow(_ row: NovaRiskRow) -> some View {
         Button { processKind = "risk" } label: {
             HStack(alignment: .top, spacing: 10) {
                 VStack(alignment: .leading, spacing: 2) {
-                    if let assessedOn = row.currentAssessmentOn {
+                    if let assetID = row.currentFileAssetID {
+                        NovaText(text: "Risk Analizi - " + assetID.uuidString, style: .bodyStrong)
+                    } else if let assessedOn = row.currentAssessmentOn {
                         NovaText(text: "Değerlendirme: " + NovaStatisticsSnapshot.dayLabel(assessedOn), style: .bodyStrong)
                     } else {
                         NovaText(text: "Risk analizi eklendi", style: .bodyStrong)

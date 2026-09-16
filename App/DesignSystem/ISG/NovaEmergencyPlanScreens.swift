@@ -167,6 +167,12 @@ struct NovaEmergencyPlanScreen: View {
     }
 
     var body: some View {
+        // Opened straight into "add": the create flow alone is the entire
+        // cover, so it blurs the real company page instead of an empty
+        // intermediate board screen. See NovaPopup's own doc comment.
+        if startInAddMode {
+            addFlow(.init(preparedOn: NovaDayField.text(Date())))
+        } else {
         NovaPageSurface {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
@@ -189,7 +195,6 @@ struct NovaEmergencyPlanScreen: View {
             }
         }
         .task { await load(reset: true) }
-        .onAppear { if startInAddMode && canWrite { startCreate() } }
         .sheet(item: $detail) { plan in
             NovaEmergencyDetailSheet(plan: plan, canWrite: canWrite, fileClient: client.fileClient,
                 onRenew: {
@@ -214,14 +219,19 @@ struct NovaEmergencyPlanScreen: View {
                     fileCategories: fileCategories, fileAccepts: fileAccepts, fileAssurance: fileAssurance,
                     onSave: { edited in await publish(edited) }, onClose: { drafting = nil })
             } else {
-            NovaCompanyCreateFlow(title: "Plan yayınla", companies: client.companies,
-                catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany) { selectedCatalogue, selectedCompany in
-                NovaEmergencyPlanSheet(draft: draft, catalogue: selectedCatalogue,
-                    fileClient: client.fileClient, fileCompany: selectedCompany,
-                    fileCategories: fileCategories, fileAccepts: fileAccepts, fileAssurance: fileAssurance,
-                    onSave: { edited in await publish(edited) }, onClose: { drafting = nil })
+                addFlow(draft)
             }
-            }
+        }
+        }
+    }
+    private func addFlow(_ draft: NovaEmergencyPlanDraft) -> some View {
+        NovaCompanyCreateFlow(title: "Plan yayınla", companies: client.companies,
+            catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany) { selectedCatalogue, selectedCompany in
+            NovaEmergencyPlanSheet(draft: draft, catalogue: selectedCatalogue,
+                fileClient: client.fileClient, fileCompany: selectedCompany,
+                fileCategories: fileCategories, fileAccepts: fileAccepts, fileAssurance: fileAssurance,
+                onSave: { edited in await publish(edited) },
+                onClose: { if startInAddMode { onBack() } else { drafting = nil } })
         }
     }
 
