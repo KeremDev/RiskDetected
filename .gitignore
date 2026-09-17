@@ -68,6 +68,8 @@ tmp/
 .codex-qa/
 **/.codex-qa/
 .playwright-cli/
+.graphify-out/
+graphify-out/
 .asc/
 android/.kotlin/
 
