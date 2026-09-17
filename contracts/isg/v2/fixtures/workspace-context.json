@@ -1,0 +1,213 @@
+{
+  "cases": [
+    {
+      "id": "personal_owner",
+      "valid": true,
+      "input": {
+        "schema_version": 1,
+        "workspace_id": "10000000-0000-4000-8000-000000000001",
+        "kind": "personal",
+        "name": "Kişisel Çalışma Alanı",
+        "status": "active",
+        "timezone": "Europe/Istanbul",
+        "workspace_version": 0,
+        "membership": {
+          "membership_id": "20000000-0000-4000-8000-000000000001",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "role": "owner",
+          "status": "active",
+          "is_practicing_expert": false,
+          "permission_revision": 0,
+          "membership_version": 0
+        },
+        "can_read": true,
+        "can_operate": true,
+        "can_manage_members": true,
+        "can_manage_billing": true
+      }
+    },
+    {
+      "id": "osgb_pending_owner",
+      "valid": true,
+      "input": {
+        "schema_version": 1,
+        "workspace_id": "10000000-0000-4000-8000-000000000002",
+        "kind": "osgb",
+        "name": "Deneme OSGB",
+        "status": "pending_purchase",
+        "timezone": "Europe/Istanbul",
+        "workspace_version": 2,
+        "membership": {
+          "membership_id": "20000000-0000-4000-8000-000000000002",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "role": "owner",
+          "status": "active",
+          "is_practicing_expert": false,
+          "permission_revision": 4,
+          "membership_version": 3
+        },
+        "can_read": true,
+        "can_operate": false,
+        "can_manage_members": true,
+        "can_manage_billing": true
+      }
+    },
+    {
+      "id": "osgb_active_expert",
+      "valid": true,
+      "input": {
+        "schema_version": 1,
+        "workspace_id": "10000000-0000-4000-8000-000000000002",
+        "kind": "osgb",
+        "name": "Deneme OSGB",
+        "status": "active",
+        "timezone": "Europe/Istanbul",
+        "workspace_version": 2,
+        "membership": {
+          "membership_id": "20000000-0000-4000-8000-000000000003",
+          "user_id": "30000000-0000-4000-8000-000000000002",
+          "role": "expert",
+          "status": "active",
+          "is_practicing_expert": true,
+          "permission_revision": 1,
+          "membership_version": 1
+        },
+        "can_read": true,
+        "can_operate": true,
+        "can_manage_members": false,
+        "can_manage_billing": false
+      }
+    },
+    {
+      "id": "suspended_expert",
+      "valid": true,
+      "input": {
+        "schema_version": 1,
+        "workspace_id": "10000000-0000-4000-8000-000000000002",
+        "kind": "osgb",
+        "name": "Deneme OSGB",
+        "status": "active",
+        "timezone": "Europe/Istanbul",
+        "workspace_version": 2,
+        "membership": {
+          "membership_id": "20000000-0000-4000-8000-000000000003",
+          "user_id": "30000000-0000-4000-8000-000000000002",
+          "role": "expert",
+          "status": "suspended",
+          "is_practicing_expert": false,
+          "permission_revision": 2,
+          "membership_version": 2
+        },
+        "can_read": false,
+        "can_operate": false,
+        "can_manage_members": false,
+        "can_manage_billing": false
+      }
+    },
+    {
+      "id": "pending_operates",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "workspace_id": "10000000-0000-4000-8000-000000000002",
+        "kind": "osgb",
+        "name": "Deneme OSGB",
+        "status": "pending_purchase",
+        "timezone": "Europe/Istanbul",
+        "workspace_version": 0,
+        "membership": {
+          "membership_id": "20000000-0000-4000-8000-000000000002",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "role": "owner",
+          "status": "active",
+          "is_practicing_expert": false,
+          "permission_revision": 0,
+          "membership_version": 0
+        },
+        "can_read": true,
+        "can_operate": true,
+        "can_manage_members": true,
+        "can_manage_billing": true
+      }
+    },
+    {
+      "id": "personal_admin",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "workspace_id": "10000000-0000-4000-8000-000000000001",
+        "kind": "personal",
+        "name": "Kişisel",
+        "status": "active",
+        "timezone": "Europe/Istanbul",
+        "workspace_version": 0,
+        "membership": {
+          "membership_id": "20000000-0000-4000-8000-000000000001",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "role": "admin",
+          "status": "active",
+          "is_practicing_expert": false,
+          "permission_revision": 0,
+          "membership_version": 0
+        },
+        "can_read": true,
+        "can_operate": true,
+        "can_manage_members": true,
+        "can_manage_billing": false
+      }
+    },
+    {
+      "id": "admin_practicing",
+      "valid": true,
+      "input": {
+        "schema_version": 1,
+        "workspace_id": "10000000-0000-4000-8000-000000000002",
+        "kind": "osgb",
+        "name": "Deneme OSGB",
+        "status": "active",
+        "timezone": "Europe/Istanbul",
+        "workspace_version": 0,
+        "membership": {
+          "membership_id": "20000000-0000-4000-8000-000000000002",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "role": "admin",
+          "status": "active",
+          "is_practicing_expert": true,
+          "permission_revision": 0,
+          "membership_version": 0
+        },
+        "can_read": true,
+        "can_operate": true,
+        "can_manage_members": true,
+        "can_manage_billing": false
+      }
+    },
+    {
+      "id": "unknown_top_field",
+      "valid": false,
+      "input": {
+        "schema_version": 1,
+        "workspace_id": "10000000-0000-4000-8000-000000000001",
+        "kind": "personal",
+        "name": "Kişisel",
+        "status": "active",
+        "timezone": "Europe/Istanbul",
+        "workspace_version": 0,
+        "membership": {
+          "membership_id": "20000000-0000-4000-8000-000000000001",
+          "user_id": "30000000-0000-4000-8000-000000000001",
+          "role": "owner",
+          "status": "active",
+          "is_practicing_expert": false,
+          "permission_revision": 0,
+          "membership_version": 0
+        },
+        "can_read": true,
+        "can_operate": true,
+        "can_manage_members": true,
+        "can_manage_billing": true,
+        "authorized": true
+      }
+    }
+  ]
+}

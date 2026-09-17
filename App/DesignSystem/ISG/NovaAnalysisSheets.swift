@@ -23,6 +23,9 @@ struct NovaAnalysisItemSheet: View {
     var createdOn = ""
     let reaction: NovaAnalysisReaction
     var canWrite = true
+    var canEdit = true
+    var canReact = true
+    var canFile = true
     let react: (NovaAnalysisReaction) async throws -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
@@ -35,7 +38,7 @@ struct NovaAnalysisItemSheet: View {
 
     /// Only the scored findings are real analysis findings; the judgement
     /// sections have no editable record behind them.
-    private var isEditable: Bool { canWrite && section.isScored }
+    private var isEditable: Bool { canWrite && canEdit && section.isScored }
     private var band: String? { item.band(method) }
 
     var body: some View {
@@ -43,7 +46,7 @@ struct NovaAnalysisItemSheet: View {
             VStack(alignment: .leading, spacing: 11) {
                 hero
                 if isEditable { controls }
-                if canWrite, section.isFileable, let onFile {
+                if canWrite, canFile, section.isFileable, let onFile {
                     NovaButton(label: "Firmaya Uygunsuzluk Olarak Ekle", symbol: "building.2", variant: .surface, action: onFile)
                         .accessibilityIdentifier("analysis.finding.file")
                 }
@@ -68,7 +71,9 @@ struct NovaAnalysisItemSheet: View {
                                     startPoint: .center, endPoint: .bottom))
             .overlay(alignment: .bottomLeading) { caption }
             .clipShape(RoundedRectangle(cornerRadius: 20))
-            .overlay(alignment: .topTrailing) { feedback.padding(9) }
+            .overlay(alignment: .topTrailing) {
+                if canWrite && canReact { feedback.padding(9) }
+            }
     }
 
     private var caption: some View {
@@ -696,9 +701,11 @@ struct NovaAnalysisFileSheet: View {
                             fallback: "Bu bulgunun risk bandı okunamadı. Önem derecesini siz seçin.")
                         : RDLocalization.string("localizable.nova.analysis.file.unscored", table: .localizable,
                             fallback: "Bu madde skorsuz geliyor. Önem derecesini siz seçin."), style: .metaQuiet)
-                    Picker("Önem derecesi", selection: Binding<NovaNonconformitySeverity?>(
+                    Picker(RDLocalization.string("localizable.nova.nonconformity.field.severity", table: .localizable,
+                        fallback: "Önem derecesi"), selection: Binding<NovaNonconformitySeverity?>(
                         get: { severity[item.id] }, set: { severity[item.id] = $0 })) {
-                        Text("Önem derecesi seçin").tag(NovaNonconformitySeverity?.none)
+                        Text(RDLocalization.string("localizable.nova.analysis.severity.pick", table: .localizable,
+                            fallback: "Önem derecesi seçin")).tag(NovaNonconformitySeverity?.none)
                         ForEach(NovaNonconformitySeverity.allCases) { value in
                             Text(verbatim: NovaNonconformityWords.severity(value)).tag(Optional(value))
                         }

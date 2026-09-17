@@ -24,6 +24,12 @@ struct NovaAnalysisDetailScreen: View {
     let client: NovaAnalysisDetailClient
     let onBack: () -> Void
     var canWrite = true
+    var canEdit = true
+    var canReact = true
+    var canFile = true
+    var canFileTraining = true
+    var canReport = true
+    var reportResultIsArchiveName = true
     @Environment(\.colorScheme) private var scheme
     @State private var data: NovaAnalysisDetailData?
     @State private var pictures: [UIImage] = []
@@ -49,13 +55,17 @@ struct NovaAnalysisDetailScreen: View {
     private var items: [NovaAnalysisItem] { current?.items ?? [] }
     // Findings can be marked before the analysis is attached to a company.
     // Filing itself remains guarded by the company requirement.
-    private var selectable: Bool { section.isFileable && canWrite }
+    private var selectable: Bool {
+        section.isFileable && canWrite && canFile &&
+            (section != .trainingRecommendations || canFileTraining)
+    }
 
     var body: some View {
         NovaPageSurface(onEdgeBack: onBack) {
             VStack(spacing: 0) {
                 header
-                NovaHelpHint(text: "Bulguyu inceleyin; seçtiğiniz firmaya uygunsuzluk olarak ekleyin veya rapor oluşturun.")
+                NovaHelpHint(text: RDLocalization.string("localizable.nova.analysis.detail.hint", table: .localizable,
+                    fallback: "Bulguyu inceleyin; seçtiğiniz firmaya uygunsuzluk olarak ekleyin veya rapor oluşturun."))
                     .padding(.horizontal, 16)
                 if data == nil && loadError == nil {
                     NovaLoadingView(message: RDLocalization.string("localizable.nova.analysis.loading", table: .localizable,
@@ -97,6 +107,8 @@ struct NovaAnalysisDetailScreen: View {
                     photo: photo(for: item), analysisTitle: data?.title ?? "",
                     companyName: data?.companyName, createdOn: data?.createdOn ?? "",
                     reaction: reactions[item.id] ?? item.reaction, canWrite: canWrite,
+                    canEdit: canEdit, canReact: canReact,
+                    canFile: canFile && (section != .trainingRecommendations || canFileTraining),
                     react: { value in
                         try await client.react(item, section, value)
                         reactions[item.id] = value
@@ -148,8 +160,10 @@ struct NovaAnalysisDetailScreen: View {
                     NovaAnalysisReportSheet(data: data, method: method, selectedCount: selected.count) { request in
                         let name = try await client.report(request)
                         reporting = false
-                        notice = String(format: RDLocalization.string("localizable.nova.analysis.report.saved", table: .localizable,
-                            fallback: "Rapor arşive kaydedildi: %@"), name)
+                        notice = reportResultIsArchiveName
+                            ? String(format: RDLocalization.string("localizable.nova.analysis.report.saved", table: .localizable,
+                                fallback: "Rapor arşive kaydedildi: %@"), name)
+                            : name
                     }
                 }
             }
@@ -327,7 +341,7 @@ struct NovaAnalysisDetailScreen: View {
                 case .approvedNotebook: NovaNotebookPanel(items: items) { inspecting = $0 }
                 }
             }
-            if section.isFileable && canWrite && !items.isEmpty { fileHint }
+            if selectable && !items.isEmpty { fileHint }
         }
     }
 
@@ -337,7 +351,8 @@ struct NovaAnalysisDetailScreen: View {
         ForEach(items) { item in
             VStack(alignment: .leading, spacing: 5) {
                 NovaAnalysisFindingCard(item: withReaction(item), method: method,
-                    isSelected: selected.contains(item.id), isSelectable: selectable, canEdit: canWrite,
+                    isSelected: selected.contains(item.id), isSelectable: selectable,
+                    canEdit: canWrite && canEdit, canReact: canWrite && canReact,
                     onSelect: { toggle(item) }, onOpen: { inspecting = item },
                     onEdit: { editing = item }, onDelete: { deleting = item },
                     onReact: { react(item, $0) })
@@ -352,6 +367,7 @@ struct NovaAnalysisDetailScreen: View {
             VStack(alignment: .leading, spacing: 5) {
                 NovaAnalysisAdviceCard(item: withReaction(item), kind: section,
                     isSelected: selected.contains(item.id), isSelectable: selectable,
+                    canReact: canWrite && canReact,
                     onSelect: { toggle(item) }, onOpen: { inspecting = item },
                     onReact: { react(item, $0) })
                 if let outcome = outcomes[item.id] { outcomeLine(outcome) }
@@ -387,7 +403,7 @@ struct NovaAnalysisDetailScreen: View {
     }
 
     @ViewBuilder private var fileHint: some View {
-        if data?.companyID == nil && canWrite && section.isFileable && !selected.isEmpty {
+        if data?.companyID == nil && selectable && !selected.isEmpty {
             NovaAnalysisTag(symbol: "building.2.crop.circle",
                 text: RDLocalization.string("localizable.nova.analysis.file.needs.company", table: .localizable,
                     fallback: "Firmaya Aktar ile hedef firmayı seçebilirsiniz."), status: .info)
@@ -459,7 +475,7 @@ struct NovaAnalysisDetailScreen: View {
                 if selectable && !selected.isEmpty {
                     primary(RDLocalization.string("localizable.nova.analysis.file.run.short", table: .localizable, fallback: "Firmaya Aktar"),
                             symbol: "arrow.right.doc.on.clipboard", id: "file") { filing = true }
-                } else {
+                } else if canReport {
                     primary(RDLocalization.string("localizable.nova.analysis.report", table: .localizable, fallback: "Rapor oluştur"),
                             symbol: "slider.horizontal.3", id: "report") { reporting = true }
                 }

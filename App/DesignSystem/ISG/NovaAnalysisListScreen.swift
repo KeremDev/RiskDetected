@@ -231,7 +231,9 @@ struct NovaAnalysisListScreen: View {
     }
 
     private var companyMenu: some View {
-        NovaFilterField(label: "Firma", options: [.init(id: nil, title: "Tüm firmalar")] + companyNames.map { .init(id: $0, title: $0) },
+        NovaFilterField(label: RDLocalization.string("localizable.nova.nonconformity.filter.company", table: .localizable,
+            fallback: "Firma"), options: [.init(id: nil, title: RDLocalization.string("localizable.nova.document.company.all", table: .localizable,
+                fallback: "Tüm firmalar"))] + companyNames.map { .init(id: $0, title: $0) },
             selected: company, identifier: "analysis.list.company") { company = $0 }
     }
 
@@ -252,7 +254,8 @@ struct NovaAnalysisListScreen: View {
         } else if visible.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.analysis.list.empty", table: .localizable,
                 fallback: "Henüz analiz kaydı yok"),
-                message: "Fotoğraf veya metin analizi oluşturarak riskleri, uzman görüşlerini ve önerileri dijital ortamda saklayabilirsiniz.")
+                message: RDLocalization.string("localizable.nova.analysis.list.empty.detail", table: .localizable,
+                    fallback: "Fotoğraf veya metin analizi oluşturarak riskleri, uzman görüşlerini ve önerileri dijital ortamda saklayabilirsiniz."))
         } else {
             ForEach(visible) { row in card(row) }
             // Only offered on an unfiltered, unsearched view of the account's

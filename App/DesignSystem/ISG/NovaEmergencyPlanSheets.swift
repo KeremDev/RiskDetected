@@ -216,7 +216,7 @@ struct NovaEmergencyPlanSheet: View {
     @State private var failure: String?
     @State private var saving = false
     @State private var choosingWorkplace = false
-    @State private var choosingEmployee = false
+    @State private var supportStaffPicker = false
     @State private var personnel: [NovaEmployeeRow] = []
     @State private var personnelLoading = false
     @State private var personnelFailure: String?
@@ -437,18 +437,20 @@ struct NovaEmergencyPlanSheet: View {
             }
             NovaFileChooserButton(label: "Firma personeli",
                 value: personnel.first { $0.id == selectedEmployeeID }?.name ?? "Personel seçin",
-                symbol: "person", isOpen: choosingEmployee,
+                symbol: "person", isOpen: supportStaffPicker,
                 isAnswered: selectedEmployeeID != nil,
-                identifier: "nova.emergency.form.employee") { choosingEmployee.toggle() }
-            if choosingEmployee {
+                identifier: "nova.emergency.form.employee") { supportStaffPicker.toggle() }
+            if supportStaffPicker {
                 NovaFileChooserPanel(options: personnel.filter { employee in
                     !draft.team.contains { $0.fullName == employee.name }
                 }.map { .init(id: $0.id.uuidString, title: $0.name) },
                     selected: selectedEmployeeID?.uuidString,
                     identifier: "nova.emergency.form.employee.options") { value in
                     selectedEmployeeID = value.flatMap(UUID.init(uuidString:))
-                    memberName = personnel.first { $0.id == selectedEmployeeID }?.name ?? ""
-                    choosingEmployee = false
+                    if let person = personnel.first(where: { $0.id == selectedEmployeeID }) {
+                        memberName = person.fullName
+                    }
+                    supportStaffPicker = false
                 }
             }
             if personnelLoading { ProgressView().controlSize(.small) }

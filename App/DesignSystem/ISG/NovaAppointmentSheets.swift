@@ -329,9 +329,9 @@ struct NovaAppointmentSheet: View {
                                 table: .localizable, fallback: "Atama yazısı"), style: .label,
                                 color: NovaColorToken.textTertiary.color(in: scheme))
                             NovaInlineFileField(category: "personnel_document", company: fileCompany,
-                                fileClient: fileClient, assetID: Binding(
-                                    get: { draft.assetID?.uuidString ?? "" },
-                                    set: { draft.assetID = UUID(uuidString: $0) }))
+                                fileClient: fileClient, assetID: $draft.letterLocation)
+                            NovaText(text: NovaAppointmentWords.letterNote, style: .meta,
+                                color: NovaColorToken.textSecondary.color(in: scheme))
                         }
                     }
                     NovaHelpHint(text: NovaAppointmentWords.noQualificationNote)

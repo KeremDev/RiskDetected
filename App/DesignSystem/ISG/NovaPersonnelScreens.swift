@@ -162,7 +162,8 @@ private struct PersonnelContent: View {
                 if let error { NovaCard(padding: 16) { NovaText(text: error); NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.tekrar.dene.c2d238eb", table: .localizable, fallback: "Tekrar dene"), symbol: "arrow.clockwise", variant: .surface, action: { generation = UUID() }) } }
                 if !loading && error == nil && rows.isEmpty {
                     NovaEmptyState(title: RDLocalization.string("localizable.nova.personnel.screens.henuz.personel.yok.d4c4f866", table: .localizable, fallback: "Henüz personel yok."),
-                        message: "Firma personelini ekleyerek eğitim, ekip, zimmet ve diğer İSG kayıtlarında doğrudan seçim yapabilirsiniz.")
+                        message: RDLocalization.string("localizable.nova.personnel.empty.detail", table: .localizable,
+                            fallback: "Firma personelini ekleyerek eğitim, ekip, zimmet ve diğer İSG kayıtlarında doğrudan seçim yapabilirsiniz."))
                 }
                 ForEach(preview ? Array(rows.prefix(5)) : rows) { row in
                     Button { route = .detail(row.id) } label: {

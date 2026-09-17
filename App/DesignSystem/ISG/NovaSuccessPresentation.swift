@@ -15,6 +15,18 @@ enum NovaSuccessMessage {
     static let fileAdded = "Dosya başarıyla eklendi!"
     static func recordSaved(_ name: String) -> String { "\(name) başarıyla kaydedildi!" }
 
+    /// Server receipts carry stable keys so a workspace mutation cannot inject
+    /// presentation text. Unknown keys keep the success UI useful without
+    /// exposing a backend identifier to the user.
+    static func serverKey(_ key: String) -> String {
+        switch key {
+        case "analysis_finding_filed": return findingCreated
+        case "analysis_finding_already_filed": return "Bu uygunsuzluk firmada zaten kayıtlı."
+        case "ppe_handover_created": return recordSaved("KKD zimmeti")
+        default: return "İşlem başarıyla tamamlandı!"
+        }
+    }
+
     static func normalized(_ text: String) -> String {
         let value = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.isEmpty else { return "İşlem başarıyla tamamlandı!" }

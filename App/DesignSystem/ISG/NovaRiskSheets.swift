@@ -57,6 +57,9 @@ struct NovaRiskDetailSheet: View {
                     row.currentVersion > 0 ? "v\(row.currentVersion)" : unset,
                     detail: row.currentKind?.title ?? "")
             }
+            NovaHelpHint(text: RDLocalization.string("localizable.nova.risk.period.attribution",
+                table: .localizable,
+                fallback: "Süre kaynağı her satırda yazılıdır. Uzmanın kendi belirlediği süre mevzuat gereği olarak sunulmaz."))
             if row.sourceDrift {
                 NovaHelpHint(text: row.driftNote ?? RDLocalization.string("localizable.nova.risk.fact.drift",
                     table: .localizable,

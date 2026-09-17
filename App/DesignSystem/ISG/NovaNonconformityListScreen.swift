@@ -94,9 +94,12 @@ struct NovaNonconformityListScreen: View {
     private var filters: some View {
         VStack(spacing: 8) {
             HStack(spacing: 7) {
-                filterButton("Firma", key: "company", value: companies.first { $0.id == filter.companyID }?.name)
-                filterButton("Durum", key: "state", value: filter.overdueOnly ? "Termini geçen" : filter.state.map { NovaNonconformityWords.state($0.rawValue) })
-                filterButton("Kayıt türü", key: "kind", value: filter.kind.map(NovaNonconformityWords.recordKind))
+                filterButton(RDLocalization.string("localizable.nova.nonconformity.filter.company", table: .localizable, fallback: "Firma"),
+                    key: "company", value: companies.first { $0.id == filter.companyID }?.name)
+                filterButton(RDLocalization.string("localizable.nova.nonconformity.filter.state", table: .localizable, fallback: "Durum"),
+                    key: "state", value: filter.overdueOnly ? RDLocalization.string("localizable.nova.nonconformity.filter.overdue", table: .localizable, fallback: "Termini geçen") : filter.state.map { NovaNonconformityWords.state($0.rawValue) })
+                filterButton(RDLocalization.string("localizable.nova.nonconformity.filter.kind", table: .localizable, fallback: "Kayıt türü"),
+                    key: "kind", value: filter.kind.map(NovaNonconformityWords.recordKind))
             }
             if let openFilter {
                 NovaFileChooserPanel(options: filterOptions(openFilter), selected: filterSelection(openFilter),
@@ -114,7 +117,7 @@ struct NovaNonconformityListScreen: View {
         }
     }
     private func filterButton(_ label: String, key: String, value: String?) -> some View {
-        NovaFileChooserButton(label: label, value: value ?? "Tümü", isOpen: openFilter == key,
+        NovaFileChooserButton(label: label, value: value ?? RDLocalization.string("localizable.nova.nonconformity.filter.all", table: .localizable, fallback: "Tümü"), isOpen: openFilter == key,
             identifier: "nonconformity.filter.\(key)") { openFilter = openFilter == key ? nil : key }
     }
     private func filterSelection(_ key: String) -> String? {
@@ -125,11 +128,11 @@ struct NovaNonconformityListScreen: View {
         }
     }
     private func filterOptions(_ key: String) -> [NovaFileChooserOption] {
-        let all = [NovaFileChooserOption(id: nil, title: "Tümü")]
+        let all = [NovaFileChooserOption(id: nil, title: RDLocalization.string("localizable.nova.nonconformity.filter.all", table: .localizable, fallback: "Tümü"))]
         switch key {
         case "company": return all + companies.map { .init(id: $0.id.uuidString, title: $0.name) }
         case "state":
-            return all + [.init(id: "overdue", title: "Termini geçen", count: overdueCount)] +
+            return all + [.init(id: "overdue", title: RDLocalization.string("localizable.nova.nonconformity.filter.overdue", table: .localizable, fallback: "Termini geçen"), count: overdueCount)] +
                 [NovaNonconformityState.draft, .open, .assigned, .in_progress, .pending_verification, .closed, .reopened, .cancelled].map { .init(id: $0.rawValue, title: NovaNonconformityWords.state($0.rawValue)) }
         default: return all + NovaNonconformityRecordKind.allCases.map { .init(id: $0.rawValue, title: NovaNonconformityWords.recordKind($0)) }
         }
@@ -170,8 +173,10 @@ struct NovaNonconformityListScreen: View {
                 : RDLocalization.string("localizable.nova.nonconformity.empty.filtered", table: .localizable,
                     fallback: "Bu filtrelerle eşleşen kayıt yok"),
                 message: filter.isEmpty
-                    ? "Hızlıca uygunsuzluk ekleyebilir, düzeltme sürecini ve terminleri dijital ortamda takip edebilirsiniz."
-                    : "Arama veya filtreleri değiştirerek diğer uygunsuzluk kayıtlarını görüntüleyebilirsiniz.")
+                    ? RDLocalization.string("localizable.nova.nonconformity.empty.detail", table: .localizable,
+                        fallback: "Hızlıca uygunsuzluk ekleyebilir, düzeltme sürecini ve terminleri dijital ortamda takip edebilirsiniz.")
+                    : RDLocalization.string("localizable.nova.nonconformity.empty.filtered.detail", table: .localizable,
+                        fallback: "Arama veya filtreleri değiştirerek diğer uygunsuzluk kayıtlarını görüntüleyebilirsiniz."))
         } else {
             ForEach(visible) { entry in card(entry) }
         }

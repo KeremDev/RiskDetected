@@ -1,0 +1,5 @@
+iOS: Debug / generic iOS Simulator / CODE_SIGNING_ALLOWED=NO: BUILD SUCCEEDED
+Android: :core:data:compileDebugKotlin :core:data:testDebugUnitTest, JDK 17: BUILD SUCCESSFUL
+New Android gateway tests: {"tests": 4, "failures": 0, "errors": 0, "skipped": 0}
+Canonical bridge: PASS
+Legacy pilot operational module regression: PASS

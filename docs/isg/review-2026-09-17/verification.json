@@ -1,0 +1,44 @@
+{
+  "date": "2026-09-17",
+  "base_commit": "6eebab8946c627f42d13415cff1b8dc5007cc1ce",
+  "release_ready": false,
+  "production_modified": false,
+  "scope": "local undeployed candidates, synthetic PostgreSQL and client tests",
+  "tests": {
+    "osgb": {
+      "tests": 99,
+      "pass": 99,
+      "fail": 0
+    },
+    "foundation": {
+      "tests": 755,
+      "pass": 755,
+      "fail": 0
+    },
+    "design": {
+      "tests": 194,
+      "pass": 194,
+      "fail": 0
+    }
+  },
+  "android_gateway": {
+    "tests": 9,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "ios_simulator_build": "passed",
+  "android_core_data_build_and_tests": "passed",
+  "legacy_pilot_regression": "passed",
+  "canonical_bridge": "passed",
+  "review_regression_groups": 10,
+  "migration_count": 24,
+  "candidate_manifest_sha256": "19e389e54a6ce38b84544143f36550537daac0eebdb784c51fffce370c7b3d9f",
+  "limitations": [
+    "No production-like complete schema upgrade or actual auth/RLS end-to-end acceptance",
+    "No physical device E2E",
+    "No live provider, store sandbox, restore or load acceptance",
+    "iOS workspace/company/member/assignment and D1-D9 primary operational routes are integrated; advanced domain parity, Android OSGB UI, real provider/export renderer and complete handover product remain incomplete",
+    "Admin frontend intentionally deferred until the user supplies the UI kit"
+  ]
+}

@@ -1,0 +1,11 @@
+NOTICE:  ok review populated legacy PPE upgrade and personal employee/PPE edits after mapping
+NOTICE:  ok review workspace-private file excluded from company search
+NOTICE:  ok review member-private change events hidden from non-recipient owner
+NOTICE:  ok review disabled source domain excluded from global search
+NOTICE:  ok review old-client workplace, equipment, annual plan and nested item writes
+NOTICE:  ok review archive cancels future and ends finite assignments of a suspended member
+NOTICE:  ok review same-name personal company creation remains compatible
+NOTICE:  ok review expired-owner scope backfill preserves timestamps and completed replay
+NOTICE:  ok review canonical sync preserves the actual updating admin
+NOTICE:  ok review legacy personal company deletion retains an archived mirror without stale link
+PASS: undeployed OSGB populated legacy and privacy regression chain in one disposable PostgreSQL

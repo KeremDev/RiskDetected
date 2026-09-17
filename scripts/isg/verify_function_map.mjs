@@ -20,6 +20,8 @@ const runners = {
   'node-notification-repository': 'scripts/isg/notification_repository.test.mjs',
   'node-notification-journal': 'scripts/isg/notification_journal.test.mjs',
   'node-file-inspector': 'scripts/isg/file_format_inspector.test.mjs',
+  'node-workspace-context': 'scripts/isg/osgb_workspace_context.test.mjs',
+  'node-workspace-api': 'scripts/isg/osgb_workspace_api.test.mjs',
 };
 const digest = value => createHash('sha256').update(value).digest('hex');
 export function runtimeFiles(root = ROOT) {

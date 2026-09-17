@@ -110,7 +110,8 @@ struct NovaAnalysisReportsScreen: View {
         } else if visible.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.analysis.reports.empty", table: .localizable,
                 fallback: "Henüz analizden rapor oluşturmadınız."),
-                message: "Bir analizin raporunu oluşturarak PDF ve Excel çıktılarını denetimlerde hızlıca bulabilir, firma bazında saklayabilirsiniz.")
+                message: RDLocalization.string("localizable.nova.analysis.reports.empty.detail", table: .localizable,
+                    fallback: "Bir analizin raporunu oluşturarak PDF ve Excel çıktılarını denetimlerde hızlıca bulabilir, firma bazında saklayabilirsiniz."))
         } else {
             ForEach(visible) { row in card(row) }
         }

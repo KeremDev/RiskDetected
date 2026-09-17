@@ -1,0 +1,22 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {ROOT} from './lib.mjs';
+const sql=readFileSync(`${ROOT}/supabase/pilot-release/candidates/20260917093000_osgb_company_assignments.sql`,'utf8');
+test('OSGB companies do not reinterpret the legacy company owner column',()=>{
+  assert.match(sql,/CREATE TABLE private_isg\.workspace_companies/);
+  assert.match(sql,/legacy_company_id uuid UNIQUE/);
+  assert.match(sql,/CREATE TABLE private_isg\.company_assignments/);
+  assert.match(sql,/CREATE FUNCTION private_isg\.workspace_assignment_list/);
+  assert.match(sql,/CREATE FUNCTION public\.isg_workspace_assignment_list_v1/);
+  assert.match(sql,/workspace_require_member\(p_workspace,ARRAY\['owner','admin'\],false\)/);
+  assert.match(sql,/p_status NOT IN \('all','current','ended','future'\)/);
+  assert.match(sql,/'membership_status',page\.membership_status/);
+  assert.match(sql,/company_assignment_json\(assignment\)\|\|jsonb_build_object\([\s\S]*'membership_status',target\.status/);
+  assert.match(sql,/PRACTICING_MEMBERSHIP_REQUIRED/);
+  assert.match(sql,/ASSIGNMENT_REQUIRED/);
+  assert.match(sql,/ASSIGNMENT_OVERLAP/);
+  assert.match(sql,/workspace_company_active_name_idx/);
+  assert.doesNotMatch(sql,/ALTER TABLE public\.companies/);
+  assert.doesNotMatch(sql,/UPDATE public\.companies/);
+  assert.doesNotMatch(sql,/INSERT INTO public\.companies/);
+  assert.doesNotMatch(sql,/GRANT .* ON private_isg\./i);
+  assert.match(sql,/REVOKE ALL ON FUNCTION[\s\S]*public\.isg_workspace_assignment_list_v1/);
+});

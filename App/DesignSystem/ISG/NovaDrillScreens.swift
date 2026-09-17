@@ -130,7 +130,13 @@ struct NovaDrillScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
-                    NovaHelpHint(text: "Firmanın tatbikat kayıtlarını ve gerçekleşme sonuçlarını inceleyin.")
+                    NovaHelpHint(text: [
+                        RDLocalization.string("localizable.nova.drill.page.hint", table: .localizable,
+                            fallback: "Firmanın tatbikat kayıtlarını ve gerçekleşme sonuçlarını inceleyin."),
+                        NovaDrillWords.planningIsNotPerforming,
+                        RDLocalization.string("localizable.nova.drill.empty.noplan", table: .localizable,
+                            fallback: "Önce bir acil durum planı yayımlayın; tatbikat bir plan sürümünü prova eder.")
+                    ].joined(separator: " "))
                     if let board { counters(board) }
                     filters
                     if loading && board == nil {

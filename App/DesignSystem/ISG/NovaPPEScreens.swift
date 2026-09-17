@@ -106,6 +106,7 @@ struct NovaPPEScreen: View {
     var canWrite: Bool = true
     var initialCompany: UUID?
     var headingOverride: String?
+    var startInAddMode = false
     var management: ((UUID, UUID) -> AnyView)?
     @State private var pendingCreate = false
     @State private var draftCompany: UUID?
@@ -134,6 +135,7 @@ struct NovaPPEScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
+                    NovaHelpHint(text: NovaPPEWords.signedCopyNote)
                     if let board { counters(board) }
                     filters
                     if loading && board == nil {
@@ -151,7 +153,10 @@ struct NovaPPEScreen: View {
                 .padding(.bottom, 24 + novaTabBarInset)
             }
         }
-        .task { await load(reset: true) }
+        .task {
+            await load(reset: true)
+            if startInAddMode && query.company != nil { startCreate() }
+        }
         .novaPopup(item: $detail) { row in
             NovaPPEDetailSheet(handover: row, canWrite: canWrite,
                 onReturn: {

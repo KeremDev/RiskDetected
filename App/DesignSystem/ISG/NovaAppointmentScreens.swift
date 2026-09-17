@@ -140,6 +140,8 @@ struct NovaAppointmentScreen: View {
                 VStack(alignment: .leading, spacing: 14) {
                     header
                     NovaHelpHint(text: "Firmayı ve personeli seçerek görevlendirme kaydı oluşturun; belgesini aynı kayda ekleyin.")
+                    NovaHelpHint(text: NovaAppointmentWords.noQualificationNote)
+                    NovaHelpHint(text: NovaAppointmentWords.noRequiredCountNote)
                     if let board { counters(board) }
                     filters
                     if loading && board == nil {

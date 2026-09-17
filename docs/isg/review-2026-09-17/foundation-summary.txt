@@ -1,0 +1,17 @@
+✖ the team editor offers the roster but never auto-submits a name (15.834167ms)
+✖ the bell shows unread without inventing it (1.159375ms)
+✖ every NOVA localization key resolves in a catalog with tr and en (60.316375ms)
+✖ no shipped NOVA copy is left as a raw literal (28.135959ms)
+ℹ tests 752
+ℹ suites 0
+ℹ pass 748
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6519.042667
+✖ failing tests:
+✖ the team editor offers the roster but never auto-submits a name (15.834167ms)
+✖ the bell shows unread without inventing it (1.159375ms)
+✖ every NOVA localization key resolves in a catalog with tr and en (60.316375ms)
+✖ no shipped NOVA copy is left as a raw literal (28.135959ms)

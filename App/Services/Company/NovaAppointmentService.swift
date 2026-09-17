@@ -162,7 +162,8 @@ import Foundation
         if NovaDayField.date(draft.endsBefore) != nil { payload["ends_before"] = .string(draft.endsBefore) }
         let note = draft.basisNote.trimmingCharacters(in: .whitespacesAndNewlines)
         if !note.isEmpty { payload["basis_note"] = .string(note) }
-        if let asset = draft.assetID { payload["asset_id"] = .id(asset) }
+        let location = draft.letterLocation.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !location.isEmpty { payload["letter_location"] = .string(location) }
         return try await mutate(identity, company: company, action: "record_appointment", payload: payload)
     }
 

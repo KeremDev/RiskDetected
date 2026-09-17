@@ -143,7 +143,8 @@ struct NovaDocumentTrackingScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 11) {
                     header
-                    NovaHelpHint(text: "Firma evraklarının güncel, yaklaşan ve süresi geçmiş kayıtlarını inceleyin.")
+                    NovaHelpHint(text: RDLocalization.string("localizable.nova.document.page.hint", table: .localizable,
+                        fallback: "Firma evraklarının güncel, yaklaşan ve süresi geçmiş kayıtlarını inceleyin."))
                     if company == nil { picker } else { tracker }
                 }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
             }
@@ -372,10 +373,16 @@ struct NovaDocumentTrackingScreen: View {
             }
         } else if board?.rows.isEmpty ?? true {
             VStack(alignment: .leading, spacing: 10) {
-                NovaEmptyState(title: trackedHere == 0 ? "Henüz takip edilen evrak yok" : "Bu filtreye uyan kayıt yok",
+                NovaEmptyState(title: trackedHere == 0
+                    ? RDLocalization.string("localizable.nova.document.empty.title", table: .localizable,
+                        fallback: "Henüz takip edilen evrak yok")
+                    : RDLocalization.string("localizable.nova.document.empty.filtered.title", table: .localizable,
+                        fallback: "Bu filtreye uyan kayıt yok"),
                     message: trackedHere == 0
-                        ? "Modüllere eklediğiniz süreli belgelerin güncel, yaklaşan ve süresi geçen durumlarını burada izleyebilirsiniz."
-                        : "Filtreyi değiştirerek diğer evrak takip kayıtlarını görüntüleyebilirsiniz.")
+                        ? RDLocalization.string("localizable.nova.document.empty.detail", table: .localizable,
+                            fallback: "Modüllere eklediğiniz süreli belgelerin güncel, yaklaşan ve süresi geçen durumlarını burada izleyebilirsiniz.")
+                        : RDLocalization.string("localizable.nova.document.empty.filtered.detail", table: .localizable,
+                            fallback: "Filtreyi değiştirerek diğer evrak takip kayıtlarını görüntüleyebilirsiniz."))
                 if canWrite && trackedHere == 0 {
                     NovaButton(label: RDLocalization.string("localizable.nova.document.add.title", table: .localizable,
                         fallback: "Takibe evrak ekle"), symbol: "plus") { adding = true }

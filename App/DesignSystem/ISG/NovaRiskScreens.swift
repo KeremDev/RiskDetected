@@ -167,6 +167,7 @@ struct NovaRiskScreen: View {
                     VStack(alignment: .leading, spacing: 14) {
                         header
                         NovaHelpHint(text: "Firmanın risk analizini, kapsamını ve dosyasını kaydedin; güncel sürümünü takip edin.")
+                        NovaHelpHint(text: NovaRiskWords.periodAttribution)
                         if let board { counters(board) }
                         filters
                         if loading && board == nil {

@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "status": "local_candidate_not_deployed",
+  "base_commit": "6eebab8946c627f42d13415cff1b8dc5007cc1ce",
+  "generated_for": "2026-09-17",
+  "safety": {
+    "workspace_rollout_default": "off",
+    "domain_rollout_default": "off",
+    "production_target": false
+  },
+  "candidate_count": 24,
+  "candidates": [
+    {
+      "order": 1,
+      "path": "supabase/pilot-release/candidates/20260917090000_osgb_workspace_foundation.sql",
+      "bytes": 41318,
+      "sha256": "98033ecc4919af727ca9e58401e37faaf98f89d2e623b9dd81bef48b5d09bbf9"
+    },
+    {
+      "order": 2,
+      "path": "supabase/pilot-release/candidates/20260917091500_osgb_personal_backfill.sql",
+      "bytes": 5106,
+      "sha256": "192751c8605327e8dac6bb16ac3b877ca5559c327e5d071c7135fbff66baf450"
+    },
+    {
+      "order": 3,
+      "path": "supabase/pilot-release/candidates/20260917093000_osgb_company_assignments.sql",
+      "bytes": 21796,
+      "sha256": "c52d2632207312ff7252afd039d019b2cbed9b63fb0e9a8da2791910c3298863"
+    },
+    {
+      "order": 4,
+      "path": "supabase/pilot-release/candidates/20260917100000_osgb_seat_entitlements.sql",
+      "bytes": 8712,
+      "sha256": "99071702663aa0c3762e48cde81bc85e301c4ce13e0ba246170f7e94542c856b"
+    },
+    {
+      "order": 5,
+      "path": "supabase/pilot-release/candidates/20260917103000_osgb_wallet_usage_storage.sql",
+      "bytes": 20815,
+      "sha256": "f5ab71301b9143a4c7c9a745572395b0a00d515bc6718eb0bdc9d5822a01b00d"
+    },
+    {
+      "order": 6,
+      "path": "supabase/pilot-release/candidates/20260917110000_osgb_handover_memory.sql",
+      "bytes": 32043,
+      "sha256": "08419fe42085299adf42e59daebe6cf64d401b599835172c79ae5168f6aca0e7"
+    },
+    {
+      "order": 7,
+      "path": "supabase/pilot-release/candidates/20260917113000_osgb_provider_billing.sql",
+      "bytes": 22592,
+      "sha256": "42d192c79e2f0fd0b751318c8049a8bd3fe1a820cdbbaee00256bc7af46b8564"
+    },
+    {
+      "order": 8,
+      "path": "supabase/pilot-release/candidates/20260917120000_osgb_admin_extension.sql",
+      "bytes": 15266,
+      "sha256": "7ec10d7146694322153629cba9d6b851598ee2898302b09da33ea3c7c1a99d8c"
+    },
+    {
+      "order": 9,
+      "path": "supabase/pilot-release/candidates/20260917123000_osgb_ai_jobs.sql",
+      "bytes": 17131,
+      "sha256": "5357e3f74ceb31ec67b4fa6d21d262f35e4fbcd613668c1503edde33da3345ea"
+    },
+    {
+      "order": 10,
+      "path": "supabase/pilot-release/candidates/20260917130000_osgb_asset_transport.sql",
+      "bytes": 28176,
+      "sha256": "f794b9a841cb78b3a780b802b94e848d6c394f91c5f3ba56d026eafd51d2cca2"
+    },
+    {
+      "order": 11,
+      "path": "supabase/pilot-release/candidates/20260917133000_osgb_metrics.sql",
+      "bytes": 12725,
+      "sha256": "b4a6126d139b649600625b9d1c1e8dace3d8644fba83d796878d7eb0d9bcc746"
+    },
+    {
+      "order": 12,
+      "path": "supabase/pilot-release/candidates/20260917134500_osgb_workspace_operations.sql",
+      "bytes": 19395,
+      "sha256": "65927dbca62268598f54e92aa7f458b2a9b819a74641d48e437d5d39fa829072"
+    },
+    {
+      "order": 13,
+      "path": "supabase/pilot-release/candidates/20260917140000_osgb_purchase_intents.sql",
+      "bytes": 12846,
+      "sha256": "5b071489ee8241cf25df30212b26b986ea4b028a6f55a0156853614237927c00"
+    },
+    {
+      "order": 14,
+      "path": "supabase/pilot-release/candidates/20260917141500_osgb_member_quotas.sql",
+      "bytes": 10176,
+      "sha256": "38b9f28b806886147076d83a7edf7ef1dc2e664c2ce41a8440f91c8449c36d68"
+    },
+    {
+      "order": 15,
+      "path": "supabase/pilot-release/candidates/20260917143000_osgb_company_canonical_bridge.sql",
+      "bytes": 18729,
+      "sha256": "bedbe73c8d06770cc29e7fd9f9cfd01d0f121d6c75d35e9d95c2706295e69486"
+    },
+    {
+      "order": 16,
+      "path": "supabase/pilot-release/candidates/20260917144500_osgb_personnel_domain.sql",
+      "bytes": 26964,
+      "sha256": "df431cf760d98af5e7066170a0dc6344e3fb3de210b9be8a5109f6744b57dfa4"
+    },
+    {
+      "order": 17,
+      "path": "supabase/pilot-release/candidates/20260917150000_osgb_training_domain.sql",
+      "bytes": 26516,
+      "sha256": "568289049c0bdaba11b8ef61dc3ed24b99a57fa7ddefaff1065fc7a4aac7ee1e"
+    },
+    {
+      "order": 18,
+      "path": "supabase/pilot-release/candidates/20260917151500_osgb_risk_nonconformity_domain.sql",
+      "bytes": 51178,
+      "sha256": "33a630168bd371497d0f343b1ffadaaf0ee325c1b3c97159d4355ffdc65b6c00"
+    },
+    {
+      "order": 19,
+      "path": "supabase/pilot-release/candidates/20260917153000_osgb_emergency_ppe_domain.sql",
+      "bytes": 36058,
+      "sha256": "1323a72d5f07c2cc550fa3bbe194a3b3b1660dd15bb5f089299b36831476fc38"
+    },
+    {
+      "order": 20,
+      "path": "supabase/pilot-release/candidates/20260917154500_osgb_equipment_domain.sql",
+      "bytes": 33299,
+      "sha256": "923bee975be5463efaf1ab0e895af705700dd78a613ad39c631610340731ff7a"
+    },
+    {
+      "order": 21,
+      "path": "supabase/pilot-release/candidates/20260917160000_osgb_operations_domain.sql",
+      "bytes": 43716,
+      "sha256": "85df66ecdaa0d0f70f2b359283e8e8a29997591929665a595cf2adc8a59f20a1"
+    },
+    {
+      "order": 22,
+      "path": "supabase/pilot-release/candidates/20260917161500_osgb_file_domain.sql",
+      "bytes": 37251,
+      "sha256": "00cbfbf7e9fa1a9635862154906747a5643ae7ed6f358c53d3491cf1e0db21e8"
+    },
+    {
+      "order": 23,
+      "path": "supabase/pilot-release/candidates/20260917163000_osgb_analysis_export_domain.sql",
+      "bytes": 48005,
+      "sha256": "7d64ba6dd7f09f067e894538d1bb59ee8cade80ba26f3107c7e87eda4b6a620d"
+    },
+    {
+      "order": 24,
+      "path": "supabase/pilot-release/candidates/20260917164500_osgb_tracking_notification_domain.sql",
+      "bytes": 33697,
+      "sha256": "78e4ad2e071a7410c45fe58879512759817df452ba4595715f8d2fe38be32aca"
+    }
+  ]
+}

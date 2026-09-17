@@ -33,15 +33,19 @@ struct NovaCompanyLiveEditor: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                NovaText(text: "Firma Bilgilerini Güncelle", style: .sectionTitle)
+                NovaText(text: RDLocalization.string("localizable.nova.company.editor.title", table: .localizable,
+                    fallback: "Firma Bilgilerini Güncelle"), style: .sectionTitle)
                 NovaCard(padding: 14) {
                     VStack(spacing: 14) {
-                        field("Firma adı", text: $draft.name, symbol: "building.2")
-                        Picker("Tehlike sınıfı", selection: $draft.hazardClass) {
+                        field(RDLocalization.string("localizable.company.picker.sheet.firma.adi.32866b14", table: .localizable,
+                            fallback: "Firma adı"), text: $draft.name, symbol: "building.2")
+                        Picker(RDLocalization.string("localizable.nova.visual.6", table: .localizable,
+                            fallback: "Tehlike sınıfı"), selection: $draft.hazardClass) {
                             ForEach(CompanyHazardClass.allCases) { value in Text(value.title).tag(value) }
                         }.font(NovaFont.font(.body))
                         field("Adres", text: $draft.address, symbol: "mappin")
-                        field("İlgili kişi", text: $draft.contactPerson, symbol: "person")
+                        field(RDLocalization.string("localizable.company.picker.sheet.ilgili.kisi.c54dd4c6", table: .localizable,
+                            fallback: "İlgili kişi"), text: $draft.contactPerson, symbol: "person")
                         field("Departman / ekip", text: $draft.department, symbol: "person.3")
                     }
                 }

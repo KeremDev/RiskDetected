@@ -239,6 +239,7 @@ struct NovaAnalysisTag: View {
 /// where a real record exists behind the row.
 struct NovaAnalysisItemBar: View {
     let canEdit: Bool
+    var canReact = true
     let reaction: NovaAnalysisReaction
     let onEdit: () -> Void
     let onDelete: () -> Void
@@ -255,10 +256,12 @@ struct NovaAnalysisItemBar: View {
                 icon("trash", RDLocalization.string("localizable.nova.analysis.item.delete", table: .localizable, fallback: "Bulguyu sil"),
                      id: "delete", isOn: false, action: onDelete)
             }
-            icon("hand.thumbsup", RDLocalization.string("localizable.nova.analysis.item.like", table: .localizable, fallback: "Faydalı"),
-                 id: "like", isOn: reaction == .like) { onReact(reaction == .like ? .none : .like) }
-            icon("hand.thumbsdown", RDLocalization.string("localizable.nova.analysis.item.dislike", table: .localizable, fallback: "Faydasız"),
-                 id: "dislike", isOn: reaction == .dislike) { onReact(reaction == .dislike ? .none : .dislike) }
+            if canReact {
+                icon("hand.thumbsup", RDLocalization.string("localizable.nova.analysis.item.like", table: .localizable, fallback: "Faydalı"),
+                     id: "like", isOn: reaction == .like) { onReact(reaction == .like ? .none : .like) }
+                icon("hand.thumbsdown", RDLocalization.string("localizable.nova.analysis.item.dislike", table: .localizable, fallback: "Faydasız"),
+                     id: "dislike", isOn: reaction == .dislike) { onReact(reaction == .dislike ? .none : .dislike) }
+            }
             Spacer(minLength: 0)
             Button(action: onOpen) {
                 HStack(spacing: 4) {
@@ -293,6 +296,7 @@ struct NovaAnalysisFindingCard: View {
     let isSelected: Bool
     var isSelectable = true
     var canEdit = true
+    var canReact = true
     let onSelect: () -> Void
     let onOpen: () -> Void
     let onEdit: () -> Void
@@ -310,7 +314,7 @@ struct NovaAnalysisFindingCard: View {
                 if !item.body.isEmpty { NovaText(text: item.body, style: .metaQuiet).lineLimit(3) }
             }.padding(13).frame(maxWidth: .infinity, alignment: .leading)
             Rectangle().fill(NovaColorToken.hairline.color(in: scheme)).frame(height: 1)
-            NovaAnalysisItemBar(canEdit: canEdit, reaction: item.reaction, onEdit: onEdit, onDelete: onDelete,
+            NovaAnalysisItemBar(canEdit: canEdit, canReact: canReact, reaction: item.reaction, onEdit: onEdit, onDelete: onDelete,
                 onReact: onReact, onOpen: onOpen, identifier: identifier)
         }
         .background(NovaColorToken.surface.color(in: scheme))
@@ -357,6 +361,7 @@ struct NovaAnalysisAdviceCard: View {
     let kind: NovaAnalysisSectionKind
     let isSelected: Bool
     var isSelectable = true
+    var canReact = true
     let onSelect: () -> Void
     let onOpen: () -> Void
     let onReact: (NovaAnalysisReaction) -> Void
@@ -396,7 +401,7 @@ struct NovaAnalysisAdviceCard: View {
                 }
             }.padding(13).frame(maxWidth: .infinity, alignment: .leading)
             Rectangle().fill(NovaColorToken.hairline.color(in: scheme)).frame(height: 1)
-            NovaAnalysisItemBar(canEdit: false, reaction: item.reaction, onEdit: {}, onDelete: {},
+            NovaAnalysisItemBar(canEdit: false, canReact: canReact, reaction: item.reaction, onEdit: {}, onDelete: {},
                 onReact: onReact, onOpen: onOpen, identifier: identifier)
         }
         .background(NovaColorToken.surface.color(in: scheme))

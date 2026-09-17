@@ -125,7 +125,8 @@ struct NovaShellTopBar: View {
     var body: some View {
         VStack(spacing: 8) {
         HStack(spacing: 10) {
-            icon("line.3.horizontal", label: "Menüyü aç", id: "nova.menu") { send(.open(.drawer)) }
+            icon("line.3.horizontal", label: RDLocalization.string("localizable.nova.shell.open.menu", table: .localizable,
+                fallback: "Menüyü aç"), id: "nova.menu") { send(.open(.drawer)) }
             if typeSize.isAccessibilitySize { Spacer() } else { brand }
             icon("bell", label: hasUnread ? RDLocalization.string("localizable.nova.shell.notifications.with.new", table: .localizable, fallback: "Bildirimler, yeni bildirim var") : RDLocalization.string("localizable.nova.shell.notifications", table: .localizable, fallback: "Bildirimler"), id: "nova.notifications") {
                 send(.open(.notifications))
@@ -609,8 +610,9 @@ struct NovaShellPanel: View {
             Button {
                 // Opening a notice is reading it.
                 onReadNotice?(notice.id)
-                if let onOpenNotice { send(.dismiss); onOpenNotice(notice.id) }
-                else { send(.navigate(notice.destination)) }
+                send(.navigate(notice.destination))
+                send(.dismiss)
+                onOpenNotice?(notice.id)
             } label: {
                 HStack(alignment: .top, spacing: 10) {
                     NovaIcon(symbol: notice.symbol, size: 19)

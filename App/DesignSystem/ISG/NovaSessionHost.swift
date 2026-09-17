@@ -7,12 +7,32 @@ struct NovaSessionIdentity: Equatable {
     let sessionID: UUID
 }
 
+/// The selected server context, reduced to the fields needed to invalidate UI work.
+/// It is a cache boundary, never an authorization decision.
+struct NovaWorkspaceSelection: Equatable {
+    let workspaceID: UUID
+    let membershipID: UUID
+    let userID: UUID
+    let kind: String
+    let permissionRevision: Int64
+    let workspaceVersion: Int64
+    let canRead: Bool
+    let canOperate: Bool
+
+    var isStructurallyValid: Bool {
+        ["personal", "osgb"].contains(kind) && permissionRevision >= 0 &&
+        permissionRevision <= 9_007_199_254_740_991 && workspaceVersion >= 0 &&
+        workspaceVersion <= 9_007_199_254_740_991
+    }
+}
+
 enum NovaHostPhase: String { case signedOut, resolving, ready, failed }
 
 struct NovaAvailabilityTicket: Equatable {
     fileprivate let id: UUID
     fileprivate let epoch: String
     fileprivate let identity: NovaSessionIdentity
+    fileprivate let workspace: NovaWorkspaceSelection?
 }
 
 /// Opaque, in-memory value. Read through the CURRENT host, not a captured host snapshot.
@@ -25,6 +45,7 @@ struct NovaScopedValue<Value> {
 /// No Auth SDK, billing inference, persistence, token parsing, company grants or network calls.
 struct NovaSessionHost {
     private(set) var identity: NovaSessionIdentity?
+    private(set) var workspace: NovaWorkspaceSelection?
     private(set) var phase: NovaHostPhase = .signedOut
     private(set) var navigation = NovaNavigationState(epoch: UUID().uuidString, available: [])
     private(set) var pending: NovaAvailabilityTicket?
@@ -36,6 +57,7 @@ struct NovaSessionHost {
     mutating func adopt(_ next: NovaSessionIdentity?) {
         guard identity != next else { return }
         identity = next
+        workspace = nil
         invalidate()
         phase = next == nil ? .signedOut : .resolving
     }
@@ -46,7 +68,20 @@ struct NovaSessionHost {
         guard let identity else { return nil }
         invalidate()
         phase = .resolving
-        let ticket = NovaAvailabilityTicket(id: UUID(), epoch: navigation.epoch, identity: identity)
+        let ticket = NovaAvailabilityTicket(id: UUID(), epoch: navigation.epoch, identity: identity, workspace: workspace)
+        pending = ticket
+        return ticket
+    }
+
+    /// A workspace change is an account-scope boundary: hide the previous workspace
+    /// immediately and require a new availability result before rendering content.
+    mutating func beginWorkspaceSwitch(to next: NovaWorkspaceSelection) -> NovaAvailabilityTicket? {
+        guard let identity, next.isStructurallyValid, next.canRead,
+              next.userID == identity.userID, workspace != next else { return nil }
+        workspace = next
+        invalidate()
+        phase = .resolving
+        let ticket = NovaAvailabilityTicket(id: UUID(), epoch: navigation.epoch, identity: identity, workspace: next)
         pending = ticket
         return ticket
     }
@@ -83,6 +118,11 @@ struct NovaSessionHost {
 
     func isCurrent(_ epoch: String) -> Bool { phase == .ready && epoch == navigation.epoch }
 
+    func isCurrent(_ epoch: String, workspaceID: UUID, permissionRevision: Int64) -> Bool {
+        isCurrent(epoch) && workspace?.workspaceID == workspaceID &&
+        workspace?.permissionRevision == permissionRevision
+    }
+
     /// Does NOT implement latest-request-wins within an epoch: feature loaders must also compare
     /// their own request ID, company scope and query before publishing a response.
     func scope<Value>(_ value: Value, from epoch: String) -> NovaScopedValue<Value>? {
@@ -96,7 +136,8 @@ struct NovaSessionHost {
     }
 
     private func matches(_ ticket: NovaAvailabilityTicket) -> Bool {
-        phase == .resolving && pending == ticket && identity == ticket.identity && navigation.epoch == ticket.epoch
+        phase == .resolving && pending == ticket && identity == ticket.identity &&
+        workspace == ticket.workspace && navigation.epoch == ticket.epoch
     }
 
     private mutating func invalidate() {

@@ -130,6 +130,7 @@ struct NovaChecklistScreen: View {
                 VStack(alignment: .leading, spacing: 14) {
                     header
                     NovaHelpHint(text: "Kontrol listesini seçin, soruları yanıtlayın ve sonucu kaydedin.")
+                    NovaHelpHint(text: NovaChecklistWords.noProductList)
                     if let board { counters(board) }
                     filters
                     if loading && board == nil {

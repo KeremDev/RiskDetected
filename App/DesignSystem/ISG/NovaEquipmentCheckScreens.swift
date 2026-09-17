@@ -329,7 +329,8 @@ struct NovaEquipmentCheckScreen: View {
     private var managementActions: some View {
         NovaCard(padding: 8) {
             HStack(spacing: 8) {
-                compactAction("Ekipman ekle", symbol: "shippingbox.badge.plus", enabled: canWrite) { adding = true }
+                compactAction(RDLocalization.string("localizable.nova.equipment.add.short", table: .localizable, fallback: "Ekipman Ekle"),
+                    symbol: "shippingbox.badge.plus", enabled: canWrite) { adding = true }
                 compactAction("Kontrol süreleri", symbol: "hourglass", enabled: canWrite) { editingPeriods = true }
             }
         }
@@ -492,8 +493,8 @@ struct NovaEquipmentCheckScreen: View {
                         ? "Periyodik kontrole giren ekipmanları ekleyerek kontrol tarihlerini ve raporlarını takip edebilirsiniz."
                         : "Arama veya filtreleri değiştirerek diğer ekipman kayıtlarını görüntüleyebilirsiniz.")
                 if canWrite && trackedHere == 0 {
-                    NovaButton(label: RDLocalization.string("localizable.nova.equipment.add.title", table: .localizable,
-                        fallback: "Ekipman ekle"), symbol: "plus") { adding = true }
+                    NovaButton(label: RDLocalization.string("localizable.nova.equipment.add.short", table: .localizable,
+                        fallback: "Ekipman Ekle"), symbol: "plus") { adding = true }
                         .accessibilityIdentifier("equipment.empty.add")
                 }
             }
@@ -680,7 +681,8 @@ struct NovaEquipmentSectionStrip: View {
             }
             HStack(spacing: 8) {
                 if let onAdd {
-                    NovaCompactActionButton(title: "Kontrol ekle", symbol: "plus", prominent: true, action: onAdd)
+                    NovaCompactActionButton(title: RDLocalization.string("localizable.nova.equipment.add.short", table: .localizable, fallback: "Ekipman Ekle"),
+                        symbol: "plus", prominent: true, action: onAdd)
                         .accessibilityIdentifier("company.section.equipment.add")
                 }
                 NovaCompactActionButton(title: "Ekipmanları yönet", symbol: "shippingbox", action: onOpen)

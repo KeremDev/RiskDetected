@@ -21,7 +21,9 @@ struct NovaPilotDocumentGate: View {
     var body: some View {
         NovaFollowupScreen(identity: identity, initialCompany: initialCompany, canWrite: canWrite, onBack: onBack, legacy: { company in
             AnyView(NovaDocumentTrackingScreen(client: client, onBack: onBack, canWrite: false,
-                initialCompany: company, initialKinds: initialKinds, headingOverride: "Önceki Evrak Kayıtları"))
+                initialCompany: company, initialKinds: initialKinds,
+                headingOverride: RDLocalization.string("localizable.nova.document.previous.title", table: .localizable,
+                    fallback: "Önceki Evrak Kayıtları")))
         })
     }
 

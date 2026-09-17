@@ -23,7 +23,7 @@
     {
       "id": "ISG.TRANSPORT.SWIFT",
       "source": "App/Services/ISG/IsgMutationContext.swift",
-      "source_sha256": "ac0662fd95a825bc99d9cc8f6ea9cfce9b2389306e75f8a077fbb71128096fb6",
+      "source_sha256": "bb1a7e352a802d7f067ca484abb08c0c703e0f0530cc30741d66b7727c5e3107",
       "symbols": [
         "IsgMutationContext.init(from:)",
         "Scope.init(from:)",
@@ -37,7 +37,7 @@
     {
       "id": "ISG.TRANSPORT.KOTLIN",
       "source": "android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/IsgMutationContext.kt",
-      "source_sha256": "901087c9f7a96fff6afe24ee5a2cb4e156a0754f58ab92a73711828a9851e9c4",
+      "source_sha256": "dc4436b20f377f01ad3207460ebeba17228e8ec6e8e80efde92d13e20ec1bd37",
       "symbols": [
         "IsgMutationContext.parse",
         "JsonObject.text",
@@ -173,6 +173,108 @@
       "harness": "scripts/isg/file_format_inspector.test.mjs",
       "harness_sha256": "a6ab2462cc0946257c628517dbb8cbc7770338f13b33570748de69b4fcb2bd7b",
       "runner": "node-file-inspector",
+      "coverage": "targeted_behavior_tests"
+    },
+    {
+      "id": "ISG.WORKSPACE.CONTEXT.TS",
+      "source": "supabase/functions/_shared/isg/workspace-context.ts",
+      "source_sha256": "fbc50fc75dea4297817707d2ad022a31d8846f18b9d5f418db560d582e4e025e",
+      "symbols": [
+        "parseIsgWorkspaceContext"
+      ],
+      "harness": "scripts/isg/osgb_workspace_context.test.mjs",
+      "harness_sha256": "c6ca32370dd21a14874dc9600420963a4a02499a3abb835362f3a1918ff3d574",
+      "runner": "node-workspace-context",
+      "coverage": "targeted_behavior_tests"
+    },
+    {
+      "id": "ISG.WORKSPACE.API.SWIFT",
+      "source": "App/Services/ISG/IsgWorkspaceAPI.swift",
+      "source_sha256": "3cda526ebe8bfcff6beac8d1a711deedb39dff909cdda94bf22ae8e9e6ba21a5",
+      "symbols": [
+        "IsgWorkspaceAPI.list",
+        "IsgWorkspaceAPI.context",
+        "IsgWorkspaceAPI.analyses",
+        "IsgWorkspaceAPI.fileAnalysisItem",
+        "IsgWorkspaceAPI.createExport",
+        "IsgWorkspaceAPI.createWorkspace",
+        "IsgWorkspaceAPI.acceptInvitation",
+        "IsgWorkspaceAPI.members",
+        "IsgWorkspaceAPI.invite",
+        "IsgWorkspaceAPI.mutateMember",
+        "IsgWorkspaceAPI.assignments",
+        "IsgWorkspaceAPI.mutateAssignment",
+        "IsgWorkspaceAPI.domain",
+        "IsgWorkspaceAPI.mutateDomain",
+        "IsgWorkspaceAPI.directory",
+        "IsgWorkspaceAPI.employees",
+        "IsgWorkspaceAPI.mutateDirectory",
+        "IsgWorkspaceAPI.mutateEmployee"
+      ],
+      "harness": "scripts/isg/osgb_workspace_api.test.mjs",
+      "harness_sha256": "45514aa920e7be989b1f49a0428eb0daa19cfa83b6ffe3ea5f7551b115325738",
+      "runner": "node-workspace-api",
+      "coverage": "targeted_behavior_tests"
+    },
+    {
+      "id": "ISG.WORKSPACE.ADAPTER.SWIFT",
+      "source": "App/Services/ISG/IsgWorkspaceLiveAdapter.swift",
+      "source_sha256": "26c6554e545cebb1525d174ba8e148c0dd255188b6a6b8a6cefcbe1c152011ef",
+      "symbols": [
+        "IsgWorkspaceAPI.live"
+      ],
+      "harness": "scripts/isg/osgb_workspace_api.test.mjs",
+      "harness_sha256": "45514aa920e7be989b1f49a0428eb0daa19cfa83b6ffe3ea5f7551b115325738",
+      "runner": "node-workspace-api",
+      "coverage": "targeted_behavior_tests"
+    },
+    {
+      "id": "ISG.WORKSPACE.STORE.SWIFT",
+      "source": "App/Services/ISG/IsgWorkspaceStore.swift",
+      "source_sha256": "000eb7438db8a973efb8a7f4066988a3d744884f9d4802c32ddc1d84fb45e720",
+      "symbols": [
+        "IsgWorkspaceStore.adopt",
+        "IsgWorkspaceStore.select",
+        "IsgWorkspaceStore.analyses",
+        "IsgWorkspaceStore.fileAnalysisItem",
+        "IsgWorkspaceStore.createExport",
+        "IsgWorkspaceStore.createWorkspace",
+        "IsgWorkspaceStore.acceptInvitation",
+        "IsgWorkspaceStore.members",
+        "IsgWorkspaceStore.invite",
+        "IsgWorkspaceStore.mutateMember",
+        "IsgWorkspaceStore.assignments",
+        "IsgWorkspaceStore.mutateAssignment",
+        "IsgWorkspaceStore.domain",
+        "IsgWorkspaceStore.mutateDomain",
+        "IsgWorkspaceStore.directory",
+        "IsgWorkspaceStore.employees",
+        "IsgWorkspaceStore.mutateDirectory",
+        "IsgWorkspaceStore.mutateEmployee"
+      ],
+      "harness": "scripts/isg/osgb_workspace_api.test.mjs",
+      "harness_sha256": "45514aa920e7be989b1f49a0428eb0daa19cfa83b6ffe3ea5f7551b115325738",
+      "runner": "node-workspace-api",
+      "coverage": "targeted_behavior_tests"
+    },
+    {
+      "id": "ISG.WORKSPACE.GATEWAY.KOTLIN",
+      "source": "android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/IsgWorkspaceGateway.kt",
+      "source_sha256": "5a13a127263bc669a9910a03bc7fe9bc64d4e78973c7c5af49297f0300caa946",
+      "symbols": [
+        "IsgWorkspaceGateway.list",
+        "IsgWorkspaceGateway.context",
+        "IsgWorkspaceGateway.assignments",
+        "IsgWorkspaceGateway.mutateAssignment",
+        "IsgWorkspaceGateway.analyses",
+        "IsgWorkspaceGateway.domain",
+        "IsgWorkspaceGateway.mutateDomain",
+        "IsgWorkspaceGateway.fileAnalysisItem",
+        "IsgWorkspaceGateway.createExport"
+      ],
+      "harness": "scripts/isg/osgb_workspace_api.test.mjs",
+      "harness_sha256": "45514aa920e7be989b1f49a0428eb0daa19cfa83b6ffe3ea5f7551b115325738",
+      "runner": "node-workspace-api",
       "coverage": "targeted_behavior_tests"
     }
   ]

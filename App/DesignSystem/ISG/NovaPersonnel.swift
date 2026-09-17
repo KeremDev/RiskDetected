@@ -17,6 +17,7 @@ struct NovaEmployeeRow: Equatable, Identifiable {
     var jobTitle: String? = nil
     let version: Int64
     let isArchived: Bool
+    var fullName: String { name }
 }
 struct NovaDepartmentRow: Equatable, Identifiable {
     let id: UUID

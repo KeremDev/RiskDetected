@@ -1,0 +1,35 @@
+✖ nothing on this side can claim a qualification (0.735292ms)
+✖ the board never counts against a requirement (4.539125ms)
+✖ the letter itself is never sent, only where it is (0.134833ms)
+✖ the product ships no list and the screens say so rather than looking empty (2.364958ms)
+✖ a company page heading reads the tracker, not a second list (0.849292ms)
+✖ performed is read from the record, never from a date (4.974167ms)
+✖ a drill with no plan says what to do rather than looking broken (0.366167ms)
+✖ the header pill says what it does, not just a noun (1.788042ms)
+✖ the company detail strip can open the add sheet directly (0.359916ms)
+✖ equipmentAdding resets on dismiss so a later plain open is not mistaken for add mode (0.864542ms)
+✖ the client never sends a signed copy flag, only where the form is (4.445125ms)
+✖ the route exists, is reachable and is wired to the real gate (0.756875ms)
+✖ a period the expert set is labelled as the expert's everywhere it shows (1.589916ms)
+ℹ tests 194
+ℹ suites 0
+ℹ pass 181
+ℹ fail 13
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2375.210875
+✖ failing tests:
+✖ nothing on this side can claim a qualification (0.735292ms)
+✖ the board never counts against a requirement (4.539125ms)
+✖ the letter itself is never sent, only where it is (0.134833ms)
+✖ the product ships no list and the screens say so rather than looking empty (2.364958ms)
+✖ a company page heading reads the tracker, not a second list (0.849292ms)
+✖ performed is read from the record, never from a date (4.974167ms)
+✖ a drill with no plan says what to do rather than looking broken (0.366167ms)
+✖ the header pill says what it does, not just a noun (1.788042ms)
+✖ the company detail strip can open the add sheet directly (0.359916ms)
+✖ equipmentAdding resets on dismiss so a later plain open is not mistaken for add mode (0.864542ms)
+✖ the client never sends a signed copy flag, only where the form is (4.445125ms)
+✖ the route exists, is reachable and is wired to the real gate (0.756875ms)
+✖ a period the expert set is labelled as the expert's everywhere it shows (1.589916ms)

@@ -155,7 +155,9 @@ struct NovaAppointmentDraft: Equatable {
     var startsOn: String = ""
     var endsBefore: String = ""
     var basisNote: String = ""
-    var assetID: UUID?
+    /// Opaque archive reference to the appointment letter. The appointment
+    /// service only records this location; it never sends or stores the file.
+    var letterLocation: String = ""
 }
 
 /// What the expert fills in to end one, or to correct the date they ended it.
@@ -218,4 +220,7 @@ enum NovaAppointmentWords {
     static let noRequiredCountNote = RDLocalization.string("localizable.nova.appointment.count.note",
         table: .localizable,
         fallback: "Ürün bir işyeri için kaç kişi gerektiğini söylemez; onaylanmış bir sayı kataloğu yok.")
+    static let letterNote = RDLocalization.string("localizable.nova.appointment.letter.note",
+        table: .localizable,
+        fallback: "Atama yazısının kendisi burada tutulmaz; yalnızca arşivdeki konumu kaydedilir.")
 }
