@@ -361,12 +361,14 @@ private struct NovaOBMarquee: View {
         Color.clear
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .overlay(alignment: .bottomLeading) {
-                HStack(spacing: 12) {
+                // `maxHeight: .infinity` on every card inside a fixed-size row
+                // makes them all as tall as the tallest one.
+                HStack(alignment: .top, spacing: 12) {
                     ForEach(Array((reviews + reviews).enumerated()), id: \.offset) { _, review in
                         card(review)
                     }
                 }
-                .fixedSize(horizontal: true, vertical: false)
+                .fixedSize(horizontal: true, vertical: true)
                 .padding(.leading, 24)
                 .offset(x: offset)
             }
@@ -406,9 +408,10 @@ private struct NovaOBMarquee: View {
                 }
             }
             .padding(.top, 2)
+            Spacer(minLength: 0)
         }
         .padding(18)
-        .frame(width: 252, alignment: .leading)
+        .frame(width: 252, height: 220, alignment: .topLeading)
         .background(NovaOB.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .shadow(color: Color(hex: 0x142832).opacity(0.08), radius: 11, y: 8)
     }

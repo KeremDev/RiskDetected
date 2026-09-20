@@ -44,7 +44,7 @@ struct NovaLoginScreen: View {
 
     private var formScreen: some View {
         ZStack {
-            ScrollView {
+            NovaOBFittedScroll {
                 VStack(spacing: 16) {
                     VStack(spacing: 14) {
                         Image("NovaOBLogo")
@@ -89,9 +89,7 @@ struct NovaLoginScreen: View {
                 .padding(.horizontal, 24)
                 .padding(.top, NovaOB.padTop(64))
                 .padding(.bottom, NovaOB.padBottom(28))
-                .frame(minHeight: UIScreen.main.bounds.height - 40, alignment: .top)
             }
-            .scrollDismissesKeyboard(.interactively)
 
             if phase == .sheet { verificationSheet }
         }

@@ -85,6 +85,23 @@ extension Color {
     }
 }
 
+/// A scroll view whose content is at least as tall as the visible area, so a
+/// `Spacer` can push a footer to the bottom without ever overflowing it off
+/// screen the way a hard-coded screen height does.
+struct NovaOBFittedScroll<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        GeometryReader { proxy in
+            ScrollView {
+                content()
+                    .frame(minHeight: proxy.size.height, alignment: .top)
+            }
+            .scrollDismissesKeyboard(.interactively)
+        }
+    }
+}
+
 // MARK: - Shared primitives
 
 /// The black pill CTA used on every marketing screen (intro, card, push, trial).

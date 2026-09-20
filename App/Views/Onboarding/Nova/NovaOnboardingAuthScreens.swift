@@ -125,7 +125,7 @@ struct NovaOBSignupScreen: View {
     }
 
     var body: some View {
-        ScrollView {
+        NovaOBFittedScroll {
             VStack(alignment: .leading, spacing: 18) {
                 HStack {
                     NovaOBBackButton { controller.toCard() }.padding(.leading, -12)
@@ -194,7 +194,6 @@ struct NovaOBSignupScreen: View {
             .padding(.horizontal, 24)
             .padding(.top, NovaOB.padTop(70))
             .padding(.bottom, NovaOB.padBottom(34))
-            .frame(minHeight: UIScreen.main.bounds.height - 40, alignment: .top)
         }
         .background(NovaOB.surface.ignoresSafeArea())
     }
@@ -281,7 +280,7 @@ struct NovaOBEmailFormScreen: View {
     private enum Field { case email, password }
 
     var body: some View {
-        ScrollView {
+        NovaOBFittedScroll {
             VStack(alignment: .leading, spacing: 18) {
                 HStack {
                     NovaOBBackButton { controller.go(.signup) }.padding(.leading, -12)
@@ -322,9 +321,7 @@ struct NovaOBEmailFormScreen: View {
             .padding(.horizontal, 24)
             .padding(.top, NovaOB.padTop(70))
             .padding(.bottom, NovaOB.padBottom(34))
-            .frame(minHeight: UIScreen.main.bounds.height - 40, alignment: .top)
         }
-        .scrollDismissesKeyboard(.interactively)
         .background(NovaOB.surface.ignoresSafeArea())
     }
 
@@ -498,7 +495,7 @@ struct NovaOBOtpScreen: View {
     @ObservedObject var controller: NovaOBController
 
     var body: some View {
-        ScrollView {
+        NovaOBFittedScroll {
             VStack(alignment: .leading, spacing: 18) {
                 HStack {
                     NovaOBBackButton { controller.go(.emailForm) }.padding(.leading, -12)
@@ -566,7 +563,6 @@ struct NovaOBOtpScreen: View {
             .padding(.horizontal, 24)
             .padding(.top, NovaOB.padTop(70))
             .padding(.bottom, NovaOB.padBottom(34))
-            .frame(minHeight: UIScreen.main.bounds.height - 40, alignment: .top)
         }
         .background(NovaOB.surface.ignoresSafeArea())
     }

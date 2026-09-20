@@ -75,6 +75,8 @@ struct NovaOBQuestion: Identifiable {
     var max: Int? = nil
     var searchable = false
     var grid = false
+    /// Columns when `grid` is on; the sector step needs a denser row.
+    var gridColumns = 2
     /// The option value that clears every other choice when picked.
     var exclusive: String? = nil
     /// The option value that reveals the free-text field.
@@ -160,7 +162,7 @@ enum NovaOBCatalogue {
                 .init(value: "hizmet", label: "Hizmet", icon: NovaOBIcon.headset),
                 .init(value: "diger", label: "Diğer", icon: NovaOBIcon.dots)
             ],
-            searchable: true, grid: true, other: "diger"
+            searchable: true, grid: true, gridColumns: 3, other: "diger"
         ),
         NovaOBQuestion(
             id: "trainings", kind: .multi,
@@ -217,7 +219,7 @@ enum NovaOBCatalogue {
         NovaOBQuestion(
             id: "assist", kind: .multi,
             title: "Hangi konularda asistanlık yapalım?",
-            desc: "Önce en çok ihtiyaç duyduğun üç alanı belirleyelim.",
+            desc: "İhtiyaç duyduğun alanları seç.",
             options: [
                 .init(value: "risk", label: "Risk Analizi", sub: "Analiz taslakları, revizyon hatırlatmaları", icon: NovaOBIcon.shield, suggestedBy: "risk"),
                 .init(value: "kontrol", label: "Kontrol Listeleri", sub: "Sahaya göre hazır listeler", icon: NovaOBIcon.clipboard, suggestedBy: "saha"),
@@ -229,7 +231,7 @@ enum NovaOBCatalogue {
                 .init(value: "mevzuat", label: "Mevzuat Takibi", sub: "Değişiklik bildirimleri", icon: NovaOBIcon.gavel, suggestedBy: "mevzuat"),
                 .init(value: "rapor", label: "Raporlama", sub: "Dönemsel rapor çıktıları", icon: NovaOBIcon.docChart, suggestedBy: "rapor")
             ],
-            max: 3, grid: true
+            grid: true
         )
     ]
 

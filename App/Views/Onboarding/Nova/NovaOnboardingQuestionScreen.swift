@@ -120,7 +120,8 @@ struct NovaOBQuestionScreen: View {
                     .offset(x: 16, y: -54)
                     .allowsHitTesting(false)
             }
-            .padding(.top, 44)
+            .padding(.top, 64)
+            .padding(.bottom, 20)
         }
     }
 
@@ -176,7 +177,13 @@ struct NovaOBChoiceWidget: View {
                     .foregroundColor(NovaOB.ink)
             }
             if !gridOptions.isEmpty {
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 6), GridItem(.flexible(), spacing: 6)], spacing: 6) {
+                LazyVGrid(
+                    columns: Array(
+                        repeating: GridItem(.flexible(), spacing: 6),
+                        count: controller.question.gridColumns
+                    ),
+                    spacing: 6
+                ) {
                     ForEach(gridOptions) { option in
                         gridCell(option)
                     }
@@ -199,17 +206,17 @@ struct NovaOBChoiceWidget: View {
         let selected = controller.isSelected(option.value)
         return Button { toggle(option) } label: {
             VStack(alignment: .leading, spacing: 3) {
-                NovaOBIconPath(path: option.icon, size: 19, color: NovaOB.ink, lineWidth: 1.6)
+                NovaOBIconPath(path: option.icon, size: 23, color: NovaOB.ink, lineWidth: 1.6)
                 Text(option.label)
-                    .font(NovaOB.font(12.5, 600))
+                    .font(NovaOB.font(14, 600))
                     .foregroundColor(NovaOB.ink)
-                    .lineSpacing(NovaOB.lineSpacing(12.5, 1.2))
+                    .lineSpacing(NovaOB.lineSpacing(14, 1.2))
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.trailing, 20)
                 if !option.sub.isEmpty {
                     Text(option.sub)
-                        .font(NovaOB.font(11))
+                        .font(NovaOB.font(12))
                         .foregroundColor(NovaOB.muted)
                         .lineSpacing(NovaOB.lineSpacing(11, 1.25))
                 }
@@ -217,9 +224,9 @@ struct NovaOBChoiceWidget: View {
                     Text("Sana uygun olabilir").font(NovaOB.font(11.5)).foregroundColor(NovaOB.ink)
                 }
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .frame(maxWidth: .infinity, minHeight: 56, alignment: .topLeading)
+            .padding(.horizontal, 11)
+            .padding(.vertical, 11)
+            .frame(maxWidth: .infinity, minHeight: 72, alignment: .topLeading)
             .background(selected ? NovaOB.fill : NovaOB.surface,
                         in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(
@@ -240,17 +247,17 @@ struct NovaOBChoiceWidget: View {
         let selected = controller.isSelected(option.value)
         return Button { toggle(option) } label: {
             HStack(spacing: 12) {
-                NovaOBIconPath(path: option.icon, size: 26, color: NovaOB.ink, lineWidth: 1.5)
-                VStack(alignment: .leading, spacing: 2) {
+                NovaOBIconPath(path: option.icon, size: 30, color: NovaOB.ink, lineWidth: 1.5)
+                VStack(alignment: .leading, spacing: 3) {
                     Text(option.label)
-                        .font(NovaOB.font(15, 600))
+                        .font(NovaOB.font(17, 600))
                         .foregroundColor(NovaOB.ink)
-                        .lineSpacing(NovaOB.lineSpacing(15, 1.25))
+                        .lineSpacing(NovaOB.lineSpacing(17, 1.25))
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                     if !option.sub.isEmpty {
                         Text(option.sub)
-                            .font(NovaOB.font(12.5))
+                            .font(NovaOB.font(13.5))
                             .foregroundColor(NovaOB.muted)
                             .lineSpacing(NovaOB.lineSpacing(12.5, 1.3))
                             .fixedSize(horizontal: false, vertical: true)
@@ -260,11 +267,11 @@ struct NovaOBChoiceWidget: View {
                     }
                 }
                 Spacer(minLength: 0)
-                mark(selected: selected, size: 22, check: 14)
+                mark(selected: selected, size: 24, check: 15)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, minHeight: 66, alignment: .leading)
             .background(selected ? NovaOB.fill : NovaOB.surface,
                         in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
@@ -360,11 +367,6 @@ struct NovaOBExperienceWidget: View {
                     if label != "10+" { Spacer(minLength: 0) }
                 }
             }
-            HStack(spacing: 10) {
-                stepChip("Azalt") { controller.stepExperience(-1) }
-                stepChip("Artır") { controller.stepExperience(1) }
-            }
-            .frame(maxWidth: .infinity)
         }
         .padding(.horizontal, 22)
         .padding(.top, 24)
@@ -446,19 +448,6 @@ struct NovaOBExperienceWidget: View {
                     .strokeBorder(controller.answers.expLess ? NovaOB.ink : NovaOB.line, lineWidth: 1.5)
             )
             .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func stepChip(_ title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(NovaOB.font(13))
-                .foregroundColor(NovaOB.ink)
-                .padding(.horizontal, 16)
-                .frame(height: 34)
-                .overlay(Capsule().strokeBorder(NovaOB.line, lineWidth: 1))
-                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
     }

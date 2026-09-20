@@ -253,18 +253,6 @@ final class NovaOBController: ObservableObject {
         answers.expLess = false
     }
 
-    func stepExperience(_ delta: Int) {
-        if answers.expLess {
-            answers.expLess = false
-            answers.exp = delta > 0 ? 0 : nil
-            return
-        }
-        let current = answers.exp ?? (delta > 0 ? -1 : 4)
-        unskip("exp")
-        answers.exp = min(3, max(0, current + delta))
-        answers.expLess = false
-    }
-
     func toggleLessThanYear() {
         unskip("exp")
         answers.expLess.toggle()
