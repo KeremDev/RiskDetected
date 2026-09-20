@@ -71,7 +71,7 @@ struct NovaSuccessOverlay: View {
             .overlay {
                 if let event = store.event {
                     ZStack {
-                        Color.black.opacity(0.30).ignoresSafeArea()
+                        Color.black.opacity(appeared ? 0.30 : 0).ignoresSafeArea()
                         NovaCard(padding: 24) {
                             VStack(spacing: 14) {
                                 HStack(spacing: 18) {
@@ -99,14 +99,28 @@ struct NovaSuccessOverlay: View {
                             }.frame(maxWidth: .infinity)
                         }.frame(maxWidth: 300).padding(24)
                             .scaleEffect(reduceMotion || appeared ? 1 : 0.9)
+                            .opacity(appeared ? 1 : 0)
                     }
                     .accessibilityElement(children: .combine).accessibilityAddTraits(.isModal)
                     .accessibilityIdentifier("nova.success")
                     .task(id: event.id) {
                         appeared = false
-                        withAnimation(reduceMotion ? nil : .spring(response: 0.35)) { appeared = true }
+                        // Saving a record is the rare, high-emotion moment this
+                        // app has, so it gets the one spring with overshoot and
+                        // the one success haptic — fired on the same frame as
+                        // the visual, before any await.
+                        withAnimation(NovaMotion.gated(NovaMotion.celebrate, reduceMotion: reduceMotion)) {
+                            appeared = true
+                        }
+                        NovaHaptics.success()
                         UIAccessibility.post(notification: .announcement, argument: event.text)
-                        do { try await Task.sleep(nanoseconds: 2_500_000_000) } catch { return }
+                        do { try await Task.sleep(nanoseconds: 2_300_000_000) } catch { return }
+                        guard store.event?.id == event.id else { return }
+                        // It used to disappear on a single frame. It leaves the
+                        // way it arrived instead, so the screen underneath does
+                        // not snap back into view.
+                        withAnimation(NovaMotion.easeOut(NovaMotion.Duration.popover)) { appeared = false }
+                        do { try await Task.sleep(nanoseconds: 200_000_000) } catch { return }
                         if store.event?.id == event.id { store.event = nil }
                     }
                 }

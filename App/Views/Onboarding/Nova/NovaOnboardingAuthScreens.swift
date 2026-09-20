@@ -24,7 +24,7 @@ struct NovaOBProviderButtons: View {
                 .background(NovaOB.ink, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(NovaPressStyle())
 
             Button(action: onGoogle) {
                 HStack(spacing: 9) {
@@ -40,7 +40,7 @@ struct NovaOBProviderButtons: View {
                 )
                 .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(NovaPressStyle())
         }
     }
 }
@@ -171,7 +171,7 @@ struct NovaOBSignupScreen: View {
                     )
                     .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NovaPressStyle())
 
                 if !controller.authError.isEmpty {
                     NovaOBErrorNote(text: controller.authError)
@@ -188,7 +188,7 @@ struct NovaOBSignupScreen: View {
                             .frame(maxWidth: .infinity)
                             .frame(height: 44)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(NovaPressStyle())
                 }
             }
             .padding(.horizontal, 24)
@@ -370,7 +370,7 @@ struct NovaOBEmailFormScreen: View {
                         .padding(.horizontal, 12)
                         .frame(height: 44)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NovaPressStyle())
                 .padding(.trailing, 8)
             }
             .novaOBField(
@@ -418,7 +418,7 @@ struct NovaOBEmailFormScreen: View {
                 .padding(.vertical, 4)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(NovaPressStyle())
         }
     }
 }
@@ -550,7 +550,7 @@ struct NovaOBOtpScreen: View {
                         .frame(height: 40)
                         .background(NovaOB.fill, in: Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(NovaPressStyle())
 
                     if controller.resendNote {
                         Text("Yeni kod gönderildi.").font(NovaOB.font(13.5)).foregroundColor(NovaOB.ink)

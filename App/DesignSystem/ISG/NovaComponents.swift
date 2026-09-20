@@ -202,7 +202,8 @@ struct NovaBackButton: View {
                 .foregroundStyle(NovaColorToken.text.color(in: scheme))
                 .frame(width: 44, height: 44)
                 .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        }.buttonStyle(.plain).disabled(!isEnabled)
+                .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }.buttonStyle(NovaPressStyle()).disabled(!isEnabled)
             .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.shell.back", table: .localizable, fallback: "Geri")))
     }
 }
@@ -325,12 +326,6 @@ struct NovaButton: View {
         .disabled(!isEnabled || isLoading)
         .accessibilityLabel(Text(verbatim: label))
         .accessibilityValue(Text(verbatim: isLoading ? loadingDescription : ""))
-    }
-}
-
-private struct NovaPressStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label.opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
 

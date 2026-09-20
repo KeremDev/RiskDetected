@@ -145,7 +145,7 @@ struct NovaShellTopBar: View {
                 NovaIcon(symbol: "person", size: 22)
                     .foregroundStyle(NovaColorToken.text.color(in: scheme))
                     .frame(width: 44, height: 44)
-            }.buttonStyle(.plain).accessibilityLabel(RDLocalization.string("localizable.nova.expert.shell.hesabim.f6d2ed00", table: .localizable, fallback: "Hesabım")).accessibilityIdentifier("nova.profile")
+            }.buttonStyle(NovaPressStyle()).accessibilityLabel(RDLocalization.string("localizable.nova.expert.shell.hesabim.f6d2ed00", table: .localizable, fallback: "Hesabım")).accessibilityIdentifier("nova.profile")
         }
         if typeSize.isAccessibilitySize { brand }
         }.padding(.horizontal, NovaDimensionToken.spaceScreenX.value).padding(.top, 8).padding(.bottom, 2)
@@ -180,7 +180,7 @@ struct NovaShellTopBar: View {
                 NovaIcon(symbol: symbol, size: 17)
                     .foregroundStyle((symbol == "bell" ? NovaColorToken.accentInk : .text).color(in: scheme))
             }.frame(width: 44, height: 44).contentShape(Rectangle())
-        }.buttonStyle(.plain).accessibilityLabel(Text(verbatim: label)).accessibilityIdentifier(id)
+        }.buttonStyle(NovaPressStyle()).accessibilityLabel(Text(verbatim: label)).accessibilityIdentifier(id)
     }
 }
 
@@ -247,7 +247,7 @@ struct NovaShellTabBar: View {
                 .frame(width: 62, height: 62)
                 .contentShape(Circle())
         }
-        .buttonStyle(NovaGlassPressStyle())
+        .buttonStyle(NovaPressStyle(scale: 0.93, pressedOpacity: 0.72))
         .accessibilityLabel("Ekle")
         .accessibilityIdentifier("nova.add")
         .id("add")
@@ -276,7 +276,7 @@ struct NovaShellTabStrip: View {
         let isSelected = selected == tab
         return Button {
             UISelectionFeedbackGenerator().selectionChanged()
-            withAnimation(reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.78)) {
+            withAnimation(NovaMotion.stopped(NovaMotion.momentum, reduceMotion: reduceMotion)) {
                 onDestination?(tab.root)
                 send(.select(tab))
             }
@@ -304,7 +304,7 @@ struct NovaShellTabStrip: View {
             .frame(width: isSelected ? 116 : 45, height: 48)
             .contentShape(Capsule())
             .opacity(canOpen(tab.root) ? 1 : 0.3)
-        }.buttonStyle(NovaGlassPressStyle()).disabled(!canOpen(tab.root))
+        }.buttonStyle(NovaPressStyle(scale: 0.93, pressedOpacity: 0.72)).disabled(!canOpen(tab.root))
             .accessibilityLabel(Text(verbatim: tab.title))
             .accessibilityAddTraits(isSelected ? .isSelected : [])
             .accessibilityIdentifier("nova.tab.\(tab.rawValue)").id(tab.rawValue)
@@ -317,15 +317,6 @@ struct NovaShellTabStrip: View {
         case .findings: return "checklist"
         case .profile: return "person"
         }
-    }
-}
-
-private struct NovaGlassPressStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.93 : 1)
-            .opacity(configuration.isPressed ? 0.72 : 1)
-            .animation(.spring(response: 0.2, dampingFraction: 0.72), value: configuration.isPressed)
     }
 }
 
@@ -469,7 +460,7 @@ struct NovaShellPanel: View {
                     NovaText(text: RDLocalization.string("localizable.nova.expert.shell.cikis.yap.6a3d02af", table: .localizable, fallback: "Çıkış yap"), style: .button, color: NovaColorToken.textSecondary.color(in: scheme))
                 }.frame(maxWidth: .infinity, minHeight: 46)
                     .background(NovaColorToken.surfaceMuted.color(in: scheme), in: Capsule())
-            }.buttonStyle(.plain).disabled(onLogout == nil).accessibilityIdentifier("nova.logout")
+            }.buttonStyle(NovaRowPressStyle()).disabled(onLogout == nil).accessibilityIdentifier("nova.logout")
                 .padding(.top, 10).padding(.bottom, 14)
         }.padding(.horizontal, 20)
     }
@@ -519,7 +510,7 @@ struct NovaShellPanel: View {
             .foregroundStyle(NovaColorToken.text.color(in: scheme))
             .padding(.horizontal, 8).padding(.vertical, 6)
             .frame(minHeight: 44).contentShape(Rectangle())
-        }.buttonStyle(.plain).disabled(action == nil).opacity(action == nil ? 0.4 : 1)
+        }.buttonStyle(NovaRowPressStyle()).disabled(action == nil).opacity(action == nil ? 0.4 : 1)
             .accessibilityIdentifier(identifier)
     }
 
@@ -527,7 +518,7 @@ struct NovaShellPanel: View {
         let expanded = expandedDrawerGroup == group.id
         return VStack(spacing: 0) {
             Button {
-                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.18)) {
+                withAnimation(NovaMotion.gated(NovaMotion.easeOut(NovaMotion.Duration.dropdown), reduceMotion: reduceMotion)) {
                     expandedDrawerGroup = expanded ? nil : group.id
                 }
             } label: {
@@ -544,7 +535,7 @@ struct NovaShellPanel: View {
                 .padding(.horizontal, 8).padding(.vertical, 6)
                 .frame(minHeight: 46).contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("nova.drawer.group.\(group.id)")
             .accessibilityValue(expanded ? RDLocalization.string("localizable.nova.drawer.expanded", table: .localizable, fallback: "Açık") : RDLocalization.string("localizable.nova.drawer.collapsed", table: .localizable, fallback: "Kapalı"))
             if expanded {
@@ -553,6 +544,12 @@ struct NovaShellPanel: View {
                         drawerDestination(destination, nested: true)
                     }
                 }.padding(.bottom, 6)
+                // The chevron was already turning, but the rows themselves
+                // appeared and vanished on a single frame. They now grow out of
+                // the group header they belong to, and collapse back into it.
+                .transition(reduceMotion
+                    ? .opacity
+                    : .scale(scale: 0.98, anchor: .top).combined(with: .opacity))
             }
         }
     }
@@ -581,7 +578,7 @@ struct NovaShellPanel: View {
             .foregroundStyle(NovaColorToken.text.color(in: scheme))
             .padding(.leading, nested ? 24 : 8).padding(.trailing, 8).padding(.vertical, 6)
             .frame(minHeight: 44).contentShape(Rectangle())
-        }.buttonStyle(.plain).disabled(!enabled)
+        }.buttonStyle(NovaRowPressStyle()).disabled(!enabled)
             .opacity(enabled ? 1 : 0.4)
             .accessibilityIdentifier("nova.destination.\(destination.rawValue)")
             .accessibilityAddTraits(selected == destination ? .isSelected : [])
@@ -623,7 +620,7 @@ struct NovaShellPanel: View {
                             .foregroundStyle(NovaColorToken.borderStrong.color(in: scheme))
                     }.padding(.horizontal, 14).padding(.vertical, 13).frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
                         .novaControlBackground(cornerRadius: 20)
-                }.buttonStyle(.plain).disabled(!enabled).opacity(enabled ? 1 : 0.4)
+                }.buttonStyle(NovaRowPressStyle()).disabled(!enabled).opacity(enabled ? 1 : 0.4)
                     .accessibilityIdentifier("nova.destination.\(destination.rawValue)")
             }
             }
@@ -633,7 +630,7 @@ struct NovaShellPanel: View {
                     NovaText(text: RDLocalization.string("localizable.nova.expert.shell.vazgec.5f0c7644", table: .localizable, fallback: "Vazgeç"), style: .button, color: NovaColorToken.textSecondary.color(in: scheme))
                 }.frame(maxWidth: .infinity, minHeight: 46)
                     .background(NovaColorToken.surfaceMuted.color(in: scheme), in: Capsule())
-            }.buttonStyle(.plain).foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
+            }.buttonStyle(NovaRowPressStyle()).foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
                 .padding(.top, 2).accessibilityIdentifier("nova.panel.close")
         }
     }
@@ -652,7 +649,7 @@ struct NovaShellPanel: View {
                 Image(systemName: "chevron.right").font(.system(size: 12))
             }.padding(.horizontal, 14).padding(.vertical, 13).frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
                 .novaControlBackground(cornerRadius: 20)
-        }.buttonStyle(.plain).disabled(action == nil).opacity(action == nil ? 0.45 : 1)
+        }.buttonStyle(NovaRowPressStyle()).disabled(action == nil).opacity(action == nil ? 0.45 : 1)
     }
 
     private var notifications: some View {
@@ -692,9 +689,9 @@ struct NovaShellPanel: View {
                     NovaText(text: RDLocalization.string("localizable.nova.expert.shell.bildirim.merkezine.git.65adaa40", table: .localizable, fallback: "Bildirim merkezine git"), style: .meta, color: NovaColorToken.statusSuccessInk.color(in: scheme))
                     Image(systemName: "arrow.right").font(.system(size: 12))
                 }.frame(minHeight: 44)
-            }.buttonStyle(.plain).foregroundStyle(NovaColorToken.statusSuccessInk.color(in: scheme)).padding(.top, -6).padding(.bottom, -13)
+            }.buttonStyle(NovaRowPressStyle()).foregroundStyle(NovaColorToken.statusSuccessInk.color(in: scheme)).padding(.top, -6).padding(.bottom, -13)
                 .disabled(!canOpen(.notifications)).accessibilityIdentifier("nova.notices.center")
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
     }
 
     /// One notice: the whole row opens the record, and the two controls on the
@@ -728,7 +725,7 @@ struct NovaShellPanel: View {
                             color: NovaColorToken.textMuted.color(in: scheme))
                     }
                 }.frame(maxWidth: .infinity, alignment: .leading)
-            }.buttonStyle(.plain).disabled(!canOpen(notice.destination))
+            }.buttonStyle(NovaRowPressStyle()).disabled(!canOpen(notice.destination))
                 .accessibilityIdentifier("nova.notice.\(notice.id)")
             VStack(spacing: 2) {
                 if notice.dismissed {
@@ -756,7 +753,7 @@ struct NovaShellPanel: View {
             NovaIcon(symbol: symbol, size: 13)
                 .foregroundStyle(NovaColorToken.textMuted.color(in: scheme))
                 .frame(width: 30, height: 30).contentShape(Rectangle())
-        }.buttonStyle(.plain).disabled(disabled)
+        }.buttonStyle(NovaRowPressStyle()).disabled(disabled)
             .accessibilityLabel(Text(verbatim: label)).accessibilityIdentifier(identifier)
     }
 }
@@ -913,7 +910,7 @@ struct NovaDashboardScreen: View {
                         Image(systemName: "chevron.right").font(.system(size: 18)).foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
                     }.padding(.horizontal, 14).padding(.vertical, 13).frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
                         .novaControlBackground(cornerRadius: 24)
-                }.buttonStyle(.plain).padding(.horizontal, 18).padding(.bottom, 10).accessibilityIdentifier("nova.home.training")
+                }.buttonStyle(NovaRowPressStyle()).padding(.horizontal, 18).padding(.bottom, 10).accessibilityIdentifier("nova.home.training")
                 HStack(spacing: 10) {
                     Image(systemName: "line.3.horizontal.decrease").foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
                     NovaText(text: RDLocalization.string("localizable.nova.expert.shell.son.uygunsuzluklar.6355cdea", table: .localizable, fallback: "Son Uygunsuzluklar"), style: .screenTitle)
@@ -932,7 +929,7 @@ struct NovaDashboardScreen: View {
                                         .padding(3).overlay(Circle().strokeBorder(NovaColorToken.statusInfoDot.color(in: scheme), lineWidth: 3))
                                     NovaText(text: finding.companyName, style: .meta, color: muted).lineLimit(1)
                                 }.frame(width: 74)
-                            }.buttonStyle(.plain).disabled(onFinding == nil).accessibilityIdentifier("nova.recent.\(finding.id)")
+                            }.buttonStyle(NovaRowPressStyle()).disabled(onFinding == nil).accessibilityIdentifier("nova.recent.\(finding.id)")
                         }
                     }.padding(.horizontal, 20).padding(.top, 14)
                 }
@@ -979,7 +976,7 @@ struct NovaDashboardScreen: View {
                 NovaSizedText(text: RDLocalization.string("localizable.nova.expert.shell.ai.asistan.fd9d94db", table: .localizable, fallback: "AI Asistan"), size: 13.5)
             }.padding(.horizontal, 15).frame(minHeight: 44)
                 .background(NovaColorToken.surfaceMuted.color(in: scheme), in: Capsule())
-        }.buttonStyle(.plain).accessibilityIdentifier("nova.home.assistant")
+        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("nova.home.assistant")
     }
     private var activity: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -1002,7 +999,7 @@ struct NovaDashboardScreen: View {
                     Image(systemName: "chevron.right").font(.system(size: 13)).foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
                 }.frame(minHeight: 30)
             }.disabled(data.activity == nil)
-        }.buttonStyle(.plain).padding(12).padding(.vertical, 3)
+        }.buttonStyle(NovaRowPressStyle()).padding(12).padding(.vertical, 3)
             .novaControlBackground(cornerRadius: 24)
     }
     private var capture: some View {
@@ -1032,7 +1029,7 @@ struct NovaDashboardScreen: View {
                     .background { NovaPhotoBackdrop() }
                     .clipShape(RoundedRectangle(cornerRadius: 20))
                     .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(NovaColorToken.borderStrong.color(in: scheme), style: StrokeStyle(lineWidth: 1.6, dash: [5, 4])))
-            }.buttonStyle(.plain).padding(.top, 12).accessibilityIdentifier("nova.home.photo")
+            }.buttonStyle(NovaRowPressStyle()).padding(.top, 12).accessibilityIdentifier("nova.home.photo")
             Button { onNavigate(.newFinding) } label: {
                 HStack(spacing: 9) {
                     Image(systemName: "arrow.right")
@@ -1040,7 +1037,7 @@ struct NovaDashboardScreen: View {
                 }.foregroundStyle(.white).frame(maxWidth: .infinity, minHeight: 54)
                     .background(NovaColorToken.accent.color(in: scheme), in: Capsule())
                     .shadow(color: NovaColorToken.accent.color(in: scheme).opacity(0.18), radius: 18, x: 0, y: 9)
-            }.buttonStyle(.plain).padding(.top, 14).accessibilityIdentifier("nova.home.addFinding")
+            }.buttonStyle(NovaRowPressStyle()).padding(.top, 14).accessibilityIdentifier("nova.home.addFinding")
         }.padding(18)
             .novaControlBackground(cornerRadius: 26)
     }
@@ -1107,7 +1104,7 @@ struct NovaCompaniesScreen: View {
                             }.padding(.horizontal, 15).frame(minWidth: 116, minHeight: 34)
                                 .background(NovaColorToken.accent.color(in: scheme), in: Capsule())
                                 .foregroundStyle(NovaColorToken.onAccent.color(in: scheme))
-                        }.buttonStyle(.plain).accessibilityIdentifier("nova.pilot.company.create")
+                        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("nova.pilot.company.create")
                     }
                 }
                 HStack(spacing: 10) {
@@ -1151,7 +1148,7 @@ struct NovaCompaniesScreen: View {
                     }
                 }
             }.padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 24)
-        }.buttonStyle(.plain).background(NovaColorToken.canvas.color(in: scheme))
+        }.buttonStyle(NovaRowPressStyle()).background(NovaColorToken.canvas.color(in: scheme))
             .novaEdgeBackGesture(action: onBack)
     }
 }

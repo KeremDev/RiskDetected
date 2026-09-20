@@ -345,9 +345,12 @@ final class NovaOBController: ObservableObject {
     func submitSignup() async {
         guard !busy else { return }
         let address = email.novaTrimmed
-        guard !address.isEmpty else { authError = "E-posta adresini yaz."; return }
-        guard Self.isValidEmail(address) else { authError = "Bu e-posta adresi geçerli görünmüyor."; return }
+        guard !address.isEmpty else { NovaHaptics.failure(); authError = "E-posta adresini yaz."; return }
+        guard Self.isValidEmail(address) else {
+            NovaHaptics.failure(); authError = "Bu e-posta adresi geçerli görünmüyor."; return
+        }
         guard IsgPasswordRules(password).valid else {
+            NovaHaptics.failure()
             authError = "Parola en az 8 karakter olmalı; büyük harf, küçük harf ve rakam içermeli."
             return
         }
@@ -360,6 +363,7 @@ final class NovaOBController: ObservableObject {
             // Expected: Supabase created the account and wants the address verified.
             await openOtp(for: address)
         } catch {
+            NovaHaptics.failure()
             authError = AppErrorMessage.make(
                 error, context: "Hesap oluşturulamadı", fallbackTitle: "Hesap oluşturulamadı"
             ).message
@@ -386,10 +390,12 @@ final class NovaOBController: ObservableObject {
         otpError = ""
         do {
             try await auth.verifyCode(email.novaTrimmed, code)
+            NovaHaptics.success()
             otpVerified = true
             try? await Task.sleep(nanoseconds: 700_000_000)
             go(.trial)
         } catch {
+            NovaHaptics.failure()
             otpVerified = false
             otpError = "Geçersiz kod. Kodu kontrol edip yeniden dene."
             otpDigits = Array(repeating: "", count: 6)

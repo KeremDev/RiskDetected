@@ -45,7 +45,7 @@ struct NovaListStat: View {
     var body: some View {
         Group {
             if let onTap {
-                Button(action: onTap) { tile }.buttonStyle(.plain)
+                Button(action: onTap) { tile }.buttonStyle(NovaRowPressStyle())
             } else {
                 tile
             }
@@ -101,9 +101,9 @@ struct NovaCompactActionButton: View {
                 in: RoundedRectangle(cornerRadius: 14))
             .overlay(RoundedRectangle(cornerRadius: 14)
                 .strokeBorder(prominent ? Color.clear : NovaColorToken.border.color(in: scheme), lineWidth: 1))
-            .contentShape(Rectangle())
+            .contentShape(RoundedRectangle(cornerRadius: 14))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NovaPressStyle())
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.45)
     }
@@ -144,6 +144,8 @@ struct NovaFilterField: View {
     let identifier: String
     let onPick: (String?) -> Void
     @State private var expanded = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         VStack(spacing: 8) {
             NovaFileChooserButton(label: label,
@@ -155,7 +157,16 @@ struct NovaFilterField: View {
                     onPick(value)
                     expanded = false
                 }
+                // The panel belongs to the button above it, so it grows from
+                // that edge rather than fading in place, and it leaves the same
+                // way it arrived. Without this the rows below it teleport.
+                .transition(reduceMotion
+                    ? .opacity
+                    : .scale(scale: 0.97, anchor: .top).combined(with: .opacity))
             }
         }
+        .animation(NovaMotion.gated(NovaMotion.easeOut(NovaMotion.Duration.dropdown),
+                                    reduceMotion: reduceMotion),
+                   value: expanded)
     }
 }

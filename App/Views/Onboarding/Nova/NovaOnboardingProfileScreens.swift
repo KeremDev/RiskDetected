@@ -293,7 +293,7 @@ struct NovaOBEditSummaryScreen: View {
             )
             .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NovaPressStyle())
     }
 }
 #endif

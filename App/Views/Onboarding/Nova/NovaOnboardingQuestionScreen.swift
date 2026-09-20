@@ -141,7 +141,7 @@ struct NovaOBQuestionScreen: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NovaPressStyle())
             }
         }
         .padding(.horizontal, 24)
@@ -238,9 +238,10 @@ struct NovaOBChoiceWidget: View {
                     .padding(8)
             }
             .opacity(controller.isBlocked(option.value) ? 0.45 : 1)
+            .animation(NovaMotion.easeOut(0.14), value: selected)
             .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NovaRowPressStyle(pressedOpacity: 0.7))
     }
 
     private func listRow(_ option: NovaOBOption) -> some View {
@@ -279,9 +280,10 @@ struct NovaOBChoiceWidget: View {
                     .strokeBorder(selected ? NovaOB.ink : NovaOB.line, lineWidth: 1.5)
             )
             .opacity(controller.isBlocked(option.value) ? 0.45 : 1)
+            .animation(NovaMotion.easeOut(0.14), value: selected)
             .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NovaRowPressStyle(pressedOpacity: 0.7))
     }
 
     private func mark(selected: Bool, size: CGFloat, check: CGFloat) -> some View {
@@ -302,6 +304,7 @@ struct NovaOBChoiceWidget: View {
     }
 
     private func toggle(_ option: NovaOBOption) {
+        NovaHaptics.selection()
         if controller.question.kind == .single {
             controller.pickSingle(option.value)
         } else {
@@ -447,9 +450,10 @@ struct NovaOBExperienceWidget: View {
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .strokeBorder(controller.answers.expLess ? NovaOB.ink : NovaOB.line, lineWidth: 1.5)
             )
+            .animation(NovaMotion.easeOut(0.14), value: controller.answers.expLess)
             .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NovaRowPressStyle(pressedOpacity: 0.7))
     }
 
     private var valueLabel: String {
@@ -555,7 +559,7 @@ struct NovaOBCounterWidget: View {
                 .opacity(opacity)
                 .contentShape(Circle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NovaPressStyle())
     }
 }
 #endif

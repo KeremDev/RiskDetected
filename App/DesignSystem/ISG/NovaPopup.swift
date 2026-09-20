@@ -99,18 +99,11 @@ struct NovaPopupCloseButton: View {
                 .overlay(Circle().strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
                 .contentShape(Circle())
         }
-        .buttonStyle(NovaPopupClosePressStyle())
+        // A 48pt circle can take a deeper press than a full-width button without
+        // reading as a collapse, so this one overrides the shared scale.
+        .buttonStyle(NovaPressStyle(scale: 0.92, pressedOpacity: 0.72))
         .accessibilityLabel(RDLocalization.string("localizable.nova.company.management.gate.kapat.3148ed17", table: .localizable, fallback: "Kapat"))
         .accessibilityIdentifier(identifier)
-    }
-}
-
-private struct NovaPopupClosePressStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.92 : 1)
-            .opacity(configuration.isPressed ? 0.72 : 1)
-            .animation(.spring(response: 0.2, dampingFraction: 0.75), value: configuration.isPressed)
     }
 }
 

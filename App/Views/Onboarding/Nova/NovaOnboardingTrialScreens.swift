@@ -73,7 +73,7 @@ struct NovaOBCloseButton: View {
                 .shadow(color: Color(hex: 0x784614).opacity(0.14), radius: 4, y: 2)
                 .contentShape(Circle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NovaPressStyle())
     }
 }
 
@@ -416,7 +416,7 @@ struct NovaOBTrialHowScreen: View {
                     .padding(.horizontal, 12)
                     .frame(height: 44)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NovaPressStyle())
 
                 Rectangle().fill(NovaOB.ink.opacity(0.14)).frame(width: 1, height: 18)
 
@@ -430,7 +430,7 @@ struct NovaOBTrialHowScreen: View {
                     .padding(.horizontal, 12)
                     .frame(height: 44)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NovaPressStyle())
             }
         }
     }
@@ -482,7 +482,7 @@ struct NovaOBPushScreen: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 48)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NovaPressStyle())
             }
         }
         .padding(.horizontal, 24)

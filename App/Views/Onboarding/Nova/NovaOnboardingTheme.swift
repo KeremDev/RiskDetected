@@ -131,7 +131,7 @@ struct NovaOBPillButton: View {
             .background(background, in: Capsule())
             .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NovaPressStyle())
     }
 }
 
@@ -155,7 +155,7 @@ struct NovaOBPrimaryButton: View {
             .background(enabled ? NovaOB.ink : Color(hex: 0xDDDDDD), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NovaPressStyle())
         .disabled(!enabled || busy)
     }
 }
@@ -180,7 +180,7 @@ struct NovaOBOutlineButton: View {
             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(NovaOB.ink, lineWidth: 2))
             .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NovaPressStyle())
     }
 }
 
@@ -207,7 +207,7 @@ struct NovaOBBackButton: View {
                 .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NovaPressStyle())
     }
 }
 

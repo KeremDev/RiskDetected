@@ -134,7 +134,7 @@ struct NovaLoginScreen: View {
                         .frame(width: 44, height: 44)
                         .contentShape(Circle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NovaPressStyle())
                 .padding(.trailing, 6)
             }
             .novaOBField(leadingInset: 0, trailingInset: 0,
@@ -161,7 +161,7 @@ struct NovaLoginScreen: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 40)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(NovaPressStyle())
         }
     }
 
@@ -203,7 +203,7 @@ struct NovaLoginScreen: View {
                             .frame(width: 34, height: 34)
                             .background(NovaOB.fill2, in: Circle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(NovaPressStyle())
                 }
 
                 NovaOBCodeField(digits: $digits, state: error.isEmpty ? (codeVerified ? .verified : .idle) : .invalid) { code in
@@ -225,7 +225,7 @@ struct NovaLoginScreen: View {
                             }
                             .padding(.vertical, 4)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(NovaPressStyle())
                         Spacer(minLength: 0)
                         Text(resendNote.isEmpty ? "Kod gelmediyse spam klasörünü kontrol et." : resendNote)
                             .font(NovaOB.font(12))
@@ -320,7 +320,7 @@ struct NovaLoginScreen: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 44)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NovaPressStyle())
             }
             .padding(.top, 8)
 
@@ -391,6 +391,7 @@ struct NovaLoginScreen: View {
             phase = .done
         } catch {
             if !NovaOBController.isCancellation(error) {
+                NovaHaptics.failure()
                 self.error = AppErrorMessage.make(
                     error, context: "Giriş yapılamadı", fallbackTitle: "Giriş yapılamadı"
                 ).message
@@ -405,10 +406,12 @@ struct NovaLoginScreen: View {
         guard !busy else { return }
         let address = email.novaTrimmed.lowercased()
         guard NovaOBController.isValidEmail(address) else {
+            NovaHaptics.failure()
             error = "Geçerli bir e-posta adresi yaz."
             return
         }
         guard password.count >= 6 else {
+            NovaHaptics.failure()
             error = "Şifren en az 6 karakter olmalı."
             return
         }
@@ -437,11 +440,13 @@ struct NovaLoginScreen: View {
         error = ""
         do {
             try await auth.verifyCode(email.novaTrimmed.lowercased(), code)
+            NovaHaptics.success()
             codeVerified = true
             try? await Task.sleep(nanoseconds: 900_000_000)
             doneKind = .signup
             phase = .done
         } catch {
+            NovaHaptics.failure()
             codeVerified = false
             digits = Array(repeating: "", count: 6)
             self.error = "Geçersiz kod. Kodu kontrol edip yeniden dene."

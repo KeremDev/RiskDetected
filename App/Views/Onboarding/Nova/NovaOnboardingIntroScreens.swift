@@ -111,7 +111,7 @@ struct NovaOBIntroScreen: View {
                         .padding(.horizontal, 6)
                         .padding(.vertical, 8)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NovaPressStyle())
             }
         }
         .padding(.bottom, 26)
@@ -171,7 +171,7 @@ struct NovaOBIntroScreen: View {
                         .multilineTextAlignment(.trailing)
                         .lineSpacing(NovaOB.lineSpacing(13.5, 1.45))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(NovaPressStyle())
                 }
             }
         }
@@ -247,7 +247,7 @@ struct NovaOBSocialProofScreen: View {
                     .padding(.horizontal, 6)
                     .padding(.vertical, 8)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(NovaPressStyle())
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 26)
@@ -466,7 +466,7 @@ struct NovaOBSkipModal: View {
                         .frame(height: 54)
                         .background(NovaOB.ink, in: Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(NovaPressStyle())
 
                     Button(action: onSkip) {
                         HStack(spacing: 8) {
@@ -479,7 +479,7 @@ struct NovaOBSkipModal: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 48)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(NovaPressStyle())
                 }
                 .padding(.top, 4)
             }
