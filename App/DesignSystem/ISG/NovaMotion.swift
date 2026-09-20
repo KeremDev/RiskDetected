@@ -156,11 +156,20 @@ struct NovaPressStyle: ButtonStyle {
 /// A row is too large to scale — shrinking a list item pulls it away from the
 /// rows around it. It dims instead, which is the same answer without the
 /// movement.
+///
+/// Rows live inside scroll views, where a touch that turns into a scroll is
+/// pressed and then cancelled within a few frames. Dimming on that first frame
+/// makes every flick flash the row under the finger, so the dim is held back
+/// briefly — the same thing `delaysContentTouches` does for a UIKit table. A
+/// deliberate press outlasts the delay and still reads as immediate; letting go
+/// is never delayed.
 struct NovaRowPressStyle: ButtonStyle {
     var pressedOpacity: Double = 0.62
+    var pressDelay: Double = 0.05
 
     func makeBody(configuration: Configuration) -> some View {
-        NovaPressBody(configuration: configuration, scale: 1, pressedOpacity: pressedOpacity)
+        NovaPressBody(configuration: configuration, scale: 1,
+                      pressedOpacity: pressedOpacity, pressDelay: pressDelay)
     }
 }
 
@@ -170,12 +179,19 @@ private struct NovaPressBody: View {
     let configuration: ButtonStyleConfiguration
     let scale: CGFloat
     let pressedOpacity: Double
+    var pressDelay: Double = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var animation: Animation {
+        configuration.isPressed && pressDelay > 0
+            ? NovaMotion.press.delay(pressDelay)
+            : NovaMotion.press
+    }
 
     var body: some View {
         configuration.label
             .scaleEffect(reduceMotion || !configuration.isPressed ? 1 : scale)
             .opacity(configuration.isPressed ? pressedOpacity : 1)
-            .animation(NovaMotion.press, value: configuration.isPressed)
+            .animation(animation, value: configuration.isPressed)
     }
 }
