@@ -76,7 +76,7 @@ struct NovaEquipmentItemSheet: View {
             appliedStartMode = true
             recording = true
         }
-        .novaFullScreenCover(isPresented: $editing) {
+        .novaPopupCover(isPresented: $editing) {
             NovaPopup {
                 NovaEquipmentEditSheet(item: row, workplaces: workplaces) { value in
                     current = try await client.update(row, value)
@@ -85,7 +85,7 @@ struct NovaEquipmentItemSheet: View {
                 }
             }
         }
-        .novaFullScreenCover(item: $correcting) { entry in
+        .novaPopupCover(item: $correcting) { entry in
             NovaPopup {
                 NovaEquipmentReportEditSheet(report: entry, periodMonths: row.periodMonths,
                     reports: reports) { value in

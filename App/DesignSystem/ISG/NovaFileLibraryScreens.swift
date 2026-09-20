@@ -284,14 +284,14 @@ struct NovaFileLibraryScreen: View {
                 }.padding(16).novaPopupContentSize()
             }
         }
-        .novaFullScreenCover(item: $inspecting) { row in
+        .novaPopupCover(item: $inspecting) { row in
             NovaPopup {
                 NovaFileEntrySheet(entry: row, catalogue: catalogue, assurance: assurance,
                     client: client, canWrite: canWrite,
                     onChanged: { reload = UUID() }, onClosed: { inspecting = nil })
             }
         }
-        .novaFullScreenCover(isPresented: $adding) {
+        .novaPopupCover(isPresented: $adding) {
             NovaPopup {
                 NovaFileAddSheet(companies: companies, preselected: company,
                     categories: offeredCategories, accepts: accepts, assurance: assurance,

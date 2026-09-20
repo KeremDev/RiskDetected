@@ -136,14 +136,14 @@ struct NovaEquipmentCheckScreen: View {
                 Task { await openInspection() }
             }
         }
-        .novaFullScreenCover(item: $inspecting) { row in
+        .novaPopupCover(item: $inspecting) { row in
             NovaPopup {
                 NovaEquipmentItemSheet(item: row, rule: rule(for: row.equipmentType),
                     workplaces: workplaces, client: client, canWrite: canWrite,
                     onChanged: { reload = UUID() }, onClosed: { inspecting = nil })
             }
         }
-        .novaFullScreenCover(isPresented: $adding) {
+        .novaPopupCover(isPresented: $adding) {
             NovaPopup {
                 NovaEquipmentAddSheet(companies: companies, preselected: company,
                     suggestions: suggestions, rules: rules, workplaces: workplaces, client: client) {
@@ -152,7 +152,7 @@ struct NovaEquipmentCheckScreen: View {
                     }
             }
         }
-        .novaFullScreenCover(isPresented: $addingInspection) {
+        .novaPopupCover(isPresented: $addingInspection) {
             NovaPopup {
                 if let company {
                     NovaEquipmentInspectionFlow(
@@ -171,7 +171,7 @@ struct NovaEquipmentCheckScreen: View {
                 }
             }
         }
-        .novaFullScreenCover(isPresented: $editingPeriods) {
+        .novaPopupCover(isPresented: $editingPeriods) {
             NovaPopup {
                 NovaEquipmentPeriodSheet(company: company, suggestions: suggestions, rules: rules,
                     client: client) {

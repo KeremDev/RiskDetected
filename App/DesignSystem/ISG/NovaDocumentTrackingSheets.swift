@@ -40,7 +40,7 @@ struct NovaDocumentObligationSheet: View {
             kinds = (try? await client.kinds(company)) ?? []
             places = (try? await client.workplaces(company)) ?? []
         }
-        .novaFullScreenCover(isPresented: $editing) {
+        .novaPopupCover(isPresented: $editing) {
             NovaPopup {
                 NovaDocumentObligationForm(title: RDLocalization.string("localizable.nova.document.edit.title", table: .localizable, fallback: "Takip kaydını düzenle"),
                     kinds: kinds, places: places, draft: Self.draft(row), isKindLocked: true) { value in

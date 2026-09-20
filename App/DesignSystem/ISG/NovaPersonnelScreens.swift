@@ -120,7 +120,7 @@ private struct PersonnelContent: View {
                 }
             }
         }
-        .novaFullScreenCover(isPresented: $showingCreate) {
+        .novaPopupCover(isPresented: $showingCreate) {
             NovaPopup {
             NavigationStack {
                 NovaPageSurface {

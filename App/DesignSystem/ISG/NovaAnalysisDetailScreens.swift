@@ -118,7 +118,7 @@ struct NovaAnalysisDetailScreen: View {
                     onFile: { selected = [item.id]; fileAfterDetail = true; inspecting = nil })
             }
         }
-        .novaFullScreenCover(item: $editing) { item in
+        .novaPopupCover(item: $editing) { item in
             NovaPopup {
                 NovaAnalysisEditSheet(item: item, method: method) { values in
                     guard let data else { return }
@@ -130,7 +130,7 @@ struct NovaAnalysisDetailScreen: View {
                 }
             }
         }
-        .novaFullScreenCover(item: $deleting) { item in
+        .novaPopupCover(item: $deleting) { item in
             NovaPopup {
                 NovaAnalysisDeleteSheet(item: item) {
                     try await client.remove(item)
@@ -139,7 +139,7 @@ struct NovaAnalysisDetailScreen: View {
                 }
             }
         }
-        .novaFullScreenCover(item: $preview) { item in
+        .novaPopupCover(item: $preview) { item in
             NovaPopup { NovaImageViewer(image: item.image) }
         }
         .novaPopup(isPresented: $filing) {
@@ -154,7 +154,7 @@ struct NovaAnalysisDetailScreen: View {
                     record: { id, outcome in outcomes[id] = outcome })
             }
         }
-        .novaFullScreenCover(isPresented: $reporting) {
+        .novaPopupCover(isPresented: $reporting) {
             NovaPopup {
                 if let data {
                     NovaAnalysisReportSheet(data: data, method: method, selectedCount: selected.count) { request in
@@ -168,7 +168,7 @@ struct NovaAnalysisDetailScreen: View {
                 }
             }
         }
-        .novaFullScreenCover(isPresented: $assigning) {
+        .novaPopupCover(isPresented: $assigning) {
             NovaPopup {
                 NovaAnalysisCompanySheet(load: client.companies) { company in
                     try await client.assign(company)

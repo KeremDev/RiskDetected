@@ -57,7 +57,7 @@ struct NovaPhotoIntakeScreen: View {
         .photosPicker(isPresented: $galleryOpen, selection: $gallery,
                       maxSelectionCount: max(1, maximum - images.count), matching: .images)
         .onChange(of: gallery) { _ in Task { await loadGallery() } }
-        .novaFullScreenCover(item: $preview) { item in
+        .novaPopupCover(item: $preview) { item in
             NovaPopup { NovaImageViewer(image: item.image) }
         }
         .alert(notice ?? "", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {

@@ -47,6 +47,8 @@ struct NovaPopup<Content: View>: View {
     @Environment(\.isNovaPopup) private var nested
     @Environment(\.novaSuccessStore) private var successStore
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.novaPopupVisible) private var visible
     @State private var busy = false
     @State private var contentHeight: CGFloat = 0
     @ViewBuilder var body: some View {
@@ -55,8 +57,12 @@ struct NovaPopup<Content: View>: View {
     private var presentation: some View {
         GeometryReader { geometry in
             ZStack {
-                if !reduceTransparency { Rectangle().fill(.thinMaterial).opacity(NovaPopupStyle.materialOpacity).ignoresSafeArea() }
-                Color.black.opacity(NovaPopupStyle.dimOpacity).ignoresSafeArea()
+                // The backdrop fades and the card scales; neither travels. See
+                // NovaPopupTransition for why the cover's own slide is gone.
+                Group {
+                    if !reduceTransparency { Rectangle().fill(.thinMaterial).opacity(NovaPopupStyle.materialOpacity).ignoresSafeArea() }
+                    Color.black.opacity(NovaPopupStyle.dimOpacity).ignoresSafeArea()
+                }.opacity(visible ? 1 : 0)
                 ZStack(alignment: .topTrailing) {
                     // Reserve the close-control row so headings and their
                     // trailing actions never sit underneath the X button.
@@ -74,6 +80,8 @@ struct NovaPopup<Content: View>: View {
                 .clipShape(RoundedRectangle(cornerRadius: 24))
                 .shadow(color: .black.opacity(0.12), radius: 24, y: 8)
                 .padding(.horizontal, 16)
+                .scaleEffect(reduceMotion || visible ? 1 : NovaPopupTransition.enterScale)
+                .opacity(visible ? 1 : 0)
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
         }.font(NovaFont.font(.body)).foregroundStyle(NovaColorToken.text.color(in: scheme)).tint(NovaColorToken.text.color(in: scheme))
         .modifier(NovaTransparentPresentation())
@@ -136,19 +144,170 @@ struct NovaPopupBusyKey: PreferenceKey {
 }
 
 
+/// How a centered popup arrives and leaves.
+///
+/// `fullScreenCover` stays the presentation — it is what keeps the keyboard,
+/// focus and dismissal semantics correct, and swapping it for an in-hierarchy
+/// overlay would mean rebuilding all of that by hand. What it cannot do is
+/// choose its own transition: it always slides the whole cover up from the
+/// bottom edge. For a card that lives in the middle of the screen that is the
+/// wrong path, and it drags the blur and the dim up with it, so the backdrop
+/// arrives as a moving panel instead of settling behind the card.
+///
+/// So the cover's slide is suppressed — the presentation binding is written
+/// inside a transaction with animations disabled — and the card runs its own
+/// motion instead: the backdrop fades, the card scales up from 0.94. The exit
+/// is the same path reversed, which is why the modifier holds the dismissal
+/// back for the length of the exit before it actually tears the cover down.
+///
+/// A `NovaPopup` presented some other way still renders normally: the
+/// environment flag defaults to visible, so the card is simply on screen from
+/// the first frame and the cover animates the way it always did.
+enum NovaPopupTransition {
+    static let enterScale: CGFloat = 0.94
+    static var enter: Animation { NovaMotion.easeOut(0.24) }
+    static var exit: Animation { NovaMotion.easeOut(0.16) }
+    /// Kept in step with `exit` — the cover is torn down once the card has
+    /// finished leaving, not before.
+    static let exitSeconds = 0.16
+
+    /// Writes a presentation binding without letting the cover animate itself.
+    static func silently(_ write: @escaping () -> Void) {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction, write)
+    }
+}
+
+private struct NovaPopupVisibleKey: EnvironmentKey { static let defaultValue = true }
+
+extension EnvironmentValues {
+    /// False while the popup card is off-stage — before it has scaled in, and
+    /// again while it scales out ahead of the cover being removed.
+    var novaPopupVisible: Bool {
+        get { self[NovaPopupVisibleKey.self] }
+        set { self[NovaPopupVisibleKey.self] = newValue }
+    }
+}
+
+/// Drives the enter and exit for a popup bound to an optional item.
+private struct NovaPopupItemPresentation<Item: Identifiable, PopupContent: View>: ViewModifier {
+    @Binding var item: Item?
+    let onDismiss: (() -> Void)?
+    @ViewBuilder let popupContent: (Item) -> PopupContent
+    @State private var visible = false
+    @State private var closing = false
+
+    func body(content: Content) -> some View {
+        content.novaFullScreenCover(item: gate, onDismiss: {
+            visible = false
+            closing = false
+            onDismiss?()
+        }) { value in
+            popupContent(value)
+                .environment(\.novaPopupVisible, visible)
+                .onAppear(perform: reveal)
+        }
+    }
+
+    /// A frame later, so the card is laid out at its start value and the change
+    /// actually animates instead of being folded into the first render.
+    private func reveal() {
+        guard !visible else { return }
+        DispatchQueue.main.async {
+            withAnimation(NovaPopupTransition.enter) { visible = true }
+        }
+    }
+
+    private var gate: Binding<Item?> {
+        Binding(get: { item }, set: { value in
+            guard let value else { return requestClose() }
+            NovaPopupTransition.silently { item = value }
+        })
+    }
+
+    /// Runs the exit, then removes the cover. Re-entrant dismissals — a close
+    /// button tapped twice, or a form dismissing itself as the user also taps
+    /// the X — collapse into the first one.
+    private func requestClose() {
+        guard !closing else { return }
+        closing = true
+        withAnimation(NovaPopupTransition.exit) { visible = false }
+        DispatchQueue.main.asyncAfter(deadline: .now() + NovaPopupTransition.exitSeconds) {
+            NovaPopupTransition.silently { item = nil }
+        }
+    }
+}
+
+/// The same driver for a popup bound to a flag.
+private struct NovaPopupFlagPresentation<PopupContent: View>: ViewModifier {
+    @Binding var isPresented: Bool
+    let onDismiss: (() -> Void)?
+    @ViewBuilder let popupContent: () -> PopupContent
+    @State private var visible = false
+    @State private var closing = false
+
+    func body(content: Content) -> some View {
+        content.novaFullScreenCover(isPresented: gate, onDismiss: {
+            visible = false
+            closing = false
+            onDismiss?()
+        }) {
+            popupContent()
+                .environment(\.novaPopupVisible, visible)
+                .onAppear(perform: reveal)
+        }
+    }
+
+    private func reveal() {
+        guard !visible else { return }
+        DispatchQueue.main.async {
+            withAnimation(NovaPopupTransition.enter) { visible = true }
+        }
+    }
+
+    private var gate: Binding<Bool> {
+        Binding(get: { isPresented }, set: { value in
+            guard value else { return requestClose() }
+            NovaPopupTransition.silently { isPresented = true }
+        })
+    }
+
+    private func requestClose() {
+        guard !closing else { return }
+        closing = true
+        withAnimation(NovaPopupTransition.exit) { visible = false }
+        DispatchQueue.main.asyncAfter(deadline: .now() + NovaPopupTransition.exitSeconds) {
+            NovaPopupTransition.silently { isPresented = false }
+        }
+    }
+}
+
 extension View {
     /// App forms use this centered presentation. System camera/document/share controllers retain native presentation.
     func novaPopup<Item: Identifiable, Content: View>(item: Binding<Item?>, onDismiss: (() -> Void)? = nil,
         @ViewBuilder content: @escaping (Item) -> Content) -> some View {
-        novaFullScreenCover(item: item, onDismiss: onDismiss) { value in
+        novaPopupCover(item: item, onDismiss: onDismiss) { value in
             NovaPopup { content(value) }
         }
     }
     func novaPopup<Content: View>(isPresented: Binding<Bool>, onDismiss: (() -> Void)? = nil,
         @ViewBuilder content: @escaping () -> Content) -> some View {
-        novaFullScreenCover(isPresented: isPresented, onDismiss: onDismiss) {
+        novaPopupCover(isPresented: isPresented, onDismiss: onDismiss) {
             NovaPopup { content() }
         }
+    }
+
+    /// For the screens that wrap themselves in a `NovaPopup` — the ones opened
+    /// straight into their create form — so they arrive the same way as a form
+    /// presented through `novaPopup`.
+    func novaPopupCover<Item: Identifiable, Content: View>(item: Binding<Item?>, onDismiss: (() -> Void)? = nil,
+        @ViewBuilder content: @escaping (Item) -> Content) -> some View {
+        modifier(NovaPopupItemPresentation(item: item, onDismiss: onDismiss, popupContent: content))
+    }
+    func novaPopupCover<Content: View>(isPresented: Binding<Bool>, onDismiss: (() -> Void)? = nil,
+        @ViewBuilder content: @escaping () -> Content) -> some View {
+        modifier(NovaPopupFlagPresentation(isPresented: isPresented, onDismiss: onDismiss, popupContent: content))
     }
 }
 

@@ -39,7 +39,7 @@ struct NovaFileEntrySheet: View {
                 controls
             }.padding(16).novaPopupContentSize()
         }
-        .novaFullScreenCover(isPresented: $editing) {
+        .novaPopupCover(isPresented: $editing) {
             NovaPopup {
                 NovaFileRenameSheet(entry: row, catalogue: catalogue) { title, category, note, tags in
                     var updated = row; updated.tags = tags

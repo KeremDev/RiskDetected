@@ -159,13 +159,13 @@ struct NovaDocumentTrackingScreen: View {
             query = ""
             reload = UUID()
         }
-        .novaFullScreenCover(item: $inspecting) { row in
+        .novaPopupCover(item: $inspecting) { row in
             NovaPopup {
                 NovaDocumentObligationSheet(obligation: row, client: client, canWrite: canWrite,
                     onChanged: { reload = UUID() }, onClosed: { inspecting = nil })
             }
         }
-        .novaFullScreenCover(isPresented: $adding) {
+        .novaPopupCover(isPresented: $adding) {
             NovaPopup {
                 NovaDocumentAddSheet(companies: companies, preselected: company,
                     allowedKinds: initialKinds, client: client) {

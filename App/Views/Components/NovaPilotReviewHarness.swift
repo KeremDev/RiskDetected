@@ -107,7 +107,7 @@ struct NovaPilotReviewHarness: View {
             }
         }
         }
-        .novaFullScreenCover(isPresented: $create) {
+        .novaPopupCover(isPresented: $create) {
             NovaPopup {
             NovaPilotCompanyCreateView(identity: identity,
                 service: .init(rpc: { endpoint, _ in
@@ -115,7 +115,9 @@ struct NovaPilotReviewHarness: View {
                 }, currentIdentity: { identity }, storage: NovaReviewStorage()), onCreated: { _ in })
             }
         }
-        .novaFullScreenCover(isPresented: $riskPopup) {
+        // Opened straight into its create form, so the screen is a NovaPopup
+        // from its first frame and arrives like one.
+        .novaPopupCover(isPresented: $riskPopup) {
             NovaRiskScreen(client: reviewRiskClient, onBack: { riskPopup = false },
                 initialCompany: CommandLine.arguments.contains("RD_UI_TEST_POPUP_SELECTED") ? Self.company : nil,
                 startInAddMode: true)
@@ -149,7 +151,7 @@ struct NovaPilotReviewHarness: View {
                 thumbnail: { _ in Self.fixturePhoto },
                 open: { entry in reviewRecord = entry }, create: { navigation.apply(.navigate(.newFinding), from: navigation.epoch) }),
                 companies: reviewCompanies, today: "2026-09-14", onBack: {})
-                .novaFullScreenCover(item: $reviewRecord) { entry in
+                .novaPopupCover(item: $reviewRecord) { entry in
                     NovaPopup {
                         NovaNonconformityRecordSheet(entry: entry, client: .init(
                             load: { entry.row }, transition: { _, _, _ in entry.row },
@@ -171,7 +173,7 @@ struct NovaPilotReviewHarness: View {
                 }
         case .newAnalysis:
             NovaPhotoIntakeScreen(images: $reviewImages, onStart: { showingIntake = true }, onBack: {})
-                .novaFullScreenCover(isPresented: $showingIntake) {
+                .novaPopupCover(isPresented: $showingIntake) {
                     NovaPopup {
                         NovaAnalysisIntakePopup(companies: reviewCompanies, sectors: NovaPilotFindingsGate.sectorOptions,
                             focuses: reviewFocuses, draft: $draft, onStart: { showingIntake = false })
