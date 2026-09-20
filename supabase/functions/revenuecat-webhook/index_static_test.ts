@@ -44,3 +44,12 @@ Deno.test("RevenueCat Play webhook has an isolated authorization secret", async 
   assertStringIncludes(source, '"REVENUECAT_WEBHOOK_AUTHORIZATION"');
   assertStringIncludes(source, "Deno.env.get(\n    authorizationSecretName,");
 });
+
+Deno.test("RevenueCat OSGB purchases require an exact workspace purchase intent", async () => {
+  const source = await readTextIfAllowed(new URL("./index.ts", import.meta.url));
+  if (source == null) return;
+  assertStringIncludes(source, "revenueCatWorkspaceIntent(event)");
+  assertStringIncludes(source, "isg_workspace_purchase_record_revenuecat_v1");
+  assertStringIncludes(source, "workspace_purchase_event_invalid");
+  assertStringIncludes(source, "never falls through");
+});

@@ -84,6 +84,9 @@ verify_jwt = true
 [functions.process-analysis-jobs]
 verify_jwt = false
 
+[functions.process-isg-workspace-jobs]
+verify_jwt = false
+
 [functions.account-deletion-complete]
 verify_jwt = false
 

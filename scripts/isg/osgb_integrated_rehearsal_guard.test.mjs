@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {OSGB_CANDIDATE_MIGRATIONS} from './osgb_candidate_manifest.mjs';
 
 const runner=readFileSync(new URL('./run_osgb_integrated_rehearsal.mjs',import.meta.url),'utf8');
 const check=readFileSync(new URL('./osgb_integrated_rehearsal_check.sql',import.meta.url),'utf8');
@@ -14,8 +15,10 @@ test('integrated rehearsal is disposable and cannot target a live database',()=>
 
 test('all OSGB candidates are applied once in timestamp order',()=>{
   assert.match(runner,/OSGB_CANDIDATE_MIGRATIONS/);
-  const names=[...manifest.matchAll(/'([0-9]{14}_osgb_[^']+\.sql)'/g)].map(match=>match[1]);
-  assert.equal(names.length,24);
+  const candidateArray=manifest.slice(manifest.indexOf('Object.freeze(['),manifest.indexOf(']);'));
+  const names=[...candidateArray.matchAll(/'([0-9]{14}_osgb_[^']+\.sql)'/g)].map(match=>match[1]);
+  assert.equal(names.length,OSGB_CANDIDATE_MIGRATIONS.length);
+  assert.ok(names.length>0);
   assert.deepEqual(names,[...names].sort());
   assert.equal(new Set(names).size,names.length);
 });

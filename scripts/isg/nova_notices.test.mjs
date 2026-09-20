@@ -21,7 +21,9 @@ test('the design layer never imports the SDK',()=>{
 
 test('the bell is reachable and carries the count',()=>{
   // The destination must be available, or the button stays disabled.
-  assert.match(main,/\.checklists, \.notifications\]\)/);
+  assert.match(main,/NovaWorkspaceRole\.personnel\.destinations/);
+  assert.match(main,/NovaWorkspaceRole\.osgbExpert\.destinations/);
+  assert.match(main,/case \.notifications:/);
   assert.match(main,/hasUnread: notices\.unread > 0, unreadCount: notices\.unread/);
   assert.match(shell,/unreadCount > 99 \? "99\+" : String\(unreadCount\)/);
   // The badge is decoration; the label already says it.

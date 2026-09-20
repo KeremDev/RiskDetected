@@ -20,6 +20,11 @@ export const TRANSACTIONAL_NOTIFICATION_EVENT_KEYS = [
   "account_update.expiration",
   "account_update.billing_issue",
   "account_update.subscription_paused",
+  "workspace_deadline_due",
+  "workspace_deadline_soon",
+  "workspace_assignment_changed",
+  "workspace_export_ready",
+  "workspace_handover_ready",
 ] as const;
 
 export type TransactionalNotificationEventKey =
@@ -71,6 +76,26 @@ const TURKISH_COPY: Readonly<
     title: "Üyelik duraklatıldı",
     body: "RiskDetected hesabın geçici olarak ücretsiz plana alındı.",
   },
+  workspace_deadline_due: {
+    title: "İSG görevinin süresi doldu",
+    body: "Süresi dolan kaydı OSGB çalışma alanından inceleyin.",
+  },
+  workspace_deadline_soon: {
+    title: "İSG görevinin süresi yaklaşıyor",
+    body: "Yaklaşan kaydı OSGB çalışma alanından inceleyin.",
+  },
+  workspace_assignment_changed: {
+    title: "Firma ataması güncellendi",
+    body: "Güncel sorumluluklarınızı OSGB çalışma alanından inceleyin.",
+  },
+  workspace_export_ready: {
+    title: "OSGB raporu hazır",
+    body: "Hazırlanan raporu OSGB çalışma alanından indirebilirsiniz.",
+  },
+  workspace_handover_ready: {
+    title: "Devir işlemi hazır",
+    body: "Firma devir işlemini OSGB çalışma alanından inceleyin.",
+  },
 });
 
 const ENGLISH_COPY: Readonly<
@@ -116,6 +141,26 @@ const ENGLISH_COPY: Readonly<
   "account_update.subscription_paused": {
     title: "Subscription paused",
     body: "Your RiskDetected account has temporarily moved to the free plan.",
+  },
+  workspace_deadline_due: {
+    title: "OHS task overdue",
+    body: "Review the overdue record in your OSGB workspace.",
+  },
+  workspace_deadline_soon: {
+    title: "OHS task due soon",
+    body: "Review the upcoming record in your OSGB workspace.",
+  },
+  workspace_assignment_changed: {
+    title: "Company assignment updated",
+    body: "Review your current responsibilities in the OSGB workspace.",
+  },
+  workspace_export_ready: {
+    title: "OSGB report ready",
+    body: "Your report is ready to download from the OSGB workspace.",
+  },
+  workspace_handover_ready: {
+    title: "Handover ready",
+    body: "Review the company handover in your OSGB workspace.",
   },
 });
 

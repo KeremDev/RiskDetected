@@ -125,7 +125,8 @@ BEGIN
     IS DISTINCT FROM ROW(OLD.workspace_id,OLD.company_id,OLD.membership_id,OLD.assignment_role,OLD.starts_at) THEN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='IMMUTABLE_SCOPE';
   END IF;
-  PERFORM pg_advisory_xact_lock(hashtextextended(NEW.workspace_id::text||':'||NEW.company_id::text||':'||NEW.membership_id::text,0));
+  -- Serialize the whole company's schedule, including different primary experts.
+  PERFORM pg_advisory_xact_lock(hashtextextended(NEW.workspace_id::text||':'||NEW.company_id::text,0));
   SELECT * INTO member FROM private_isg.workspace_memberships
     WHERE workspace_id=NEW.workspace_id AND id=NEW.membership_id FOR SHARE;
   -- Revoking a member must not prevent a manager from closing their old work.
@@ -138,7 +139,8 @@ BEGIN
   END IF;
   IF EXISTS(SELECT 1 FROM private_isg.company_assignments a
     WHERE a.workspace_id=NEW.workspace_id AND a.company_id=NEW.company_id
-      AND a.membership_id=NEW.membership_id AND a.id<>NEW.id
+      AND (a.membership_id=NEW.membership_id OR
+        (a.assignment_role='primary' AND NEW.assignment_role='primary')) AND a.id<>NEW.id
       AND tstzrange(a.starts_at,a.ends_at,'[)') && tstzrange(NEW.starts_at,NEW.ends_at,'[)')) THEN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ASSIGNMENT_OVERLAP';
   END IF;
@@ -194,7 +196,7 @@ RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $
 DECLARE actor uuid:=private_isg.active_actor(); member private_isg.workspace_memberships; rows jsonb; next_id uuid;
 BEGIN
   PERFORM private_isg.workspace_gate('workspace_companies',false);
-  IF p_limit NOT BETWEEN 1 AND 100 THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
+  IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   member:=private_isg.workspace_require_member(p_workspace,ARRAY['owner','admin','expert'],false);
   WITH visible AS (
     SELECT c.* FROM private_isg.workspace_companies c
@@ -217,7 +219,8 @@ LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
 DECLARE manager private_isg.workspace_memberships; rows jsonb; next_id uuid;
 BEGIN
   PERFORM private_isg.workspace_gate('workspace_assignments',false);
-  IF p_status NOT IN ('all','current','ended','future') OR p_limit NOT BETWEEN 1 AND 100 THEN
+  IF p_status IS NULL OR p_status NOT IN ('all','current','ended','future')
+     OR p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 THEN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR';
   END IF;
   manager:=private_isg.workspace_require_member(p_workspace,ARRAY['owner','admin'],false);
@@ -232,8 +235,10 @@ BEGIN
       AND (p_status='all'
         OR (p_status='current' AND a.starts_at<=clock_timestamp()
           AND (a.ends_at IS NULL OR a.ends_at>clock_timestamp()))
-        OR (p_status='ended' AND a.ends_at IS NOT NULL AND a.ends_at<=clock_timestamp())
-        OR (p_status='future' AND a.starts_at>clock_timestamp()))
+        OR (p_status='ended' AND a.ends_at IS NOT NULL
+          AND (a.ends_at<=clock_timestamp() OR a.ends_at=a.starts_at))
+        OR (p_status='future' AND a.starts_at>clock_timestamp()
+          AND (a.ends_at IS NULL OR a.ends_at>a.starts_at)))
     ORDER BY a.id LIMIT p_limit+1
   ), page AS (SELECT * FROM visible ORDER BY id LIMIT p_limit)
   SELECT coalesce(jsonb_agg(jsonb_build_object('assignment_id',page.id,
@@ -256,12 +261,13 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE actor uuid:=private_isg.active_actor(); manager private_isg.workspace_memberships;
   target private_isg.workspace_memberships; assignment private_isg.company_assignments;
   before_state jsonb; clean_reason text; fingerprint bytea; replay jsonb; result jsonb;
+  effective_end timestamptz;
 BEGIN
   PERFORM private_isg.workspace_gate('workspace_assignments',true);
   manager:=private_isg.workspace_require_member(p_workspace,ARRAY['owner','admin'],true);
   PERFORM private_isg.workspace_require_company(p_workspace,p_company,true);
   clean_reason:=private_isg.workspace_text(p_reason,500);
-  IF p_action NOT IN ('create','end') OR p_expected IS NULL OR p_expected<0 THEN
+  IF p_action IS NULL OR p_action NOT IN ('create','end') OR p_expected IS NULL OR p_expected<0 THEN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   fingerprint:=sha256(convert_to(jsonb_build_array(p_workspace,p_company,p_assignment,p_membership,
     p_expected,p_action,p_role,p_starts_at,p_ends_at,clean_reason)::text,'UTF8'));
@@ -269,7 +275,8 @@ BEGIN
   IF replay IS NOT NULL THEN RETURN replay; END IF;
   IF p_action='create' THEN
     IF p_assignment IS NOT NULL OR p_membership IS NULL OR p_expected<>0 OR
-       p_role NOT IN ('primary','support') OR p_starts_at IS NULL OR
+       p_role IS NULL OR p_role NOT IN ('primary','support') OR p_starts_at IS NULL OR NOT isfinite(p_starts_at) OR
+       (p_ends_at IS NOT NULL AND NOT isfinite(p_ends_at)) OR
        p_starts_at>clock_timestamp()+interval '365 days' OR (p_ends_at IS NOT NULL AND p_ends_at<=p_starts_at) THEN
       RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
     SELECT * INTO target FROM private_isg.workspace_memberships
@@ -282,16 +289,22 @@ BEGIN
       RETURNING * INTO assignment;
     before_state:=NULL;
   ELSE
-    IF p_assignment IS NULL OR p_membership IS NOT NULL OR p_ends_at IS NULL THEN
+    IF p_assignment IS NULL OR p_membership IS NOT NULL OR p_ends_at IS NULL OR NOT isfinite(p_ends_at) THEN
       RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
     SELECT * INTO assignment FROM private_isg.company_assignments
       WHERE id=p_assignment AND workspace_id=p_workspace AND company_id=p_company FOR UPDATE;
     IF assignment.id IS NULL THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
     IF assignment.version<>p_expected THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VERSION_CONFLICT'; END IF;
-    IF assignment.ends_at IS NOT NULL OR p_ends_at<=assignment.starts_at THEN
+    -- Future cancellation is an empty interval; active finite periods may be
+    -- shortened, but ending must never extend or reopen historical access.
+    effective_end:=greatest(p_ends_at,assignment.starts_at);
+    IF assignment.ended_by_user_id IS NOT NULL OR
+       (assignment.ends_at IS NOT NULL AND
+         (assignment.ends_at<=clock_timestamp() OR effective_end>=assignment.ends_at)) OR
+       (assignment.starts_at<=clock_timestamp() AND effective_end<=assignment.starts_at) THEN
       RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ASSIGNMENT_CONFLICT'; END IF;
     before_state:=private_isg.company_assignment_json(assignment);
-    UPDATE private_isg.company_assignments SET ends_at=p_ends_at,ended_by_user_id=actor,
+    UPDATE private_isg.company_assignments SET ends_at=effective_end,ended_by_user_id=actor,
       reason=clean_reason,version=version+1,updated_at=clock_timestamp()
       WHERE id=assignment.id RETURNING * INTO assignment;
   END IF;

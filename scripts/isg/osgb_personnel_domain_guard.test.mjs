@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const sql=readFileSync(new URL('../../supabase/pilot-release/candidates/20260917144500_osgb_personnel_domain.sql',import.meta.url),'utf8');
+const advanced=readFileSync(new URL('../../supabase/pilot-release/candidates/20260917170000_osgb_personnel_training_advanced.sql',import.meta.url),'utf8');
 
 test('every operational domain starts disabled behind an independent gate',()=>{
   assert.match(sql,/workspace_domain_rollout/);
@@ -33,4 +34,13 @@ test('OSGB rows preserve actual author and carry no fake legacy owner',()=>{
   assert.match(sql,/VALUES\(p_workspace,p_company,NULL,clean_code,clean_name/);
   assert.match(sql,/created_by_user_id,updated_by_user_id/);
   assert.match(sql,/LEGACY_OWNER_FORBIDDEN/);
+});
+
+test('advanced personnel is tenant-native and preserves effective-dated history',()=>{
+  for(const table of ['workspace_job_roles','workspace_contractor_organizations',
+    'workspace_contractor_engagements','workspace_personnel_assignments']) assert.match(advanced,new RegExp(`CREATE TABLE private_isg\\.${table}`));
+  for(const token of ['workspace_personnel_advanced_read','workspace_personnel_advanced_mutate',
+    'ASSIGNMENT_OVERLAP','ACTIVE_ENGAGEMENT_EXISTS','employee_name_snapshot','employer_name_snapshot']) assert.ok(advanced.includes(token),token);
+  assert.match(advanced,/FOREIGN KEY\(workspace_id,company_id,employee_id\)/);
+  assert.doesNotMatch(advanced,/GRANT\s+(SELECT|INSERT|UPDATE|DELETE)\s+ON/i);
 });

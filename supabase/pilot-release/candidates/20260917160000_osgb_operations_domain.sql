@@ -88,6 +88,35 @@ ALTER TABLE private_isg.site_visit_observations ADD COLUMN version bigint NOT NU
 ALTER TABLE private_isg.site_visit_observations ADD CONSTRAINT observations_workspace_parent_fk FOREIGN KEY(workspace_id,company_id,visit_id) REFERENCES private_isg.site_visits(workspace_id,company_id,visit_id) ON DELETE CASCADE;
 ALTER TABLE private_isg.site_visit_observations ADD CONSTRAINT observations_workspace_identity_unique UNIQUE(workspace_id,company_id,observation_id);
 
+-- The curated pilot release intentionally did not ship the legacy notebook
+-- archive slice.  D6 still exposes notebook archives to workspace clients, so
+-- create the compatible root when that optional legacy slice is absent.  This
+-- is additive and keeps the signed-copy invariant used by both personal and
+-- OSGB workspaces.
+CREATE TABLE IF NOT EXISTS private_isg.notebook_archive_entries (
+  entry_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id uuid NOT NULL,
+  owner_id uuid NOT NULL,
+  workplace_id uuid NOT NULL,
+  notebook_ref text NOT NULL CHECK(btrim(notebook_ref)<>'' AND length(notebook_ref)<=200),
+  entry_on date NOT NULL CHECK(isfinite(entry_on)),
+  asset_id uuid NOT NULL REFERENCES private_isg.file_assets(asset_id),
+  ai_draft_ref text CHECK(ai_draft_ref IS NULL OR length(ai_draft_ref)<=200),
+  ai_text_is_official_record boolean NOT NULL DEFAULT false CHECK(NOT ai_text_is_official_record),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(company_id,notebook_ref,entry_on),
+  FOREIGN KEY(company_id,owner_id) REFERENCES public.companies(id,user_id) ON DELETE CASCADE,
+  FOREIGN KEY(company_id,workplace_id) REFERENCES private_isg.workplaces(company_id,id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS notebook_scope_idx
+  ON private_isg.notebook_archive_entries(company_id,workplace_id,entry_on);
+CREATE INDEX IF NOT EXISTS notebook_owner_idx
+  ON private_isg.notebook_archive_entries(company_id,owner_id);
+CREATE INDEX IF NOT EXISTS notebook_asset_idx
+  ON private_isg.notebook_archive_entries(asset_id);
+ALTER TABLE private_isg.notebook_archive_entries ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON private_isg.notebook_archive_entries FROM PUBLIC,anon,authenticated,service_role;
+
 ALTER TABLE private_isg.notebook_archive_entries ADD COLUMN workspace_id uuid;
 ALTER TABLE private_isg.notebook_archive_entries ADD COLUMN workspace_asset_id uuid REFERENCES private_isg.workspace_file_assets(id) ON DELETE RESTRICT;
 ALTER TABLE private_isg.notebook_archive_entries ADD COLUMN created_by_user_id uuid;
@@ -182,30 +211,57 @@ BEGIN
   RETURN p_asset;
 END $$;
 
-CREATE FUNCTION private_isg.workspace_operations_read(p_workspace uuid,p_company uuid,p_kind text,p_id uuid,p_limit integer)
+CREATE FUNCTION private_isg.workspace_operations_read(p_workspace uuid,p_company uuid,p_kind text,p_id uuid,p_after uuid,p_limit integer)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
-DECLARE rows jsonb;
+DECLARE rows jsonb; next_id uuid; id_key text;
 BEGIN
   PERFORM private_isg.workspace_domain_gate('operations',false);
   PERFORM private_isg.workspace_require_company(p_workspace,p_company,false);
-  IF p_kind NOT IN ('katip_contract','annual_plan','board','work_permit','site_visit','notebook_archive') OR p_limit NOT BETWEEN 1 AND 100 THEN
+  IF p_kind NOT IN ('katip_contract','annual_plan','board','work_permit','site_visit','notebook_archive')
+    OR p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 OR (p_id IS NOT NULL AND p_after IS NOT NULL) THEN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   IF p_kind='katip_contract' THEN
-    SELECT coalesce(jsonb_agg(to_jsonb(r)-ARRAY['owner_id','workspace_id','asset_id'] ORDER BY r.starts_on DESC,r.contract_id),'[]') INTO rows FROM private_isg.katip_contracts r WHERE r.workspace_id=p_workspace AND r.company_id=p_company AND NOT r.is_deleted AND (p_id IS NULL OR r.contract_id=p_id);
+    id_key:='contract_id';
+    SELECT coalesce(jsonb_agg(to_jsonb(r)-ARRAY['owner_id','workspace_id','asset_id'] ORDER BY r.contract_id),'[]') INTO rows
+    FROM (SELECT * FROM private_isg.katip_contracts WHERE workspace_id=p_workspace AND company_id=p_company
+      AND NOT is_deleted AND (p_id IS NULL OR contract_id=p_id) AND (p_after IS NULL OR contract_id>p_after)
+      ORDER BY contract_id LIMIT CASE WHEN p_id IS NULL THEN p_limit+1 ELSE 1 END) r;
   ELSIF p_kind='annual_plan' THEN
-    SELECT coalesce(jsonb_agg((to_jsonb(r)-ARRAY['owner_id','workspace_id'])||jsonb_build_object('items',(SELECT coalesce(jsonb_agg(to_jsonb(i)-ARRAY['workspace_id','company_id'] ORDER BY i.planned_on,i.item_id),'[]') FROM private_isg.annual_work_plan_items i WHERE i.workspace_id=p_workspace AND i.company_id=p_company AND i.plan_id=r.plan_id AND NOT i.is_deleted)) ORDER BY r.plan_year DESC,r.plan_id),'[]') INTO rows FROM private_isg.annual_work_plans r WHERE r.workspace_id=p_workspace AND r.company_id=p_company AND NOT r.is_deleted AND (p_id IS NULL OR r.plan_id=p_id);
+    id_key:='plan_id';
+    SELECT coalesce(jsonb_agg((to_jsonb(r)-ARRAY['owner_id','workspace_id'])||jsonb_build_object('items',(SELECT coalesce(jsonb_agg(to_jsonb(i)-ARRAY['workspace_id','company_id'] ORDER BY i.planned_on,i.item_id),'[]') FROM private_isg.annual_work_plan_items i WHERE i.workspace_id=p_workspace AND i.company_id=p_company AND i.plan_id=r.plan_id AND NOT i.is_deleted)) ORDER BY r.plan_id),'[]') INTO rows
+    FROM (SELECT * FROM private_isg.annual_work_plans WHERE workspace_id=p_workspace AND company_id=p_company
+      AND NOT is_deleted AND (p_id IS NULL OR plan_id=p_id) AND (p_after IS NULL OR plan_id>p_after)
+      ORDER BY plan_id LIMIT CASE WHEN p_id IS NULL THEN p_limit+1 ELSE 1 END) r;
   ELSIF p_kind='board' THEN
-    SELECT coalesce(jsonb_agg((to_jsonb(r)-ARRAY['owner_id','workspace_id','minutes_asset_id'])||jsonb_build_object('decisions',(SELECT coalesce(jsonb_agg(to_jsonb(i)-ARRAY['workspace_id','company_id'] ORDER BY i.decision_no),'[]') FROM private_isg.board_decisions i WHERE i.workspace_id=p_workspace AND i.company_id=p_company AND i.meeting_id=r.meeting_id AND NOT i.is_deleted)) ORDER BY r.planned_on DESC,r.meeting_id),'[]') INTO rows FROM private_isg.board_meetings r WHERE r.workspace_id=p_workspace AND r.company_id=p_company AND NOT r.is_deleted AND (p_id IS NULL OR r.meeting_id=p_id);
+    id_key:='meeting_id';
+    SELECT coalesce(jsonb_agg((to_jsonb(r)-ARRAY['owner_id','workspace_id','minutes_asset_id'])||jsonb_build_object('decisions',(SELECT coalesce(jsonb_agg(to_jsonb(i)-ARRAY['workspace_id','company_id'] ORDER BY i.decision_no),'[]') FROM private_isg.board_decisions i WHERE i.workspace_id=p_workspace AND i.company_id=p_company AND i.meeting_id=r.meeting_id AND NOT i.is_deleted)) ORDER BY r.meeting_id),'[]') INTO rows
+    FROM (SELECT * FROM private_isg.board_meetings WHERE workspace_id=p_workspace AND company_id=p_company
+      AND NOT is_deleted AND (p_id IS NULL OR meeting_id=p_id) AND (p_after IS NULL OR meeting_id>p_after)
+      ORDER BY meeting_id LIMIT CASE WHEN p_id IS NULL THEN p_limit+1 ELSE 1 END) r;
   ELSIF p_kind='work_permit' THEN
-    SELECT coalesce(jsonb_agg(to_jsonb(r)-ARRAY['owner_id','workspace_id','rendered_asset_id'] ORDER BY r.planned_on DESC,r.permit_id),'[]') INTO rows FROM private_isg.work_permit_forms r WHERE r.workspace_id=p_workspace AND r.company_id=p_company AND NOT r.is_deleted AND (p_id IS NULL OR r.permit_id=p_id);
+    id_key:='permit_id';
+    SELECT coalesce(jsonb_agg(to_jsonb(r)-ARRAY['owner_id','workspace_id','rendered_asset_id'] ORDER BY r.permit_id),'[]') INTO rows
+    FROM (SELECT * FROM private_isg.work_permit_forms WHERE workspace_id=p_workspace AND company_id=p_company
+      AND NOT is_deleted AND (p_id IS NULL OR permit_id=p_id) AND (p_after IS NULL OR permit_id>p_after)
+      ORDER BY permit_id LIMIT CASE WHEN p_id IS NULL THEN p_limit+1 ELSE 1 END) r;
   ELSIF p_kind='site_visit' THEN
-    SELECT coalesce(jsonb_agg((to_jsonb(r)-ARRAY['owner_id','workspace_id'])||jsonb_build_object('observations',(SELECT coalesce(jsonb_agg(to_jsonb(i)-ARRAY['workspace_id','company_id','evidence_asset_id'] ORDER BY i.created_at,i.observation_id),'[]') FROM private_isg.site_visit_observations i WHERE i.workspace_id=p_workspace AND i.company_id=p_company AND i.visit_id=r.visit_id AND NOT i.is_deleted)) ORDER BY r.visited_on DESC,r.visit_id),'[]') INTO rows FROM private_isg.site_visits r WHERE r.workspace_id=p_workspace AND r.company_id=p_company AND NOT r.is_deleted AND (p_id IS NULL OR r.visit_id=p_id);
+    id_key:='visit_id';
+    SELECT coalesce(jsonb_agg((to_jsonb(r)-ARRAY['owner_id','workspace_id'])||jsonb_build_object('observations',(SELECT coalesce(jsonb_agg(to_jsonb(i)-ARRAY['workspace_id','company_id','evidence_asset_id'] ORDER BY i.created_at,i.observation_id),'[]') FROM private_isg.site_visit_observations i WHERE i.workspace_id=p_workspace AND i.company_id=p_company AND i.visit_id=r.visit_id AND NOT i.is_deleted)) ORDER BY r.visit_id),'[]') INTO rows
+    FROM (SELECT * FROM private_isg.site_visits WHERE workspace_id=p_workspace AND company_id=p_company
+      AND NOT is_deleted AND (p_id IS NULL OR visit_id=p_id) AND (p_after IS NULL OR visit_id>p_after)
+      ORDER BY visit_id LIMIT CASE WHEN p_id IS NULL THEN p_limit+1 ELSE 1 END) r;
   ELSE
-    SELECT coalesce(jsonb_agg(to_jsonb(r)-ARRAY['owner_id','workspace_id','asset_id'] ORDER BY r.entry_on DESC,r.entry_id),'[]') INTO rows FROM private_isg.notebook_archive_entries r WHERE r.workspace_id=p_workspace AND r.company_id=p_company AND (p_id IS NULL OR r.entry_id=p_id);
+    id_key:='entry_id';
+    SELECT coalesce(jsonb_agg(to_jsonb(r)-ARRAY['owner_id','workspace_id','asset_id'] ORDER BY r.entry_id),'[]') INTO rows
+    FROM (SELECT * FROM private_isg.notebook_archive_entries WHERE workspace_id=p_workspace AND company_id=p_company
+      AND (p_id IS NULL OR entry_id=p_id) AND (p_after IS NULL OR entry_id>p_after)
+      ORDER BY entry_id LIMIT CASE WHEN p_id IS NULL THEN p_limit+1 ELSE 1 END) r;
   END IF;
   IF p_id IS NOT NULL AND jsonb_array_length(rows)=0 THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
+  IF p_id IS NULL AND jsonb_array_length(rows)>p_limit THEN next_id:=(rows->(p_limit-1)->>id_key)::uuid; END IF;
   RETURN jsonb_build_object('schema_version',1,'workspace_id',p_workspace,'company_id',p_company,'kind',p_kind,
-    'rows',(SELECT coalesce(jsonb_agg(value),'[]') FROM (SELECT value FROM jsonb_array_elements(rows) LIMIT p_limit) q));
+    'rows',(SELECT coalesce(jsonb_agg(value),'[]') FROM (SELECT value FROM jsonb_array_elements(rows) LIMIT p_limit) q),
+    'next',next_id);
 END $$;
 
 CREATE FUNCTION private_isg.workspace_operations_mutate(p_mutation uuid,p_workspace uuid,p_company uuid,p_payload jsonb)
@@ -357,10 +413,10 @@ BEGIN
     'notebook_archives',(SELECT count(*) FROM private_isg.notebook_archive_entries WHERE workspace_id=p_workspace AND company_id=p_company));
 END $$;
 
-CREATE FUNCTION public.isg_workspace_operations_read_v1(p_workspace uuid,p_company uuid,p_kind text,p_id uuid DEFAULT NULL,p_limit integer DEFAULT 50) RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private_isg.workspace_operations_read(p_workspace,p_company,p_kind,p_id,p_limit) $$;
+CREATE FUNCTION public.isg_workspace_operations_read_v1(p_workspace uuid,p_company uuid,p_kind text,p_id uuid DEFAULT NULL,p_after uuid DEFAULT NULL,p_limit integer DEFAULT 50) RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private_isg.workspace_operations_read(p_workspace,p_company,p_kind,p_id,p_after,p_limit) $$;
 CREATE FUNCTION public.isg_workspace_operations_mutate_v1(p_mutation uuid,p_workspace uuid,p_company uuid,p_payload jsonb) RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private_isg.workspace_operations_mutate(p_mutation,p_workspace,p_company,p_payload) $$;
 CREATE FUNCTION public.isg_workspace_operations_metrics_v1(p_workspace uuid,p_company uuid) RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private_isg.workspace_operations_metrics(p_workspace,p_company) $$;
 
-REVOKE ALL ON FUNCTION private_isg.workspace_operation_root_invariant(),private_isg.workspace_operation_child_invariant(),private_isg.workspace_operation_asset(uuid,uuid,uuid,boolean),private_isg.workspace_operations_read(uuid,uuid,text,uuid,integer),private_isg.workspace_operations_mutate(uuid,uuid,uuid,jsonb),private_isg.workspace_operations_metrics(uuid,uuid),public.isg_workspace_operations_read_v1(uuid,uuid,text,uuid,integer),public.isg_workspace_operations_mutate_v1(uuid,uuid,uuid,jsonb),public.isg_workspace_operations_metrics_v1(uuid,uuid) FROM PUBLIC,anon,authenticated,service_role;
-GRANT EXECUTE ON FUNCTION private_isg.workspace_operations_read(uuid,uuid,text,uuid,integer),private_isg.workspace_operations_mutate(uuid,uuid,uuid,jsonb),private_isg.workspace_operations_metrics(uuid,uuid),public.isg_workspace_operations_read_v1(uuid,uuid,text,uuid,integer),public.isg_workspace_operations_mutate_v1(uuid,uuid,uuid,jsonb),public.isg_workspace_operations_metrics_v1(uuid,uuid) TO authenticated;
+REVOKE ALL ON FUNCTION private_isg.workspace_operation_root_invariant(),private_isg.workspace_operation_child_invariant(),private_isg.workspace_operation_asset(uuid,uuid,uuid,boolean),private_isg.workspace_operations_read(uuid,uuid,text,uuid,uuid,integer),private_isg.workspace_operations_mutate(uuid,uuid,uuid,jsonb),private_isg.workspace_operations_metrics(uuid,uuid),public.isg_workspace_operations_read_v1(uuid,uuid,text,uuid,uuid,integer),public.isg_workspace_operations_mutate_v1(uuid,uuid,uuid,jsonb),public.isg_workspace_operations_metrics_v1(uuid,uuid) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION private_isg.workspace_operations_read(uuid,uuid,text,uuid,uuid,integer),private_isg.workspace_operations_mutate(uuid,uuid,uuid,jsonb),private_isg.workspace_operations_metrics(uuid,uuid),public.isg_workspace_operations_read_v1(uuid,uuid,text,uuid,uuid,integer),public.isg_workspace_operations_mutate_v1(uuid,uuid,uuid,jsonb),public.isg_workspace_operations_metrics_v1(uuid,uuid) TO authenticated;
 NOTIFY pgrst,'reload schema';

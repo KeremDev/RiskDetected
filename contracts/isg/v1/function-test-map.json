@@ -190,7 +190,7 @@
     {
       "id": "ISG.WORKSPACE.API.SWIFT",
       "source": "App/Services/ISG/IsgWorkspaceAPI.swift",
-      "source_sha256": "3cda526ebe8bfcff6beac8d1a711deedb39dff909cdda94bf22ae8e9e6ba21a5",
+      "source_sha256": "acda1067b5c173fb6665a9c1a04d3b8fa8e595603283e773dbdc05b1c99b16ae",
       "symbols": [
         "IsgWorkspaceAPI.list",
         "IsgWorkspaceAPI.context",
@@ -209,10 +209,19 @@
         "IsgWorkspaceAPI.directory",
         "IsgWorkspaceAPI.employees",
         "IsgWorkspaceAPI.mutateDirectory",
-        "IsgWorkspaceAPI.mutateEmployee"
+        "IsgWorkspaceAPI.mutateEmployee",
+        "IsgWorkspaceAPI.personnelAdvanced",
+        "IsgWorkspaceAPI.trainingAdvanced",
+        "IsgWorkspaceAPI.mutatePersonnelAdvanced",
+        "IsgWorkspaceAPI.mutateTrainingAdvanced",
+        "IsgWorkspaceAPI.createCompany",
+        "IsgWorkspaceAPI.updateCompany",
+        "IsgWorkspaceAPI.domainDetail",
+        "IsgWorkspaceAPI.equipmentCatalog",
+        "IsgWorkspaceAPI.uploadFile"
       ],
       "harness": "scripts/isg/osgb_workspace_api.test.mjs",
-      "harness_sha256": "45514aa920e7be989b1f49a0428eb0daa19cfa83b6ffe3ea5f7551b115325738",
+      "harness_sha256": "a9625b7de26214dedbd34fcc64c198def95f7fa1db589c4bfcd5cb28d70121f5",
       "runner": "node-workspace-api",
       "coverage": "targeted_behavior_tests"
     },
@@ -224,14 +233,14 @@
         "IsgWorkspaceAPI.live"
       ],
       "harness": "scripts/isg/osgb_workspace_api.test.mjs",
-      "harness_sha256": "45514aa920e7be989b1f49a0428eb0daa19cfa83b6ffe3ea5f7551b115325738",
+      "harness_sha256": "a9625b7de26214dedbd34fcc64c198def95f7fa1db589c4bfcd5cb28d70121f5",
       "runner": "node-workspace-api",
       "coverage": "targeted_behavior_tests"
     },
     {
       "id": "ISG.WORKSPACE.STORE.SWIFT",
       "source": "App/Services/ISG/IsgWorkspaceStore.swift",
-      "source_sha256": "000eb7438db8a973efb8a7f4066988a3d744884f9d4802c32ddc1d84fb45e720",
+      "source_sha256": "95acbe8c8ee3bc0d67a794e92ccee265de4441eae95c0767c45c673c1cf9b198",
       "symbols": [
         "IsgWorkspaceStore.adopt",
         "IsgWorkspaceStore.select",
@@ -250,17 +259,27 @@
         "IsgWorkspaceStore.directory",
         "IsgWorkspaceStore.employees",
         "IsgWorkspaceStore.mutateDirectory",
-        "IsgWorkspaceStore.mutateEmployee"
+        "IsgWorkspaceStore.mutateEmployee",
+        "IsgWorkspaceStore.personnelAdvanced",
+        "IsgWorkspaceStore.trainingAdvanced",
+        "IsgWorkspaceStore.mutatePersonnelAdvanced",
+        "IsgWorkspaceStore.mutateTrainingAdvanced",
+        "IsgWorkspaceStore.createCompany",
+        "IsgWorkspaceStore.updateCompany",
+        "IsgWorkspaceStore.domainDetail",
+        "IsgWorkspaceStore.equipmentCatalog",
+        "IsgWorkspaceStore.uploadFile",
+        "IsgWorkspaceStore.attachFile"
       ],
       "harness": "scripts/isg/osgb_workspace_api.test.mjs",
-      "harness_sha256": "45514aa920e7be989b1f49a0428eb0daa19cfa83b6ffe3ea5f7551b115325738",
+      "harness_sha256": "a9625b7de26214dedbd34fcc64c198def95f7fa1db589c4bfcd5cb28d70121f5",
       "runner": "node-workspace-api",
       "coverage": "targeted_behavior_tests"
     },
     {
       "id": "ISG.WORKSPACE.GATEWAY.KOTLIN",
       "source": "android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/IsgWorkspaceGateway.kt",
-      "source_sha256": "5a13a127263bc669a9910a03bc7fe9bc64d4e78973c7c5af49297f0300caa946",
+      "source_sha256": "dc715ac6cd795af99eb647d33a8e027d3b3dd89e2367fc7d5f68abee4fb8552a",
       "symbols": [
         "IsgWorkspaceGateway.list",
         "IsgWorkspaceGateway.context",
@@ -270,10 +289,36 @@
         "IsgWorkspaceGateway.domain",
         "IsgWorkspaceGateway.mutateDomain",
         "IsgWorkspaceGateway.fileAnalysisItem",
-        "IsgWorkspaceGateway.createExport"
+        "IsgWorkspaceGateway.createExport",
+        "IsgWorkspaceGateway.personnelAdvanced",
+        "IsgWorkspaceGateway.trainingAdvanced",
+        "IsgWorkspaceGateway.mutatePersonnelAdvanced",
+        "IsgWorkspaceGateway.mutateTrainingAdvanced"
       ],
       "harness": "scripts/isg/osgb_workspace_api.test.mjs",
-      "harness_sha256": "45514aa920e7be989b1f49a0428eb0daa19cfa83b6ffe3ea5f7551b115325738",
+      "harness_sha256": "a9625b7de26214dedbd34fcc64c198def95f7fa1db589c4bfcd5cb28d70121f5",
+      "runner": "node-workspace-api",
+      "coverage": "targeted_behavior_tests"
+    },
+    {
+      "id": "ISG.WORKSPACE.REPOSITORY.KOTLIN",
+      "source": "android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/IsgWorkspaceRepository.kt",
+      "source_sha256": "491a3dd65b08b9262e018e66e6f2a323bae606496268dd75c8306ba168e4940c",
+      "symbols": [
+        "IsgWorkspaceRepository.listOsgbWorkspaces",
+        "IsgWorkspaceRepository.select",
+        "IsgWorkspaceRepository.companies",
+        "IsgWorkspaceRepository.dashboard",
+        "IsgWorkspaceRepository.domain",
+        "IsgWorkspaceRepository.domainMetrics",
+        "IsgWorkspaceRepository.personnelAdvanced",
+        "IsgWorkspaceRepository.trainingAdvanced",
+        "IsgWorkspaceRepository.analyses",
+        "IsgWorkspaceRepository.analysis",
+        "IsgWorkspaceRepository.createExport"
+      ],
+      "harness": "scripts/isg/osgb_workspace_api.test.mjs",
+      "harness_sha256": "a9625b7de26214dedbd34fcc64c198def95f7fa1db589c4bfcd5cb28d70121f5",
       "runner": "node-workspace-api",
       "coverage": "targeted_behavior_tests"
     }

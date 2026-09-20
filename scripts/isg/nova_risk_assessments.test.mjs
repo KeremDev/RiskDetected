@@ -97,7 +97,7 @@ test('the route exists, is reachable and is wired to the real gate',()=>{
   assert.match(navigation,/case riskAssessments/);
   assert.match(navigation,/case \.riskAssessments: return RDLocalization\.string\("localizable\.nova\.navigation\.risk\.assessments"/);
   assert.match(navigation,/static let drawer: \[Self\] = \[[^\]]*\.riskAssessments/);
-  assert.match(main,/case \.riskAssessments:\n\s+risk/);
+  assert.match(main,/case \.riskAssessments:\n\s+if let workspaceStore \{ workspaceDomain\(workspaceStore, \.risk\) \} else \{ risk \}/);
   assert.match(gate,/NovaPilotRiskGate/);
   assert.match(gate,/NovaRiskScreen\(client: client/);
 });

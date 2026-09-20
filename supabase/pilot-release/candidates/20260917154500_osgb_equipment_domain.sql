@@ -194,14 +194,15 @@ BEGIN
 END $$;
 
 CREATE FUNCTION private_isg.workspace_equipment_read(p_workspace uuid,p_company uuid,p_kind text,p_id uuid,
-  p_query text,p_state text,p_type text,p_limit integer) RETURNS jsonb
+  p_query text,p_state text,p_type text,p_after uuid,p_limit integer) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
-DECLARE rows jsonb; catalog jsonb; needle text:=lower(btrim(coalesce(p_query,'')));
+DECLARE rows jsonb; catalog jsonb; next_id uuid; needle text:=lower(btrim(coalesce(p_query,'')));
 BEGIN
   PERFORM private_isg.workspace_domain_gate('equipment',false);
   PERFORM private_isg.workspace_require_company(p_workspace,p_company,false);
-  IF p_kind NOT IN ('inventory','detail','catalog','rules') OR p_limit NOT BETWEEN 1 AND 100 OR
+  IF p_kind NOT IN ('inventory','detail','catalog','rules') OR p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 OR
      (p_kind='detail' AND p_id IS NULL) OR
+     (p_after IS NOT NULL AND (p_kind<>'inventory' OR p_id IS NOT NULL)) OR
      (p_state IS NOT NULL AND p_state NOT IN ('never_inspected','period_unknown','failed','overdue','due_soon','valid')) THEN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   IF p_kind='catalog' THEN
@@ -225,14 +226,20 @@ BEGIN
       SELECT e.equipment_id,private_isg.workspace_equipment_row(p_workspace,p_company,e.equipment_id,p_kind='detail') row_payload
       FROM private_isg.equipment_items e WHERE e.workspace_id=p_workspace AND e.company_id=p_company
         AND (p_kind='detail' OR NOT e.is_archived) AND (p_id IS NULL OR e.equipment_id=p_id)
+        AND (p_after IS NULL OR e.equipment_id>p_after)
         AND (p_type IS NULL OR e.equipment_type=p_type)
         AND (needle='' OR lower(e.serial_tag||' '||coalesce(e.equipment_type_label,e.equipment_type)||' '||coalesce(e.location_note,'')) LIKE '%'||needle||'%')
         AND (p_state IS NULL OR private_isg.workspace_equipment_row(p_workspace,p_company,e.equipment_id,false)->>'state'=p_state)
-      ORDER BY e.created_at DESC,e.equipment_id LIMIT p_limit) q;
+      ORDER BY e.equipment_id LIMIT CASE WHEN p_kind='inventory' THEN p_limit+1 ELSE p_limit END) q;
     IF p_kind='detail' AND jsonb_array_length(rows)=0 THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
   END IF;
+  IF p_kind='inventory' AND jsonb_array_length(rows)>p_limit THEN
+    next_id:=(rows->(p_limit-1)->>'equipment_id')::uuid;
+    SELECT coalesce(jsonb_agg(value),'[]'::jsonb) INTO rows
+      FROM (SELECT value FROM jsonb_array_elements(rows) LIMIT p_limit) q;
+  END IF;
   RETURN jsonb_build_object('schema_version',1,'workspace_id',p_workspace,'company_id',p_company,
-    'kind',p_kind,'rows',rows,'total',jsonb_array_length(rows));
+    'kind',p_kind,'rows',rows,'total',jsonb_array_length(rows),'next',next_id);
 END $$;
 
 CREATE FUNCTION private_isg.workspace_equipment_mutate(p_mutation uuid,p_workspace uuid,p_company uuid,p_payload jsonb)
@@ -396,9 +403,9 @@ BEGIN
 END $$;
 
 CREATE FUNCTION public.isg_workspace_equipment_read_v1(p_workspace uuid,p_company uuid,p_kind text,
-  p_id uuid DEFAULT NULL,p_query text DEFAULT NULL,p_state text DEFAULT NULL,p_type text DEFAULT NULL,p_limit integer DEFAULT 50)
+  p_id uuid DEFAULT NULL,p_query text DEFAULT NULL,p_state text DEFAULT NULL,p_type text DEFAULT NULL,p_after uuid DEFAULT NULL,p_limit integer DEFAULT 50)
 RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$
-  SELECT private_isg.workspace_equipment_read(p_workspace,p_company,p_kind,p_id,p_query,p_state,p_type,p_limit) $$;
+  SELECT private_isg.workspace_equipment_read(p_workspace,p_company,p_kind,p_id,p_query,p_state,p_type,p_after,p_limit) $$;
 CREATE FUNCTION public.isg_workspace_equipment_mutate_v1(p_mutation uuid,p_workspace uuid,p_company uuid,p_payload jsonb)
 RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$
   SELECT private_isg.workspace_equipment_mutate(p_mutation,p_workspace,p_company,p_payload) $$;
@@ -409,14 +416,14 @@ REVOKE ALL ON FUNCTION private_isg.workspace_equipment_item_invariant(),
   private_isg.workspace_equipment_rule_invariant(),private_isg.workspace_equipment_inspection_invariant(),
   private_isg.workspace_equipment_state(date,boolean,text,date),
   private_isg.workspace_equipment_row(uuid,uuid,uuid,boolean),
-  private_isg.workspace_equipment_read(uuid,uuid,text,uuid,text,text,text,integer),
+  private_isg.workspace_equipment_read(uuid,uuid,text,uuid,text,text,text,uuid,integer),
   private_isg.workspace_equipment_mutate(uuid,uuid,uuid,jsonb),private_isg.workspace_equipment_metrics(uuid,uuid),
-  public.isg_workspace_equipment_read_v1(uuid,uuid,text,uuid,text,text,text,integer),
+  public.isg_workspace_equipment_read_v1(uuid,uuid,text,uuid,text,text,text,uuid,integer),
   public.isg_workspace_equipment_mutate_v1(uuid,uuid,uuid,jsonb),public.isg_workspace_equipment_metrics_v1(uuid,uuid)
   FROM PUBLIC,anon,authenticated,service_role;
-GRANT EXECUTE ON FUNCTION private_isg.workspace_equipment_read(uuid,uuid,text,uuid,text,text,text,integer),
+GRANT EXECUTE ON FUNCTION private_isg.workspace_equipment_read(uuid,uuid,text,uuid,text,text,text,uuid,integer),
   private_isg.workspace_equipment_mutate(uuid,uuid,uuid,jsonb),private_isg.workspace_equipment_metrics(uuid,uuid),
-  public.isg_workspace_equipment_read_v1(uuid,uuid,text,uuid,text,text,text,integer),
+  public.isg_workspace_equipment_read_v1(uuid,uuid,text,uuid,text,text,text,uuid,integer),
   public.isg_workspace_equipment_mutate_v1(uuid,uuid,uuid,jsonb),public.isg_workspace_equipment_metrics_v1(uuid,uuid)
   TO authenticated;
 NOTIFY pgrst,'reload schema';

@@ -58,6 +58,7 @@ import kotlinx.serialization.Serializable
     val sectorId: String? = null,
 )
 @Serializable object Companies
+@Serializable object OsgbWorkspace
 @Serializable object Support
 @Serializable object NotificationSettings
 @Serializable object AppearanceSettings

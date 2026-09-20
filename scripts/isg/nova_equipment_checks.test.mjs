@@ -16,6 +16,7 @@ const adapter=read('App/Services/Company/NovaEquipmentCheckLiveAdapter.swift');
 const gate=read('App/Views/Components/NovaPilotEquipmentGate.swift');
 const company=read('App/Views/Components/NovaCompanyManagementGate.swift');
 const main=read('App/Views/Components/NovaPilotMainGate.swift');
+const navigation=read('App/DesignSystem/ISG/NovaNavigation.swift');
 const catalogue=JSON.parse(read('App/Localization/Localizable.xcstrings'));
 const code=source=>source.split('\n').filter(line=>!/^\s*\/\//.test(line)).join('\n');
 
@@ -176,13 +177,13 @@ test('the company page reads the module from the same tally the module uses',()=
 });
 
 test('Periyodik Kontroller is reachable from the menu and the home summary',()=>{
-  assert.match(main,/case \.periodicChecks:\n\s*equipment/);
+  assert.match(main,/case \.periodicChecks:\n\s+if let workspaceStore \{ workspaceDomain\(workspaceStore, \.equipment\) \} else \{ equipment \}/);
   // canWrite here must not depend on a company already being selected: this
   // route is opened straight from the menu, with no company chosen yet, so
   // controller.canWrite (which requires controller.scope) would always be
   // false and silently disable every write control on the page.
   assert.match(main,/NovaPilotEquipmentGate\(identity: identity, canWrite: ready/);
-  assert.match(main,/available: \[[^\]]*\.periodicChecks[,\]]/);
+  assert.match(navigation,/sharedDestinations:[\s\S]*\.periodicChecks/);
   // The home card counts records and lands on this page; it states no verdict.
   assert.match(main,/id: "equipment", value: equipmentBoard\.map \{ String\(\$0\.needsAttention\) \} \?\? "—"/);
   assert.match(main,/destination: \.periodicChecks/);

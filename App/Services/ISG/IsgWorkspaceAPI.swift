@@ -18,6 +18,31 @@ indirect enum IsgWorkspaceRPCValue: Encodable, Equatable {
     static func id(_ value: UUID?) -> Self { value.map { .string($0.uuidString.lowercased()) } ?? .null }
 }
 
+/// Keeps one mutation key for one unchanged command. If the server commits but
+/// the response is lost, tapping Save again replays the receipt instead of
+/// creating a second record. Editing any command field starts a new attempt.
+struct IsgWorkspaceMutationAttempt {
+    private var signature: String?
+    private var mutationID = UUID()
+
+    mutating func id(namespace: String, payload: [String: IsgWorkspaceRPCValue]) -> UUID {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let encoded = (try? encoder.encode(IsgWorkspaceRPCValue.object(payload))) ?? Data()
+        return id(namespace: namespace, components: [Self.digest(encoded)])
+    }
+
+    mutating func id(namespace: String, components: [String]) -> UUID {
+        let value = ([namespace] + components).map { "\($0.utf8.count):\($0)" }.joined(separator: "|")
+        if signature != value { signature = value; mutationID = UUID() }
+        return mutationID
+    }
+
+    static func digest(_ data: Data) -> String {
+        SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+}
+
 enum IsgWorkspaceAPIFailure: Error, Equatable { case staleSession, invalidResponse, invalidRequest }
 
 struct IsgWorkspaceCompany: Equatable {
@@ -26,6 +51,55 @@ struct IsgWorkspaceCompany: Equatable {
     let hazardClass: String
     let status: String
     let version: Int64
+    let sector: String?
+    let email: String?
+    let declaredEmployeeCount: Int?
+    let address: String?
+    let responsibleName: String?
+    let responsiblePhone: String?
+    let responsibleEmail: String?
+    let profileVersion: Int64?
+
+    init(id: UUID, name: String, hazardClass: String, status: String, version: Int64,
+         sector: String? = nil, email: String? = nil, declaredEmployeeCount: Int? = nil,
+         address: String? = nil, responsibleName: String? = nil, responsiblePhone: String? = nil,
+         responsibleEmail: String? = nil, profileVersion: Int64? = nil) {
+        self.id = id; self.name = name; self.hazardClass = hazardClass; self.status = status; self.version = version
+        self.sector = sector; self.email = email; self.declaredEmployeeCount = declaredEmployeeCount
+        self.address = address; self.responsibleName = responsibleName; self.responsiblePhone = responsiblePhone
+        self.responsibleEmail = responsibleEmail; self.profileVersion = profileVersion
+    }
+
+    func applying(_ profile: IsgWorkspaceCompanyProfile) -> Self {
+        .init(id: id, name: name, hazardClass: hazardClass, status: status, version: version,
+              sector: profile.sector, email: profile.email, declaredEmployeeCount: profile.declaredEmployeeCount,
+              address: profile.address, responsibleName: profile.responsibleName,
+              responsiblePhone: profile.responsiblePhone, responsibleEmail: profile.responsibleEmail,
+              profileVersion: profile.version)
+    }
+}
+
+struct IsgWorkspaceCompanyProfile: Equatable {
+    let sector: String
+    let email: String?
+    let declaredEmployeeCount: Int?
+    let address: String?
+    let responsibleName: String?
+    let responsiblePhone: String?
+    let responsibleEmail: String?
+    let version: Int64
+}
+
+struct IsgWorkspaceCompanyDraft: Equatable {
+    var name: String
+    var hazardClass: String
+    var sector: String
+    var email: String
+    var employeeCount: Int?
+    var address: String
+    var responsibleName: String
+    var responsiblePhone: String
+    var responsibleEmail: String
 }
 
 struct IsgWorkspaceMember: Equatable {
@@ -41,6 +115,7 @@ struct IsgWorkspaceMember: Equatable {
 struct IsgWorkspaceMemberPage: Equatable { let rows: [IsgWorkspaceMember]; let next: UUID? }
 
 struct IsgWorkspaceCompanyAssignment: Identifiable, Equatable {
+    enum PeriodState { case current, future, ended }
     let id: UUID
     let companyID: UUID
     let membershipID: UUID
@@ -51,6 +126,20 @@ struct IsgWorkspaceCompanyAssignment: Identifiable, Equatable {
     let startsAt: String
     let endsAt: String?
     let version: Int64
+
+    func periodState(at now: Date = Date()) -> PeriodState {
+        let formatter = ISO8601DateFormatter()
+        func date(_ value: String) -> Date? {
+            formatter.formatOptions = [.withInternetDateTime]
+            if let date = formatter.date(from: value) { return date }
+            formatter.formatOptions.insert(.withFractionalSeconds)
+            return formatter.date(from: value)
+        }
+        guard let start = date(startsAt) else { return .ended }
+        // A cancelled future assignment is retained as an empty interval.
+        if let end = endsAt.flatMap(date), end <= start || end <= now { return .ended }
+        return start > now ? .future : .current
+    }
 }
 
 struct IsgWorkspaceCompanyAssignmentPage: Equatable {
@@ -78,11 +167,15 @@ struct IsgWorkspaceInvitationToken: Equatable {
 
 struct IsgPersonnelMetrics: Equatable {
     struct Counts: Equatable { let active: Int64; let archived: Int64 }
+    struct AssignmentCounts: Equatable { let current: Int64; let historical: Int64 }
     let workspaceID: UUID
     let companyID: UUID?
     let workplaces: Counts
     let departments: Counts
     let employees: Counts
+    let jobRoles: Counts
+    let contractors: Counts
+    let assignments: AssignmentCounts
 }
 
 struct IsgWorkspaceDashboard: Equatable {
@@ -136,6 +229,16 @@ struct IsgWorkspaceAnalysisSummary: Identifiable, Equatable {
 struct IsgWorkspaceAnalysisPage: Equatable {
     let rows: [IsgWorkspaceAnalysisSummary]; let offset: Int; let hasMore: Bool
 }
+struct IsgWorkspacePhotoAnalysisJob: Identifiable, Equatable {
+    let id: UUID
+    let workspaceID: UUID
+    let companyID: UUID
+    let status: String
+    let outputAssetID: UUID?
+    let errorCode: String?
+    let version: Int64?
+    let analysisID: UUID?
+}
 struct IsgWorkspaceFilingResult: Equatable {
     let nonconformityID: UUID; let created: Bool; let successMessageKey: String
 }
@@ -165,6 +268,11 @@ struct IsgWorkspaceDomainRecord: Identifiable, Equatable {
     let status: String?
     let version: Int64?
     let facts: [(String, String)]
+    let checklistItems: [IsgWorkspaceChecklistItem]
+    let trainingParticipants: [IsgWorkspaceTrainingParticipant]
+    let boardDecisions: [IsgWorkspaceBoardDecision]
+    let riskVersions: [IsgWorkspaceRiskVersion]
+    let equipmentInspections: [IsgWorkspaceEquipmentInspection]
     let assetID: UUID?
     let fileExtension: String?
     let originalFilename: String?
@@ -174,8 +282,81 @@ struct IsgWorkspaceDomainRecord: Identifiable, Equatable {
         lhs.status == rhs.status && lhs.version == rhs.version &&
         lhs.assetID == rhs.assetID && lhs.fileExtension == rhs.fileExtension &&
         lhs.originalFilename == rhs.originalFilename &&
+        lhs.checklistItems == rhs.checklistItems &&
+        lhs.trainingParticipants == rhs.trainingParticipants &&
+        lhs.boardDecisions == rhs.boardDecisions &&
+        lhs.riskVersions == rhs.riskVersions &&
+        lhs.equipmentInspections == rhs.equipmentInspections &&
         lhs.facts.elementsEqual(rhs.facts) { $0.0 == $1.0 && $0.1 == $1.1 }
     }
+}
+
+struct IsgWorkspaceRiskVersion: Identifiable, Equatable {
+    var id: Int { number }
+    let number: Int
+    let kind: String
+    let assessmentOn: String
+    let revisionOn: String?
+    let scopeSummary: String?
+    let reason: String?
+    let state: String
+    let validUntil: String?
+    let periodYears: Int?
+    let periodSource: String?
+    let periodNeedsReview: Bool
+    let sourceDrift: Bool
+    let editRevision: Int
+    let cancellationNote: String?
+}
+
+struct IsgWorkspaceEquipmentInspection: Identifiable, Equatable {
+    let id: UUID
+    let performedOn: String
+    let result: String
+    let nextDueOn: String?
+    let periodMonths: Int?
+    let dueSource: String?
+    let inspector: String?
+    let externalRef: String?
+    let note: String?
+    let assetID: UUID?
+    let version: Int64
+    let katipDeclared: Bool
+    let katipNote: String?
+}
+
+struct IsgWorkspaceBoardDecision: Identifiable, Equatable {
+    let id: UUID
+    let number: Int
+    let text: String
+    let responsibleContact: String?
+    let dueOn: String?
+    let state: String
+    let version: Int64
+}
+
+struct IsgWorkspaceTrainingParticipant: Identifiable, Equatable {
+    let id: UUID
+    let name: String
+    let attended: Bool
+}
+
+struct IsgWorkspaceChecklistItem: Identifiable, Equatable {
+    var id: String { code }
+    let code: String
+    let prompt: String
+    let allowsNotApplicable: Bool
+    let result: String?
+    let note: String?
+    let nonconformityID: UUID?
+}
+
+struct IsgWorkspaceChecklistTemplate: Identifiable, Equatable {
+    var id: String { "\(code):\(version)" }
+    let code: String
+    let version: Int
+    let title: String
+    let itemCount: Int
 }
 
 struct IsgWorkspaceDomainMetric: Identifiable, Equatable {
@@ -190,12 +371,44 @@ struct IsgWorkspaceDomainSnapshot: Equatable {
     let metrics: [IsgWorkspaceDomainMetric]
 }
 
+struct IsgWorkspaceEquipmentCatalog: Equatable {
+    struct Suggestion: Identifiable, Equatable {
+        var id: String { code }
+        let code: String
+        let ordinal: Int
+        let defaultPeriodMonths: Int?
+        let defaultBasisNote: String?
+    }
+    struct Rule: Identifiable, Equatable {
+        var id: String { equipmentType }
+        let equipmentType: String
+        let periodMonths: Int
+        let periodSource: String
+        let needsReview: Bool
+        let exceptionNote: String?
+        let version: Int64
+    }
+    let suggestions: [Suggestion]
+    let rules: [Rule]
+
+    func period(for code: String) -> Int? {
+        rules.first(where: { $0.equipmentType == code })?.periodMonths
+            ?? suggestions.first(where: { $0.code == code })?.defaultPeriodMonths
+    }
+}
+
 struct IsgWorkspaceMutationResult: Equatable {
     let domain: IsgWorkspaceDomain
     let companyID: UUID
+    /// Returned by commands that create an aggregate. Keeping this optional
+    /// lets compact product flows (for example: create a meeting, then mark it
+    /// held and add its decisions) remain on the tenant-scoped API boundary.
+    let recordID: UUID?
+    let version: Int64?
 }
 
 struct IsgWorkspaceFileUploadResult: Equatable {
+    let entryID: UUID
     let assetID: UUID
     let companyID: UUID
     let byteSize: Int64
@@ -228,6 +441,37 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
     let endsBefore: String?
     let isArchived: Bool
     let version: Int64
+}
+
+enum IsgWorkspacePersonnelAdvancedKind: String, CaseIterable, Equatable {
+    case jobRoles = "job_roles", contractors, engagements, assignments
+}
+
+enum IsgWorkspaceTrainingAdvancedKind: String, CaseIterable, Equatable {
+    case curricula, annualPlans = "annual_plans", annualItems = "annual_items", attempts, certificates
+}
+
+struct IsgWorkspaceAdvancedTopic: Identifiable, Equatable {
+    let id: UUID
+    let position: Int
+    let title: String
+    let description: String
+    let durationMinutes: Int
+}
+
+struct IsgWorkspaceAdvancedRecord: Identifiable, Equatable {
+    let id: UUID
+    let kind: String
+    let title: String
+    let subtitle: String?
+    let status: String?
+    let version: Int64
+    let fields: [String: String]
+    let topics: [IsgWorkspaceAdvancedTopic]
+
+    func uuid(_ key: String) -> UUID? { fields[key].flatMap(UUID.init(uuidString:)) }
+    func text(_ key: String) -> String? { fields[key] }
+    func flag(_ key: String) -> Bool { fields[key] == "true" }
 }
 
 /// RPC transport for the dark OSGB rollout. It never falls back to a personal
@@ -524,42 +768,91 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
         ])
         try require(selection, operate: true)
         guard data.count <= 32_768 else { throw IsgWorkspaceAPIFailure.invalidResponse }
-        return try JSONDecoder().decode(AssignmentDTO.self, from: data)
+        let result = try JSONDecoder().decode(AssignmentDTO.self, from: data)
             .value(workspaceID: selection.workspaceID, companyID: companyID)
+        guard (action == "create" && result.membershipID == membershipID &&
+                 result.assignmentRole == role && result.version == 0) ||
+              (action == "end" && result.id == assignmentID && result.endsAt != nil &&
+                 expectedVersion < Int64.max && result.version == expectedVersion + 1) else {
+            throw IsgWorkspaceAPIFailure.invalidResponse
+        }
+        return result
     }
 
-    func createCompany(selection: NovaWorkspaceSelection, mutationID: UUID,
-                       name: String, hazardClass: String) async throws -> IsgWorkspaceCompany {
+    func createCompany(selection: NovaWorkspaceSelection, mutationID: UUID, profileMutationID: UUID,
+                       draft: IsgWorkspaceCompanyDraft) async throws -> IsgWorkspaceCompany {
         try require(selection, operate: true)
-        let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let clean = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty, clean.utf8.count <= 200,
-              ["low", "medium", "high"].contains(hazardClass) else {
+              ["low", "medium", "high"].contains(draft.hazardClass) else {
             throw IsgWorkspaceAPIFailure.invalidRequest
         }
         let data = try await rpc("isg_workspace_company_create_v1", [
             "p_mutation": .id(mutationID), "p_workspace": .id(selection.workspaceID),
-            "p_name": .string(clean), "p_hazard": .string(hazardClass)
+            "p_name": .string(clean), "p_hazard": .string(draft.hazardClass)
         ])
         try require(selection, operate: true)
-        return try decodeCompanyMutation(data, selection: selection, expectedCompanyID: nil)
+        let company = try decodeCompanyMutation(data, selection: selection, expectedCompanyID: nil)
+        let profile = try await mutateCompanyProfile(selection: selection, mutationID: profileMutationID,
+            companyID: company.id, expectedVersion: 0, draft: draft)
+        return company.applying(profile)
     }
 
-    func updateCompany(selection: NovaWorkspaceSelection, mutationID: UUID,
-                       companyID: UUID, expectedVersion: Int64,
-                       name: String, hazardClass: String) async throws -> IsgWorkspaceCompany {
+    func updateCompany(selection: NovaWorkspaceSelection, mutationID: UUID, profileMutationID: UUID,
+                       companyID: UUID, expectedVersion: Int64, expectedProfileVersion: Int64,
+                       draft: IsgWorkspaceCompanyDraft) async throws -> IsgWorkspaceCompany {
         try require(selection, operate: true)
-        let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let clean = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard expectedVersion >= 0, !clean.isEmpty, clean.utf8.count <= 200,
-              ["low", "medium", "high"].contains(hazardClass) else {
+              ["low", "medium", "high"].contains(draft.hazardClass) else {
             throw IsgWorkspaceAPIFailure.invalidRequest
         }
         let data = try await rpc("isg_workspace_company_update_v1", [
             "p_mutation": .id(mutationID), "p_workspace": .id(selection.workspaceID),
             "p_company": .id(companyID), "p_expected": .number(Int(expectedVersion)),
-            "p_name": .string(clean), "p_hazard": .string(hazardClass)
+            "p_name": .string(clean), "p_hazard": .string(draft.hazardClass)
         ])
         try require(selection, operate: true)
-        return try decodeCompanyMutation(data, selection: selection, expectedCompanyID: companyID)
+        let company = try decodeCompanyMutation(data, selection: selection, expectedCompanyID: companyID)
+        let profile = try await mutateCompanyProfile(selection: selection, mutationID: profileMutationID,
+            companyID: company.id, expectedVersion: expectedProfileVersion, draft: draft)
+        return company.applying(profile)
+    }
+
+    private func mutateCompanyProfile(selection: NovaWorkspaceSelection, mutationID: UUID,
+                                      companyID: UUID, expectedVersion: Int64,
+                                      draft: IsgWorkspaceCompanyDraft) async throws -> IsgWorkspaceCompanyProfile {
+        try require(selection, operate: true)
+        let sector = draft.sector.trimmingCharacters(in: .whitespacesAndNewlines)
+        let email = draft.email.trimmingCharacters(in: .whitespacesAndNewlines)
+        let address = draft.address.trimmingCharacters(in: .whitespacesAndNewlines)
+        let responsibleName = draft.responsibleName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let responsiblePhone = draft.responsiblePhone.trimmingCharacters(in: .whitespacesAndNewlines)
+        let responsibleEmail = draft.responsibleEmail.trimmingCharacters(in: .whitespacesAndNewlines)
+        let responsibleValues = [responsibleName, responsiblePhone, responsibleEmail]
+        guard expectedVersion >= 0, !sector.isEmpty, sector.utf8.count <= 160,
+              email.utf8.count <= 320, address.utf8.count <= 1_000,
+              responsibleName.utf8.count <= 160, responsiblePhone.utf8.count <= 80,
+              responsibleEmail.utf8.count <= 320,
+              responsibleValues.allSatisfy({ $0.isEmpty }) || responsibleValues.allSatisfy({ !$0.isEmpty }) else {
+            throw IsgWorkspaceAPIFailure.invalidRequest
+        }
+        let data = try await rpc("isg_workspace_company_profile_mutate_v1", [
+            "p_mutation": .id(mutationID), "p_workspace": .id(selection.workspaceID),
+            "p_company": .id(companyID), "p_expected": .number(Int(expectedVersion)),
+            "p_sector": .string(sector), "p_email": email.isEmpty ? .null : .string(email),
+            "p_employee_count": draft.employeeCount.map(IsgWorkspaceRPCValue.number) ?? .null,
+            "p_address": address.isEmpty ? .null : .string(address),
+            "p_responsible_name": responsibleName.isEmpty ? .null : .string(responsibleName),
+            "p_responsible_phone": responsiblePhone.isEmpty ? .null : .string(responsiblePhone),
+            "p_responsible_email": responsibleEmail.isEmpty ? .null : .string(responsibleEmail)
+        ])
+        try require(selection, operate: true)
+        guard data.count <= 32_768 else { throw IsgWorkspaceAPIFailure.invalidResponse }
+        let response = try JSONDecoder().decode(CompanyProfileDTO.self, from: data)
+        guard response.schemaVersion == 1, response.workspaceID == selection.workspaceID,
+              response.companyID == companyID else { throw IsgWorkspaceAPIFailure.invalidResponse }
+        return try response.value()
     }
 
     func archiveCompany(selection: NovaWorkspaceSelection, mutationID: UUID,
@@ -647,6 +940,31 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
         return try dto.value(workspaceID: selection.workspaceID, companyID: companyID, analysisID: analysisID)
     }
 
+    func submitPhotoAnalysis(selection: NovaWorkspaceSelection, mutationID: UUID,
+                             companyID: UUID, assetID: UUID) async throws -> IsgWorkspacePhotoAnalysisJob {
+        try require(selection, operate: true)
+        let data = try await rpc("isg_workspace_photo_analysis_submit_v1", [
+            "p_workspace": .id(selection.workspaceID), "p_company": .id(companyID),
+            "p_idempotency": .id(mutationID), "p_source_asset": .id(assetID)
+        ])
+        try require(selection, operate: true)
+        guard data.count <= 32_768 else { throw IsgWorkspaceAPIFailure.invalidResponse }
+        let dto = try JSONDecoder().decode(PhotoAnalysisSubmitDTO.self, from: data)
+        return try dto.value(workspaceID: selection.workspaceID, companyID: companyID)
+    }
+
+    func photoAnalysisJob(selection: NovaWorkspaceSelection, companyID: UUID,
+                          jobID: UUID) async throws -> IsgWorkspacePhotoAnalysisJob {
+        try require(selection)
+        let data = try await rpc("isg_workspace_photo_analysis_get_v1", [
+            "p_workspace": .id(selection.workspaceID), "p_job": .id(jobID)
+        ])
+        try require(selection)
+        guard data.count <= 32_768 else { throw IsgWorkspaceAPIFailure.invalidResponse }
+        let dto = try JSONDecoder().decode(PhotoAnalysisJobDTO.self, from: data)
+        return try dto.value(workspaceID: selection.workspaceID, companyID: companyID, jobID: jobID)
+    }
+
     func fileAnalysisItem(selection: NovaWorkspaceSelection, mutationID: UUID, companyID: UUID,
                           workplaceID: UUID, sourceScope: String, analysisID: UUID,
                           itemKind: String, itemID: UUID, severity: String?, openedOn: String,
@@ -726,8 +1044,27 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
                 domain: IsgWorkspaceDomain, limit: Int = 100) async throws -> IsgWorkspaceDomainSnapshot {
         try require(selection)
         guard (1...100).contains(limit) else { throw IsgWorkspaceAPIFailure.invalidRequest }
-        let request = domainReadRequest(selection: selection, companyID: companyID, domain: domain, limit: limit)
-        let data = try await rpc(request.function, request.arguments)
+        var after: UUID?
+        var rows: [IsgWorkspaceDomainRecord] = []
+        var seen = Set<UUID>()
+        for pageIndex in 0..<100 {
+            let request = domainReadRequest(selection: selection, companyID: companyID,
+                                            domain: domain, after: after, limit: limit)
+            let data = try await rpc(request.function, request.arguments)
+            try require(selection)
+            guard data.count <= 1_048_576 else { throw IsgWorkspaceAPIFailure.invalidResponse }
+            let page = try decodeDomainPage(data, workspaceID: selection.workspaceID,
+                                            companyID: companyID, domain: domain, limit: limit)
+            guard page.rows.allSatisfy({ seen.insert($0.id).inserted }) else {
+                throw IsgWorkspaceAPIFailure.invalidResponse
+            }
+            rows.append(contentsOf: page.rows)
+            guard let next = page.next else { break }
+            guard next != after, page.rows.last?.id == next, pageIndex < 99 else {
+                throw IsgWorkspaceAPIFailure.invalidResponse
+            }
+            after = next
+        }
         let metricsData: Data?
         if let metrics = domainMetricRequest(selection: selection, companyID: companyID, domain: domain) {
             metricsData = try await rpc(metrics.function, metrics.arguments)
@@ -735,15 +1072,102 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
             metricsData = nil
         }
         try require(selection)
-        guard data.count <= 1_048_576, (metricsData?.count ?? 0) <= 262_144 else {
+        guard (metricsData?.count ?? 0) <= 262_144 else {
             throw IsgWorkspaceAPIFailure.invalidResponse
         }
-        let rows = try decodeDomainRows(data, workspaceID: selection.workspaceID,
-                                        companyID: companyID, domain: domain, limit: limit)
         let metrics = try metricsData.map {
             try decodeDomainMetrics($0, workspaceID: selection.workspaceID, companyID: companyID)
         } ?? []
         return .init(domain: domain, companyID: companyID, rows: rows, metrics: metrics)
+    }
+
+    /// Fetches the authoritative detail shape for a selected list row. Some
+    /// domains intentionally omit heavy history arrays from their board read.
+    func domainDetail(selection: NovaWorkspaceSelection, companyID: UUID,
+                      domain: IsgWorkspaceDomain, id: UUID) async throws -> IsgWorkspaceDomainRecord {
+        try require(selection)
+        var request = domainReadRequest(selection: selection, companyID: companyID,
+                                        domain: domain, after: nil, limit: 1)
+        request.arguments["p_id"] = .id(id)
+        request.arguments["p_after"] = .null
+        request.arguments["p_limit"] = .number(1)
+        if domain == .equipment { request.arguments["p_kind"] = .string("detail") }
+        let data = try await rpc(request.function, request.arguments)
+        try require(selection)
+        guard data.count <= 1_048_576 else { throw IsgWorkspaceAPIFailure.invalidResponse }
+        let page = try decodeDomainPage(data, workspaceID: selection.workspaceID,
+                                        companyID: companyID, domain: domain, limit: 1)
+        guard page.next == nil, page.rows.count == 1, page.rows[0].id == id else {
+            throw IsgWorkspaceAPIFailure.invalidResponse
+        }
+        return page.rows[0]
+    }
+
+    func checklistTemplates(selection: NovaWorkspaceSelection, companyID: UUID) async throws
+        -> [IsgWorkspaceChecklistTemplate] {
+        try require(selection)
+        let data = try await rpc("isg_workspace_checklist_read_v1", [
+            "p_workspace": .id(selection.workspaceID), "p_company": .id(companyID),
+            "p_id": .null, "p_after": .null, "p_limit": .number(1)
+        ])
+        try require(selection)
+        guard data.count <= 262_144 else { throw IsgWorkspaceAPIFailure.invalidResponse }
+        let response = try JSONDecoder().decode(ChecklistTemplateEnvelope.self, from: data)
+        guard response.schemaVersion == 1, response.workspaceID == selection.workspaceID,
+              response.companyID == companyID, response.templates.count <= 500,
+              Set(response.templates.map(\.id)).count == response.templates.count,
+              response.templates.allSatisfy({ !$0.code.isEmpty && !$0.title.isEmpty &&
+                  (1...1000).contains($0.version) && (1...500).contains($0.itemCount) }) else {
+            throw IsgWorkspaceAPIFailure.invalidResponse
+        }
+        return response.templates.map {
+            .init(code: $0.code, version: $0.version, title: $0.title, itemCount: $0.itemCount)
+        }
+    }
+
+    func equipmentCatalog(selection: NovaWorkspaceSelection, companyID: UUID) async throws
+        -> IsgWorkspaceEquipmentCatalog {
+        try require(selection)
+        let data = try await rpc("isg_workspace_equipment_read_v1", [
+            "p_workspace": .id(selection.workspaceID), "p_company": .id(companyID),
+            "p_kind": .string("catalog"), "p_id": .null, "p_query": .string(""),
+            "p_state": .null, "p_type": .null, "p_after": .null, "p_limit": .number(100)
+        ])
+        try require(selection)
+        guard data.count <= 262_144,
+              let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              (root["schema_version"] as? NSNumber)?.intValue == 1,
+              root["workspace_id"] as? String == selection.workspaceID.uuidString.lowercased(),
+              root["company_id"] as? String == companyID.uuidString.lowercased(),
+              let rawSuggestions = root["suggestions"] as? [[String: Any]],
+              let rawRules = root["rules"] as? [[String: Any]],
+              rawSuggestions.count <= 100, rawRules.count <= 100 else {
+            throw IsgWorkspaceAPIFailure.invalidResponse
+        }
+        let suggestions: [IsgWorkspaceEquipmentCatalog.Suggestion] = try rawSuggestions.map { row in
+            guard let code = row["code"] as? String, !code.isEmpty,
+                  let ordinal = (row["ordinal"] as? NSNumber)?.intValue,
+                  ordinal > 0 else { throw IsgWorkspaceAPIFailure.invalidResponse }
+            let months = (row["default_period_months"] as? NSNumber)?.intValue
+            let note = row["default_basis_note"] as? String
+            return .init(code: code, ordinal: ordinal, defaultPeriodMonths: months, defaultBasisNote: note)
+        }.sorted { $0.ordinal < $1.ordinal }
+        let rules: [IsgWorkspaceEquipmentCatalog.Rule] = try rawRules.map { row in
+            guard let type = row["equipment_type"] as? String, !type.isEmpty,
+                  let months = (row["period_months"] as? NSNumber)?.intValue,
+                  let source = row["period_source"] as? String,
+                  let needsReview = row["needs_review"] as? Bool,
+                  let version = (row["version"] as? NSNumber)?.int64Value,
+                  (1...240).contains(months) else { throw IsgWorkspaceAPIFailure.invalidResponse }
+            return .init(equipmentType: type, periodMonths: months, periodSource: source,
+                         needsReview: needsReview, exceptionNote: row["exception_note"] as? String,
+                         version: version)
+        }
+        guard Set(suggestions.map(\.code)).count == suggestions.count,
+              Set(rules.map(\.equipmentType)).count == rules.count else {
+            throw IsgWorkspaceAPIFailure.invalidResponse
+        }
+        return .init(suggestions: suggestions, rules: rules)
     }
 
     func initializePersonnel(selection: NovaWorkspaceSelection, companyID: UUID) async throws {
@@ -762,39 +1186,87 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
                    kind: IsgWorkspaceDirectoryKind, includeArchived: Bool = false) async throws
         -> [IsgWorkspaceDirectoryEntry] {
         try require(selection)
-        let data = try await rpc("isg_workspace_personnel_read_v1", [
-            "p_workspace": .id(selection.workspaceID), "p_company": .id(companyID),
-            "p_kind": .string(kind == .workplace ? "workplaces" : "departments"),
-            "p_query": .string(""), "p_archived": .bool(includeArchived),
-            "p_after": .null, "p_id": .null, "p_limit": .number(100)
-        ])
-        try require(selection)
-        guard data.count <= 262_144 else { throw IsgWorkspaceAPIFailure.invalidResponse }
-        let response = try JSONDecoder().decode(DirectoryPageDTO.self, from: data)
-        guard response.schemaVersion == 1, response.workspaceID == selection.workspaceID,
-              response.companyID == companyID, response.rows.count <= 100 else {
-            throw IsgWorkspaceAPIFailure.invalidResponse
-        }
-        return try response.rows.map { try $0.value(kind: kind) }
+        var rows: [IsgWorkspaceDirectoryEntry] = []
+        var cursor: UUID?
+        var pageCount = 0
+        repeat {
+            pageCount += 1
+            guard pageCount <= 100 else { throw IsgWorkspaceAPIFailure.invalidResponse }
+            let data = try await rpc("isg_workspace_personnel_read_v1", [
+                "p_workspace": .id(selection.workspaceID), "p_company": .id(companyID),
+                "p_kind": .string(kind == .workplace ? "workplaces" : "departments"),
+                "p_query": .string(""), "p_archived": .bool(includeArchived),
+                "p_after": .id(cursor), "p_id": .null, "p_limit": .number(100)
+            ])
+            try require(selection)
+            guard data.count <= 262_144 else { throw IsgWorkspaceAPIFailure.invalidResponse }
+            let response = try JSONDecoder().decode(DirectoryPageDTO.self, from: data)
+            guard response.schemaVersion == 1, response.workspaceID == selection.workspaceID,
+                  response.companyID == companyID, response.rows.count <= 100 else {
+                throw IsgWorkspaceAPIFailure.invalidResponse
+            }
+            let page = try response.rows.map { try $0.value(kind: kind) }
+            try validatePersonnelPage(page.map(\.id), after: cursor, next: response.next)
+            rows.append(contentsOf: page)
+            cursor = response.next
+        } while cursor != nil
+        return rows
     }
 
     func employees(selection: NovaWorkspaceSelection, companyID: UUID,
                    includeArchived: Bool = false) async throws -> [IsgWorkspaceEmployeeEntry] {
         try require(selection)
-        let data = try await rpc("isg_workspace_personnel_read_v1", [
-            "p_workspace": .id(selection.workspaceID), "p_company": .id(companyID),
-            "p_kind": .string("employees"), "p_query": .string(""),
-            "p_archived": .bool(includeArchived), "p_after": .null, "p_id": .null,
-            "p_limit": .number(100)
-        ])
-        try require(selection)
-        guard data.count <= 262_144 else { throw IsgWorkspaceAPIFailure.invalidResponse }
-        let response = try JSONDecoder().decode(EmployeePageDTO.self, from: data)
-        guard response.schemaVersion == 1, response.workspaceID == selection.workspaceID,
-              response.companyID == companyID, response.rows.count <= 100 else {
-            throw IsgWorkspaceAPIFailure.invalidResponse
-        }
-        return try response.rows.map { try $0.value() }
+        var rows: [IsgWorkspaceEmployeeEntry] = []
+        var cursor: UUID?
+        var pageCount = 0
+        repeat {
+            pageCount += 1
+            guard pageCount <= 100 else { throw IsgWorkspaceAPIFailure.invalidResponse }
+            let data = try await rpc("isg_workspace_personnel_read_v1", [
+                "p_workspace": .id(selection.workspaceID), "p_company": .id(companyID),
+                "p_kind": .string("employees"), "p_query": .string(""),
+                "p_archived": .bool(includeArchived), "p_after": .id(cursor), "p_id": .null,
+                "p_limit": .number(100)
+            ])
+            try require(selection)
+            guard data.count <= 262_144 else { throw IsgWorkspaceAPIFailure.invalidResponse }
+            let response = try JSONDecoder().decode(EmployeePageDTO.self, from: data)
+            guard response.schemaVersion == 1, response.workspaceID == selection.workspaceID,
+                  response.companyID == companyID, response.rows.count <= 100 else {
+                throw IsgWorkspaceAPIFailure.invalidResponse
+            }
+            let page = try response.rows.map { try $0.value() }
+            try validatePersonnelPage(page.map(\.id), after: cursor, next: response.next)
+            rows.append(contentsOf: page)
+            cursor = response.next
+        } while cursor != nil
+        return rows
+    }
+
+    func personnelAdvanced(selection: NovaWorkspaceSelection, companyID: UUID,
+                           kind: IsgWorkspacePersonnelAdvancedKind) async throws
+        -> [IsgWorkspaceAdvancedRecord] {
+        try await advancedRows(selection: selection, companyID: companyID,
+            function: "isg_workspace_personnel_advanced_read_v1", kind: kind.rawValue)
+    }
+
+    func trainingAdvanced(selection: NovaWorkspaceSelection, companyID: UUID,
+                          kind: IsgWorkspaceTrainingAdvancedKind) async throws
+        -> [IsgWorkspaceAdvancedRecord] {
+        try await advancedRows(selection: selection, companyID: companyID,
+            function: "isg_workspace_training_advanced_read_v1", kind: kind.rawValue)
+    }
+
+    func mutatePersonnelAdvanced(selection: NovaWorkspaceSelection, mutationID: UUID,
+                                 companyID: UUID, payload: [String: IsgWorkspaceRPCValue]) async throws {
+        try await mutateAdvanced(selection: selection, mutationID: mutationID, companyID: companyID,
+            function: "isg_workspace_personnel_advanced_mutate_v1", payload: payload)
+    }
+
+    func mutateTrainingAdvanced(selection: NovaWorkspaceSelection, mutationID: UUID,
+                                companyID: UUID, payload: [String: IsgWorkspaceRPCValue]) async throws {
+        try await mutateAdvanced(selection: selection, mutationID: mutationID, companyID: companyID,
+            function: "isg_workspace_training_advanced_mutate_v1", payload: payload)
     }
 
     func mutateDirectory(selection: NovaWorkspaceSelection, mutationID: UUID, companyID: UUID,
@@ -875,7 +1347,13 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
               try validScope(root, workspaceID: selection.workspaceID, companyID: companyID) else {
             throw IsgWorkspaceAPIFailure.invalidResponse
         }
-        return .init(domain: domain, companyID: companyID)
+        let record = (root["row"] as? [String: Any]) ?? root
+        let idKeys = ["id", "meeting_id", "plan_id", "appointment_id", "assessment_id",
+                      "training_id", "nonconformity_id", "run_id", "drill_id", "handover_id",
+                      "equipment_id", "contract_id", "permit_id", "visit_id", "entry_id"]
+        let recordID = idKeys.compactMap { record[$0] as? String }.compactMap(UUID.init(uuidString:)).first
+        let version = (record["version"] as? NSNumber)?.int64Value
+        return .init(domain: domain, companyID: companyID, recordID: recordID, version: version)
     }
 
     /// Opens a server-scoped upload intent, writes only to its exact private
@@ -901,11 +1379,29 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
               (1...52_428_800).contains(data.count) else {
             throw IsgWorkspaceAPIFailure.invalidRequest
         }
+        let receiptData = try await rpc("isg_workspace_file_create_receipt_v1", [
+            "p_workspace": .id(selection.workspaceID), "p_company": .id(companyID),
+            "p_mutation": .id(mutationID)
+        ])
+        try require(selection, operate: true)
+        guard receiptData.count <= 16_384 else { throw IsgWorkspaceAPIFailure.invalidResponse }
+        let receipt = try JSONDecoder().decode(FileCreateReceiptDTO.self, from: receiptData)
+        guard receipt.schemaVersion == 1, receipt.workspaceID == selection.workspaceID,
+              receipt.companyID == companyID else { throw IsgWorkspaceAPIFailure.invalidResponse }
+        if receipt.found {
+            guard let entryID = receipt.entryID, let assetID = receipt.assetID,
+                  receipt.byteSize == Int64(data.count) else {
+                throw IsgWorkspaceAPIFailure.invalidResponse
+            }
+            return .init(entryID: entryID, assetID: assetID,
+                         companyID: companyID, byteSize: Int64(data.count))
+        }
         let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
         let expiresAt = ISO8601DateFormatter().string(from: Date().addingTimeInterval(600))
+        let uploadAttemptID = UUID()
         let openedData = try await rpc("isg_workspace_upload_open_v1", [
             "p_workspace": .id(selection.workspaceID), "p_company": .id(companyID),
-            "p_idempotency": .id(mutationID), "p_request_hash": .string("\\x" + digest),
+            "p_idempotency": .id(uploadAttemptID), "p_request_hash": .string("\\x" + digest),
             "p_purpose": .string("workspace_file"),
             "p_media_type": .string(Self.mediaType(for: fileExtension)),
             "p_extension": .string(fileExtension), "p_expected_bytes": .number(data.count),
@@ -931,16 +1427,18 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
         let finalized = try JSONDecoder().decode(FileUploadFinalizedDTO.self, from: finalizedData)
         guard finalized.schemaVersion == 1, finalized.workspaceID == selection.workspaceID,
               finalized.byteSize == Int64(data.count) else { throw IsgWorkspaceAPIFailure.invalidResponse }
+        let assetID = finalized.assetID
 
-        _ = try await mutateDomain(selection: selection, mutationID: UUID(), companyID: companyID,
-                                   domain: .files, payload: [
-            "action": .string("create"), "asset_id": .id(finalized.assetID),
+        let entry = try await mutateDomain(selection: selection, mutationID: mutationID, companyID: companyID,
+                                           domain: .files, payload: [
+            "action": .string("create"), "asset_id": .id(assetID),
             "category": .string(category), "visibility": .string("company_team"),
             "title": .string(cleanTitle), "original_filename": .string(cleanFilename),
             "note": .string(""), "tags": .array([])
         ])
-        return .init(assetID: finalized.assetID, companyID: companyID,
-                     byteSize: finalized.byteSize)
+        guard let entryID = entry.recordID else { throw IsgWorkspaceAPIFailure.invalidResponse }
+        return .init(entryID: entryID, assetID: assetID,
+                     companyID: companyID, byteSize: Int64(data.count))
     }
 
     func downloadFile(selection: NovaWorkspaceSelection, companyID: UUID,
@@ -989,6 +1487,111 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
         return !code.isEmpty && code.utf8.count <= 80 && !name.isEmpty && name.utf8.count <= 200
     }
 
+    private func advancedRows(selection: NovaWorkspaceSelection, companyID: UUID,
+                              function: String, kind: String) async throws -> [IsgWorkspaceAdvancedRecord] {
+        try require(selection)
+        var rows: [IsgWorkspaceAdvancedRecord] = []
+        var cursor: UUID?
+        var seen = Set<UUID>()
+        for pageIndex in 0..<100 {
+            let data = try await rpc(function, [
+                "p_workspace": .id(selection.workspaceID), "p_company": .id(companyID),
+                "p_kind": .string(kind), "p_after": .id(cursor), "p_limit": .number(100)
+            ])
+            try require(selection)
+            guard data.count <= 524_288,
+                  let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  try validScope(root, workspaceID: selection.workspaceID, companyID: companyID),
+                  root["kind"] as? String == kind,
+                  let rawRows = root["rows"] as? [[String: Any]], rawRows.count <= 100 else {
+                throw IsgWorkspaceAPIFailure.invalidResponse
+            }
+            let page = try rawRows.map { try advancedRecord($0) }
+            guard page.allSatisfy({ seen.insert($0.id).inserted }) else {
+                throw IsgWorkspaceAPIFailure.invalidResponse
+            }
+            let next: UUID?
+            if root["next"] == nil || root["next"] is NSNull { next = nil }
+            else if let raw = root["next"] as? String, let id = UUID(uuidString: raw) { next = id }
+            else { throw IsgWorkspaceAPIFailure.invalidResponse }
+            guard next == nil || (page.count == 100 && page.last?.id == next && next != cursor && pageIndex < 99) else {
+                throw IsgWorkspaceAPIFailure.invalidResponse
+            }
+            rows.append(contentsOf: page)
+            cursor = next
+            if next == nil { break }
+        }
+        return rows
+    }
+
+    private func mutateAdvanced(selection: NovaWorkspaceSelection, mutationID: UUID, companyID: UUID,
+                                function: String, payload: [String: IsgWorkspaceRPCValue]) async throws {
+        try require(selection, operate: true)
+        guard case .string(let action)? = payload["action"], !action.isEmpty,
+              (try? JSONEncoder().encode(IsgWorkspaceRPCValue.object(payload)).count).map({ $0 <= 65_536 }) == true else {
+            throw IsgWorkspaceAPIFailure.invalidRequest
+        }
+        let data = try await rpc(function, ["p_mutation": .id(mutationID),
+            "p_workspace": .id(selection.workspaceID), "p_company": .id(companyID),
+            "p_payload": .object(payload)])
+        try require(selection, operate: true)
+        guard data.count <= 65_536,
+              let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              try validScope(root, workspaceID: selection.workspaceID, companyID: companyID),
+              root["action"] as? String == action, root["entity_id"] as? String != nil,
+              ((root["version"] as? NSNumber)?.int64Value ?? -1) >= 0 else {
+            throw IsgWorkspaceAPIFailure.invalidResponse
+        }
+    }
+
+    private func advancedRecord(_ row: [String: Any]) throws -> IsgWorkspaceAdvancedRecord {
+        guard let idText = row["id"] as? String, let id = UUID(uuidString: idText),
+              let kind = row["kind"] as? String, !kind.isEmpty else {
+            throw IsgWorkspaceAPIFailure.invalidResponse
+        }
+        var fields: [String: String] = [:]
+        for (key, value) in row {
+            if let text = value as? String { fields[key] = text }
+            else if let number = value as? NSNumber {
+                fields[key] = CFGetTypeID(number) == CFBooleanGetTypeID() ?
+                    (number.boolValue ? "true" : "false") : number.stringValue
+            }
+        }
+        let title = fields["title"] ?? fields["name"] ?? fields["employee_name"] ??
+            fields["training_title"] ?? fields["certificate_no"] ?? kind
+        guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw IsgWorkspaceAPIFailure.invalidResponse
+        }
+        let subtitle = fields["code"] ?? fields["contractor_name"] ?? fields["workplace_name"] ??
+            fields["employer_name"] ?? fields["employee_name"]
+        let status = fields["state"] ?? fields["verification_state"] ??
+            (fields["is_current"] == "true" ? "active" : nil)
+        let version = (row["version"] as? NSNumber)?.int64Value ?? 0
+        guard version >= 0 else { throw IsgWorkspaceAPIFailure.invalidResponse }
+        let topics: [IsgWorkspaceAdvancedTopic]
+        if let values = row["topics"] as? [[String: Any]] {
+            guard values.count <= 999 else { throw IsgWorkspaceAPIFailure.invalidResponse }
+            topics = try values.map { value in
+                guard let rawID = value["id"] as? String, let topicID = UUID(uuidString: rawID),
+                      let position = (value["position"] as? NSNumber)?.intValue, (1...999).contains(position),
+                      let topicTitle = value["title"] as? String, !topicTitle.isEmpty,
+                      let description = value["description"] as? String,
+                      let minutes = (value["duration_minutes"] as? NSNumber)?.intValue,
+                      (1...100_000).contains(minutes) else {
+                    throw IsgWorkspaceAPIFailure.invalidResponse
+                }
+                return .init(id: topicID, position: position, title: topicTitle,
+                             description: description, durationMinutes: minutes)
+            }
+            guard Set(topics.map(\.id)).count == topics.count,
+                  Set(topics.map(\.position)).count == topics.count else {
+                throw IsgWorkspaceAPIFailure.invalidResponse
+            }
+        } else { topics = [] }
+        return .init(id: id, kind: kind, title: title, subtitle: subtitle,
+                     status: status, version: version, fields: fields, topics: topics)
+    }
+
     private static func validInstant(_ value: String?) -> Bool {
         guard let value, !value.isEmpty else { return false }
         let formatter = ISO8601DateFormatter()
@@ -1013,7 +1616,7 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
     }
 
     private func domainReadRequest(selection: NovaWorkspaceSelection, companyID: UUID,
-                                   domain: IsgWorkspaceDomain, limit: Int)
+                                   domain: IsgWorkspaceDomain, after: UUID?, limit: Int)
         -> (function: String, arguments: [String: IsgWorkspaceRPCValue]) {
         let scope: [String: IsgWorkspaceRPCValue] = [
             "p_workspace": .id(selection.workspaceID), "p_company": .id(companyID)
@@ -1022,23 +1625,24 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
         case .personnel:
             return ("isg_workspace_personnel_read_v1", scope.merging([
                 "p_kind": .string("employees"), "p_query": .string(""), "p_archived": .bool(false),
-                "p_after": .null, "p_id": .null, "p_limit": .number(limit)
+                "p_after": after.map(IsgWorkspaceRPCValue.id) ?? .null, "p_id": .null, "p_limit": .number(limit)
             ]) { _, new in new })
         case .training:
             return ("isg_workspace_training_read_v1", scope.merging([
-                "p_id": .null, "p_after": .null, "p_limit": .number(limit)
+                "p_id": .null, "p_after": after.map(IsgWorkspaceRPCValue.id) ?? .null, "p_limit": .number(limit)
             ]) { _, new in new })
         case .risk:
             return ("isg_workspace_risk_read_v1", scope.merging([
-                "p_id": .null, "p_limit": .number(limit)
+                "p_id": .null, "p_after": after.map(IsgWorkspaceRPCValue.id) ?? .null, "p_limit": .number(limit)
             ]) { _, new in new })
         case .nonconformity:
             return ("isg_workspace_nonconformity_read_v1", scope.merging([
-                "p_id": .null, "p_state": .null, "p_limit": .number(limit)
+                "p_id": .null, "p_state": .null, "p_after": after.map(IsgWorkspaceRPCValue.id) ?? .null,
+                "p_limit": .number(limit)
             ]) { _, new in new })
         case .checklist:
             return ("isg_workspace_checklist_read_v1", scope.merging([
-                "p_id": .null, "p_limit": .number(limit)
+                "p_id": .null, "p_after": after.map(IsgWorkspaceRPCValue.id) ?? .null, "p_limit": .number(limit)
             ]) { _, new in new })
         case .emergencyPlan, .drill, .appointment, .ppe:
             let kind: String
@@ -1049,12 +1653,14 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
             default: kind = "ppe"
             }
             return ("isg_workspace_safety_read_v1", scope.merging([
-                "p_kind": .string(kind), "p_id": .null, "p_limit": .number(limit)
+                "p_kind": .string(kind), "p_id": .null,
+                "p_after": after.map(IsgWorkspaceRPCValue.id) ?? .null, "p_limit": .number(limit)
             ]) { _, new in new })
         case .equipment:
             return ("isg_workspace_equipment_read_v1", scope.merging([
                 "p_kind": .string("inventory"), "p_id": .null, "p_query": .string(""),
-                "p_state": .null, "p_type": .null, "p_limit": .number(limit)
+                "p_state": .null, "p_type": .null, "p_after": after.map(IsgWorkspaceRPCValue.id) ?? .null,
+                "p_limit": .number(limit)
             ]) { _, new in new })
         case .katip, .annualPlan, .board, .workPermit, .visit:
             let kind: String
@@ -1066,12 +1672,14 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
             default: kind = "site_visit"
             }
             return ("isg_workspace_operations_read_v1", scope.merging([
-                "p_kind": .string(kind), "p_id": .null, "p_limit": .number(limit)
+                "p_kind": .string(kind), "p_id": .null,
+                "p_after": after.map(IsgWorkspaceRPCValue.id) ?? .null, "p_limit": .number(limit)
             ]) { _, new in new })
         case .files:
             return ("isg_workspace_file_read_v1", scope.merging([
                 "p_id": .null, "p_query": .string(""), "p_category": .null,
-                "p_include_archived": .bool(false), "p_limit": .number(limit)
+                "p_include_archived": .bool(false),
+                "p_after": after.map(IsgWorkspaceRPCValue.id) ?? .null, "p_limit": .number(limit)
             ]) { _, new in new })
         }
     }
@@ -1111,9 +1719,9 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
         }
     }
 
-    private func decodeDomainRows(_ data: Data, workspaceID: UUID, companyID: UUID,
+    private func decodeDomainPage(_ data: Data, workspaceID: UUID, companyID: UUID,
                                   domain: IsgWorkspaceDomain, limit: Int) throws
-        -> [IsgWorkspaceDomainRecord] {
+        -> (rows: [IsgWorkspaceDomainRecord], next: UUID?) {
         guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               (root["schema_version"] as? NSNumber)?.intValue == 1,
               root["workspace_id"] as? String == workspaceID.uuidString.lowercased(),
@@ -1126,8 +1734,15 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
         else { rawRows = [] }
         guard rawRows.count <= limit else { throw IsgWorkspaceAPIFailure.invalidResponse }
         let rows = try rawRows.map { try domainRecord($0, domain: domain) }
-        guard Set(rows.map(\.id)).count == rows.count else { throw IsgWorkspaceAPIFailure.invalidResponse }
-        return rows
+        let next: UUID?
+        if root["next"] is NSNull || root["next"] == nil { next = nil }
+        else if let raw = root["next"] as? String, let value = UUID(uuidString: raw) { next = value }
+        else { throw IsgWorkspaceAPIFailure.invalidResponse }
+        guard Set(rows.map(\.id)).count == rows.count,
+              next == nil || (rows.count == limit && rows.last?.id == next) else {
+            throw IsgWorkspaceAPIFailure.invalidResponse
+        }
+        return (rows, next)
     }
 
     private func decodeDomainMetrics(_ data: Data, workspaceID: UUID, companyID: UUID) throws
@@ -1184,22 +1799,203 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
         }
         let title = domainTitle(row, domain: domain) ??
             titleKeys.compactMap { display(row[$0]) }.first ?? id.uuidString
-        let status = ["state", "status"].compactMap { display(row[$0]) }.first
+        let riskVersions = domain == .risk ? row["versions"] as? [[String: Any]] : nil
+        let latestRiskVersion = riskVersions?.first
+        let status: String?
+        if domain == .risk {
+            if riskVersions?.contains(where: { display($0["state"]) == "draft" }) == true { status = "draft" }
+            else if ((row["current_version"] as? NSNumber)?.intValue ?? 0) > 0 { status = "final" }
+            else { status = display(latestRiskVersion?["state"]) }
+        } else {
+            status = ["state", "status"].compactMap { display(row[$0]) }.first
+        }
         let subtitle = ["code", "serial_tag", "trainer", "location", "location_note", "expert_contact",
                         "opened_on", "prepared_on", "planned_on", "visited_on", "starts_on", "original_filename"]
             .compactMap { display(row[$0]) }.first
         let version = (row["version"] as? NSNumber)?.int64Value
         let hidden = Set(idKeys + titleKeys + ["state", "status", "version", "workspace_id", "company_id",
-                                              "created_by_user_id", "updated_by_user_id", "created_at", "updated_at"])
-        let facts = row.keys.sorted().compactMap { key -> (String, String)? in
+                                              "created_by_user_id", "updated_by_user_id", "created_at", "updated_at",
+                                              "participants", "versions", "items", "asset", "team", "actions",
+                                              "attendance", "agenda", "decisions"])
+        var facts = row.keys.sorted().compactMap { key -> (String, String)? in
             guard !hidden.contains(key), let value = display(row[key]) else { return nil }
             return (key, value)
         }
+        if domain == .equipment {
+            for key in ["serial_tag", "equipment_type_label", "equipment_type"] {
+                if let value = display(row[key]), !facts.contains(where: { $0.0 == key }) {
+                    facts.insert((key, value), at: 0)
+                }
+            }
+        }
+        if domain == .emergencyPlan, let team = row["team"] as? [[String: Any]] {
+            facts.append(("team_size", String(team.count)))
+            let names = team.compactMap { $0["full_name"] as? String }
+            if !names.isEmpty { facts.append(("team_members", names.joined(separator: ", "))) }
+        }
+        if domain == .board {
+            if let agenda = row["agenda"] as? [String] {
+                facts.append(("agenda_count", String(agenda.count)))
+                if let first = agenda.first, !first.isEmpty { facts.append(("agenda_summary", first)) }
+            }
+            if let attendance = row["attendance"] as? [[String: Any]] {
+                facts.append(("attendance_count", String(attendance.count)))
+            }
+            if let decisions = row["decisions"] as? [[String: Any]] {
+                facts.append(("decision_count", String(decisions.count)))
+                let open = decisions.filter { ($0["state"] as? String) == "open" }.count
+                facts.append(("open_decision_count", String(open)))
+            }
+        }
+        if let draft = riskVersions?.first(where: { display($0["state"]) == "draft" }) {
+            if let value = display(draft["version"]) { facts.append(("draft_version", value)) }
+            if let value = display(draft["kind"]) { facts.append(("draft_kind", value)) }
+        }
+        if domain == .training, let snapshot = row["curriculum_snapshot"] as? [String: Any] {
+            if let value = display(snapshot["title"]) { facts.append(("curriculum_title", value)) }
+            if let value = display(snapshot["revision"]) { facts.append(("curriculum_revision", value)) }
+            if let value = display(snapshot["assessment_required"]) {
+                facts.append(("assessment_required", value))
+            }
+        }
+        let checklistItems: [IsgWorkspaceChecklistItem]
+        if domain == .checklist, let rawItems = row["items"] as? [[String: Any]] {
+            checklistItems = try rawItems.map { item in
+                guard let code = item["item_code"] as? String, !code.isEmpty,
+                      let prompt = item["prompt"] as? String, !prompt.isEmpty,
+                      let allows = item["allows_not_applicable"] as? Bool else {
+                    throw IsgWorkspaceAPIFailure.invalidResponse
+                }
+                let result = item["result"] as? String
+                guard result == nil || ["conform", "nonconform", "not_applicable"].contains(result!) else {
+                    throw IsgWorkspaceAPIFailure.invalidResponse
+                }
+                let nonconformityID = (item["nonconformity_id"] as? String).flatMap(UUID.init(uuidString:))
+                if item["nonconformity_id"] != nil && nonconformityID == nil {
+                    throw IsgWorkspaceAPIFailure.invalidResponse
+                }
+                return .init(code: code, prompt: prompt, allowsNotApplicable: allows,
+                             result: result, note: item["note"] as? String,
+                             nonconformityID: nonconformityID)
+            }
+            guard checklistItems.count <= 500,
+                  Set(checklistItems.map(\.code)).count == checklistItems.count else {
+                throw IsgWorkspaceAPIFailure.invalidResponse
+            }
+        } else { checklistItems = [] }
+        let trainingParticipants: [IsgWorkspaceTrainingParticipant]
+        if domain == .training, let rawParticipants = row["participants"] as? [[String: Any]] {
+            trainingParticipants = try rawParticipants.map { participant in
+                guard let rawID = participant["employee_id"] as? String,
+                      let employeeID = UUID(uuidString: rawID),
+                      let name = participant["name"] as? String, !name.isEmpty,
+                      let attended = participant["attended"] as? Bool else {
+                    throw IsgWorkspaceAPIFailure.invalidResponse
+                }
+                return .init(id: employeeID, name: name, attended: attended)
+            }
+            guard trainingParticipants.count <= 500,
+                  Set(trainingParticipants.map(\.id)).count == trainingParticipants.count else {
+                throw IsgWorkspaceAPIFailure.invalidResponse
+            }
+        } else { trainingParticipants = [] }
+        let boardDecisions: [IsgWorkspaceBoardDecision]
+        if domain == .board, let rawDecisions = row["decisions"] as? [[String: Any]] {
+            boardDecisions = try rawDecisions.map { decision in
+                guard let rawID = decision["decision_id"] as? String,
+                      let id = UUID(uuidString: rawID),
+                      let number = (decision["decision_no"] as? NSNumber)?.intValue,
+                      let text = decision["decision_text"] as? String, !text.isEmpty,
+                      let state = decision["state"] as? String,
+                      ["open", "done", "cancelled"].contains(state),
+                      let version = (decision["version"] as? NSNumber)?.int64Value else {
+                    throw IsgWorkspaceAPIFailure.invalidResponse
+                }
+                return .init(id: id, number: number, text: text,
+                             responsibleContact: decision["responsible_contact"] as? String,
+                             dueOn: decision["due_on"] as? String, state: state, version: version)
+            }
+            guard boardDecisions.count <= 500, Set(boardDecisions.map(\.id)).count == boardDecisions.count else {
+                throw IsgWorkspaceAPIFailure.invalidResponse
+            }
+        } else { boardDecisions = [] }
+        let parsedRiskVersions: [IsgWorkspaceRiskVersion]
+        if domain == .risk, let values = riskVersions {
+            guard values.count <= 500 else { throw IsgWorkspaceAPIFailure.invalidResponse }
+            parsedRiskVersions = try values.map { value in
+                guard let number = (value["version"] as? NSNumber)?.intValue, number > 0,
+                      let kind = value["kind"] as? String,
+                      ["full", "partial", "metadata", "rescan"].contains(kind),
+                      let assessmentOn = value["assessment_on"] as? String, !assessmentOn.isEmpty,
+                      let state = value["state"] as? String,
+                      ["draft", "final", "superseded", "cancelled"].contains(state) else {
+                    throw IsgWorkspaceAPIFailure.invalidResponse
+                }
+                let scopeSummary: String?
+                if let scope = value["scope"] as? [String: Any] {
+                    scopeSummary = display(scope["summary"])
+                } else if let scope = value["scope"] as? [String] {
+                    scopeSummary = scope.isEmpty ? nil : scope.joined(separator: ", ")
+                } else if value["scope"] == nil || value["scope"] is NSNull {
+                    scopeSummary = nil
+                } else {
+                    throw IsgWorkspaceAPIFailure.invalidResponse
+                }
+                return .init(number: number, kind: kind, assessmentOn: assessmentOn,
+                             revisionOn: value["revision_on"] as? String,
+                             scopeSummary: scopeSummary, reason: value["reason"] as? String,
+                             state: state, validUntil: value["valid_until"] as? String,
+                             periodYears: (value["period_years"] as? NSNumber)?.intValue,
+                             periodSource: value["period_source"] as? String,
+                             periodNeedsReview: (value["period_needs_review"] as? Bool) ?? false,
+                             sourceDrift: (value["source_drift"] as? Bool) ?? false,
+                             editRevision: (value["edit_revision"] as? NSNumber)?.intValue ?? 0,
+                             cancellationNote: value["cancellation_note"] as? String)
+            }
+            guard Set(parsedRiskVersions.map(\.number)).count == parsedRiskVersions.count else {
+                throw IsgWorkspaceAPIFailure.invalidResponse
+            }
+        } else { parsedRiskVersions = [] }
+        let equipmentInspections: [IsgWorkspaceEquipmentInspection]
+        if domain == .equipment, let values = row["inspections"] as? [[String: Any]] {
+            guard values.count <= 500 else { throw IsgWorkspaceAPIFailure.invalidResponse }
+            equipmentInspections = try values.map { value in
+                guard let idText = value["inspection_id"] as? String,
+                      let inspectionID = UUID(uuidString: idText),
+                      let performedOn = value["performed_on"] as? String, !performedOn.isEmpty,
+                      let result = value["result"] as? String,
+                      ["pass", "conditional", "fail"].contains(result),
+                      let version = (value["version"] as? NSNumber)?.int64Value, version >= 0 else {
+                    throw IsgWorkspaceAPIFailure.invalidResponse
+                }
+                let assetID: UUID?
+                if value["workspace_asset_id"] == nil || value["workspace_asset_id"] is NSNull {
+                    assetID = nil
+                } else if let raw = value["workspace_asset_id"] as? String,
+                          let parsed = UUID(uuidString: raw) { assetID = parsed }
+                else { throw IsgWorkspaceAPIFailure.invalidResponse }
+                return .init(id: inspectionID, performedOn: performedOn, result: result,
+                             nextDueOn: value["next_due_on"] as? String,
+                             periodMonths: (value["period_months"] as? NSNumber)?.intValue,
+                             dueSource: value["due_source"] as? String,
+                             inspector: value["inspector"] as? String,
+                             externalRef: value["external_ref"] as? String,
+                             note: value["note"] as? String, assetID: assetID, version: version,
+                             katipDeclared: (value["katip_assignment_declared"] as? Bool) ?? false,
+                             katipNote: value["katip_declared_note"] as? String)
+            }
+            guard Set(equipmentInspections.map(\.id)).count == equipmentInspections.count else {
+                throw IsgWorkspaceAPIFailure.invalidResponse
+            }
+        } else { equipmentInspections = [] }
         let asset = row["asset"] as? [String: Any]
         let assetID = (asset?["id"] as? String).flatMap(UUID.init(uuidString:))
         let fileExtension = asset?["extension"] as? String
         return .init(id: id, title: title, subtitle: subtitle, status: status,
-                     version: version, facts: Array(facts.prefix(12)), assetID: assetID,
+                     version: version, facts: Array(facts.prefix(14)), checklistItems: checklistItems,
+                     trainingParticipants: trainingParticipants, boardDecisions: boardDecisions,
+                     riskVersions: parsedRiskVersions, equipmentInspections: equipmentInspections,
+                     assetID: assetID,
                      fileExtension: fileExtension, originalFilename: row["original_filename"] as? String)
     }
 
@@ -1272,9 +2068,32 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
         let schemaVersion: Int; let userID: UUID; let workspaces: [IsgWorkspaceContext]
         enum CodingKeys: String, CodingKey { case schemaVersion = "schema_version", userID = "user_id", workspaces }
     }
+    private func validatePersonnelPage(_ ids: [UUID], after: UUID?, next: UUID?) throws {
+        let ordered = ids.map { $0.uuidString.lowercased() }
+        guard Set(ids).count == ids.count, ordered == ordered.sorted(),
+              after == nil || ordered.allSatisfy({ $0 > after!.uuidString.lowercased() }),
+              next == nil || next == ids.last else { throw IsgWorkspaceAPIFailure.invalidResponse }
+    }
+
     private struct DirectoryPageDTO: Decodable {
+        let next: UUID?
         let schemaVersion: Int; let workspaceID: UUID; let companyID: UUID; let rows: [DirectoryDTO]
-        enum CodingKeys: String, CodingKey { case schemaVersion = "schema_version", workspaceID = "workspace_id", companyID = "company_id", rows }
+        enum CodingKeys: String, CodingKey { case schemaVersion = "schema_version", workspaceID = "workspace_id", companyID = "company_id", rows, next }
+    }
+    private struct ChecklistTemplateEnvelope: Decodable {
+        let schemaVersion: Int; let workspaceID: UUID; let companyID: UUID
+        let templates: [ChecklistTemplateDTO]
+        enum CodingKeys: String, CodingKey {
+            case schemaVersion = "schema_version", workspaceID = "workspace_id"
+            case companyID = "company_id", templates
+        }
+    }
+    private struct ChecklistTemplateDTO: Decodable {
+        let code: String; let version: Int; let title: String; let itemCount: Int
+        var id: String { "\(code):\(version)" }
+        enum CodingKeys: String, CodingKey {
+            case code, version, title, itemCount = "item_count"
+        }
     }
     private struct DirectoryDTO: Decodable {
         let workplaceID: UUID?; let departmentID: UUID?; let code: String; let name: String
@@ -1295,8 +2114,9 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
         }
     }
     private struct EmployeePageDTO: Decodable {
+        let next: UUID?
         let schemaVersion: Int; let workspaceID: UUID; let companyID: UUID; let rows: [EmployeeDTO]
-        enum CodingKeys: String, CodingKey { case schemaVersion = "schema_version", workspaceID = "workspace_id", companyID = "company_id", rows }
+        enum CodingKeys: String, CodingKey { case schemaVersion = "schema_version", workspaceID = "workspace_id", companyID = "company_id", rows, next }
     }
     private struct EmployeeDTO: Decodable {
         let employeeID: UUID; let code: String; let name: String; let departmentID: UUID?
@@ -1432,14 +2252,23 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
     }
     private struct CompanyDTO: Decodable {
         let companyID: UUID; let name: String; let hazardClass: String; let status: String; let version: Int64
+        let sector: String?; let email: String?; let declaredEmployeeCount: Int?; let address: String?
+        let responsibleName: String?; let responsiblePhone: String?; let responsibleEmail: String?
+        let profileVersion: Int64?
         enum CodingKeys: String, CodingKey {
-            case companyID = "company_id", name, hazardClass = "hazard_class", status, version
+            case companyID = "company_id", name, hazardClass = "hazard_class", status, version, sector, email, address
+            case declaredEmployeeCount = "declared_employee_count", responsibleName = "responsible_name"
+            case responsiblePhone = "responsible_phone", responsibleEmail = "responsible_email"
+            case profileVersion = "profile_version"
         }
         func value() throws -> IsgWorkspaceCompany {
             guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, name.utf8.count <= 200,
                   ["low", "medium", "high"].contains(hazardClass), status == "active",
                   (0...9_007_199_254_740_991).contains(version) else { throw IsgWorkspaceAPIFailure.invalidResponse }
-            return .init(id: companyID, name: name, hazardClass: hazardClass, status: status, version: version)
+            return .init(id: companyID, name: name, hazardClass: hazardClass, status: status, version: version,
+                sector: sector, email: email, declaredEmployeeCount: declaredEmployeeCount, address: address,
+                responsibleName: responsibleName, responsiblePhone: responsiblePhone,
+                responsibleEmail: responsibleEmail, profileVersion: profileVersion)
         }
     }
     private struct CompanyMutationDTO: Decodable {
@@ -1466,22 +2295,52 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
             case status, version, dataDeleted = "data_deleted"
         }
     }
-    private struct PersonnelMetricsDTO: Decodable {
-        struct Counts: Decodable { let active: Int64; let archived: Int64 }
-        let schemaVersion: Int; let workspaceID: UUID; let companyID: UUID?; let measured: Bool
-        let workplaces: Counts; let departments: Counts; let employees: Counts
+    private struct CompanyProfileDTO: Decodable {
+        let schemaVersion: Int; let workspaceID: UUID; let companyID: UUID
+        let sector: String; let email: String?; let declaredEmployeeCount: Int?; let address: String?
+        let responsibleName: String?; let responsiblePhone: String?; let responsibleEmail: String?
+        let profileVersion: Int64
         enum CodingKeys: String, CodingKey {
             case schemaVersion = "schema_version", workspaceID = "workspace_id", companyID = "company_id"
-            case measured, workplaces, departments, employees
+            case sector, email, address, declaredEmployeeCount = "declared_employee_count"
+            case responsibleName = "responsible_name", responsiblePhone = "responsible_phone"
+            case responsibleEmail = "responsible_email", profileVersion = "profile_version"
+        }
+        func value() throws -> IsgWorkspaceCompanyProfile {
+            let responsible = [responsibleName, responsiblePhone, responsibleEmail]
+            guard !sector.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  sector.utf8.count <= 160, profileVersion >= 0,
+                  responsible.allSatisfy({ $0 == nil }) || responsible.allSatisfy({ $0 != nil }) else {
+                throw IsgWorkspaceAPIFailure.invalidResponse
+            }
+            return .init(sector: sector, email: email, declaredEmployeeCount: declaredEmployeeCount,
+                         address: address, responsibleName: responsibleName,
+                         responsiblePhone: responsiblePhone, responsibleEmail: responsibleEmail,
+                         version: profileVersion)
+        }
+    }
+    private struct PersonnelMetricsDTO: Decodable {
+        struct Counts: Decodable { let active: Int64; let archived: Int64 }
+        struct AssignmentCounts: Decodable { let current: Int64; let historical: Int64 }
+        let schemaVersion: Int; let workspaceID: UUID; let companyID: UUID?; let measured: Bool
+        let workplaces: Counts; let departments: Counts; let employees: Counts
+        let jobRoles: Counts?; let contractors: Counts?; let assignments: AssignmentCounts?
+        enum CodingKeys: String, CodingKey {
+            case schemaVersion = "schema_version", workspaceID = "workspace_id", companyID = "company_id"
+            case measured, workplaces, departments, employees, contractors, assignments
+            case jobRoles = "job_roles"
         }
         func value(workspaceID expectedWorkspace: UUID, companyID expectedCompany: UUID?) throws -> IsgPersonnelMetrics {
-            let all = [workplaces, departments, employees]
+            let all = [workplaces, departments, employees] + [jobRoles, contractors].compactMap { $0 }
             guard schemaVersion == 1, workspaceID == expectedWorkspace, companyID == expectedCompany, measured,
                   all.allSatisfy({ $0.active >= 0 && $0.archived >= 0 }) else { throw IsgWorkspaceAPIFailure.invalidResponse }
             return .init(workspaceID: workspaceID, companyID: companyID,
                 workplaces: .init(active: workplaces.active, archived: workplaces.archived),
                 departments: .init(active: departments.active, archived: departments.archived),
-                employees: .init(active: employees.active, archived: employees.archived))
+                employees: .init(active: employees.active, archived: employees.archived),
+                jobRoles: .init(active: jobRoles?.active ?? 0, archived: jobRoles?.archived ?? 0),
+                contractors: .init(active: contractors?.active ?? 0, archived: contractors?.archived ?? 0),
+                assignments: .init(current: assignments?.current ?? 0, historical: assignments?.historical ?? 0))
         }
     }
 
@@ -1576,6 +2435,60 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
                 offset: offset, hasMore: hasMore)
         }
     }
+    private struct PhotoAnalysisSubmitDTO: Decodable {
+        let schemaVersion: Int
+        let jobID: UUID
+        let workspaceID: UUID
+        let companyID: UUID
+        let sourceAssetID: UUID
+        let status: String
+        enum CodingKeys: String, CodingKey {
+            case schemaVersion = "schema_version", jobID = "job_id", workspaceID = "workspace_id"
+            case companyID = "company_id", sourceAssetID = "source_asset_id", status
+        }
+        func value(workspaceID expectedWorkspace: UUID,
+                   companyID expectedCompany: UUID) throws -> IsgWorkspacePhotoAnalysisJob {
+            guard schemaVersion == 1, workspaceID == expectedWorkspace, companyID == expectedCompany,
+                  ["queued", "running", "succeeded", "failed", "cancelled", "reconcile"].contains(status) else {
+                throw IsgWorkspaceAPIFailure.invalidResponse
+            }
+            return .init(id: jobID, workspaceID: workspaceID, companyID: companyID, status: status,
+                         outputAssetID: nil, errorCode: nil, version: nil, analysisID: nil)
+        }
+    }
+    private struct PhotoAnalysisJobDTO: Decodable {
+        let schemaVersion: Int
+        let jobID: UUID
+        let workspaceID: UUID
+        let companyID: UUID
+        let feature: String
+        let status: String
+        let sourceKind: String
+        let outputAssetID: UUID?
+        let errorCode: String?
+        let version: Int64
+        let analysisID: UUID?
+        enum CodingKeys: String, CodingKey {
+            case schemaVersion = "schema_version", jobID = "job_id", workspaceID = "workspace_id"
+            case companyID = "company_id", feature, status, sourceKind = "source_kind"
+            case outputAssetID = "output_asset_id", errorCode = "error_code", version
+            case analysisID = "analysis_id"
+        }
+        func value(workspaceID expectedWorkspace: UUID, companyID expectedCompany: UUID,
+                   jobID expectedJob: UUID) throws -> IsgWorkspacePhotoAnalysisJob {
+            let statuses = ["queued", "running", "succeeded", "failed", "cancelled", "reconcile"]
+            guard schemaVersion == 1, workspaceID == expectedWorkspace, companyID == expectedCompany,
+                  jobID == expectedJob, feature == "photo_analysis", sourceKind == "photo",
+                  statuses.contains(status), version >= 0,
+                  status != "succeeded" || (outputAssetID != nil && analysisID != nil),
+                  !["failed", "reconcile"].contains(status) || errorCode != nil else {
+                throw IsgWorkspaceAPIFailure.invalidResponse
+            }
+            return .init(id: jobID, workspaceID: workspaceID, companyID: companyID, status: status,
+                         outputAssetID: outputAssetID, errorCode: errorCode,
+                         version: version, analysisID: analysisID)
+        }
+    }
     private struct FilingDTO: Decodable {
         let schemaVersion: Int; let workspaceID: UUID; let companyID: UUID; let nonconformityID: UUID
         let created: Bool; let commitState: String; let successMessageKey: String
@@ -1594,6 +2507,14 @@ struct IsgWorkspaceEmployeeEntry: Identifiable, Equatable {
             case schemaVersion = "schema_version", intentID = "intent_id", workspaceID = "workspace_id"
             case status, bucket, objectPath = "object_path", uploadToken = "upload_token"
             case credentialReturned = "credential_returned", replayed
+        }
+    }
+    private struct FileCreateReceiptDTO: Decodable {
+        let schemaVersion: Int; let workspaceID: UUID; let companyID: UUID
+        let found: Bool; let entryID: UUID?; let assetID: UUID?; let byteSize: Int64?
+        enum CodingKeys: String, CodingKey {
+            case schemaVersion = "schema_version", workspaceID = "workspace_id", companyID = "company_id"
+            case found, entryID = "entry_id", assetID = "asset_id", byteSize = "byte_size"
         }
     }
     private struct FileUploadFinalizedDTO: Decodable {

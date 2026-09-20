@@ -456,8 +456,8 @@ final class AppState: ObservableObject {
             flow = .main
             return
         }
-        if Self.isRealE2EAnalysisLaunch {
-            Task { await bootstrapRealE2EAnalysis() }
+        if Self.isRealE2EAnalysisLaunch || Self.isPilotPasswordLoginLaunch {
+            Task { await bootstrapDebugPasswordLogin() }
             return
         }
         #endif
@@ -500,7 +500,10 @@ final class AppState: ObservableObject {
     }
 
     #if DEBUG
-    private func bootstrapRealE2EAnalysis() async {
+    /// Debug/device-pilot helper. Credentials are supplied only to the launch
+    /// process and are never compiled into the app bundle. The authenticated
+    /// Supabase session then persists through the normal auth storage.
+    private func bootstrapDebugPasswordLogin() async {
         hasSeenOnboarding = true
         UserDefaults.standard.set(true, forKey: Self.onboardingCompletedKey)
 
@@ -509,7 +512,7 @@ final class AppState: ObservableObject {
             let email = environment["RD_E2E_EMAIL"]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             let password = environment["RD_E2E_PASSWORD"] ?? ""
             guard !email.isEmpty, !password.isEmpty else {
-                authError = "RD_E2E_EMAIL ve RD_E2E_PASSWORD olmadan gerçek E2E login başlatılamaz."
+                authError = Self.isOSGBPilotBundle ? nil : "Pilot giriş bilgileri eksik."
                 flow = .auth
                 return
             }
@@ -517,7 +520,7 @@ final class AppState: ObservableObject {
             do {
                 try await auth.signInWithPassword(email: email, password: password)
             } catch {
-                authError = "Gerçek E2E login başarısız: \(error.localizedDescription)"
+                authError = "Pilot girişi başarısız: \(error.localizedDescription)"
                 flow = .auth
                 return
             }
@@ -986,6 +989,19 @@ final class AppState: ObservableObject {
     private static var isRealE2EAnalysisLaunch: Bool {
         CommandLine.arguments.contains("RD_E2E_REAL_3_PHOTO_ANALYSIS")
             || ProcessInfo.processInfo.environment["RD_E2E_REAL_3_PHOTO_ANALYSIS"] == "1"
+    }
+
+    private static var isPilotPasswordLoginLaunch: Bool {
+        isOSGBPilotBundle
+            || CommandLine.arguments.contains("RD_PILOT_PASSWORD_LOGIN")
+            || ProcessInfo.processInfo.environment["RD_PILOT_PASSWORD_LOGIN"] == "1"
+    }
+
+    /// The dedicated staging pilot must remain usable after a normal icon
+    /// launch. Launch-process credentials are still supported for automation,
+    /// while people signing in on the device use the scoped password screen.
+    private static var isOSGBPilotBundle: Bool {
+        Bundle.main.bundleIdentifier == "com.riskdetected.app.osgbpilot"
     }
 
     private static func prepareForUITestLaunchIfNeeded() {

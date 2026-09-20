@@ -1,6 +1,13 @@
 {
   "sourceLanguage": "tr",
   "strings": {
+    "localizable.nova.workspace.summary.unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The summary is currently unavailable. Check your company selection and connection." } },
+        "tr": { "stringUnit": { "state": "translated", "value": "Özet şu anda kullanılamıyor. Firma seçimini ve bağlantınızı kontrol edin." } }
+      }
+    },
     "localizable.analyzing.view.1.fotograf.79ece311": {
       "comment": "swiftui_text; App/Views/Analyzing/AnalyzingView.swift:370; placeholders: %1$@; review: machine_draft; review: deterministic_english_quality_override",
       "extractionState": "manual",
@@ -43772,6 +43779,13 @@
     "localizable.nova.analysis.field.duration": {"comment":"Analysis training duration label","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Training duration"}},"tr":{"stringUnit":{"state":"translated","value":"Eğitim süresi"}}}},
     "localizable.nova.workspace.analysis.export.ready": {"comment":"Workspace analysis export completed","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"The report is ready."}},"tr":{"stringUnit":{"state":"translated","value":"Rapor hazırlandı."}}}},
     "localizable.nova.workspace.analysis.export.queued": {"comment":"Workspace analysis export queued","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"The report request was received and is being prepared."}},"tr":{"stringUnit":{"state":"translated","value":"Rapor isteği alındı ve hazırlanıyor."}}}},
+    "localizable.nova.manager.section": {"comment":"OSGB manager actions section","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Management"}},"tr":{"stringUnit":{"state":"translated","value":"Yönetim"}}}},
+    "localizable.nova.manager.assignment": {"comment":"OSGB company expert assignment action","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Assign / change"}},"tr":{"stringUnit":{"state":"translated","value":"Atama yap / değiştir"}}}},
+    "localizable.nova.manager.safety": {"comment":"OSGB occupational safety drawer group","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Occupational Safety"}},"tr":{"stringUnit":{"state":"translated","value":"İş Güvenliği"}}}},
+    "localizable.nova.manager.company.add.detail": {"comment":"OSGB manager add-company shortcut detail","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Add a new company to the OSGB workspace."}},"tr":{"stringUnit":{"state":"translated","value":"Yeni firmayı OSGB çalışma alanına ekleyin."}}}},
+    "localizable.nova.manager.expert.add.detail": {"comment":"OSGB manager add-expert shortcut detail","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Invite a new occupational safety expert to your team."}},"tr":{"stringUnit":{"state":"translated","value":"Ekibinize yeni bir İSG uzmanı davet edin."}}}},
+    "localizable.nova.manager.assignment.detail": {"comment":"OSGB manager assignment shortcut detail","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Manage company access and expert roles."}},"tr":{"stringUnit":{"state":"translated","value":"Firma erişimi ve uzman rollerini yönetin."}}}},
+    "localizable.nova.photo.intake.workspace.hint": {"comment":"Single-photo OSGB workspace analysis guidance","extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Select one photo. It is saved to the assigned company's files and the analysis result opens in the same workspace."}},"tr":{"stringUnit":{"state":"translated","value":"Tek fotoğraf seçin. Fotoğraf bağlı bulunduğunuz firmanın dosyalarına kaydedilir ve analiz sonucu aynı çalışma alanında açılır."}}}},
     "localizable.nova.education.savedraft": {
       "comment": "isg_education_editor; Eğitim Ekle: accordion form (info/schedule/trainers/participants), shared curriculum template mirrored into every scope, topics popup opens from the info step; placeholders: %d/%@ and positional %1$d/%2$d where shown; review: human_draft",
       "extractionState": "manual",

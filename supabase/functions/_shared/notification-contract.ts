@@ -49,6 +49,36 @@ const KIND_CONTRACTS: Readonly<
     allowedDestinations: ["reports"],
     defaultSource: "transactional",
   },
+  workspace_deadline_due: {
+    preferenceKey: "account_updates",
+    requiresPreferenceRow: false,
+    allowedDestinations: ["profile"],
+    defaultSource: "transactional",
+  },
+  workspace_deadline_soon: {
+    preferenceKey: "account_updates",
+    requiresPreferenceRow: false,
+    allowedDestinations: ["profile"],
+    defaultSource: "transactional",
+  },
+  workspace_assignment_changed: {
+    preferenceKey: "account_updates",
+    requiresPreferenceRow: false,
+    allowedDestinations: ["profile"],
+    defaultSource: "transactional",
+  },
+  workspace_export_ready: {
+    preferenceKey: "report_ready",
+    requiresPreferenceRow: false,
+    allowedDestinations: ["reports", "profile"],
+    defaultSource: "transactional",
+  },
+  workspace_handover_ready: {
+    preferenceKey: "account_updates",
+    requiresPreferenceRow: false,
+    allowedDestinations: ["profile"],
+    defaultSource: "transactional",
+  },
   account_updates: {
     preferenceKey: "account_updates",
     requiresPreferenceRow: false,

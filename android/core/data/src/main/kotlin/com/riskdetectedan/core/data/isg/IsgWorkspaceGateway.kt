@@ -13,6 +13,15 @@ enum class IsgWorkspaceDomain {
     APPOINTMENT, PPE, EQUIPMENT, KATIP, ANNUAL_PLAN, BOARD, WORK_PERMIT, VISIT, FILES
 }
 
+enum class IsgWorkspacePersonnelAdvancedKind(val wireValue: String) {
+    JOB_ROLES("job_roles"), CONTRACTORS("contractors"), ENGAGEMENTS("engagements"), ASSIGNMENTS("assignments")
+}
+
+enum class IsgWorkspaceTrainingAdvancedKind(val wireValue: String) {
+    CURRICULA("curricula"), ANNUAL_PLANS("annual_plans"), ANNUAL_ITEMS("annual_items"),
+    ATTEMPTS("attempts"), CERTIFICATES("certificates")
+}
+
 /**
  * Dark-rollout transport for the OSGB workspace API. Every response is checked
  * against the same workspace revision after suspension; callers never fall back
@@ -121,7 +130,14 @@ class IsgWorkspaceGateway(
         requireEnvelope(result, workspaceId, companyId)
         if (result.text("assignment_id")?.let(UUID::matches) != true ||
             result.text("membership_id")?.let(UUID::matches) != true ||
-            result.text("assignment_role") !in setOf("primary", "support")) fail()
+            result.text("assignment_role") !in setOf("primary", "support") ||
+            result.text("starts_at")?.let(::validInstant) != true ||
+            !(result["ends_at"] is JsonNull || result.text("ends_at")?.let(::validInstant) == true)) fail()
+        if (create && (result.text("membership_id") != targetMembershipId ||
+                result.text("assignment_role") != role || result.safeLong("version") != 0L)) fail()
+        if (end && (result.text("assignment_id") != assignmentId ||
+                result.text("ends_at") == null || expectedVersion == Long.MAX_VALUE ||
+                result.safeLong("version") != expectedVersion + 1)) fail()
         return result
     }
 
@@ -138,6 +154,36 @@ class IsgWorkspaceGateway(
         }
         return result
     }
+
+    suspend fun personnelAdvanced(workspaceId: String, membershipId: String, permissionRevision: Long,
+                                  companyId: String, kind: IsgWorkspacePersonnelAdvancedKind,
+                                  limit: Int = 100): JsonObject = advancedRead(
+        workspaceId, membershipId, permissionRevision, companyId, kind.wireValue, limit,
+        "isg_workspace_personnel_advanced_read_v1"
+    )
+
+    suspend fun trainingAdvanced(workspaceId: String, membershipId: String, permissionRevision: Long,
+                                 companyId: String, kind: IsgWorkspaceTrainingAdvancedKind,
+                                 limit: Int = 100): JsonObject = advancedRead(
+        workspaceId, membershipId, permissionRevision, companyId, kind.wireValue, limit,
+        "isg_workspace_training_advanced_read_v1"
+    )
+
+    suspend fun mutatePersonnelAdvanced(workspaceId: String, membershipId: String,
+                                        permissionRevision: Long, canOperate: Boolean,
+                                        mutationId: String, companyId: String,
+                                        payload: JsonObject): JsonObject = advancedMutation(
+        workspaceId, membershipId, permissionRevision, canOperate, mutationId, companyId, payload,
+        "isg_workspace_personnel_advanced_mutate_v1"
+    )
+
+    suspend fun mutateTrainingAdvanced(workspaceId: String, membershipId: String,
+                                       permissionRevision: Long, canOperate: Boolean,
+                                       mutationId: String, companyId: String,
+                                       payload: JsonObject): JsonObject = advancedMutation(
+        workspaceId, membershipId, permissionRevision, canOperate, mutationId, companyId, payload,
+        "isg_workspace_training_advanced_mutate_v1"
+    )
 
     suspend fun dashboard(workspaceId: String, membershipId: String, permissionRevision: Long,
                           companyId: String?): JsonObject {
@@ -182,13 +228,40 @@ class IsgWorkspaceGateway(
                        companyId: String, domain: IsgWorkspaceDomain, limit: Int = 100): JsonObject {
         checkWorkspace(workspaceId, membershipId, permissionRevision)
         requireLimit(limit, 100)
-        val (function, arguments) = domainReadRequest(workspaceId, companyId, domain, limit)
-        val result = invoke(function, arguments)
-        checkWorkspace(workspaceId, membershipId, permissionRevision)
-        requireEnvelope(result, workspaceId, companyId)
-        val size = (result["rows"] as? JsonArray)?.size ?: if (result["row"] is JsonObject) 1 else 0
-        if (size > limit) fail()
-        return result
+        var after: String? = null
+        var envelope: JsonObject? = null
+        val combined = mutableListOf<JsonElement>()
+        val seen = mutableSetOf<String>()
+        repeat(100) { pageIndex ->
+            val (function, arguments) = domainReadRequest(workspaceId, companyId, domain, after, limit)
+            val result = invoke(function, arguments)
+            checkWorkspace(workspaceId, membershipId, permissionRevision)
+            requireEnvelope(result, workspaceId, companyId)
+            if (envelope == null) envelope = result
+            val rows = result["rows"] as? JsonArray ?: if (result["row"] is JsonObject) {
+                JsonArray(listOf(result.getValue("row")))
+            } else JsonArray(emptyList())
+            if (rows.size > limit) fail()
+            for (element in rows) {
+                val row = element as? JsonObject ?: fail()
+                val id = domainRowId(row) ?: fail()
+                if (!seen.add(id)) fail()
+                combined += row
+            }
+            val next = when (val raw = result["next"]) {
+                null, JsonNull -> null
+                is JsonPrimitive -> raw.content.takeIf(UUID::matches) ?: fail()
+                else -> fail()
+            }
+            if (next == null) return JsonObject(envelope.toMutableMap().apply {
+                put("rows", JsonArray(combined)); put("next", JsonNull); remove("row")
+                if (containsKey("returned")) put("returned", JsonPrimitive(combined.size))
+                if (containsKey("total")) put("total", JsonPrimitive(combined.size))
+            })
+            if (next == after || rows.size != limit || domainRowId(rows.last() as? JsonObject ?: fail()) != next || pageIndex == 99) fail()
+            after = next
+        }
+        fail()
     }
 
     suspend fun domainMetrics(workspaceId: String, membershipId: String, permissionRevision: Long,
@@ -334,10 +407,69 @@ class IsgWorkspaceGateway(
         return result
     }
 
+    private suspend fun advancedRead(workspaceId: String, membershipId: String, permissionRevision: Long,
+                                     companyId: String, kind: String, limit: Int,
+                                     function: String): JsonObject {
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        requireLimit(limit, 100)
+        var after: String? = null
+        var envelope: JsonObject? = null
+        val combined = mutableListOf<JsonElement>()
+        val seen = mutableSetOf<String>()
+        repeat(100) { pageIndex ->
+            val result = invoke(function, buildJsonObject {
+                put("p_workspace", workspaceId); put("p_company", companyId); put("p_kind", kind)
+                put("p_after", after?.let(::JsonPrimitive) ?: JsonNull); put("p_limit", limit)
+            })
+            checkWorkspace(workspaceId, membershipId, permissionRevision)
+            requireEnvelope(result, workspaceId, companyId)
+            if (result.text("kind") != kind) fail()
+            if (envelope == null) envelope = result
+            val rows = result["rows"] as? JsonArray ?: fail()
+            if (rows.size > limit) fail()
+            for (element in rows) {
+                val row = element as? JsonObject ?: fail()
+                val id = row.text("id")?.takeIf(UUID::matches) ?: fail()
+                if (!seen.add(id) || row.text("kind").isNullOrBlank()) fail()
+                combined += row
+            }
+            val next = when (val raw = result["next"]) {
+                null, JsonNull -> null
+                is JsonPrimitive -> raw.content.takeIf(UUID::matches) ?: fail()
+                else -> fail()
+            }
+            if (next == null) return JsonObject(envelope.toMutableMap().apply {
+                put("rows", JsonArray(combined)); put("next", JsonNull)
+            })
+            if (next == after || rows.size != limit ||
+                (rows.last() as? JsonObject)?.text("id") != next || pageIndex == 99) fail()
+            after = next
+        }
+        fail()
+    }
+
+    private suspend fun advancedMutation(workspaceId: String, membershipId: String,
+                                         permissionRevision: Long, canOperate: Boolean,
+                                         mutationId: String, companyId: String, payload: JsonObject,
+                                         function: String): JsonObject {
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        if (!UUID.matches(mutationId) || payload.text("action").isNullOrBlank() ||
+            payload.toString().toByteArray().size > 65_536) validation()
+        val result = invoke(function, buildJsonObject {
+            put("p_mutation", mutationId); put("p_workspace", workspaceId); put("p_company", companyId)
+            put("p_payload", payload)
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        requireEnvelope(result, workspaceId, companyId)
+        if (result.text("action") != payload.text("action") ||
+            result.text("entity_id")?.let(UUID::matches) != true || result.safeLong("version") == null) fail()
+        return result
+    }
+
     private fun validInstant(value: String): Boolean = runCatching { Instant.parse(value) }.isSuccess
 
     private fun domainReadRequest(workspace: String, company: String, domain: IsgWorkspaceDomain,
-                                  limit: Int): Pair<String, JsonObject> {
+                                  after: String?, limit: Int): Pair<String, JsonObject> {
         val function = when (domain) {
             IsgWorkspaceDomain.PERSONNEL -> "isg_workspace_personnel_read_v1"
             IsgWorkspaceDomain.TRAINING -> "isg_workspace_training_read_v1"
@@ -356,22 +488,23 @@ class IsgWorkspaceGateway(
             when (domain) {
                 IsgWorkspaceDomain.PERSONNEL -> {
                     put("p_kind", "employees"); put("p_query", ""); put("p_archived", false)
-                    put("p_after", JsonNull); put("p_id", JsonNull); put("p_limit", limit)
+                    put("p_after", after?.let(::JsonPrimitive) ?: JsonNull); put("p_id", JsonNull); put("p_limit", limit)
                 }
-                IsgWorkspaceDomain.TRAINING -> { put("p_id", JsonNull); put("p_after", JsonNull); put("p_limit", limit) }
-                IsgWorkspaceDomain.RISK -> { put("p_id", JsonNull); put("p_limit", limit) }
-                IsgWorkspaceDomain.NONCONFORMITY -> { put("p_id", JsonNull); put("p_state", JsonNull); put("p_limit", limit) }
-                IsgWorkspaceDomain.CHECKLIST -> { put("p_id", JsonNull); put("p_limit", limit) }
+                IsgWorkspaceDomain.TRAINING -> { put("p_id", JsonNull); put("p_after", after?.let(::JsonPrimitive) ?: JsonNull); put("p_limit", limit) }
+                IsgWorkspaceDomain.RISK -> { put("p_id", JsonNull); put("p_after", after?.let(::JsonPrimitive) ?: JsonNull); put("p_limit", limit) }
+                IsgWorkspaceDomain.NONCONFORMITY -> { put("p_id", JsonNull); put("p_state", JsonNull); put("p_after", after?.let(::JsonPrimitive) ?: JsonNull); put("p_limit", limit) }
+                IsgWorkspaceDomain.CHECKLIST -> { put("p_id", JsonNull); put("p_after", after?.let(::JsonPrimitive) ?: JsonNull); put("p_limit", limit) }
                 IsgWorkspaceDomain.EMERGENCY_PLAN, IsgWorkspaceDomain.DRILL,
                 IsgWorkspaceDomain.APPOINTMENT, IsgWorkspaceDomain.PPE -> {
                     put("p_kind", when (domain) {
                         IsgWorkspaceDomain.EMERGENCY_PLAN -> "plans"; IsgWorkspaceDomain.DRILL -> "drills"
                         IsgWorkspaceDomain.APPOINTMENT -> "appointments"; else -> "ppe" })
-                    put("p_id", JsonNull); put("p_limit", limit)
+                    put("p_id", JsonNull); put("p_after", after?.let(::JsonPrimitive) ?: JsonNull); put("p_limit", limit)
                 }
                 IsgWorkspaceDomain.EQUIPMENT -> {
                     put("p_kind", "inventory"); put("p_id", JsonNull); put("p_query", "")
-                    put("p_state", JsonNull); put("p_type", JsonNull); put("p_limit", limit)
+                    put("p_state", JsonNull); put("p_type", JsonNull)
+                    put("p_after", after?.let(::JsonPrimitive) ?: JsonNull); put("p_limit", limit)
                 }
                 IsgWorkspaceDomain.KATIP, IsgWorkspaceDomain.ANNUAL_PLAN, IsgWorkspaceDomain.BOARD,
                 IsgWorkspaceDomain.WORK_PERMIT, IsgWorkspaceDomain.VISIT -> {
@@ -379,15 +512,22 @@ class IsgWorkspaceGateway(
                         IsgWorkspaceDomain.KATIP -> "katip_contract"; IsgWorkspaceDomain.ANNUAL_PLAN -> "annual_plan"
                         IsgWorkspaceDomain.BOARD -> "board"; IsgWorkspaceDomain.WORK_PERMIT -> "work_permit"
                         else -> "site_visit" })
-                    put("p_id", JsonNull); put("p_limit", limit)
+                    put("p_id", JsonNull); put("p_after", after?.let(::JsonPrimitive) ?: JsonNull); put("p_limit", limit)
                 }
                 IsgWorkspaceDomain.FILES -> {
                     put("p_id", JsonNull); put("p_query", ""); put("p_category", JsonNull)
-                    put("p_include_archived", false); put("p_limit", limit)
+                    put("p_include_archived", false); put("p_after", after?.let(::JsonPrimitive) ?: JsonNull)
+                    put("p_limit", limit)
                 }
             }
         }
     }
+
+    private fun domainRowId(row: JsonObject): String? = listOf(
+        "employee_id", "training_id", "assessment_id", "nonconformity_id", "run_id", "plan_id",
+        "drill_id", "appointment_id", "handover_id", "equipment_id", "contract_id", "meeting_id",
+        "permit_id", "visit_id", "entry_id", "id"
+    ).firstNotNullOfOrNull { key -> row.text(key)?.takeIf(UUID::matches) }
 
     private fun domainMetricRequest(workspace: String, company: String, domain: IsgWorkspaceDomain): Pair<String, JsonObject>? {
         val function = when (domain) {

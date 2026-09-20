@@ -97,13 +97,13 @@ test('every read and every write re-checks the scope it was given',()=>{
 
 test('the menu entry lands on the tracker and on nothing else',()=>{
   const main=read('App/Views/Components/NovaPilotMainGate.swift');
-  assert.match(main,/case \.documentChecklist:\s*\n\s*documents/);
+  assert.match(main,/case \.documentChecklist:\s*\n\s*if let workspaceStore \{ workspaceDomain\(workspaceStore, \.files\) \} else \{ documents \}/);
   assert.match(main,/NovaPilotDocumentGate\(identity: identity/);
   const navigation=read('App/DesignSystem/ISG/NovaNavigation.swift');
   assert.ok(navigation.includes('.documentChecklist,'));
   // The destination is offered rather than left disabled in the drawer. Its
   // position in that list belongs to whichever slice added the newest entry.
-  assert.match(main,/available: \[[^\]]*\.documentChecklist[,\]]/);
+  assert.match(navigation,/sharedDestinations:[\s\S]*\.documentChecklist/);
 });
 
 test('the portfolio page reads the account once and shows ten at a time',()=>{

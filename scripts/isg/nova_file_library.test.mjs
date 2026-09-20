@@ -14,6 +14,7 @@ const adapter=read('App/Services/Company/NovaFileLibraryLiveAdapter.swift');
 const gate=read('App/Views/Components/NovaPilotFileGate.swift');
 const company=read('App/Views/Components/NovaCompanyManagementGate.swift');
 const main=read('App/Views/Components/NovaPilotMainGate.swift');
+const navigation=read('App/DesignSystem/ISG/NovaNavigation.swift');
 const catalogue=JSON.parse(read('App/Localization/Localizable.xcstrings'));
 // The ban is on what the product says and does, not on the word appearing in a
 // comment that explains why it is banned.
@@ -126,11 +127,11 @@ test('the company page reads the archive from the same tally the archive uses',(
 });
 
 test('Diğer Dosyalar is reachable from the menu and from the company page',()=>{
-  assert.match(main,/case \.documents:\n\s*files/);
+  assert.match(main,/case \.documents:\n\s+if let workspaceStore \{ workspaceDomain\(workspaceStore, \.files\) \} else \{ files\(\) \}/);
   assert.match(main,/NovaPilotFileGate\(identity: identity, canWrite: ready/);
   // Its position in the drawer list belongs to whichever slice added the
   // newest entry, so only its presence is pinned here.
-  assert.match(main,/available: \[[^\]]*\.documents[,\]]/);
+  assert.match(navigation,/sharedDestinations:[\s\S]*\.documents/);
   // Company detail opens the relevant file heading directly in add mode; the
   // removed global button must not return and bypass that context.
   assert.match(company,/startInAddMode: fileSectionAdding/);

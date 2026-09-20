@@ -1,6 +1,80 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+/// A local file selected inside a domain form. Uploading is deliberately
+/// deferred until the parent record is saved so cancelling a form does not
+/// leave an unrelated archive entry behind.
+struct IsgWorkspaceAttachmentDraft: Equatable {
+    let title: String
+    let filename: String
+    let data: Data
+}
+
+/// Reusable inline attachment picker for OSGB create and action flows.
+/// The parent owns the mutation so the document and business record share one
+/// retryable workflow instead of requiring a separate visit to Files.
+struct IsgWorkspaceInlineAttachmentField: View {
+    let title: String
+    var help: String = "PDF, Office, CSV veya görsel · en fazla 50 MB"
+    @Binding var attachment: IsgWorkspaceAttachmentDraft?
+    @State private var picking = false
+    @State private var error: String?
+
+    private let types = ["pdf", "doc", "docx", "xls", "xlsx", "csv", "jpg", "jpeg",
+                         "png", "webp", "avif", "heic", "heif"].compactMap {
+        UTType(filenameExtension: $0)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            Button { picking = true } label: {
+                HStack(spacing: 11) {
+                    NovaIcon(symbol: attachment == nil ? "doc.badge.plus" : "doc.fill", size: 19)
+                    VStack(alignment: .leading, spacing: 3) {
+                        NovaText(text: attachment?.filename ?? title, style: .bodyStrong)
+                        NovaText(text: attachment == nil ? help : "Dosya kayıtla birlikte yüklenecek.",
+                                 style: .metaQuiet)
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: attachment == nil ? "chevron.right" : "arrow.triangle.2.circlepath")
+                }
+                .padding(12).contentShape(Rectangle()).novaControlBackground(cornerRadius: 14)
+            }.buttonStyle(.plain)
+
+            if attachment != nil {
+                Button(role: .destructive) { attachment = nil } label: {
+                    Label("Seçimi kaldır", systemImage: "xmark.circle")
+                        .font(NovaFont.font(.meta))
+                }.buttonStyle(.plain)
+            }
+            if let error { NovaHelpHint(text: error) }
+        }
+        .fileImporter(isPresented: $picking, allowedContentTypes: types,
+                      allowsMultipleSelection: false) { take($0) }
+    }
+
+    private func take(_ result: Result<[URL], Error>) {
+        do {
+            guard let url = try result.get().first else { return }
+            let access = url.startAccessingSecurityScopedResource()
+            defer { if access { url.stopAccessingSecurityScopedResource() } }
+            let data = try Data(contentsOf: url, options: .mappedIfSafe)
+            guard (1...52_428_800).contains(data.count) else {
+                throw IsgWorkspaceAPIFailure.invalidRequest
+            }
+            let filename = url.lastPathComponent
+            let inferredTitle = url.deletingPathExtension().lastPathComponent
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            attachment = .init(title: inferredTitle.isEmpty ? filename : inferredTitle,
+                               filename: filename, data: data)
+            error = nil
+        } catch {
+            attachment = nil
+            self.error = "Dosya okunamadı veya 50 MB sınırını aşıyor."
+        }
+    }
+}
+
 /// D7 file entry surface. Storage location and inspection verdict never come
 /// from this view; it submits bytes to the server-owned intent flow.
 struct IsgWorkspaceFileCreateEditor: View {
@@ -13,6 +87,7 @@ struct IsgWorkspaceFileCreateEditor: View {
     @State private var picking = false
     @State private var saving = false
     @State private var error: String?
+    @State private var mutationAttempt = IsgWorkspaceMutationAttempt()
     @Environment(\.novaCelebrate) private var celebrate
 
     private let categories = [
@@ -106,10 +181,16 @@ struct IsgWorkspaceFileCreateEditor: View {
 
     private func save() {
         guard let payload, let filename, canSave else { return }
+        var attempt = mutationAttempt
+        let mutationID = attempt.id(namespace: "files.create", components: [
+            title.trimmingCharacters(in: .whitespacesAndNewlines), filename, category,
+            IsgWorkspaceMutationAttempt.digest(payload)
+        ])
+        mutationAttempt = attempt
         saving = true; error = nil
         Task { @MainActor in
             do {
-                _ = try await store.uploadFile(mutationID: UUID(), title: title,
+                _ = try await store.uploadFile(mutationID: mutationID, title: title,
                                                filename: filename, category: category, data: payload)
                 celebrate(NovaSuccessMessage.recordSaved(RDLocalization.string(
                     "localizable.nova.workspace.file.saved.subject", table: .localizable,

@@ -2,11 +2,11 @@
 
 17 Eylül 2026 · Plan sürümü 1 · Referans kod: `6eebab8946c627f42d13415cff1b8dc5007cc1ce`, `codex/isg-transition-foundation`.
 
-**Durum: yerel ana operasyon entegrasyonu tamamlandı; tam ürün ve yayın kabulü verilmedi.** Güncel kapsam/kanıt/eksikler [uygulama durumunda](OSGB_IMPLEMENTATION_STATUS_2026-09-17.md), 24 SQL adayının kesin sırası ve hash'leri [aday manifestinde](OSGB_CANDIDATE_MANIFEST_2026-09-17.json) kayıtlıdır. iOS'ta workspace/firma/ekip/atama ile D1–D9 birincil yolları workspace servislerine bağlıdır; ileri domain parity'si, gerçek provider/store, Android OSGB UI, admin frontend ve staging/device kabulü açıktır. Canlı veritabanına, kullanıcılara, API'lere, feature flag'lere, ödeme ürünlerine, webhook'lara, dosyalara veya uygulama dağıtımına işlem yapılmadı. İlerideki canlı geçiş bu belgeden otomatik yetki almaz; hazırlanmış somut yayın paketi ayrıca değerlendirilir.
+**Durum: yerel ana entegrasyon, staging operasyon kabulü, gerçek Gemini/Storage/PDF/XLSX zinciri ve Android OSGB ürün kökünün emülatör E2E'si tamamlandı; production mağaza/fiziksel cihaz ve admin frontend kabulü verilmedi.** Güncel kanıt [staging kabul raporunda](OSGB_STAGING_ACCEPTANCE_2026-09-17.md), kapsam [uygulama durumunda](OSGB_IMPLEMENTATION_STATUS_2026-09-17.md), migration sırası ve hash'leri [aday manifestinde](OSGB_CANDIDATE_MANIFEST_2026-09-17.json) kayıtlıdır. Production veritabanına ve production rollout'una işlem yapılmadı. Admin frontend kullanıcı tarafından sağlanacak UI kit sonrasına bırakıldı.
 
 Bu belge önceki yalnız Faz B planının üzerinde **A–L tam kapsamın ana kaynağıdır**. [Faz B teknik alt planı](OSGB_PHASE_B_PLAN.md) ayrıntılı ek olarak korunur. Yerel aday, staging kabulü ve canlı yayın birbirinden ayrı durumlarda izlenir; henüz kabul edilmemiş işin adı “tamamlandı” olarak değiştirilmez.
 
-17 Eylül kod incelemesinde kişisel veri uyumluluğu ve yetki/istemci hataları düzeltildi; firma–uzman atama yönetimi ile D1–D9 ana iOS route'ları eklendi. Eksik ileri UI parity'si, provider/store, Android, admin ve devir teslimleri [inceleme raporunda](OSGB_INTEGRATION_REVIEW_2026-09-17.md) açıkça listelendi. Karar bağımsız bütün geliştirmelerin bitmiş olduğu varsayılmamalıdır.
+17 Eylül kod incelemesinde kişisel veri uyumluluğu ve yetki/istemci hataları düzeltildi; firma–uzman atama yönetimi, D1–D9 mobil route'ları ve D1/D2 gelişmiş personel/eğitim akışları eklendi. Staging, sağlayıcı ve Android kabulü [güncel kabul raporunda](OSGB_STAGING_ACCEPTANCE_2026-09-17.md) gösterilir. Admin ve dış mağaza/cihaz adımları tamamlanmış varsayılmaz.
 
 ## 1. Kaynaklar ve kapsamın tamamlığı
 
@@ -119,16 +119,16 @@ Fazlar aşağıdaki incelenebilir PR'lara bölünür; harf bir takvim süresi ve
 | Faz | Teslim | Önkoşul | Durum |
 |---|---|---|---|
 | A | Repo envanteri, sahiplik haritası, baseline | Yok | Yerel keşif tamamlandı; canlı katalog doğrulaması bekliyor |
-| B | Workspace/üyelik/davet/personel bağlamı, personal mapping | A + izole baseline | Yerel backend/client adayı ve disposable kabul testi hazır; staging bekliyor |
+| B | Workspace/üyelik/davet/personel bağlamı, personal mapping | A + izole baseline | Backend/client, disposable ve staging sentetik tenant kabulü geçti |
 | C | Firma scope, uzman profili, atamalar/history | B | Yerel backend adayı ve A/B/P testi hazır; gerçek veri doğrulaması bekliyor |
-| D | Bütün operasyon ve yan veri yolları | C | D1–D9 yerel aday zinciri, iOS ana ekran adaptörleri ve çapraz-domain prova hazır; ileri parity/staging/device kabulü bekliyor |
-| E | OSGB/uzman ekranları, ortak operasyonlar | D | iOS store ve D1–D9 route'ları, Android data gateway hazır; Android UI ve cihaz E2E bekliyor |
+| D | Bütün operasyon ve yan veri yolları | C | D1–D9, D1/D2 ileri modüller, gerçek object/AI/export ve staging çapraz-domain kabulü geçti; cihaz/performance kabulü bekliyor |
+| E | OSGB/uzman ekranları, ortak operasyonlar | D | iOS ve Android OSGB ürün kökleri, firma/dashboard/D1–D9 route'ları ve Android analiz export eylemleri hazır; API 33 staging E2E geçti, fiziksel cihaz kabulü bekliyor |
 | F | Mevcut Super Admin genişlemesi | D + mevcut panel kaynağı | Backend komut/overview adayı hazır; DEC-01 nedeniyle frontend kabulü bekliyor |
-| G | Storage ölçümü, AI usage, wallet/reserve temeli | D + F güvenli admin komut çekirdeği | Yerel aday ve concurrency/reconcile testi hazır; gerçek provider/limit bekliyor |
+| G | Storage ölçümü, AI usage, wallet/reserve temeli | D + F güvenli admin komut çekirdeği | Concurrency/reconcile ile gerçek staging Storage/Gemini settlement geçti; production limit kararı bekliyor |
 | H | Apple/Google abonelik, katalog, seat enforcement | C/G + ürün kararları | Provider-neutral aday hazır; ürün kararları ve store sandbox bekliyor |
 | I | Mağaza kredi satışı, grant/refund/ledger | G/H | Provider-neutral aday hazır; ürün kararları ve store sandbox bekliyor |
 | J | Devir, işletme hafızası, deterministik ve AI brief | D/E/F; ücretli brief için I | Yerel aday ve stale/replay/revoke testi hazır; UI/retention kararı bekliyor |
-| K | Tam sistem, güvenlik, performans, restore kabulü | B–J'nin bütün teslimleri | Yerel manifest, integrated rehearsal ve iOS build hazır; staging/restore/load/device kabulü bekliyor |
+| K | Tam sistem, güvenlik, performans, restore kabulü | B–J'nin bütün teslimleri | Manifest, integrated rehearsal, staging gerçek sağlayıcı/object ve Android emülatör E2E geçti; restore/load/physical-device/store kabulü bekliyor |
 | L | Kontrollü pilot ve kademeli yayın | K + somut yayın kararı | Uygulanmadı; ayrı canlı yayın kararı gerekir |
 
 E/F önce operasyonel çekirdek ekranları kurar, G–J verisi geldikçe aynı ekranları tamamlar. Kullanım/billing ekranı boş veya sahte veriyle bitmiş sayılmaz. Bu iki fazın **final kabulü** I/J sonrası yapılır; bağımlılık döngüsü nedeniyle yarım paneller teslim edilmez.

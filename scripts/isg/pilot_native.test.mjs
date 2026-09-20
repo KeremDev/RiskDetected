@@ -54,10 +54,30 @@ test('native pilot create: durable retry, owner/session isolation and fail-close
 test('pilot UI is private-build-only and has no legacy write/store escape', () => {
   const source = readFileSync(join(ROOT, 'App/Views/Components/NovaPilotMainGate.swift'), 'utf8');
   assert.match(source, /#if DEBUG && NOVA_PILOT_BUILD/);
-  assert.match(source, /UUID\(uuidString: configured\) == session.user.id/);
+  assert.match(source, /UUID\(uuidString: configured\) == userID/);
+  assert.match(source, /Bundle\.main\.bundleIdentifier == "com\.riskdetected\.app\.osgbpilot"/);
+  assert.match(source, /Self\.canOpenNovaPilot\(userID: session\.user\.id\)/);
   assert.match(source, /#if targetEnvironment\(simulator\)/);
   assert.doesNotMatch(source, /NovaCompanyManagementGate|CompanyManagementView|PaywallView/);
   const service = readFileSync(join(ROOT, 'App/Services/Company/NovaPilotCompanyService.swift'), 'utf8');
   assert.doesNotMatch(service, /\.from\(|\.insert\(payload|\.update\(payload/);
   assert.match(service, /isg_pilot_company_create_v1/);
+});
+
+test('OSGB pilot opens a scoped password login without changing production OTP', () => {
+  const root = readFileSync(join(ROOT, 'App/RootView.swift'), 'utf8');
+  const state = readFileSync(join(ROOT, 'App/AppState.swift'), 'utf8');
+  const entry = readFileSync(join(ROOT, 'App/Views/Onboarding/Nova/NovaPilotEntryGate.swift'), 'utf8');
+  const config = readFileSync(join(ROOT, 'App/Services/RDConfig.swift'), 'utf8');
+  assert.match(root, /#if DEBUG && NOVA_PILOT_BUILD/);
+  assert.match(root, /NovaPilotEntryGate\(\)/);
+  assert.match(state, /isOSGBPilotBundle[\s\S]*com\.riskdetected\.app\.osgbpilot/);
+  assert.match(state, /authError = Self\.isOSGBPilotBundle \? nil/);
+  assert.match(entry, /signInWithPassword\(email: email, password: password\)/);
+  assert.match(entry, /NovaLoginScreen\(auth: bridge\)/);
+  assert.match(entry, /#if DEBUG && NOVA_PILOT_BUILD/);
+  assert.match(root, /#else\s+AuthView\(\)/);
+  assert.match(config, /osgbPilotSupabaseURLString = "https:\/\/qlymhrrlhklcudveknih\.supabase\.co"/);
+  assert.match(config, /if isOSGBPilotBundle \{[\s\S]*return URL\(string: osgbPilotSupabaseURLString\)!/);
+  assert.match(config, /if isOSGBPilotBundle \{[\s\S]*return osgbPilotPublishableKey/);
 });

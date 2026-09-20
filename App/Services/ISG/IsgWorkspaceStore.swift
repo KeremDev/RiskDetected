@@ -16,9 +16,19 @@ import Combine
     private var identity: NovaSessionIdentity?
     private var generation = UUID()
     private var request: Task<Void, Never>?
-    private lazy var api = IsgWorkspaceAPI.live(currentIdentity: { [weak self] in self?.identity },
-                                                 currentSelection: { [weak self] in self?.selection },
-                                                 currentEpoch: { [weak self] in self?.generation })
+    private let rpc: IsgWorkspaceAPI.RPC?
+    private lazy var api: IsgWorkspaceAPI = {
+        if let rpc {
+            return IsgWorkspaceAPI(rpc: rpc, currentIdentity: { [weak self] in self?.identity },
+                isCurrentWorkspace: { [weak self] in self?.selection == $0 },
+                currentEpoch: { [weak self] in self?.generation })
+        }
+        return .live(currentIdentity: { [weak self] in self?.identity },
+                     currentSelection: { [weak self] in self?.selection },
+                     currentEpoch: { [weak self] in self?.generation })
+    }()
+
+    init(rpc: IsgWorkspaceAPI.RPC? = nil) { self.rpc = rpc }
 
     deinit { request?.cancel() }
 
@@ -156,29 +166,33 @@ import Combine
             action: action, value: value, reason: reason)
     }
 
-    func createCompany(mutationID: UUID, name: String, hazardClass: String) async throws -> IsgWorkspaceCompany {
+    func createCompany(mutationID: UUID, profileMutationID: UUID,
+                       draft: IsgWorkspaceCompanyDraft) async throws -> IsgWorkspaceCompany {
         let selection = try expectedSelection(operate: true)
         let company = try await api.createCompany(selection: selection, mutationID: mutationID,
-                                                  name: name, hazardClass: hazardClass)
+                                                  profileMutationID: profileMutationID, draft: draft)
         try requireCurrent(selection)
+        companies.removeAll { $0.id == company.id }
         companies.append(company)
         companies.sort { $0.id.uuidString.lowercased() < $1.id.uuidString.lowercased() }
         selectedCompanyID = company.id
         // The mutation is already committed at this point. A transient summary
         // failure must not turn a successful create into a false failure.
-        dashboard = try? await api.dashboard(selection: selection, companyID: company.id)
+        try await refreshDashboardAfterMutation(selection)
         return company
     }
 
-    func updateCompany(mutationID: UUID, companyID: UUID, expectedVersion: Int64,
-                       name: String, hazardClass: String) async throws -> IsgWorkspaceCompany {
+    func updateCompany(mutationID: UUID, profileMutationID: UUID, companyID: UUID,
+                       expectedVersion: Int64, expectedProfileVersion: Int64,
+                       draft: IsgWorkspaceCompanyDraft) async throws -> IsgWorkspaceCompany {
         let selection = try expectedSelection(operate: true)
         let company = try await api.updateCompany(selection: selection, mutationID: mutationID,
-            companyID: companyID, expectedVersion: expectedVersion, name: name, hazardClass: hazardClass)
+            profileMutationID: profileMutationID, companyID: companyID, expectedVersion: expectedVersion,
+            expectedProfileVersion: expectedProfileVersion, draft: draft)
         try requireCurrent(selection)
         if let index = companies.firstIndex(where: { $0.id == companyID }) { companies[index] = company }
         if selectedCompanyID == companyID {
-            dashboard = try? await api.dashboard(selection: selection, companyID: companyID)
+            try await refreshDashboardAfterMutation(selection)
         }
         return company
     }
@@ -190,8 +204,8 @@ import Combine
             companyID: companyID, expectedVersion: expectedVersion, reason: reason)
         try requireCurrent(selection)
         companies.removeAll { $0.id == companyID }
-        selectedCompanyID = nil
-        dashboard = try? await api.dashboard(selection: selection, companyID: nil)
+        if selectedCompanyID == companyID { selectedCompanyID = nil }
+        try await refreshDashboardAfterMutation(selection)
     }
 
     func assignments(companyID: UUID? = nil, status: String = "all") async throws
@@ -229,13 +243,67 @@ import Combine
             membershipID: membershipID, expectedVersion: expectedVersion, role: role,
             startsAt: startsAt, endsAt: endsAt, reason: reason)
         try requireCurrent(selection)
-        dashboard = try? await api.dashboard(selection: selection, companyID: companyID)
+        try await refreshDashboardAfterMutation(selection)
         return result
     }
 
     func personnelMetrics(companyID: UUID? = nil) async throws -> IsgPersonnelMetrics {
         let selection = try expectedSelection()
         return try await api.personnelMetrics(selection: selection, companyID: companyID ?? selectedCompanyID)
+    }
+
+    /// Experts are authorized company-by-company, so the server deliberately
+    /// rejects a workspace-wide dashboard request for that role. Build the
+    /// home summary from the expert's already-filtered company directory and
+    /// add the authorized company snapshots. This keeps the overview useful
+    /// without weakening the tenant boundary or requiring a company picker on
+    /// the home page.
+    func aggregateExpertDashboard() async throws -> IsgWorkspaceDashboard {
+        let selection = try expectedSelection()
+        let assignedCompanies = companies
+        var nonconformities = IsgWorkspaceDashboard.Pair(first: 0, second: 0)
+        var visits = IsgWorkspaceDashboard.Pair(first: 0, second: 0)
+        var training = IsgWorkspaceDashboard.Pair(first: 0, second: 0)
+        var deadlines = IsgWorkspaceDashboard.Pair(first: 0, second: 0)
+
+        for company in assignedCompanies {
+            let value = try await api.dashboard(selection: selection, companyID: company.id)
+            nonconformities = add(nonconformities, value.nonconformities)
+            visits = add(visits, value.visits)
+            training = add(training, value.training)
+            deadlines = add(deadlines, value.deadlines)
+        }
+        try requireCurrent(selection)
+        return .init(workspaceID: selection.workspaceID, companyID: nil,
+                     companies: .init(first: Int64(assignedCompanies.count), second: nil),
+                     experts: nil, nonconformities: nonconformities, visits: visits,
+                     training: training, deadlines: deadlines)
+    }
+
+    func aggregateExpertPersonnelMetrics() async throws -> IsgPersonnelMetrics {
+        let selection = try expectedSelection()
+        let assignedCompanies = companies
+        var workplaces = IsgPersonnelMetrics.Counts(active: 0, archived: 0)
+        var departments = IsgPersonnelMetrics.Counts(active: 0, archived: 0)
+        var employees = IsgPersonnelMetrics.Counts(active: 0, archived: 0)
+        var jobRoles = IsgPersonnelMetrics.Counts(active: 0, archived: 0)
+        var contractors = IsgPersonnelMetrics.Counts(active: 0, archived: 0)
+        var assignments = IsgPersonnelMetrics.AssignmentCounts(current: 0, historical: 0)
+
+        for company in assignedCompanies {
+            let value = try await api.personnelMetrics(selection: selection, companyID: company.id)
+            workplaces = add(workplaces, value.workplaces)
+            departments = add(departments, value.departments)
+            employees = add(employees, value.employees)
+            jobRoles = add(jobRoles, value.jobRoles)
+            contractors = add(contractors, value.contractors)
+            assignments = .init(current: assignments.current + value.assignments.current,
+                                historical: assignments.historical + value.assignments.historical)
+        }
+        try requireCurrent(selection)
+        return .init(workspaceID: selection.workspaceID, companyID: nil,
+                     workplaces: workplaces, departments: departments, employees: employees,
+                     jobRoles: jobRoles, contractors: contractors, assignments: assignments)
     }
 
     func domain(_ domain: IsgWorkspaceDomain, companyID: UUID? = nil,
@@ -246,6 +314,32 @@ import Combine
                                           domain: domain, limit: limit)
         try requireCurrent(selection)
         return result
+    }
+
+    func domainDetail(_ domain: IsgWorkspaceDomain, id: UUID,
+                      companyID: UUID? = nil) async throws -> IsgWorkspaceDomainRecord {
+        let selection = try expectedSelection()
+        guard let companyID = companyID ?? selectedCompanyID else { throw IsgWorkspaceAPIFailure.invalidRequest }
+        let row = try await api.domainDetail(selection: selection, companyID: companyID,
+                                             domain: domain, id: id)
+        try requireCurrent(selection)
+        return row
+    }
+
+    func checklistTemplates(companyID: UUID? = nil) async throws -> [IsgWorkspaceChecklistTemplate] {
+        let selection = try expectedSelection()
+        guard let companyID = companyID ?? selectedCompanyID else { throw IsgWorkspaceAPIFailure.invalidRequest }
+        let rows = try await api.checklistTemplates(selection: selection, companyID: companyID)
+        try requireCurrent(selection)
+        return rows
+    }
+
+    func equipmentCatalog(companyID: UUID? = nil) async throws -> IsgWorkspaceEquipmentCatalog {
+        let selection = try expectedSelection()
+        guard let companyID = companyID ?? selectedCompanyID else { throw IsgWorkspaceAPIFailure.invalidRequest }
+        let value = try await api.equipmentCatalog(selection: selection, companyID: companyID)
+        try requireCurrent(selection)
+        return value
     }
 
     func initializePersonnel(companyID: UUID? = nil) async throws {
@@ -271,6 +365,44 @@ import Combine
                                        includeArchived: includeArchived)
     }
 
+    func personnelAdvanced(_ kind: IsgWorkspacePersonnelAdvancedKind,
+                           companyID: UUID? = nil) async throws -> [IsgWorkspaceAdvancedRecord] {
+        let selection = try expectedSelection()
+        guard let companyID = companyID ?? selectedCompanyID else { throw IsgWorkspaceAPIFailure.invalidRequest }
+        let rows = try await api.personnelAdvanced(selection: selection, companyID: companyID, kind: kind)
+        try requireCurrent(selection)
+        return rows
+    }
+
+    func trainingAdvanced(_ kind: IsgWorkspaceTrainingAdvancedKind,
+                          companyID: UUID? = nil) async throws -> [IsgWorkspaceAdvancedRecord] {
+        let selection = try expectedSelection()
+        guard let companyID = companyID ?? selectedCompanyID else { throw IsgWorkspaceAPIFailure.invalidRequest }
+        let rows = try await api.trainingAdvanced(selection: selection, companyID: companyID, kind: kind)
+        try requireCurrent(selection)
+        return rows
+    }
+
+    func mutatePersonnelAdvanced(mutationID: UUID, payload: [String: IsgWorkspaceRPCValue],
+                                 companyID: UUID? = nil) async throws {
+        let selection = try expectedSelection(operate: true)
+        guard let companyID = companyID ?? selectedCompanyID else { throw IsgWorkspaceAPIFailure.invalidRequest }
+        try await api.mutatePersonnelAdvanced(selection: selection, mutationID: mutationID,
+                                              companyID: companyID, payload: payload)
+        try requireCurrent(selection)
+        try await refreshDashboardAfterMutation(selection)
+    }
+
+    func mutateTrainingAdvanced(mutationID: UUID, payload: [String: IsgWorkspaceRPCValue],
+                                companyID: UUID? = nil) async throws {
+        let selection = try expectedSelection(operate: true)
+        guard let companyID = companyID ?? selectedCompanyID else { throw IsgWorkspaceAPIFailure.invalidRequest }
+        try await api.mutateTrainingAdvanced(selection: selection, mutationID: mutationID,
+                                             companyID: companyID, payload: payload)
+        try requireCurrent(selection)
+        try await refreshDashboardAfterMutation(selection)
+    }
+
     func mutateDirectory(mutationID: UUID, kind: IsgWorkspaceDirectoryKind, action: String,
                          entryID: UUID?, expectedVersion: Int64, workplaceID: UUID?,
                          code: String?, name: String?, companyID: UUID? = nil) async throws {
@@ -283,16 +415,19 @@ import Combine
         try requireCurrent(selection)
     }
 
+    @discardableResult
     func mutateEmployee(mutationID: UUID, action: String, employeeID: UUID?,
                         expectedVersion: Int64, code: String?, name: String?, departmentID: UUID?,
-                        hiredOn: String?, endsBefore: String?, companyID: UUID? = nil) async throws {
+                        hiredOn: String?, endsBefore: String?, companyID: UUID? = nil) async throws
+        -> IsgWorkspaceEmployeeEntry? {
         let selection = try expectedSelection(operate: true)
         guard let companyID = companyID ?? selectedCompanyID else { throw IsgWorkspaceAPIFailure.invalidRequest }
-        _ = try await api.mutateEmployee(selection: selection, mutationID: mutationID, companyID: companyID,
-                                         action: action, employeeID: employeeID,
-                                         expectedVersion: expectedVersion, code: code, name: name,
-                                         departmentID: departmentID, hiredOn: hiredOn, endsBefore: endsBefore)
+        let result = try await api.mutateEmployee(selection: selection, mutationID: mutationID, companyID: companyID,
+                                                  action: action, employeeID: employeeID,
+                                                  expectedVersion: expectedVersion, code: code, name: name,
+                                                  departmentID: departmentID, hiredOn: hiredOn, endsBefore: endsBefore)
         try requireCurrent(selection)
+        return result
     }
 
     @discardableResult
@@ -304,7 +439,7 @@ import Combine
         let result = try await api.mutateDomain(selection: selection, mutationID: mutationID,
                                                 companyID: companyID, domain: domain, payload: payload)
         try requireCurrent(selection)
-        dashboard = try? await api.dashboard(selection: selection, companyID: companyID)
+        try await refreshDashboardAfterMutation(selection)
         return result
     }
 
@@ -318,8 +453,22 @@ import Combine
                                               companyID: companyID, title: title,
                                               filename: filename, category: category, data: data)
         try requireCurrent(selection)
-        dashboard = try? await api.dashboard(selection: selection, companyID: companyID)
+        try await refreshDashboardAfterMutation(selection)
         return result
+    }
+
+    /// Links an already-uploaded workspace file entry to the record created by
+    /// the same form. The file remains a first-class archive entry while the
+    /// parent module can surface it without asking the user to visit Files.
+    @discardableResult
+    func attachFile(mutationID: UUID, entryID: UUID, parentKind: String,
+                    parentID: UUID, fieldName: String,
+                    companyID: UUID? = nil) async throws -> IsgWorkspaceMutationResult {
+        try await mutateDomain(mutationID: mutationID, domain: .files, payload: [
+            "action": .string("attach"), "entry_id": .id(entryID),
+            "parent_kind": .string(parentKind), "parent_id": .id(parentID),
+            "field_name": .string(fieldName)
+        ], companyID: companyID)
     }
 
     func downloadFile(_ row: IsgWorkspaceDomainRecord, companyID: UUID? = nil) async throws
@@ -331,9 +480,9 @@ import Combine
         return result
     }
 
-    func archiveFile(_ row: IsgWorkspaceDomainRecord, companyID: UUID? = nil) async throws {
+    func archiveFile(_ row: IsgWorkspaceDomainRecord, mutationID: UUID, companyID: UUID? = nil) async throws {
         guard let version = row.version else { throw IsgWorkspaceAPIFailure.invalidRequest }
-        _ = try await mutateDomain(mutationID: UUID(), domain: .files, payload: [
+        _ = try await mutateDomain(mutationID: mutationID, domain: .files, payload: [
             "action": .string("archive"), "entry_id": .id(row.id),
             "expected_version": .number(Int(version))
         ], companyID: companyID)
@@ -359,6 +508,22 @@ import Combine
     func analysis(companyID: UUID, analysisID: UUID) async throws -> IsgWorkspaceAnalysisResult {
         let selection = try expectedSelection()
         return try await api.analysis(selection: selection, companyID: companyID, analysisID: analysisID)
+    }
+
+    func submitPhotoAnalysis(mutationID: UUID, companyID: UUID,
+                             assetID: UUID) async throws -> IsgWorkspacePhotoAnalysisJob {
+        let selection = try expectedSelection(operate: true)
+        let job = try await api.submitPhotoAnalysis(selection: selection, mutationID: mutationID,
+                                                     companyID: companyID, assetID: assetID)
+        try requireCurrent(selection)
+        return job
+    }
+
+    func photoAnalysisJob(companyID: UUID, jobID: UUID) async throws -> IsgWorkspacePhotoAnalysisJob {
+        let selection = try expectedSelection()
+        let job = try await api.photoAnalysisJob(selection: selection, companyID: companyID, jobID: jobID)
+        try requireCurrent(selection)
+        return job
     }
 
     func fileAnalysisItem(mutationID: UUID, companyID: UUID, workplaceID: UUID,
@@ -430,7 +595,19 @@ import Combine
                 cursor = page.last?.id
             }
             guard isCurrent(token, identity: current), confirmed.selection == selection else { return }
-            let dashboardCompany = confirmed.membership.role == "expert" ? loadedCompanies.first?.id : nil
+            let retainedCompany = selectedCompanyID.flatMap { selectedID in
+                loadedCompanies.contains(where: { $0.id == selectedID }) ? selectedID : nil
+            }
+            // A single-company workspace should open ready for work for every
+            // role. Previously owners/admins always landed with a nil company,
+            // which disabled every operational module even though the company
+            // was visible on screen.
+            let dashboardCompany: UUID?
+            if confirmed.membership.role == "expert" {
+                dashboardCompany = retainedCompany ?? loadedCompanies.first?.id
+            } else {
+                dashboardCompany = retainedCompany ?? (loadedCompanies.count == 1 ? loadedCompanies.first?.id : nil)
+            }
             let loadedDashboard: IsgWorkspaceDashboard?
             if dashboardCompany == nil && confirmed.membership.role == "expert" {
                 loadedDashboard = nil
@@ -461,6 +638,19 @@ import Combine
         }
     }
 
+    /// A committed mutation remains successful if only the summary fails. Never
+    /// publish its late summary (including nil) into a newer session or company.
+    private func refreshDashboardAfterMutation(_ expected: NovaWorkspaceSelection) async throws {
+        let token = generation
+        let companyID = selectedCompanyID
+        let value = try? await api.dashboard(selection: expected, companyID: companyID)
+        guard token == generation, selectedCompanyID == companyID else {
+            throw IsgWorkspaceAPIFailure.staleSession
+        }
+        try requireCurrent(expected)
+        dashboard = value
+    }
+
     private func expectedIdentity() throws -> NovaSessionIdentity {
         guard let identity else { throw IsgWorkspaceAPIFailure.staleSession }
         return identity
@@ -475,6 +665,17 @@ import Combine
 
     private func requireCurrent(_ expected: NovaWorkspaceSelection) throws {
         guard selection == expected, phase == .ready else { throw IsgWorkspaceAPIFailure.staleSession }
+    }
+
+    private func add(_ lhs: IsgWorkspaceDashboard.Pair,
+                     _ rhs: IsgWorkspaceDashboard.Pair) -> IsgWorkspaceDashboard.Pair {
+        .init(first: (lhs.first ?? 0) + (rhs.first ?? 0),
+              second: (lhs.second ?? 0) + (rhs.second ?? 0))
+    }
+
+    private func add(_ lhs: IsgPersonnelMetrics.Counts,
+                     _ rhs: IsgPersonnelMetrics.Counts) -> IsgPersonnelMetrics.Counts {
+        .init(active: lhs.active + rhs.active, archived: lhs.archived + rhs.archived)
     }
 
     private func isCurrent(_ token: UUID, identity expected: NovaSessionIdentity) -> Bool {

@@ -179,6 +179,7 @@ fun MainShellScreen(
             RdTab.Profile -> ProfileScreen(
                 onBack = null,
                 onManageCompanies = { navController.navigate(Companies) },
+                onOsgbWorkspace = { navController.navigate(OsgbWorkspace) },
                 onAnalyses = { selectTab(RdTab.Analyses) },
                 onReports = { selectTab(RdTab.Reports) },
                 onSupport = { navController.navigate(Support) },

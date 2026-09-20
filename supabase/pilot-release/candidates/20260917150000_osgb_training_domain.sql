@@ -289,6 +289,28 @@ BEGIN
   ELSIF action='complete' THEN
     IF record.starts_at+make_interval(mins=>record.duration_minutes)>clock_timestamp() THEN
       RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='TRAINING_NOT_ENDED'; END IF;
+    people:=p_payload->'participants';
+    IF people IS NOT NULL THEN
+      IF jsonb_typeof(people) IS DISTINCT FROM 'array' OR jsonb_array_length(people) NOT BETWEEN 1 AND 500 THEN
+        RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
+      selected_ids:='{}';
+      FOR person IN SELECT value FROM jsonb_array_elements(people) LOOP
+        IF jsonb_typeof(person)<>'object' OR jsonb_typeof(person->'attended') IS DISTINCT FROM 'boolean'
+          OR EXISTS(SELECT 1 FROM jsonb_object_keys(person) k WHERE k NOT IN ('id','attended')) THEN
+          RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
+        person_id:=(person->>'id')::uuid;
+        IF person_id IS NULL OR person_id=ANY(selected_ids) OR NOT EXISTS(
+          SELECT 1 FROM private_isg.pilot_training_participants p WHERE p.workspace_id=p_workspace
+            AND p.company_id=p_company AND p.training_id=target AND p.employee_id=person_id) THEN
+          RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='PARTICIPANT_UNAVAILABLE'; END IF;
+        selected_ids:=array_append(selected_ids,person_id);
+        UPDATE private_isg.pilot_training_participants SET attended=(person->>'attended')::boolean
+          WHERE workspace_id=p_workspace AND company_id=p_company AND training_id=target AND employee_id=person_id;
+      END LOOP;
+      IF (SELECT count(*) FROM private_isg.pilot_training_participants p WHERE p.workspace_id=p_workspace
+        AND p.company_id=p_company AND p.training_id=target)<>coalesce(array_length(selected_ids,1),0) THEN
+        RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='PARTICIPANT_SET_MISMATCH'; END IF;
+    END IF;
     IF NOT EXISTS(SELECT 1 FROM private_isg.pilot_training_participants
       WHERE workspace_id=p_workspace AND company_id=p_company AND training_id=target AND attended) THEN
       RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ATTENDANCE_REQUIRED'; END IF;

@@ -1,5 +1,7 @@
 # OSGB entegrasyon incelemesi ve düzeltme raporu
 
+> Bu önceki tur raporudur. D1–D7 sayfalama, belirsiz mutasyon tekrarı, yaşam döngüsü bağlantıları ve burada açık görünen D1/D2 tenant-native görev/dış firma/atama ile müfredat/sınav/plan/sertifika modülleri daha sonra tamamlandı. **18 Eylül 2026'da** eğitim, risk değerlendirmesi ve periyodik kontrolün bireysel Pilot Canlı Nova akışları da OSGB yönetici/uzman ekranlarına taşındı; staging `20260918020000` seviyesine getirildi ve fiziksel iPhone build 122 kabulü yapıldı. Güncel ürün eşitliği için [OSGB_PERSONAL_PILOT_PARITY_REVIEW_2026-09-18.md](OSGB_PERSONAL_PILOT_PARITY_REVIEW_2026-09-18.md), önceki genel inceleme için [OSGB_FINAL_REVIEW_2026-09-17.md](OSGB_FINAL_REVIEW_2026-09-17.md) kullanılmalıdır.
+
 17 Eylül 2026 · `codex/isg-transition-foundation` · Referans HEAD: `6eebab8946c627f42d13415cff1b8dc5007cc1ce`
 
 ## Sonuç
@@ -103,7 +105,7 @@ Fiyat, gerçek ürün kimliği, Scale sınırı, grace/downgrade, storage limiti
 
 | Kontrol | Bu incelemede sonuç | Sınır |
 |---|---|---|
-| OSGB Node test paketi | 99/99 | Kaynak guard'ları ile executable Swift/context testlerinin karışımı; 99 cihaz senaryosu değildir. |
+| OSGB Node test paketi | 103/103 | Kaynak guard'ları ile executable Swift/context testlerinin karışımı; 103 cihaz senaryosu değildir. |
 | Dolu-veri review regresyon zinciri | 24 migration + mevcut bütünleşik senaryo + 10 yeni regresyon grubu geçti | PostgreSQL 17 disposable fixture, dış ağa kapalı; gerçek production upgrade değil. |
 | Canonical company bağımsız SQL provası | Geçti | Sentetik personal/OSGB veri. |
 | Swift API davranış testleri | Geçti | A→B→A, auth değişimi, yanlış export işi, skor korunumu dahil. |
@@ -111,7 +113,7 @@ Fiyat, gerçek ürün kimliği, Scale sınırı, grace/downgrade, storage limiti
 | Android core:data compile + unit test | Geçti; Gateway dosyasında 9 test | Tam Android UI E2E değildir. |
 | Mevcut pilot operasyon modülleri | Geçti | Eski modüllerin kendi fixture/gerçek SQL zinciri; yeni 24 migration ile üretim şemasının birleşimi değildir. |
 | Fonksiyon/test kaynak haritası | 16 kaynak, hash kontrolü geçti | Kapsam haritası tek başına davranış testi değildir. |
-| Geniş foundation | 755/755 | Ekip editörü, bildirim davranışı, eksik localization anahtarı ve raw metinler gerçek kod düzeltmeleriyle kapatıldı. |
+| Geniş foundation | 758/758 | Ekip editörü, bildirim davranışı, eksik localization anahtarı ve raw metinler gerçek kod düzeltmeleriyle kapatıldı. |
 | Nova-design | 194/194 | Önceki 13 tasarım/sözleşme arızası gerçek UI ve sözleşme düzeltmeleriyle kapatıldı. |
 
 Foundation ve tasarım paketleri tamamen yeşildir. Bu sonuç OSGB'nin canlı yayın kabulü değildir; gerçek migration, sağlayıcı, ileri domain parity'si ve cihaz kabulü ayrı kapılardır.

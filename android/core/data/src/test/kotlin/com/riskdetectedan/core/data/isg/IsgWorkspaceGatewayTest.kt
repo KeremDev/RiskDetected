@@ -57,6 +57,29 @@ class IsgWorkspaceGatewayTest {
         assertFalse(called.any { it.contains("legacy") || it.contains("personal") })
     }
 
+    @Test fun domainReadConsumesEveryCursorPageWithoutDuplicates() = runBlocking {
+        val ids = (1..101).map { "40000000-0000-4000-8000-${it.toString().padStart(12, '0')}" }
+        var calls = 0
+        val gateway = IsgWorkspaceGateway({ function, arguments ->
+            assertEquals("isg_workspace_training_read_v1", function)
+            val first = arguments["p_after"] == JsonNull
+            if (!first) assertEquals(ids[99], arguments["p_after"]!!.jsonPrimitive.content)
+            calls += 1
+            val page = if (first) ids.take(100) else listOf(ids[100])
+            buildJsonObject {
+                put("schema_version", 1); put("workspace_id", workspace); put("company_id", company)
+                put("rows", buildJsonArray { page.forEach { id -> add(buildJsonObject {
+                    put("training_id", id); put("title", "Eğitim")
+                }) } })
+                put("next", if (first) JsonPrimitive(ids[99]) else JsonNull)
+            }
+        }, { _, _ -> true }, { _, _, _ -> true }, { "current" })
+        val result = gateway.domain(workspace, "member", 1, company, IsgWorkspaceDomain.TRAINING)
+        assertEquals(2, calls)
+        assertEquals(101, result["rows"]!!.jsonArray.size)
+        assertEquals(ids[100], result["rows"]!!.jsonArray.last().jsonObject["training_id"]!!.jsonPrimitive.content)
+    }
+
     @Test fun domainMutationRequiresOperateAndKeepsScope() = runBlocking {
         var called: String? = null
         val gateway = IsgWorkspaceGateway({ function, arguments ->
@@ -122,5 +145,83 @@ class IsgWorkspaceGatewayTest {
         gateway.mutateAssignment(workspace, "member", 1, true, job, company, "create",
             null, targetMembership, 0, "support", "2026-09-17T08:00:00Z", null, "atama")
         assertEquals(1, calls)
+    }
+
+    @Test fun assignmentReceiptMustMatchRequestedMember() = runBlocking {
+        val gateway = IsgWorkspaceGateway({ _, _ ->
+            buildJsonObject {
+                put("schema_version", 1); put("workspace_id", workspace); put("company_id", company)
+                put("assignment_id", assignment); put("membership_id", assignment)
+                put("assignment_role", "support"); put("starts_at", "2026-09-17T08:00:00Z")
+                put("ends_at", JsonNull); put("version", 0)
+            }
+        }, { _, _ -> true }, { _, _, _ -> true }, { "current" })
+        rejected("INVALID_RESPONSE") {
+            gateway.mutateAssignment(workspace, "member", 1, true, job, company, "create",
+                null, targetMembership, 0, "support", "2026-09-17T08:00:00Z", null, "atama")
+        }
+    }
+
+    @Test fun advancedD1AndD2ReadsUseTenantFunctionsAndConsumeCursorPages() = runBlocking {
+        val ids = (1..101).map { "41000000-0000-4000-8000-${it.toString().padStart(12, '0')}" }
+        val called = mutableListOf<String>()
+        val gateway = IsgWorkspaceGateway({ function, arguments ->
+            called += function
+            val first = arguments["p_after"] == JsonNull
+            val page = if (first) ids.take(100) else listOf(ids.last())
+            buildJsonObject {
+                put("schema_version", 1); put("workspace_id", workspace); put("company_id", company)
+                put("kind", arguments["p_kind"]!!.jsonPrimitive.content)
+                put("rows", buildJsonArray { page.forEach { id -> add(buildJsonObject {
+                    put("id", id); put("kind", "record")
+                }) } })
+                put("next", if (first) JsonPrimitive(ids[99]) else JsonNull)
+            }
+        }, { _, _ -> true }, { _, _, _ -> true }, { "current" })
+
+        val personnel = gateway.personnelAdvanced(workspace, "member", 1, company,
+            IsgWorkspacePersonnelAdvancedKind.ASSIGNMENTS)
+        val training = gateway.trainingAdvanced(workspace, "member", 1, company,
+            IsgWorkspaceTrainingAdvancedKind.CERTIFICATES)
+
+        assertEquals(101, personnel["rows"]!!.jsonArray.size)
+        assertEquals(101, training["rows"]!!.jsonArray.size)
+        assertEquals(listOf(
+            "isg_workspace_personnel_advanced_read_v1", "isg_workspace_personnel_advanced_read_v1",
+            "isg_workspace_training_advanced_read_v1", "isg_workspace_training_advanced_read_v1"
+        ), called)
+    }
+
+    @Test fun advancedMutationRequiresOperateAndValidatesReceipt() = runBlocking {
+        var calls = 0
+        val payload = buildJsonObject { put("action", "curriculum_create"); put("title", "Temel eğitim") }
+        val gateway = IsgWorkspaceGateway({ function, arguments ->
+            calls += 1
+            assertEquals("isg_workspace_training_advanced_mutate_v1", function)
+            assertEquals(payload, arguments["p_payload"])
+            buildJsonObject {
+                put("schema_version", 1); put("workspace_id", workspace); put("company_id", company)
+                put("action", "curriculum_create"); put("entity_id", assignment); put("version", 0)
+            }
+        }, { _, _ -> true }, { _, _, _ -> true }, { "current" })
+
+        rejected("STALE_WORKSPACE") {
+            gateway.mutateTrainingAdvanced(workspace, "member", 1, false, job, company, payload)
+        }
+        gateway.mutateTrainingAdvanced(workspace, "member", 1, true, job, company, payload)
+        assertEquals(1, calls)
+    }
+
+    @Test fun advancedReadRejectsKindOrCursorMismatch() = runBlocking {
+        val gateway = IsgWorkspaceGateway({ _, arguments -> buildJsonObject {
+            put("schema_version", 1); put("workspace_id", workspace); put("company_id", company)
+            put("kind", "contractors"); put("rows", buildJsonArray { add(buildJsonObject {
+                put("id", assignment); put("kind", "contractor")
+            }) }); put("next", job)
+        } }, { _, _ -> true }, { _, _, _ -> true }, { "current" })
+        rejected("INVALID_RESPONSE") {
+            gateway.personnelAdvanced(workspace, "member", 1, company,
+                IsgWorkspacePersonnelAdvancedKind.JOB_ROLES)
+        }
     }
 }

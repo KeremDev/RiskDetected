@@ -144,6 +144,7 @@ import kotlinx.coroutines.withContext
 fun ProfileScreen(
     onBack: (() -> Unit)? = null,
     onManageCompanies: () -> Unit = {},
+    onOsgbWorkspace: () -> Unit = {},
     onAnalyses: () -> Unit = {},
     onReports: () -> Unit = {},
     onSupport: () -> Unit = {},
@@ -153,9 +154,11 @@ fun ProfileScreen(
     onDeleteAccount: () -> Unit = {},
     onPaywall: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
+    osgbWorkspaceViewModel: OsgbWorkspaceViewModel = hiltViewModel(),
 ) {
     val colors = RdTheme.colors
     val state by viewModel.state.collectAsState()
+    val osgbState by osgbWorkspaceViewModel.state.collectAsState()
     val restoreState by viewModel.restoreState.collectAsState()
     var isEditing by remember { mutableStateOf(false) }
     var showNotebook by remember { mutableStateOf(false) }
@@ -222,6 +225,8 @@ fun ProfileScreen(
                     onShowTitles = { showTitles = true },
                     onEdit = { isEditing = true },
                     onManageCompanies = onManageCompanies,
+                    showOsgbWorkspace = osgbState.hasWorkspace == true,
+                    onOsgbWorkspace = onOsgbWorkspace,
                     onAnalyses = onAnalyses,
                     onReports = onReports,
                     onNotificationSettings = onNotificationSettings,
@@ -350,6 +355,8 @@ fun ProfileLoadedSurface(
     onShowTitles: () -> Unit = {},
     onEdit: () -> Unit = {},
     onManageCompanies: () -> Unit = {},
+    showOsgbWorkspace: Boolean = false,
+    onOsgbWorkspace: () -> Unit = {},
     onAnalyses: () -> Unit = {},
     onReports: () -> Unit = {},
     onNotificationSettings: () -> Unit = {},
@@ -401,6 +408,15 @@ fun ProfileLoadedSurface(
                 detail = if (profile.isPaid) stringResource(RdR.string.rd_yonet) else stringResource(RdR.string.rd_plus_pro),
                 onClick = if (profile.isPaid) onManageCompanies else onPaywall,
             )
+            if (showOsgbWorkspace) {
+                ProfileMenuDivider()
+                ProfileMenuRow(
+                    "OSGB Çalışma Alanı",
+                    Icons.Filled.Business,
+                    detail = "Firma ve operasyon yönetimi",
+                    onClick = onOsgbWorkspace,
+                )
+            }
             ProfileMenuDivider()
             ProfileMenuRow(stringResource(RdR.string.rd_gecmis_analizler), Icons.Filled.Assessment, detail = stats?.analysisCount?.toString() ?: "—", onClick = onAnalyses)
             ProfileMenuDivider()

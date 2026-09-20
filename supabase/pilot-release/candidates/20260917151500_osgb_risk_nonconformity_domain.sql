@@ -240,23 +240,33 @@ LANGUAGE sql STABLE SECURITY INVOKER SET search_path='' AS $$
   WHERE a.workspace_id=p_workspace AND a.company_id=p_company AND a.assessment_id=p_id
 $$;
 
-CREATE FUNCTION private_isg.workspace_risk_read(p_workspace uuid,p_company uuid,p_id uuid,p_limit integer) RETURNS jsonb
+CREATE FUNCTION private_isg.workspace_risk_read(p_workspace uuid,p_company uuid,p_id uuid,p_after uuid,p_limit integer) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
-DECLARE rows jsonb;
+DECLARE rows jsonb; next_id uuid;
 BEGIN
   PERFORM private_isg.workspace_domain_gate('risk_nonconformity',false);
   PERFORM private_isg.workspace_require_company(p_workspace,p_company,false);
-  IF p_limit NOT BETWEEN 1 AND 100 THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
+  IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 OR (p_id IS NOT NULL AND p_after IS NOT NULL) THEN
+    RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   IF p_id IS NOT NULL THEN
     rows:=private_isg.workspace_risk_row(p_workspace,p_company,p_id);
     IF rows IS NULL THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
     RETURN jsonb_build_object('schema_version',1,'workspace_id',p_workspace,'company_id',p_company,'row',rows);
   END IF;
-  SELECT coalesce(jsonb_agg(private_isg.workspace_risk_row(p_workspace,p_company,q.assessment_id)
-    ORDER BY q.updated_at DESC,q.assessment_id),'[]'::jsonb) INTO rows FROM (
-      SELECT assessment_id,updated_at FROM private_isg.risk_assessments
-      WHERE workspace_id=p_workspace AND company_id=p_company ORDER BY updated_at DESC,assessment_id LIMIT p_limit) q;
-  RETURN jsonb_build_object('schema_version',1,'workspace_id',p_workspace,'company_id',p_company,'rows',rows);
+  WITH page AS (
+    SELECT assessment_id FROM private_isg.risk_assessments
+    WHERE workspace_id=p_workspace AND company_id=p_company
+      AND (p_after IS NULL OR assessment_id>p_after)
+    ORDER BY assessment_id LIMIT p_limit+1
+  ), numbered AS (
+    SELECT assessment_id,row_number() OVER (ORDER BY assessment_id) ordinal,count(*) OVER () total FROM page
+  )
+  SELECT coalesce(jsonb_agg(private_isg.workspace_risk_row(p_workspace,p_company,assessment_id)
+      ORDER BY assessment_id) FILTER (WHERE ordinal<=p_limit),'[]'::jsonb),
+    (array_agg(assessment_id) FILTER (WHERE ordinal=p_limit AND total>p_limit))[1]
+    INTO rows,next_id FROM numbered;
+  RETURN jsonb_build_object('schema_version',1,'workspace_id',p_workspace,'company_id',p_company,
+    'rows',rows,'next',next_id);
 END $$;
 
 CREATE FUNCTION private_isg.workspace_risk_mutate(p_mutation uuid,p_workspace uuid,p_company uuid,p_payload jsonb)
@@ -353,6 +363,9 @@ LANGUAGE sql STABLE SECURITY INVOKER SET search_path='' AS $$
     'workplace_id',n.workplace_id,'source_kind',n.source_kind,'source_ref',n.source_ref,
     'title',n.title,'severity',n.severity,'opened_on',n.opened_on,'due_on',n.due_on,
     'assignee_contact',n.assignee_contact,'state',n.state,'version',n.version,'closed_on',n.closed_on,
+    'verification_outcome',(SELECT v.outcome FROM private_isg.verification_records v
+      WHERE v.workspace_id=p_workspace AND v.company_id=p_company
+        AND v.nonconformity_id=n.nonconformity_id AND v.cycle=n.version LIMIT 1),
     'created_by_user_id',n.created_by_user_id,
     'actions',coalesce((SELECT jsonb_agg(jsonb_build_object('action_id',a.action_id,
       'description',a.description,'assignee_contact',a.assignee_contact,'due_on',a.due_on,'state',a.state)
@@ -367,13 +380,14 @@ LANGUAGE sql STABLE SECURITY INVOKER SET search_path='' AS $$
 $$;
 
 CREATE FUNCTION private_isg.workspace_nonconformity_read(p_workspace uuid,p_company uuid,p_id uuid,
-  p_state text,p_limit integer) RETURNS jsonb
+  p_state text,p_after uuid,p_limit integer) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
-DECLARE rows jsonb;
+DECLARE rows jsonb; next_id uuid;
 BEGIN
   PERFORM private_isg.workspace_domain_gate('risk_nonconformity',false);
   PERFORM private_isg.workspace_require_company(p_workspace,p_company,false);
-  IF p_limit NOT BETWEEN 1 AND 100 OR (p_state IS NOT NULL AND p_state NOT IN
+  IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 OR (p_id IS NOT NULL AND p_after IS NOT NULL) OR
+    (p_state IS NOT NULL AND p_state NOT IN
     ('draft','open','assigned','in_progress','pending_verification','closed','reopened','cancelled')) THEN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   IF p_id IS NOT NULL THEN
@@ -381,12 +395,20 @@ BEGIN
     IF rows IS NULL THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
     RETURN jsonb_build_object('schema_version',1,'workspace_id',p_workspace,'company_id',p_company,'row',rows);
   END IF;
-  SELECT coalesce(jsonb_agg(private_isg.workspace_nonconformity_row(p_workspace,p_company,q.nonconformity_id)
-    ORDER BY q.updated_at DESC,q.nonconformity_id),'[]'::jsonb) INTO rows FROM (
-      SELECT nonconformity_id,updated_at FROM private_isg.nonconformities WHERE workspace_id=p_workspace
+  WITH page AS (
+    SELECT nonconformity_id FROM private_isg.nonconformities WHERE workspace_id=p_workspace
       AND company_id=p_company AND (p_state IS NULL OR state=p_state)
-      ORDER BY updated_at DESC,nonconformity_id LIMIT p_limit) q;
-  RETURN jsonb_build_object('schema_version',1,'workspace_id',p_workspace,'company_id',p_company,'rows',rows);
+      AND (p_after IS NULL OR nonconformity_id>p_after)
+    ORDER BY nonconformity_id LIMIT p_limit+1
+  ), numbered AS (
+    SELECT nonconformity_id,row_number() OVER (ORDER BY nonconformity_id) ordinal,count(*) OVER () total FROM page
+  )
+  SELECT coalesce(jsonb_agg(private_isg.workspace_nonconformity_row(p_workspace,p_company,nonconformity_id)
+      ORDER BY nonconformity_id) FILTER (WHERE ordinal<=p_limit),'[]'::jsonb),
+    (array_agg(nonconformity_id) FILTER (WHERE ordinal=p_limit AND total>p_limit))[1]
+    INTO rows,next_id FROM numbered;
+  RETURN jsonb_build_object('schema_version',1,'workspace_id',p_workspace,'company_id',p_company,
+    'rows',rows,'next',next_id);
 END $$;
 
 CREATE FUNCTION private_isg.workspace_nonconformity_mutate(p_mutation uuid,p_workspace uuid,p_company uuid,
@@ -396,7 +418,7 @@ DECLARE actor uuid:=private_isg.active_actor(); action text; fingerprint bytea; 
   entry private_isg.nonconformities; edge private_isg.nonconformity_state_edges;
   workplace uuid; target uuid; expected bigint; clean_title text; clean_source_kind text; clean_source_ref text;
   severity text; opened date; due date; desired_state text; clean_reason text; clean_assignee text;
-  before_state jsonb; result jsonb; action_row private_isg.nonconformity_actions;
+  before_state jsonb; result jsonb; action_row private_isg.nonconformity_actions; existing_outcome text;
 BEGIN
   PERFORM private_isg.workspace_domain_gate('risk_nonconformity',true);
   PERFORM private_isg.workspace_require_company(p_workspace,p_company,true);
@@ -474,10 +496,17 @@ BEGIN
     ELSE
       IF p_payload->>'outcome' NOT IN ('accepted','rejected') OR (p_payload->>'verified_on')::date IS NULL THEN
         RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
-      INSERT INTO private_isg.verification_records(workspace_id,company_id,nonconformity_id,cycle,outcome,
-        verified_by,verified_on,note)
-      VALUES(p_workspace,p_company,target,entry.version,p_payload->>'outcome',actor,
-        (p_payload->>'verified_on')::date,nullif(btrim(coalesce(p_payload->>'note','')),''));
+      SELECT outcome INTO existing_outcome FROM private_isg.verification_records
+        WHERE workspace_id=p_workspace AND company_id=p_company
+          AND nonconformity_id=target AND cycle=entry.version FOR UPDATE;
+      IF FOUND AND existing_outcome IS DISTINCT FROM p_payload->>'outcome' THEN
+        RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='IDEMPOTENCY_CONFLICT'; END IF;
+      IF NOT FOUND THEN
+        INSERT INTO private_isg.verification_records(workspace_id,company_id,nonconformity_id,cycle,outcome,
+          verified_by,verified_on,note)
+        VALUES(p_workspace,p_company,target,entry.version,p_payload->>'outcome',actor,
+          (p_payload->>'verified_on')::date,nullif(btrim(coalesce(p_payload->>'note','')),''));
+      END IF;
       UPDATE private_isg.nonconformities SET updated_by_user_id=actor,
         updated_at=clock_timestamp() WHERE nonconformity_id=target RETURNING * INTO entry;
     END IF;
@@ -488,40 +517,61 @@ BEGIN
     'nonconformity',entry.nonconformity_id,entry.version,before_state,result,NULL,result);
 END $$;
 
-CREATE FUNCTION private_isg.workspace_checklist_read(p_workspace uuid,p_company uuid,p_id uuid,p_limit integer)
+CREATE FUNCTION private_isg.workspace_checklist_read(p_workspace uuid,p_company uuid,p_id uuid,p_after uuid,p_limit integer)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
-DECLARE rows jsonb;
+DECLARE rows jsonb; next_id uuid;
 BEGIN
   PERFORM private_isg.workspace_domain_gate('risk_nonconformity',false);
   PERFORM private_isg.workspace_require_company(p_workspace,p_company,false);
-  IF p_limit NOT BETWEEN 1 AND 100 THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
+  IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 OR (p_id IS NOT NULL AND p_after IS NOT NULL) THEN
+    RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
+  WITH page AS (
+    SELECT run_id FROM private_isg.checklist_runs WHERE workspace_id=p_workspace AND company_id=p_company
+      AND (p_id IS NULL OR run_id=p_id) AND (p_after IS NULL OR run_id>p_after)
+    ORDER BY run_id LIMIT CASE WHEN p_id IS NULL THEN p_limit+1 ELSE 1 END
+  ), numbered AS (
+    SELECT run_id,row_number() OVER (ORDER BY run_id) ordinal,count(*) OVER () total FROM page
+  )
   SELECT coalesce(jsonb_agg(jsonb_build_object('run_id',r.run_id,'workplace_id',r.workplace_id,
     'template_code',r.template_code,'template_version',r.template_version,'state',r.state,
     'started_on',r.started_on,'submitted_at',r.submitted_at,'version',r.version,
-    'items',coalesce((SELECT jsonb_agg(jsonb_build_object('item_code',i.item_code,'result',i.result,
-      'note',i.note,'nonconformity_id',i.nonconformity_id) ORDER BY i.item_code)
-      FROM private_isg.checklist_run_items i WHERE i.workspace_id=p_workspace
-        AND i.company_id=p_company AND i.run_id=r.run_id),'[]'::jsonb)) ORDER BY r.created_at DESC,r.run_id),'[]'::jsonb)
-    INTO rows FROM private_isg.checklist_runs r WHERE r.workspace_id=p_workspace AND r.company_id=p_company
-      AND (p_id IS NULL OR r.run_id=p_id) AND r.run_id IN (SELECT run_id FROM private_isg.checklist_runs
-        WHERE workspace_id=p_workspace AND company_id=p_company ORDER BY created_at DESC,run_id LIMIT p_limit);
+    'items',coalesce((SELECT jsonb_agg(jsonb_strip_nulls(jsonb_build_object(
+      'item_code',t.item_code,'prompt',t.prompt,'allows_not_applicable',t.allows_not_applicable,
+      'result',i.result,'note',i.note,'nonconformity_id',i.nonconformity_id)) ORDER BY t.position)
+      FROM private_isg.checklist_template_items t
+      LEFT JOIN private_isg.checklist_run_items i ON i.workspace_id=p_workspace
+        AND i.company_id=p_company AND i.run_id=r.run_id AND i.item_code=t.item_code
+      WHERE t.template_code=r.template_code AND t.version=r.template_version),'[]'::jsonb)) ORDER BY r.run_id)
+      FILTER (WHERE n.ordinal<=p_limit),'[]'::jsonb),
+    (array_agg(r.run_id) FILTER (WHERE n.ordinal=p_limit AND n.total>p_limit))[1]
+    INTO rows,next_id FROM numbered n JOIN private_isg.checklist_runs r ON r.run_id=n.run_id;
   IF p_id IS NOT NULL AND jsonb_array_length(rows)=0 THEN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
-  RETURN jsonb_build_object('schema_version',1,'workspace_id',p_workspace,'company_id',p_company,'rows',rows);
+  RETURN jsonb_build_object('schema_version',1,'workspace_id',p_workspace,'company_id',p_company,
+    'rows',rows,'next',CASE WHEN p_id IS NULL THEN next_id ELSE NULL END,
+    'templates',coalesce((SELECT jsonb_agg(jsonb_build_object('code',v.template_code,'version',v.version,
+      'title',t.title,'item_count',(SELECT count(*) FROM private_isg.checklist_template_items i
+        WHERE i.template_code=v.template_code AND i.version=v.version)) ORDER BY t.title,v.template_code)
+      FROM private_isg.checklist_template_versions v
+      JOIN private_isg.checklist_templates t ON t.template_code=v.template_code
+      WHERE v.status='published' AND EXISTS(
+        SELECT 1 FROM private_isg.checklist_template_items i
+        WHERE i.template_code=v.template_code AND i.version=v.version
+      )),'[]'::jsonb));
 END $$;
 
 CREATE FUNCTION private_isg.workspace_checklist_mutate(p_mutation uuid,p_workspace uuid,p_company uuid,p_payload jsonb)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 DECLARE actor uuid:=private_isg.active_actor(); action text; fingerprint bytea; replay jsonb;
   run private_isg.checklist_runs; target uuid; expected bigint; requested_item text; result_code text;
-  finding uuid; before_state jsonb; response jsonb; prompt text;
+  finding uuid; before_state jsonb; response jsonb; prompt text; allows_na boolean; create_finding boolean;
 BEGIN
   PERFORM private_isg.workspace_domain_gate('risk_nonconformity',true);
   PERFORM private_isg.workspace_require_company(p_workspace,p_company,true);
   IF p_mutation IS NULL OR p_payload IS NULL OR jsonb_typeof(p_payload)<>'object' OR octet_length(p_payload::text)>32768
     OR EXISTS(SELECT 1 FROM jsonb_object_keys(p_payload) k WHERE k NOT IN
       ('action','id','expected_version','workplace_id','template_code','template_version','started_on',
-       'item_code','result','note','severity','due_on')) THEN
+       'item_code','result','note','create_nonconformity','severity','due_on')) THEN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   action:=p_payload->>'action'; target:=(p_payload->>'id')::uuid;
   IF action NOT IN ('create','answer','submit','cancel') OR (action='create')<>(target IS NULL) THEN
@@ -545,14 +595,20 @@ BEGIN
     IF run.run_id IS NULL THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
     IF run.version<>expected THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VERSION_CONFLICT'; END IF;
     IF run.state<>'open' THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='CHECKLIST_LOCKED'; END IF;
-    before_state:=(private_isg.workspace_checklist_read(p_workspace,p_company,target,1)->'rows'->0);
+    before_state:=(private_isg.workspace_checklist_read(p_workspace,p_company,target,NULL,1)->'rows'->0);
     IF action='answer' THEN
       requested_item:=p_payload->>'item_code'; result_code:=p_payload->>'result';
-      SELECT i.prompt INTO prompt FROM private_isg.checklist_template_items i
+      create_finding:=coalesce((p_payload->>'create_nonconformity')::boolean,false);
+      SELECT i.prompt,i.allows_not_applicable INTO prompt,allows_na FROM private_isg.checklist_template_items i
       WHERE i.template_code=run.template_code AND i.version=run.template_version AND i.item_code=requested_item;
-      IF prompt IS NULL OR result_code NOT IN ('conform','nonconform','not_applicable') THEN
+      IF prompt IS NULL OR result_code NOT IN ('conform','nonconform','not_applicable')
+        OR (result_code='not_applicable' AND NOT allows_na)
+        OR (create_finding AND result_code<>'nonconform')
+        OR (result_code='nonconform' AND create_finding AND
+          (coalesce(p_payload->>'severity','medium') NOT IN ('low','medium','high','critical')
+          OR (p_payload->>'due_on')::date IS NULL OR (p_payload->>'due_on')::date<run.started_on)) THEN
         RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
-      IF result_code='nonconform' THEN
+      IF result_code='nonconform' AND create_finding THEN
         INSERT INTO private_isg.nonconformities(workspace_id,company_id,owner_id,workplace_id,source_kind,
           source_ref,title,severity,opened_on,due_on,state,created_by_user_id,updated_by_user_id)
         VALUES(p_workspace,p_company,NULL,run.workplace_id,'checklist',run.run_id::text||':'||requested_item,
@@ -583,7 +639,7 @@ BEGIN
       updated_at=clock_timestamp() WHERE run_id=target RETURNING * INTO run;
   END IF;
   response:=jsonb_build_object('schema_version',1,'workspace_id',p_workspace,'company_id',p_company,
-    'row',(private_isg.workspace_checklist_read(p_workspace,p_company,run.run_id,1)->'rows'->0));
+    'row',(private_isg.workspace_checklist_read(p_workspace,p_company,run.run_id,NULL,1)->'rows'->0));
   RETURN private_isg.workspace_record_effect(actor,p_mutation,'checklist.'||action,fingerprint,p_workspace,
     'checklist',run.run_id,run.version,before_state,response,NULL,response);
 END $$;
@@ -611,17 +667,17 @@ BEGIN
   RETURN result;
 END $$;
 
-CREATE FUNCTION public.isg_workspace_risk_read_v1(p_workspace uuid,p_company uuid,p_id uuid DEFAULT NULL,p_limit integer DEFAULT 50) RETURNS jsonb
-LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private_isg.workspace_risk_read(p_workspace,p_company,p_id,p_limit) $$;
+CREATE FUNCTION public.isg_workspace_risk_read_v1(p_workspace uuid,p_company uuid,p_id uuid DEFAULT NULL,p_after uuid DEFAULT NULL,p_limit integer DEFAULT 50) RETURNS jsonb
+LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private_isg.workspace_risk_read(p_workspace,p_company,p_id,p_after,p_limit) $$;
 CREATE FUNCTION public.isg_workspace_risk_mutate_v1(p_mutation uuid,p_workspace uuid,p_company uuid,p_payload jsonb) RETURNS jsonb
 LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private_isg.workspace_risk_mutate(p_mutation,p_workspace,p_company,p_payload) $$;
 CREATE FUNCTION public.isg_workspace_nonconformity_read_v1(p_workspace uuid,p_company uuid,p_id uuid DEFAULT NULL,
-  p_state text DEFAULT NULL,p_limit integer DEFAULT 50) RETURNS jsonb
-LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private_isg.workspace_nonconformity_read(p_workspace,p_company,p_id,p_state,p_limit) $$;
+  p_state text DEFAULT NULL,p_after uuid DEFAULT NULL,p_limit integer DEFAULT 50) RETURNS jsonb
+LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private_isg.workspace_nonconformity_read(p_workspace,p_company,p_id,p_state,p_after,p_limit) $$;
 CREATE FUNCTION public.isg_workspace_nonconformity_mutate_v1(p_mutation uuid,p_workspace uuid,p_company uuid,p_payload jsonb) RETURNS jsonb
 LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private_isg.workspace_nonconformity_mutate(p_mutation,p_workspace,p_company,p_payload) $$;
-CREATE FUNCTION public.isg_workspace_checklist_read_v1(p_workspace uuid,p_company uuid,p_id uuid DEFAULT NULL,p_limit integer DEFAULT 50) RETURNS jsonb
-LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private_isg.workspace_checklist_read(p_workspace,p_company,p_id,p_limit) $$;
+CREATE FUNCTION public.isg_workspace_checklist_read_v1(p_workspace uuid,p_company uuid,p_id uuid DEFAULT NULL,p_after uuid DEFAULT NULL,p_limit integer DEFAULT 50) RETURNS jsonb
+LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private_isg.workspace_checklist_read(p_workspace,p_company,p_id,p_after,p_limit) $$;
 CREATE FUNCTION public.isg_workspace_checklist_mutate_v1(p_mutation uuid,p_workspace uuid,p_company uuid,p_payload jsonb) RETURNS jsonb
 LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private_isg.workspace_checklist_mutate(p_mutation,p_workspace,p_company,p_payload) $$;
 CREATE FUNCTION public.isg_workspace_assurance_metrics_v1(p_workspace uuid,p_company uuid) RETURNS jsonb
@@ -629,29 +685,29 @@ LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private_isg.worksp
 
 REVOKE ALL ON FUNCTION private_isg.workspace_assurance_root_invariant(),private_isg.workspace_risk_child_invariant(),
   private_isg.workspace_nonconformity_child_invariant(),private_isg.workspace_checklist_item_invariant(),
-  private_isg.workspace_risk_row(uuid,uuid,uuid),private_isg.workspace_risk_read(uuid,uuid,uuid,integer),
+  private_isg.workspace_risk_row(uuid,uuid,uuid),private_isg.workspace_risk_read(uuid,uuid,uuid,uuid,integer),
   private_isg.workspace_risk_mutate(uuid,uuid,uuid,jsonb),private_isg.workspace_nonconformity_row(uuid,uuid,uuid),
-  private_isg.workspace_nonconformity_read(uuid,uuid,uuid,text,integer),
+  private_isg.workspace_nonconformity_read(uuid,uuid,uuid,text,uuid,integer),
   private_isg.workspace_nonconformity_mutate(uuid,uuid,uuid,jsonb),
-  private_isg.workspace_checklist_read(uuid,uuid,uuid,integer),private_isg.workspace_checklist_mutate(uuid,uuid,uuid,jsonb),
-  private_isg.workspace_assurance_metrics(uuid,uuid),public.isg_workspace_risk_read_v1(uuid,uuid,uuid,integer),
+  private_isg.workspace_checklist_read(uuid,uuid,uuid,uuid,integer),private_isg.workspace_checklist_mutate(uuid,uuid,uuid,jsonb),
+  private_isg.workspace_assurance_metrics(uuid,uuid),public.isg_workspace_risk_read_v1(uuid,uuid,uuid,uuid,integer),
   public.isg_workspace_risk_mutate_v1(uuid,uuid,uuid,jsonb),
-  public.isg_workspace_nonconformity_read_v1(uuid,uuid,uuid,text,integer),
+  public.isg_workspace_nonconformity_read_v1(uuid,uuid,uuid,text,uuid,integer),
   public.isg_workspace_nonconformity_mutate_v1(uuid,uuid,uuid,jsonb),
-  public.isg_workspace_checklist_read_v1(uuid,uuid,uuid,integer),
+  public.isg_workspace_checklist_read_v1(uuid,uuid,uuid,uuid,integer),
   public.isg_workspace_checklist_mutate_v1(uuid,uuid,uuid,jsonb),
   public.isg_workspace_assurance_metrics_v1(uuid,uuid)
   FROM PUBLIC,anon,authenticated,service_role;
-GRANT EXECUTE ON FUNCTION private_isg.workspace_risk_read(uuid,uuid,uuid,integer),
+GRANT EXECUTE ON FUNCTION private_isg.workspace_risk_read(uuid,uuid,uuid,uuid,integer),
   private_isg.workspace_risk_mutate(uuid,uuid,uuid,jsonb),
-  private_isg.workspace_nonconformity_read(uuid,uuid,uuid,text,integer),
+  private_isg.workspace_nonconformity_read(uuid,uuid,uuid,text,uuid,integer),
   private_isg.workspace_nonconformity_mutate(uuid,uuid,uuid,jsonb),
-  private_isg.workspace_checklist_read(uuid,uuid,uuid,integer),private_isg.workspace_checklist_mutate(uuid,uuid,uuid,jsonb),
-  private_isg.workspace_assurance_metrics(uuid,uuid),public.isg_workspace_risk_read_v1(uuid,uuid,uuid,integer),
+  private_isg.workspace_checklist_read(uuid,uuid,uuid,uuid,integer),private_isg.workspace_checklist_mutate(uuid,uuid,uuid,jsonb),
+  private_isg.workspace_assurance_metrics(uuid,uuid),public.isg_workspace_risk_read_v1(uuid,uuid,uuid,uuid,integer),
   public.isg_workspace_risk_mutate_v1(uuid,uuid,uuid,jsonb),
-  public.isg_workspace_nonconformity_read_v1(uuid,uuid,uuid,text,integer),
+  public.isg_workspace_nonconformity_read_v1(uuid,uuid,uuid,text,uuid,integer),
   public.isg_workspace_nonconformity_mutate_v1(uuid,uuid,uuid,jsonb),
-  public.isg_workspace_checklist_read_v1(uuid,uuid,uuid,integer),
+  public.isg_workspace_checklist_read_v1(uuid,uuid,uuid,uuid,integer),
   public.isg_workspace_checklist_mutate_v1(uuid,uuid,uuid,jsonb),
   public.isg_workspace_assurance_metrics_v1(uuid,uuid)
   TO authenticated;

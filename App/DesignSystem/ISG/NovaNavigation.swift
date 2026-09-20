@@ -62,7 +62,7 @@ enum NovaDestination: String, CaseIterable, Hashable {
         case .visits: return "Ziyaretler"
         case .statistics: return RDLocalization.string("localizable.nova.navigation.istatistikler.da698529", table: .localizable, fallback: "İstatistikler")
         case .training: return RDLocalization.string("localizable.nova.navigation.egitim.ve.takip.59c46410", table: .localizable, fallback: "Eğitim ve Takip")
-        case .reports: return RDLocalization.string("localizable.nova.navigation.rapor.olustur.3c24b0ae", table: .localizable, fallback: "Rapor Oluştur")
+        case .reports: return "Rapor Merkezi"
         case .reportArchive: return RDLocalization.string("localizable.nova.navigation.rapor.arsivi.67865663", table: .localizable, fallback: "Rapor Arşivi")
         case .notifications: return RDLocalization.string("localizable.nova.navigation.bildirim.merkezi.e5d0ac4c", table: .localizable, fallback: "Bildirim Merkezi")
         case .profile: return "Profil"
@@ -143,6 +143,41 @@ enum NovaDestination: String, CaseIterable, Hashable {
     static let quickAdd: [Self] = [.newCompany, .newAnalysis, .newFinding, .newDocument]
 }
 
+/// The panel is a product surface, not a role-specific screen.  Roles only
+/// change which capabilities are exposed; every workspace starts from this
+/// same route catalog so a new module cannot silently exist in one panel only.
+enum NovaWorkspaceRole: String, CaseIterable {
+    case personnel
+    case osgbExpert
+    case osgbManager
+
+    /// Routes shared by both the personal/personnel and OSGB workspaces.
+    /// Management actions are capability-gated at the shell, while the
+    /// operational pages remain available to every authorized expert.
+    static let sharedDestinations: Set<NovaDestination> = [
+        .riskAssessments, .statistics, .companies, .newCompany,
+        .findings, .newFinding, .analyses, .newAnalysis,
+        .training, .newTraining, .documentChecklist, .documents, .newDocument,
+        .periodicChecks, .emergencyPlans, .drills, .ppeHandovers, .appointments,
+        .katipContracts, .annualWorkPlans, .boardMeetings, .visits, .workPermits,
+        .contractors, .reports, .reportArchive, .checklists, .notifications,
+        .newVisit
+    ]
+
+    var destinations: Set<NovaDestination> {
+        switch self {
+        case .personnel, .osgbManager:
+            return Self.sharedDestinations
+        case .osgbExpert:
+            // An OSGB expert can operate the same modules but cannot create
+            // an OSGB company or manage the tenant directory. Operational AI
+            // analysis remains available through the tenant-scoped product
+            // endpoint and the expert's active company assignment.
+            return Self.sharedDestinations.subtracting([.newCompany])
+        }
+    }
+}
+
 /// Each drawer destination appears once; grouping does not alter route identities.
 struct NovaDrawerGroup: Identifiable {
     let id: String
@@ -210,10 +245,7 @@ struct NovaNavigationState: Equatable {
     }
     var canGoBack: Bool { overlay != nil || !(paths[selected] ?? []).isEmpty || selected != .home }
     func canOpen(_ destination: NovaDestination) -> Bool {
-        // Creating a company is presented by the companies host; it does not
-        // require a separate server capability flag beyond the companies tab.
-        let availableDestination = destination == .newCompany ? available.contains(.companies) : available.contains(destination)
-        return availableDestination && available.contains(destination.tab.root)
+        return available.contains(destination) && available.contains(destination.tab.root)
     }
     mutating func select(_ tab: NovaTab, from expectedEpoch: String) {
         guard expectedEpoch == epoch, canOpen(tab.root) else { return }

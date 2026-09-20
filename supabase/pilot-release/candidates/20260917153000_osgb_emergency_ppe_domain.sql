@@ -211,46 +211,60 @@ END $$;
 CREATE TRIGGER ppe_returns_workspace_scope_before BEFORE INSERT OR UPDATE ON private_isg.ppe_returns
 FOR EACH ROW EXECUTE FUNCTION private_isg.workspace_ppe_return_invariant();
 
-CREATE FUNCTION private_isg.workspace_safety_read(p_workspace uuid,p_company uuid,p_kind text,p_id uuid,p_limit integer)
+CREATE FUNCTION private_isg.workspace_safety_read(p_workspace uuid,p_company uuid,p_kind text,p_id uuid,p_after uuid,p_limit integer)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
-DECLARE rows jsonb;
+DECLARE rows jsonb; next_id uuid; id_key text;
 BEGIN
   PERFORM private_isg.workspace_domain_gate('emergency_ppe',false);
   PERFORM private_isg.workspace_require_company(p_workspace,p_company,false);
-  IF p_kind NOT IN ('plans','drills','appointments','ppe') OR p_limit NOT BETWEEN 1 AND 100 THEN
+  IF p_kind NOT IN ('plans','drills','appointments','ppe') OR p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100
+    OR (p_id IS NOT NULL AND p_after IS NOT NULL) THEN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   IF p_kind='plans' THEN
+    id_key:='plan_id';
     SELECT coalesce(jsonb_agg(jsonb_build_object('plan_id',plan_id,'version',version,'workplace_id',workplace_id,
       'scope',scope,'prepared_on',prepared_on,'valid_until',valid_until,'team',team_snapshot,
       'state',state,'needs_review',needs_review,'created_by_user_id',created_by_user_id)
       ORDER BY created_at DESC,plan_id,version DESC),'[]'::jsonb) INTO rows
-    FROM private_isg.emergency_plan_versions WHERE workspace_id=p_workspace AND company_id=p_company
-      AND (p_id IS NULL OR plan_id=p_id) AND (p_id IS NOT NULL OR state='active');
+    FROM (SELECT * FROM private_isg.emergency_plan_versions WHERE workspace_id=p_workspace AND company_id=p_company
+      AND (p_id IS NULL OR plan_id=p_id) AND (p_id IS NOT NULL OR state='active')
+      AND (p_after IS NULL OR plan_id>p_after)
+      ORDER BY plan_id,version DESC LIMIT CASE WHEN p_id IS NULL THEN p_limit+1 ELSE 100 END) page;
   ELSIF p_kind='drills' THEN
+    id_key:='drill_id';
     SELECT coalesce(jsonb_agg(jsonb_build_object('drill_id',drill_id,'workplace_id',workplace_id,
       'plan_id',plan_id,'plan_version',plan_version,'planned_on',planned_on,'performed_on',performed_on,
       'state',state,'participants',participants,'observation',observation,'improvement',improvement,'version',version)
       ORDER BY planned_on DESC,drill_id),'[]'::jsonb) INTO rows
-    FROM private_isg.drill_records WHERE workspace_id=p_workspace AND company_id=p_company
-      AND (p_id IS NULL OR drill_id=p_id);
+    FROM (SELECT * FROM private_isg.drill_records WHERE workspace_id=p_workspace AND company_id=p_company
+      AND (p_id IS NULL OR drill_id=p_id) AND (p_after IS NULL OR drill_id>p_after)
+      ORDER BY drill_id LIMIT CASE WHEN p_id IS NULL THEN p_limit+1 ELSE 1 END) page;
   ELSIF p_kind='appointments' THEN
+    id_key:='appointment_id';
     SELECT coalesce(jsonb_agg(jsonb_build_object('appointment_id',appointment_id,'employee_id',employee_id,
       'kind',kind,'workplace_id',scope_workplace_id,'starts_on',starts_on,'ends_before',ends_before,'version',version)
       ORDER BY starts_on DESC,appointment_id),'[]'::jsonb) INTO rows
-    FROM private_isg.appointments WHERE workspace_id=p_workspace AND company_id=p_company
-      AND (p_id IS NULL OR appointment_id=p_id);
+    FROM (SELECT * FROM private_isg.appointments WHERE workspace_id=p_workspace AND company_id=p_company
+      AND (p_id IS NULL OR appointment_id=p_id) AND (p_after IS NULL OR appointment_id>p_after)
+      ORDER BY appointment_id LIMIT CASE WHEN p_id IS NULL THEN p_limit+1 ELSE 1 END) page;
   ELSE
+    id_key:='handover_id';
     SELECT coalesce(jsonb_agg(jsonb_build_object('handover_id',h.handover_id,'employee_id',h.employee_id,
       'item',h.item,'quantity',h.quantity,'unit',h.unit,'handed_on',h.handed_on,'signed_copy',h.signed_copy,
       'version',h.version,'returned_quantity',coalesce((SELECT sum(r.quantity) FROM private_isg.ppe_returns r
         WHERE r.workspace_id=p_workspace AND r.company_id=p_company AND r.handover_id=h.handover_id),0))
       ORDER BY h.handed_on DESC,h.handover_id),'[]'::jsonb) INTO rows
-    FROM private_isg.ppe_handovers h WHERE h.workspace_id=p_workspace AND h.company_id=p_company
-      AND (p_id IS NULL OR h.handover_id=p_id);
+    FROM (SELECT * FROM private_isg.ppe_handovers WHERE workspace_id=p_workspace AND company_id=p_company
+      AND (p_id IS NULL OR handover_id=p_id) AND (p_after IS NULL OR handover_id>p_after)
+      ORDER BY handover_id LIMIT CASE WHEN p_id IS NULL THEN p_limit+1 ELSE 1 END) h;
   END IF;
   IF p_id IS NOT NULL AND jsonb_array_length(rows)=0 THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
+  IF p_id IS NULL AND jsonb_array_length(rows)>p_limit THEN
+    next_id:=(rows->(p_limit-1)->>id_key)::uuid;
+  END IF;
   RETURN jsonb_build_object('schema_version',1,'workspace_id',p_workspace,'company_id',p_company,'kind',p_kind,
-    'rows',(SELECT coalesce(jsonb_agg(value),'[]'::jsonb) FROM (SELECT value FROM jsonb_array_elements(rows) LIMIT p_limit) q));
+    'rows',(SELECT coalesce(jsonb_agg(value),'[]'::jsonb) FROM (SELECT value FROM jsonb_array_elements(rows) LIMIT p_limit) q),
+    'next',next_id);
 END $$;
 
 CREATE FUNCTION private_isg.workspace_safety_mutate(p_mutation uuid,p_workspace uuid,p_company uuid,p_payload jsonb)
@@ -259,7 +273,7 @@ DECLARE actor uuid:=private_isg.active_actor(); entity text; action text; finger
   target uuid; expected bigint; plan private_isg.emergency_plan_versions; drill private_isg.drill_records;
   appointment private_isg.appointments; handover private_isg.ppe_handovers; returned private_isg.ppe_returns;
   next_version integer; result jsonb; before_state jsonb; aggregate_version bigint:=0;
-  team_snapshot jsonb; participants_snapshot jsonb;
+  team_snapshot jsonb; participants_snapshot jsonb; returned_total numeric;
 BEGIN
   PERFORM private_isg.workspace_domain_gate('emergency_ppe',true);
   PERFORM private_isg.workspace_require_company(p_workspace,p_company,true);
@@ -409,6 +423,16 @@ BEGIN
       SELECT * INTO handover FROM private_isg.ppe_handovers WHERE workspace_id=p_workspace
         AND company_id=p_company AND handover_id=target FOR UPDATE;
       IF handover.handover_id IS NULL THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
+      expected:=(p_payload->>'expected_version')::bigint;
+      SELECT coalesce(sum(quantity),0) INTO returned_total FROM private_isg.ppe_returns
+        WHERE workspace_id=p_workspace AND company_id=p_company AND handover_id=target;
+      IF handover.version<>expected THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VERSION_CONFLICT'; END IF;
+      IF (p_payload->>'quantity')::numeric IS NULL OR (p_payload->>'quantity')::numeric<=0 OR
+         returned_total+(p_payload->>'quantity')::numeric>handover.quantity OR
+         (p_payload->>'returned_on')::date IS NULL OR (p_payload->>'returned_on')::date<handover.handed_on OR
+         (p_payload->>'returned_on')::date>(clock_timestamp() AT TIME ZONE 'UTC')::date OR
+         p_payload->>'condition' NOT IN ('reusable','worn','damaged','lost') THEN
+        RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
       before_state:=to_jsonb(handover);
       INSERT INTO private_isg.ppe_returns(workspace_id,company_id,handover_id,quantity,returned_on,condition,note,created_by_user_id)
       VALUES(p_workspace,p_company,target,(p_payload->>'quantity')::numeric,(p_payload->>'returned_on')::date,
@@ -449,8 +473,8 @@ BEGIN
 END $$;
 
 CREATE FUNCTION public.isg_workspace_safety_read_v1(p_workspace uuid,p_company uuid,p_kind text,
-  p_id uuid DEFAULT NULL,p_limit integer DEFAULT 50) RETURNS jsonb
-LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private_isg.workspace_safety_read(p_workspace,p_company,p_kind,p_id,p_limit) $$;
+  p_id uuid DEFAULT NULL,p_after uuid DEFAULT NULL,p_limit integer DEFAULT 50) RETURNS jsonb
+LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private_isg.workspace_safety_read(p_workspace,p_company,p_kind,p_id,p_after,p_limit) $$;
 CREATE FUNCTION public.isg_workspace_safety_mutate_v1(p_mutation uuid,p_workspace uuid,p_company uuid,p_payload jsonb) RETURNS jsonb
 LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private_isg.workspace_safety_mutate(p_mutation,p_workspace,p_company,p_payload) $$;
 CREATE FUNCTION public.isg_workspace_safety_metrics_v1(p_workspace uuid,p_company uuid) RETURNS jsonb
@@ -459,13 +483,13 @@ LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$ SELECT private_isg.worksp
 REVOKE ALL ON FUNCTION private_isg.workspace_emergency_plan_invariant(),private_isg.workspace_drill_invariant(),
   private_isg.workspace_appointment_invariant(),private_isg.workspace_ppe_handover_invariant(),
   private_isg.workspace_ppe_return_invariant(),
-  private_isg.workspace_safety_read(uuid,uuid,text,uuid,integer),private_isg.workspace_safety_mutate(uuid,uuid,uuid,jsonb),
-  private_isg.workspace_safety_metrics(uuid,uuid),public.isg_workspace_safety_read_v1(uuid,uuid,text,uuid,integer),
+  private_isg.workspace_safety_read(uuid,uuid,text,uuid,uuid,integer),private_isg.workspace_safety_mutate(uuid,uuid,uuid,jsonb),
+  private_isg.workspace_safety_metrics(uuid,uuid),public.isg_workspace_safety_read_v1(uuid,uuid,text,uuid,uuid,integer),
   public.isg_workspace_safety_mutate_v1(uuid,uuid,uuid,jsonb),public.isg_workspace_safety_metrics_v1(uuid,uuid)
   FROM PUBLIC,anon,authenticated,service_role;
-GRANT EXECUTE ON FUNCTION private_isg.workspace_safety_read(uuid,uuid,text,uuid,integer),
+GRANT EXECUTE ON FUNCTION private_isg.workspace_safety_read(uuid,uuid,text,uuid,uuid,integer),
   private_isg.workspace_safety_mutate(uuid,uuid,uuid,jsonb),private_isg.workspace_safety_metrics(uuid,uuid),
-  public.isg_workspace_safety_read_v1(uuid,uuid,text,uuid,integer),
+  public.isg_workspace_safety_read_v1(uuid,uuid,text,uuid,uuid,integer),
   public.isg_workspace_safety_mutate_v1(uuid,uuid,uuid,jsonb),public.isg_workspace_safety_metrics_v1(uuid,uuid)
   TO authenticated;
 NOTIFY pgrst,'reload schema';

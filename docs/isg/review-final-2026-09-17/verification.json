@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-09-17",
+  "base_commit": "c6b5316671e1c44493c03b2529bf2691d57d12db",
+  "branch": "codex/isg-transition-foundation",
+  "status": "reviewed_local_d1_d2_complete_not_deployed",
+  "production_changed": false,
+  "staging_changed": false,
+  "full_integration_accepted": false,
+  "commands": {
+    "node": {
+      "command": "node --test scripts/isg/osgb_*.test.mjs",
+      "exit_code": 0,
+      "log_sha256": "6d29008328684e8bb4b4c1a2947e9e14d6a7b32ac4d433be4e30cfb6de1aedfb",
+      "result_lines": [
+        "ℹ tests 106",
+        "ℹ pass 106",
+        "ℹ fail 0"
+      ]
+    },
+    "foundation": {
+      "command": "node scripts/isg/run_suite.mjs foundation",
+      "exit_code": 0,
+      "log_sha256": "fba5d651e53f49b18df79e9f721f80d1fc38ab75f7c870b3530cc1214b05fe43",
+      "result_lines": [
+        "ℹ tests 761",
+        "ℹ pass 761",
+        "ℹ fail 0"
+      ]
+    },
+    "design": {
+      "command": "node scripts/isg/run_suite.mjs nova-design",
+      "exit_code": 0,
+      "log_sha256": "9015bc7a0c62591baa784f9d6423af901cd0035f044908eb79d2aa97e39b1209",
+      "result_lines": [
+        "ℹ tests 194",
+        "ℹ pass 194",
+        "ℹ fail 0"
+      ]
+    },
+    "regressions": {
+      "command": "node scripts/isg/run_osgb_review_regressions.mjs",
+      "exit_code": 0,
+      "log_sha256": "0b41dbf8866531fc76207a479640c0d50a22e4749b0d69324d3b5c1ddc6ffc0b",
+      "result_lines": [
+        "NOTICE:  ok review populated legacy PPE upgrade and personal employee/PPE edits after mapping",
+        "NOTICE:  ok review workspace-private file excluded from company search",
+        "NOTICE:  ok review member-private change events hidden from non-recipient owner",
+        "NOTICE:  ok review disabled source domain excluded from global search",
+        "NOTICE:  ok review old-client workplace, equipment, annual plan and nested item writes",
+        "NOTICE:  ok review archive cancels future and ends finite assignments of a suspended member",
+        "NOTICE:  ok review same-name personal company creation remains compatible",
+        "NOTICE:  ok review expired-owner scope backfill preserves timestamps and completed replay",
+        "NOTICE:  ok review canonical sync preserves the actual updating admin",
+        "NOTICE:  ok review legacy personal company deletion retains an archived mirror without stale link",
+        "PASS: undeployed OSGB populated legacy and privacy regression chain in one disposable PostgreSQL"
+      ]
+    },
+    "assignments": {
+      "command": "node scripts/isg/run_osgb_company_assignments.mjs",
+      "exit_code": 0,
+      "log_sha256": "de051be34bbc1b428611e169976ec6f89cba2e208fca9bfc14be40f14f0255a1",
+      "result_lines": [
+        "NOTICE:  ok workspace company idempotency, portfolio isolation, assignment visibility, overlap and history",
+        "NOTICE:  ok assignment finite primary overlap, future cancellation and early termination",
+        "PASS: undeployed OSGB company and assignment foundation in disposable PostgreSQL"
+      ]
+    },
+    "integrated": {
+      "command": "node scripts/isg/run_osgb_integrated_rehearsal.mjs",
+      "exit_code": 0,
+      "log_sha256": "da0c44f47871e311d45b5c3c043b79067e64c78d15128fa8a95733d5aa64ed31",
+      "result_lines": [
+        "NOTICE:  ok integrated subscription, seats, company, personnel, training, assurance, safety, equipment, operations, files, analysis, verified filing, export, tracking, notification lease, signed evidence, upload, AI wallet, quota, handover, revoked token, memory, metrics and admin projection",
+        "PASS: undeployed OSGB full candidate chain in one disposable PostgreSQL"
+      ]
+    },
+    "assets": {
+      "command": "node scripts/isg/run_osgb_asset_transport.mjs",
+      "exit_code": 0,
+      "log_sha256": "45fb8cf6b2e1f0cd6ed859a45d8e935aa7a8159af66d48ddfcad195202d8200f",
+      "result_lines": [
+        "NOTICE:  ok server path ownership, one-time token, byte finalize, download delivery, revoke check and evidence-based delete",
+        "PASS: undeployed OSGB asset transport and deletion lifecycle in disposable PostgreSQL"
+      ]
+    },
+    "ios": {
+      "command": "xcodebuild -project RiskDetected.xcodeproj -scheme RiskDetected -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/RiskDetectedD1D2Final CODE_SIGNING_ALLOWED=NO build",
+      "exit_code": 0,
+      "log_sha256": "2e746272c2bd196bb8799a9984124b7ac37268db71f2062a1724b47913026f6c",
+      "result_lines": [
+        "** BUILD SUCCEEDED **"
+      ]
+    },
+    "android": {
+      "command": "JAVA_HOME=<installed JDK 17> ./gradlew --no-daemon --no-watch-fs :core:data:testDebugUnitTest :core:designsystem:testDebugUnitTest (cwd: android)",
+      "exit_code": 0,
+      "log_sha256": "54d15fa95323675e0050c1a1b9f8837379f1b895b0bb7182873c7236e4f351a3",
+      "result_lines": [
+        "BUILD SUCCESSFUL in 6s"
+      ]
+    }
+  },
+  "source_sha256": {
+    "App/DesignSystem/ISG/IsgWorkspaceAssignmentScreen.swift": "45b0edab2eb6c22933e13b811ff2c1d0eace6439f39217fa810e6be0d6ea30c7",
+    "App/DesignSystem/ISG/IsgWorkspaceDomainCreateEditor.swift": "653be03c8690897bcc07bdaf1c4256362f8ee94090a5efa25fa22c6113cda6da",
+    "App/DesignSystem/ISG/IsgWorkspaceDomainScreen.swift": "74f0ba80b4506bd893310e8c94f235c128df7c6f7ea667a88214482398691bc8",
+    "App/DesignSystem/ISG/IsgWorkspaceFileCreateEditor.swift": "227cfb482fc10ce85204fc64b63ef4c4817d521369f4961e1d75c71ce52f93c6",
+    "App/DesignSystem/ISG/IsgWorkspacePersonnelScreen.swift": "e2aea0888d3bd2357dabf12cca6a2f1b36b927c259f27114def85370d24cabf2",
+    "App/DesignSystem/ISG/IsgWorkspaceTrainingAdvancedScreen.swift": "c2d8ee36d64e51c3eb96aa287ce6f98a8c6ac3e79e416b5c2ebf31c874c3827e",
+    "App/Localization/Localizable.xcstrings": "65badd262926be745296eda4ae218f12ab5cacbd081b1e368508c117c1fee364",
+    "App/Services/ISG/IsgWorkspaceAPI.swift": "236cfc6e782c711917265bbabf5032fd1b00dfbb04a1a65fec12b7fcde99492e",
+    "App/Services/ISG/IsgWorkspaceStore.swift": "8ee122db1a5df6aec25852eea92ad1f9d8dda878dd28b91ffec81be181abf83c",
+    "App/Views/Components/NovaPilotMainGate.swift": "18d42022457ad43af21d91fc7e73958f71753d2bf752bdf52e7ed267737e8340",
+    "android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/IsgWorkspaceGateway.kt": "dc715ac6cd795af99eb647d33a8e027d3b3dd89e2367fc7d5f68abee4fb8552a",
+    "android/core/data/src/test/kotlin/com/riskdetectedan/core/data/isg/IsgWorkspaceGatewayTest.kt": "6235bf4fced79b912d1d0ae43d79861954836ddb067b32edaf08233206ca4405",
+    "contracts/isg/v1/function-test-map.json": "1ef3d150cce0e0542cdb75a4317ec8f699374eb95e7435a284cdb834b956315e",
+    "docs/isg/OSGB_CANDIDATE_MANIFEST_2026-09-17.json": "ce0d92db18fb6a2d0413e5eea40df5927273299509e23cc2767f32f73d843e73",
+    "scripts/isg/WorkspaceAPICheck.swift": "63fe31741aca50922561e1dea4ffdfa405cd9f69329a251a5cacd95a261ac954",
+    "scripts/isg/WorkspaceStoreCheck.swift": "3a20e1b55f19f36a9a5c99b061c0c7a0e39ee34ce5f9fa5964a65d1a02da8274",
+    "scripts/isg/osgb_assignment_lifecycle_check.sql": "b9989639a6aa323f30e628e4aee2f2c812e4f66e7904e023847f361a84a5640f",
+    "scripts/isg/osgb_candidate_manifest_guard.test.mjs": "caa512d01c6b0132e332a17d999a2ac5763ac9d503a267eeab93a10b7c9dde38",
+    "scripts/isg/osgb_integrated_rehearsal_check.sql": "dece8acc404f81bfcfb0314c603cafd0465ad562889085c5a5e57ba231c7cfd3",
+    "scripts/isg/osgb_integrated_rehearsal_guard.test.mjs": "434684d7ccaa4cb2aaad4cd53ff65c7dd66ad044d05339b4fcbd6c35f8d176b2",
+    "scripts/isg/osgb_personnel_domain_guard.test.mjs": "d98d2416e1279d83e545396e845873197e8411e4c887bbb87f8ff9bf2989adc7",
+    "scripts/isg/osgb_risk_nonconformity_domain_guard.test.mjs": "981a9360e20a6d9ec338df2ff48075de30bdc93e84b54f0d5ec728a4bab48dac",
+    "scripts/isg/osgb_training_domain_guard.test.mjs": "d8f3398cc337917895bbf3f56ac5406dccad43c8a24a88cb0f7d447ded67bd18",
+    "scripts/isg/osgb_workspace_api.test.mjs": "15bcf2bc1b1ba468a82120f61c1f5052ed7643c0a566f0e342ab66a5f07fd4d3",
+    "supabase/pilot-release/candidates/20260917150000_osgb_training_domain.sql": "a29d979ed31d77f0d869ca95f79133907efbd1ff75d09571324ccf2cb6885e7f",
+    "supabase/pilot-release/candidates/20260917151500_osgb_risk_nonconformity_domain.sql": "ad5f0753c19cb369446a71b545cfd958412b425cb783d7ce2a6ead9f1ffa4a9f",
+    "supabase/pilot-release/candidates/20260917161500_osgb_file_domain.sql": "4a9981f48ba39261defc30af17f4b70da3b7fb0bc2173418e787574a885d037e",
+    "supabase/pilot-release/candidates/20260917170000_osgb_personnel_training_advanced.sql": "3d8c02a686df5fbb992748dc4fa9c1be83dc696a40696c91ad0405d4491308bc"
+  },
+  "candidate_migration_count": 25,
+  "d1_d2_tenant_native_advanced": "locally_complete"
+}

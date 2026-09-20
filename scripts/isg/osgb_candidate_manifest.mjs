@@ -30,15 +30,27 @@ export const OSGB_CANDIDATE_MIGRATIONS=Object.freeze([
   '20260917161500_osgb_file_domain.sql',
   '20260917163000_osgb_analysis_export_domain.sql',
   '20260917164500_osgb_tracking_notification_domain.sql',
+  '20260917170000_osgb_personnel_training_advanced.sql',
+  '20260917171500_osgb_provider_worker_bridge.sql',
+  '20260917172000_osgb_provider_worker_rpc_security.sql',
+  '20260917172500_osgb_storage_worker_rpc_security.sql',
+  '20260917173000_osgb_ai_worker_source_validation.sql',
+  '20260918010000_osgb_company_profile_product_parity.sql',
+  '20260918013000_osgb_operational_surface_parity.sql',
+  '20260918020000_osgb_personal_pilot_parity.sql',
+  '20260920183000_osgb_photo_analysis_product.sql',
 ]);
 
 export function buildCandidateManifest(){
   return {
     schema_version:1,
-    status:'local_candidate_not_deployed',
+    status:'staging_operational_admin_deferred',
     base_commit:'6eebab8946c627f42d13415cff1b8dc5007cc1ce',
-    generated_for:'2026-09-17',
+    generated_for:'2026-09-20',
     safety:{workspace_rollout_default:'off',domain_rollout_default:'off',production_target:false},
+    staging:{project_ref:'qlymhrrlhklcudveknih',deployed_through:'20260920183000',
+      excluded:['20260917120000_osgb_admin_extension.sql'],
+      exclusion_reason:'Admin product UI is intentionally deferred until the user supplies its UI kit.'},
     candidate_count:OSGB_CANDIDATE_MIGRATIONS.length,
     candidates:OSGB_CANDIDATE_MIGRATIONS.map((name,index)=>{
       const path=`supabase/pilot-release/candidates/${name}`;

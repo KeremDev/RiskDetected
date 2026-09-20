@@ -26,8 +26,11 @@ struct NovaPhotoIntakeScreen: View {
                         NovaText(text: RDLocalization.string("localizable.nova.intake.title", table: .localizable, fallback: "Fotoğraf Analizi"), style: .screenTitle)
                         Spacer(minLength: 0)
                     }
-                    NovaHelpHint(text: RDLocalization.string("localizable.nova.photo.intake.hint", table: .localizable,
-                        fallback: "En fazla üç fotoğraf. Firma, sektör ve odak seçimini analizi başlatırken soracağız."))
+                    NovaHelpHint(text: maximum == 1
+                        ? RDLocalization.string("localizable.nova.photo.intake.workspace.hint", table: .localizable,
+                            fallback: "Tek fotoğraf seçin. Fotoğraf bağlı bulunduğunuz firmanın dosyalarına kaydedilir ve analiz sonucu aynı çalışma alanında açılır.")
+                        : RDLocalization.string("localizable.nova.photo.intake.hint", table: .localizable,
+                            fallback: "En fazla üç fotoğraf. Firma, sektör ve odak seçimini analizi başlatırken soracağız."))
                     if images.isEmpty { dropZone } else { grid }
                     NovaButton(label: RDLocalization.string("localizable.nova.intake.start", table: .localizable, fallback: "Analizi başlat"),
                         symbol: "sparkles", isEnabled: !images.isEmpty) { onStart() }

@@ -52,6 +52,35 @@ const PASSIVE_STATUSES = new Set([
 
 const PUBLIC_REVENUECAT_API_KEY = "appl_mckFFxUrvtNqzjShezjMIrFmItA";
 
+function revenueCatWorkspaceIntent(event: Record<string, unknown>): string | null {
+  const attributes = event.subscriber_attributes;
+  if (!attributes || typeof attributes !== "object" || Array.isArray(attributes)) return null;
+  const candidate = (attributes as Record<string, unknown>).osgb_purchase_intent;
+  const value = candidate && typeof candidate === "object" && !Array.isArray(candidate)
+    ? (candidate as Record<string, unknown>).value
+    : candidate;
+  return typeof value === "string" && /^[0-9a-f]{64}$/i.test(value.trim()) ? value.trim().toLowerCase() : null;
+}
+
+function revenueCatWorkspaceLifecycle(eventType: string, expiration: string | null) {
+  if (eventType === "BILLING_ISSUE") return "grace";
+  if (eventType === "SUBSCRIPTION_PAUSED") return "hold";
+  if (eventType === "EXPIRATION") return "expired";
+  if (eventType === "REFUND" || eventType === "REVOKE") return "revoked";
+  if (eventType === "CANCELLATION") return expiration && Date.parse(expiration) > Date.now() ? "canceled_active" : "expired";
+  return "active";
+}
+
+function revenueCatTimestamp(value: unknown, fallback = Date.now()): string {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return new Date(Number.isFinite(parsed) && parsed > 0 ? parsed : fallback).toISOString();
+}
+
+async function sha256Hex(value: unknown): Promise<string> {
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(value)));
+  return [...new Uint8Array(bytes)].map((item) => item.toString(16).padStart(2, "0")).join("");
+}
+
 type RevenueCatEntitlement = {
   expires_date?: string | null;
   product_identifier?: string | null;
@@ -913,6 +942,41 @@ serve(async (req) => {
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+
+  // OSGB purchases are explicitly correlated with a short-lived workspace
+  // intent. An invalid/mismatched intent fails closed and never falls through
+  // to the legacy individual subscription projection.
+  const workspaceIntent = revenueCatWorkspaceIntent(event);
+  if (workspaceIntent) {
+    const transactionID = typeof event.transaction_id === "string" ? event.transaction_id : null;
+    const chainID = typeof event.original_transaction_id === "string" ? event.original_transaction_id : transactionID;
+    if (!productID || !appUserID || !/^[0-9a-f-]{36}$/i.test(appUserID) || !transactionID || !chainID) {
+      return json(400, { error: "workspace_purchase_event_invalid", event_id: eventID });
+    }
+    const effectiveAt = revenueCatTimestamp(event.purchased_at_ms ?? event.event_timestamp_ms);
+    const candidateExpiry = event.expiration_at_ms == null ? null : revenueCatTimestamp(event.expiration_at_ms);
+    const validUntil = candidateExpiry && Date.parse(candidateExpiry) > Date.parse(effectiveAt) ? candidateExpiry : null;
+    const sequence = Math.max(0, Math.floor(Number(event.event_timestamp_ms ?? event.purchased_at_ms ?? Date.now())));
+    const payloadHash = await sha256Hex(event);
+    const { data, error } = await supabase.rpc("isg_workspace_purchase_record_revenuecat_v1", {
+      p_intent_token: workspaceIntent,
+      p_event_id: eventID,
+      p_product: productID,
+      p_app_user: appUserID,
+      p_transaction: transactionID,
+      p_chain: chainID,
+      p_lifecycle: revenueCatWorkspaceLifecycle(eventType, validUntil),
+      p_effective_at: effectiveAt,
+      p_valid_until: validUntil,
+      p_sequence: sequence,
+      p_payload_hash: `\\x${payloadHash}`,
+      p_now: new Date().toISOString(),
+    });
+    if (error) {
+      return json(409, { error: "workspace_purchase_rejected", event_id: eventID, detail: safeLogText(error.code) });
+    }
+    return json(200, { ok: true, workspace_purchase: true, result: data });
+  }
 
   let eventUserID = userID;
   if (eventUserID) {

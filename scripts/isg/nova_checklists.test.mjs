@@ -92,6 +92,6 @@ test('the route exists, is reachable and is wired to the real gate',()=>{
   assert.match(navigation,/case checklists/);
   assert.match(navigation,/case \.checklists: return RDLocalization\.string\("localizable\.nova\.navigation\.checklists"/);
   assert.match(navigation,/static let drawer: \[Self\] = \[[^\]]*\.checklists/);
-  assert.match(main,/case \.checklists:\n\s+checklists/);
+  assert.match(main,/case \.checklists:\n\s+if let workspaceStore \{ workspaceDomain\(workspaceStore, \.checklist\) \} else \{ checklists \}/);
   assert.match(gate,/NovaChecklistScreen\(client: client/);
 });

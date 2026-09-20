@@ -40,27 +40,61 @@ enum RDConfig {
     }
 
     private static let productionSupabaseURLString = "https://ppcrzemgiztzcgddbins.supabase.co"
-    private static let defaultSupabaseURLString = productionSupabaseURLString
+
+    #if DEBUG && NOVA_PILOT_BUILD
+    /// The OSGB pilot is a separate bundle and must never silently fall back to
+    /// the production Auth project when a build is installed without Xcode's
+    /// launch environment. The publishable/anon key is intentionally public;
+    /// tenant and write access remain enforced by Supabase Auth/RLS.
+    private static let osgbPilotBundleIdentifier = "com.riskdetected.app.osgbpilot"
+    private static let osgbPilotSupabaseURLString = "https://qlymhrrlhklcudveknih.supabase.co"
+    private static let osgbPilotPublishableKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFseW1ocnJsaGtsY3VkdmVrbmloIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxMjUyMjIsImV4cCI6MjEwMTcwMTIyMn0.Tdh_r9QzV5J7NC3lsoDMCKAND983mjjilSd1IZqdtwE"
+
+    private static var isOSGBPilotBundle: Bool {
+        Bundle.main.bundleIdentifier == osgbPilotBundleIdentifier
+    }
+    #endif
+
+    private static var defaultSupabaseURLString: String {
+        #if DEBUG && NOVA_PILOT_BUILD
+        return isOSGBPilotBundle ? osgbPilotSupabaseURLString : productionSupabaseURLString
+        #else
+        return productionSupabaseURLString
+        #endif
+    }
     private static let defaultSupabasePublishableKey = "sb_publishable_cUQq5Lv-zDF1hXqwnmAj1A_LTdk9FJt"
     private static let defaultRevenueCatAPIKey = "appl_mckFFxUrvtNqzjShezjMIrFmItA"
     private static let defaultRevenueCatOfferingIdentifier = "default"
 
     /// Supabase proje URL'i.
-    static let supabaseURL = URL(
-        string: configuredString(
-            bundleKey: "RDSupabaseURL",
-            environmentKey: "RISKDETECTED_SUPABASE_URL",
-            defaultValue: defaultSupabaseURLString
-        )
-    )!
+    static let supabaseURL: URL = {
+        #if DEBUG && NOVA_PILOT_BUILD
+        if isOSGBPilotBundle {
+            return URL(string: osgbPilotSupabaseURLString)!
+        }
+        #endif
+        return URL(
+            string: configuredString(
+                bundleKey: "RDSupabaseURL",
+                environmentKey: "RISKDETECTED_SUPABASE_URL",
+                defaultValue: defaultSupabaseURLString
+            )
+        )!
+    }()
 
     /// Supabase publishable key (modern format — JWT tabanlı anon key'in yerini alır).
-    static let supabasePublishableKey =
-        configuredString(
+    static let supabasePublishableKey = {
+        #if DEBUG && NOVA_PILOT_BUILD
+        if isOSGBPilotBundle {
+            return osgbPilotPublishableKey
+        }
+        #endif
+        return configuredString(
             bundleKey: "RDSupabasePublishableKey",
             environmentKey: "RISKDETECTED_SUPABASE_PUBLISHABLE_KEY",
             defaultValue: defaultSupabasePublishableKey
         )
+    }()
 
     /// Edge Function endpoint adı.
     static let analyzeFunctionName = "analyze"

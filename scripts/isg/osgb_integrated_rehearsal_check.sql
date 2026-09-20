@@ -179,8 +179,262 @@ DO $$ DECLARE training_metrics jsonb; BEGIN
     RAISE EXCEPTION 'training metrics failed: %',training_metrics; END IF;
 END $$;
 
+-- D1 advanced: job roles, contractor engagements and effective-dated
+-- personnel assignments are tenant-native. Assignment history is closed, not
+-- overwritten, and a company cannot borrow another company's employee IDs.
+SELECT set_config('test.actor','20000000-0000-0000-0000-000000000001',false);
+WITH created AS (
+  SELECT public.isg_workspace_personnel_advanced_mutate_v1('c1000000-0000-4000-8000-000000000001',
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    jsonb_build_object('action','job_role_save','expected_version',0,'code','ISG-UZMANI',
+      'name','İSG Uzmanı','description','Saha güvenliği sorumlusu')) body)
+INSERT INTO integrated_state VALUES('job_role',(SELECT body->>'entity_id' FROM created));
+WITH created AS (
+  SELECT public.isg_workspace_personnel_advanced_mutate_v1('c1000000-0000-4000-8000-000000000002',
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    jsonb_build_object('action','contractor_save','expected_version',0,'name','Sentetik Alt İşveren',
+      'relation_kind','subcontractor','tax_identifier','TEST-001','contact_name','Yetkili',
+      'contact_value','yetkili@example.test')) body)
+INSERT INTO integrated_state VALUES('contractor',(SELECT body->>'entity_id' FROM created));
+WITH created AS (
+  SELECT public.isg_workspace_personnel_advanced_mutate_v1('c1000000-0000-4000-8000-000000000003',
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    jsonb_build_object('action','engagement_create','expected_version',0,
+      'contractor_id',(SELECT value FROM integrated_state WHERE key='contractor'),
+      'workplace_id',(SELECT value FROM integrated_state WHERE key='workplace'),
+      'scope','Bakım hizmeti','starts_on',CURRENT_DATE-60)) body)
+INSERT INTO integrated_state VALUES('contractor_engagement',(SELECT body->>'entity_id' FROM created));
+
+SELECT set_config('test.actor','20000000-0000-0000-0000-000000000002',false);
+WITH created AS (
+  SELECT public.isg_workspace_personnel_advanced_mutate_v1('c1000000-0000-4000-8000-000000000004',
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    jsonb_build_object('action','assignment_create','expected_version',0,
+      'employee_id',(SELECT value FROM integrated_state WHERE key='employee'),
+      'department_id',(SELECT value FROM integrated_state WHERE key='department'),
+      'job_role_id',(SELECT value FROM integrated_state WHERE key='job_role'),
+      'engagement_id',(SELECT value FROM integrated_state WHERE key='contractor_engagement'),
+      'effective_from',CURRENT_DATE-30)) body)
+INSERT INTO integrated_state VALUES('personnel_assignment',(SELECT body->>'entity_id' FROM created));
+DO $$ BEGIN
+  PERFORM public.isg_workspace_personnel_advanced_mutate_v1('c1000000-0000-4000-8000-000000000005',
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    jsonb_build_object('action','assignment_create','expected_version',0,
+      'employee_id',(SELECT value FROM integrated_state WHERE key='employee'),
+      'job_role_id',(SELECT value FROM integrated_state WHERE key='job_role'),
+      'effective_from',CURRENT_DATE-1));
+  RAISE EXCEPTION 'overlapping personnel assignment was accepted';
+EXCEPTION WHEN SQLSTATE 'P0001' THEN
+  IF SQLERRM<>'ASSIGNMENT_OVERLAP' THEN RAISE; END IF;
+END $$;
+SELECT public.isg_workspace_personnel_advanced_mutate_v1('c1000000-0000-4000-8000-000000000006',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','assignment_end','id',(SELECT value FROM integrated_state WHERE key='personnel_assignment'),
+    'expected_version',0,'effective_before',CURRENT_DATE));
+DO $$ DECLARE body jsonb; BEGIN
+  body:=public.isg_workspace_personnel_advanced_read_v1(
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),'assignments',NULL,50);
+  IF jsonb_array_length(body->'rows')<>1 OR body->'rows'->0->>'effective_before'<>CURRENT_DATE::text
+    OR body->'rows'->0->>'job_role_name'<>'İSG Uzmanı'
+    OR body->'rows'->0->>'employer_name'<>'Sentetik Alt İşveren' THEN
+    RAISE EXCEPTION 'advanced personnel history failed: %',body; END IF;
+END $$;
+
+SELECT set_config('test.actor','20000000-0000-0000-0000-000000000001',false);
+WITH created AS (
+  SELECT public.isg_workspace_company_create_v1('c1000000-0000-4000-8000-000000000007',
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),'Kapsam Kontrol Firması','low') body)
+INSERT INTO integrated_state VALUES('other_company',(SELECT body->>'company_id' FROM created));
+DO $$ BEGIN
+  PERFORM public.isg_workspace_personnel_advanced_mutate_v1('c1000000-0000-4000-8000-000000000008',
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='other_company'),
+    jsonb_build_object('action','assignment_create','expected_version',0,
+      'employee_id',(SELECT value FROM integrated_state WHERE key='employee'),
+      'job_role_id',(SELECT value FROM integrated_state WHERE key='job_role'),
+      'effective_from',CURRENT_DATE));
+  RAISE EXCEPTION 'cross-company personnel assignment was accepted';
+EXCEPTION WHEN SQLSTATE 'P0001' THEN
+  IF SQLERRM<>'ACCESS_DENIED' THEN RAISE; END IF;
+END $$;
+
+-- D2 advanced: curricula are published as immutable revisions; an assessed
+-- session cannot complete before a passing attempt. Annual plan realisation
+-- and certificate verification are explicit writes, never automatic side effects.
+WITH created AS (
+  SELECT public.isg_workspace_training_advanced_mutate_v1('c1000000-0000-4000-8000-000000000009',
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    jsonb_build_object('action','curriculum_create','expected_version',0,'title','Saha Temel Eğitimi',
+      'cycle','initial','hazard_class','high','target_group','Saha personeli',
+      'assessment_required',true,'pass_score',70)) body)
+INSERT INTO integrated_state VALUES('curriculum',(SELECT body->>'entity_id' FROM created));
+SELECT public.isg_workspace_training_advanced_mutate_v1('c1000000-0000-4000-8000-000000000010',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','curriculum_topic_save','curriculum_id',(SELECT value FROM integrated_state WHERE key='curriculum'),
+    'expected_version',0,'position',1,'title','Saha riskleri','description','Sentetik konu','duration_minutes',60));
+WITH read_back AS (
+  SELECT public.isg_workspace_training_advanced_read_v1(
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),'curricula',NULL,100) body)
+INSERT INTO integrated_state VALUES('curriculum_topic',(SELECT body->'rows'->0->'topics'->0->>'id' FROM read_back));
+SELECT public.isg_workspace_training_advanced_mutate_v1('c2000000-0000-4000-8000-000000000001',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','curriculum_topic_save','id',(SELECT value FROM integrated_state WHERE key='curriculum'),
+    'curriculum_id',(SELECT value FROM integrated_state WHERE key='curriculum'),
+    'topic_id',(SELECT value FROM integrated_state WHERE key='curriculum_topic'),
+    'expected_version',1,'position',1,'title','Saha riskleri ve kontroller',
+    'description','Güncellenmiş sentetik konu','duration_minutes',75));
+SELECT public.isg_workspace_training_advanced_mutate_v1('c2000000-0000-4000-8000-000000000002',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','curriculum_topic_save','curriculum_id',(SELECT value FROM integrated_state WHERE key='curriculum'),
+    'expected_version',2,'position',2,'title','Geçici konu','description','Silme testi','duration_minutes',15));
+WITH read_back AS (
+  SELECT public.isg_workspace_training_advanced_read_v1(
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),'curricula',NULL,100) body)
+INSERT INTO integrated_state VALUES('curriculum_topic_delete',(SELECT body->'rows'->0->'topics'->1->>'id' FROM read_back));
+SELECT public.isg_workspace_training_advanced_mutate_v1('c2000000-0000-4000-8000-000000000003',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','curriculum_topic_delete','id',(SELECT value FROM integrated_state WHERE key='curriculum'),
+    'curriculum_id',(SELECT value FROM integrated_state WHERE key='curriculum'),
+    'topic_id',(SELECT value FROM integrated_state WHERE key='curriculum_topic_delete'),'expected_version',3));
+SELECT public.isg_workspace_training_advanced_mutate_v1('c1000000-0000-4000-8000-000000000011',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','curriculum_publish','id',(SELECT value FROM integrated_state WHERE key='curriculum'),
+    'expected_version',4));
+
+SELECT set_config('test.actor','20000000-0000-0000-0000-000000000002',false);
+WITH created AS (
+  SELECT public.isg_workspace_training_mutate_v1('c1000000-0000-4000-8000-000000000012',
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    jsonb_build_object('action','save','expected_version',0,'title','Değerlendirmeli saha eğitimi',
+      'trainer','Ayşe Uzman','method','face_to_face','starts_at',clock_timestamp()-interval '3 hours',
+      'duration_minutes',60,'location','Saha','notes','İleri D2 testi',
+      'participants',jsonb_build_array(jsonb_build_object(
+        'id',(SELECT value FROM integrated_state WHERE key='employee'),'attended',false)))) body)
+INSERT INTO integrated_state VALUES('assessed_training',(SELECT body->'row'->>'training_id' FROM created));
+SELECT public.isg_workspace_training_advanced_mutate_v1('c1000000-0000-4000-8000-000000000013',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','training_link_curriculum','id',(SELECT value FROM integrated_state WHERE key='assessed_training'),
+    'expected_version',1,'curriculum_id',(SELECT value FROM integrated_state WHERE key='curriculum')));
+DO $$ BEGIN
+  PERFORM public.isg_workspace_training_mutate_v1('c1000000-0000-4000-8000-000000000014',
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    jsonb_build_object('action','complete','id',(SELECT value FROM integrated_state WHERE key='assessed_training'),
+      'expected_version',2,'participants',jsonb_build_array(jsonb_build_object(
+        'id',(SELECT value FROM integrated_state WHERE key='employee'),'attended',true))));
+  RAISE EXCEPTION 'assessed training completed without a passing attempt';
+EXCEPTION WHEN SQLSTATE 'P0001' THEN
+  IF SQLERRM<>'PASSED_ASSESSMENT_REQUIRED' THEN RAISE; END IF;
+END $$;
+SELECT public.isg_workspace_training_advanced_mutate_v1('c1000000-0000-4000-8000-000000000015',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','attempt_record','expected_version',0,
+    'training_id',(SELECT value FROM integrated_state WHERE key='assessed_training'),
+    'employee_id',(SELECT value FROM integrated_state WHERE key='employee'),'attempt_no',1,
+    'score',85,'passed',true,'taken_on',CURRENT_DATE,'notes','Başarılı'));
+SELECT public.isg_workspace_training_mutate_v1('c1000000-0000-4000-8000-000000000016',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','complete','id',(SELECT value FROM integrated_state WHERE key='assessed_training'),
+    'expected_version',2,'participants',jsonb_build_array(jsonb_build_object(
+      'id',(SELECT value FROM integrated_state WHERE key='employee'),'attended',true))));
+
+SELECT set_config('test.actor','20000000-0000-0000-0000-000000000001',false);
+WITH created AS (
+  SELECT public.isg_workspace_training_advanced_mutate_v1('c1000000-0000-4000-8000-000000000017',
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    jsonb_build_object('action','plan_create','expected_version',0,
+      'workplace_id',(SELECT value FROM integrated_state WHERE key='workplace'),
+      'plan_year',extract(year FROM CURRENT_DATE)::integer,'title','Yıllık eğitim planı')) body)
+INSERT INTO integrated_state VALUES('annual_training_plan',(SELECT body->>'entity_id' FROM created));
+SELECT public.isg_workspace_training_advanced_mutate_v1('c1000000-0000-4000-8000-000000000018',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','plan_activate','id',(SELECT value FROM integrated_state WHERE key='annual_training_plan'),
+    'expected_version',0));
+WITH created AS (
+  SELECT public.isg_workspace_training_advanced_mutate_v1('c1000000-0000-4000-8000-000000000019',
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    jsonb_build_object('action','plan_item_save','expected_version',0,
+      'plan_id',(SELECT value FROM integrated_state WHERE key='annual_training_plan'),
+      'curriculum_id',(SELECT value FROM integrated_state WHERE key='curriculum'),
+      'title','Saha Temel Eğitimi','target_group','Saha personeli','planned_on',CURRENT_DATE,
+      'duration_minutes',60,'responsible','Ayşe Uzman')) body)
+INSERT INTO integrated_state VALUES('annual_training_item',(SELECT body->>'entity_id' FROM created));
+DO $$ BEGIN
+  PERFORM public.isg_workspace_training_advanced_mutate_v1('c1000000-0000-4000-8000-000000000023',
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    jsonb_build_object('action','plan_close','id',(SELECT value FROM integrated_state WHERE key='annual_training_plan'),
+      'expected_version',1));
+  RAISE EXCEPTION 'annual training plan closed with a pending item';
+EXCEPTION WHEN SQLSTATE 'P0001' THEN
+  IF SQLERRM<>'PLAN_ITEMS_PENDING' THEN RAISE; END IF;
+END $$;
+SELECT public.isg_workspace_training_advanced_mutate_v1('c1000000-0000-4000-8000-000000000020',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','plan_item_realise','id',(SELECT value FROM integrated_state WHERE key='annual_training_item'),
+    'expected_version',0,'training_id',(SELECT value FROM integrated_state WHERE key='assessed_training')));
+SELECT public.isg_workspace_training_advanced_mutate_v1('c1000000-0000-4000-8000-000000000023',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','plan_close','id',(SELECT value FROM integrated_state WHERE key='annual_training_plan'),
+    'expected_version',1));
+WITH created AS (
+  SELECT public.isg_workspace_training_advanced_mutate_v1('c1000000-0000-4000-8000-000000000021',
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    jsonb_build_object('action','certificate_issue','expected_version',0,
+      'employee_id',(SELECT value FROM integrated_state WHERE key='employee'),
+      'training_id',(SELECT value FROM integrated_state WHERE key='assessed_training'),
+      'certificate_kind','internal_training','certificate_no','CERT-TEST-001','issuer','Entegre OSGB',
+      'issued_on',CURRENT_DATE,'expires_on',CURRENT_DATE+365)) body)
+INSERT INTO integrated_state VALUES('training_certificate',(SELECT body->>'entity_id' FROM created));
+SELECT public.isg_workspace_training_advanced_mutate_v1('c1000000-0000-4000-8000-000000000022',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','certificate_verify','id',(SELECT value FROM integrated_state WHERE key='training_certificate'),
+    'expected_version',0));
+DO $$ DECLARE body jsonb; metrics jsonb; BEGIN
+  body:=public.isg_workspace_training_advanced_read_v1(
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),'certificates',NULL,50);
+  metrics:=public.isg_workspace_training_metrics_v1(
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'));
+  IF body->'rows'->0->>'verification_state'<>'verified'
+    OR (metrics->'curricula'->>'published')::integer<>1
+    OR (metrics->'annual_plan'->>'open')::integer<>0
+    OR (metrics->'annual_plan'->>'realised_items')::integer<>1
+    OR (metrics->'assessment'->>'passed_people')::integer<>1 THEN
+    RAISE EXCEPTION 'advanced training integration failed: %, %',body,metrics; END IF;
+END $$;
+SELECT set_config('test.actor','20000000-0000-0000-0000-000000000002',false);
+
 -- D3: a versioned risk record, an auditable nonconformity transition and a
--- submitted checklist whose negative answer creates a linked finding.
+-- submitted checklist whose negative answer creates a linked finding only
+-- after the expert explicitly asks for it.
 WITH drafted AS (
   SELECT public.isg_workspace_risk_mutate_v1('a1000000-0000-4000-8000-000000000024',
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
@@ -213,6 +467,50 @@ SELECT public.isg_workspace_nonconformity_mutate_v1('a1000000-0000-4000-8000-000
   (SELECT value::uuid FROM integrated_state WHERE key='company'),
   jsonb_build_object('action','transition','id',(SELECT value FROM integrated_state WHERE key='nonconformity'),
     'expected_version',0,'to_state','open'));
+SELECT public.isg_workspace_nonconformity_mutate_v1('b1000000-0000-4000-8000-000000000002',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','transition','id',(SELECT value FROM integrated_state WHERE key='nonconformity'),
+    'expected_version',1,'to_state','assigned','assignee_contact','Saha sorumlusu'));
+SELECT public.isg_workspace_nonconformity_mutate_v1('b1000000-0000-4000-8000-000000000003',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','transition','id',(SELECT value FROM integrated_state WHERE key='nonconformity'),
+    'expected_version',2,'to_state','in_progress'));
+SELECT public.isg_workspace_nonconformity_mutate_v1('b1000000-0000-4000-8000-000000000004',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','transition','id',(SELECT value FROM integrated_state WHERE key='nonconformity'),
+    'expected_version',3,'to_state','pending_verification'));
+SELECT public.isg_workspace_nonconformity_mutate_v1('b1000000-0000-4000-8000-000000000005',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','verify','id',(SELECT value FROM integrated_state WHERE key='nonconformity'),
+    'expected_version',4,'outcome','accepted','verified_on',(clock_timestamp() AT TIME ZONE 'UTC')::date));
+-- Reopening the UI and sending the same verification under a new mutation key
+-- must read the existing cycle record rather than violating its unique key.
+SELECT public.isg_workspace_nonconformity_mutate_v1('b1000000-0000-4000-8000-000000000006',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','verify','id',(SELECT value FROM integrated_state WHERE key='nonconformity'),
+    'expected_version',4,'outcome','accepted','verified_on',(clock_timestamp() AT TIME ZONE 'UTC')::date));
+DO $$ DECLARE row_data jsonb; BEGIN
+  row_data:=public.isg_workspace_nonconformity_read_v1(
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    (SELECT value::uuid FROM integrated_state WHERE key='nonconformity'),NULL,NULL,20);
+  IF row_data->'row'->>'verification_outcome'<>'accepted' OR
+     (SELECT count(*) FROM private_isg.verification_records
+       WHERE workspace_id=(SELECT value::uuid FROM integrated_state WHERE key='workspace')
+         AND company_id=(SELECT value::uuid FROM integrated_state WHERE key='company')
+         AND nonconformity_id=(SELECT value::uuid FROM integrated_state WHERE key='nonconformity'))<>1 THEN
+    RAISE EXCEPTION 'verification projection or replay failed: %',row_data; END IF;
+END $$;
+SELECT public.isg_workspace_nonconformity_mutate_v1('b1000000-0000-4000-8000-000000000007',
+  (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+  (SELECT value::uuid FROM integrated_state WHERE key='company'),
+  jsonb_build_object('action','transition','id',(SELECT value FROM integrated_state WHERE key='nonconformity'),
+    'expected_version',4,'to_state','closed'));
 
 INSERT INTO private_isg.checklist_templates(template_code,title) VALUES('integration_check','Entegrasyon kontrolü');
 INSERT INTO private_isg.checklist_template_versions(template_code,version,status,approved_by,approval_note,published_at)
@@ -230,13 +528,43 @@ WITH opened AS (
 INSERT INTO integrated_state VALUES
   ('checklist',(SELECT body->'row'->>'run_id' FROM opened)),
   ('checklist_version',(SELECT body->'row'->>'version' FROM opened));
+DO $$ DECLARE page jsonb; BEGIN
+  page:=public.isg_workspace_checklist_read_v1(
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    (SELECT value::uuid FROM integrated_state WHERE key='checklist'),NULL,20);
+  IF page->'templates'->0->>'code'<>'integration_check'
+     OR page->'rows'->0->'items'->0->>'prompt'<>'Koruyucu mevcut mu?'
+     OR page->'rows'->0->'items'->0 ? 'result' THEN
+    RAISE EXCEPTION 'checklist template projection failed: %',page; END IF;
+END $$;
 WITH answered AS (
   SELECT public.isg_workspace_checklist_mutate_v1('a1000000-0000-4000-8000-000000000029',
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
     (SELECT value::uuid FROM integrated_state WHERE key='company'),
     jsonb_build_object('action','answer','id',(SELECT value FROM integrated_state WHERE key='checklist'),
       'expected_version',(SELECT value::bigint FROM integrated_state WHERE key='checklist_version'),
-      'item_code','guard','result','nonconform','severity','medium',
+      'item_code','guard','result','nonconform','create_nonconformity',false)) body
+)
+UPDATE integrated_state SET value=(SELECT body->'row'->>'version' FROM answered) WHERE key='checklist_version';
+DO $$ DECLARE row_count integer; checklist jsonb; BEGIN
+  SELECT count(*) INTO row_count FROM private_isg.nonconformities
+    WHERE workspace_id=(SELECT value::uuid FROM integrated_state WHERE key='workspace')
+      AND company_id=(SELECT value::uuid FROM integrated_state WHERE key='company');
+  checklist:=public.isg_workspace_checklist_read_v1(
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    (SELECT value::uuid FROM integrated_state WHERE key='checklist'),NULL,20);
+  IF row_count<>1 OR checklist->'rows'->0->'items'->0 ? 'nonconformity_id' THEN
+    RAISE EXCEPTION 'negative checklist answer created an implicit finding: %, %',row_count,checklist; END IF;
+END $$;
+WITH answered AS (
+  SELECT public.isg_workspace_checklist_mutate_v1('b1000000-0000-4000-8000-000000000001',
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    jsonb_build_object('action','answer','id',(SELECT value FROM integrated_state WHERE key='checklist'),
+      'expected_version',(SELECT value::bigint FROM integrated_state WHERE key='checklist_version'),
+      'item_code','guard','result','nonconform','create_nonconformity',true,'severity','medium',
       'due_on',(clock_timestamp() AT TIME ZONE 'UTC')::date+5)) body
 )
 UPDATE integrated_state SET value=(SELECT body->'row'->>'version' FROM answered) WHERE key='checklist_version';
@@ -327,8 +655,30 @@ SELECT public.isg_workspace_safety_mutate_v1('a1000000-0000-4000-8000-0000000000
   (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
   (SELECT value::uuid FROM integrated_state WHERE key='company'),
   jsonb_build_object('entity','ppe','action','return','id',(SELECT value FROM integrated_state WHERE key='ppe_handover'),
-    'quantity',1,'returned_on',(clock_timestamp() AT TIME ZONE 'UTC')::date-1,
+    'expected_version',0,'quantity',1,'returned_on',(clock_timestamp() AT TIME ZONE 'UTC')::date-1,
     'condition','reusable','note','Sentetik iade'));
+DO $$ BEGIN
+  PERFORM public.isg_workspace_safety_mutate_v1('a1000000-0000-4000-8000-000000000136',
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    jsonb_build_object('entity','ppe','action','return','id',(SELECT value FROM integrated_state WHERE key='ppe_handover'),
+      'expected_version',0,'quantity',1,'returned_on',(clock_timestamp() AT TIME ZONE 'UTC')::date,
+      'condition','reusable'));
+  RAISE EXCEPTION 'EXPECTED_PPE_VERSION_CONFLICT';
+EXCEPTION WHEN SQLSTATE 'P0001' THEN
+  IF SQLERRM<>'VERSION_CONFLICT' THEN RAISE; END IF;
+END $$;
+DO $$ BEGIN
+  PERFORM public.isg_workspace_safety_mutate_v1('a1000000-0000-4000-8000-000000000137',
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    jsonb_build_object('entity','ppe','action','return','id',(SELECT value FROM integrated_state WHERE key='ppe_handover'),
+      'expected_version',1,'quantity',2,'returned_on',(clock_timestamp() AT TIME ZONE 'UTC')::date,
+      'condition','reusable'));
+  RAISE EXCEPTION 'EXPECTED_PPE_RETURN_OVERFLOW';
+EXCEPTION WHEN SQLSTATE 'P0001' THEN
+  IF SQLERRM<>'VALIDATION_ERROR' THEN RAISE; END IF;
+END $$;
 DO $$ DECLARE safety jsonb; BEGIN
   safety:=public.isg_workspace_safety_metrics_v1(
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
@@ -355,7 +705,7 @@ INSERT INTO integrated_state VALUES
 DO $$ DECLARE catalog jsonb; BEGIN
   catalog:=public.isg_workspace_equipment_read_v1(
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
-    (SELECT value::uuid FROM integrated_state WHERE key='company'),'catalog',NULL,NULL,NULL,NULL,50);
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),'catalog',NULL,NULL,NULL,NULL,NULL,50);
   IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(catalog->'rules') rule
     WHERE rule->>'equipment_type'='forklift' AND rule->>'period_source'='regulation_default'
       AND (rule->>'period_months')::integer=12 AND (rule->>'needs_review')::boolean) THEN
@@ -451,6 +801,20 @@ WITH created AS (
       'tags',jsonb_build_array('marka','rapor'))) body
 )
 INSERT INTO integrated_state VALUES('file_entry',(SELECT body->>'entry_id' FROM created));
+DO $$ DECLARE receipt jsonb; missing jsonb; BEGIN
+  receipt:=public.isg_workspace_file_create_receipt_v1(
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    'a1000000-0000-4000-8000-000000000060');
+  missing:=public.isg_workspace_file_create_receipt_v1(
+    (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),
+    'a1000000-0000-4000-8000-000000000099');
+  IF NOT (receipt->>'found')::boolean OR receipt->>'entry_id' IS DISTINCT FROM
+       (SELECT value FROM integrated_state WHERE key='file_entry') OR (receipt->>'byte_size')::bigint<>2048 OR
+     (missing->>'found')::boolean THEN
+    RAISE EXCEPTION 'file create receipt resolution failed: %, %',receipt,missing; END IF;
+END $$;
 WITH linked AS (
   SELECT public.isg_workspace_file_mutate_v1('a1000000-0000-4000-8000-000000000061',
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
@@ -461,7 +825,7 @@ INSERT INTO integrated_state VALUES('file_reference',(SELECT body->>'reference_i
 DO $$ DECLARE files jsonb; BEGIN
   files:=public.isg_workspace_file_read_v1(
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
-    (SELECT value::uuid FROM integrated_state WHERE key='company'),NULL,'marka','company_logo',false,20);
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),NULL,'marka','company_logo',false,NULL,20);
   IF jsonb_array_length(files->'rows')<>1 OR files->'rows'->0->>'title'<>'Entegre firma logosu' OR
      (SELECT workspace_logo_entry_id::text FROM public.companies WHERE id=(SELECT value::uuid FROM integrated_state WHERE key='company'))
        IS DISTINCT FROM (SELECT value FROM integrated_state WHERE key='file_entry') THEN
@@ -655,11 +1019,11 @@ INSERT INTO integrated_state VALUES('analysis_nonconformity',(SELECT body->>'non
 DO $$ DECLARE listed jsonb; detail jsonb; BEGIN
   listed:=public.isg_workspace_nonconformity_read_v1(
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
-    (SELECT value::uuid FROM integrated_state WHERE key='company'),NULL,NULL,100);
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),NULL,NULL,NULL,100);
   detail:=public.isg_workspace_nonconformity_read_v1(
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
     (SELECT value::uuid FROM integrated_state WHERE key='company'),
-    (SELECT value::uuid FROM integrated_state WHERE key='analysis_nonconformity'),NULL,1);
+    (SELECT value::uuid FROM integrated_state WHERE key='analysis_nonconformity'),NULL,NULL,1);
   IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(listed->'rows') x
       WHERE x->>'nonconformity_id'=(SELECT value FROM integrated_state WHERE key='analysis_nonconformity')) OR
      detail->'row'->'source_snapshot'->>'description'<>'Hareketli parça koruyucusu bulunmuyor.' THEN
@@ -826,7 +1190,7 @@ END $$;
 DO $$ BEGIN
   PERFORM public.isg_workspace_file_read_v1(
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
-    (SELECT value::uuid FROM integrated_state WHERE key='company'),NULL,NULL,NULL,false,20);
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),NULL,NULL,NULL,false,NULL,20);
   RAISE EXCEPTION 'EXPECTED_UNASSIGNED_FILE_DENIAL';
 EXCEPTION WHEN SQLSTATE 'P0001' THEN
   IF SQLERRM<>'ASSIGNMENT_REQUIRED' THEN RAISE; END IF;
@@ -895,7 +1259,7 @@ DO $$ DECLARE files jsonb; BEGIN
   files:=public.isg_workspace_file_read_v1(
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
     (SELECT value::uuid FROM integrated_state WHERE key='company'),
-    (SELECT value::uuid FROM integrated_state WHERE key='file_entry'),NULL,NULL,false,20);
+    (SELECT value::uuid FROM integrated_state WHERE key='file_entry'),NULL,NULL,false,NULL,20);
   IF files->'row'->>'title'<>'Entegre firma logosu' OR files->'row'->'asset'->>'byte_size'<>'2048' THEN
     RAISE EXCEPTION 'handover file visibility failed: %',files; END IF;
 END $$;
@@ -903,16 +1267,16 @@ DO $$ DECLARE risk jsonb; nonconformity jsonb; checklist jsonb; BEGIN
   risk:=public.isg_workspace_risk_read_v1(
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
     (SELECT value::uuid FROM integrated_state WHERE key='company'),
-    (SELECT value::uuid FROM integrated_state WHERE key='risk'),20);
+    (SELECT value::uuid FROM integrated_state WHERE key='risk'),NULL,20);
   nonconformity:=public.isg_workspace_nonconformity_read_v1(
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
     (SELECT value::uuid FROM integrated_state WHERE key='company'),
-    (SELECT value::uuid FROM integrated_state WHERE key='nonconformity'),NULL,20);
+    (SELECT value::uuid FROM integrated_state WHERE key='nonconformity'),NULL,NULL,20);
   checklist:=public.isg_workspace_checklist_read_v1(
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
     (SELECT value::uuid FROM integrated_state WHERE key='company'),
-    (SELECT value::uuid FROM integrated_state WHERE key='checklist'),20);
-  IF risk->'row'->>'current_version'<>'1' OR nonconformity->'row'->>'state'<>'open' OR
+    (SELECT value::uuid FROM integrated_state WHERE key='checklist'),NULL,20);
+  IF risk->'row'->>'current_version'<>'1' OR nonconformity->'row'->>'state'<>'closed' OR
      checklist->'rows'->0->>'state'<>'submitted' THEN
     RAISE EXCEPTION 'handover assurance visibility failed: %, %, %',risk,nonconformity,checklist; END IF;
 END $$;
@@ -920,19 +1284,19 @@ DO $$ DECLARE plans jsonb; drills jsonb; appointments jsonb; ppe jsonb; BEGIN
   plans:=public.isg_workspace_safety_read_v1(
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
     (SELECT value::uuid FROM integrated_state WHERE key='company'),'plans',
-    (SELECT value::uuid FROM integrated_state WHERE key='emergency_plan'),20);
+    (SELECT value::uuid FROM integrated_state WHERE key='emergency_plan'),NULL,20);
   drills:=public.isg_workspace_safety_read_v1(
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
     (SELECT value::uuid FROM integrated_state WHERE key='company'),'drills',
-    (SELECT value::uuid FROM integrated_state WHERE key='drill'),20);
+    (SELECT value::uuid FROM integrated_state WHERE key='drill'),NULL,20);
   appointments:=public.isg_workspace_safety_read_v1(
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
     (SELECT value::uuid FROM integrated_state WHERE key='company'),'appointments',
-    (SELECT value::uuid FROM integrated_state WHERE key='appointment'),20);
+    (SELECT value::uuid FROM integrated_state WHERE key='appointment'),NULL,20);
   ppe:=public.isg_workspace_safety_read_v1(
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
     (SELECT value::uuid FROM integrated_state WHERE key='company'),'ppe',
-    (SELECT value::uuid FROM integrated_state WHERE key='ppe_handover'),20);
+    (SELECT value::uuid FROM integrated_state WHERE key='ppe_handover'),NULL,20);
   IF plans->'rows'->0->'team'->0->>'full_name'<>'Ayşe Uzman' OR
      drills->'rows'->0->>'state'<>'performed' OR
      drills->'rows'->0->'participants'->0->>'full_name'<>'Ayşe Uzman' OR
@@ -944,7 +1308,7 @@ DO $$ DECLARE equipment jsonb; BEGIN
   equipment:=public.isg_workspace_equipment_read_v1(
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
     (SELECT value::uuid FROM integrated_state WHERE key='company'),'detail',
-    (SELECT value::uuid FROM integrated_state WHERE key='equipment'),NULL,NULL,NULL,20);
+    (SELECT value::uuid FROM integrated_state WHERE key='equipment'),NULL,NULL,NULL,NULL,20);
   IF equipment->'rows'->0->>'serial_tag'<>'FLT-100' OR
      equipment->'rows'->0->>'state'<>'valid' OR
      equipment->'rows'->0->>'due_source'<>'expert' OR
@@ -952,12 +1316,12 @@ DO $$ DECLARE equipment jsonb; BEGIN
     RAISE EXCEPTION 'handover equipment visibility failed: %',equipment; END IF;
 END $$;
 DO $$ DECLARE katip jsonb; annual_plan jsonb; board jsonb; permit jsonb; visit jsonb; notebook jsonb; BEGIN
-  katip:=public.isg_workspace_operations_read_v1((SELECT value::uuid FROM integrated_state WHERE key='workspace'),(SELECT value::uuid FROM integrated_state WHERE key='company'),'katip_contract',(SELECT value::uuid FROM integrated_state WHERE key='katip_contract'),20);
-  annual_plan:=public.isg_workspace_operations_read_v1((SELECT value::uuid FROM integrated_state WHERE key='workspace'),(SELECT value::uuid FROM integrated_state WHERE key='company'),'annual_plan',(SELECT value::uuid FROM integrated_state WHERE key='annual_plan'),20);
-  board:=public.isg_workspace_operations_read_v1((SELECT value::uuid FROM integrated_state WHERE key='workspace'),(SELECT value::uuid FROM integrated_state WHERE key='company'),'board',(SELECT value::uuid FROM integrated_state WHERE key='board'),20);
-  permit:=public.isg_workspace_operations_read_v1((SELECT value::uuid FROM integrated_state WHERE key='workspace'),(SELECT value::uuid FROM integrated_state WHERE key='company'),'work_permit',(SELECT value::uuid FROM integrated_state WHERE key='work_permit'),20);
-  visit:=public.isg_workspace_operations_read_v1((SELECT value::uuid FROM integrated_state WHERE key='workspace'),(SELECT value::uuid FROM integrated_state WHERE key='company'),'site_visit',(SELECT value::uuid FROM integrated_state WHERE key='site_visit'),20);
-  notebook:=public.isg_workspace_operations_read_v1((SELECT value::uuid FROM integrated_state WHERE key='workspace'),(SELECT value::uuid FROM integrated_state WHERE key='company'),'notebook_archive',(SELECT value::uuid FROM integrated_state WHERE key='notebook_archive'),20);
+  katip:=public.isg_workspace_operations_read_v1((SELECT value::uuid FROM integrated_state WHERE key='workspace'),(SELECT value::uuid FROM integrated_state WHERE key='company'),'katip_contract',(SELECT value::uuid FROM integrated_state WHERE key='katip_contract'),NULL,20);
+  annual_plan:=public.isg_workspace_operations_read_v1((SELECT value::uuid FROM integrated_state WHERE key='workspace'),(SELECT value::uuid FROM integrated_state WHERE key='company'),'annual_plan',(SELECT value::uuid FROM integrated_state WHERE key='annual_plan'),NULL,20);
+  board:=public.isg_workspace_operations_read_v1((SELECT value::uuid FROM integrated_state WHERE key='workspace'),(SELECT value::uuid FROM integrated_state WHERE key='company'),'board',(SELECT value::uuid FROM integrated_state WHERE key='board'),NULL,20);
+  permit:=public.isg_workspace_operations_read_v1((SELECT value::uuid FROM integrated_state WHERE key='workspace'),(SELECT value::uuid FROM integrated_state WHERE key='company'),'work_permit',(SELECT value::uuid FROM integrated_state WHERE key='work_permit'),NULL,20);
+  visit:=public.isg_workspace_operations_read_v1((SELECT value::uuid FROM integrated_state WHERE key='workspace'),(SELECT value::uuid FROM integrated_state WHERE key='company'),'site_visit',(SELECT value::uuid FROM integrated_state WHERE key='site_visit'),NULL,20);
+  notebook:=public.isg_workspace_operations_read_v1((SELECT value::uuid FROM integrated_state WHERE key='workspace'),(SELECT value::uuid FROM integrated_state WHERE key='company'),'notebook_archive',(SELECT value::uuid FROM integrated_state WHERE key='notebook_archive'),NULL,20);
   IF (katip->'rows'->0->>'official_integration')::boolean OR annual_plan->'rows'->0->'items'->0->>'state'<>'performed' OR
      board->'rows'->0->>'state'<>'held' OR (board->'rows'->0->>'counts_towards_legal_score')::boolean OR
      (permit->'rows'->0->>'authorises_work')::boolean OR jsonb_array_length(visit->'rows'->0->'observations')<>1 OR
@@ -1016,7 +1380,7 @@ END $$;
 DO $$ BEGIN
   PERFORM public.isg_workspace_file_read_v1(
     (SELECT value::uuid FROM integrated_state WHERE key='workspace'),
-    (SELECT value::uuid FROM integrated_state WHERE key='company'),NULL,NULL,NULL,false,20);
+    (SELECT value::uuid FROM integrated_state WHERE key='company'),NULL,NULL,NULL,false,NULL,20);
   RAISE EXCEPTION 'EXPECTED_TRANSFERRED_FILE_DENIAL';
 EXCEPTION WHEN SQLSTATE 'P0001' THEN
   IF SQLERRM<>'ASSIGNMENT_REQUIRED' THEN RAISE; END IF;

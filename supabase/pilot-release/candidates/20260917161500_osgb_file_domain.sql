@@ -60,6 +60,7 @@ CREATE TABLE private_isg.workspace_file_entries (
   updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   archived_at timestamptz,
   UNIQUE(workspace_id,id),
+  UNIQUE(workspace_id,company_id,id),
   FOREIGN KEY(workspace_id,company_id) REFERENCES public.companies(workspace_id,id) ON DELETE RESTRICT,
   FOREIGN KEY(workspace_id,private_to_membership_id)
     REFERENCES private_isg.workspace_memberships(workspace_id,id) ON DELETE RESTRICT,
@@ -242,15 +243,16 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $$
 $$;
 
 CREATE FUNCTION private_isg.workspace_file_read(p_workspace uuid,p_company uuid,p_id uuid,p_query text,
-  p_category text,p_include_archived boolean,p_limit integer) RETURNS jsonb
+  p_category text,p_include_archived boolean,p_after uuid,p_limit integer) RETURNS jsonb
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
 DECLARE member private_isg.workspace_memberships; entry private_isg.workspace_file_entries;
-  rows jsonb; legacy_logo jsonb; needle text:=nullif(btrim(coalesce(p_query,'')),'');
+  rows jsonb; legacy_logo jsonb; next_id uuid; needle text:=nullif(btrim(coalesce(p_query,'')),'');
 BEGIN
   PERFORM private_isg.workspace_domain_gate('files',false);
   member:=private_isg.workspace_require_member(p_workspace,ARRAY['owner','admin','expert'],false);
   IF p_company IS NOT NULL THEN PERFORM private_isg.workspace_require_company(p_workspace,p_company,false); END IF;
-  IF p_limit NOT BETWEEN 1 AND 100 OR p_include_archived IS NULL OR
+  IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 OR p_include_archived IS NULL OR
+     (p_id IS NOT NULL AND p_after IS NOT NULL) OR
      (p_category IS NOT NULL AND NOT EXISTS(SELECT 1 FROM private_isg.workspace_file_categories WHERE code=p_category)) THEN
     RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
   IF p_id IS NOT NULL THEN
@@ -260,14 +262,17 @@ BEGIN
       RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='ACCESS_DENIED'; END IF;
     RETURN jsonb_build_object('schema_version',1,'workspace_id',p_workspace,'row',private_isg.workspace_file_entry_row(entry.id));
   END IF;
-  SELECT coalesce(jsonb_agg(private_isg.workspace_file_entry_row(q.id) ORDER BY q.updated_at DESC,q.id),'[]') INTO rows
-    FROM (SELECT e.id,e.updated_at FROM private_isg.workspace_file_entries e
+  SELECT coalesce(jsonb_agg(private_isg.workspace_file_entry_row(q.id) ORDER BY q.id),'[]'),
+    (array_agg(q.id) FILTER (WHERE q.ordinal=p_limit AND q.total>p_limit))[1] INTO rows,next_id
+    FROM (SELECT e.id,row_number() OVER (ORDER BY e.id) ordinal,count(*) OVER () total
+      FROM private_isg.workspace_file_entries e
       WHERE e.workspace_id=p_workspace AND e.company_id IS NOT DISTINCT FROM p_company
         AND private_isg.workspace_file_can_access(e,member)
         AND (p_include_archived OR e.state='active') AND (p_category IS NULL OR e.category=p_category)
         AND (needle IS NULL OR e.title ILIKE '%'||needle||'%' OR e.original_filename ILIKE '%'||needle||'%'
           OR coalesce(e.note,'') ILIKE '%'||needle||'%' OR array_to_string(e.tags,' ') ILIKE '%'||needle||'%')
-      ORDER BY e.updated_at DESC,e.id LIMIT p_limit) q;
+        AND (p_after IS NULL OR e.id>p_after)
+      ORDER BY e.id LIMIT p_limit+1) q WHERE q.ordinal<=p_limit;
   IF p_company IS NOT NULL THEN
     SELECT jsonb_build_object('id',l.id,'source_kind',l.source_kind,'status',l.status,
       'migrated_asset_id',l.migrated_asset_id) INTO legacy_logo
@@ -276,7 +281,31 @@ BEGIN
       ORDER BY l.discovered_at DESC,l.id LIMIT 1;
   END IF;
   RETURN jsonb_build_object('schema_version',1,'workspace_id',p_workspace,'company_id',p_company,
-    'rows',rows,'returned',jsonb_array_length(rows),'legacy_company_logo',legacy_logo);
+    'rows',rows,'returned',jsonb_array_length(rows),'next',next_id,'legacy_company_logo',legacy_logo);
+END $$;
+
+-- Lets a client resolve the uncertain outcome of an unchanged file-create
+-- command without replaying or exposing an upload credential.
+CREATE FUNCTION private_isg.workspace_file_create_receipt(p_workspace uuid,p_company uuid,p_mutation uuid)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
+DECLARE actor uuid:=private_isg.active_actor(); response jsonb;
+BEGIN
+  PERFORM private_isg.workspace_domain_gate('files',false);
+  PERFORM private_isg.workspace_require_company(p_workspace,p_company,false);
+  IF p_mutation IS NULL THEN RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='VALIDATION_ERROR'; END IF;
+  SELECT r.response INTO response FROM private_isg.workspace_receipts r
+    WHERE r.actor_user_id=actor AND r.mutation_id=p_mutation AND r.workspace_id=p_workspace
+      AND r.action='files.create';
+  IF response IS NULL THEN
+    RETURN jsonb_build_object('schema_version',1,'workspace_id',p_workspace,'company_id',p_company,'found',false);
+  END IF;
+  IF response->>'workspace_id' IS DISTINCT FROM p_workspace::text OR
+     response->>'company_id' IS DISTINCT FROM p_company::text OR response->>'action'<>'create' OR
+     response->'row'->'asset'->>'id' IS NULL OR response->'row'->'asset'->>'byte_size' IS NULL THEN
+    RAISE EXCEPTION USING ERRCODE='P0001',MESSAGE='RECEIPT_SCOPE_CONFLICT'; END IF;
+  RETURN jsonb_build_object('schema_version',1,'workspace_id',p_workspace,'company_id',p_company,'found',true,
+    'entry_id',response->>'entry_id','asset_id',response->'row'->'asset'->>'id',
+    'byte_size',(response->'row'->'asset'->>'byte_size')::bigint);
 END $$;
 
 CREATE FUNCTION private_isg.workspace_file_mutate(p_mutation uuid,p_workspace uuid,p_company uuid,p_payload jsonb)
@@ -470,9 +499,12 @@ BEGIN
 END $$;
 
 CREATE FUNCTION public.isg_workspace_file_read_v1(p_workspace uuid,p_company uuid,p_id uuid,p_query text,
-  p_category text,p_include_archived boolean,p_limit integer) RETURNS jsonb
+  p_category text,p_include_archived boolean,p_after uuid DEFAULT NULL,p_limit integer DEFAULT 50) RETURNS jsonb
 LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$
-  SELECT private_isg.workspace_file_read(p_workspace,p_company,p_id,p_query,p_category,p_include_archived,p_limit) $$;
+  SELECT private_isg.workspace_file_read(p_workspace,p_company,p_id,p_query,p_category,p_include_archived,p_after,p_limit) $$;
+CREATE FUNCTION public.isg_workspace_file_create_receipt_v1(p_workspace uuid,p_company uuid,p_mutation uuid)
+RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$
+  SELECT private_isg.workspace_file_create_receipt(p_workspace,p_company,p_mutation) $$;
 CREATE FUNCTION public.isg_workspace_file_mutate_v1(p_mutation uuid,p_workspace uuid,p_company uuid,p_payload jsonb)
 RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path='' AS $$
   SELECT private_isg.workspace_file_mutate(p_mutation,p_workspace,p_company,p_payload) $$;
@@ -484,19 +516,23 @@ REVOKE ALL ON FUNCTION private_isg.workspace_file_asset(uuid,uuid,uuid),
   private_isg.workspace_file_parent_exists(uuid,uuid,text,uuid),
   private_isg.workspace_file_entry_row(uuid),
   private_isg.workspace_file_can_access(private_isg.workspace_file_entries,private_isg.workspace_memberships),
-  private_isg.workspace_file_read(uuid,uuid,uuid,text,text,boolean,integer),
+  private_isg.workspace_file_read(uuid,uuid,uuid,text,text,boolean,uuid,integer),
+  private_isg.workspace_file_create_receipt(uuid,uuid,uuid),
   private_isg.workspace_file_mutate(uuid,uuid,uuid,jsonb),
   private_isg.workspace_legacy_download_open(uuid,uuid,timestamptz),
   private_isg.workspace_legacy_download_claim(text,timestamptz),
   private_isg.workspace_asset_reference_count(uuid,uuid),
-  public.isg_workspace_file_read_v1(uuid,uuid,uuid,text,text,boolean,integer),
+  public.isg_workspace_file_read_v1(uuid,uuid,uuid,text,text,boolean,uuid,integer),
+  public.isg_workspace_file_create_receipt_v1(uuid,uuid,uuid),
   public.isg_workspace_file_mutate_v1(uuid,uuid,uuid,jsonb),
   public.isg_workspace_legacy_download_open_v1(uuid,uuid,timestamptz)
   FROM PUBLIC,anon,authenticated,service_role;
-GRANT EXECUTE ON FUNCTION private_isg.workspace_file_read(uuid,uuid,uuid,text,text,boolean,integer),
+GRANT EXECUTE ON FUNCTION private_isg.workspace_file_read(uuid,uuid,uuid,text,text,boolean,uuid,integer),
+  private_isg.workspace_file_create_receipt(uuid,uuid,uuid),
   private_isg.workspace_file_mutate(uuid,uuid,uuid,jsonb),
   private_isg.workspace_legacy_download_open(uuid,uuid,timestamptz),
-  public.isg_workspace_file_read_v1(uuid,uuid,uuid,text,text,boolean,integer),
+  public.isg_workspace_file_read_v1(uuid,uuid,uuid,text,text,boolean,uuid,integer),
+  public.isg_workspace_file_create_receipt_v1(uuid,uuid,uuid),
   public.isg_workspace_file_mutate_v1(uuid,uuid,uuid,jsonb),
   public.isg_workspace_legacy_download_open_v1(uuid,uuid,timestamptz)
   TO authenticated;

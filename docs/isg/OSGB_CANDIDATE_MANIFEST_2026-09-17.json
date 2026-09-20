@@ -1,14 +1,22 @@
 {
   "schema_version": 1,
-  "status": "local_candidate_not_deployed",
+  "status": "staging_operational_admin_deferred",
   "base_commit": "6eebab8946c627f42d13415cff1b8dc5007cc1ce",
-  "generated_for": "2026-09-17",
+  "generated_for": "2026-09-20",
   "safety": {
     "workspace_rollout_default": "off",
     "domain_rollout_default": "off",
     "production_target": false
   },
-  "candidate_count": 24,
+  "staging": {
+    "project_ref": "qlymhrrlhklcudveknih",
+    "deployed_through": "20260920183000",
+    "excluded": [
+      "20260917120000_osgb_admin_extension.sql"
+    ],
+    "exclusion_reason": "Admin product UI is intentionally deferred until the user supplies its UI kit."
+  },
+  "candidate_count": 33,
   "candidates": [
     {
       "order": 1,
@@ -25,8 +33,8 @@
     {
       "order": 3,
       "path": "supabase/pilot-release/candidates/20260917093000_osgb_company_assignments.sql",
-      "bytes": 21796,
-      "sha256": "c52d2632207312ff7252afd039d019b2cbed9b63fb0e9a8da2791910c3298863"
+      "bytes": 22687,
+      "sha256": "61954e595f7729f0edca57b72348ce592f2a6585aa05901b285e95722c937791"
     },
     {
       "order": 4,
@@ -109,38 +117,38 @@
     {
       "order": 17,
       "path": "supabase/pilot-release/candidates/20260917150000_osgb_training_domain.sql",
-      "bytes": 26516,
-      "sha256": "568289049c0bdaba11b8ef61dc3ed24b99a57fa7ddefaff1065fc7a4aac7ee1e"
+      "bytes": 28180,
+      "sha256": "a29d979ed31d77f0d869ca95f79133907efbd1ff75d09571324ccf2cb6885e7f"
     },
     {
       "order": 18,
       "path": "supabase/pilot-release/candidates/20260917151500_osgb_risk_nonconformity_domain.sql",
-      "bytes": 51178,
-      "sha256": "33a630168bd371497d0f343b1ffadaaf0ee325c1b3c97159d4355ffdc65b6c00"
+      "bytes": 54747,
+      "sha256": "ad5f0753c19cb369446a71b545cfd958412b425cb783d7ce2a6ead9f1ffa4a9f"
     },
     {
       "order": 19,
       "path": "supabase/pilot-release/candidates/20260917153000_osgb_emergency_ppe_domain.sql",
-      "bytes": 36058,
-      "sha256": "1323a72d5f07c2cc550fa3bbe194a3b3b1660dd15bb5f089299b36831476fc38"
+      "bytes": 37969,
+      "sha256": "6350346503ff64f70d49e1cf4e928b99de44d22a35f2578f17d5eae5218c94f6"
     },
     {
       "order": 20,
       "path": "supabase/pilot-release/candidates/20260917154500_osgb_equipment_domain.sql",
-      "bytes": 33299,
-      "sha256": "923bee975be5463efaf1ab0e895af705700dd78a613ad39c631610340731ff7a"
+      "bytes": 33849,
+      "sha256": "556f96de2755b9b4e6c4eb64c71b33f27bae36b62518cdbeb090a1662c58527f"
     },
     {
       "order": 21,
       "path": "supabase/pilot-release/candidates/20260917160000_osgb_operations_domain.sql",
-      "bytes": 43716,
-      "sha256": "85df66ecdaa0d0f70f2b359283e8e8a29997591929665a595cf2adc8a59f20a1"
+      "bytes": 46631,
+      "sha256": "4aad2f1c3d1772be2bd0246fd5a874511e399222c7863b16144b0eef374b38f1"
     },
     {
       "order": 22,
       "path": "supabase/pilot-release/candidates/20260917161500_osgb_file_domain.sql",
-      "bytes": 37251,
-      "sha256": "00cbfbf7e9fa1a9635862154906747a5643ae7ed6f358c53d3491cf1e0db21e8"
+      "bytes": 39769,
+      "sha256": "4a9981f48ba39261defc30af17f4b70da3b7fb0bc2173418e787574a885d037e"
     },
     {
       "order": 23,
@@ -153,6 +161,60 @@
       "path": "supabase/pilot-release/candidates/20260917164500_osgb_tracking_notification_domain.sql",
       "bytes": 33697,
       "sha256": "78e4ad2e071a7410c45fe58879512759817df452ba4595715f8d2fe38be32aca"
+    },
+    {
+      "order": 25,
+      "path": "supabase/pilot-release/candidates/20260917170000_osgb_personnel_training_advanced.sql",
+      "bytes": 83745,
+      "sha256": "3d8c02a686df5fbb992748dc4fa9c1be83dc696a40696c91ad0405d4491308bc"
+    },
+    {
+      "order": 26,
+      "path": "supabase/pilot-release/candidates/20260917171500_osgb_provider_worker_bridge.sql",
+      "bytes": 17804,
+      "sha256": "336ea28509aed937d7198fd5a01e0a9da8ea87eee9bc463cc1d9b2e6acf60778"
+    },
+    {
+      "order": 27,
+      "path": "supabase/pilot-release/candidates/20260917172000_osgb_provider_worker_rpc_security.sql",
+      "bytes": 1389,
+      "sha256": "b32176ab4758afd8ddcfefba7e6b79ca19bd7a42e58fcdf008fafb331f869350"
+    },
+    {
+      "order": 28,
+      "path": "supabase/pilot-release/candidates/20260917172500_osgb_storage_worker_rpc_security.sql",
+      "bytes": 872,
+      "sha256": "346e3580ac1c06e99a32e4bc7bcd634c9990dec9d582f68e2b4a07c046a1da1e"
+    },
+    {
+      "order": 29,
+      "path": "supabase/pilot-release/candidates/20260917173000_osgb_ai_worker_source_validation.sql",
+      "bytes": 3581,
+      "sha256": "c793499bb6655e4229d008da358b2d09661295f08b4cde9f6b06d1dbfcc0d674"
+    },
+    {
+      "order": 30,
+      "path": "supabase/pilot-release/candidates/20260918010000_osgb_company_profile_product_parity.sql",
+      "bytes": 9979,
+      "sha256": "84e0584e5705551119a281c06819ef687003d64379c57a6e237847d7ed75c2fe"
+    },
+    {
+      "order": 31,
+      "path": "supabase/pilot-release/candidates/20260918013000_osgb_operational_surface_parity.sql",
+      "bytes": 8090,
+      "sha256": "8fd9b30eb3f853a39caf9fd4134e82abf3478088cac2984500171dedb0684ff7"
+    },
+    {
+      "order": 32,
+      "path": "supabase/pilot-release/candidates/20260918020000_osgb_personal_pilot_parity.sql",
+      "bytes": 12661,
+      "sha256": "5ad66161ff8c9dc3bf716a71c467598d8011fe1cbb8bfd5273be761914b99f18"
+    },
+    {
+      "order": 33,
+      "path": "supabase/pilot-release/candidates/20260920183000_osgb_photo_analysis_product.sql",
+      "bytes": 7939,
+      "sha256": "39b8b1549ed9d0c24a8662bc92c621fa379dce0d2892777fd425969e7e496193"
     }
   ]
 }

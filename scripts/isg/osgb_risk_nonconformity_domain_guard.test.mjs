@@ -38,8 +38,16 @@ test('unverified client finding ids cannot create an analysis-sourced nonconform
   assert.doesNotMatch(sql,/source_kind NOT IN \([^)]*legacy_finding/);
 });
 
-test('checklist negatives link a tenant-scoped nonconformity and metrics are measured',()=>{
+test('checklist negatives create a tenant-scoped nonconformity only after explicit expert choice',()=>{
   assert.match(sql,/result_code='nonconform'/);
+  assert.match(sql,/create_finding:=coalesce\(\(p_payload->>'create_nonconformity'\)::boolean,false\)/);
+  assert.match(sql,/result_code='nonconform' AND create_finding/);
   assert.match(sql,/'checklist',run\.run_id::text/);
   for(const token of ["'measured',true","'risk'","'nonconformity'","'checklists'"]) assert.ok(sql.includes(token),token);
+});
+
+test('workspace verification is readable and safely replayed before close',()=>{
+  assert.match(sql,/'verification_outcome',\(SELECT v\.outcome/);
+  assert.match(sql,/SELECT outcome INTO existing_outcome FROM private_isg\.verification_records/);
+  assert.match(sql,/existing_outcome IS DISTINCT FROM p_payload->>'outcome'/);
 });

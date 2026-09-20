@@ -98,6 +98,6 @@ test('the route exists, is reachable and is wired to the real gate',()=>{
   assert.match(navigation,/case ppeHandovers/);
   assert.match(navigation,/case \.ppeHandovers: return RDLocalization\.string\("localizable\.nova\.navigation\.ppe"/);
   assert.match(navigation,/static let drawer: \[Self\] = \[[^\]]*\.ppeHandovers/);
-  assert.match(main,/case \.ppeHandovers:\n\s+ppe/);
+  assert.match(main,/case \.ppeHandovers:\n\s+if let workspaceStore \{ workspaceDomain\(workspaceStore, \.ppe\) \} else \{ ppe \}/);
   assert.match(gate,/NovaPPEScreen\(client: client/);
 });

@@ -3,14 +3,16 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {buildCandidateManifest,MANIFEST_PATH,OSGB_CANDIDATE_MIGRATIONS} from './osgb_candidate_manifest.mjs';
 
-test('candidate manifest pins every undeployed migration in execution order',()=>{
+test('candidate manifest pins every migration in execution order',()=>{
   const stored=JSON.parse(readFileSync(MANIFEST_PATH,'utf8'));
   assert.deepEqual(stored,buildCandidateManifest());
-  assert.equal(stored.status,'local_candidate_not_deployed');
-  assert.equal(stored.candidate_count,24);
+  assert.equal(stored.status,'staging_operational_admin_deferred');
+  assert.equal(stored.staging.project_ref,'qlymhrrlhklcudveknih');
+  assert.deepEqual(stored.staging.excluded,['20260917120000_osgb_admin_extension.sql']);
+  assert.equal(stored.candidate_count,OSGB_CANDIDATE_MIGRATIONS.length);
   assert.deepEqual(stored.candidates.map(row=>row.path.split('/').at(-1)),OSGB_CANDIDATE_MIGRATIONS);
   assert.deepEqual(OSGB_CANDIDATE_MIGRATIONS,[...OSGB_CANDIDATE_MIGRATIONS].sort());
-  assert.equal(new Set(stored.candidates.map(row=>row.sha256)).size,24);
+  assert.equal(new Set(stored.candidates.map(row=>row.sha256)).size,OSGB_CANDIDATE_MIGRATIONS.length);
 });
 
 test('release candidates remain dark by default',()=>{

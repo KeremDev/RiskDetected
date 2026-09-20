@@ -1,5 +1,7 @@
 # OSGB tam kapsam — gereksinim ve kabul matrisi
 
+> Güncel kabul durumu [son genel incelemede](OSGB_FINAL_REVIEW_2026-09-17.md). D1–D7 cursor sayfalama, sabit mutasyon denemesi, D2–D6 yaşam döngüsü ve D1/D2 tenant-native ileri personel/eğitim akışları test edildi. Bu tablolardaki “Kabul kanıtı” sütunu beklenen kontrolü tarif eder; gerçek sağlayıcı ve yayın satırlarının kabul edildiğini göstermez.
+
 17 Eylül 2026 · [Ana plan](OSGB_FULL_INTEGRATION_PLAN.md) · [Canlı koruma eki](OSGB_RELEASE_SAFETY_PLAN.md).
 
 **S1:** `ISGADA_OSGB_MULTI_TENANT_INTEGRATION_PLAN_2026-09-16.md`. **S2:** `deep-research-report-2.md`. Kaynak sürümleri [hash kaydında](OSGB_BASELINE_2026-09-17.md). § numaraları S1'e aittir. S2 başlıkları en altta eşlenir.
@@ -36,8 +38,8 @@ Tablolardaki faz/PR isimleri kapsamı gösterir. Karar bağımsız backend ve is
 | R019 | §4.2 | Çoktan çoğa expert-company assignment ve history | C3 | Yetkili çoklu uzman; ended uzman yetkisiz; history duruyor |
 | R020 | §4.2 | Primary, future effective, yarı açık dönem çakışması | C3 | Aynı primary future overlap reddi, ardışık sınır kabul |
 | R021 | §4.3 | Parent-child/responsible membership scope ve immutable tenant | C/D | Cross-company ve cross-workspace FK/command ret |
-| R022 | §4.3,13 | Personel/dizin/department/job/contractor/personnel assignment | D1 | Personnel kendi semantiğiyle kalır; şirket alt kapsam testi |
-| R023 | §4.3,13 | Eğitim/müfredat/katılım/sertifika/yıllık eğitim | D2 | Tenant-safe liste/yazım/rapor ve saat/kişi istatistikleri |
+| R022 | §4.3,13 | Personel/dizin/department/job/contractor/personnel assignment | D1 | **Yerel kabul geçti:** composite scope, görev/dış firma/sözleşme, etkili tarih ve overlap reddi; personal kayıt ayrı |
+| R023 | §4.3,13 | Eğitim/müfredat/katılım/sertifika/yıllık eğitim | D2 | **Yerel kabul geçti:** tenant-safe müfredat/konu/sınav/plan/sertifika, katılım ve saat/kişi istatistikleri |
 | R024 | §4.3,13 | Risk değerlendirme ve sürümleri | D3 | Source file/version/detail/export izinleri |
 | R025 | §4.3,13 | Uygunsuzluk, action/verification, checklist | D3 | Analizden firmaya commit/readback/detail; state/audit doğru |
 | R026 | §4.3,13 | Acil durum ve tatbikat | D4 | Plan/personel/rapor aynı scope; gerçekleşme bilgisi korunur |

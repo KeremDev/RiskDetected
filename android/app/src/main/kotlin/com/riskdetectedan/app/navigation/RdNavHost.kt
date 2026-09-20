@@ -24,6 +24,7 @@ import com.riskdetectedan.feature.paywall.PaywallScreen
 import com.riskdetectedan.feature.paywall.PaywallPlan
 import com.riskdetectedan.feature.profile.AccountDeletionScreen
 import com.riskdetectedan.feature.profile.CompanyListScreen
+import com.riskdetectedan.feature.profile.OsgbWorkspaceScreen
 import com.riskdetectedan.feature.profile.NotificationSettingsScreen
 import com.riskdetectedan.feature.profile.DataManagementScreen
 import com.riskdetectedan.feature.profile.SupportScreen
@@ -236,6 +237,7 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
             )
         }
         composable<Companies> { CompanyListScreen(onBack = { navController.popBackStack() }) }
+        composable<OsgbWorkspace> { OsgbWorkspaceScreen(onBack = { navController.popBackStack() }) }
         composable<Support> { SupportScreen(onBack = { navController.popBackStack() }) }
         composable<NotificationSettings> { NotificationSettingsScreen(onBack = { navController.popBackStack() }) }
         composable<AppearanceSettings> { AppearanceSettingsScreen(onBack = { navController.popBackStack() }) }

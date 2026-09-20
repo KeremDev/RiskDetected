@@ -18,6 +18,12 @@ struct NovaExpertShell<Content: View>: View {
     var onReadAll: (() -> Void)?
     var onClearNotifications: (() -> Void)?
     var onCompanyCreate: (() -> Void)?
+    /// OSGB manager-only shortcuts. They are deliberately callbacks instead
+    /// of destinations: both actions open the existing, mutation-backed
+    /// management sheets and therefore cannot bypass their scoped store.
+    var isManager = false
+    var onExpertCreate: (() -> Void)?
+    var onAssignmentOpen: (() -> Void)?
     /// Allows the composition root to reset feature-local state when a root
     /// destination is selected (for example, leaving a company workspace).
     var onDestination: ((NovaDestination) -> Void)?
@@ -75,6 +81,9 @@ struct NovaExpertShell<Content: View>: View {
                         onDismissNotice: guardedKey(onDismissNotice, epoch: epoch),
                         onRestoreNotice: guardedKey(onRestoreNotice, epoch: epoch),
                         onCompanyCreate: guarded(onCompanyCreate, epoch: epoch),
+                        isManager: isManager,
+                        onExpertCreate: guarded(onExpertCreate, epoch: epoch),
+                        onAssignmentOpen: guarded(onAssignmentOpen, epoch: epoch),
                         onDestination: guardedDestination(onDestination, epoch: epoch),
                         onLogout: guarded(onLogout, epoch: epoch))
                 }
@@ -377,6 +386,9 @@ struct NovaShellPanel: View {
     var onDismissNotice: ((String) -> Void)?
     var onRestoreNotice: ((String) -> Void)?
     var onCompanyCreate: (() -> Void)?
+    var isManager = false
+    var onExpertCreate: (() -> Void)?
+    var onAssignmentOpen: (() -> Void)?
     var onDestination: ((NovaDestination) -> Void)?
     var onLogout: (() -> Void)?
     @Environment(\.colorScheme) private var scheme
@@ -421,7 +433,7 @@ struct NovaShellPanel: View {
                     .background(Color(white: 0.14), in: RoundedRectangle(cornerRadius: 16))
                 VStack(alignment: .leading, spacing: 2) {
                     NovaText(text: userName, style: .sectionTitle)
-                    NovaText(text: RDLocalization.string("localizable.nova.expert.shell.isg.uzmani.4d28231f", table: .localizable, fallback: "İSG Uzmanı"), style: .metaQuiet, color: NovaColorToken.textMuted.color(in: scheme))
+                    NovaText(text: isManager ? "OSGB yetkilisi" : RDLocalization.string("localizable.nova.expert.shell.isg.uzmani.4d28231f", table: .localizable, fallback: "İSG Uzmanı"), style: .metaQuiet, color: NovaColorToken.textMuted.color(in: scheme))
                 }
                 Spacer(minLength: 0)
                 close
@@ -431,21 +443,25 @@ struct NovaShellPanel: View {
             Rectangle().fill(NovaColorToken.hairline.color(in: scheme)).frame(height: 1).padding(.bottom, 12)
             ScrollView {
                 VStack(spacing: 0) {
-                    drawerDestination(.home)
-                    ForEach(NovaDrawerGroup.all) { group in
-                        drawerGroup(group)
+                    if isManager {
+                        managerDrawer
+                    } else {
+                        drawerDestination(.home)
+                        ForEach(NovaDrawerGroup.all) { group in
+                            drawerGroup(group)
+                        }
+                        drawerDestination(.periodicChecks)
+                        drawerDestination(.training)
+                        drawerDestination(.katipContracts)
+                        drawerDestination(.workPermits)
+                        drawerDestination(.visits)
+                        drawerDestination(.statistics)
+                        drawerDestination(.notifications)
                     }
-                    drawerDestination(.periodicChecks)
-                    drawerDestination(.training)
-                    drawerDestination(.katipContracts)
-                    drawerDestination(.workPermits)
-                    drawerDestination(.visits)
-                    drawerDestination(.statistics)
-                    drawerDestination(.notifications)
                 }
             }.accessibilityIdentifier("nova.panel.scroll")
                 .onAppear {
-                    expandedDrawerGroup = NovaDrawerGroup.all.first { $0.destinations.contains(selected) }?.id
+                    expandedDrawerGroup = isManager ? managerSafetyGroup.id : NovaDrawerGroup.all.first { $0.destinations.contains(selected) }?.id
                 }
             Button { onLogout?() } label: {
                 HStack(spacing: 8) {
@@ -456,6 +472,55 @@ struct NovaShellPanel: View {
             }.buttonStyle(.plain).disabled(onLogout == nil).accessibilityIdentifier("nova.logout")
                 .padding(.top, 10).padding(.bottom, 14)
         }.padding(.horizontal, 20)
+    }
+
+    /// The OSGB authority does not need the expert's personal route catalog.
+    /// Keep operations under one accordion and surface the three management
+    /// actions that otherwise remained hidden behind the floating plus button.
+    @ViewBuilder private var managerDrawer: some View {
+        drawerDestination(.home)
+        drawerDestination(.companies)
+        drawerAction(title: "Uzmanlar", symbol: "person.2", identifier: "nova.manager.experts",
+                     action: onExpertCreate)
+        drawerDestination(.statistics)
+        drawerDestination(.reports)
+        drawerGroup(managerSafetyGroup)
+        Rectangle().fill(NovaColorToken.hairline.color(in: scheme)).frame(height: 1)
+            .padding(.horizontal, 8).padding(.vertical, 8)
+        NovaText(text: RDLocalization.string("localizable.nova.manager.section", table: .localizable,
+            fallback: "Yönetim"), style: .meta, color: NovaColorToken.textMuted.color(in: scheme))
+            .padding(.horizontal, 8).padding(.bottom, 3)
+        drawerAction(title: "Firma ekle", symbol: "building.2.crop.circle", identifier: "nova.manager.add-company",
+                     action: onCompanyCreate)
+        drawerAction(title: "Uzman ekle", symbol: "person.badge.plus", identifier: "nova.manager.add-expert",
+                     action: onExpertCreate)
+        drawerAction(title: RDLocalization.string("localizable.nova.manager.assignment", table: .localizable,
+            fallback: "Atama yap / değiştir"), symbol: "person.2.badge.gearshape", identifier: "nova.manager.assign-expert",
+                     action: onAssignmentOpen)
+    }
+
+    private var managerSafetyGroup: NovaDrawerGroup {
+        .init(id: "manager-safety", title: RDLocalization.string("localizable.nova.manager.safety", table: .localizable,
+              fallback: "İş Güvenliği"), symbol: "shield.lefthalf.filled",
+              destinations: [.analyses, .findings, .riskAssessments, .checklists, .training,
+                             .emergencyPlans, .drills, .ppeHandovers, .periodicChecks,
+                             .katipContracts, .workPermits, .visits])
+    }
+
+    private func drawerAction(title: String, symbol: String, identifier: String,
+                              action: (() -> Void)?) -> some View {
+        Button { action?(); send(.dismiss) } label: {
+            HStack(spacing: 12) {
+                NovaIcon(symbol: symbol, size: 18).frame(width: 20)
+                NovaText(text: title, style: .buttonSm)
+                Spacer(minLength: 4)
+                Image(systemName: "plus").font(.system(size: 11, weight: .semibold))
+            }
+            .foregroundStyle(NovaColorToken.text.color(in: scheme))
+            .padding(.horizontal, 8).padding(.vertical, 6)
+            .frame(minHeight: 44).contentShape(Rectangle())
+        }.buttonStyle(.plain).disabled(action == nil).opacity(action == nil ? 0.4 : 1)
+            .accessibilityIdentifier(identifier)
     }
 
     private func drawerGroup(_ group: NovaDrawerGroup) -> some View {
@@ -493,7 +558,8 @@ struct NovaShellPanel: View {
     }
 
     private func drawerDestination(_ destination: NovaDestination, nested: Bool = false) -> some View {
-        Button {
+        let enabled = canOpen(destination) && (destination != .newCompany || onCompanyCreate != nil)
+        return Button {
             // Firma Ekle opens the company-create flow directly, same as the
             // quick-add sheet's own entry for it — it is not a pushed screen.
             if destination == .newCompany {
@@ -515,8 +581,8 @@ struct NovaShellPanel: View {
             .foregroundStyle(NovaColorToken.text.color(in: scheme))
             .padding(.leading, nested ? 24 : 8).padding(.trailing, 8).padding(.vertical, 6)
             .frame(minHeight: 44).contentShape(Rectangle())
-        }.buttonStyle(.plain).disabled(!canOpen(destination))
-            .opacity(canOpen(destination) ? 1 : 0.4)
+        }.buttonStyle(.plain).disabled(!enabled)
+            .opacity(enabled ? 1 : 0.4)
             .accessibilityIdentifier("nova.destination.\(destination.rawValue)")
             .accessibilityAddTraits(selected == destination ? .isSelected : [])
     }
@@ -524,7 +590,17 @@ struct NovaShellPanel: View {
     private var quickAdd: some View {
         VStack(alignment: .leading, spacing: 8) {
             NovaText(text: RDLocalization.string("localizable.nova.expert.shell.ne.eklemek.istiyorsun.ee07893e", table: .localizable, fallback: "Ne eklemek istiyorsun?"), style: .sectionTitle).padding(.horizontal, 4).padding(.bottom, 4)
+            if isManager {
+                managerQuickAction(title: "Firma ekle", detail: RDLocalization.string("localizable.nova.manager.company.add.detail", table: .localizable,
+                    fallback: "Yeni firmayı OSGB çalışma alanına ekleyin."), symbol: "building.2.crop.circle", action: onCompanyCreate)
+                managerQuickAction(title: "Uzman ekle", detail: RDLocalization.string("localizable.nova.manager.expert.add.detail", table: .localizable,
+                    fallback: "Ekibinize yeni bir İSG uzmanı davet edin."), symbol: "person.badge.plus", action: onExpertCreate)
+                managerQuickAction(title: RDLocalization.string("localizable.nova.manager.assignment", table: .localizable,
+                    fallback: "Atama yap / değiştir"), detail: RDLocalization.string("localizable.nova.manager.assignment.detail", table: .localizable,
+                    fallback: "Firma erişimi ve uzman rollerini yönetin."), symbol: "person.2.badge.gearshape", action: onAssignmentOpen)
+            } else {
             ForEach(NovaDestination.quickAdd, id: \.self) { destination in
+                let enabled = canOpen(destination) && (destination != .newCompany || onCompanyCreate != nil)
                 Button {
                     if destination == .newCompany { onCompanyCreate?() }
                     else {
@@ -547,8 +623,9 @@ struct NovaShellPanel: View {
                             .foregroundStyle(NovaColorToken.borderStrong.color(in: scheme))
                     }.padding(.horizontal, 14).padding(.vertical, 13).frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
                         .novaControlBackground(cornerRadius: 20)
-                }.buttonStyle(.plain).disabled(!canOpen(destination)).opacity(canOpen(destination) ? 1 : 0.4)
+                }.buttonStyle(.plain).disabled(!enabled).opacity(enabled ? 1 : 0.4)
                     .accessibilityIdentifier("nova.destination.\(destination.rawValue)")
+            }
             }
             Button { send(.dismiss) } label: {
                 HStack(spacing: 10) {
@@ -559,6 +636,23 @@ struct NovaShellPanel: View {
             }.buttonStyle(.plain).foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
                 .padding(.top, 2).accessibilityIdentifier("nova.panel.close")
         }
+    }
+
+    private func managerQuickAction(title: String, detail: String, symbol: String,
+                                    action: (() -> Void)?) -> some View {
+        Button { action?(); send(.dismiss) } label: {
+            HStack(spacing: 12) {
+                NovaIcon(symbol: symbol, size: 21)
+                    .foregroundStyle(NovaColorToken.accentInk.color(in: scheme)).frame(width: 38, height: 38)
+                VStack(alignment: .leading, spacing: 2) {
+                    NovaSizedText(text: title, size: 15, weight: "Medium")
+                    NovaText(text: detail, style: .meta, color: NovaColorToken.textMuted.color(in: scheme))
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.system(size: 12))
+            }.padding(.horizontal, 14).padding(.vertical, 13).frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+                .novaControlBackground(cornerRadius: 20)
+        }.buttonStyle(.plain).disabled(action == nil).opacity(action == nil ? 0.45 : 1)
     }
 
     private var notifications: some View {
@@ -773,6 +867,14 @@ struct NovaDashboardScreen: View {
     var onFinding: ((String) -> Void)?
     var trackingIdentity: NovaSessionIdentity?
     var trackingCanWrite = false
+    /// Optional workspace-specific controls rendered inside the same scroll
+    /// surface. This keeps OSGB company selection/actions on the shared home
+    /// page instead of creating a second dashboard layout.
+    var footer: AnyView?
+    /// Capability-gated actions may be removed without forking the dashboard
+    /// layout. A hidden control is preferable to a button with an empty action.
+    var showsPhotoCapture = true
+    var showsAssistant = true
     @Environment(\.colorScheme) private var scheme
     @Environment(\.dynamicTypeSize) private var typeSize
     private var muted: Color { NovaColorToken.textMuted.color(in: scheme) }
@@ -797,7 +899,9 @@ struct NovaDashboardScreen: View {
                         }
                     }.padding(.horizontal, 16)
                 }.padding(.bottom, 18)
-                capture.padding(.horizontal, 20).padding(.bottom, 22)
+                if showsPhotoCapture {
+                    capture.padding(.horizontal, 20).padding(.bottom, 22)
+                }
                 Button { onNavigate(.training) } label: {
                     HStack(spacing: 12) {
                         NovaIcon(symbol: "hand.thumbsup.fill", size: 22).foregroundStyle(NovaColorToken.accent.color(in: scheme))
@@ -836,14 +940,25 @@ struct NovaDashboardScreen: View {
                     NovaModuleTrackingCard(identity: trackingIdentity, canWrite: trackingCanWrite)
                         .padding(.horizontal, 20).padding(.top, 22)
                 }
+                if let footer {
+                    footer
+                        .padding(.horizontal, 16)
+                        .padding(.top, 22)
+                }
             }.padding(.bottom, 122)
         }.background(NovaColorToken.canvas.color(in: scheme)).accessibilityIdentifier("nova.home.scroll")
     }
 
     private var welcome: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 12) { greeting; assistant }
-            VStack(alignment: .leading, spacing: 12) { greeting; assistant }
+            HStack(spacing: 12) {
+                greeting
+                if showsAssistant { assistant }
+            }
+            VStack(alignment: .leading, spacing: 12) {
+                greeting
+                if showsAssistant { assistant }
+            }
         }.padding(16).frame(maxWidth: .infinity, alignment: .leading)
             .novaControlBackground(cornerRadius: 22)
     }

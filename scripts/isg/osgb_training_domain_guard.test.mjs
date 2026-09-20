@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const sql=readFileSync(new URL('../../supabase/pilot-release/candidates/20260917150000_osgb_training_domain.sql',import.meta.url),'utf8');
+const advanced=readFileSync(new URL('../../supabase/pilot-release/candidates/20260917170000_osgb_personnel_training_advanced.sql',import.meta.url),'utf8');
 
 test('training session, record, participant and revision share workspace scope',()=>{
   for(const table of ['pilot_training_sessions','pilot_training_records','pilot_training_participants',
@@ -32,9 +33,24 @@ test('training endpoints are assignment scoped, idempotent and table-private',()
   assert.match(sql,/PARTICIPANT_UNAVAILABLE/);
   assert.match(sql,/TRAINING_NOT_ENDED/);
   assert.match(sql,/ATTENDANCE_REQUIRED/);
+  assert.match(sql,/PARTICIPANT_SET_MISMATCH/);
+  assert.match(sql,/SET attended=\(person->>'attended'\)::boolean/);
 });
 
 test('training metrics expose measured totals, people, minutes and missing coverage',()=>{
   for(const token of ['completed_minutes','trained_people','person_minutes','people_without_completed_training',
     "'measured',true"]) assert.ok(sql.includes(token),token);
+});
+
+test('advanced training supports versioned curricula, plans, exams and explicit certificates',()=>{
+  for(const table of ['workspace_training_curricula','workspace_training_curriculum_topics',
+    'workspace_annual_training_plans','workspace_annual_training_plan_items',
+    'workspace_training_attempts','workspace_training_certificates']) assert.match(advanced,new RegExp(`CREATE TABLE private_isg\\.${table}`));
+  for(const token of ['curriculum_revise','curriculum_publish','PASSED_ASSESSMENT_REQUIRED',
+    'plan_item_realise','attempt_record','certificate_issue','certificate_verify',
+    'PUBLISHED_CURRICULUM_REQUIRED','PLAN_ITEMS_PENDING']) assert.ok(advanced.includes(token),token);
+  assert.match(advanced,/workspace_curriculum_id/);
+  assert.match(advanced,/p\.training_id=training\.id AND p\.employee_id=v_employee_id\) THEN/,
+    'an enrolled participant may record the required exam before attendance is finalized');
+  assert.doesNotMatch(advanced,/GRANT\s+(SELECT|INSERT|UPDATE|DELETE)\s+ON/i);
 });

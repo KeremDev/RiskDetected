@@ -28,6 +28,8 @@ test('iOS and Android use only workspace endpoints and recheck scope after trans
     const source=readFileSync(resolve(ROOT,path),'utf8');
     for(const endpoint of ['isg_workspace_list_v1','isg_workspace_company_list_v1','isg_workspace_personnel_metrics_v1',
       'isg_workspace_assignment_list_v1','isg_workspace_assignment_mutate_v1',
+      'isg_workspace_personnel_advanced_read_v1','isg_workspace_personnel_advanced_mutate_v1',
+      'isg_workspace_training_advanced_read_v1','isg_workspace_training_advanced_mutate_v1',
       'isg_workspace_dashboard_v1','isg_workspace_search_v1','isg_workspace_analysis_list_v1','isg_workspace_analysis_read_v1',
       'isg_workspace_analysis_file_v1','isg_workspace_export_create_v1','isg_workspace_export_get_v1',
       'isg_workspace_change_read_v1'])
@@ -47,7 +49,8 @@ test('iOS and Android use only workspace endpoints and recheck scope after trans
 test('session store exposes analysis filing, export and change flows with standard success copy',()=>{
   const store=readFileSync(resolve(ROOT,'App/Services/ISG/IsgWorkspaceStore.swift'),'utf8');
   const success=readFileSync(resolve(ROOT,'App/DesignSystem/ISG/NovaSuccessPresentation.swift'),'utf8');
-  for(const method of ['personnelMetrics','search','analyses','analysis','fileAnalysisItem','createExport','export','changes'])
+  for(const method of ['personnelMetrics','personnelAdvanced','trainingAdvanced','mutatePersonnelAdvanced',
+    'mutateTrainingAdvanced','search','analyses','analysis','fileAnalysisItem','createExport','export','changes'])
     assert.match(store,new RegExp(`func ${method}\\(`),method);
   for(const method of ['assignments','mutateAssignment'])
     assert.match(store,new RegExp(`func ${method}\\(`),method);
@@ -63,12 +66,13 @@ test('iOS workspace setup and member management stay on scoped server operations
   for(const endpoint of ['isg_osgb_workspace_create_v1','isg_workspace_invitation_accept_v1',
     'isg_workspace_member_list_v1','isg_workspace_invitation_list_v1','isg_workspace_invite_v1',
     'isg_workspace_invitation_resend_v1','isg_workspace_invitation_mutate_v1','isg_workspace_member_mutate_v1',
-    'isg_workspace_company_create_v1','isg_workspace_company_update_v1','isg_workspace_company_archive_v1'])
+    'isg_workspace_company_create_v1','isg_workspace_company_update_v1',
+    'isg_workspace_company_profile_mutate_v1','isg_workspace_company_archive_v1'])
     assert.ok(api.includes(endpoint),endpoint);
   for(const method of ['createWorkspace','acceptInvitation','members','invitations','invite',
     'resendInvitation','revokeInvitation','mutateMember','createCompany','updateCompany','archiveCompany'])
     assert.match(store,new RegExp(`func ${method}\\(`),method);
-  assert.match(store,/dashboard = try\? await api\.dashboard/,
+  assert.match(store,/let value = try\? await api\.dashboard/,
     'a refresh failure must not report a committed company mutation as failed');
   assert.doesNotMatch(api,/isg_personnel_read_v1|from\("workspace_memberships"\)|from\("workspace_invitations"\)/);
 });
@@ -104,6 +108,8 @@ test('iOS operational modules use scoped D1-D8 reads and reviewed mutations',()=
   const analyses=readFileSync(resolve(ROOT,'App/DesignSystem/ISG/IsgWorkspaceAnalysisScreen.swift'),'utf8');
   for(const endpoint of ['isg_workspace_personnel_read_v1','isg_workspace_directory_mutate_v1',
     'isg_workspace_employee_mutate_v1','isg_workspace_training_read_v1','isg_workspace_training_mutate_v1',
+    'isg_workspace_personnel_advanced_read_v1','isg_workspace_personnel_advanced_mutate_v1',
+    'isg_workspace_training_advanced_read_v1','isg_workspace_training_advanced_mutate_v1',
     'isg_workspace_risk_read_v1','isg_workspace_risk_mutate_v1','isg_workspace_nonconformity_read_v1',
     'isg_workspace_nonconformity_mutate_v1','isg_workspace_checklist_read_v1','isg_workspace_checklist_mutate_v1',
     'isg_workspace_safety_read_v1','isg_workspace_safety_mutate_v1','isg_workspace_equipment_read_v1',
@@ -121,4 +127,90 @@ test('iOS operational modules use scoped D1-D8 reads and reviewed mutations',()=
     assert.doesNotMatch(source,/NovaPersonnelService|NovaTrainingService|NovaRiskAssessmentService|NovaFileLibraryService/);
   assert.match(analyses,/store\.analyses[\s\S]*store\.analysis[\s\S]*store\.fileAnalysisItem[\s\S]*store\.createExport/);
   assert.doesNotMatch(analyses,/NovaAnalysisWorkspace|AnalysisResultHubService/);
+});
+
+test('D1 and D2 advanced workspace modules expose complete tenant-native management flows',()=>{
+  const api=readFileSync(resolve(ROOT,'App/Services/ISG/IsgWorkspaceAPI.swift'),'utf8');
+  const store=readFileSync(resolve(ROOT,'App/Services/ISG/IsgWorkspaceStore.swift'),'utf8');
+  const personnel=readFileSync(resolve(ROOT,'App/DesignSystem/ISG/IsgWorkspacePersonnelScreen.swift'),'utf8');
+  const training=readFileSync(resolve(ROOT,'App/DesignSystem/ISG/IsgWorkspaceTrainingAdvancedScreen.swift'),'utf8');
+  for(const method of ['personnelAdvanced','trainingAdvanced','mutatePersonnelAdvanced','mutateTrainingAdvanced']){
+    assert.match(api,new RegExp(`func ${method}\\(`),`API ${method}`);
+    assert.match(store,new RegExp(`func ${method}\\(`),`store ${method}`);
+  }
+  for(const action of ['job_role_save','job_role_archive','contractor_save','contractor_archive',
+    'engagement_create','engagement_end','assignment_create','assignment_end'])
+    assert.ok(personnel.includes(action),action);
+  for(const action of ['curriculum_create','curriculum_topic_save','curriculum_topic_delete','curriculum_publish','curriculum_revise',
+    'curriculum_retire','training_link_curriculum','plan_create','plan_activate','plan_item_save',
+    'plan_item_realise','plan_item_cancel','plan_close','attempt_record','certificate_issue',
+    'certificate_verify','certificate_revoke'])
+    assert.ok(training.includes(action),action);
+  for(const source of [personnel,training])
+    assert.doesNotMatch(source,/NovaPersonnelService|NovaTrainingService|mutationID:\s*UUID\(\)/);
+});
+
+test('all D1-D7 lists expose cursors and OSGB forms reuse one unchanged mutation attempt',()=>{
+  const sqlFiles=[
+    'supabase/pilot-release/candidates/20260917150000_osgb_training_domain.sql',
+    'supabase/pilot-release/candidates/20260917151500_osgb_risk_nonconformity_domain.sql',
+    'supabase/pilot-release/candidates/20260917153000_osgb_emergency_ppe_domain.sql',
+    'supabase/pilot-release/candidates/20260917154500_osgb_equipment_domain.sql',
+    'supabase/pilot-release/candidates/20260917160000_osgb_operations_domain.sql',
+    'supabase/pilot-release/candidates/20260917161500_osgb_file_domain.sql'
+  ];
+  for(const path of sqlFiles){
+    const source=readFileSync(resolve(ROOT,path),'utf8');
+    assert.match(source,/p_after uuid/,`${path}: cursor input`);
+    assert.match(source,/'next'/,`${path}: cursor output`);
+  }
+  const ios=readFileSync(resolve(ROOT,'App/Services/ISG/IsgWorkspaceAPI.swift'),'utf8');
+  const android=readFileSync(resolve(ROOT,'android/core/data/src/main/kotlin/com/riskdetectedan/core/data/isg/IsgWorkspaceGateway.kt'),'utf8');
+  assert.match(ios,/for pageIndex in 0\.\.<100[\s\S]*p_after/);
+  assert.match(android,/repeat\(100\)[\s\S]*p_after/);
+  const mutationSources=[
+    'App/DesignSystem/ISG/IsgWorkspaceDomainCreateEditor.swift',
+    'App/DesignSystem/ISG/IsgWorkspaceDomainScreen.swift',
+    'App/DesignSystem/ISG/IsgWorkspaceFileCreateEditor.swift',
+    'App/DesignSystem/ISG/IsgWorkspacePersonnelScreen.swift',
+    'App/DesignSystem/ISG/IsgWorkspaceAssignmentScreen.swift',
+    'App/DesignSystem/ISG/IsgWorkspaceAnalysisScreen.swift',
+    'App/Views/Components/NovaPilotMainGate.swift'
+  ];
+  for(const path of mutationSources){
+    const source=readFileSync(resolve(ROOT,path),'utf8');
+    assert.doesNotMatch(source,/mutationID:\s*UUID\(\)/,`${path}: unstable mutation key`);
+  }
+  assert.match(ios,/struct IsgWorkspaceMutationAttempt/);
+  assert.match(ios,/isg_workspace_file_create_receipt_v1/);
+  assert.match(ios,/struct IsgWorkspaceFileUploadResult[\s\S]*let entryID: UUID/,
+    'upload result must expose the logical file entry needed for parent attachment');
+  const store=readFileSync(resolve(ROOT,'App/Services/ISG/IsgWorkspaceStore.swift'),'utf8');
+  assert.match(store,/func attachFile\([\s\S]*"action": \.string\("attach"\)/,
+    'workspace forms must attach uploaded entries through the scoped file mutation');
+});
+
+test('workspace detail connects advanced lifecycle operations without legacy services',()=>{
+  const detail=readFileSync(resolve(ROOT,'App/DesignSystem/ISG/IsgWorkspaceDomainScreen.swift'),'utf8');
+  for(const token of ['trainingComplete','riskFinalize','nonconformityTransition','nonconformityAddAction',
+    'nonconformityVerify','checklistAnswer','checklistSubmit','drillPerform','appointmentEnd','ppeReturn',
+    'equipmentInspect','annualAddItem','boardHold','boardAddDecision','visitAddObservation'])
+    assert.ok(detail.includes(token),token);
+  assert.match(detail,/store\.mutateDomain\(mutationID: mutationID, domain: domain, payload: command\)/);
+  assert.match(detail,/expected_version/);
+  assert.match(detail,/Bu madde için uygunsuzluk kaydı aç/,
+    'negative checklist answer must keep nonconformity creation an explicit expert choice');
+  assert.match(detail,/"create_nonconformity": \.bool/);
+  assert.match(detail,/verification_outcome/,
+    'verification result must hide repeat verification and expose close only after acceptance');
+  assert.match(detail,/row\.trainingParticipants[\s\S]*"participants": \.array/,
+    'training completion must capture final attendance instead of relying on creation-time defaults');
+  assert.doesNotMatch(detail,/NovaTrainingService|NovaRiskAssessmentService|NovaFileLibraryService|mutationID:\s*UUID\(\)/);
+  const create=readFileSync(resolve(ROOT,'App/DesignSystem/ISG/IsgWorkspaceDomainCreateEditor.swift'),'utf8');
+  assert.match(create,/selectedEmployeeIDs\.isEmpty/,
+    'training create must require one or more real workspace employee participants');
+  assert.match(create,/selectedEmployeeIDs\.sorted[\s\S]*"participants": \.array/,
+    'training create must persist every selected workspace participant');
+  assert.match(create,/store\.checklistTemplates\(\)/,
+    'checklist create must use a published server template instead of free text');
 });

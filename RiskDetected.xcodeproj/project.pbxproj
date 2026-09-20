@@ -7,12 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A1000001000000000000E001 /* FacebookCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1000001000000000000E101 /* FacebookCore */; };
 		A1000001000000000000B001 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = A1000001000000000000B101 /* Supabase */; };
 		A1000001000000000000B002 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = A1000001000000000000B102 /* GoogleSignIn */; };
 		A1000001000000000000B003 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = A1000001000000000000B103 /* RevenueCat */; };
 		A1000001000000000000B004 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1000001000000000000B104 /* RevenueCatUI */; };
 		A1000001000000000000D014 /* SnapshottingTests in Frameworks */ = {isa = PBXBuildFile; productRef = A1000001000000000000D017 /* SnapshottingTests */; };
+		A1000001000000000000E001 /* FacebookCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1000001000000000000E101 /* FacebookCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -269,6 +269,25 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		A1000001000000000000A103 /* Strip xattrs */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Strip xattrs";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ -d \"$BUILT_PRODUCTS_DIR/$WRAPPER_NAME\" ]; then\n  find \"$BUILT_PRODUCTS_DIR/$WRAPPER_NAME\" -exec xattr -c {} \\; 2>/dev/null || true\nfi\n";
+		};
 		A1000001000000000000A104 /* Localization release gate */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -375,25 +394,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"$SRCROOT/scripts/localization_release_build_gate.sh\"\n";
-		};
-		A1000001000000000000A103 /* Strip xattrs */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Strip xattrs";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "if [ -d \"$BUILT_PRODUCTS_DIR/$WRAPPER_NAME\" ]; then\n  find \"$BUILT_PRODUCTS_DIR/$WRAPPER_NAME\" -exec xattr -c {} \\; 2>/dev/null || true\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -791,11 +791,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		A1000001000000000000E201 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/facebook/facebook-ios-sdk.git";
-			requirement = { kind = exactVersion; version = 18.1.1; };
-		};
 		A1000001000000000000B201 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase/supabase-swift.git";
@@ -828,14 +823,17 @@
 				minimumVersion = 0.15.0;
 			};
 		};
+		A1000001000000000000E201 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/facebook/facebook-ios-sdk.git";
+			requirement = {
+				kind = exactVersion;
+				version = 18.1.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		A1000001000000000000E101 /* FacebookCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A1000001000000000000E201;
-			productName = FacebookCore;
-		};
 		A1000001000000000000B101 /* Supabase */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A1000001000000000000B201 /* XCRemoteSwiftPackageReference "supabase-swift" */;
@@ -860,6 +858,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1000001000000000000B204 /* XCRemoteSwiftPackageReference "SnapshotPreviews" */;
 			productName = SnapshottingTests;
+		};
+		A1000001000000000000E101 /* FacebookCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1000001000000000000E201 /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
