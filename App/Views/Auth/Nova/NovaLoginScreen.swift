@@ -50,7 +50,8 @@ struct NovaLoginScreen: View {
                         Image("NovaOBLogo")
                             .resizable().scaledToFit()
                             .frame(width: 168)
-                            .padding(.bottom, NovaOB.padBottom(40))
+                            .padding(.top, 28)
+                            .padding(.bottom, 56)
                             .scaleEffect(logoShown ? 1 : 0.7)
                             .opacity(logoShown ? 1 : 0)
                             .onAppear {
@@ -238,7 +239,7 @@ struct NovaLoginScreen: View {
             }
             .padding(.horizontal, 22)
             .padding(.top, 12)
-            .padding(.bottom, NovaOB.padBottom(28))
+            .padding(.bottom, 28)
             .frame(maxWidth: .infinity)
             .background(
                 NovaOB.surface,

@@ -370,7 +370,7 @@ struct NovaOBExperienceWidget: View {
         }
         .padding(.horizontal, 22)
         .padding(.top, 24)
-        .padding(.bottom, NovaOB.padBottom(28))
+        .padding(.bottom, 26)
         .background(NovaOB.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
