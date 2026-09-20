@@ -19,6 +19,10 @@ struct RootView: View {
                 SplashView()
                     .transition(.opacity)
             case .onboarding:
+                #if DEBUG && NOVA_PILOT_BUILD
+                NovaPilotEntryGate()
+                    .transition(.opacity)
+                #else
                 OnboardingViewV2(
                     appLanguage: app.languagePreference,
                     initialSafetyProfileID: app.languagePreference == .english
@@ -40,9 +44,17 @@ struct RootView: View {
                     onSafetyProfileChange: { app.setSafetyProfile($0) }
                 )
                     .transition(.opacity)
+                #endif
             case .auth:
+                #if DEBUG && NOVA_PILOT_BUILD
+                // Both pilot bundles (Pilot Canlı and OSGB) now share the Nova
+                // sign-in surface; production keeps AuthView untouched.
+                NovaPilotEntryGate()
+                    .transition(.opacity)
+                #else
                 AuthView()
                     .transition(.opacity)
+                #endif
             case .main:
                 NovaPilotMainGate(auth: app.auth)
                     .transition(.opacity)

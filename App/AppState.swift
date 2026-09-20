@@ -334,6 +334,12 @@ final class AppState: ObservableObject {
     @Published var quickScanRequestID = UUID()
     var quickScanSource: QuickScanSource = .chooser
     @Published var hasSeenOnboarding: Bool
+    #if DEBUG && NOVA_PILOT_BUILD
+    /// True while the Nova pilot funnel is on screen. The funnel keeps running
+    /// after the account is created (trial, notification permission), so a new
+    /// session must not pull the app to `.main` underneath it.
+    @Published var novaPilotOnboardingActive = false
+    #endif
     @Published var authError: String?
     @Published private(set) var isAuthenticated: Bool
     @Published private(set) var subscriptionState: SubscriptionState = .free
@@ -1130,6 +1136,9 @@ final class AppState: ObservableObject {
                         await self.refreshPlanState()
                         await self.sendWelcomeEmailIfPossible()
                     }
+                    #if DEBUG && NOVA_PILOT_BUILD
+                    if self.novaPilotOnboardingActive { return }
+                    #endif
                     if self.flow == .onboarding && !self.hasSeenOnboarding {
                         return
                     }

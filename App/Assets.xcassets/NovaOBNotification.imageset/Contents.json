@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "NovaOBNotification.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
