@@ -96,6 +96,7 @@ struct NovaAnalysisDetailScreen: View {
                 }
                 }
             }
+                .novaAsyncContent(isLoading: data == nil && loadError == nil)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) { if data != nil { actionBar } }
         .task(id: reload) { await load() }

@@ -169,9 +169,13 @@ struct IsgWorkspaceDomainScreen: View {
                     } else if rows.isEmpty {
                         NovaEmptyState(title: emptyTitle, message: emptyMessage)
                     } else {
-                        ForEach(rows) { row in record(row) }
+                        ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                            record(row).novaRowEntrance(index)
+                        }
                     }
                 }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
+                    .novaAsyncContent(isLoading: loading)
+                    .novaListEntrance(hasRecords: !rows.isEmpty)
             }
         }
         .task(id: revision) { await load() }
@@ -1743,6 +1747,7 @@ struct IsgWorkspaceChangeScreen: View {
                         }
                     }
                 }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
+                    .novaAsyncContent(isLoading: loading)
             }
             .refreshable { revision = UUID() }
         }

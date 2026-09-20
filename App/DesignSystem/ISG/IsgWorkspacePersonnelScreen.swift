@@ -112,6 +112,8 @@ struct IsgWorkspacePersonnelScreen: View {
                                 table: .localizable, fallback: "Kayıt ekleyerek firmanın personel organizasyonunu güvenli biçimde yönetin."))
                     } else { records }
                 }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
+                    .novaAsyncContent(isLoading: loading)
+                    .novaListEntrance(hasRecords: visibleCount > 0)
             }.refreshable { revision = UUID() }
         }
         .task(id: revision) { await load() }
@@ -159,22 +161,22 @@ struct IsgWorkspacePersonnelScreen: View {
     @ViewBuilder private var records: some View {
         switch section {
         case .employee:
-            ForEach(employees.filter { matches($0.code, $0.name) }) { row in
+            ForEach(Array(employees.filter { matches($0.code, $0.name) }.enumerated()), id: \.element.id) { index, row in
                 rowButton(title: row.name, subtitle: row.code, symbol: "person") {
                     employeeRoute = .init(entry: row)
-                }
+                }.novaRowEntrance(index)
             }
         case .workplace:
-            ForEach(workplaces.filter { matches($0.code, $0.name) }) { row in
+            ForEach(Array(workplaces.filter { matches($0.code, $0.name) }.enumerated()), id: \.element.id) { index, row in
                 rowButton(title: row.name, subtitle: row.code, symbol: "building.2") {
                     directoryRoute = .init(kind: .workplace, entry: row)
-                }
+                }.novaRowEntrance(index)
             }
         case .department:
-            ForEach(departments.filter { matches($0.code, $0.name) }) { row in
+            ForEach(Array(departments.filter { matches($0.code, $0.name) }.enumerated()), id: \.element.id) { index, row in
                 rowButton(title: row.name, subtitle: row.code, symbol: "square.grid.2x2") {
                     directoryRoute = .init(kind: .department, entry: row)
-                }
+                }.novaRowEntrance(index)
             }
         case .jobRole:
             advancedRows(jobRoles, symbol: "briefcase")
@@ -188,11 +190,13 @@ struct IsgWorkspacePersonnelScreen: View {
     }
 
     @ViewBuilder private func advancedRows(_ values: [IsgWorkspaceAdvancedRecord], symbol: String) -> some View {
-        ForEach(values.filter { matches($0.title, $0.subtitle ?? "", $0.status ?? "") }) { row in
+        ForEach(Array(values.filter { matches($0.title, $0.subtitle ?? "", $0.status ?? "") }.enumerated()),
+                id: \.element.id) { index, row in
             rowButton(title: row.title,
                       subtitle: [row.subtitle, row.status.map(IsgWorkspaceDisplayText.value)]
                         .compactMap { $0 }.joined(separator: " · "),
                       symbol: symbol) { advancedRoute = .init(section: section, entry: row) }
+                .novaRowEntrance(index)
         }
     }
 

@@ -73,6 +73,7 @@ struct IsgWorkspaceTrainingAdvancedScreen: View {
                                    message: "İlk kaydı ekleyerek bu firmadaki eğitim sürecini planlayabilirsiniz.")
                 } else { ForEach(records) { recordRow($0) } }
             }.padding(18).novaPopupContentSize(extra: 120)
+                .novaAsyncContent(isLoading: loading)
         }
         .task(id: revision) { await load() }
         .novaPopup(item: $route, onDismiss: { revision = UUID() }) { route in

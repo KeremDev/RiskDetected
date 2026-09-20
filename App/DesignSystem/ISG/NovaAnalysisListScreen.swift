@@ -160,7 +160,8 @@ struct NovaAnalysisListScreen: View {
                     overview
                     search
                     chips
-                    list
+                    list.novaAsyncContent(isLoading: rows == nil)
+                        .novaListEntrance(hasRecords: !(rows ?? []).isEmpty)
                 }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
             }
         }
@@ -257,7 +258,9 @@ struct NovaAnalysisListScreen: View {
                 message: RDLocalization.string("localizable.nova.analysis.list.empty.detail", table: .localizable,
                     fallback: "Fotoğraf veya metin analizi oluşturarak riskleri, uzman görüşlerini ve önerileri dijital ortamda saklayabilirsiniz."))
         } else {
-            ForEach(visible) { row in card(row) }
+            ForEach(Array(visible.enumerated()), id: \.element.id) { index, row in
+                card(row).novaRowEntrance(index)
+            }
             // Only offered on an unfiltered, unsearched view of the account's
             // own order: filtering client-side over one page would silently
             // hide rows a further page might actually answer.

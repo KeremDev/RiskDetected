@@ -43,6 +43,7 @@ struct IsgWorkspaceAssignmentManagement: View {
                 }
                 if let error { NovaHelpHint(text: error) }
             }.padding(18).padding(.bottom, 24).novaPopupContentSize()
+                .novaAsyncContent(isLoading: loading)
         }
         .scrollDismissesKeyboard(.interactively)
         .task { await load() }

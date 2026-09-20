@@ -45,6 +45,7 @@ struct NovaStatisticsScreen: View {
                         NovaText(text: "Güncelleme: \(NovaStatisticsSnapshot.dayLabel(data.today)) · İstanbul", style: .micro)
                     }
                 }.padding(.horizontal, 18).padding(.top, 6).padding(.bottom, novaTabBarInset)
+                    .novaAsyncContent(isLoading: loading)
             }
             .refreshable { revision += 1 }
             .task(id: requestKey) { await refresh(key: requestKey) }

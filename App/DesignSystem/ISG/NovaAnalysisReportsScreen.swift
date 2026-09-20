@@ -49,7 +49,8 @@ struct NovaAnalysisReportsScreen: View {
                         placeholder: RDLocalization.string("localizable.nova.analysis.reports.search", table: .localizable, fallback: "Rapor ara"),
                         identifier: "analysis.reports.search")
                     chips
-                    list
+                    list.novaAsyncContent(isLoading: rows == nil)
+                        .novaListEntrance(hasRecords: !(rows ?? []).isEmpty)
                 }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
             }
         }
@@ -113,7 +114,9 @@ struct NovaAnalysisReportsScreen: View {
                 message: RDLocalization.string("localizable.nova.analysis.reports.empty.detail", table: .localizable,
                     fallback: "Bir analizin raporunu oluşturarak PDF ve Excel çıktılarını denetimlerde hızlıca bulabilir, firma bazında saklayabilirsiniz."))
         } else {
-            ForEach(visible) { row in card(row) }
+            ForEach(Array(visible.enumerated()), id: \.element.id) { index, row in
+                card(row).novaRowEntrance(index)
+            }
         }
     }
 

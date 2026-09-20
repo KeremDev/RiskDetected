@@ -112,6 +112,7 @@ struct IsgWorkspaceTrainingCreateEditor: View {
                                isEnabled: !saving && completed == Step.allCases.count) { save() }
                 }
             }.padding(18).novaPopupContentSize(extra: 150)
+                .novaAsyncContent(isLoading: loading)
         }
         .scrollDismissesKeyboard(.interactively)
         .task { await prepare() }
@@ -505,6 +506,7 @@ struct IsgWorkspaceManualNonconformityEditor: View {
                         isEnabled: canSave && !saving) { save() }
                 }
             }.padding(18).novaPopupContentSize(extra: 150)
+                .novaAsyncContent(isLoading: loading)
         }
         .scrollDismissesKeyboard(.interactively)
         .task { await prepare() }
@@ -760,6 +762,7 @@ struct IsgWorkspaceRiskCreateEditor: View {
                                isEnabled: !saving && completed == Step.allCases.count) { save() }
                 }
             }.padding(18).novaPopupContentSize(extra: 120)
+                .novaAsyncContent(isLoading: loading)
         }
         .task { await prepare() }
         .onChange(of: workplaceID) { _ in configureKind() }
@@ -937,6 +940,7 @@ struct IsgWorkspaceEquipmentCreateEditor: View {
                                isEnabled: !saving && completed == Step.allCases.count) { save() }
                 }
             }.padding(18).novaPopupContentSize(extra: 110)
+                .novaAsyncContent(isLoading: loading)
         }.task { await prepare() }
     }
 

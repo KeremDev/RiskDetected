@@ -61,6 +61,7 @@ struct IsgWorkspaceDomainCreateEditor: View {
                         symbol: "checkmark", prominent: true, enabled: canSave && !saving) { save() }
                 }
             }.padding(18).novaPopupContentSize()
+                .novaAsyncContent(isLoading: loading)
         }
         .scrollDismissesKeyboard(.interactively)
         .task { await prepare() }

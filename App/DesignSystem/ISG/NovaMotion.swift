@@ -32,6 +32,10 @@ enum NovaMotion {
         static let modal = 0.32
         /// Reduce Motion replacement: a plain cross-fade with no travel.
         static let reduced = 0.12
+        /// How long a list stays willing to stagger its rows after the first
+        /// records land. Long enough for the first screenful, short enough that
+        /// scrolling never triggers it.
+        static let entranceWindow = 0.6
     }
 
     // MARK: - Curves
@@ -130,6 +134,110 @@ enum NovaHaptics {
     /// The action did not go through.
     static func failure() {
         UINotificationFeedbackGenerator().notificationOccurred(.error)
+    }
+}
+
+/// Cross-fades a page between its loading, error and ready states.
+///
+/// Every İSGADA page branches the same way — an error card, or a spinner, or
+/// the records — and all three used to swap on a single frame: the page was a
+/// spinner, the request landed, and the content was simply there instead. The
+/// jump is worst on the pages that reload when the scene becomes active, where
+/// it happens without the user asking for anything.
+///
+/// It takes the flag the page already branches on rather than a phase enum, so
+/// a screen keeps the structure it has and only gains the transition. Applied
+/// to the page's root, it covers the branch wherever it sits inside.
+private struct NovaAsyncContentTransition: ViewModifier {
+    let isLoading: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content.animation(
+            NovaMotion.gated(NovaMotion.easeOut(NovaMotion.Duration.dropdown), reduceMotion: reduceMotion),
+            value: isLoading)
+    }
+}
+
+extension View {
+    func novaAsyncContent(isLoading: Bool) -> some View {
+        modifier(NovaAsyncContentTransition(isLoading: isLoading))
+    }
+}
+
+private struct NovaRowEntranceKey: EnvironmentKey { static let defaultValue = false }
+
+extension EnvironmentValues {
+    /// True only during the short window after a list's first records land.
+    var novaRowEntranceActive: Bool {
+        get { self[NovaRowEntranceKey.self] }
+        set { self[NovaRowEntranceKey.self] = newValue }
+    }
+}
+
+/// Opens the entrance window on a list container, once per screen.
+///
+/// A group of things arriving together may stagger, but only when the group is
+/// genuinely new to the reader. İSGADA's lists reload whenever the scene
+/// becomes active, on every pull, and after every save — staggering each time
+/// would make people watch their own records re-deal themselves a dozen times a
+/// day, and the records are what they came to read. So the window opens once,
+/// on the first set of rows after this screen was opened, and stays shut for
+/// every later refresh.
+///
+/// The window also closes on a timer, which is what keeps a `LazyVStack` from
+/// animating rows as they scroll into view: by the time the reader has scrolled
+/// anywhere, rows are simply there.
+private struct NovaListEntrance: ViewModifier {
+    let hasRecords: Bool
+    @State private var open = false
+    @State private var spent = false
+
+    func body(content: Content) -> some View {
+        content
+            .environment(\.novaRowEntranceActive, open)
+            .onChange(of: hasRecords) { ready in
+                guard ready, !spent else { return }
+                spent = true
+                open = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + NovaMotion.Duration.entranceWindow) {
+                    open = false
+                }
+            }
+    }
+}
+
+/// The per-row half: a short rise and fade, staggered by position.
+private struct NovaRowEntrance: ViewModifier {
+    let index: Int
+    @Environment(\.novaRowEntranceActive) private var active
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var shown = false
+
+    /// Past the first screenful the delay would outlast the reader's attention,
+    /// and the row is usually not even on screen yet.
+    private var staggered: Bool { active && index < 8 }
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(staggered && !shown ? 0 : 1)
+            .offset(y: staggered && !shown && !reduceMotion ? 8 : 0)
+            .onAppear {
+                guard staggered, !shown else { return }
+                withAnimation(NovaMotion.easeOut(0.26).delay(Double(index) * 0.045)) { shown = true }
+            }
+    }
+}
+
+extension View {
+    /// On the list container. `hasRecords` flips true when the first rows land.
+    func novaListEntrance(hasRecords: Bool) -> some View {
+        modifier(NovaListEntrance(hasRecords: hasRecords))
+    }
+
+    /// On each row, with its position in the list.
+    func novaRowEntrance(_ index: Int) -> some View {
+        modifier(NovaRowEntrance(index: index))
     }
 }
 
