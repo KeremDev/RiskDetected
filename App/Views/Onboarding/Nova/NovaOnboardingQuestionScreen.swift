@@ -54,7 +54,7 @@ struct NovaOBQuestionScreen: View {
                 .foregroundColor(NovaOB.ink)
         }
         .padding(.horizontal, 24)
-        .padding(.top, 60)
+        .padding(.top, NovaOB.padTop(60))
         .padding(.bottom, 12)
         .background(NovaOB.surface)
     }
@@ -145,7 +145,7 @@ struct NovaOBQuestionScreen: View {
         }
         .padding(.horizontal, 24)
         .padding(.top, 10)
-        .padding(.bottom, 34)
+        .padding(.bottom, NovaOB.padBottom(34))
         .background(NovaOB.surface)
     }
 }
@@ -368,7 +368,7 @@ struct NovaOBExperienceWidget: View {
         }
         .padding(.horizontal, 22)
         .padding(.top, 24)
-        .padding(.bottom, 28)
+        .padding(.bottom, NovaOB.padBottom(28))
         .background(NovaOB.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 22, style: .continuous)

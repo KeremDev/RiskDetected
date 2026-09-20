@@ -56,8 +56,8 @@ struct NovaOBTrialScreen: View {
                 .frame(maxHeight: .infinity, alignment: .bottom)
             }
             .padding(.horizontal, 22)
-            .padding(.top, 54)
-            .padding(.bottom, 34)
+            .padding(.top, NovaOB.padTop(54))
+            .padding(.bottom, NovaOB.padBottom(34))
         }
     }
 }
@@ -305,8 +305,8 @@ struct NovaOBTrialHowScreen: View {
                 footer
             }
             .padding(.horizontal, 22)
-            .padding(.top, 54)
-            .padding(.bottom, 30)
+            .padding(.top, NovaOB.padTop(54))
+            .padding(.bottom, NovaOB.padBottom(30))
         }
     }
 
@@ -486,8 +486,8 @@ struct NovaOBPushScreen: View {
             }
         }
         .padding(.horizontal, 24)
-        .padding(.top, 78)
-        .padding(.bottom, 34)
+        .padding(.top, NovaOB.padTop(78))
+        .padding(.bottom, NovaOB.padBottom(34))
         .background(NovaOB.surface.ignoresSafeArea())
     }
 }

@@ -43,8 +43,8 @@ struct NovaOBPrepScreen: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 24)
-        .padding(.top, 96)
-        .padding(.bottom, 40)
+        .padding(.top, NovaOB.padTop(96))
+        .padding(.bottom, NovaOB.padBottom(40))
         .background(NovaOB.surface.ignoresSafeArea())
     }
 
@@ -147,8 +147,8 @@ struct NovaOBProfileCardScreen: View {
                 }
             }
             .padding(.horizontal, 24)
-            .padding(.top, 72)
-            .padding(.bottom, 34)
+            .padding(.top, NovaOB.padTop(72))
+            .padding(.bottom, NovaOB.padBottom(34))
         }
     }
 }
@@ -259,8 +259,8 @@ struct NovaOBEditSummaryScreen: View {
             }
         }
         .padding(.horizontal, 24)
-        .padding(.top, 70)
-        .padding(.bottom, 34)
+        .padding(.top, NovaOB.padTop(70))
+        .padding(.bottom, NovaOB.padBottom(34))
         .background(NovaOB.surface.ignoresSafeArea())
     }
 

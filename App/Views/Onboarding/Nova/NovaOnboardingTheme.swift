@@ -53,6 +53,24 @@ enum NovaOB {
     static func lineSpacing(_ size: CGFloat, _ ratio: CGFloat) -> CGFloat {
         max(0, size * ratio - size * 1.18)
     }
+
+    // MARK: safe-area aware screen padding
+
+    /// The prototype measures its screen padding from the very top and bottom
+    /// of the 393×852 frame — status bar and home indicator included. SwiftUI
+    /// already lays content out inside the safe area, so the design values are
+    /// reduced by the inset to land in the same visual place on device.
+    static func padTop(_ design: CGFloat) -> CGFloat { max(0, design - insets.top) }
+    static func padBottom(_ design: CGFloat) -> CGFloat { max(0, design - insets.bottom) }
+
+    private static var insets: UIEdgeInsets {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .first { $0.isKeyWindow }?
+            .safeAreaInsets
+            ?? UIEdgeInsets(top: 47, left: 0, bottom: 34, right: 0)
+    }
 }
 
 extension Color {

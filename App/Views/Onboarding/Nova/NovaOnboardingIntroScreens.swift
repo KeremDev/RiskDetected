@@ -41,7 +41,8 @@ struct NovaOBSplashScreen: View {
         withAnimation(.linear(duration: 0.3)) { logoVisible = true }
         try? await Task.sleep(nanoseconds: 180_000_000)
         withAnimation(.linear(duration: 0.24)) { mascotOpacity = 0 }
-        try? await Task.sleep(nanoseconds: 240_000_000)
+        // Hold on the wordmark before handing over to the intro.
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
         controller.go(.intro1)
     }
 }
@@ -92,8 +93,8 @@ struct NovaOBIntroScreen: View {
                 footer
             }
             .padding(.horizontal, 24)
-            .padding(.top, 78)
-            .padding(.bottom, 40)
+            .padding(.top, NovaOB.padTop(78))
+            .padding(.bottom, NovaOB.padBottom(40))
         }
         .transition(.opacity)
     }
@@ -223,8 +224,8 @@ struct NovaOBSocialProofScreen: View {
                 }
                 footer
             }
-            .padding(.top, 78)
-            .padding(.bottom, 40)
+            .padding(.top, NovaOB.padTop(78))
+            .padding(.bottom, NovaOB.padBottom(40))
 
             if controller.skipModal {
                 NovaOBSkipModal(
@@ -359,7 +360,7 @@ private struct NovaOBMarquee: View {
         // from propagating out and squeezing the rest of the column.
         Color.clear
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .overlay(alignment: .leading) {
+            .overlay(alignment: .bottomLeading) {
                 HStack(spacing: 12) {
                     ForEach(Array((reviews + reviews).enumerated()), id: \.offset) { _, review in
                         card(review)

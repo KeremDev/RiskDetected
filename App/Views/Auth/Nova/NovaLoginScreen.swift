@@ -50,7 +50,7 @@ struct NovaLoginScreen: View {
                         Image("NovaOBLogo")
                             .resizable().scaledToFit()
                             .frame(width: 168)
-                            .padding(.bottom, 40)
+                            .padding(.bottom, NovaOB.padBottom(40))
                             .scaleEffect(logoShown ? 1 : 0.7)
                             .opacity(logoShown ? 1 : 0)
                             .onAppear {
@@ -87,8 +87,8 @@ struct NovaLoginScreen: View {
                     NovaOBLegalLine(prefix: "Devam ederek", alignment: .center)
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 64)
-                .padding(.bottom, 28)
+                .padding(.top, NovaOB.padTop(64))
+                .padding(.bottom, NovaOB.padBottom(28))
                 .frame(minHeight: UIScreen.main.bounds.height - 40, alignment: .top)
             }
             .scrollDismissesKeyboard(.interactively)
@@ -240,7 +240,7 @@ struct NovaLoginScreen: View {
             }
             .padding(.horizontal, 22)
             .padding(.top, 12)
-            .padding(.bottom, 28)
+            .padding(.bottom, NovaOB.padBottom(28))
             .frame(maxWidth: .infinity)
             .background(
                 NovaOB.surface,
@@ -342,8 +342,8 @@ struct NovaLoginScreen: View {
             .background(NovaOB.fill3, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .padding(.horizontal, 24)
-        .padding(.top, 56)
-        .padding(.bottom, 28)
+        .padding(.top, NovaOB.padTop(56))
+        .padding(.bottom, NovaOB.padBottom(28))
     }
 
     // MARK: done

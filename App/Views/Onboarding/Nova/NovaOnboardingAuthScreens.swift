@@ -192,8 +192,8 @@ struct NovaOBSignupScreen: View {
                 }
             }
             .padding(.horizontal, 24)
-            .padding(.top, 70)
-            .padding(.bottom, 34)
+            .padding(.top, NovaOB.padTop(70))
+            .padding(.bottom, NovaOB.padBottom(34))
             .frame(minHeight: UIScreen.main.bounds.height - 40, alignment: .top)
         }
         .background(NovaOB.surface.ignoresSafeArea())
@@ -320,8 +320,8 @@ struct NovaOBEmailFormScreen: View {
                 }
             }
             .padding(.horizontal, 24)
-            .padding(.top, 70)
-            .padding(.bottom, 34)
+            .padding(.top, NovaOB.padTop(70))
+            .padding(.bottom, NovaOB.padBottom(34))
             .frame(minHeight: UIScreen.main.bounds.height - 40, alignment: .top)
         }
         .scrollDismissesKeyboard(.interactively)
@@ -564,8 +564,8 @@ struct NovaOBOtpScreen: View {
                 Spacer(minLength: 12)
             }
             .padding(.horizontal, 24)
-            .padding(.top, 70)
-            .padding(.bottom, 34)
+            .padding(.top, NovaOB.padTop(70))
+            .padding(.bottom, NovaOB.padBottom(34))
             .frame(minHeight: UIScreen.main.bounds.height - 40, alignment: .top)
         }
         .background(NovaOB.surface.ignoresSafeArea())
