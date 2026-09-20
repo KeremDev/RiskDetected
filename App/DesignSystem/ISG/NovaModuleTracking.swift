@@ -142,7 +142,7 @@ struct NovaModuleTrackingCard: View {
                                     Image(systemName: "chevron.right").font(.system(size: 11))
                                 }.frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
                                     .contentShape(Rectangle())
-                            }.buttonStyle(.plain).disabled(!row.available)
+                            }.buttonStyle(NovaRowPressStyle()).disabled(!row.available)
                                 .accessibilityIdentifier("nova.tracking.\(row.id)")
                         }
                         Button { expanded.toggle() } label: {

@@ -15,7 +15,7 @@ struct NovaFileSourceLinks: View {
             ForEach(rows) { row in
                 Button { selected = row } label: {
                     HStack { Image(systemName: "link"); NovaText(text: row.typeTitle + " · " + row.title, style: .meta); Spacer(); Image(systemName: "chevron.right") }
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
             }
         }
         .task(id: "\(entry.id):\(revision)") {

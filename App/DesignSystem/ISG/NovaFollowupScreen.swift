@@ -87,7 +87,7 @@ struct NovaFollowupScreen: View {
                                     NovaText(text: NovaFollowupPage.statusTitle(row.status) + (row.due_on.map { " · " + $0 } ?? ""), style: .meta)
                                 }.frame(maxWidth: .infinity, alignment: .leading)
                             }
-                        }.buttonStyle(.plain)
+                        }.buttonStyle(NovaRowPressStyle())
                     }
                     if page?.has_more == true { Button("Daha fazla") { Task { await load(more: true) } }.disabled(busy) }
                 }.padding(16)
@@ -138,7 +138,7 @@ struct NovaFollowupSummaryCard: View {
                     else { NovaText(text: "Evrak ve belge sürelerini aç", style: .meta) }
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
         .task(id: "\(company?.uuidString ?? "all"):\(revision)") { page = try? await NovaFollowupService(identity: identity).load(company: company) }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("isgada.records.changed"))) { _ in revision += 1 }
         .novaPopup(isPresented: $show) { NovaFollowupScreen(identity: identity, initialCompany: company, canWrite: canWrite, onBack: { show = false }) }

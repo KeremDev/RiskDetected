@@ -294,7 +294,7 @@ struct NovaCompanyWorkspace: View {
             NovaPersonnelDestination(scope: scope, companyName: companyName, client: personnel,
                 onBack: { personnelPage = false }, directory: directory, canWrite: canWrite, preview: false)
         }
-        .novaFullScreenCover(item: $sheet, onDismiss: { summaryRevision = UUID() }) { destination in
+        .novaPopupCover(item: $sheet, onDismiss: { summaryRevision = UUID() }) { destination in
             NovaPopup {
             NavigationStack {
                 switch destination {
@@ -350,7 +350,7 @@ struct NovaCompanyWorkspace: View {
                 if let tag { NovaStatusPill(label: tag.0, status: tag.1) }
                 Image(systemName: "chevron.right").font(.system(size: 11))
             }.frame(minHeight: 40).contentShape(Rectangle())
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
     }
     /// Nothing on file yet — say so plainly and offer the one action that
     /// fixes it instead of navigating to an empty list.
@@ -389,7 +389,7 @@ struct NovaCompanyWorkspace: View {
                 NovaStatusPill(label: appointment.state.title, status: appointmentStatus(appointment.state))
                 Image(systemName: "chevron.right").font(.system(size: 11))
             }.frame(minHeight: 40).contentShape(Rectangle())
-        }.buttonStyle(.plain).disabled(appointment.employeeID == nil)
+        }.buttonStyle(NovaRowPressStyle()).disabled(appointment.employeeID == nil)
     }
     private func riskGroupStatus(_ group: NovaRiskGroup) -> NovaStatus {
         switch group {
@@ -423,7 +423,7 @@ struct NovaCompanyWorkspace: View {
                 NovaStatusPill(label: row.group.title, status: riskGroupStatus(row.group))
                 Image(systemName: "chevron.right").font(.system(size: 11))
             }.frame(minHeight: 40).contentShape(Rectangle())
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
     }
     private func statStrip(_ items: [(String, String, Int)], identifier: String) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -570,7 +570,7 @@ struct NovaCompanyWorkspace: View {
                 if !personnelQuery.isEmpty {
                     Button { personnelQuery = "" } label: {
                         Image(systemName: "xmark.circle.fill").frame(width: 36, height: 36)
-                    }.buttonStyle(.plain).accessibilityLabel(RDLocalization.string("localizable.nova.nonconformity.search.clear", table: .localizable, fallback: "Aramayı temizle"))
+                    }.buttonStyle(NovaRowPressStyle()).accessibilityLabel(RDLocalization.string("localizable.nova.nonconformity.search.clear", table: .localizable, fallback: "Aramayı temizle"))
                 }
             }
             .padding(.horizontal, 12).frame(minHeight: 46)
@@ -613,7 +613,7 @@ struct NovaCompanyWorkspace: View {
                         .padding(.horizontal, 10).frame(maxWidth: .infinity, minHeight: 48)
                         .novaControlBackground(cornerRadius: 13)
                         .contentShape(Rectangle())
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(NovaRowPressStyle())
                 }
             }
             HStack(spacing: 8) {
@@ -684,7 +684,7 @@ struct NovaCompanyWorkspace: View {
                         .accessibilityLabel(RDLocalization.string("localizable.nova.visual.2", table: .localizable, fallback: "Güncelle")).accessibilityIdentifier("company.edit")
                     Button { sheet = .deleteCompany } label: { Image(systemName: "trash").foregroundStyle(.red).frame(width: 36, height: 30) }
                         .accessibilityLabel(RDLocalization.string("localizable.nova.visual.3", table: .localizable, fallback: "Sil")).accessibilityIdentifier("company.delete")
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
                 if summaryFailed {
                     NovaButton(label: RDLocalization.string("localizable.nova.company.summary.retry", table: .localizable, fallback: "Özeti tekrar yükle"), symbol: "arrow.clockwise", variant: .surface) { summaryRevision = UUID() }
                 }
@@ -733,7 +733,7 @@ struct NovaCompanyWorkspace: View {
                             .background(NovaColorToken.surfaceMuted.color(in: scheme), in: Capsule())
                             .contentShape(Capsule())
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(NovaRowPressStyle())
                         .disabled(!canWrite || companyRecord == nil)
                         .accessibilityIdentifier("company.logo.picker")
                     }
@@ -861,7 +861,7 @@ struct NovaCompanyWorkspace: View {
                                 }
                                 .padding(.horizontal, 10).frame(maxWidth: .infinity, minHeight: 48)
                                 .novaControlBackground(cornerRadius: 13).contentShape(Rectangle())
-                            }.buttonStyle(.plain).disabled(onOpenNonconformities == nil)
+                            }.buttonStyle(NovaRowPressStyle()).disabled(onOpenNonconformities == nil)
                         }
                     }
                     if let onOpenNonconformities {
@@ -892,6 +892,6 @@ struct NovaCompanyWorkspace: View {
                     NovaIcon(symbol: "chevron.right", size: 12)
                 }.frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
             }
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
     }
 }

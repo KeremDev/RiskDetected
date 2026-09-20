@@ -109,7 +109,7 @@ private struct IsgWorkspaceChooser: View {
                         Spacer(minLength: 0)
                         Button { store.refresh() } label: {
                             Image(systemName: "arrow.clockwise").frame(width: 44, height: 44)
-                        }.buttonStyle(.plain)
+                        }.buttonStyle(NovaRowPressStyle())
                             .accessibilityLabel(RDLocalization.string("localizable.nova.workspace.refresh", table: .localizable,
                                 fallback: "Çalışma alanlarını yenile"))
                     }
@@ -152,13 +152,13 @@ private struct IsgWorkspaceChooser: View {
                                     Image(systemName: "chevron.right")
                                 }.frame(maxWidth: .infinity, minHeight: 52)
                             }
-                        }.buttonStyle(.plain)
+                        }.buttonStyle(NovaRowPressStyle())
                     }
                 }.padding(18)
             }
         }
         .preferredColorScheme(.light)
-        .novaFullScreenCover(item: $accessRoute) { route in
+        .novaPopupCover(item: $accessRoute) { route in
             NovaPopup {
                 IsgWorkspaceAccessEditor(mode: route.mode) { value in
                     switch route.mode {
@@ -376,7 +376,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                   store.selectedCompanyID == companyWorkspaceID else { return }
             companyPersonnel = try? await store.personnelMetrics(companyID: companyWorkspaceID)
         }
-        .novaFullScreenCover(item: $editor) { route in
+        .novaPopupCover(item: $editor) { route in
             NovaPopup {
                 IsgWorkspaceCompanyEditor(company: route.company, store: store,
                     onSave: { mutationID, profileMutationID, draft, selectedExpertIDs, assignmentRole in
@@ -417,7 +417,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                     })
             }
         }
-        .novaFullScreenCover(isPresented: $showingMembers) {
+        .novaPopupCover(isPresented: $showingMembers) {
             NovaPopup { IsgWorkspaceMemberManagement(store: store) }
         }
         .novaFullScreenCover(isPresented: $showingAssignments) {
@@ -499,7 +499,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                             Spacer(minLength: 0)
                             Image(systemName: "chevron.right")
                         }.contentShape(Rectangle())
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(NovaRowPressStyle())
                 }
             }
             if context?.canManageMembers == true {
@@ -514,7 +514,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                             Spacer(minLength: 0)
                             Image(systemName: "chevron.right")
                         }.contentShape(Rectangle())
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(NovaRowPressStyle())
                 }
             }
             moduleGrid
@@ -560,7 +560,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                             Spacer(minLength: 0)
                             Image(systemName: "chevron.right")
                         }.contentShape(Rectangle())
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(NovaRowPressStyle())
                 }
                 NovaCard(padding: 14) {
                     Button { navigate(.documents) } label: {
@@ -573,7 +573,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                             Spacer(minLength: 0)
                             Image(systemName: "chevron.right")
                         }.contentShape(Rectangle())
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(NovaRowPressStyle())
                 }
             }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
         }
@@ -603,7 +603,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                                 Image(systemName: "chevron.right")
                             }.contentShape(Rectangle())
                         }
-                    }.buttonStyle(.plain).disabled(selectedCompany == nil)
+                    }.buttonStyle(NovaRowPressStyle()).disabled(selectedCompany == nil)
                 }
             }.padding(16).padding(.bottom, novaTabBarInset)
         }
@@ -645,7 +645,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                                 Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
                             }.frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
                         }
-                    }.buttonStyle(.plain).disabled(selectedCompany == nil)
+                    }.buttonStyle(NovaRowPressStyle()).disabled(selectedCompany == nil)
                 }
                 Button { navigate(.analyses) } label: {
                     NovaCard(padding: 12) {
@@ -656,7 +656,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                             Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
                         }.frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
                     }
-                }.buttonStyle(.plain).disabled(selectedCompany == nil)
+                }.buttonStyle(NovaRowPressStyle()).disabled(selectedCompany == nil)
             }
         }
     }
@@ -713,7 +713,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                         if canManageCompanies {
                             Button { editor = .edit(company) } label: {
                                 Image(systemName: "pencil").frame(width: 44, height: 44)
-                            }.buttonStyle(.plain).accessibilityLabel("Firmayı düzenle")
+                            }.buttonStyle(NovaRowPressStyle()).accessibilityLabel("Firmayı düzenle")
                         }
                     }
                 }
@@ -732,7 +732,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                                 Spacer(minLength: 0)
                                 Image(systemName: "chevron.right")
                             }.contentShape(Rectangle())
-                        }.buttonStyle(.plain)
+                        }.buttonStyle(NovaRowPressStyle())
                     }
                     companyModuleGrid
                 }
@@ -754,7 +754,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                                 Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
                             }.frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
                         }
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(NovaRowPressStyle())
                 }
                 Button { companyWorkspaceAnalyses = true } label: {
                     NovaCard(padding: 12) {
@@ -765,7 +765,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                             Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
                         }.frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
                     }
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
             }
         }
     }
@@ -896,7 +896,7 @@ private struct IsgOSGBWorkspaceRoot: View {
             Button(action: onSwitchWorkspace) {
                 HStack(spacing: 5) { Image(systemName: "arrow.triangle.2.circlepath"); NovaText(text: role(context?.membership.role ?? "expert"), style: .meta) }
                     .padding(.horizontal, 10).frame(minHeight: 44).novaControlBackground(cornerRadius: 15)
-            }.buttonStyle(.plain)
+            }.buttonStyle(NovaRowPressStyle())
         }
     }
 
@@ -945,12 +945,12 @@ private struct IsgOSGBWorkspaceRoot: View {
                     Spacer(minLength: 0)
                     if store.selectedCompanyID == company.id { Image(systemName: "checkmark.circle.fill") }
                     }.contentShape(Rectangle())
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
                 if canManageCompanies {
                     Button { editor = .edit(company) } label: {
                         Image(systemName: "pencil").frame(width: 44, height: 44)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(NovaRowPressStyle())
                     .accessibilityLabel(RDLocalization.string("localizable.nova.workspace.company.edit", table: .localizable,
                         fallback: "Firmayı düzenle"))
                 }
@@ -1405,7 +1405,7 @@ private struct IsgWorkspaceCompanyEditor: View {
                                         Spacer(minLength: 0)
                                         Image(systemName: selectedExpertIDs.contains(member.id) ? "checkmark.circle.fill" : "circle")
                                     }.frame(minHeight: 42).contentShape(Rectangle())
-                                }.buttonStyle(.plain)
+                                }.buttonStyle(NovaRowPressStyle())
                             }
                         }
                     }
@@ -1474,7 +1474,7 @@ private struct IsgWorkspaceCompanyEditor: View {
                 Image(systemName: "chevron.up.chevron.down").font(.system(size: 11, weight: .semibold))
             }.padding(.horizontal, 10).frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
                 .novaControlBackground(cornerRadius: 14)
-        }.buttonStyle(.plain).frame(maxWidth: .infinity)
+        }.buttonStyle(NovaRowPressStyle()).frame(maxWidth: .infinity)
             .accessibilityLabel("Tehlike sınıfı, \(hazardTitle)")
     }
 
@@ -1506,7 +1506,7 @@ private struct IsgWorkspaceCompanyEditor: View {
                     Image(systemName: "chevron.down").font(.system(size: 12, weight: .semibold))
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                 }.frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-            }.buttonStyle(.plain)
+            }.buttonStyle(NovaRowPressStyle())
             if isExpanded {
                 VStack(alignment: .leading, spacing: 10) { content() }
                     .padding(.top, 3).padding(.bottom, 4)
@@ -1836,7 +1836,7 @@ struct NovaPilotRoot: View {
                 .accessibilityIdentifier("nova.pilot.root")
                 .allowsHitTesting(false)
         }
-        .novaFullScreenCover(isPresented: $showingCreate) {
+        .novaPopupCover(isPresented: $showingCreate) {
             NovaPopup {
             NovaPilotCompanyCreateView(identity: identity, service: .live()) { companyID in
                 listRevision = UUID()
@@ -2308,7 +2308,7 @@ private struct NovaWorkspaceExpertFindingsGate: View {
                     Image(systemName: "chevron.right")
                 }.frame(maxWidth: .infinity, minHeight: 58).contentShape(Rectangle())
             }
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
     }
 
     private func analysisGate(startInCreateMode: Bool,
@@ -2470,7 +2470,7 @@ private struct NovaWorkspaceExpertCompanyDetail: View {
                                 Image(systemName: "chevron.right")
                             }.contentShape(Rectangle())
                         }
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(NovaRowPressStyle())
                     if loading { NovaLoadingView(message: "Firma başlıkları güncelleniyor…") }
                     NovaCompanyAccordion(title: "Firma Bilgileri", symbol: "building.2",
                         identifier: "workspace.company.info",
@@ -2624,7 +2624,7 @@ private struct NovaWorkspaceExpertStatisticsScreen: View {
                     NovaText(text: title, style: .meta)
                 }.frame(maxWidth: .infinity, minHeight: 100, alignment: .leading)
             }
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
     }
 }
 
@@ -2660,7 +2660,7 @@ private struct NovaWorkspaceExpertReportCenter: View {
                     Image(systemName: "chevron.right")
                 }.contentShape(Rectangle())
             }
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
     }
 }
 
