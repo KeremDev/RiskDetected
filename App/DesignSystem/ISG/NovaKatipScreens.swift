@@ -78,7 +78,7 @@ struct NovaKatipContractCard: View {
                 }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NovaRowPressStyle())
         .accessibilityIdentifier("nova.katip.row.\(entry.id.uuidString)")
     }
 

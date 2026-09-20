@@ -39,13 +39,13 @@ struct IsgWorkspaceInlineAttachmentField: View {
                     Image(systemName: attachment == nil ? "chevron.right" : "arrow.triangle.2.circlepath")
                 }
                 .padding(12).contentShape(Rectangle()).novaControlBackground(cornerRadius: 14)
-            }.buttonStyle(.plain)
+            }.buttonStyle(NovaRowPressStyle())
 
             if attachment != nil {
                 Button(role: .destructive) { attachment = nil } label: {
                     Label("Seçimi kaldır", systemImage: "xmark.circle")
                         .font(NovaFont.font(.meta))
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
             }
             if let error { NovaHelpHint(text: error) }
         }
@@ -125,7 +125,7 @@ struct IsgWorkspaceFileCreateEditor: View {
                             Image(systemName: "chevron.right")
                         }.contentShape(Rectangle())
                     }
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
 
                 if payload != nil {
                     TextField(RDLocalization.string(

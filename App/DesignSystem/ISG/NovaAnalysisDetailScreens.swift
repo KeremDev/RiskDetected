@@ -276,7 +276,7 @@ struct NovaAnalysisDetailScreen: View {
             .foregroundStyle(NovaColorToken.statusInfoInk.color(in: scheme))
             .padding(.horizontal, 8).padding(.vertical, 5)
             .background(NovaColorToken.statusInfoBg.color(in: scheme), in: Capsule())
-        }.buttonStyle(.plain).accessibilityIdentifier("analysis.detail.assign")
+        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("analysis.detail.assign")
     }
 
     /// The analysed picture; tapping it opens the full size in a popup rather
@@ -297,7 +297,7 @@ struct NovaAnalysisDetailScreen: View {
                                 .padding(3)
                         }
                     }
-            }.buttonStyle(.plain)
+            }.buttonStyle(NovaRowPressStyle())
                 .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.analysis.photo.open", table: .localizable, fallback: "Analiz fotoğrafını büyüt")))
                 .accessibilityIdentifier("analysis.detail.photo")
         } else {
@@ -397,7 +397,7 @@ struct NovaAnalysisDetailScreen: View {
                             : RDLocalization.string("localizable.nova.analysis.selection.all", table: .localizable, fallback: "Tümünü seç"),
                             style: .buttonSm, color: NovaColorToken.text.color(in: scheme))
                     }.foregroundStyle(NovaColorToken.text.color(in: scheme)).frame(minHeight: 30)
-                }.buttonStyle(.plain).accessibilityIdentifier("analysis.detail.select.all")
+                }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("analysis.detail.select.all")
             }
         }
     }
@@ -471,7 +471,7 @@ struct NovaAnalysisDetailScreen: View {
                     .novaControlBackground(cornerRadius: 18)
                     .overlay(RoundedRectangle(cornerRadius: 18)
                         .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
-                }.buttonStyle(.plain).accessibilityIdentifier("analysis.detail.back")
+                }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("analysis.detail.back")
                 if selectable && !selected.isEmpty {
                     primary(RDLocalization.string("localizable.nova.analysis.file.run.short", table: .localizable, fallback: "Firmaya Aktar"),
                             symbol: "arrow.right.doc.on.clipboard", id: "file") { filing = true }
@@ -505,6 +505,6 @@ struct NovaAnalysisDetailScreen: View {
             .padding(.leading, 16).padding(.trailing, 8)
             .frame(maxWidth: .infinity, minHeight: 54)
             .background(NovaColorToken.inverse.color(in: scheme), in: RoundedRectangle(cornerRadius: 18))
-        }.buttonStyle(.plain).accessibilityIdentifier("analysis.detail.\(id)")
+        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("analysis.detail.\(id)")
     }
 }

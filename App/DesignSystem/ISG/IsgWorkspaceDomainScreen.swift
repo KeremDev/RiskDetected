@@ -218,7 +218,7 @@ struct IsgWorkspaceDomainScreen: View {
                 .font(NovaFont.font(.body)).submitLabel(.done)
             if !query.isEmpty {
                 Button { query = "" } label: { Image(systemName: "xmark.circle").frame(width: 36, height: 36) }
-                    .buttonStyle(.plain)
+                    .buttonStyle(NovaRowPressStyle())
                     .accessibilityLabel(RDLocalization.string(
                         "localizable.nova.nonconformity.search.clear", table: .localizable,
                         fallback: "Aramayı temizle"))
@@ -368,7 +368,7 @@ struct IsgWorkspaceDomainScreen: View {
                     else { Image(systemName: "chevron.right") }
                 }.contentShape(Rectangle())
             }
-        }.buttonStyle(.plain).disabled(detailLoadingID != nil)
+        }.buttonStyle(NovaRowPressStyle()).disabled(detailLoadingID != nil)
     }
 
     private func open(_ row: IsgWorkspaceDomainRecord) {
@@ -1250,7 +1250,7 @@ private struct IsgWorkspaceDomainActionEditor: View {
                         NovaText(text: employee.name, style: .body)
                         Spacer()
                     }.frame(minHeight: 44).contentShape(Rectangle())
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
             }
         }.padding(12).novaControlBackground(cornerRadius: 14)
     }

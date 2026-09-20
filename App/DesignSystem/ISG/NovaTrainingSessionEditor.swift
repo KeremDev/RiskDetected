@@ -113,7 +113,7 @@ struct NovaTrainingSessionEditor: View {
                             else { selected[company.id] = [] }
                         } label: {
                             HStack { Image(systemName: selected[company.id] == nil ? "circle" : "checkmark.circle"); Text(company.name); Spacer() }
-                        }.buttonStyle(.plain).font(NovaFont.font(.body)).disabled(!writable || !writableCompanies.contains(company.id))
+                        }.buttonStyle(NovaRowPressStyle()).font(NovaFont.font(.body)).disabled(!writable || !writableCompanies.contains(company.id))
                         if let ids = selected[company.id] {
                             if let rule = item?.rules[company.hazard_class] {
                                 Text("\(rule.minutes / 60) sa \(rule.minutes % 60) dk · \(validity(rule.months))")
@@ -128,7 +128,7 @@ struct NovaTrainingSessionEditor: View {
                                         Image(systemName: ids.contains(person.id) ? "checkmark.square" : "square")
                                         Text(person.name); Spacer()
                                     }.font(NovaFont.font(.body)).frame(minHeight: 34)
-                                }.buttonStyle(.plain).disabled(!writable)
+                                }.buttonStyle(NovaRowPressStyle()).disabled(!writable)
                             }
                             if employees[company.id]?.isEmpty != false { Text("Bu firmada aktif personel yok.").font(NovaFont.font(.meta)) }
                             ForEach(original?.companies.first(where: { $0.company_id == company.id })?.participants.filter { person in
@@ -139,7 +139,7 @@ struct NovaTrainingSessionEditor: View {
                                     else { selected[company.id]?.insert(person.id) }
                                 } label: {
                                     Label("\(person.name) · eski kayıt", systemImage: ids.contains(person.id) ? "checkmark.square" : "square").font(NovaFont.font(.meta))
-                                }.buttonStyle(.plain).disabled(!writable)
+                                }.buttonStyle(NovaRowPressStyle()).disabled(!writable)
                             }
                         }
                     }.padding(.vertical, 5)

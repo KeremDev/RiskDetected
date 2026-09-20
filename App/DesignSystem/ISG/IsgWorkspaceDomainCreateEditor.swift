@@ -232,7 +232,7 @@ struct IsgWorkspaceDomainCreateEditor: View {
                                     NovaText(text: employee.name, style: .body)
                                     Spacer(minLength: 0)
                                 }.frame(minHeight: 42).contentShape(Rectangle())
-                            }.buttonStyle(.plain)
+                            }.buttonStyle(NovaRowPressStyle())
                         }
                     }
                 }
@@ -351,7 +351,7 @@ struct IsgWorkspaceDomainCreateEditor: View {
                             NovaText(text: employee.name, style: .body)
                             Spacer(minLength: 0)
                         }.frame(minHeight: 42).contentShape(Rectangle())
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(NovaRowPressStyle())
                 }
             }
         }
@@ -385,7 +385,7 @@ struct IsgWorkspaceDomainCreateEditor: View {
                                 NovaText(text: employee.name, style: .body)
                                 Spacer(minLength: 0)
                             }.frame(minHeight: 42).contentShape(Rectangle())
-                        }.buttonStyle(.plain)
+                        }.buttonStyle(NovaRowPressStyle())
                         if showsRoles && selectedEmployeeIDs.contains(employee.id) {
                             Picker("Ekip görevi", selection: emergencyRoleBinding(employee.id)) {
                                 ForEach(["coordinator", "fire", "first_aid", "evacuation", "other"], id: \.self) {
@@ -405,7 +405,7 @@ struct IsgWorkspaceDomainCreateEditor: View {
             TextField("Personel ara", text: $employeeQuery)
             if !employeeQuery.isEmpty {
                 Button { employeeQuery = "" } label: { Image(systemName: "xmark.circle.fill") }
-                    .buttonStyle(.plain)
+                    .buttonStyle(NovaRowPressStyle())
             }
         }.padding(.horizontal, 12).frame(minHeight: 44).novaControlBackground(cornerRadius: 14)
     }

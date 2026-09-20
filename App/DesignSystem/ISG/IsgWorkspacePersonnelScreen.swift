@@ -137,7 +137,7 @@ struct IsgWorkspacePersonnelScreen: View {
                             .foregroundStyle(section == item ? Color.white : Color.primary)
                             .padding(.horizontal, 12).frame(minHeight: 38)
                             .background(section == item ? Color.black : Color.white.opacity(0.72), in: Capsule())
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(NovaRowPressStyle())
                 }
             }
         }
@@ -150,7 +150,7 @@ struct IsgWorkspacePersonnelScreen: View {
                 fallback: "Kayıtlarda ara"), text: $query).font(NovaFont.font(.body))
             if !query.isEmpty {
                 Button { query = "" } label: { Image(systemName: "xmark.circle").frame(width: 36, height: 36) }
-                    .buttonStyle(.plain).accessibilityLabel(RDLocalization.string(
+                    .buttonStyle(NovaRowPressStyle()).accessibilityLabel(RDLocalization.string(
                         "localizable.nova.nonconformity.search.clear", table: .localizable, fallback: "Aramayı temizle"))
             }
         }.padding(.horizontal, 12).frame(minHeight: 48).novaControlBackground(cornerRadius: 16)
@@ -209,7 +209,7 @@ struct IsgWorkspacePersonnelScreen: View {
                     Image(systemName: "chevron.right").accessibilityHidden(true)
                 }.contentShape(Rectangle())
             }
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
     }
 
     private var visibleCount: Int {

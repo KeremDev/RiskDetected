@@ -178,14 +178,14 @@ private struct PersonnelContent: View {
                                 Spacer(); NovaIcon(symbol: "chevron.right", size: 16)
                             }
                         }
-                    }.buttonStyle(.plain).disabled(pending != nil || reconciling).accessibilityIdentifier("personnel.row.\(row.id.uuidString.lowercased())")
+                    }.buttonStyle(NovaRowPressStyle()).disabled(pending != nil || reconciling).accessibilityIdentifier("personnel.row.\(row.id.uuidString.lowercased())")
                 }
                 if loading { ProgressView().frame(maxWidth: .infinity).accessibilityIdentifier("personnel.loading") }
                 if preview, (!rows.isEmpty || next != nil), let onShowAll {
                     Button(action: onShowAll) {
                         HStack { NovaText(text: RDLocalization.string("localizable.nova.personnel.see.all", table: .localizable, fallback: "Tümünü gör"), style: .meta, color: NovaColorToken.accentInk.color(in: scheme)); Spacer(); NovaIcon(symbol: "chevron.right", size: 13) }
                             .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
-                    }.buttonStyle(.plain).accessibilityIdentifier("personnel.show.all")
+                    }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("personnel.show.all")
                 } else if let next, !loading {
                     NovaButton(label: RDLocalization.string("localizable.nova.personnel.screens.daha.fazla.goster.3e8d6c6b", table: .localizable, fallback: "Daha fazla göster"), symbol: "chevron.down", variant: .surface, action: { requestedPage = next })
                 }
@@ -248,7 +248,7 @@ private struct PersonnelHeading: View {
                     HStack(spacing: 4) { Image(systemName: "plus").font(.system(size: 11, weight: .medium)); NovaSizedText(text: trailingTitle ?? "Ekle", size: 11.5, weight: "Medium") }
                         .padding(.horizontal, 15).frame(minWidth: 108, minHeight: 32)
                         .foregroundStyle(NovaColorToken.onAccent.color(in: scheme))
-                }.buttonStyle(.plain).disabled(!isBackEnabled).accessibilityIdentifier("personnel.add")
+                }.buttonStyle(NovaRowPressStyle()).disabled(!isBackEnabled).accessibilityIdentifier("personnel.add")
             }
         }
     }
@@ -365,7 +365,7 @@ private struct NovaEmployeeEditor: View {
                                 .focused($focusedField, equals: "department").submitLabel(.done).onSubmit { focusedField = nil }
                             ForEach(departments) { d in
                                 Button { state.selectedDepartment = d; state.departmentText = "" } label: { HStack { NovaIcon(symbol: "building.2", size: 18); NovaText(text: d.name); Spacer(); NovaIcon(symbol: "plus", size: 16) }.frame(minHeight: 44) }
-                                    .buttonStyle(.plain).disabled(!state.canEdit).accessibilityIdentifier("personnel.department.\(d.id.uuidString.lowercased())")
+                                    .buttonStyle(NovaRowPressStyle()).disabled(!state.canEdit).accessibilityIdentifier("personnel.department.\(d.id.uuidString.lowercased())")
                             }
                             if let departmentNext { Button(RDLocalization.string("localizable.nova.personnel.screens.diger.departmanlar.d52232c2", table: .localizable, fallback: "Diğer departmanlar")) { departmentPage = departmentNext }.disabled(!state.canEdit) }
                             if departmentsError { NovaText(text: RDLocalization.string("localizable.nova.personnel.screens.departman.listesi.yuklenemedi.bos.birakabilir.ve.256eb508", table: .localizable, fallback: "Departman listesi yüklenemedi. Boş bırakabilir veya yeni ad yazabilirsiniz."), style: .metaQuiet) }

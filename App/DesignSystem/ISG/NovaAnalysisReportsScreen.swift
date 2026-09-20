@@ -68,7 +68,7 @@ struct NovaAnalysisReportsScreen: View {
                     .frame(width: 44, height: 44)
                     .overlay(RoundedRectangle(cornerRadius: 14)
                         .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
-            }.buttonStyle(.plain)
+            }.buttonStyle(NovaRowPressStyle())
                 .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.analysis.list.refresh", table: .localizable, fallback: "Listeyi yenile")))
                 .accessibilityIdentifier("analysis.reports.refresh")
         }
@@ -151,7 +151,7 @@ struct NovaAnalysisReportsScreen: View {
                     }
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             // A report whose analysis is gone still lists; it simply does not
             // open one, and it is not greyed out as if the row were broken.
             .allowsHitTesting(row.analysisID != nil)

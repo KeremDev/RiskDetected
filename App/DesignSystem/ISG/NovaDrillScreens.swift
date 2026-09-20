@@ -78,7 +78,7 @@ struct NovaDrillCard: View {
                 }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NovaRowPressStyle())
         .accessibilityIdentifier("nova.drill.row.\(drill.id.uuidString)")
     }
 

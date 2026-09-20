@@ -110,7 +110,7 @@ struct IsgWorkspaceTrainingAdvancedScreen: View {
                     Spacer(); if row.kind != "attempt" { Image(systemName: "chevron.right") }
                 }.contentShape(Rectangle())
             }
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
     }
     @MainActor private func load() async {
         loading = true; error = nil
@@ -236,7 +236,7 @@ private struct IsgWorkspaceTrainingAdvancedEditor: View {
                         Spacer(); NovaText(text: "\(topic.durationMinutes) dk", style: .metaQuiet)
                         Image(systemName: "chevron.right")
                     }.padding(12).novaControlBackground(cornerRadius: 14).contentShape(Rectangle())
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
             }
             field("Konu başlığı", text: $title); field("Konu açıklaması", text: $notes)
             Stepper("Sıra: \(number)", value: $number, in: 1...999)

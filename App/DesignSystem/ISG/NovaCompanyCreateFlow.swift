@@ -40,7 +40,7 @@ struct NovaCompanyCreateFlow<Catalogue, Content: View>: View {
                         if fixedCompany == nil { Button { self.loaded = nil; self.selected = nil } label: {
                             Label("Değiştir", systemImage: "arrow.left.arrow.right")
                                 .font(NovaFont.font(.micro)).fixedSize().frame(minHeight: 36)
-                        }.buttonStyle(.plain).disabled(formBusy) }
+                        }.buttonStyle(NovaRowPressStyle()).disabled(formBusy) }
                     }.padding(.horizontal, 14).padding(.vertical, 4)
                     .novaControlBackground(cornerRadius: 14)
                     .padding(.horizontal, 20).padding(.top, 4)

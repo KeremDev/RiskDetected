@@ -49,7 +49,7 @@ struct NovaNoticeCard: View {
                             }
                         }
                     }.frame(maxWidth: .infinity, alignment: .leading)
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
                     .accessibilityIdentifier("nova.notice.center.row.\(entry.key)")
                 VStack(spacing: 2) {
                     if entry.dismissed {
@@ -79,7 +79,7 @@ struct NovaNoticeCard: View {
             NovaIcon(symbol: symbol, size: 13)
                 .foregroundStyle(NovaColorToken.textMuted.color(in: scheme))
                 .frame(width: 32, height: 32).contentShape(Rectangle())
-        }.buttonStyle(.plain).disabled(disabled)
+        }.buttonStyle(NovaRowPressStyle()).disabled(disabled)
             .accessibilityLabel(Text(verbatim: label)).accessibilityIdentifier(identifier)
     }
 }
@@ -170,7 +170,7 @@ struct NovaNoticeCenterScreen: View {
                         .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .strokeBorder(NovaColorToken.hairline.color(in: scheme), lineWidth: 1))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NovaRowPressStyle())
                 .accessibilityIdentifier("nova.notice.center.scope.\(value.rawValue)")
             }
             Spacer(minLength: 0)

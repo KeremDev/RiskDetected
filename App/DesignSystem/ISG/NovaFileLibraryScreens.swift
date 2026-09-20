@@ -91,7 +91,7 @@ struct NovaFileChooserButton: View {
                 .strokeBorder(isOpen ? NovaColorToken.accentInk.color(in: scheme)
                                      : NovaColorToken.border.color(in: scheme),
                               lineWidth: isOpen ? 1.4 : 1))
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier(identifier)
             .accessibilityValue(Text(verbatim: value))
     }
@@ -169,7 +169,7 @@ struct NovaFileChooserPanel: View {
             .background(isOn ? NovaColorToken.surfaceMuted.color(in: scheme) : .clear,
                 in: RoundedRectangle(cornerRadius: 10))
             .contentShape(Rectangle())
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("\(identifier).\(option.identity)")
             .accessibilityAddTraits(isOn ? .isSelected : [])
     }
@@ -322,7 +322,7 @@ struct NovaFileLibraryScreen: View {
                     .foregroundStyle(NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
                     .padding(.horizontal, 14).frame(minHeight: 44)
                     .background(NovaColorToken.accent.color(in: scheme), in: Capsule())
-                }.buttonStyle(.plain).accessibilityIdentifier("file.library.new")
+                }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("file.library.new")
             }
         }
     }
@@ -363,7 +363,7 @@ struct NovaFileLibraryScreen: View {
                 Button { companyQuery = "" } label: {
                     Image(systemName: "xmark.circle").font(.system(size: 14))
                         .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
                     .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.analysis.search.clear", table: .localizable, fallback: "Aramayı temizle")))
             }
         }
@@ -416,7 +416,7 @@ struct NovaFileLibraryScreen: View {
                     }
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("file.company.\(option.id.uuidString.lowercased())")
     }
 
@@ -583,7 +583,7 @@ struct NovaFileLibraryScreen: View {
                         NovaText(text: RDLocalization.string("localizable.nova.document.more", table: .localizable, fallback: "Daha fazla göster"),
                             style: .meta, color: NovaColorToken.accentInk.color(in: scheme))
                     }.foregroundStyle(NovaColorToken.accentInk.color(in: scheme)).frame(minHeight: 40)
-                }.buttonStyle(.plain).disabled(loading)
+                }.buttonStyle(NovaRowPressStyle()).disabled(loading)
                     .accessibilityIdentifier("file.library.more")
             }
         }
@@ -622,7 +622,7 @@ struct NovaFileLibraryScreen: View {
                     }
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("file.library.row.\(row.id.uuidString.lowercased())")
     }
 

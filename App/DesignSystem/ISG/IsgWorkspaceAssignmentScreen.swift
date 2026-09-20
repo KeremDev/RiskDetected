@@ -73,7 +73,7 @@ struct IsgWorkspaceAssignmentManagement: View {
                         Spacer(minLength: 0)
                         Image(systemName: "chevron.down").rotationEffect(.degrees(detailsExpanded ? 180 : 0))
                     }.frame(minHeight: 38).contentShape(Rectangle())
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
                 if detailsExpanded {
                     if experts.isEmpty {
                         NovaHelpHint(text: label("localizable.nova.workspace.assignment.no.expert",
@@ -132,7 +132,7 @@ struct IsgWorkspaceAssignmentManagement: View {
                 Image(systemName: "chevron.up.chevron.down").font(.system(size: 11, weight: .semibold))
             }.padding(.horizontal, 10).frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
                 .novaControlBackground(cornerRadius: 14)
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
     }
 
     @ViewBuilder private var assignmentList: some View {
@@ -159,7 +159,7 @@ struct IsgWorkspaceAssignmentManagement: View {
                         if assignment.periodState() != .ended {
                             Button { ending = assignment } label: {
                                 Image(systemName: "stop.circle").frame(width: 44, height: 44)
-                            }.buttonStyle(.plain)
+                            }.buttonStyle(NovaRowPressStyle())
                                 .accessibilityLabel(label("localizable.nova.workspace.assignment.end", "Atamayı bitir"))
                         } else {
                             NovaStatusPill(label: label("localizable.nova.workspace.assignment.ended", "Sona eren"), status: .neutral)

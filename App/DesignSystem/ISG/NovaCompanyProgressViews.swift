@@ -131,7 +131,7 @@ struct NovaCompanyAccordion<Content: View>: View {
                         .background(expanded ? NovaColorToken.surfaceMuted.color(in: scheme) : .clear,
                             in: RoundedRectangle(cornerRadius: NovaDimensionToken.radiusCard.value - 2))
                         .contentShape(Rectangle())
-                }.buttonStyle(.plain).accessibilityIdentifier(identifier).accessibilityValue(expanded ? RDLocalization.string("localizable.nova.workspace.expanded", table: .localizable, fallback: "Açık") : RDLocalization.string("localizable.nova.workspace.collapsed", table: .localizable, fallback: "Kapalı"))
+                }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier(identifier).accessibilityValue(expanded ? RDLocalization.string("localizable.nova.workspace.expanded", table: .localizable, fallback: "Açık") : RDLocalization.string("localizable.nova.workspace.collapsed", table: .localizable, fallback: "Kapalı"))
                 if expanded { content().padding(.bottom, 0) }
             }
         }

@@ -373,7 +373,7 @@ struct NovaEmergencyPlanSheet: View {
             if isClearable && value.wrappedValue.isEmpty {
                 Button { value.wrappedValue = NovaDayField.text(Date()) } label: {
                     NovaText(text: "Belirtilmedi", style: .meta)
-                }.buttonStyle(.plain).accessibilityIdentifier("\(identifier).set")
+                }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("\(identifier).set")
             } else {
                 DatePicker("", selection: Binding(
                     get: { NovaDayField.date(value.wrappedValue) ?? Date() },
@@ -385,7 +385,7 @@ struct NovaEmergencyPlanSheet: View {
                 if isClearable {
                     Button { value.wrappedValue = "" } label: {
                         Image(systemName: "xmark.circle").font(.system(size: 13)).frame(width: 28, height: 34)
-                    }.buttonStyle(.plain).accessibilityIdentifier("\(identifier).clear")
+                    }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("\(identifier).clear")
                 }
             }
         }
@@ -411,7 +411,7 @@ struct NovaEmergencyPlanSheet: View {
                         .accessibilityIdentifier("nova.emergency.form.file.replace")
                     Button { draft.assetID = nil } label: {
                         Image(systemName: "xmark.circle").font(.system(size: 12))
-                    }.buttonStyle(.plain).accessibilityIdentifier("nova.emergency.form.file.remove")
+                    }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("nova.emergency.form.file.remove")
                 }
             } else if fileCompany != nil {
                 // The upload area shows up on its own — no "Dosya ekle" tap
@@ -462,7 +462,7 @@ struct NovaEmergencyPlanSheet: View {
                     Spacer(minLength: 0)
                     Button { draft.team.removeAll { $0.id == member.id } } label: {
                         Image(systemName: "xmark.circle").font(.system(size: 12))
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(NovaRowPressStyle())
                 }
             }
             // Only the roles the schema knows, so the snapshot cannot carry one
@@ -483,7 +483,7 @@ struct NovaEmergencyPlanSheet: View {
                                                     : NovaColorToken.surfaceMuted.color(in: scheme),
                                 in: Capsule())
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(NovaRowPressStyle())
                         .accessibilityIdentifier("nova.emergency.form.role.\(role.rawValue)")
                     }
                 }

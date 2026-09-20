@@ -227,7 +227,7 @@ struct NovaFileEntrySheet: View {
             .foregroundStyle(palette.ink.color(in: scheme))
             .frame(maxWidth: .infinity, minHeight: 44)
             .background(palette.background.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
-        }.buttonStyle(.plain).disabled(busy)
+        }.buttonStyle(NovaRowPressStyle()).disabled(busy)
             .accessibilityIdentifier("file.entry.\(id)")
     }
 
@@ -361,7 +361,7 @@ struct NovaInlineFileField: View {
                         .accessibilityIdentifier("nova.inline.file.replace")
                     Button { assetID = "" } label: {
                         Image(systemName: "xmark.circle").font(.system(size: 12))
-                    }.buttonStyle(.plain).accessibilityIdentifier("nova.inline.file.remove")
+                    }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("nova.inline.file.remove")
                 }
                 .padding(12).frame(maxWidth: .infinity, alignment: .leading)
                 .novaControlBackground(cornerRadius: 16)

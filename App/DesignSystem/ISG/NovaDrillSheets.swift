@@ -315,7 +315,7 @@ struct NovaDrillResultSheet: View {
                         Spacer(minLength: 0)
                     }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NovaRowPressStyle())
                 .accessibilityIdentifier("nova.drill.result.person.\(person.id.uuidString)")
             }
             NovaText(text: NovaDrillWords.snapshotNote, style: .meta,

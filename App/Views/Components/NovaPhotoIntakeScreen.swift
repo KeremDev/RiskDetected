@@ -81,7 +81,7 @@ struct NovaPhotoIntakeScreen: View {
                 .clipShape(RoundedRectangle(cornerRadius: 20))
                 .overlay(RoundedRectangle(cornerRadius: 20)
                     .strokeBorder(NovaColorToken.borderStrong.color(in: scheme), style: StrokeStyle(lineWidth: 1.6, dash: [5, 4])))
-        }.buttonStyle(.plain).accessibilityIdentifier("photo.intake.add")
+        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("photo.intake.add")
             .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.photo.intake.add", table: .localizable, fallback: "Fotoğraf ekle")))
     }
 
@@ -104,7 +104,7 @@ struct NovaPhotoIntakeScreen: View {
                             .background(NovaColorToken.surface.color(in: scheme), in: RoundedRectangle(cornerRadius: 16))
                             .overlay(RoundedRectangle(cornerRadius: 16)
                                 .strokeBorder(NovaColorToken.borderStrong.color(in: scheme), style: StrokeStyle(lineWidth: 1.4, dash: [5, 4])))
-                    }.buttonStyle(.plain).accessibilityIdentifier("photo.intake.add.\(slot)")
+                    }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("photo.intake.add.\(slot)")
                 }
             }
             NovaText(text: String(format: RDLocalization.string("localizable.nova.photo.intake.count", table: .localizable,
@@ -122,11 +122,11 @@ struct NovaPhotoIntakeScreen: View {
                         Image(systemName: "xmark").font(.system(size: 11, weight: .bold))
                             .foregroundStyle(NovaColorToken.onInverse.color(in: scheme))
                             .frame(width: 28, height: 28)
-                    }.buttonStyle(.plain).padding(5)
+                    }.buttonStyle(NovaRowPressStyle()).padding(5)
                         .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.photo.intake.remove", table: .localizable, fallback: "Fotoğrafı çıkar")))
                         .accessibilityIdentifier("photo.intake.remove.\(index)")
                 }
-        }.buttonStyle(.plain).accessibilityIdentifier("photo.intake.thumbnail.\(index)")
+        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("photo.intake.thumbnail.\(index)")
     }
 
     private func add(_ values: [UIImage]) {

@@ -197,7 +197,7 @@ struct NovaAnalysisMethodToggle: View {
             .overlay(RoundedRectangle(cornerRadius: 11)
                 .strokeBorder(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.border.color(in: scheme),
                               lineWidth: isOn ? 1.4 : 1))
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("analysis.detail.method.\(value.rawValue)")
             .accessibilityAddTraits(isOn ? .isSelected : [])
     }
@@ -270,7 +270,7 @@ struct NovaAnalysisItemBar: View {
                     Image(systemName: "chevron.right").font(.system(size: 10, weight: .bold))
                         .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
                 }.frame(minHeight: 40).padding(.horizontal, 6)
-            }.buttonStyle(.plain).accessibilityIdentifier("\(identifier).more")
+            }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("\(identifier).more")
         }
         .padding(.horizontal, 7)
         .background(NovaColorToken.surfaceMuted.color(in: scheme))
@@ -281,7 +281,7 @@ struct NovaAnalysisItemBar: View {
             Image(systemName: isOn ? "\(symbol).fill" : symbol).font(.system(size: 14, weight: .medium))
                 .foregroundStyle(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.textSecondary.color(in: scheme))
                 .frame(width: 40, height: 40)
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityLabel(Text(verbatim: label))
             .accessibilityIdentifier("\(identifier).\(id)")
             .accessibilityAddTraits(isOn ? .isSelected : [])
@@ -346,7 +346,7 @@ struct NovaAnalysisFindingCard: View {
                 .foregroundStyle(isSelected ? NovaColorToken.accentInk.color(in: scheme)
                                             : NovaColorToken.borderStrong.color(in: scheme))
                 .frame(width: 34, height: 34)
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityLabel(Text(verbatim: item.title))
             .accessibilityIdentifier("analysis.detail.select.\(item.id.uuidString.lowercased())")
             .accessibilityAddTraits(isSelected ? .isSelected : [])
@@ -415,7 +415,7 @@ struct NovaAnalysisAdviceCard: View {
                 .foregroundStyle(isSelected ? NovaColorToken.accentInk.color(in: scheme)
                                             : NovaColorToken.borderStrong.color(in: scheme))
                 .frame(width: 34, height: 34)
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityLabel(Text(verbatim: item.title))
             .accessibilityIdentifier("analysis.detail.select.\(item.id.uuidString.lowercased())")
             .accessibilityAddTraits(isSelected ? .isSelected : [])
@@ -482,7 +482,7 @@ struct NovaNotebookPanel: View {
                 }
                 Spacer(minLength: 0)
             }.frame(maxWidth: .infinity, alignment: .leading)
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("analysis.notebook.\(item.id.uuidString.lowercased())")
     }
 

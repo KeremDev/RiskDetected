@@ -26,13 +26,13 @@ struct NovaNumberedItemsEditor: View {
                         next.remove(at: index)
                         value = next.joined(separator: "\n")
                     } label: { NovaIcon(symbol: "minus.circle", size: 18).frame(width: 44, height: 44) }
-                    .buttonStyle(.plain).accessibilityLabel("Madde \(index + 1) sil")
+                    .buttonStyle(NovaRowPressStyle()).accessibilityLabel("Madde \(index + 1) sil")
                 }
             }
             Button {
                 value = (lines + [""]).joined(separator: "\n")
             } label: { Label("Madde ekle", systemImage: "plus").font(NovaFont.font(.buttonSm)).frame(minHeight: 44) }
-                .buttonStyle(.plain)
+                .buttonStyle(NovaRowPressStyle())
         }
     }
 }

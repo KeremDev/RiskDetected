@@ -61,7 +61,7 @@ struct NovaAnalysisSearchField: View {
                 Button { text = "" } label: {
                     Image(systemName: "xmark.circle").font(.system(size: 14))
                         .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
                     .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.analysis.search.clear", table: .localizable, fallback: "Aramayı temizle")))
             }
         }
@@ -91,7 +91,7 @@ struct NovaAnalysisFilterChip: View {
             }
             .padding(.horizontal, 13).frame(minHeight: 38)
             .background(isOn ? NovaColorToken.inverse.color(in: scheme) : NovaColorToken.surfaceMuted.color(in: scheme), in: Capsule())
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier(identifier)
             .accessibilityAddTraits(isOn ? .isSelected : [])
     }
@@ -179,7 +179,7 @@ struct NovaAnalysisListScreen: View {
                         .frame(width: 44, height: 44)
                         .overlay(RoundedRectangle(cornerRadius: 14)
                             .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
                     .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.analysis.reports.title", table: .localizable, fallback: "Analiz Raporları")))
                     .accessibilityIdentifier("analysis.list.reports")
             }
@@ -193,7 +193,7 @@ struct NovaAnalysisListScreen: View {
                     .foregroundStyle(NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
                     .padding(.horizontal, 14).frame(minHeight: 44)
                     .background(NovaColorToken.accent.color(in: scheme), in: Capsule())
-                }.buttonStyle(.plain).accessibilityIdentifier("analysis.list.new")
+                }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("analysis.list.new")
             }
         }
     }
@@ -270,7 +270,7 @@ struct NovaAnalysisListScreen: View {
                         NovaText(text: RDLocalization.string("localizable.nova.analysis.list.more", table: .localizable,
                             fallback: "Daha fazla göster"), style: .meta, color: NovaColorToken.accentInk.color(in: scheme))
                     }.frame(maxWidth: .infinity, minHeight: 44)
-                }.buttonStyle(.plain).disabled(loadingMore)
+                }.buttonStyle(NovaRowPressStyle()).disabled(loadingMore)
                     .accessibilityIdentifier("analysis.list.more")
             }
         }
@@ -318,7 +318,7 @@ struct NovaAnalysisListScreen: View {
                         .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme)).padding(.top, 6)
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("analysis.list.row.\(row.id.uuidString.lowercased())")
     }
 

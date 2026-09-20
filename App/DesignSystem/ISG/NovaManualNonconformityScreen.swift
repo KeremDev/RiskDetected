@@ -168,7 +168,7 @@ struct NovaManualNonconformityScreen: View {
                     .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 16))
                     .overlay(RoundedRectangle(cornerRadius: 16)
                         .strokeBorder(NovaColorToken.borderStrong.color(in: scheme), style: StrokeStyle(lineWidth: 1.4, dash: [5, 4])))
-            }.buttonStyle(.plain).accessibilityIdentifier("manual.photo.add")
+            }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("manual.photo.add")
         } else {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
                 ForEach(Array(photos.enumerated()), id: \.offset) { index, image in
@@ -183,17 +183,17 @@ struct NovaManualNonconformityScreen: View {
                                     Image(systemName: "xmark").font(.system(size: 10, weight: .bold))
                                         .foregroundStyle(NovaColorToken.text.color(in: scheme))
                                         .frame(width: 26, height: 26)
-                                }.buttonStyle(.plain).padding(4)
+                                }.buttonStyle(NovaRowPressStyle()).padding(4)
                                     .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.photo.intake.remove", table: .localizable, fallback: "Fotoğrafı çıkar")))
                             }
-                    }.buttonStyle(.plain).accessibilityIdentifier("manual.photo.thumbnail.\(index)")
+                    }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("manual.photo.thumbnail.\(index)")
                 }
                 if photos.count < 3 {
                     Button { choosing = true } label: {
                         Image(systemName: "plus").font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
                             .frame(maxWidth: .infinity).frame(height: 92)
-                    }.buttonStyle(.plain).accessibilityIdentifier("manual.photo.add")
+                    }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("manual.photo.add")
                         .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.photo.intake.add", table: .localizable, fallback: "Fotoğraf ekle")))
                 }
             }
@@ -218,7 +218,7 @@ struct NovaManualNonconformityScreen: View {
                         }
                         Spacer(minLength: 0)
                     }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
                     .accessibilityIdentifier("manual.company.\(company.id.uuidString.lowercased())")
             }
         }
@@ -248,7 +248,7 @@ struct NovaManualNonconformityScreen: View {
                             NovaText(text: place.name)
                             Spacer(minLength: 0)
                         }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(NovaRowPressStyle())
                         .accessibilityIdentifier("manual.workplace.\(place.id.uuidString.lowercased())")
                 }
                 // The record has to land on a workplace, so the first one is

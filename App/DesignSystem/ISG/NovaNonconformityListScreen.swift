@@ -65,7 +65,7 @@ struct NovaNonconformityListScreen: View {
                     .foregroundStyle(NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
                     .padding(.horizontal, 14).frame(minHeight: 40)
                     .background(NovaColorToken.accent.color(in: scheme), in: Capsule())
-                }.buttonStyle(.plain).accessibilityIdentifier("nonconformity.new")
+                }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("nonconformity.new")
             }
         }
     }
@@ -82,7 +82,7 @@ struct NovaNonconformityListScreen: View {
                 Button { filter.query = "" } label: {
                     Image(systemName: "xmark.circle").frame(width: 32, height: 32)
                         .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
                     .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.nonconformity.search.clear", table: .localizable, fallback: "Aramayı temizle")))
             }
         }.padding(.horizontal, 14).frame(minHeight: 44)
@@ -148,11 +148,11 @@ struct NovaNonconformityListScreen: View {
                     Button { filter = NovaNonconformityFilter() } label: {
                         NovaText(text: RDLocalization.string("localizable.nova.nonconformity.filter.reset", table: .localizable, fallback: "Filtreleri temizle"),
                             style: .meta, color: NovaColorToken.accentInk.color(in: scheme)).frame(minHeight: 32)
-                    }.buttonStyle(.plain).accessibilityIdentifier("nonconformity.filter.reset")
+                    }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("nonconformity.filter.reset")
                 }
                 Button { reload = UUID() } label: {
                     Image(systemName: "arrow.clockwise").frame(width: 40, height: 40)
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
                     .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.nonconformity.refresh", table: .localizable, fallback: "Listeyi yenile")))
                     .accessibilityIdentifier("nonconformity.refresh")
             }
@@ -226,7 +226,7 @@ struct NovaNonconformityListScreen: View {
                         .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme)).padding(.top, 3)
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("nonconformity.row.\(entry.id.uuidString.lowercased())")
     }
 

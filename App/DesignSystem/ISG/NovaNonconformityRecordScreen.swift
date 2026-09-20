@@ -143,7 +143,7 @@ struct NovaNonconformityRecordSheet: View {
                                     : RDLocalization.string("localizable.nova.nonconformity.detail.edit", table: .localizable, fallback: "Düzenle"),
                                     style: .meta, color: NovaColorToken.accentInk.color(in: scheme))
                             }.foregroundStyle(NovaColorToken.accentInk.color(in: scheme)).frame(minHeight: 34)
-                        }.buttonStyle(.plain).accessibilityIdentifier("nonconformity.detail.edit")
+                        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("nonconformity.detail.edit")
                     }
                 }
                 if panel == .detail {
@@ -208,7 +208,7 @@ struct NovaNonconformityRecordSheet: View {
                                         table: .localizable, fallback: "Foto %d"), index + 1), style: .micro)
                                 }.frame(width: 64, height: 64)
                                     .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
-                            }.buttonStyle(.plain).disabled(openingIndex != nil)
+                            }.buttonStyle(NovaRowPressStyle()).disabled(openingIndex != nil)
                                 .accessibilityIdentifier("nonconformity.evidence.\(index)")
                         }
                         Spacer(minLength: 0)
@@ -271,7 +271,7 @@ struct NovaNonconformityRecordSheet: View {
             .frame(maxWidth: .infinity, minHeight: 54)
             .background(isOn ? NovaColorToken.statusSuccessBg.color(in: scheme) : NovaColorToken.surface.color(in: scheme),
                 in: RoundedRectangle(cornerRadius: 14))
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("nonconformity.panel.\(target == .state ? "state" : target == .action ? "action" : "verify")")
             .accessibilityAddTraits(isOn ? .isSelected : [])
     }
@@ -300,7 +300,7 @@ struct NovaNonconformityRecordSheet: View {
                                     .padding(.horizontal, 11).frame(minHeight: 38)
                                     .background(move?.id == edge.id ? NovaColorToken.statusSuccessBg.color(in: scheme)
                                                                     : NovaColorToken.surfaceMuted.color(in: scheme), in: Capsule())
-                            }.buttonStyle(.plain)
+                            }.buttonStyle(NovaRowPressStyle())
                                 .accessibilityIdentifier("nonconformity.move.\(edge.to.rawValue)")
                                 .accessibilityAddTraits(move?.id == edge.id ? .isSelected : [])
                         }

@@ -152,7 +152,7 @@ private struct NovaEducationTopicEditor: View {
             Button { includedBinding.wrappedValue.toggle() } label: {
                 Image(systemName: includedBinding.wrappedValue ? "checkmark.square.fill" : "square")
                     .font(.system(size: 18)).foregroundStyle(includedBinding.wrappedValue ? Color.accentColor : NovaFont.secondaryInk)
-            }.buttonStyle(.plain).accessibilityLabel(
+            }.buttonStyle(NovaRowPressStyle()).accessibilityLabel(
                 RDLocalization.string("localizable.nova.education.topics.included", table: .localizable, fallback: "Bu konu bu eğitimde işlendi"))
             if topic.group == "G4" || topic.parent_code != nil || topic.code.hasPrefix("CUSTOM") {
                 TextField(RDLocalization.string("localizable.nova.education.topics.topictitle", table: .localizable, fallback: "Konu başlığı"), text: $topic.title, axis: .vertical)

@@ -188,7 +188,7 @@ private struct NovaDirectoryEditor: View {
                             if field.choices != nil || field.id == "previous_id" {
                                 Button { expanded = expanded == field.id ? nil : field.id } label: {
                                     HStack { NovaText(text: options[field.id]?.first(where: { $0.id.uuidString.lowercased() == fields[field.id] })?.title ?? (fields[field.id, default: ""].isEmpty ? "Seçilmedi" : "Seçildi")); Spacer(); NovaIcon(symbol: "chevron.down", size: 16) }
-                                }.buttonStyle(.plain).accessibilityIdentifier("directory.field.\(field.id)")
+                                }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("directory.field.\(field.id)")
                                 if expanded == field.id {
                                     if field.nullable { Button(RDLocalization.string("localizable.nova.directory.screens.secimi.kaldir.0db468a9", table: .localizable, fallback: "Seçimi kaldır")) { fields[field.id] = ""; expanded = nil } }
                                     ForEach(visibleOptions(field)) { option in

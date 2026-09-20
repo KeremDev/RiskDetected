@@ -211,7 +211,7 @@ struct NovaEquipmentCheckScreen: View {
                     .foregroundStyle(NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
                     .padding(.horizontal, 14).frame(minHeight: 44)
                     .background(NovaColorToken.accent.color(in: scheme), in: Capsule())
-                }.buttonStyle(.plain).accessibilityIdentifier("equipment.inspection.new")
+                }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("equipment.inspection.new")
             }
         }
     }
@@ -253,7 +253,7 @@ struct NovaEquipmentCheckScreen: View {
                 Button { companyQuery = "" } label: {
                     Image(systemName: "xmark.circle").font(.system(size: 14))
                         .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
                     .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.analysis.search.clear", table: .localizable, fallback: "Aramayı temizle")))
             }
         }
@@ -302,7 +302,7 @@ struct NovaEquipmentCheckScreen: View {
                     }
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("equipment.company.\(option.id.uuidString.lowercased())")
     }
 
@@ -347,7 +347,7 @@ struct NovaEquipmentCheckScreen: View {
             .frame(maxWidth: .infinity, minHeight: 44)
             .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 13))
             .contentShape(RoundedRectangle(cornerRadius: 13))
-        }.buttonStyle(.plain).disabled(!enabled)
+        }.buttonStyle(NovaRowPressStyle()).disabled(!enabled)
     }
 
     private var chosenCompany: some View {
@@ -362,7 +362,7 @@ struct NovaEquipmentCheckScreen: View {
                     NovaText(text: RDLocalization.string("localizable.nova.document.company.change", table: .localizable, fallback: "Firma değiştir"),
                         style: .meta, color: NovaColorToken.accentInk.color(in: scheme))
                 }.foregroundStyle(NovaColorToken.accentInk.color(in: scheme)).frame(minHeight: 36)
-            }.buttonStyle(.plain).accessibilityIdentifier("equipment.company.change")
+            }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("equipment.company.change")
         }
         .padding(.horizontal, 12).padding(.vertical, 4)
         .novaControlBackground(cornerRadius: 16)
@@ -416,7 +416,7 @@ struct NovaEquipmentCheckScreen: View {
             .novaControlBackground(cornerRadius: 14)
             .overlay(RoundedRectangle(cornerRadius: 14)
                 .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
-        }.buttonStyle(.plain).accessibilityIdentifier("equipment.periods.open")
+        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("equipment.periods.open")
     }
 
     private var search: some View {
@@ -521,7 +521,7 @@ struct NovaEquipmentCheckScreen: View {
                         NovaText(text: RDLocalization.string("localizable.nova.document.more", table: .localizable, fallback: "Daha fazla göster"),
                             style: .meta, color: NovaColorToken.accentInk.color(in: scheme))
                     }.foregroundStyle(NovaColorToken.accentInk.color(in: scheme)).frame(minHeight: 40)
-                }.buttonStyle(.plain).disabled(loading)
+                }.buttonStyle(NovaRowPressStyle()).disabled(loading)
                     .accessibilityIdentifier("equipment.more")
             }
         }
@@ -568,7 +568,7 @@ struct NovaEquipmentCheckScreen: View {
                     }
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("equipment.row.\(row.id.uuidString.lowercased())")
     }
 

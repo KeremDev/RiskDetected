@@ -102,7 +102,7 @@ struct NovaPilotProcessGate: View {
                                     Label("Aç / Düzenle",systemImage:"chevron.right").font(NovaFont.font(.meta))
                                 }.frame(maxWidth:.infinity,alignment:.leading)
                             }
-                        }.buttonStyle(.plain)
+                        }.buttonStyle(NovaRowPressStyle())
                     }
                     if hasMore { Button("Daha fazla") { Task { await load(more:true) } }.disabled(busy) }
                 }.padding(16)
@@ -457,7 +457,7 @@ struct NovaProcessEditor: View {
                 Button { values[field.id] = .string(person.id.uuidString) } label: {
                     HStack { Text(person.name); Spacer(); Image(systemName: values[field.id]?.text.lowercased() == person.id.uuidString.lowercased() ? "checkmark.circle" : "circle") }
                         .font(NovaFont.font(.body)).padding(.vertical, 6)
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
             }
         case "photos":
             ForEach(Array(photoIDs.enumerated()), id: \.element) { index, id in
@@ -672,7 +672,7 @@ private struct NovaProcessLinkPicker: View {
                                 Text(row.title).fixedSize(horizontal: false, vertical: true)
                                 Text(String(row.date.prefix(10))).font(NovaFont.font(.meta))
                             }.frame(maxWidth: .infinity, alignment: .leading).padding(12)
-                        }.buttonStyle(.plain).disabled(loading)
+                        }.buttonStyle(NovaRowPressStyle()).disabled(loading)
                     }
                     if rows.isEmpty && !loading && error == nil { Text("Bu firmada uygun kayıt bulunamadı.") }
                     if hasMore { Button("Daha fazla") { Task { await load(more: true) } }.disabled(loading) }

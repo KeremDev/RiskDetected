@@ -152,7 +152,7 @@ struct NovaDocumentObligationSheet: View {
                             .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
                             .padding(.horizontal, 10).frame(minHeight: 34)
                             .background(NovaColorToken.statusSuccessBg.color(in: scheme), in: Capsule())
-                        }.buttonStyle(.plain).accessibilityIdentifier("document.copy.add")
+                        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("document.copy.add")
                     }
                 }
                 // The tracker keeps a reference, never the document itself.
@@ -250,7 +250,7 @@ struct NovaDocumentObligationSheet: View {
                     Image(systemName: "trash").font(.system(size: 12))
                         .foregroundStyle(NovaColorToken.statusDangerInk.color(in: scheme))
                         .frame(width: 34, height: 34)
-                }.buttonStyle(.plain).disabled(busy)
+                }.buttonStyle(NovaRowPressStyle()).disabled(busy)
                     .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.document.copy.remove", table: .localizable, fallback: "Kopyayı sil")))
                     .accessibilityIdentifier("document.copy.remove.\(entry.id.uuidString.lowercased())")
             }
@@ -295,7 +295,7 @@ struct NovaDocumentObligationSheet: View {
             .foregroundStyle(palette.ink.color(in: scheme))
             .frame(maxWidth: .infinity, minHeight: 44)
             .background(palette.background.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
-        }.buttonStyle(.plain).disabled(busy)
+        }.buttonStyle(NovaRowPressStyle()).disabled(busy)
             .accessibilityIdentifier("document.obligation.\(id)")
     }
 
@@ -385,7 +385,7 @@ struct NovaDocumentAddSheet: View {
                                     .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
                             }.frame(maxWidth: .infinity, alignment: .leading)
                         }
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(NovaRowPressStyle())
                         .accessibilityIdentifier("document.add.company.\(option.id.uuidString.lowercased())")
                 }
             }.padding(16).novaPopupContentSize()
@@ -431,7 +431,7 @@ struct NovaDocumentObligationForm: View {
                         Button(action: onChangeCompany) {
                             NovaText(text: RDLocalization.string("localizable.nova.document.add.change.company", table: .localizable, fallback: "Firmayı değiştir"),
                                 style: .micro, color: NovaColorToken.accentInk.color(in: scheme))
-                        }.buttonStyle(.plain).accessibilityIdentifier("document.add.change.company")
+                        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("document.add.change.company")
                     }
                 }
                 kindPicker
@@ -515,7 +515,7 @@ struct NovaDocumentObligationForm: View {
             .overlay(RoundedRectangle(cornerRadius: 13)
                 .strokeBorder(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.border.color(in: scheme),
                               lineWidth: isOn ? 1.4 : 1))
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("document.kind.\(kind.code)")
             .accessibilityAddTraits(isOn ? .isSelected : [])
     }
@@ -558,7 +558,7 @@ struct NovaDocumentObligationForm: View {
                                 .padding(.horizontal, 12).frame(minHeight: 40)
                                 .background(draft.basis == value ? NovaColorToken.statusSuccessBg.color(in: scheme)
                                                                 : NovaColorToken.surfaceMuted.color(in: scheme), in: Capsule())
-                        }.buttonStyle(.plain)
+                        }.buttonStyle(NovaRowPressStyle())
                             .accessibilityIdentifier("document.basis.\(value.rawValue)")
                             .accessibilityAddTraits(draft.basis == value ? .isSelected : [])
                     }

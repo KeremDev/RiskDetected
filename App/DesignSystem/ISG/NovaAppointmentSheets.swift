@@ -273,7 +273,7 @@ struct NovaAppointmentSheet: View {
                                         RoundedRectangle(cornerRadius: 10, style: .continuous)
                                             .strokeBorder(NovaColorToken.hairline.color(in: scheme), lineWidth: 1))
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(NovaRowPressStyle())
                                 .accessibilityIdentifier("nova.appointment.form.role.\(role.kind.rawValue)")
                             }
                         }
@@ -300,7 +300,7 @@ struct NovaAppointmentSheet: View {
                                             RoundedRectangle(cornerRadius: 9, style: .continuous)
                                                 .strokeBorder(NovaColorToken.hairline.color(in: scheme), lineWidth: 1))
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(NovaRowPressStyle())
                                     .accessibilityIdentifier("nova.appointment.form.basis.\(basis.rawValue)")
                                 }
                                 Spacer(minLength: 0)

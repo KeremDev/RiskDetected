@@ -71,7 +71,7 @@ struct NovaAnalysisIntakePopup: View {
                 Button { back() } label: {
                     Image(systemName: "chevron.left").font(.system(size: 14, weight: .semibold))
                         .frame(width: 40, height: 40)
-                }.buttonStyle(.plain).disabled(isStarting)
+                }.buttonStyle(NovaRowPressStyle()).disabled(isStarting)
                     .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.shell.back", table: .localizable, fallback: "Geri")))
                     .accessibilityIdentifier("analysis.intake.back")
             }
@@ -189,7 +189,7 @@ struct NovaAnalysisIntakePopup: View {
                                                     : NovaColorToken.borderStrong.color(in: scheme))
                 }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             }
-        }.buttonStyle(.plain).accessibilityIdentifier(identifier)
+        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier(identifier)
             .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
@@ -226,7 +226,7 @@ struct NovaAnalysisIntakePopup: View {
                     NovaText(text: sector.label, style: .cardTitle)
                 }.frame(maxWidth: .infinity, minHeight: 50, alignment: .topLeading)
             }
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("analysis.intake.sector.\(sector.id)")
             .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
@@ -266,7 +266,7 @@ struct NovaAnalysisIntakePopup: View {
                     NovaText(text: focus.detail, style: .metaQuiet).lineLimit(3)
                 }.frame(maxWidth: .infinity, minHeight: 74, alignment: .topLeading)
             }.opacity(focus.isLocked ? 0.55 : 1)
-        }.buttonStyle(.plain).disabled(focus.isLocked)
+        }.buttonStyle(NovaRowPressStyle()).disabled(focus.isLocked)
             .accessibilityIdentifier("analysis.intake.focus.\(focus.id)")
             .accessibilityAddTraits(isSelected ? .isSelected : [])
     }

@@ -43,7 +43,7 @@ struct NovaDayField: View {
                     Button { value = Self.text(Date()) } label: {
                         NovaText(text: RDLocalization.string("localizable.nova.document.date.unset", table: .localizable, fallback: "Belirtilmedi"), style: .meta)
                             .frame(minHeight: 36)
-                    }.buttonStyle(.plain).accessibilityIdentifier("\(identifier).set")
+                    }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("\(identifier).set")
                 } else {
                     DatePicker("", selection: Binding(
                         get: { Self.date(value) ?? Date() },
@@ -55,7 +55,7 @@ struct NovaDayField: View {
                         Button { value = "" } label: {
                             Image(systemName: "xmark.circle").font(.system(size: 14))
                                 .frame(width: 32, height: 36)
-                        }.buttonStyle(.plain).accessibilityIdentifier("\(identifier).clear")
+                        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("\(identifier).clear")
                             .accessibilityLabel(RDLocalization.string("localizable.nova.document.date.clear", table: .localizable, fallback: "Temizle"))
                     }
                 }
@@ -195,7 +195,7 @@ struct NovaDocumentTrackingScreen: View {
                     .foregroundStyle(NovaRGBA(red: 17, green: 17, blue: 17, alpha: 1).color)
                     .padding(.horizontal, 14).frame(minHeight: 44)
                     .background(NovaColorToken.accent.color(in: scheme), in: Capsule())
-                }.buttonStyle(.plain).accessibilityIdentifier("document.tracking.new")
+                }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("document.tracking.new")
             }
         }
     }
@@ -239,7 +239,7 @@ struct NovaDocumentTrackingScreen: View {
                 Button { companyQuery = "" } label: {
                     Image(systemName: "xmark.circle").font(.system(size: 14))
                         .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
                     .accessibilityLabel(Text(verbatim: RDLocalization.string("localizable.nova.analysis.search.clear", table: .localizable, fallback: "Aramayı temizle")))
             }
         }
@@ -288,7 +288,7 @@ struct NovaDocumentTrackingScreen: View {
                     }
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("document.company.\(option.id.uuidString.lowercased())")
     }
 
@@ -315,7 +315,7 @@ struct NovaDocumentTrackingScreen: View {
                     NovaText(text: RDLocalization.string("localizable.nova.document.company.change", table: .localizable, fallback: "Firma değiştir"),
                         style: .meta, color: NovaColorToken.accentInk.color(in: scheme))
                 }.foregroundStyle(NovaColorToken.accentInk.color(in: scheme)).frame(minHeight: 36)
-            }.buttonStyle(.plain).accessibilityIdentifier("document.company.change")
+            }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("document.company.change")
         }
         .padding(.horizontal, 12).padding(.vertical, 4)
         .novaControlBackground(cornerRadius: 16)
@@ -413,7 +413,7 @@ struct NovaDocumentTrackingScreen: View {
                         NovaText(text: RDLocalization.string("localizable.nova.document.more", table: .localizable, fallback: "Daha fazla göster"),
                             style: .meta, color: NovaColorToken.accentInk.color(in: scheme))
                     }.foregroundStyle(NovaColorToken.accentInk.color(in: scheme)).frame(minHeight: 40)
-                }.buttonStyle(.plain).disabled(loading)
+                }.buttonStyle(NovaRowPressStyle()).disabled(loading)
                     .accessibilityIdentifier("document.tracking.more")
             }
         }
@@ -455,7 +455,7 @@ struct NovaDocumentTrackingScreen: View {
                     }
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("document.tracking.row.\(row.id.uuidString.lowercased())")
     }
 

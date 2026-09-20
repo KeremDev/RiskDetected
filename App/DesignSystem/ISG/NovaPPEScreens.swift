@@ -82,7 +82,7 @@ struct NovaPPEHandoverCard: View {
                 }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NovaRowPressStyle())
         .accessibilityIdentifier("nova.ppe.row.\(handover.id.uuidString)")
     }
 

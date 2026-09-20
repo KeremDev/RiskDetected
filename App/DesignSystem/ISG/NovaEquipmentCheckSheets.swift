@@ -309,7 +309,7 @@ struct NovaEquipmentItemSheet: View {
                     Image(systemName: inspectionSection == id ? "chevron.up" : "chevron.down")
                         .font(.system(size: 10, weight: .bold))
                 }.frame(minHeight: 42).contentShape(Rectangle())
-            }.buttonStyle(.plain)
+            }.buttonStyle(NovaRowPressStyle())
             if inspectionSection == id {
                 content().padding(.top, 2)
             }
@@ -335,7 +335,7 @@ struct NovaEquipmentItemSheet: View {
                     Button { value.wrappedValue = NovaDayField.text(Date()) } label: {
                         NovaText(text: "Belirtilmedi", style: .meta).frame(minHeight: 32)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(NovaRowPressStyle())
                     .accessibilityIdentifier("\(identifier).set")
                 } else {
                     DatePicker("", selection: Binding(
@@ -351,7 +351,7 @@ struct NovaEquipmentItemSheet: View {
                         Image(systemName: "xmark.circle").font(.system(size: 13))
                             .frame(width: 26, height: 32)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(NovaRowPressStyle())
                     .accessibilityIdentifier("\(identifier).clear")
                     .accessibilityLabel("Temizle")
                 }
@@ -393,7 +393,7 @@ struct NovaEquipmentItemSheet: View {
                     weight: draft.katipDeclared ? "Bold" : "Medium")
                 Spacer(minLength: 0)
             }.frame(minHeight: 40)
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("equipment.inspection.katip")
             .accessibilityAddTraits(draft.katipDeclared ? .isSelected : [])
         if draft.katipDeclared {
@@ -420,7 +420,7 @@ struct NovaEquipmentItemSheet: View {
                             .overlay(RoundedRectangle(cornerRadius: 11)
                                 .strokeBorder(draft.result == value ? NovaColorToken.accentInk.color(in: scheme) : .clear,
                                               lineWidth: 1.2))
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(NovaRowPressStyle())
                         .accessibilityIdentifier("equipment.result.\(value)")
                         .accessibilityAddTraits(draft.result == value ? .isSelected : [])
                 }
@@ -485,13 +485,13 @@ struct NovaEquipmentItemSheet: View {
     private func historyRow(_ entry: NovaEquipmentInspection) -> some View {
         HStack(alignment: .top, spacing: 9) {
             Button { if canWrite { correcting = entry } } label: { historyBody(entry) }
-                .buttonStyle(.plain).disabled(!canWrite)
+                .buttonStyle(NovaRowPressStyle()).disabled(!canWrite)
                 .accessibilityIdentifier("equipment.history.\(entry.id.uuidString.lowercased())")
             if entry.evidenceDownload != nil {
                 Button { open(entry) } label: {
                     if opening == entry.id { ProgressView() }
                     else { Image(systemName: "arrow.up.right.square").font(.system(size: 13)) }
-                }.buttonStyle(.plain).disabled(opening != nil)
+                }.buttonStyle(NovaRowPressStyle()).disabled(opening != nil)
                     .accessibilityIdentifier("equipment.history.\(entry.id.uuidString.lowercased()).open")
             }
         }
@@ -596,7 +596,7 @@ struct NovaEquipmentItemSheet: View {
             .foregroundStyle(palette.ink.color(in: scheme))
             .frame(maxWidth: .infinity, minHeight: 44)
             .background(palette.background.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
-        }.buttonStyle(.plain).disabled(busy)
+        }.buttonStyle(NovaRowPressStyle()).disabled(busy)
             .accessibilityIdentifier("equipment.\(id)")
     }
 
@@ -718,7 +718,7 @@ struct NovaEquipmentReportEditSheet: View {
                     weight: draft.katipDeclared ? "Bold" : "Medium")
                 Spacer(minLength: 0)
             }.frame(minHeight: 40)
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("equipment.report.katip")
             .accessibilityAddTraits(draft.katipDeclared ? .isSelected : [])
         if draft.katipDeclared {
@@ -811,7 +811,7 @@ struct NovaEquipmentInspectionFlow: View {
                                 .foregroundStyle(NovaColorToken.text.color(in: scheme))
                                 .padding(11).frame(maxWidth: .infinity, alignment: .leading)
                                 .novaControlBackground(cornerRadius: 14)
-                            }.buttonStyle(.plain)
+                            }.buttonStyle(NovaRowPressStyle())
                                 .accessibilityIdentifier("equipment.inspection.choice.\(item.id.uuidString.lowercased())")
                         }
                     }
@@ -1143,7 +1143,7 @@ struct NovaEquipmentPeriodSheet: View {
                         }
                         .padding(.horizontal, 10).frame(minHeight: 40)
                         .novaControlBackground(cornerRadius: 11)
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(NovaRowPressStyle())
                         .accessibilityIdentifier("equipment.period.source.\(value.rawValue)")
                         .accessibilityAddTraits(draft.source == value ? .isSelected : [])
                 }

@@ -76,7 +76,7 @@ struct NovaChecklistRunCard: View {
                 }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NovaRowPressStyle())
         .accessibilityIdentifier("nova.checklist.row.\(run.id.uuidString)")
     }
 

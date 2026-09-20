@@ -142,7 +142,7 @@ struct NovaAnalysisItemSheet: View {
             Image(systemName: isOn ? "\(symbol).fill" : symbol).font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.text.color(in: scheme))
                 .frame(width: 38, height: 38)
-        }.buttonStyle(.plain).disabled(busy)
+        }.buttonStyle(NovaRowPressStyle()).disabled(busy)
             .accessibilityLabel(Text(verbatim: label))
             .accessibilityIdentifier("analysis.item.\(value.rawValue)")
             .accessibilityAddTraits(isOn ? .isSelected : [])
@@ -167,7 +167,7 @@ struct NovaAnalysisItemSheet: View {
             .foregroundStyle(palette.ink.color(in: scheme))
             .frame(maxWidth: .infinity, minHeight: 44)
             .background(palette.background.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
-        }.buttonStyle(.plain).accessibilityIdentifier("analysis.item.\(id)")
+        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("analysis.item.\(id)")
     }
 
     // MARK: score
@@ -492,7 +492,7 @@ struct NovaRiskScoreEditor: View {
                         Button { score.select(nil) } label: {
                             NovaText(text: RDLocalization.string("localizable.nova.risk.method.clear", table: .localizable, fallback: "Skorsuz"), style: .meta)
                                 .padding(.horizontal, 12).frame(minHeight: 40)
-                        }.buttonStyle(.plain).accessibilityIdentifier("risk.method.none")
+                        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("risk.method.none")
                     }
                 }
                 switch score.method {
@@ -525,7 +525,7 @@ struct NovaRiskScoreEditor: View {
                 .padding(.horizontal, 12).frame(minHeight: 40)
                 .background(isSelected ? NovaColorToken.statusSuccessBg.color(in: scheme) : NovaColorToken.surfaceMuted.color(in: scheme),
                     in: Capsule())
-        }.buttonStyle(.plain).accessibilityIdentifier("risk.method.\(value.rawValue)")
+        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("risk.method.\(value.rawValue)")
             .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
@@ -562,7 +562,7 @@ struct NovaRiskScoreEditor: View {
                 .padding(.horizontal, 14).frame(minWidth: 44, minHeight: 40)
                 .background(isSelected ? NovaColorToken.inverse.color(in: scheme) : NovaColorToken.surfaceMuted.color(in: scheme),
                     in: RoundedRectangle(cornerRadius: 10))
-        }.buttonStyle(.plain).accessibilityIdentifier(identifier)
+        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier(identifier)
             .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
@@ -683,7 +683,7 @@ struct NovaAnalysisFileSheet: View {
                                                                            : NovaColorToken.borderStrong.color(in: scheme))
                                 NovaText(text: place.name)
                             }.frame(minHeight: 44)
-                        }.buttonStyle(.plain).disabled(running)
+                        }.buttonStyle(NovaRowPressStyle()).disabled(running)
                             .accessibilityIdentifier("analysis.file.workplace.\(place.id.uuidString.lowercased())")
                     }
                 }.frame(maxWidth: .infinity, alignment: .leading)
@@ -858,7 +858,7 @@ struct NovaAnalysisReportSheet: View {
             .overlay(RoundedRectangle(cornerRadius: 18)
                 .strokeBorder(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.border.color(in: scheme),
                               lineWidth: isOn ? 1.5 : 1))
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("analysis.report.format.\(value.rawValue)")
             .accessibilityAddTraits(isOn ? .isSelected : [])
     }
@@ -937,7 +937,7 @@ struct NovaAnalysisCompanySheet: View {
                                 Spacer(minLength: 0)
                             }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                         }
-                    }.buttonStyle(.plain).disabled(running)
+                    }.buttonStyle(NovaRowPressStyle()).disabled(running)
                         .accessibilityIdentifier("analysis.assign.\(company.id.uuidString.lowercased())")
                 }
                 if let error { NovaText(text: error, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme)) }

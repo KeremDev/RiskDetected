@@ -97,7 +97,7 @@ struct NovaChecklistRunSheet: View {
                         }
                     }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NovaRowPressStyle())
                 .accessibilityIdentifier("nova.checklist.question.\(answer.itemCode)")
             }
         }
@@ -174,7 +174,7 @@ struct NovaChecklistAnswerSheet: View {
                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                                         .strokeBorder(NovaColorToken.hairline.color(in: scheme), lineWidth: 1))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(NovaRowPressStyle())
                             .accessibilityIdentifier("nova.checklist.answer.\(result.rawValue)")
                         }
                     }
@@ -223,7 +223,7 @@ struct NovaChecklistAnswerSheet: View {
                         Spacer(minLength: 0)
                     }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(NovaRowPressStyle())
                 .accessibilityIdentifier("nova.checklist.answer.open")
                 NovaText(text: NovaChecklistWords.neverAutomatic, style: .meta,
                     color: NovaColorToken.textSecondary.color(in: scheme))
@@ -244,7 +244,7 @@ struct NovaChecklistAnswerSheet: View {
                                             RoundedRectangle(cornerRadius: 10, style: .continuous)
                                                 .strokeBorder(NovaColorToken.hairline.color(in: scheme), lineWidth: 1))
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(NovaRowPressStyle())
                                 .accessibilityIdentifier("nova.checklist.answer.severity.\(severity.rawValue)")
                             }
                         }
@@ -365,7 +365,7 @@ struct NovaChecklistTemplateSheet: View {
                                     } label: {
                                         Image(systemName: "trash").font(.system(size: 11))
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(NovaRowPressStyle())
                                     .accessibilityIdentifier("nova.checklist.templates.remove.\(item.itemCode)")
                                 }
                             }
@@ -400,7 +400,7 @@ struct NovaChecklistTemplateSheet: View {
                     Spacer(minLength: 0)
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("nova.checklist.templates.allowna")
             NovaButton(label: RDLocalization.string("localizable.nova.checklist.templates.add",
                 table: .localizable, fallback: "Soru ekle"), symbol: "plus.circle", variant: .surface) {

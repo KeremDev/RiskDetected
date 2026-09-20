@@ -200,7 +200,7 @@ struct NovaPPEHandoverSheet: View {
                                                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                                                     .strokeBorder(NovaColorToken.hairline.color(in: scheme), lineWidth: 1))
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(NovaRowPressStyle())
                                     .accessibilityIdentifier("nova.ppe.form.unit.\(unit.rawValue)")
                                 }
                             }
@@ -302,7 +302,7 @@ struct NovaPPEReturnSheet: View {
                                         RoundedRectangle(cornerRadius: 9, style: .continuous)
                                             .strokeBorder(NovaColorToken.hairline.color(in: scheme), lineWidth: 1))
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(NovaRowPressStyle())
                                 .accessibilityIdentifier("nova.ppe.return.condition.\(condition.rawValue)")
                             }
                         }

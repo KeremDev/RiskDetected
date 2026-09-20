@@ -101,7 +101,7 @@ struct NovaRiskRowCard: View {
                 }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NovaRowPressStyle())
         .accessibilityIdentifier("nova.risk.row.\(row.id.uuidString)")
     }
 
@@ -588,7 +588,7 @@ private struct NovaRiskQuickCreateSheet: View {
                     NovaAnalysisTag(symbol: "square.dashed", text: entry, status: .info)
                     Button { scope.removeAll { $0 == entry } } label: {
                         Image(systemName: "xmark.circle").font(.system(size: 12))
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(NovaRowPressStyle())
                 }
             }
         }

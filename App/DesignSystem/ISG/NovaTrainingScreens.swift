@@ -136,7 +136,7 @@ struct NovaTrainingRegister: View {
                                 }
                             }.frame(maxWidth: .infinity, alignment: .leading)
                         }
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(NovaRowPressStyle())
                 }
             }.padding(18).novaPopupContentSize()
         }.task(id: revision) { await load() }

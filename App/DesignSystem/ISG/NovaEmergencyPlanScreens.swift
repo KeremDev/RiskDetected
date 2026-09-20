@@ -76,7 +76,7 @@ struct NovaEmergencyPlanCard: View {
                 }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NovaRowPressStyle())
         .accessibilityIdentifier("nova.emergency.row.\(plan.id.uuidString)")
     }
 

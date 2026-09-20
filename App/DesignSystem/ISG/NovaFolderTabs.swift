@@ -36,7 +36,11 @@ struct NovaFolderTabs<Content: View>: View {
 
     private func cell(_ tab: NovaFolderTab) -> some View {
         let isOn = tab.id == selection
-        return Button { selection = tab.id } label: {
+        return Button {
+            guard selection != tab.id else { return }
+            NovaHaptics.selection()
+            selection = tab.id
+        } label: {
             VStack(spacing: 5) {
                 tabIcon(tab)
                     .foregroundStyle(NovaColorToken.text.color(in: scheme))
@@ -53,7 +57,13 @@ struct NovaFolderTabs<Content: View>: View {
             .padding(.horizontal, 4).padding(.vertical, 12)
             .frame(maxWidth: .infinity, minHeight: 96)
             .background(surface, in: RoundedRectangle(cornerRadius: 16))
-        }.buttonStyle(.plain)
+            // The selected section was only marked for VoiceOver — on screen
+            // every tile looked identical, so the row never answered "which one
+            // am I on?". Same outline NovaListStat uses for a picked tile.
+            .overlay(RoundedRectangle(cornerRadius: 16)
+                .strokeBorder(isOn ? NovaColorToken.text.color(in: scheme) : .clear, lineWidth: 1.5))
+            .animation(NovaMotion.easeOut(NovaMotion.Duration.popover), value: isOn)
+        }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("\(identifierPrefix).\(tab.id)")
             .accessibilityAddTraits(isOn ? .isSelected : [])
     }

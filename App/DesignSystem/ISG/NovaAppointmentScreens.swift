@@ -77,7 +77,7 @@ struct NovaAppointmentCard: View {
                 }
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NovaRowPressStyle())
         .accessibilityIdentifier("nova.appointment.row.\(entry.id.uuidString)")
     }
 

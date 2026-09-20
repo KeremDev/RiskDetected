@@ -40,7 +40,7 @@ struct NovaPopupOption: View {
             .padding(14).frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
             .novaControlBackground(cornerRadius: 16)
             .contentShape(RoundedRectangle(cornerRadius: 16))
-        }.buttonStyle(.plain)
+        }.buttonStyle(NovaRowPressStyle())
     }
 }
 

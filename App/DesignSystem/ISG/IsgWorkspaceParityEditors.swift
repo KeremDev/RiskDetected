@@ -188,7 +188,7 @@ struct IsgWorkspaceTrainingCreateEditor: View {
                                     .font(NovaFont.font(.meta))
                                 Button { topics.removeAll { $0.id == topic.id }; syncMinutes() } label: {
                                     Image(systemName: "xmark.circle.fill").frame(width: 32, height: 32)
-                                }.buttonStyle(.plain).accessibilityLabel("Konuyu sil")
+                                }.buttonStyle(NovaRowPressStyle()).accessibilityLabel("Konuyu sil")
                             }
                         }
                         Divider()
@@ -253,7 +253,7 @@ struct IsgWorkspaceTrainingCreateEditor: View {
                         NovaText(text: employee.name, style: .body)
                         Spacer(minLength: 0)
                     }.frame(minHeight: 42).contentShape(Rectangle())
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
             }
             NovaHelpHint(text: "Kaydettiğinizde seçilen personelin eğitime katıldığını beyan etmiş olursunuz.")
         }
@@ -264,7 +264,7 @@ struct IsgWorkspaceTrainingCreateEditor: View {
             Image(systemName: "magnifyingglass")
             TextField("Personel ara", text: $employeeQuery)
             if !employeeQuery.isEmpty {
-                Button { employeeQuery = "" } label: { Image(systemName: "xmark.circle.fill") }.buttonStyle(.plain)
+                Button { employeeQuery = "" } label: { Image(systemName: "xmark.circle.fill") }.buttonStyle(NovaRowPressStyle())
             }
         }.padding(.horizontal, 12).frame(minHeight: 44).novaControlBackground(cornerRadius: 14)
     }

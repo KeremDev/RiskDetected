@@ -137,7 +137,7 @@ struct NovaStatisticsScreen: View {
                             .frame(height: max(3, 100 * CGFloat(value) / CGFloat(maximum)))
                         Text(item.label).font(.system(size: 11)).foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
                     }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom).contentShape(Rectangle())
-                }.buttonStyle(.plain).accessibilityLabel("\(item.label) \(item.month.prefix(4)), \(value) \(trainingChart ? "eğitim" : "analiz")")
+                }.buttonStyle(NovaRowPressStyle()).accessibilityLabel("\(item.label) \(item.month.prefix(4)), \(value) \(trainingChart ? "eğitim" : "analiz")")
             }
                 }.frame(width: max(proxy.size.width, CGFloat(data.months * 52 - 8)), height: 148)
             }
@@ -189,7 +189,7 @@ struct NovaStatisticsScreen: View {
                         }
                         Spacer(minLength: 0); Image(systemName: "chevron.right").font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
                     }.padding(.vertical, 4)
-                }.buttonStyle(.plain)
+                }.buttonStyle(NovaRowPressStyle())
             }
             link("Firmaları aç", destination: .companies)
         } }
@@ -212,7 +212,7 @@ struct NovaStatisticsScreen: View {
         Label { NovaText(text: text, style: .metaQuiet) } icon: { Image(systemName: "info.circle").foregroundStyle(NovaFont.secondaryInk) }.padding(.vertical, 6)
     }
     private func link(_ title: String, destination: NovaDestination) -> some View {
-        Button { onNavigate(destination) } label: { HStack { NovaText(text: title, style: .buttonSm, color: NovaColorToken.accentInk.color(in: scheme)); Spacer(); Image(systemName: "arrow.right") }.padding(.vertical, 6) }.buttonStyle(.plain)
+        Button { onNavigate(destination) } label: { HStack { NovaText(text: title, style: .buttonSm, color: NovaColorToken.accentInk.color(in: scheme)); Spacer(); Image(systemName: "arrow.right") }.padding(.vertical, 6) }.buttonStyle(NovaRowPressStyle())
     }
     private func severityLabel(_ key: String) -> String { ["critical":"Kritik", "high":"Yüksek", "medium":"Orta", "low":"Düşük"][key] ?? key }
     private func severityTone(_ key: String) -> NovaColorToken { ["critical": .statusDangerInk, "high": .statusWarningInk, "medium": .statusInfoInk, "low": .accentInk][key] ?? .text }

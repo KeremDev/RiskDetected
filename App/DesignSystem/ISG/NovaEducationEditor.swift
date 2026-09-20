@@ -348,7 +348,7 @@ struct NovaEducationEditor: View {
             }
             .padding(12).frame(maxWidth: .infinity)
             .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
-        }.buttonStyle(.plain).foregroundStyle(.primary).accessibilityIdentifier("education.topics.link")
+        }.buttonStyle(NovaRowPressStyle()).foregroundStyle(.primary).accessibilityIdentifier("education.topics.link")
     }
 
     private func refreshTemplateDefaults() {
@@ -510,7 +510,7 @@ struct NovaEducationEditor: View {
                                 Image(systemName: "plus.circle").font(.system(size: 16))
                             }.padding(10).frame(maxWidth: .infinity)
                                 .novaControlBackground(cornerRadius: 10)
-                        }.buttonStyle(.plain).accessibilityIdentifier("education.participants.add.\(company.id)")
+                        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("education.participants.add.\(company.id)")
                     }
                 }
             }
@@ -559,7 +559,7 @@ struct NovaEducationEditor: View {
                         Spacer(minLength: 0)
                         Image(systemName: isOpen ? "chevron.up" : "chevron.down").font(.system(size: 12, weight: .semibold))
                     }
-                }.buttonStyle(.plain).accessibilityIdentifier("education.company.\(company.id)")
+                }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("education.company.\(company.id)")
                 if isOpen { companyDetail(company, currentScope: currentScope) }
             }
         }
