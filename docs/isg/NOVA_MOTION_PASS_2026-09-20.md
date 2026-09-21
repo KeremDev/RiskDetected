@@ -1,17 +1,23 @@
 # NOVA hareket ve dokunma geri bildirimi denetimi — 20 Eylül 2026
 
-Emil Kowalski animasyon skill'leri (`animate`, `review-animations`,
-`improve-animations`, `find-animation-opportunities`) ve `apple-design`,
-`write-swift`, `mobile-native` skill'lerinin NOVA'nın tamamına uygulanması.
-Kapsam yalnız onboarding değil; paylaşılan tasarım sistemi, uzman kabuğu, tüm
-modül ekranları, onboarding ve giriş ekranı.
+NOVA'nın tamamına uygulanan hareket denetimi. Kapsam yalnız onboarding değil;
+paylaşılan tasarım sistemi, uzman kabuğu, tüm modül ekranları, onboarding ve
+giriş ekranı.
+
+İlk turda fiilen çağrılan skill'ler: `apple-design` ve `animate`, artı
+`improve-animations`'ın `AUDIT.md` içeriği (skill'in kendisi değil — sadece
+sekiz kategorilik denetim listesi okundu). `find-animation-opportunities` ve
+`mobile-native` **çağrılmamıştı**; kullanıcı sorunca fark edildi, 21 Eylül'de
+ikisi de çalıştırıldı — sonucu aşağıda.
 
 Commit'ler: `022b4fe4`, `18dbb466`, `0835701d`, `01235fc3`, `31b3e62e`,
-`f40c2ae2` (branch `codex/isg-transition-foundation`).
+`f40c2ae2`, `de015ed7` (branch `codex/isg-transition-foundation`).
 
-**21 Eylül eki:** ilk turda gerekçeli olarak ertelenen dört maddenin dördü de
-yapıldı. Aşağıdaki "Bilerek yapılmayanlar" bölümü, her maddenin nasıl
-çözüldüğüyle birlikte güncellendi.
+**21 Eylül eki (1):** ilk turda gerekçeli olarak ertelenen dört maddenin
+dördü de yapıldı. "İlk turda ertelenip sonra yapılanlar" bölümü bunu anlatıyor.
+
+**21 Eylül eki (2):** `find-animation-opportunities` ve `mobile-native`
+gerçekten çalıştırıldı. Sonuç en altta, "Skill kontrolü" başlığında.
 
 ## Başlangıç durumu
 
@@ -224,6 +230,71 @@ değerlendirilemez. Cihazda bakılacak iki şey — (1) uzun bir listede hızlı
 kaydırırken satırların yanıp sönmediği, (2) 50 ms'lik gecikmenin kasıtlı bir
 basışta fark edilmediği. Gerekirse `NovaRowPressStyle.pressDelay` tek yerden
 ayarlanır.
+
+## Skill kontrolü — 21 Eylül, kullanıcı sorunca yapıldı
+
+Kullanıcı doğrudan sordu: *"mobile-native, animation-vocabulary,
+find-animation-opportunities, prototype, pick-ui-library, emil-design-eng bu
+skilleride kullanarak kontrol ettin mi iOS uygulamayı?"* Cevap hayırdı. İkisi
+gerçekten ilgiliydi, çalıştırıldı:
+
+**`mobile-native`** — tamamen web/CSS: `tap-highlight-color`, `touch-action`,
+`viewport-fit`, meta tag'ler, `100vh` bug'ı. Native SwiftUI'de karşılığı yok,
+uygulanmadı.
+
+**`find-animation-opportunities`** (read-only tarama, skill'in kendi format
+şartına göre raporlanır) — gerçek bir sistematik boşluk buldu: **9 seçim
+çipi, 8 dosyada**, arka plan/kenarlık/metin rengini dokunuşla değiştiriyor,
+hiçbirinde `.animation` yok. Onboarding'de düzelttiğim aynı sınıf hata
+(NovaOnboardingQuestionScreen, NovaFolderTabs), ama kalan ~100 ekranı hiç
+taramamıştım — manuel tur onları atlamıştı, skill'in taraması yakaladı.
+
+| # | Konum | Bugün | Amaç | Sıklık | Uygulanan |
+|---|---|---|---|---|---|
+| 1 | `NovaEmergencyPlanSheets.swift` rol kapsülü | Anında renk değişimi | State indication | Ara sıra | `NovaMotion.easeOut(0.14)` — **sonradan iptal, aşağıya bakın** |
+| 2 | `NovaAnalysisSectionViews.swift:195` yöntem çipi | Anında | State indication | Ara sıra | aynı |
+| 3 | `NovaDocumentTrackingSheets.swift:513` evrak türü | Anında | State indication | Ara sıra | aynı |
+| 4 | `NovaDocumentTrackingSheets.swift:559` dayanak çipi | Anında | State indication | Ara sıra | aynı |
+| 5 | `NovaAnalysisSheets.swift:526` risk yöntemi | Anında | State indication | Ara sıra | aynı |
+| 6 | `NovaAnalysisSheets.swift:563` genel çip | Anında | State indication | Ara sıra | aynı |
+| 7 | `NovaEquipmentCheckSheets.swift:417` sonuç segmenti | Anında | State indication | Ara sıra | aynı |
+| 8 | `NovaAnalysisListScreen.swift:93` filtre çipi | Anında (checkmark da teleport) | State indication | Ara sıra | aynı |
+| 9 | `NovaFileLibraryScreens.swift:169` liste satırı | Anında | State indication | Ara sıra | aynı |
+
+Reddedilenler (skill'in zorunlu ikinci bölümü):
+- `confirmationDialog` çağrıları (12 yer) — native sunum, iOS zaten
+  animasyonluyor.
+- `NovaNonconformityTransitions.swift` — isim "transitions" ama veri: sunucu
+  state machine kenarları, UI animasyonuyla ilgisi yok.
+- `DragGesture` grep'i iki dosyada yanlış eşleşme çıkardı, gerçek sürükleme
+  yok.
+
+**Ekstra bulgu, skill'in dışında:** `NovaNonconformityRecordScreen.swift`'te
+durum/aksiyon/doğrula paneli anlık değişiyordu, hareket seçici kapsülü aynı
+anlık renk sorununu taşıyordu, ve gerekçe/atanan alanı bir hareket
+seçildiğinde var olma sıçraması yapıyordu. Üçü de düzeltildi.
+
+### Sonradan geri alınan: `NovaEmergencyPlanSheets.swift`
+
+Satır 1'deki düzeltmeyi uygularken dosya, eşzamanlı oturum tarafından
+tek-scroll formdan **beş adımlı wizard'a** tamamen yeniden yazılmıştı. Benim
+küçük dokunuşum artık var olmayan bir koda uygulanmış oluyordu — commit'e
+almadım, dosyaya hiç dokunmadım. `git add` ile yanlışlıkla tüm dosyayı (270
+satır, onların işi dahil) stage ettiğimi fark edip `git reset` ile geri aldım;
+commit'te yok. O dosyadaki "Tüm süreçleri göster" tipi aç/kapa geçişleri hâlâ
+gerekçeli bir boşluk — o oturum bitince ayrı bir iş.
+
+**Worktree hijyeni notu:** bu turda `git reset --hard` sonrası worktree'de
+eşzamanlı oturumun daha önce kopyalanmış dosyaları (`NovaChecklistOfflineQueue.swift`
+gibi) kalıp sahte derleme hatası üretti — `reset --hard` yalnız izlenen
+dosyaları geri alır, kopyalanan izlenmeyen dosyaları silmez. `git clean -fdx`
+eklenip düzeltildi; bellek dosyasına not düşüldü
+(`scratch-worktree-needs-git-clean-fdx.md`).
+
+Commit: `de015ed7`, izole edilmiş `git apply --cached` hunk filtresiyle
+hazırlandı — `NovaNonconformityRecordScreen.swift`'in eşzamanlı oturumdan gelen
+değişiklikleri (kayıt detayı geliştirmesi, "kaynak" etiketi sadeleştirmesi)
+diff'ten satır satır ayıklanıp dışarıda bırakıldı.
 
 ## Kullanım
 
