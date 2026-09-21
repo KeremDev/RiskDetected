@@ -515,6 +515,7 @@ struct NovaDocumentObligationForm: View {
             .overlay(RoundedRectangle(cornerRadius: 13)
                 .strokeBorder(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.border.color(in: scheme),
                               lineWidth: isOn ? 1.4 : 1))
+            .animation(NovaMotion.easeOut(0.14), value: isOn)
         }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("document.kind.\(kind.code)")
             .accessibilityAddTraits(isOn ? .isSelected : [])
@@ -558,6 +559,7 @@ struct NovaDocumentObligationForm: View {
                                 .padding(.horizontal, 12).frame(minHeight: 40)
                                 .background(draft.basis == value ? NovaColorToken.statusSuccessBg.color(in: scheme)
                                                                 : NovaColorToken.surfaceMuted.color(in: scheme), in: Capsule())
+                                .animation(NovaMotion.easeOut(0.14), value: draft.basis)
                         }.buttonStyle(NovaRowPressStyle())
                             .accessibilityIdentifier("document.basis.\(value.rawValue)")
                             .accessibilityAddTraits(draft.basis == value ? .isSelected : [])

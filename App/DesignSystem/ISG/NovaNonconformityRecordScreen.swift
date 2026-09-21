@@ -257,6 +257,8 @@ struct NovaNonconformityRecordSheet: View {
             default: EmptyView()
             }
         }
+        // One operation panel teleported in over another with no bridge.
+        .animation(NovaMotion.easeOut(NovaMotion.Duration.dropdown), value: panel)
     }
 
     private func operationButton(_ target: Panel, _ symbol: String, _ title: String) -> some View {
@@ -271,6 +273,7 @@ struct NovaNonconformityRecordSheet: View {
             .frame(maxWidth: .infinity, minHeight: 54)
             .background(isOn ? NovaColorToken.statusSuccessBg.color(in: scheme) : NovaColorToken.surface.color(in: scheme),
                 in: RoundedRectangle(cornerRadius: 14))
+            .animation(NovaMotion.easeOut(0.14), value: isOn)
         }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("nonconformity.panel.\(target == .state ? "state" : target == .action ? "action" : "verify")")
             .accessibilityAddTraits(isOn ? .isSelected : [])
@@ -300,34 +303,41 @@ struct NovaNonconformityRecordSheet: View {
                                     .padding(.horizontal, 11).frame(minHeight: 38)
                                     .background(move?.id == edge.id ? NovaColorToken.statusSuccessBg.color(in: scheme)
                                                                     : NovaColorToken.surfaceMuted.color(in: scheme), in: Capsule())
+                                    .animation(NovaMotion.easeOut(0.14), value: move?.id)
                             }.buttonStyle(NovaRowPressStyle())
                                 .accessibilityIdentifier("nonconformity.move.\(edge.to.rawValue)")
                                 .accessibilityAddTraits(move?.id == edge.id ? .isSelected : [])
                         }
                     }
                     if let edge = move {
-                        if edge.requiresAssignee {
-                            field(RDLocalization.string("localizable.nova.nonconformity.move.assignee", table: .localizable, fallback: "Atanan kişi"), $assignee, id: "assignee")
-                        }
-                        area(edge.requiresReason
-                            ? RDLocalization.string("localizable.nova.nonconformity.move.reason.required", table: .localizable, fallback: "Gerekçe *")
-                            : RDLocalization.string("localizable.nova.nonconformity.move.reason", table: .localizable, fallback: "Gerekçe"),
-                            $reason, id: "reason")
-                        if edge.requiresReason {
-                            NovaText(text: RDLocalization.string("localizable.nova.nonconformity.move.reason.hint", table: .localizable,
-                                fallback: "Bu geçiş gerekçesiz kaydedilmez; en az beş karakter yazın."), style: .micro,
-                                color: NovaColorToken.textTertiary.color(in: scheme))
-                        }
-                        NovaButton(label: RDLocalization.string("localizable.nova.nonconformity.move.action", table: .localizable, fallback: "Geçişi kaydet"),
-                            symbol: "arrow.right", isEnabled: !busy && ready(edge), isLoading: busy) {
-                            run {
-                                row = try await client.transition(edge.to, reason, assignee)
-                                move = nil; panel = .none
+                        // Choosing a move used to snap these fields into existence.
+                        // They now grow out of the capsule the reader just picked.
+                        VStack(alignment: .leading, spacing: 8) {
+                            if edge.requiresAssignee {
+                                field(RDLocalization.string("localizable.nova.nonconformity.move.assignee", table: .localizable, fallback: "Atanan kişi"), $assignee, id: "assignee")
                             }
-                        }.accessibilityIdentifier("nonconformity.move.save")
+                            area(edge.requiresReason
+                                ? RDLocalization.string("localizable.nova.nonconformity.move.reason.required", table: .localizable, fallback: "Gerekçe *")
+                                : RDLocalization.string("localizable.nova.nonconformity.move.reason", table: .localizable, fallback: "Gerekçe"),
+                                $reason, id: "reason")
+                            if edge.requiresReason {
+                                NovaText(text: RDLocalization.string("localizable.nova.nonconformity.move.reason.hint", table: .localizable,
+                                    fallback: "Bu geçiş gerekçesiz kaydedilmez; en az beş karakter yazın."), style: .micro,
+                                    color: NovaColorToken.textTertiary.color(in: scheme))
+                            }
+                            NovaButton(label: RDLocalization.string("localizable.nova.nonconformity.move.action", table: .localizable, fallback: "Geçişi kaydet"),
+                                symbol: "arrow.right", isEnabled: !busy && ready(edge), isLoading: busy) {
+                                run {
+                                    row = try await client.transition(edge.to, reason, assignee)
+                                    move = nil; panel = .none
+                                }
+                            }.accessibilityIdentifier("nonconformity.move.save")
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                     }
                 }
             }.frame(maxWidth: .infinity, alignment: .leading)
+                .animation(NovaMotion.easeOut(NovaMotion.Duration.dropdown), value: move?.id)
         }
     }
 

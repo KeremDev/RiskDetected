@@ -197,6 +197,7 @@ struct NovaAnalysisMethodToggle: View {
             .overlay(RoundedRectangle(cornerRadius: 11)
                 .strokeBorder(isOn ? NovaColorToken.accentInk.color(in: scheme) : NovaColorToken.border.color(in: scheme),
                               lineWidth: isOn ? 1.4 : 1))
+            .animation(NovaMotion.easeOut(0.14), value: isOn)
         }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("analysis.detail.method.\(value.rawValue)")
             .accessibilityAddTraits(isOn ? .isSelected : [])

@@ -525,6 +525,7 @@ struct NovaRiskScoreEditor: View {
                 .padding(.horizontal, 12).frame(minHeight: 40)
                 .background(isSelected ? NovaColorToken.statusSuccessBg.color(in: scheme) : NovaColorToken.surfaceMuted.color(in: scheme),
                     in: Capsule())
+                .animation(NovaMotion.easeOut(0.14), value: isSelected)
         }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("risk.method.\(value.rawValue)")
             .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
@@ -562,6 +563,7 @@ struct NovaRiskScoreEditor: View {
                 .padding(.horizontal, 14).frame(minWidth: 44, minHeight: 40)
                 .background(isSelected ? NovaColorToken.inverse.color(in: scheme) : NovaColorToken.surfaceMuted.color(in: scheme),
                     in: RoundedRectangle(cornerRadius: 10))
+                .animation(NovaMotion.easeOut(0.14), value: isSelected)
         }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier(identifier)
             .accessibilityAddTraits(isSelected ? .isSelected : [])
     }

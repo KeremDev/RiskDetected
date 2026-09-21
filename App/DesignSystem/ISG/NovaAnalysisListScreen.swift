@@ -91,6 +91,7 @@ struct NovaAnalysisFilterChip: View {
             }
             .padding(.horizontal, 13).frame(minHeight: 38)
             .background(isOn ? NovaColorToken.inverse.color(in: scheme) : NovaColorToken.surfaceMuted.color(in: scheme), in: Capsule())
+            .animation(NovaMotion.easeOut(0.14), value: isOn)
         }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier(identifier)
             .accessibilityAddTraits(isOn ? .isSelected : [])

@@ -169,6 +169,7 @@ struct NovaFileChooserPanel: View {
             .background(isOn ? NovaColorToken.surfaceMuted.color(in: scheme) : .clear,
                 in: RoundedRectangle(cornerRadius: 10))
             .contentShape(Rectangle())
+            .animation(NovaMotion.easeOut(0.14), value: isOn)
         }.buttonStyle(NovaRowPressStyle())
             .accessibilityIdentifier("\(identifier).\(option.identity)")
             .accessibilityAddTraits(isOn ? .isSelected : [])

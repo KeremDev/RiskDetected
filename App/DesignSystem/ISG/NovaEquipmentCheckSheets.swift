@@ -420,6 +420,7 @@ struct NovaEquipmentItemSheet: View {
                             .overlay(RoundedRectangle(cornerRadius: 11)
                                 .strokeBorder(draft.result == value ? NovaColorToken.accentInk.color(in: scheme) : .clear,
                                               lineWidth: 1.2))
+                            .animation(NovaMotion.easeOut(0.14), value: draft.result)
                     }.buttonStyle(NovaRowPressStyle())
                         .accessibilityIdentifier("equipment.result.\(value)")
                         .accessibilityAddTraits(draft.result == value ? .isSelected : [])
