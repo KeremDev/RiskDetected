@@ -1,8 +1,7 @@
 package com.riskdetectedan.core.designsystem.isg
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -10,42 +9,33 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowForward
-import androidx.compose.ui.res.vectorResource
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import java.util.Locale
 
 /** Authorized account-scoped records are injected by the host; no fake production counts. */
-data class NovaCompanyItem(val id: String, val name: String, val detail: String)
+data class NovaCompanyItem(val id: String, val name: String, val detail: String,
+                           val progressCompleted: Int = 0, val progressTotal: Int = 8)
 data class NovaMetricItem(val id: String, val value: String, val label: String, val footer: String,
-                          val icon: ImageVector, val tone: NovaColorToken, val destination: NovaDestination)
+                          val symbol: String, val tone: NovaColorToken, val destination: NovaDestination)
+data class NovaRecentAnalysis(val id: String, val title: String, val companyName: String, val createdOn: String)
 data class NovaDashboardData(val firstName: String, val openCount: Int?, val metrics: List<NovaMetricItem>,
-                             val activity: String?, val trainingMessage: String, val recentFindings: List<NovaRecentFinding> = emptyList())
-data class NovaRecentFinding(val id: String, val companyName: String, val thumbnail: ImageBitmap? = null)
+                             val activity: String?, val trainingMessage: String,
+                             val recentAnalyses: List<NovaRecentAnalysis> = emptyList(),
+                             val summaryMessage: String? = null)
 
 internal fun filterNovaCompanies(companies: List<NovaCompanyItem>, query: String): List<NovaCompanyItem> {
     val locale = Locale.forLanguageTag("tr-TR")
@@ -53,206 +43,270 @@ internal fun filterNovaCompanies(companies: List<NovaCompanyItem>, query: String
     return if (needle.isEmpty()) companies else companies.filter { "${it.name} ${it.detail}".lowercase(locale).contains(needle) }
 }
 
+/** Legacy helper kept for the directory/personnel screens. */
 @Composable
 internal fun NovaSizeText(text: String, size: Float, weight: FontWeight = FontWeight.SemiBold,
-                         color: Color = NovaColorToken.text.color(), modifier: Modifier = Modifier, maxLines: Int = Int.MAX_VALUE) {
-    Text(text, modifier, color, style = NovaTypeToken.body.textStyle().copy(fontSize = size.sp, lineHeight = (size * 1.25f).sp, fontWeight = weight), maxLines = maxLines)
-}
+                          color: Color = NovaColorToken.text.color(), modifier: Modifier = Modifier, maxLines: Int = Int.MAX_VALUE) =
+    NovaSizedText(text, size, weight, color, modifier, maxLines)
 
+/**
+ * Home (iOS `NovaDashboardScreen`). [tracking] and [footer] are host-owned
+ * slots so the data-bound module tracking card and OSGB controls live inside
+ * the same scroll surface without forking the layout.
+ */
 @Composable
-private fun NovaScreenCard(modifier: Modifier = Modifier, radius: Int = 22, padding: Int = 16, content: @Composable ColumnScope.() -> Unit) {
-    Column(modifier.background(NovaColorToken.surface.color(), RoundedCornerShape(radius.dp)).padding(padding.dp), content = content)
-}
-
-@Composable
-fun NovaDashboardScreen(data: NovaDashboardData, onNavigate: (NovaDestination) -> Unit, onPhoto: () -> Unit, onAssistant: () -> Unit,
-                         onFinding: ((String) -> Unit)? = null) {
-    val expanded = LocalDensity.current.fontScale >= 1.5f
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).testTag("nova.home.scroll").padding(bottom = 122.dp)) {
-        NovaScreenCard(Modifier.padding(horizontal = 20.dp).fillMaxWidth()) {
-            @Composable fun Greeting(modifier: Modifier = Modifier) {
-                Column(modifier) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                        Icon(androidx.compose.ui.res.painterResource(com.riskdetectedan.core.designsystem.R.drawable.nova_helmet), null, Modifier.size(18.dp), tint = NovaColorToken.text.color())
-                        NovaSizeText("Merhaba, ${data.firstName}", 15.5f, FontWeight.Bold)
-                    }
-                    NovaText(data.openCount?.let { "Bugün $it açık uygunsuzluk var." } ?: "Özet yükleniyor…", Modifier.padding(top = 3.dp), NovaTypeToken.metaQuiet, NovaColorToken.textMuted.color())
-                }
-            }
-            @Composable fun Assistant() {
-                Row(Modifier.heightIn(min = 48.dp).background(NovaColorToken.surfaceMuted.color(), CircleShape)
-                    .clickable(role = Role.Button, onClick = onAssistant).testTag("nova.home.assistant").padding(horizontal = 15.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                    NovaGlyph(Icons.Outlined.AutoAwesome, null, Modifier.size(14.dp))
-                    NovaSizeText("AI Asistan", 13.5f)
-                }
-            }
-            if (expanded) { Greeting(); Spacer(Modifier.height(12.dp)); Assistant() }
-            else Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) { Greeting(Modifier.weight(1f)); Assistant() }
+fun NovaDashboardScreen(data: NovaDashboardData, onNavigate: (NovaDestination) -> Unit, onPhoto: () -> Unit,
+                        onAssistant: () -> Unit, showsPhotoCapture: Boolean = true, showsAssistant: Boolean = true,
+                        tracking: (@Composable () -> Unit)? = null, footer: (@Composable () -> Unit)? = null) {
+    val muted = NovaColorToken.textMuted.color()
+    val accentInk = NovaColorToken.accentInk.color()
+    val wide = LocalDensity.current.fontScale >= 1.5f
+    Column(Modifier.fillMaxSize().background(NovaColorToken.canvas.color()).verticalScroll(rememberScrollState())
+        .testTag("nova.home.scroll").padding(bottom = 122.dp)) {
+        NovaWelcomeCard(data, showsAssistant, onAssistant, Modifier.padding(horizontal = 20.dp).padding(top = 10.dp, bottom = 20.dp))
+        Row(Modifier.padding(horizontal = 20.dp).padding(bottom = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+            NovaText("Özet", Modifier.weight(1f), NovaTypeToken.sectionTitle)
+            NovaText("Güncel", style = NovaTypeToken.meta, color = muted)
         }
-        Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(top = 20.dp, bottom = 9.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            NovaText("Özet", style = NovaTypeToken.sectionTitle)
-            NovaText("Bu ay", style = NovaTypeToken.meta, color = NovaColorToken.textMuted.color())
-        }
-        Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 18.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
             data.metrics.forEach { metric ->
-                Column(Modifier.width(if (expanded) 160.dp else 86.dp).heightIn(min = 86.dp)
-                    .background(NovaColorToken.surface.color(), RoundedCornerShape(18.dp))
-                    .clickable(role = Role.Button) { onNavigate(metric.destination) }.testTag("nova.metric.${metric.id}").padding(horizontal = 10.dp, vertical = 11.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        NovaGlyph(metric.icon, null, Modifier.size(15.dp), metric.tone.color())
-                        NovaSizeText(metric.value, 19f, FontWeight.ExtraBold)
+                NovaListStat(metric.label, metric.symbol, metric.value, Modifier.width(if (wide) 160.dp else 86.dp)
+                    .testTag("nova.metric.${metric.id}")) { onNavigate(metric.destination) }
+            }
+        }
+        if (showsPhotoCapture) NovaCaptureCard(onPhoto, { onNavigate(NovaDestination.newFinding) },
+            Modifier.padding(horizontal = 20.dp).padding(bottom = 22.dp))
+        Row(Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            NovaIcon("line.3.horizontal.decrease", 20.dp, tint = accentInk)
+            NovaText("Son Analizler", Modifier.weight(1f), NovaTypeToken.screenTitle)
+            Box(Modifier.heightIn(min = 36.dp).novaRowPress { onNavigate(NovaDestination.analyses) }, contentAlignment = Alignment.Center) {
+                NovaText("Tümü", style = NovaTypeToken.meta, color = muted)
+            }
+        }
+        if (data.recentAnalyses.isEmpty()) {
+            Row(Modifier.padding(horizontal = 20.dp).padding(top = 12.dp).fillMaxWidth().heightIn(min = 52.dp)
+                .clip(RoundedCornerShape(18.dp)).novaControlBackground(18.dp)
+                .novaRowPress { onNavigate(NovaDestination.newAnalysis) }.testTag("nova.home.analysis.empty")
+                .padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                NovaIcon("photo.on.rectangle.angled", 20.dp, tint = accentInk)
+                NovaText("Henüz analiz yok · İlk analizi oluştur", Modifier.weight(1f), NovaTypeToken.meta)
+                NovaIcon("chevron.right", 14.dp)
+            }
+        } else {
+            Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                data.recentAnalyses.forEach { analysis ->
+                    Column(Modifier.width(198.dp).height(130.dp).clip(RoundedCornerShape(18.dp)).novaControlBackground(18.dp)
+                        .novaRowPress { onNavigate(NovaDestination.analyses) }.testTag("nova.home.analysis.${analysis.id}")
+                        .padding(12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            NovaIcon("photo.on.rectangle.angled", 18.dp, tint = accentInk)
+                            Spacer(Modifier.weight(1f))
+                            NovaIcon("chevron.right", 13.dp)
+                        }
+                        NovaText(analysis.title, style = NovaTypeToken.bodyStrong, maxLines = 2)
+                        NovaText(listOf(analysis.companyName, analysis.createdOn).filter { it.isNotEmpty() }.joinToString(" · "),
+                            style = NovaTypeToken.metaQuiet, color = muted, maxLines = 1)
                     }
-                    NovaSizeText(metric.label, 10f, FontWeight.Medium, NovaColorToken.textMuted.color(), Modifier.padding(top = 3.dp).heightIn(min = 24.dp), maxLines = 2)
-                    NovaSizeText(metric.footer, 9.5f, FontWeight.Bold, if (metric.id == "open") metric.tone.color() else NovaColorToken.textMuted.color(), maxLines = 1)
                 }
             }
         }
-        NovaScreenCard(Modifier.padding(horizontal = 20.dp).padding(top = 18.dp).fillMaxWidth(), radius = 24, padding = 12) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                NovaText("Canlı Akış", style = NovaTypeToken.sectionTitle)
-                TextButton(onClick = { onNavigate(NovaDestination.notifications) }, modifier = Modifier.height(32.dp), contentPadding = PaddingValues(horizontal = 4.dp)) {
-                    NovaText("Tümü", style = NovaTypeToken.meta, color = NovaColorToken.accentInk.color())
-                    NovaGlyph(Icons.AutoMirrored.Outlined.ArrowForward, null, Modifier.size(14.dp), NovaColorToken.accentInk.color())
+        if (tracking != null) Box(Modifier.padding(horizontal = 20.dp).padding(top = 22.dp)) { tracking() }
+        if (footer != null) Box(Modifier.padding(horizontal = 16.dp).padding(top = 22.dp)) { footer() }
+    }
+}
+
+@Composable
+private fun NovaWelcomeCard(data: NovaDashboardData, showsAssistant: Boolean, onAssistant: () -> Unit, modifier: Modifier) {
+    val surface = NovaColorToken.surface.color()
+    val dark = LocalNovaDark.current
+    val accent = NovaColorToken.accent.color()
+    val shape = RoundedCornerShape(22.dp)
+    Box(modifier.fillMaxWidth().clip(shape)
+        .background(Brush.linearGradient(listOf(surface, surface.copy(alpha = 0.92f), accent.copy(alpha = if (dark) 0.42f else 0.28f))), shape)
+        .border(1.dp, NovaColorToken.border.color(), shape)) {
+        NovaSafetyIconPattern(Modifier.matchParentSize())
+        val greeting = @Composable { m: Modifier ->
+            Column(m, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
+                    NovaIcon("helmet", 18.dp)
+                    NovaSizedText("Merhaba, ${data.firstName}", 15.5f, FontWeight.Bold)
                 }
-            }
-            Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).clickable(enabled = data.activity != null, role = Role.Button) { onNavigate(NovaDestination.notifications) },
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                NovaGlyph(Icons.Outlined.Business, null, Modifier.size(16.dp), NovaColorToken.statusInfoDot.color())
-                NovaSizeText(data.activity ?: "Henüz yeni etkinlik yok.", 11.5f, color = NovaColorToken.textSecondary.color(), modifier = Modifier.weight(1f), maxLines = 1)
-                NovaGlyph(Icons.Outlined.ChevronRight, null, Modifier.size(13.dp), NovaColorToken.textTertiary.color())
+                NovaText(data.summaryMessage ?: data.openCount?.let { "Bugün $it açık uygunsuzluk var." } ?: "Özet yükleniyor…",
+                    style = NovaTypeToken.metaQuiet, color = NovaColorToken.textMuted.color())
             }
         }
-        NovaScreenCard(Modifier.padding(horizontal = 20.dp).padding(top = 12.dp).fillMaxWidth(), radius = 26, padding = 18) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                NovaText("Yeni kayıt", Modifier.background(NovaColorToken.surfaceMuted.color(), CircleShape).padding(horizontal = 12.dp, vertical = 6.dp), NovaTypeToken.meta, NovaColorToken.textSecondary.color())
-                Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    listOf(1f, .45f, .2f).forEach { Box(Modifier.size(6.dp).background(NovaColorToken.accent.color().copy(alpha = it), CircleShape)) }
-                }
-            }
-            val photoBorder = NovaColorToken.borderStrong.color()
-            Box(Modifier.padding(top = 12.dp).fillMaxWidth().heightIn(min = 118.dp).clip(RoundedCornerShape(20.dp))
-                .background(NovaColorToken.canvasSheet.color()).drawBehind {
-                    drawRoundRect(photoBorder, cornerRadius = CornerRadius(20.dp.toPx()), style = Stroke(1.6.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 4.dp.toPx()))))
-                }.clickable(role = Role.Button, onClick = onPhoto).testTag("nova.home.photo"), contentAlignment = Alignment.Center) {
-                NovaPhotoBackdrop(Modifier.matchParentSize())
-                Column(Modifier.padding(12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(9.dp, Alignment.CenterVertically)) {
-                Box(Modifier.size(46.dp), contentAlignment = Alignment.Center) {
-                    NovaGlyph(Icons.Outlined.PhotoCamera, null, Modifier.size(22.dp))
-                    NovaGlyph(Icons.Outlined.Add, null, Modifier.align(Alignment.BottomEnd).size(15.dp), NovaColorToken.accent.color())
-                }
-                NovaText("Fotoğraf çek veya galeriden seç", style = NovaTypeToken.meta, color = NovaColorToken.textTertiary.color())
-                }
-            }
-            Row(Modifier.padding(top = 14.dp).fillMaxWidth().heightIn(min = 54.dp).background(NovaColorToken.accent.color(), CircleShape)
-                .clickable(role = Role.Button) { onNavigate(NovaDestination.newFinding) }.testTag("nova.home.addFinding"),
-                horizontalArrangement = Arrangement.spacedBy(9.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
-                NovaGlyph(Icons.AutoMirrored.Outlined.ArrowForward, null, Modifier.size(20.dp), Color.White)
-                NovaText("Uygunsuzluk Ekle", style = NovaTypeToken.button, color = Color.White)
+        val assistant = @Composable {
+            Row(Modifier.heightIn(min = 44.dp).clip(CircleShape).background(NovaColorToken.surfaceMuted.color(), CircleShape)
+                .novaRowPress(onClick = onAssistant).testTag("nova.home.assistant").padding(horizontal = 15.dp),
+                horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
+                NovaIcon("sparkle", 14.dp)
+                NovaSizedText("AI Asistan", 13.5f)
             }
         }
-        Row(Modifier.padding(horizontal = 18.dp).padding(top = 22.dp).fillMaxWidth().heightIn(min = 60.dp)
-            .background(NovaColorToken.surface.color(), RoundedCornerShape(24.dp)).clickable(role = Role.Button) { onNavigate(NovaDestination.training) }
-            .testTag("nova.home.training").padding(horizontal = 14.dp, vertical = 13.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            NovaGlyph(Icons.Outlined.ThumbUp, null, Modifier.size(22.dp), NovaColorToken.accent.color())
-            Column(Modifier.weight(1f)) {
-                NovaText("Eğitim ve Takip", style = NovaTypeToken.cardTitle)
-                NovaSizeText(data.trainingMessage, 11f, FontWeight.Normal, NovaColorToken.textSecondary.color())
-            }
-            NovaGlyph(Icons.Outlined.ChevronRight, null, Modifier.size(18.dp))
-        }
-        Row(Modifier.padding(horizontal = 20.dp).padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            NovaGlyph(Icons.Outlined.FilterList, null, Modifier.size(20.dp), NovaColorToken.accentInk.color())
-            NovaText("Son Uygunsuzluklar", Modifier.weight(1f).padding(start = 10.dp), NovaTypeToken.screenTitle)
-            TextButton(onClick = { onNavigate(NovaDestination.findings) }) { NovaText("Tümü", style = NovaTypeToken.meta) }
-        }
-        Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            data.recentFindings.forEach { finding ->
-                Column(Modifier.width(74.dp).clickable(enabled = onFinding != null, role = Role.Button) { onFinding?.invoke(finding.id) }.testTag("nova.recent.${finding.id}"),
-                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val ring = NovaColorToken.statusInfoDot.color()
-                    Box(Modifier.size(66.dp).drawBehind { drawCircle(ring, style = Stroke(3.dp.toPx())) }.padding(3.dp).clip(CircleShape), contentAlignment = Alignment.Center) {
-                        if (finding.thumbnail != null) Image(finding.thumbnail, null, Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
-                        else NovaGlyph(Icons.Outlined.PhotoCamera, null, Modifier.size(22.dp))
-                    }
-                    NovaSizeText(finding.companyName, 11.5f, color = NovaColorToken.textMuted.color(), maxLines = 1)
-                }
-            }
+        if (novaFontScaleIsAccessibility()) Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            greeting(Modifier)
+            if (showsAssistant) assistant()
+        } else Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            greeting(Modifier.weight(1f))
+            if (showsAssistant) assistant()
         }
     }
 }
 
-/** Source PhotoBackdrop.tsx icon collage; decorative only, no colored icon tiles. */
-@Composable private fun NovaPhotoBackdrop(modifier: Modifier) {
-    val motifs = listOf(
-        listOf(30f, .06f, 16f, 12f, -14f, 0f), listOf(20f, .075f, 62f, 62f, 8f, 1f),
-        listOf(40f, .045f, 24f, 66f, 6f, 1f), listOf(22f, .07f, 108f, 16f, 12f, 0f),
-        listOf(16f, .085f, 148f, 74f, -8f, 1f), listOf(34f, .05f, 210f, 20f, -10f, 0f),
-        listOf(24f, .07f, 262f, 66f, 14f, 1f), listOf(18f, .075f, 300f, 22f, -6f, 0f),
-        listOf(28f, .05f, 246f, 8f, 18f, 0f), listOf(20f, .06f, 186f, 76f, -16f, 0f))
-    BoxWithConstraints(modifier) {
-        motifs.forEach { m ->
-            Icon(androidx.compose.ui.graphics.vector.ImageVector.vectorResource(if (m[5] == 1f) com.riskdetectedan.core.designsystem.R.drawable.nova_backdrop_camera else com.riskdetectedan.core.designsystem.R.drawable.nova_backdrop_photo), null,
-                Modifier.offset(x = maxWidth * (m[2] / 326f), y = maxHeight * (m[3] / 118f)).size(m[0].dp).rotate(m[4]).alpha(m[1]), tint = NovaColorToken.text.color())
+/** Quiet decorative texture behind the greeting. */
+@Composable
+private fun NovaSafetyIconPattern(modifier: Modifier) {
+    val items = listOf(
+        listOf("eyeglasses", 27, 0.16, 0.78, 0.25), listOf("person.crop.square", 40, 0.11, 0.93, 0.22),
+        listOf("hand.raised.fill", 23, 0.13, 0.70, 0.70), listOf("shield.fill", 30, 0.10, 0.87, 0.72),
+        listOf("waveform.path.ecg", 22, 0.12, 0.58, 0.36), listOf("wrench.and.screwdriver.fill", 19, 0.11, 0.99, 0.48),
+        listOf("cross.case.fill", 18, 0.12, 0.62, 0.86))
+    val ink = NovaColorToken.onDark.color()
+    BoxWithConstraints(modifier.clearAndSetSemantics {}) {
+        items.forEach { (symbol, size, opacity, x, y) ->
+            val s = (size as Int).dp
+            NovaIcon(symbol as String, s, Modifier.offset(maxWidth * (x as Double).toFloat() - s / 2, maxHeight * (y as Double).toFloat() - s / 2),
+                tint = ink.copy(alpha = (opacity as Double).toFloat()))
         }
     }
 }
 
+@Composable
+private fun NovaCaptureCard(onPhoto: () -> Unit, onManual: () -> Unit, modifier: Modifier) {
+    val accent = NovaColorToken.accent.color()
+    Column(modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).novaControlBackground(26.dp).padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            NovaText("Yeni kayıt", Modifier.background(NovaColorToken.surfaceMuted.color(), CircleShape)
+                .padding(horizontal = 12.dp, vertical = 6.dp), NovaTypeToken.meta, NovaColorToken.text.color())
+            Spacer(Modifier.weight(1f))
+            Row(horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.clearAndSetSemantics {}) {
+                listOf(1f, 0.45f, 0.2f).forEach { Box(Modifier.size(6.dp).background(accent.copy(alpha = it), CircleShape)) }
+            }
+        }
+        // Both creation methods answer the same question and share one hierarchy.
+        val photo = @Composable { m: Modifier -> NovaAddActionCard("Fotoğraftan analiz", "Fotoğraf seç veya çek", "camera", "nova.home.photo", m, onPhoto) }
+        val manual = @Composable { m: Modifier -> NovaAddActionCard("Elle uygunsuzluk", "Bilgileri adım adım gir", "square.and.pencil", "nova.home.addFinding", m, onManual) }
+        if (novaFontScaleIsAccessibility()) Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            photo(Modifier.fillMaxWidth()); manual(Modifier.fillMaxWidth())
+        } else Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.height(IntrinsicSize.Max)) {
+            photo(Modifier.weight(1f).fillMaxHeight()); manual(Modifier.weight(1f).fillMaxHeight())
+        }
+    }
+}
+
+@Composable
+private fun NovaAddActionCard(title: String, detail: String, symbol: String, tag: String, modifier: Modifier, onClick: () -> Unit) {
+    val accentInk = NovaColorToken.accentInk.color()
+    val shape = RoundedCornerShape(18.dp)
+    Column(modifier.heightIn(min = 126.dp).clip(shape).background(NovaColorToken.surfaceMuted.color(), shape)
+        .border(1.dp, NovaColorToken.border.color(), shape).novaRowPress(onClick = onClick).testTag(tag).padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        NovaIcon(symbol, 23.dp, tint = accentInk)
+        NovaText(title, style = NovaTypeToken.bodyStrong)
+        NovaText(detail, style = NovaTypeToken.metaQuiet)
+        Spacer(Modifier.weight(1f))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            NovaText("Başla", Modifier.weight(1f), NovaTypeToken.meta, accentInk)
+            NovaIcon("arrow.right", 13.dp)
+        }
+    }
+}
+
+/** Company list (iOS `NovaCompaniesScreen`), with the setup progress per company. */
 @Composable
 fun NovaCompaniesScreen(companies: List<NovaCompanyItem>, isLoading: Boolean = false, error: String? = null,
-                         onSelect: (String) -> Unit, onBack: () -> Unit, onRetry: () -> Unit, isOwnedList: Boolean = false) {
+                        onSelect: (String) -> Unit, onBack: () -> Unit, onRetry: () -> Unit, isOwnedList: Boolean = false,
+                        onCreate: (() -> Unit)? = null) {
     var query by rememberSaveable { mutableStateOf("") }
     val filtered = filterNovaCompanies(companies, query)
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 122.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            IconButton(onClick = onBack) { NovaGlyph(Icons.Outlined.ChevronLeft, "Panele dön", Modifier.size(18.dp)) }
-            Column {
-                NovaText("Firmalar", style = NovaTypeToken.screenTitle)
-                NovaText(if (isOwnedList) "${filtered.size} firma" else "${filtered.size} atanmış firma", style = NovaTypeToken.metaQuiet, color = NovaColorToken.textMuted.color())
+    val muted = NovaColorToken.textMuted.color()
+    Column(Modifier.fillMaxSize().background(NovaColorToken.canvas.color()).verticalScroll(rememberScrollState())
+        .padding(horizontal = 20.dp).padding(top = 12.dp, bottom = 24.dp + novaTabBarInset),
+        verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            NovaBackButton(onClick = onBack)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                NovaSizedText("Firmalar", 20f, FontWeight.ExtraBold)
+                NovaText(if (isOwnedList) "${filtered.size} firma" else "${filtered.size} atanmış firma",
+                    style = NovaTypeToken.metaQuiet, color = muted)
+            }
+            if (onCreate != null) Row(Modifier.heightIn(min = 34.dp).widthIn(min = 116.dp).clip(CircleShape)
+                .background(NovaColorToken.accent.color(), CircleShape).novaRowPress(onClick = onCreate)
+                .testTag("nova.pilot.company.create").padding(horizontal = 15.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
+                NovaIcon("plus", 13.dp, tint = NovaColorToken.onAccent.color())
+                NovaText("Firma Ekle", style = NovaTypeToken.bodyStrong, color = NovaColorToken.onAccent.color())
             }
         }
-        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).background(NovaColorToken.surface.color(), RoundedCornerShape(16.dp)).padding(horizontal = 14.dp),
+        Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).novaControlBackground(16.dp).padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            NovaGlyph(Icons.Outlined.Search, null, Modifier.size(18.dp), NovaColorToken.textPlaceholder.color())
-            BasicTextField(query, { query = it }, Modifier.weight(1f).testTag("nova.companies.search").semantics { contentDescription = "Firma ara" },
-                textStyle = NovaTypeToken.body.textStyle().copy(color = NovaColorToken.text.color()), singleLine = true,
-                decorationBox = { inner -> if (query.isEmpty()) NovaText("Firma ara...", color = NovaColorToken.textPlaceholder.color()); inner() })
-            if (query.isNotEmpty()) IconButton(onClick = { query = "" }, Modifier.testTag("nova.companies.clear")) { NovaGlyph(Icons.Outlined.Close, "Aramayı temizle", Modifier.size(16.dp)) }
+            NovaIcon("magnifyingglass", 15.dp, tint = NovaColorToken.textPlaceholder.color())
+            Box(Modifier.weight(1f)) {
+                if (query.isEmpty()) NovaText("Firma ara...", color = NovaColorToken.textPlaceholder.color())
+                BasicTextField(query, { query = it }, Modifier.fillMaxWidth().testTag("nova.companies.search")
+                    .semantics { contentDescription = "Firma ara" }, singleLine = true,
+                    textStyle = novaTextStyle(NovaTypeToken.body).copy(color = NovaColorToken.text.color()),
+                    cursorBrush = SolidColor(NovaColorToken.text.color()))
+            }
+            if (query.isNotEmpty()) Box(Modifier.size(44.dp).novaPress(onClickLabel = "Aramayı temizle") { query = "" }
+                .semantics { contentDescription = "Aramayı temizle" }.testTag("nova.companies.clear"), contentAlignment = Alignment.Center) {
+                NovaIcon("xmark", 15.dp)
+            }
         }
         when {
-            isLoading -> Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                NovaGlyph(Icons.Outlined.HourglassEmpty, null, Modifier.size(20.dp)); NovaText("Firmalar yükleniyor")
+            isLoading -> Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                NovaIcon("hourglass", 16.dp); NovaText("Firmalar yükleniyor")
             }
-            error != null -> Column {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NovaGlyph(Icons.Outlined.ErrorOutline, null, Modifier.size(20.dp), NovaColorToken.statusDangerInk.color())
-                    NovaText(error)
+            error != null -> Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    NovaIcon("exclamationmark.triangle", 16.dp); NovaText("Firmalar alınamadı")
                 }
-                TextButton(onClick = onRetry) { NovaGlyph(Icons.Outlined.Refresh, null, Modifier.size(20.dp)); NovaText("Tekrar dene") }
-            }
-            filtered.isEmpty() -> Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                NovaGlyph(Icons.Outlined.Business, null, Modifier.size(20.dp))
-                NovaText(if (query.isEmpty()) { if (isOwnedList) "Henüz firma eklenmedi." else "Hesabına atanmış firma yok." } else "Firma bulunamadı")
-            }
-            else -> filtered.forEach { company ->
-                Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).background(NovaColorToken.surface.color(), RoundedCornerShape(22.dp))
-                    .clickable(role = Role.Button) { onSelect(company.id) }.testTag("nova.company.${company.id}").padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
-                    Box(Modifier.size(38.dp).background(Color(0xFFF05245), RoundedCornerShape(13.dp)), contentAlignment = Alignment.Center) {
-                        NovaText(novaInitials(company.name), style = NovaTypeToken.cardTitle, color = Color.White)
-                    }
-                    Column(Modifier.weight(1f)) {
-                        NovaText(company.name, style = NovaTypeToken.cardTitle)
-                        NovaText(company.detail, Modifier.padding(top = 3.dp), NovaTypeToken.meta, NovaColorToken.textMuted.color())
-                    }
-                    NovaGlyph(Icons.Outlined.ChevronRight, null, Modifier.size(13.dp), NovaColorToken.borderStrong.color())
+                NovaText(error, style = NovaTypeToken.metaQuiet)
+                Row(Modifier.heightIn(min = 44.dp).novaRowPress(onClick = onRetry).testTag("nova.companies.retry"),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    NovaIcon("arrow.clockwise", 16.dp); NovaText("Tekrar dene", style = NovaTypeToken.bodyStrong)
                 }
             }
-        }
-        TextButton(onClick = onBack) {
-            NovaGlyph(Icons.Outlined.ChevronLeft, null, Modifier.size(16.dp), NovaColorToken.textMuted.color())
-            NovaText("Panele dön", Modifier.padding(start = 8.dp), NovaTypeToken.meta, NovaColorToken.textMuted.color())
+            filtered.isEmpty() -> Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                NovaIcon("building.2", 16.dp)
+                NovaText(if (query.isNotBlank()) "Firma bulunamadı" else if (isOwnedList) "Henüz firma eklenmedi." else "Hesabına atanmış firma yok.")
+            }
+            else -> NovaListEntrance(filtered.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    filtered.forEachIndexed { index, company -> NovaCompanyRow(company, Modifier.novaRowEntrance(index)) { onSelect(company.id) } }
+                }
+            }
         }
     }
 }
+
+@Composable
+private fun NovaCompanyRow(company: NovaCompanyItem, modifier: Modifier, onClick: () -> Unit) {
+    val total = company.progressTotal.coerceAtLeast(1)
+    val done = company.progressCompleted.coerceIn(0, total)
+    Row(modifier.fillMaxWidth().heightIn(min = 82.dp).clip(RoundedCornerShape(22.dp)).novaControlBackground(22.dp)
+        .novaRowPress(onClick = onClick).testTag("nova.company.${company.id}").padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(11.dp)) {
+        Box(Modifier.size(38.dp).background(Brush.linearGradient(listOf(Color(1f, 0.42f, 0.37f), Color(0.89f, 0.2f, 0.16f))),
+            RoundedCornerShape(13.dp)), contentAlignment = Alignment.Center) {
+            NovaText(novaInitialsOf(company.name), style = NovaTypeToken.cardTitle, color = Color.White)
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            NovaText(company.name, style = NovaTypeToken.cardTitle)
+            NovaText(company.detail, style = NovaTypeToken.meta, color = NovaColorToken.textMuted.color())
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(Modifier.weight(1f).height(5.dp).background(NovaColorToken.surfaceMuted.color(), CircleShape)) {
+                    Box(Modifier.fillMaxWidth(done.toFloat() / total).fillMaxHeight().background(NovaColorToken.accent.color(), CircleShape))
+                }
+                NovaText("$done/$total", style = NovaTypeToken.micro, color = NovaColorToken.textMuted.color())
+            }
+        }
+        NovaIcon("chevron.right", 14.dp, tint = NovaColorToken.borderStrong.color())
+    }
+}
+

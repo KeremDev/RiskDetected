@@ -50,16 +50,17 @@ class NovaScreensTest {
         compose.onNodeWithTag("nova.companies.clear").performClick()
         compose.onNodeWithTag("nova.company.two").performClick()
         compose.runOnIdle { assertEquals("two", selected) }
-        compose.onNodeWithText("Panele dön").performClick()
+        compose.onNodeWithTag("nova.back").performClick()
         compose.runOnIdle { assertEquals(1, backs) }
     }
 
     @Test fun notificationPopupActionsPreserveRouteUntilCenterChosen() {
         var state by mutableStateOf(NovaNavigationState("a", NovaDestination.entries.toSet()))
-        var notices by mutableStateOf(listOf(NovaNotice("overdue", "Termini geçen aksiyonlar", "Geciken düzeltmeleri inceleyin.", 1, Icons.Outlined.WarningAmber, NovaColorToken.statusDangerInk)))
+        var notices by mutableStateOf(listOf(NovaNotice("overdue", "Termini geçen aksiyonlar", "Geciken düzeltmeleri inceleyin.", "1 gün gecikti", "exclamationmark.triangle", NovaColorToken.statusDangerInk)))
         compose.setContent { NovaTheme(false) {
             NovaExpertShell(state, "Kerem Kaya", onEvent = { event, epoch -> state = state.apply(event, epoch) }, notices = notices,
-                onNoticeAction = { action, epoch -> if (epoch == state.epoch) notices = if (action == NovaNoticeAction.Clear) emptyList() else notices.map { it.copy(unread = false) } }) { NovaText("content:${it.name}") }
+                actions = NovaShellActions(onReadAll = { notices = notices.map { it.copy(unread = false) } },
+                    onClearNotifications = { notices = emptyList() })) { NovaText("content:${it.name}") }
         } }
         compose.onNodeWithTag("nova.notifications").performClick()
         compose.runOnIdle { assertEquals(NovaDestination.home, state.current); assertEquals(NovaOverlay.notifications, state.overlay) }

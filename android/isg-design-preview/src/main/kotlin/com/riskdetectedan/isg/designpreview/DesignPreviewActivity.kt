@@ -26,8 +26,8 @@ class DesignPreviewActivity : ComponentActivity() {
         setContent {
             var host by remember { mutableStateOf(readyHost()) }
             var noticeSnapshot by remember { mutableStateOf(host.scope(listOf(
-                NovaNotice("overdue", "Termini geçen aksiyonlar", "Geciken düzeltmeleri önceliklendirerek inceleyin.", 1, Icons.Outlined.Warning, NovaColorToken.statusDangerInk),
-                NovaNotice("active", "Aktif uygunsuzluklar", "Sorumluluğunuzdaki firmalarda halen açık bulunan kayıtlar.", 1, Icons.Outlined.Notifications, NovaColorToken.statusInfoInk)), host.navigation.epoch)) }
+                NovaNotice("overdue", "Termini geçen aksiyonlar", "Geciken düzeltmeleri önceliklendirerek inceleyin.", "1 gün gecikti", "exclamationmark.triangle", NovaColorToken.statusDangerInk),
+                NovaNotice("active", "Aktif uygunsuzluklar", "Sorumluluğunuzdaki firmalarda halen açık bulunan kayıtlar.", "2 kayıt", "bell", NovaColorToken.statusInfoInk)), host.navigation.epoch)) }
             val state = host.navigation
             val notices = host.value(noticeSnapshot).orEmpty()
             val navigate: (NovaDestination) -> Unit = { host = host.apply(NovaNavigationEvent.Navigate(it), state.epoch) }
@@ -36,10 +36,12 @@ class DesignPreviewActivity : ComponentActivity() {
                     NovaText("QA · ${host.phase.name}")
                     return@NovaTheme
                 }
-                NovaExpertShell(state, "Kerem Kaya", Modifier.safeDrawingPadding(), hasUnread = notices.any { it.unread },
+                NovaExpertShell(state, "Kerem Kaya", modifier = Modifier.safeDrawingPadding(), hasUnread = notices.any { it.unread },
                     connectionLabel = "Çevrimdışı test", notices = notices,
-                    onNoticeAction = { action, epoch -> if (host.isCurrent(epoch)) noticeSnapshot = host.scope(if (action == NovaNoticeAction.Clear) emptyList() else host.value(noticeSnapshot).orEmpty().map { it.copy(unread = false) }, epoch) },
-                    onLogout = { epoch -> if (host.isCurrent(epoch)) host = host.adopt(null) },
+                    actions = NovaShellActions(
+                        onReadAll = { if (host.isCurrent(state.epoch)) noticeSnapshot = host.scope(host.value(noticeSnapshot).orEmpty().map { it.copy(unread = false) }, state.epoch) },
+                        onClearNotifications = { if (host.isCurrent(state.epoch)) noticeSnapshot = host.scope(emptyList(), state.epoch) },
+                        onLogout = { if (host.isCurrent(state.epoch)) host = host.adopt(null) }),
                     onEvent = { event, epoch -> host = host.apply(event, epoch) }) { destination ->
                     when (destination) {
                         NovaDestination.home -> NovaDashboardScreen(dashboard, onNavigate = navigate,
@@ -65,9 +67,9 @@ private fun readyHost(): NovaSessionHost {
     return loading.resolve(requireNotNull(loading.pending), actor.userID, NovaDestination.entries.toSet())
 }
 private val dashboard = NovaDashboardData("Kerem", 1, listOf(
-    NovaMetricItem("total", "1", "Toplam Uygunsuzluk", "+1 bu ay", Icons.Outlined.BookmarkBorder, NovaColorToken.statusInfoDot, NovaDestination.findings),
-    NovaMetricItem("open", "1", "Açık Uygunsuzluk", "1 gecikmiş", Icons.Outlined.WarningAmber, NovaColorToken.statusDangerDot, NovaDestination.findings),
-    NovaMetricItem("companies", "1", "Firma", "Atanmış firma", Icons.Outlined.Business, NovaColorToken.statusInfoDot, NovaDestination.companies),
-    NovaMetricItem("visits", "1", "Ziyaret Sayısı", "1 bu ay", Icons.Outlined.Place, NovaColorToken.statusWarningDot, NovaDestination.visits),
-    NovaMetricItem("training", "0", "Eğitim Süresi Geçen", "personel", Icons.Outlined.Schedule, NovaColorToken.statusDangerDot, NovaDestination.training)
+    NovaMetricItem("total", "1", "Toplam Uygunsuzluk", "+1 bu ay", "bookmark", NovaColorToken.statusInfoDot, NovaDestination.findings),
+    NovaMetricItem("open", "1", "Açık Uygunsuzluk", "1 gecikmiş", "exclamationmark.triangle", NovaColorToken.statusDangerDot, NovaDestination.findings),
+    NovaMetricItem("companies", "1", "Firma", "Atanmış firma", "building.2", NovaColorToken.statusInfoDot, NovaDestination.companies),
+    NovaMetricItem("visits", "1", "Ziyaret Sayısı", "1 bu ay", "mappin", NovaColorToken.statusWarningDot, NovaDestination.visits),
+    NovaMetricItem("training", "0", "Eğitim Süresi Geçen", "personel", "clock", NovaColorToken.statusDangerDot, NovaDestination.training)
 ), "Yeni firma atandı · Koza Altın A.Ş · Ahmet Bel · Uzman atandı", "Yaklaşan veya geçmiş eğitim uyarısı yok")

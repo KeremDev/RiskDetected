@@ -246,7 +246,7 @@ private fun EmployeeEditor(scope: NovaPersonnelScope, companyName: String, clien
             window?.setDimAmount(.34f)
             onDispose { if (previous != null) window.setDimAmount(previous) }
         }
-        NovaPopupSurface(Modifier.fillMaxWidth().padding(14.dp)) {
+        NovaPanelSurface(Modifier.fillMaxWidth().padding(14.dp)) {
             NovaText("Personel arşivlensin mi?", style = NovaTypeToken.sectionTitle)
             NovaText("Geçmiş kayıtlar silinmez.")
             PersonnelAction("Arşivle", Icons.Outlined.Archive, "personnel.archive.confirm") { confirmation = false; state = state.begin(scope, original, archive = true) }

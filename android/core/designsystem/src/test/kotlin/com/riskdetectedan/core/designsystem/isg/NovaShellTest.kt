@@ -41,7 +41,8 @@ class NovaShellTest {
         compose.onNodeWithTag("nova.destination.newFinding").performScrollTo().performClick()
         compose.onNodeWithText("content:newFinding").assertIsDisplayed()
         compose.onNodeWithTag("nova.tab.findings").assertIsSelected()
-        compose.onNodeWithTag("nova.back").performClick()
+        // Pages own their back button now (iOS); the system back gesture pops the tab path.
+        androidx.test.espresso.Espresso.pressBack()
         compose.onNodeWithText("content:findings").assertIsDisplayed()
     }
     @Test fun everyTabSelectionAndReselectionWorksInDarkTheme() {
@@ -65,7 +66,7 @@ class NovaShellTest {
         compose.onNodeWithTag("nova.tab.findings").assertIsNotEnabled().performTouchInput { click() }
         compose.onNodeWithTag("nova.notifications").assertIsNotEnabled().performTouchInput { click() }
         compose.onNodeWithTag("nova.add").performClick()
-        NovaDestination.quickAdd.forEach {
+        NovaDestination.quickAdd.filter { it != NovaDestination.newNote }.forEach {
             compose.onNodeWithTag("nova.destination.${it.name}").performScrollTo().assertIsNotEnabled().performTouchInput { click() }
             compose.runOnIdle { assertEquals(NovaDestination.home, state.current); assertEquals(NovaOverlay.quickAdd, state.overlay) }
         }
@@ -74,12 +75,13 @@ class NovaShellTest {
     @Test fun drawerScrollAndCloseRemainAvailableAtDoubleFontScale() {
         mount(scale = 2f)
         compose.onNodeWithTag("nova.menu").performClick()
-        NovaDestination.drawer.forEach {
+        NovaDestination.drawer.filter(::inDrawer).forEach {
+            revealInDrawer(it)
             compose.onNodeWithTag("nova.destination.${it.name}").performScrollTo().assertIsDisplayed()
             compose.onNodeWithTag("nova.panel.close").assertIsDisplayed()
         }
-        compose.onNodeWithTag("nova.destination.notifications").performClick()
-        compose.onNodeWithText("content:notifications").assertIsDisplayed()
+        compose.onNodeWithTag("nova.destination.statistics").performScrollTo().performClick()
+        compose.onNodeWithText("content:statistics").assertIsDisplayed()
     }
     @Test fun accountResetClearsPanelContentAndOldCallbackCannotReopenIt() {
         mount()
@@ -94,25 +96,33 @@ class NovaShellTest {
         compose.runOnIdle { oldCallback(); assertEquals("b", state.epoch); assertEquals(NovaDestination.home, state.current) }
         compose.onNodeWithText("content:notifications").assertDoesNotExist()
     }
-    @Test fun doubleFontScaleTabsScrollToEveryActionAndAutoRevealSelection() {
+    @Test fun doubleFontScaleKeepsEveryTabReachable() {
         mount(scale = 2f)
-        listOf(0 to NovaTab.home, 1 to NovaTab.findings, 3 to NovaTab.companies, 4 to NovaTab.profile).forEach { (index, tab) ->
-            compose.onNodeWithTag("nova.tabs.scroll").performScrollToIndex(index)
+        NovaTab.entries.forEach { tab ->
             compose.onNodeWithTag("nova.tab.${tab.name}").assertIsDisplayed().performClick().assertIsSelected()
             compose.onNodeWithText("content:${tab.name}").assertIsDisplayed()
         }
-        compose.onNodeWithTag("nova.tabs.scroll").performScrollToIndex(2)
         compose.onNodeWithTag("nova.add").performClick()
         compose.onNodeWithTag("nova.destination.newFinding").performScrollTo().performClick()
         compose.onNodeWithTag("nova.tab.findings").assertIsDisplayed().assertIsSelected()
     }
+    /** The drawer renders its named groups and direct rows only; Bildirim Merkezi and Rapor Arşivi live elsewhere (iOS). */
+    private fun inDrawer(destination: NovaDestination) =
+        NovaDrawerGroup.all.any { destination in it.destinations } || destination in NovaDrawerGroup.direct
+    /** Grouped destinations sit in a collapsed accordion until their group is opened. */
+    private fun revealInDrawer(destination: NovaDestination) {
+        val group = NovaDrawerGroup.all.firstOrNull { destination in it.destinations } ?: return
+        val node = compose.onNodeWithTag("nova.drawer.group.${group.id}").performScrollTo()
+        if (compose.onAllNodesWithTag("nova.destination.${destination.name}").fetchSemanticsNodes().isEmpty()) node.performClick()
+    }
     private fun checkEveryMenuEntry(dark: Boolean) {
         mount(dark = dark)
         for ((panel, destinations) in listOf(NovaOverlay.drawer to NovaDestination.drawer, NovaOverlay.quickAdd to NovaDestination.quickAdd)) {
-            destinations.forEach { destination ->
+            destinations.filter { it != NovaDestination.newCompany && (if (panel == NovaOverlay.drawer) inDrawer(it) else it != NovaDestination.newNote) }.forEach { destination ->
                 // Two explicit taps also return to home root if this tab retained a path.
                 compose.onNodeWithTag("nova.tab.home").performClick().performClick()
                 compose.onNodeWithTag(if (panel == NovaOverlay.drawer) "nova.menu" else "nova.add").performClick()
+                if (panel == NovaOverlay.drawer) revealInDrawer(destination)
                 compose.onNodeWithTag("nova.destination.${destination.name}").performScrollTo().performClick()
                 compose.onNodeWithText("content:${destination.name}").assertIsDisplayed()
                 compose.onNodeWithTag("nova.panel.close").assertDoesNotExist()

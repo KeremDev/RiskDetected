@@ -52,6 +52,8 @@ class NovaNavigationTest(private val id: String, private val fixture: JsonObject
                 val d = NovaDestination.valueOf(item.getValue("id").jsonPrimitive.content)
                 assertEquals(item.getValue("title").jsonPrimitive.content, d.title)
                 assertEquals(item.getValue("tab").jsonPrimitive.content, d.tab.name)
+                // Android resolves the same SF Symbol names through NovaSymbols.
+                assertEquals(item.getValue("iosSymbol").jsonPrimitive.content, d.symbol)
             }
             assertEquals(catalog.getValue("tabs").jsonArray.map { it.jsonObject.getValue("id").jsonPrimitive.content to it.jsonObject.getValue("title").jsonPrimitive.content }, NovaTab.entries.map { it.name to it.title })
             assertEquals(catalog.getValue("drawer").jsonArray.map { it.jsonPrimitive.content }, NovaDestination.drawer.map { it.name })

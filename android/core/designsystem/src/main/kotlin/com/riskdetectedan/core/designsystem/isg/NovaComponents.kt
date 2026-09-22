@@ -19,27 +19,31 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import com.riskdetectedan.core.designsystem.R
 
-private val NovaFontFamily = FontFamily(
+val NovaFontFamilyPublic = FontFamily(
     Font(R.font.plus_jakarta_sans_regular, FontWeight.Normal),
     Font(R.font.plus_jakarta_sans_medium, FontWeight.Medium),
     Font(R.font.plus_jakarta_sans_semibold, FontWeight.SemiBold),
     Font(R.font.plus_jakarta_sans_bold, FontWeight.Bold),
     Font(R.font.plus_jakarta_sans_extrabold, FontWeight.ExtraBold),
 )
-private val LocalNovaDark = staticCompositionLocalOf { false }
+val LocalNovaDark = staticCompositionLocalOf { false }
 
 fun NovaRGBA.color() = Color(red / 255f, green / 255f, blue / 255f, alpha.toFloat())
 
 @Composable
-internal fun NovaColorToken.color() = rgba(LocalNovaDark.current).color()
+fun NovaColorToken.color() = rgba(LocalNovaDark.current).color()
 
 fun NovaTypeToken.textStyle(): TextStyle = spec.let {
-    TextStyle(fontFamily = NovaFontFamily, fontWeight = FontWeight(it.weight),
+    TextStyle(fontFamily = NovaFontFamilyPublic, fontWeight = FontWeight(it.weight),
         fontSize = it.size.sp, letterSpacing = it.tracking.sp, lineHeight = it.lineHeight.sp,
         platformStyle = PlatformTextStyle(includeFontPadding = false))
 }
@@ -52,19 +56,19 @@ fun NovaTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> 
 
 @Composable
 fun NovaText(text: String, modifier: Modifier = Modifier, style: NovaTypeToken = NovaTypeToken.body,
-             color: Color = Color.Unspecified) {
-    Text(text, modifier, color = if (color == Color.Unspecified) NovaColorToken.text.color() else color,
-        style = style.textStyle())
+             color: Color = Color.Unspecified, textAlign: TextAlign? = null, maxLines: Int = Int.MAX_VALUE) {
+    Text(text, modifier, color = if (color == Color.Unspecified) NovaFont.defaultInk(style) else color,
+        style = novaTextStyle(style), textAlign = textAlign, maxLines = maxLines,
+        overflow = if (maxLines == Int.MAX_VALUE) TextOverflow.Clip else TextOverflow.Ellipsis)
 }
 
 @Composable
 fun NovaCard(modifier: Modifier = Modifier, padding: Int = 11, border: Color = Color.Transparent,
-             content: @Composable ColumnScope.() -> Unit) {
+             tint: Color? = null, content: @Composable ColumnScope.() -> Unit) {
     val shape = RoundedCornerShape(NovaDimensionToken.radiusCard.value.dp)
-    Surface(modifier.shadow(2.dp, shape), shape = shape, color = NovaColorToken.surface.color(),
-        border = androidx.compose.foundation.BorderStroke(1.5.dp, border)) {
-        Column(Modifier.padding(padding.dp), content = content)
-    }
+    val fill = tint ?: NovaPopupStyle.controlBackground()
+    Column(modifier.shadow(3.dp, shape, ambientColor = Color.Black.copy(alpha = 0.04f), spotColor = Color.Black.copy(alpha = 0.04f))
+        .background(fill, shape).border(1.5.dp, border, shape).padding(padding.dp), content = content)
 }
 
 /** Full-page canvas is distinct from white rounded card surfaces on every İSGADA destination. */
@@ -97,26 +101,34 @@ enum class NovaButtonVariant { Primary, Surface, Muted, Danger }
 @Composable
 fun NovaButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier,
                variant: NovaButtonVariant = NovaButtonVariant.Primary, enabled: Boolean = true,
-               loading: Boolean = false, loadingDescription: String = "İşlem sürüyor") {
-    val palette = when (variant) {
-        // Explicit accessibility adaptation; source white-on-green remains in the reference tokens.
-        NovaButtonVariant.Primary -> NovaColorToken.accent.color() to Color(0xFF111111)
-        NovaButtonVariant.Surface -> NovaColorToken.surface.color() to NovaColorToken.text.color()
-        NovaButtonVariant.Muted -> NovaColorToken.surfaceMuted.color() to NovaColorToken.textSecondary.color()
-        NovaButtonVariant.Danger -> NovaColorToken.statusDangerBg.color() to NovaColorToken.statusDangerInk.color()
-    }
+               loading: Boolean = false, loadingDescription: String = "İşlem sürüyor",
+               symbol: String? = null, compact: Boolean = false) {
+    val inPopup = LocalNovaPopup.current
     val active = enabled && !loading
-    val ink = if (active) palette.second else NovaColorToken.textSecondary.color()
-    Button(onClick, modifier.fillMaxWidth().heightIn(min = 52.dp).semantics {
-        if (loading) stateDescription = loadingDescription
-    }, enabled = active, shape = CircleShape,
-        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = palette.first, contentColor = ink,
-            disabledContainerColor = NovaColorToken.surfaceMuted.color(), disabledContentColor = ink)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (loading) CircularProgressIndicator(Modifier.size(16.dp).clearAndSetSemantics {}, color = ink, strokeWidth = 2.dp)
-            NovaText(label, style = NovaTypeToken.button, color = ink)
+    val (fill, ink) = when {
+        !active -> NovaColorToken.surfaceMuted.color() to NovaColorToken.textSecondary.color()
+        // Recorded accessibility adaptation: white on #2ed256 is only ~2:1.
+        variant == NovaButtonVariant.Primary -> NovaColorToken.accent.color() to Color(0xFF111111)
+        variant == NovaButtonVariant.Surface -> NovaPopupStyle.controlBackground(inPopup) to NovaColorToken.text.color()
+        variant == NovaButtonVariant.Muted -> NovaColorToken.surfaceMuted.color() to NovaColorToken.textSecondary.color()
+        else -> NovaColorToken.statusDangerBg.color() to NovaColorToken.statusDangerInk.color()
+    }
+    val small = compact || inPopup
+    Row(modifier.then(if (compact) Modifier else Modifier.fillMaxWidth())
+        .heightIn(min = if (compact) 44.dp else if (inPopup) 46.dp else 52.dp)
+        .clip(CircleShape).background(fill, CircleShape)
+        .novaPress(enabled = active, onClick = onClick)
+        .semantics(mergeDescendants = true) {
+            contentDescription = label
+            if (loading) stateDescription = loadingDescription
         }
+        .padding(horizontal = if (small) 12.dp else 18.dp, vertical = if (compact) 8.dp else if (inPopup) 10.dp else 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
+        if (loading) NovaSpinner(ink)
+        else if (symbol != null) NovaIcon(symbol, if (compact) 14.dp else if (inPopup) 16.dp else 18.dp, tint = ink)
+        NovaText(label, style = if (small) NovaTypeToken.buttonSm else NovaTypeToken.button, color = ink,
+            textAlign = TextAlign.Center, maxLines = if (small) 2 else Int.MAX_VALUE)
     }
 }
 

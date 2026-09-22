@@ -8,7 +8,7 @@
     },
     {
       "id": "findings",
-      "title": "Uygunsuzluk"
+      "title": "Denetim"
     },
     {
       "id": "companies",
@@ -21,151 +21,214 @@
   ],
   "destinations": [
     {
+      "id": "activity",
+      "title": "Aktivitem",
+      "tab": "profile",
+      "iosSymbol": "clock.arrow.circlepath"
+    },
+    {
+      "id": "notebook",
+      "title": "Kişisel Not Defteri",
+      "tab": "profile",
+      "iosSymbol": "note.text"
+    },
+    {
+      "id": "newNote",
+      "title": "Not ekle",
+      "tab": "profile",
+      "iosSymbol": "note.text"
+    },
+    {
       "id": "home",
       "title": "Ana Sayfa",
       "tab": "home",
-      "iosSymbol": "house",
-      "androidIcon": "Home"
+      "iosSymbol": "house"
     },
     {
       "id": "newFinding",
       "title": "Uygunsuzluk Ekle",
       "tab": "findings",
-      "iosSymbol": "exclamationmark.triangle",
-      "androidIcon": "WarningAmber"
+      "iosSymbol": "exclamationmark.triangle"
     },
     {
       "id": "findings",
       "title": "Uygunsuzluklar",
       "tab": "findings",
-      "iosSymbol": "list.bullet",
-      "androidIcon": "List"
+      "iosSymbol": "list.bullet"
     },
     {
       "id": "companies",
       "title": "Firmalar",
       "tab": "companies",
-      "iosSymbol": "building.2",
-      "androidIcon": "Business"
+      "iosSymbol": "building.2"
     },
     {
       "id": "memory",
       "title": "İşletme Hafızası",
       "tab": "home",
-      "iosSymbol": "clock.arrow.circlepath",
-      "androidIcon": "History"
+      "iosSymbol": "clock.arrow.circlepath"
     },
     {
       "id": "documentChecklist",
       "title": "Evrak Takibi",
       "tab": "home",
-      "iosSymbol": "doc.text",
-      "androidIcon": "Description"
+      "iosSymbol": "doc.text"
     },
     {
       "id": "documents",
-      "title": "Diğer Dosyalar",
+      "title": "Dosyalarım",
       "tab": "home",
-      "iosSymbol": "folder",
-      "androidIcon": "Folder"
+      "iosSymbol": "folder"
     },
     {
       "id": "visits",
       "title": "Ziyaretler",
       "tab": "home",
-      "iosSymbol": "mappin.and.ellipse",
-      "androidIcon": "Place"
+      "iosSymbol": "mappin.and.ellipse"
     },
     {
       "id": "statistics",
       "title": "İstatistikler",
       "tab": "home",
-      "iosSymbol": "chart.bar",
-      "androidIcon": "BarChart"
+      "iosSymbol": "chart.bar"
     },
     {
       "id": "training",
       "title": "Eğitim ve Takip",
       "tab": "home",
-      "iosSymbol": "graduationcap",
-      "androidIcon": "School"
+      "iosSymbol": "graduationcap"
     },
     {
       "id": "reports",
-      "title": "Rapor Oluştur",
+      "title": "Rapor Merkezi",
       "tab": "home",
-      "iosSymbol": "chart.doc",
-      "androidIcon": "Assessment"
+      "iosSymbol": "chart.bar"
     },
     {
       "id": "reportArchive",
       "title": "Rapor Arşivi",
       "tab": "home",
-      "iosSymbol": "archivebox",
-      "androidIcon": "Inventory2"
+      "iosSymbol": "archivebox"
     },
     {
       "id": "notifications",
       "title": "Bildirim Merkezi",
       "tab": "home",
-      "iosSymbol": "bell",
-      "androidIcon": "Notifications"
+      "iosSymbol": "bell"
     },
     {
       "id": "profile",
       "title": "Profil",
       "tab": "profile",
-      "iosSymbol": "person",
-      "androidIcon": "Person"
+      "iosSymbol": "person"
     },
     {
       "id": "newDocument",
       "title": "Dosya Ekle",
       "tab": "home",
-      "iosSymbol": "doc.badge.plus",
-      "androidIcon": "NoteAdd"
+      "iosSymbol": "doc.badge.plus"
     },
     {
       "id": "newVisit",
       "title": "Ziyaret Ekle",
       "tab": "home",
-      "iosSymbol": "calendar.badge.plus",
-      "androidIcon": "Event"
+      "iosSymbol": "calendar.badge.plus"
     },
     {
       "id": "newTraining",
       "title": "Eğitim Ekle",
       "tab": "home",
-      "iosSymbol": "graduationcap",
-      "androidIcon": "School"
+      "iosSymbol": "graduationcap"
     },
     {
       "id": "periodicChecks",
       "title": "Periyodik Kontroller",
       "tab": "home",
-      "iosSymbol": "checkmark.shield",
-      "androidIcon": "Assessment"
+      "iosSymbol": "checkmark.shield"
     },
     {
       "id": "newCompany",
       "title": "Firma Ekle",
       "tab": "companies",
-      "iosSymbol": "building.2",
-      "androidIcon": "Business"
+      "iosSymbol": "building.2"
+    },
+    {
+      "id": "riskAssessments",
+      "title": "Risk Değerlendirmesi",
+      "tab": "home",
+      "iosSymbol": "shield.lefthalf.filled"
+    },
+    {
+      "id": "checklists",
+      "title": "Kontrol Listeleri",
+      "tab": "home",
+      "iosSymbol": "checklist"
+    },
+    {
+      "id": "emergencyPlans",
+      "title": "Acil Durum Planları",
+      "tab": "home",
+      "iosSymbol": "light.beacon.max"
+    },
+    {
+      "id": "drills",
+      "title": "Tatbikatlar",
+      "tab": "home",
+      "iosSymbol": "figure.run"
+    },
+    {
+      "id": "ppeHandovers",
+      "title": "KKD Zimmet Formları",
+      "tab": "home",
+      "iosSymbol": "shield.checkered"
+    },
+    {
+      "id": "appointments",
+      "title": "Atama ve Temsilciler",
+      "tab": "home",
+      "iosSymbol": "person.badge.shield.checkmark"
+    },
+    {
+      "id": "katipContracts",
+      "title": "İSG-KATİP Sözleşmeleri",
+      "tab": "home",
+      "iosSymbol": "doc.text.magnifyingglass"
+    },
+    {
+      "id": "annualWorkPlans",
+      "title": "Yıllık Çalışma Planı",
+      "tab": "home",
+      "iosSymbol": "calendar"
+    },
+    {
+      "id": "boardMeetings",
+      "title": "Kurul ve Toplantılar",
+      "tab": "home",
+      "iosSymbol": "person.3"
+    },
+    {
+      "id": "workPermits",
+      "title": "Çalışma İzni Formları",
+      "tab": "home",
+      "iosSymbol": "doc.text"
+    },
+    {
+      "id": "contractors",
+      "title": "Taşeron ve Dış Firmalar",
+      "tab": "home",
+      "iosSymbol": "building.2"
     },
     {
       "id": "analyses",
       "title": "Analizlerim",
       "tab": "findings",
-      "iosSymbol": "photo.on.rectangle.angled",
-      "androidIcon": "PhotoLibrary"
+      "iosSymbol": "photo.on.rectangle.angled"
     },
     {
       "id": "newAnalysis",
       "title": "Analiz Yap",
       "tab": "findings",
-      "iosSymbol": "camera",
-      "androidIcon": "PhotoCamera"
+      "iosSymbol": "camera"
     }
   ],
   "drawer": [
@@ -175,6 +238,19 @@
     "newAnalysis",
     "newFinding",
     "companies",
+    "newCompany",
+    "riskAssessments",
+    "checklists",
+    "emergencyPlans",
+    "drills",
+    "ppeHandovers",
+    "appointments",
+    "katipContracts",
+    "annualWorkPlans",
+    "boardMeetings",
+    "visits",
+    "workPermits",
+    "contractors",
     "periodicChecks",
     "documentChecklist",
     "documents",
@@ -188,7 +264,8 @@
     "newCompany",
     "newAnalysis",
     "newFinding",
-    "newDocument"
+    "newDocument",
+    "newNote"
   ],
   "reference": "OSGBTakip/apps/mobile/src/components/MobileShell.tsx"
 }

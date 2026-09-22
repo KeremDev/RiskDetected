@@ -26,18 +26,18 @@ class NovaVisualTest {
     @Test fun captureHomeCompaniesAndModalContent() {
         var state by mutableStateOf(NovaNavigationState("visual-fixture", NovaDestination.entries.toSet()))
         val data = NovaDashboardData("Kerem", 1, listOf(
-            NovaMetricItem("total", "1", "Toplam Uygunsuzluk", "+1 bu ay", Icons.Outlined.BookmarkBorder, NovaColorToken.statusInfoDot, NovaDestination.findings),
-            NovaMetricItem("open", "1", "Açık Uygunsuzluk", "1 gecikmiş", Icons.Outlined.WarningAmber, NovaColorToken.statusDangerDot, NovaDestination.findings),
-            NovaMetricItem("companies", "1", "Firma", "Atanmış firma", Icons.Outlined.Business, NovaColorToken.statusInfoDot, NovaDestination.companies),
-            NovaMetricItem("visits", "1", "Ziyaret Sayısı", "1 bu ay", Icons.Outlined.Place, NovaColorToken.statusWarningDot, NovaDestination.visits),
-            NovaMetricItem("training", "0", "Eğitim Süresi Geçen", "personel", Icons.Outlined.Schedule, NovaColorToken.statusDangerDot, NovaDestination.training)
+            NovaMetricItem("total", "1", "Toplam Uygunsuzluk", "+1 bu ay", "bookmark", NovaColorToken.statusInfoDot, NovaDestination.findings),
+            NovaMetricItem("open", "1", "Açık Uygunsuzluk", "1 gecikmiş", "exclamationmark.triangle", NovaColorToken.statusDangerDot, NovaDestination.findings),
+            NovaMetricItem("companies", "1", "Firma", "Atanmış firma", "building.2", NovaColorToken.statusInfoDot, NovaDestination.companies),
+            NovaMetricItem("visits", "1", "Ziyaret Sayısı", "1 bu ay", "mappin", NovaColorToken.statusWarningDot, NovaDestination.visits),
+            NovaMetricItem("training", "0", "Eğitim Süresi Geçen", "personel", "clock", NovaColorToken.statusDangerDot, NovaDestination.training)
         ), "Yeni firma atandı · Koza Altın A.Ş · Ahmet Bel · Uzman atandı", "Yaklaşan veya geçmiş eğitim uyarısı yok")
         compose.setContent { NovaTheme(false) {
             NovaExpertShell(state, "Kerem Kaya", hasUnread = true, connectionLabel = "Çevrimiçi",
                 notices = listOf(
-                    NovaNotice("overdue", "Termini geçen aksiyonlar", "Geciken düzeltmeleri önceliklendirerek inceleyin.", 1, Icons.Outlined.Warning, NovaColorToken.statusDangerInk),
-                    NovaNotice("active", "Aktif uygunsuzluklar", "Sorumluluğunuzdaki firmalarda halen açık bulunan kayıtlar.", 1, Icons.Outlined.Notifications, NovaColorToken.statusInfoInk)),
-                onNoticeAction = { _, _ -> }, onLogout = {},
+                    NovaNotice("overdue", "Termini geçen aksiyonlar", "Geciken düzeltmeleri önceliklendirerek inceleyin.", "1 gün gecikti", "exclamationmark.triangle", NovaColorToken.statusDangerInk),
+                    NovaNotice("active", "Aktif uygunsuzluklar", "Sorumluluğunuzdaki firmalarda halen açık bulunan kayıtlar.", "2 kayıt", "bell", NovaColorToken.statusInfoInk)),
+                actions = NovaShellActions(onReadAll = {}, onClearNotifications = {}, onLogout = {}),
                 onEvent = { event, epoch -> state = state.apply(event, epoch) }) { destination ->
                 if (destination == NovaDestination.companies) NovaCompaniesScreen(listOf(NovaCompanyItem("fixture", "Koza Altın A.Ş", "Kaymaz Mah. · Maden · Çok tehlikeli")), onSelect = {}, onBack = {}, onRetry = {})
                 else NovaDashboardScreen(data, onNavigate = {}, onPhoto = {}, onAssistant = {})

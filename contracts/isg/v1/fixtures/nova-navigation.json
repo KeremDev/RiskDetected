@@ -5816,6 +5816,2918 @@
           }
         }
       ]
+    },
+    {
+      "id": "route-activity-enabled-fresh",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "activity"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "activity",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "profile",
+            "overlay": null,
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": [
+                "activity"
+              ]
+            },
+            "current": "activity",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-activity-enabled-stale",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "activity"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "activity",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-activity-locked-fresh",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "activity",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-activity-locked-stale",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "activity",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-notebook-enabled-fresh",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "notebook"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "notebook",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "profile",
+            "overlay": null,
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": [
+                "notebook"
+              ]
+            },
+            "current": "notebook",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-notebook-enabled-stale",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "notebook"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "notebook",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-notebook-locked-fresh",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "notebook",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-notebook-locked-stale",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "notebook",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-newNote-enabled-fresh",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "newNote"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "newNote",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "profile",
+            "overlay": null,
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": [
+                "newNote"
+              ]
+            },
+            "current": "newNote",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-newNote-enabled-stale",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "newNote"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "newNote",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-newNote-locked-fresh",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "newNote",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-newNote-locked-stale",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "newNote",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-riskAssessments-enabled-fresh",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "riskAssessments"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "riskAssessments",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": null,
+            "paths": {
+              "home": [
+                "riskAssessments"
+              ],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "riskAssessments",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-riskAssessments-enabled-stale",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "riskAssessments"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "riskAssessments",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-riskAssessments-locked-fresh",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "riskAssessments",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-riskAssessments-locked-stale",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "riskAssessments",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-checklists-enabled-fresh",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "checklists"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "checklists",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": null,
+            "paths": {
+              "home": [
+                "checklists"
+              ],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "checklists",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-checklists-enabled-stale",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "checklists"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "checklists",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-checklists-locked-fresh",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "checklists",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-checklists-locked-stale",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "checklists",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-emergencyPlans-enabled-fresh",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "emergencyPlans"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "emergencyPlans",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": null,
+            "paths": {
+              "home": [
+                "emergencyPlans"
+              ],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "emergencyPlans",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-emergencyPlans-enabled-stale",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "emergencyPlans"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "emergencyPlans",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-emergencyPlans-locked-fresh",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "emergencyPlans",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-emergencyPlans-locked-stale",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "emergencyPlans",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-drills-enabled-fresh",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "drills"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "drills",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": null,
+            "paths": {
+              "home": [
+                "drills"
+              ],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "drills",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-drills-enabled-stale",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "drills"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "drills",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-drills-locked-fresh",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "drills",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-drills-locked-stale",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "drills",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-ppeHandovers-enabled-fresh",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "ppeHandovers"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "ppeHandovers",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": null,
+            "paths": {
+              "home": [
+                "ppeHandovers"
+              ],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "ppeHandovers",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-ppeHandovers-enabled-stale",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "ppeHandovers"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "ppeHandovers",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-ppeHandovers-locked-fresh",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "ppeHandovers",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-ppeHandovers-locked-stale",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "ppeHandovers",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-appointments-enabled-fresh",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "appointments"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "appointments",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": null,
+            "paths": {
+              "home": [
+                "appointments"
+              ],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "appointments",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-appointments-enabled-stale",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "appointments"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "appointments",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-appointments-locked-fresh",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "appointments",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-appointments-locked-stale",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "appointments",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-katipContracts-enabled-fresh",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "katipContracts"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "katipContracts",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": null,
+            "paths": {
+              "home": [
+                "katipContracts"
+              ],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "katipContracts",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-katipContracts-enabled-stale",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "katipContracts"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "katipContracts",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-katipContracts-locked-fresh",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "katipContracts",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-katipContracts-locked-stale",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "katipContracts",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-annualWorkPlans-enabled-fresh",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "annualWorkPlans"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "annualWorkPlans",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": null,
+            "paths": {
+              "home": [
+                "annualWorkPlans"
+              ],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "annualWorkPlans",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-annualWorkPlans-enabled-stale",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "annualWorkPlans"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "annualWorkPlans",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-annualWorkPlans-locked-fresh",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "annualWorkPlans",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-annualWorkPlans-locked-stale",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "annualWorkPlans",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-boardMeetings-enabled-fresh",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "boardMeetings"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "boardMeetings",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": null,
+            "paths": {
+              "home": [
+                "boardMeetings"
+              ],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "boardMeetings",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-boardMeetings-enabled-stale",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "boardMeetings"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "boardMeetings",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-boardMeetings-locked-fresh",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "boardMeetings",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-boardMeetings-locked-stale",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "boardMeetings",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-workPermits-enabled-fresh",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "workPermits"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "workPermits",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": null,
+            "paths": {
+              "home": [
+                "workPermits"
+              ],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "workPermits",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-workPermits-enabled-stale",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "workPermits"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "workPermits",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-workPermits-locked-fresh",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "workPermits",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-workPermits-locked-stale",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "workPermits",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-contractors-enabled-fresh",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "contractors"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "contractors",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": null,
+            "paths": {
+              "home": [
+                "contractors"
+              ],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "contractors",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-contractors-enabled-stale",
+      "available": [
+        "home",
+        "newFinding",
+        "findings",
+        "companies",
+        "memory",
+        "documentChecklist",
+        "documents",
+        "visits",
+        "statistics",
+        "training",
+        "reports",
+        "reportArchive",
+        "notifications",
+        "profile",
+        "newDocument",
+        "newVisit",
+        "newTraining",
+        "contractors"
+      ],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "contractors",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-contractors-locked-fresh",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "contractors",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-contractors-locked-stale",
+      "available": [],
+      "steps": [
+        {
+          "op": "open",
+          "arg": "quickAdd",
+          "from": "account-a",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        },
+        {
+          "op": "navigate",
+          "arg": "contractors",
+          "from": "old-account",
+          "expected": {
+            "epoch": "account-a",
+            "selected": "home",
+            "overlay": "quickAdd",
+            "paths": {
+              "home": [],
+              "findings": [],
+              "companies": [],
+              "profile": []
+            },
+            "current": "home",
+            "canGoBack": true
+          }
+        }
+      ]
     }
   ]
 }

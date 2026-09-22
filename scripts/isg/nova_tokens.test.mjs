@@ -75,11 +75,11 @@ test('expert navigation corpus covers every destination across availability and 
   const ids = fixtures.map(c => c.id);
   assert.equal(new Set(ids).size, ids.length);
   assert.deepEqual(catalog.tabs.map(t => t.id), ['home', 'findings', 'companies', 'profile']);
-  assert.equal(catalog.drawer.length, 14);
-  assert.equal(catalog.quickAdd.length, 4);
-  assert.equal(catalog.destinations.length, 21);
+  assert.equal(catalog.drawer.length, 27);
+  assert.equal(catalog.quickAdd.length, 5);
+  assert.equal(catalog.destinations.length, 35);
   assert.ok(catalog.drawer.includes('periodicChecks'));
-  assert.ok(!catalog.drawer.includes('memory') && !catalog.drawer.includes('visits'));
+  assert.ok(!catalog.drawer.includes('memory'));
   assert.ok(!catalog.quickAdd.includes('newVisit') && !catalog.quickAdd.includes('newTraining'));
   // The analysis surfaces are reachable from the drawer as their own entries.
   for (const id of ['analyses', 'newAnalysis', 'findings']) assert.ok(catalog.drawer.includes(id));

@@ -479,5 +479,14 @@
   "rd_result_finding_count_format": "%1$d findings",
   "rd_result_clear_all": "Deselect all",
   "rd_plan_step_photo": "Photo",
-  "rd_paywall_dark_training": "Training recommendations"
+  "rd_paywall_dark_training": "Training recommendations",
+  "rd_pdf_brand": "RiskDetected",
+  "rd_analiz_ara": "Search analyses",
+  "rd_en_yuksek_risk": "highest risk score",
+  "rd_riskdetected": "RiskDetected",
+  "rd_vazgec": "Cancel",
+  "rd_arsiv": "Archive",
+  "rd_app_name": "RiskDetected",
+  "rd_kontrol": "Control",
+  "rd_isg_uzmani": "OHS Specialist"
 }
