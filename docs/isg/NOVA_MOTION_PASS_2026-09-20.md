@@ -317,3 +317,102 @@ NovaHaptics.failure()
 
 Yeni bir eğri veya süre elle yazmak gerekiyorsa, önce `NovaMotion`'a isimli bir
 değer olarak eklenir. Yedinci el yazması `timingCurve` bir hata olarak sayılır.
+
+## 22 Eylül eki — kalan 9 skill'in tamamı, gerçek bulgular
+
+Kullanıcı tüm listeyi verdi: `mobile-native`, `animation-vocabulary`,
+`find-animation-opportunities`, `prototype`, `pick-ui-library`,
+`emil-design-eng`, `write-swift`, `apple-design`, `animate`,
+`review-animations`, `improve-animations`. Hepsi okundu, uygulanabilir olanlar
+gerçek denetim/düzeltme işine kondu. Commit: `08215e86`.
+
+### Kendi işimi kendi denetledim — `review-animations` + `write-swift`
+
+Daha önce şevkle yazıp commit'lediğim `NovaMotion.swift`, `NovaPopup.swift`,
+`NovaSuccessPresentation.swift`'i review-animations'ın On Kural'ına ve
+write-swift'in Swift 6 kurallarına karşı satır satır izledim — kendi kodumu
+gözden geçirmek bu turda ilk kez yapıldı.
+
+**Gerçek bir hata bulundu ve düzeltildi.** `NovaSuccessOverlay`'in konfeti
+patlaması `.animation(value: appeared)` ile aynı `appeared` bayrağına
+bağlıydı — bu bayrağı önceki oturumda ben, kartın çıkış fade'i için de
+kullanmıştım. Sonuç: kart 2.3 saniyede kaybolmaya başlarken, konfeti
+`appeared=false` değişimini "geri sar" olarak okuyup parçaları 1.4 saniye
+boyunca merkeze doğru geri uçuruyordu — tam kart ekrandan silinirken kısa bir
+an görünür oluyordu. Kendi eklediğim bir özelliğin kendi eklediğim başka bir
+özelliği bozması. Konfeti artık yalnız-ileri tek seferlik `burst` bayrağına
+bağlı, geri sarılacak bir şey yok.
+
+Popup'ın açılış/kapanış yarış durumlarını (`closing` bayrağı, `dismiss()`'in
+gerçekten `gate` binding'inden mi geçtiği, `fullScreenCover`'ın sunum
+sırasında alttaki ekranı gerçekten bloke edip etmediği) satır satır izledim —
+gerçek bir yarış durumu yok, `fullScreenCover` sunucuyu tamamen blokluyor,
+"kapanırken üzerine yeni item yazılması" senaryosu UI'dan erişilemiyor.
+
+### Sistematik boşluk — Reduce Motion, onboarding yüzeyinde hiç kontrol edilmemiş
+
+Beş yerde sonsuz döngü veya büyük nesne dönüşümü, `accessibilityReduceMotion`
+kontrolü sıfırdı:
+
+| Yer | Sorun | Düzeltme |
+| --- | --- | --- |
+| Sosyal kanıt marquee'si | 34s linear, sonsuz | Reduce Motion'da durağan, ilk ekran gösterilir |
+| `NovaOBSpinner` | Uygulamanın geri kalanındaki `NovaSpinner`/`NovaLoadingView` zaten kapılıyken bu kapılı değildi | Aynı desene getirildi |
+| Splash ekranı maskot zoom'u | 12.5× büyüklükte bir nesne 1.26sn'de küçülüyor — "büyük hareketli nesne" tam bu kuralın hedefi | Reduce Motion'da animasyonsuz, dinlenme konumuna anında geçiyor |
+| Kayıt ekranındaki animasyonlu kilit | `TimelineView(.animation)`, form ekranda durduğu sürece her karede çalışıyordu | `TimelineView(.animation(paused:))` — aynı tip, sadece duruyor |
+| Profil kartı konfeti alanı | 26 parça, sürekli düşüp sallanıyor, tamamen dekoratif | Reduce Motion'da tamamen kaldırıldı — azaltılacak bir hali yok |
+
+Ek bulgu: atlama (skip) modalının girişi `scale(0.6)`'dan başlıyordu —
+uygulamadaki her popup'ın kullandığı 0.9–0.97 tabanının çok altında, "hiçten
+büyüyor" gibi okunuyordu. 0.94'e çekildi, Reduce Motion'a kapılandı.
+
+Bunların hiçbiri Claude Design handoff'undan birebir aktarılan eğrilere
+dokunmuyor — önceki raporun o kararı hâlâ geçerli. Bunlar hiç kontrol
+edilmemiş erişilebilirlik boşlukları, değer sorgulaması değil.
+
+### Diğer altı skill — gerçekten kontrol edildi, sonuç
+
+- **`apple-design`** — ilk turda zaten uygulanmıştı (tipografi tracking,
+  yay parametreleri, malzeme/derinlik kuralları). Bu turda ek bulgu yok.
+- **`animate`** — inşa kuralları (`.easeOut` varsayılan, `transform`/`opacity`
+  dışına çıkmama, spring seçimi) NovaMotion'da zaten kodlanmış durumda; yeni
+  kod (marquee/kilit/konfeti düzeltmeleri) aynı kurallarla yazıldı.
+- **`review-animations`** — yukarıda, kendi işimi denetlemek için kullanıldı.
+  Verdict: **Approve**, bir blok bulgusu (konfeti çakışması) düzeltilerek.
+- **`improve-animations`** — tam iş akışı (recon → 8 kategori denetim →
+  doğrulama → öncelik) yerine, doğrudan yürütücü ben olduğum için audit'i
+  doğrudan düzeltmeye çevirdim; `plans/` dizini açmadım. Sekiz kategoriden
+  ikisi (Reduce Motion erişilebilirlik, cohesion/tokens) yeni bulgu verdi,
+  kalan altısı (süre/eğri, fizik/origin, kesintiye açıklık, performans,
+  ışınlanma, kaçırılan fırsatlar) önceki iki turda zaten tarandı.
+- **`write-swift`** — `NovaMotion.swift`'i Swift 6/concurrency bariyle
+  okudum: sınıf yok (hepsi enum/struct, kural gereği), `DispatchQueue`
+  kullanımı codebase'in kendi konvansiyonuyla (`NovaSuccessOverlay`'in
+  `Task.sleep` deseni) tutarlı, bariz veri yarışı yok. Bulgu yok.
+- **`animation-vocabulary`** — bir isimlendirme sözlüğü, düzeltme üretmiyor;
+  bu raporun kendi terimlerini (stagger, origin-aware, crossfade, spring,
+  interruptible) zaten onun kelime dağarcığıyla yazdım. Ayrı bir eylem
+  gerektirmedi.
+- **`prototype`** — birden fazla varyant üretip seçtirmek için; tasarım
+  zaten Claude Design handoff'undan birebir uygulanmış durumda, keşif
+  istenmedi. Uygulanabilir değil.
+- **`pick-ui-library`** — Sonner/Base UI/Framer Motion gibi web/JS
+  kütüphaneleri seçer. NOVA tamamen native SwiftUI, üçüncü taraf UI
+  kütüphanesi kullanmıyor (kendi tasarım sistemi bilinçli tercih). Uygulanabilir
+  değil.
+- **`mobile-native`** — önceki turda kontrol edilip web/CSS'e özel olduğu
+  için uygulanamaz bulunmuştu; bu tur değişmedi.
+
+### Doğrulama
+
+`xcodebuild` + `NOVA_PILOT_BUILD` SUCCEEDED (bir tip hatası —
+`TimelineView`'in üç noktalı operatörle iki farklı schedule tipi alamaması —
+`paused:` parametresiyle düzeltildi). Cihazda normal hareket modunda kayıt
+ekranı doğrulandı, kilit rozeti doğru render ediliyor. Reduce Motion bu
+simülatör oturumunda `simctl` üzerinden açılamadı (subcommand yok); kod elle
+izlenerek doğrulandı — konfeti çakışması hatası zaten bu şekilde, çalıştırmadan
+bulundu.
+
+**Elde denenmesi gereken:** Ayarlar → Erişilebilirlik → Hareket → Hareketi
+Azalt açıp beş düzeltilen yeri (sosyal kanıt, splash, kayıt kilidi, profil
+konfetisi, atlama modalı) tek tek gözden geçirmek.
