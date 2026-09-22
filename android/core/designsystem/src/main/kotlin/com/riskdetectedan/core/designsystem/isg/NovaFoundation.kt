@@ -42,6 +42,9 @@ import androidx.compose.ui.unit.sp
 /** Space a scrolling page owes the floating tab bar (iOS `novaTabBarInset`). */
 val novaTabBarInset: Dp = (NovaDimensionToken.layoutScrollBottomInset.value - NovaDimensionToken.spaceScreenX.value).dp
 
+/** Room a pinned bottom bar leaves above the floating tab bar (its 8dp top and 10dp bottom padding included). */
+val novaTabBarClearance: Dp = (NovaDimensionToken.layoutTabBarHeight.value + 18).dp
+
 /** True while content renders inside the centred İSGADA popup (iOS `isNovaPopup`). */
 val LocalNovaPopup = staticCompositionLocalOf { false }
 
@@ -393,4 +396,4 @@ fun novaInitialsOf(name: String): String = name.trim().split(Regex("\\s+")).take
     .uppercase(java.util.Locale.forLanguageTag("tr-TR"))
 
 @Composable
-internal fun novaFontScaleIsAccessibility(): Boolean = LocalDensity.current.fontScale >= 1.5f
+fun novaFontScaleIsAccessibility(): Boolean = LocalDensity.current.fontScale >= 1.5f

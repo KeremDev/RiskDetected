@@ -48,6 +48,8 @@ class DesignPreviewActivity : ComponentActivity() {
                             onPhoto = { navigate(NovaDestination.newFinding) }, onAssistant = { navigate(NovaDestination.newFinding) })
                         NovaDestination.findings -> PreviewFindings(board = true, navigate)
                         NovaDestination.newFinding -> PreviewFindings(board = false, navigate)
+                        NovaDestination.riskAssessments -> com.riskdetectedan.feature.nova.NovaRiskScreen(PreviewRiskClient, true,
+                            onBack = { navigate(NovaDestination.home) })
                         NovaDestination.companies -> NovaCompaniesScreen(listOf(NovaCompanyItem("fixture", "Koza Altın A.Ş", "Kaymaz Mah. · Maden · Çok tehlikeli")),
                             onSelect = { navigate(NovaDestination.memory) }, onBack = { navigate(NovaDestination.home) }, onRetry = {})
                         else -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {

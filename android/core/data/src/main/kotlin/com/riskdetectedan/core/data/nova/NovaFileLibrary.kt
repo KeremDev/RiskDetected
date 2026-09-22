@@ -94,17 +94,18 @@ data class NovaFileDraft(val tags: String = "", val title: String = "", val cate
 }
 
 enum class NovaFileFailure(val message: String) {
-    denied("Bu dosyalara erişiminiz yok."),
-    validation("Dosya bilgileri kabul edilmedi. Alanları kontrol edin."),
-    versionConflict("Dosya bu sırada değişti. Listeyi yenileyip tekrar deneyin."),
+    denied("Bu firmanın dosyalarına erişim yok."),
+    validation("Bilgiler eksik veya geçersiz."),
+    versionConflict("Kayıt başka bir yerden değişmiş. Sayfayı yenileyip tekrar deneyin."),
     unavailable("Dosya servisi şu anda kullanılamıyor."),
-    planRequired("Bu işlem planınızda yok."),
-    conflict("Aynı işlem zaten sürüyor."),
+    planRequired("Dosya eklemek için Plus veya Pro plan gerekiyor."),
+    conflict("Bu işlem farklı bir içerikle zaten kaydedilmiş."),
     unsupportedFormat("Bu dosya türü kabul edilmiyor."),
-    tooLarge("Dosya izin verilen boyuttan büyük."),
-    uploadFailed("Dosya yüklenemedi. Bağlantıyı kontrol edip tekrar deneyin."),
-    notCancellable("Bu yükleme artık iptal edilemez."),
-    inspectionUnavailable("Dosya denetimi şu anda başlatılamadı; yükleme durumunu listeden izleyin."),
+    tooLarge("Dosya boyutu sınırın dışında."),
+    uploadFailed("Dosya gönderilemedi. Bağlantınızı kontrol edip tekrar deneyin."),
+    notCancellable("Bu dosya arşive alınmış; iptal edilemez. Kaldırmak için arşivden çıkarın."),
+    // The upload stays where it really is; nothing reports it cleared.
+    inspectionUnavailable("Denetim şu anda çalıştırılamadı. Dosya arşive alınmadı; kaydın üzerinden tekrar deneyebilirsiniz."),
 }
 
 class NovaFileException(val failure: NovaFileFailure) : Exception(failure.name)

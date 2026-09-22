@@ -8,9 +8,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.core.data.isg.IsgWorkspaceIdentity
-import com.riskdetectedan.core.data.nova.NovaNoticeEntry
-import com.riskdetectedan.core.data.nova.NovaNoticeService
-import com.riskdetectedan.core.data.nova.NovaNoticeWords
+import com.riskdetectedan.core.data.nova.*
+import kotlinx.coroutines.launch
 import com.riskdetectedan.core.designsystem.isg.*
 
 /**
@@ -26,6 +25,12 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
         viewModel.bind(identity, workspace?.expertWorkspace, workspace?.selection?.name, workspace?.dashboard)
     }
     OnForeground { viewModel.reload() }
+    val celebrate = rememberNovaCelebrate()
+    // iOS `isgada.mutation.succeeded` / `isgada.records.changed`: only this account's events count.
+    LaunchedEffect(identity) {
+        launch { services.events.succeeded.collect { if (it.userId == identity.userId) celebrate(it.message) } }
+        services.events.changed.collect { if (it.userId == identity.userId) viewModel.reload() }
+    }
     if (state.identity != identity) {
         NovaPageSurface { NovaLoadingView("Verileriniz güncelleniyor…") }
         return
@@ -66,6 +71,8 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                 isOwnedList = workspace == null,
                 onSelect = { viewModel.showUnavailable() },
                 onBack = { navigate(NovaDestination.home) }, onRetry = viewModel::reload)
+            NovaDestination.riskAssessments -> NovaRiskScreen(services.riskClient(identity), state.writable,
+                onBack = { navigate(NovaDestination.home) })
             else -> NovaModulePending(destination, state, onWorkspaceSwitch) { navigate(NovaDestination.home) }
         }
     }
@@ -181,7 +188,18 @@ private fun noticeItem(entry: NovaNoticeEntry): NovaNotice = NovaNotice(entry.ke
 
 /** Hands screens their service calls without exposing the SDK. */
 @dagger.hilt.android.lifecycle.HiltViewModel
-class NovaRootServices @javax.inject.Inject constructor(private val notices: NovaNoticeService) : androidx.lifecycle.ViewModel() {
+class NovaRootServices @javax.inject.Inject constructor(
+    private val notices: NovaNoticeService,
+    private val findings: NovaNonconformityService,
+    private val files: NovaFileLibraryService,
+    private val risk: NovaRiskService,
+    val events: NovaRecordEvents,
+) : androidx.lifecycle.ViewModel() {
+    private fun companies(identity: IsgWorkspaceIdentity): suspend () -> List<NovaCompanyOption> =
+        { runCatching { findings.companyOptions(identity) }.getOrDefault(emptyList()) }
+    fun fileClient(identity: IsgWorkspaceIdentity) = NovaFileClient(files, identity)
+    fun riskClient(identity: IsgWorkspaceIdentity) = NovaServiceRiskClient(risk, identity, companies(identity), fileClient(identity))
+
     fun noticeClient(identity: IsgWorkspaceIdentity) = NovaNoticeClient(
         feed = { scope -> notices.feed(identity, scope = scope) },
         read = { notices.read(identity, it) }, readAll = { notices.readAll(identity) },
