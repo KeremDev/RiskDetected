@@ -224,7 +224,8 @@ private struct NovaRowEntrance: ViewModifier {
             .offset(y: staggered && !shown && !reduceMotion ? 8 : 0)
             .onAppear {
                 guard staggered, !shown else { return }
-                withAnimation(NovaMotion.easeOut(0.26).delay(Double(index) * 0.045)) { shown = true }
+                withAnimation(NovaMotion.gated(NovaMotion.easeOut(0.26).delay(Double(index) * 0.045),
+                    reduceMotion: reduceMotion)) { shown = true }
             }
     }
 }

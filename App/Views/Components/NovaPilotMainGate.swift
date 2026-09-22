@@ -509,7 +509,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                 navigate(.companies)
             }) }
         }
-        .novaFullScreenCover(isPresented: $showingAssignments) {
+        .novaPopupCover(isPresented: $showingAssignments) {
             if let company = selectedCompany {
                 NovaPopup { IsgWorkspaceAssignmentManagement(store: store, company: company) }
             }
