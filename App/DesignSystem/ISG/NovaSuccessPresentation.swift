@@ -64,6 +64,13 @@ struct NovaSuccessPresentation: ViewModifier {
 struct NovaSuccessOverlay: View {
     @ObservedObject var store: NovaSuccessStore
     @State private var appeared = false
+    /// The confetti's own one-shot trigger. It used to key off `appeared`,
+    /// which also drives the card's exit fade — so when the card left,
+    /// `appeared` went back to `false` and the confetti's `.animation(value:)`
+    /// replayed in reverse, flying every piece back toward center just as the
+    /// card was fading out. Bursting is forward-only: set once on arrival,
+    /// never unset, so there is nothing for the confetti to reverse into.
+    @State private var burst = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var scheme
     var body: some View {
@@ -86,10 +93,10 @@ struct NovaSuccessOverlay: View {
                                                 RoundedRectangle(cornerRadius: 1)
                                                     .fill(index.isMultiple(of: 3) ? NovaColorToken.accent.color(in: scheme) : NovaColorToken.text.color(in: scheme).opacity(0.3))
                                                     .frame(width: 4, height: 7)
-                                                    .rotationEffect(.degrees(appeared ? Double(index * 37) : 0))
-                                                    .offset(x: appeared ? CGFloat(index - 6) * 17 : 0, y: appeared ? CGFloat((index * 23) % 80) - 35 : 0)
-                                                    .opacity(appeared ? 0 : 0.9)
-                                                    .animation(.easeOut(duration: 1.4).delay(Double(index % 3) * 0.06), value: appeared)
+                                                    .rotationEffect(.degrees(burst ? Double(index * 37) : 0))
+                                                    .offset(x: burst ? CGFloat(index - 6) * 17 : 0, y: burst ? CGFloat((index * 23) % 80) - 35 : 0)
+                                                    .opacity(burst ? 0 : 0.9)
+                                                    .animation(.easeOut(duration: 1.4).delay(Double(index % 3) * 0.06), value: burst)
                                             }
                                         }
                                     }
@@ -105,6 +112,7 @@ struct NovaSuccessOverlay: View {
                     .accessibilityIdentifier("nova.success")
                     .task(id: event.id) {
                         appeared = false
+                        burst = false
                         // Saving a record is the rare, high-emotion moment this
                         // app has, so it gets the one spring with overshoot and
                         // the one success haptic — fired on the same frame as
@@ -112,6 +120,7 @@ struct NovaSuccessOverlay: View {
                         withAnimation(NovaMotion.gated(NovaMotion.celebrate, reduceMotion: reduceMotion)) {
                             appeared = true
                         }
+                        if !reduceMotion { burst = true }
                         NovaHaptics.success()
                         UIAccessibility.post(notification: .announcement, argument: event.text)
                         do { try await Task.sleep(nanoseconds: 2_300_000_000) } catch { return }

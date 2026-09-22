@@ -249,6 +249,7 @@ struct NovaOBSpinner: View {
     var track: Color = NovaOB.line
     var head: Color = NovaOB.ink
     @State private var spinning = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         Circle()
             .trim(from: 0, to: 0.72)
@@ -258,8 +259,12 @@ struct NovaOBSpinner: View {
             )
             .frame(width: size, height: size)
             .rotationEffect(.degrees(spinning ? 360 : 0))
-            .animation(.linear(duration: 0.72).repeatForever(autoreverses: false), value: spinning)
-            .onAppear { spinning = true }
+            // Matches NovaSpinner/NovaLoadingView's own gating — a busy
+            // indicator is real state, not decoration, but the rotation is
+            // still an infinite loop and follows the same rule they do.
+            .animation(reduceMotion ? nil : .linear(duration: 0.72).repeatForever(autoreverses: false), value: spinning)
+            .onAppear { spinning = !reduceMotion }
+            .onChange(of: reduceMotion) { spinning = !$0 }
     }
 }
 

@@ -76,10 +76,16 @@ struct NovaOBAnimatedLock: View {
     var bodyColor: Color = .white
     var keyholeColor: Color = NovaOB.ink
     var size: CGFloat = 21
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            let phase = timeline.date.timeIntervalSinceReferenceDate
+        // A signup form can sit on screen for a while, and this ran every
+        // frame the whole time regardless of the setting whose entire job is
+        // to stop exactly this kind of idle loop. `paused` keeps the same
+        // schedule type but stops the per-frame updates, so the lock sits
+        // closed instead of perpetually lifting its shackle.
+        TimelineView(.animation(paused: reduceMotion)) { timeline in
+            let phase = reduceMotion ? 0 : timeline.date.timeIntervalSinceReferenceDate
                 .truncatingRemainder(dividingBy: 2.2) / 2.2
             ZStack {
                 NovaOBIconPath(path: "M8.1 11.4V8.5a3.9 3.9 0 017.8 0v2.9", size: size, color: tint, lineWidth: 2)

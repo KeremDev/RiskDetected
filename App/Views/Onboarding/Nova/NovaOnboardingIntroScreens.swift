@@ -11,6 +11,7 @@ struct NovaOBSplashScreen: View {
     @State private var zoomed = true
     @State private var mascotOpacity: Double = 0
     @State private var logoVisible = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
@@ -36,7 +37,12 @@ struct NovaOBSplashScreen: View {
     private func run() async {
         withAnimation(.linear(duration: 0.24)) { mascotOpacity = 1 }
         try? await Task.sleep(nanoseconds: 1_500_000_000)
-        withAnimation(.timingCurve(0.24, 0.9, 0.2, 1, duration: 1.26)) { zoomed = false }
+        // The mascot is 12.5× its resting size at this point, so the zoom-out
+        // is a large moving object filling most of the screen — exactly what
+        // Reduce Motion exists to replace with a plain settle rather than
+        // slow down. Reduced: it's already fully opaque, so this frame simply
+        // snaps to the resting scale/position with no animation at all.
+        withAnimation(reduceMotion ? nil : .timingCurve(0.24, 0.9, 0.2, 1, duration: 1.26)) { zoomed = false }
         try? await Task.sleep(nanoseconds: 1_080_000_000)
         withAnimation(.linear(duration: 0.3)) { logoVisible = true }
         try? await Task.sleep(nanoseconds: 180_000_000)
@@ -352,6 +358,7 @@ struct NovaOBSocialProofScreen: View {
 private struct NovaOBMarquee: View {
     let reviews: [NovaOBSocialProofScreen.Review]
     @State private var offset: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var singleWidth: CGFloat { CGFloat(reviews.count) * 264 }
 
@@ -374,6 +381,10 @@ private struct NovaOBMarquee: View {
             }
             .clipped()
             .onAppear {
+                // A continuous unidirectional drift is exactly the kind of
+                // motion Reduce Motion exists to stop, not slow down — the
+                // rail holds still and shows its first screenful instead.
+                guard !reduceMotion else { return }
                 withAnimation(.linear(duration: 34).repeatForever(autoreverses: false)) {
                     offset = -singleWidth
                 }
@@ -422,6 +433,7 @@ struct NovaOBSkipModal: View {
     let onContinue: () -> Void
     let onSkip: () -> Void
     @State private var shown = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
@@ -488,11 +500,15 @@ struct NovaOBSkipModal: View {
             .background(NovaOB.surface, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
             .shadow(color: Color(hex: 0x0E161C).opacity(0.28), radius: 30, y: 22)
             .padding(.horizontal, 24)
-            .scaleEffect(shown ? 1 : 0.6)
+            // 0.6 read as growing from nothing rather than settling in;
+            // brought up to the same floor every other popup card uses.
+            .scaleEffect(reduceMotion || shown ? 1 : 0.94)
             .opacity(shown ? 1 : 0)
         }
         .onAppear {
-            withAnimation(.timingCurve(0.2, 0.85, 0.25, 1, duration: 0.3)) { shown = true }
+            withAnimation(NovaMotion.gated(.timingCurve(0.2, 0.85, 0.25, 1, duration: 0.3), reduceMotion: reduceMotion)) {
+                shown = true
+            }
         }
     }
 }

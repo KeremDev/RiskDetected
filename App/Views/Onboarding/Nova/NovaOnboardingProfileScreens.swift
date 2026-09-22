@@ -109,6 +109,7 @@ struct NovaOBPrepScreen: View {
 
 struct NovaOBProfileCardScreen: View {
     @ObservedObject var controller: NovaOBController
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var thanksLine: String {
         let name = controller.answers.name.novaTrimmed
@@ -118,8 +119,14 @@ struct NovaOBProfileCardScreen: View {
     var body: some View {
         ZStack {
             NovaOB.surface.ignoresSafeArea()
-            NovaOBConfettiLayer()
-                .allowsHitTesting(false)
+            // Purely decorative, and a continuous full-height falling field is
+            // close to the "moving background" apple-design explicitly warns
+            // against — it has no reduced form worth keeping, so it's off
+            // entirely rather than slowed down.
+            if !reduceMotion {
+                NovaOBConfettiLayer()
+                    .allowsHitTesting(false)
+            }
 
             VStack(spacing: 22) {
                 Spacer(minLength: 0)
