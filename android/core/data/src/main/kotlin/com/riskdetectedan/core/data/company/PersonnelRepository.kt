@@ -1,11 +1,9 @@
 package com.riskdetectedan.core.data.company
 
+import com.riskdetectedan.core.data.isg.NovaExpertFailure
+import com.riskdetectedan.core.data.isg.NovaExpertTransport
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.exceptions.RestException
-import io.github.jan.supabase.postgrest.postgrest
-import io.ktor.client.plugins.ResponseException
-import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.map
@@ -22,7 +20,11 @@ class PersonnelServiceFailure(val code: String): Exception(code)
 
 /** Real SDK path; UI supplies expected scope, but only PostgreSQL grants access. */
 @Singleton
-class PersonnelRepository @Inject constructor(private val client: SupabaseClient, private val pendingStorage: PersonnelPendingStorage) {
+class PersonnelRepository @Inject constructor(
+    private val client: SupabaseClient,
+    private val pendingStorage: PersonnelPendingStorage,
+    private val transport: NovaExpertTransport = NovaExpertTransport(client),
+) {
     /** Identity correlation only; the server decides availability, never profile metadata. */
     val workspaceIdentity = client.auth.sessionStatus.map { workspaceIdentityNow() }.distinctUntilChanged()
     fun workspaceIdentityNow(): PersonnelWorkspaceIdentity? = runCatching {
@@ -57,18 +59,14 @@ class PersonnelRepository @Inject constructor(private val client: SupabaseClient
         require(UUID.fromString(owner).toString() == owner && UUID.fromString(company).toString() == company)
         return "$owner:$company"
     }
+    /** Personal records are read directly; an OSGB expert's go through the organization envelope. */
     private suspend fun invoke(function: String, args: JsonObject): JsonObject = try {
-        val raw = client.postgrest.rpc(function, args).data
-        require(raw.toByteArray(Charsets.UTF_8).size <= 262144)
-        json.parseToJsonElement(raw).jsonObject
-    } catch (error: Exception) {
+        transport.executeObject(function, args, maxBytes = 262144)
+    } catch (failure: NovaExpertFailure) {
         currentCoroutineContext().ensureActive()
-        val response = when(error) { is RestException -> error.response; is ResponseException -> error.response; else -> null }
-        val body = response?.let { runCatching { json.parseToJsonElement(it.bodyAsText()).jsonObject }.getOrNull() }
-        val state = body?.get("code")?.jsonPrimitive?.content
-        val message = body?.get("message")?.jsonPrimitive?.content
-        if (state in setOf("P0001", "28000") && message in directoryTerminal) throw PersonnelServiceFailure(message!!)
-        if (state in setOf("23503", "23505", "23514", "23P01", "22007", "22008", "22P02")) throw PersonnelServiceFailure("VALIDATION_ERROR")
+        if (failure.sqlState in setOf("P0001", "28000") && failure.code in directoryTerminal) throw PersonnelServiceFailure(failure.code)
+        if (failure.code == "VALIDATION_ERROR") throw PersonnelServiceFailure("VALIDATION_ERROR")
+        if (failure.sqlState == null && failure.code == "ACCESS_DENIED") throw PersonnelServiceFailure("ACCESS_DENIED")
         throw PersonnelServiceFailure("UNAVAILABLE") // No payload/token or server diagnostics in UI/logs.
     }
     suspend fun read(owner: String, session: String, company: String, kind: String, query: String = "", archived: Boolean = false, cursor: String? = null, id: String? = null): JsonObject {

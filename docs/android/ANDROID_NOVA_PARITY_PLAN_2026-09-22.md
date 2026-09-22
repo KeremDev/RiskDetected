@@ -87,4 +87,13 @@ sırası, aynı durum geçişleri, aynı boş/hata/yükleniyor durumları, aynı
 
 ## 7. İlerleme günlüğü
 
-(Her faz tamamlandıkça commit hash'iyle eklenir.)
+| Faz | Durum | Commit |
+|---|---|---|
+| F1 Temel + kabuk + navigasyon kataloğu | Tamam; 408 tasarım sistemi testi + iOS/Node navigasyon sözleşmesi geçiyor | `3651e480` |
+| F0 Pilot build + transport + çalışma alanı + kök | Tamam; `osgbPilot` APK emülatörde açılıyor | (bu commit) |
+| F2 Ana sayfa + bildirim merkezi | Ana sayfa canlı özet, zil, bildirim merkezi tamam; istatistik bekliyor | (bu commit) |
+
+Bilinen dışsal konular:
+- `isg-contract-tests` modülü `core/data` kaynaklarını bağımlılıksız derlediği için HEAD'de de kırık (bu işten önce).
+- `osgbPilot` staging debug paketini (`com.riskdetectedan.app.debug`) kullanıyor; ayrı paket için Firebase'de `com.riskdetectedan.app.osgbpilot` istemcisi kaydedilmeli.
+- Canlı veri doğrulaması için staging hesabıyla girişi kullanıcı yapar.

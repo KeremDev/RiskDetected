@@ -427,6 +427,7 @@ android {
             manifestPlaceholders["firebaseCrashlyticsCollectionEnabled"] = "false"
             manifestPlaceholders["facebookSdkAutoInitEnabled"] = "false"
             buildConfigField("String", "ENVIRONMENT_NAME", "staging".asBuildConfigString())
+            buildConfigField("boolean", "NOVA_PILOT", "false")
             buildConfigField("String", "SUPABASE_URL", stagingSupabaseUrl.asBuildConfigString())
             buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", stagingSupabasePublishableKey.asBuildConfigString())
             buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", stagingGoogleWebClientId.asBuildConfigString())
@@ -448,6 +449,16 @@ android {
                 versionNameSuffix = "-meta-smoke"
                 matchingFallbacks += listOf("debug")
             }
+        }
+        // The Android counterpart of the iOS OSGB pilot bundle: staging backend, the
+        // NOVA expert product instead of MainShell. It keeps the debug package so it
+        // uses the Firebase client already registered for staging; a separate
+        // `.osgbpilot` package needs its own Firebase registration first.
+        create("osgbPilot") {
+            initWith(getByName("debug"))
+            versionNameSuffix = "-osgbpilot"
+            matchingFallbacks += listOf("debug")
+            buildConfigField("boolean", "NOVA_PILOT", "true")
         }
         create("qa") {
             initWith(getByName("debug"))
@@ -478,6 +489,7 @@ android {
                 signingConfig = signingConfigs.getByName("upload")
             }
             buildConfigField("String", "ENVIRONMENT_NAME", "production".asBuildConfigString())
+            buildConfigField("boolean", "NOVA_PILOT", "false")
             buildConfigField("String", "SUPABASE_URL", productionSupabaseUrl.asBuildConfigString())
             buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", productionSupabasePublishableKey.asBuildConfigString())
             buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", productionGoogleWebClientId.asBuildConfigString())
@@ -647,6 +659,7 @@ dependencies {
     implementation(project(":feature:reports"))
     implementation(project(":feature:profile"))
     implementation(project(":feature:paywall"))
+    implementation(project(":feature:nova"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

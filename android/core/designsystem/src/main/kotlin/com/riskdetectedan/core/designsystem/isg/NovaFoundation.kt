@@ -203,6 +203,8 @@ object NovaSymbols {
             "line.3.horizontal" to Icons.Outlined.Menu,
             "line.3.horizontal.decrease" to Icons.AutoMirrored.Outlined.Sort,
             "link" to Icons.Outlined.Link,
+            "lock" to Icons.Outlined.Lock,
+            "lock.shield" to Icons.Outlined.Lock,
             "list.bullet" to Icons.AutoMirrored.Outlined.List,
             "list.bullet.circle" to Icons.AutoMirrored.Outlined.FormatListBulleted,
             "list.bullet.clipboard" to Icons.Outlined.ContentPaste,

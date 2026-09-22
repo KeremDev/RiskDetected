@@ -35,3 +35,5 @@ include(":feature:analysis")
 include(":feature:reports")
 include(":feature:profile")
 include(":feature:paywall")
+// The NOVA expert product (iOS NovaPilotRoot parity); mounted only in the pilot build type.
+include(":feature:nova")

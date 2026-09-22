@@ -87,9 +87,9 @@ class IsgWorkspaceRepository @Inject constructor(private val client: SupabaseCli
         scope = null
     }
 
-    suspend fun companies(context: IsgWorkspaceContext): JsonObject = inScope(context) {
+    suspend fun companies(context: IsgWorkspaceContext, after: String? = null, limit: Int = 100): JsonObject = inScope(context) {
         gateway.companies(context.workspaceId, context.membership.membershipId,
-            context.membership.permissionRevision)
+            context.membership.permissionRevision, after, limit)
     }
 
     suspend fun dashboard(context: IsgWorkspaceContext, companyId: String?): JsonObject =

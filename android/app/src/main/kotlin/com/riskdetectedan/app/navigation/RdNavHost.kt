@@ -25,6 +25,10 @@ import com.riskdetectedan.feature.paywall.PaywallPlan
 import com.riskdetectedan.feature.profile.AccountDeletionScreen
 import com.riskdetectedan.feature.profile.CompanyListScreen
 import com.riskdetectedan.feature.profile.OsgbWorkspaceScreen
+import com.riskdetectedan.feature.profile.ProfileScreen
+import com.riskdetectedan.feature.nova.NovaPilotEntry
+import com.riskdetectedan.feature.nova.NovaPilotSlots
+import com.riskdetectedan.app.BuildConfig
 import com.riskdetectedan.feature.profile.NotificationSettingsScreen
 import com.riskdetectedan.feature.profile.DataManagementScreen
 import com.riskdetectedan.feature.profile.SupportScreen
@@ -81,7 +85,7 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
                 // rememberNavController restores its complete back stack after activity/process
                 // recreation. Do not replace that restored Analysis/Result/Profile/etc. route
                 // with MainShell merely because bootstrap resolved the persisted session again.
-                if (!restoredAuthenticatedRoute) navController.navigate(MainShell) {
+                if (!restoredAuthenticatedRoute) navController.navigate(if (BuildConfig.NOVA_PILOT) NovaPilot else MainShell) {
                     popUpTo(0) { inclusive = true }
                     launchSingleTop = true
                 }
@@ -111,6 +115,25 @@ fun RdNavHost(viewModel: AppBootstrapViewModel = hiltViewModel()) {
             }
         }
         composable<MainShell> { MainShellScreen(navController) }
+        composable<NovaPilot> {
+            NovaPilotEntry(NovaPilotSlots(
+                profile = { _ ->
+                    ProfileScreen(
+                        onBack = null,
+                        onManageCompanies = { navController.navigate(Companies) },
+                        onOsgbWorkspace = { navController.navigate(OsgbWorkspace) },
+                        onSupport = { navController.navigate(Support) },
+                        onNotificationSettings = { navController.navigate(NotificationSettings) },
+                        onAppearanceSettings = { navController.navigate(AppearanceSettings) },
+                        onDataManagement = { navController.navigate(DataManagement) },
+                        onDeleteAccount = { navController.navigate(DeleteAccount) },
+                        onPaywall = { navController.navigate(PaywallForTier(tier = "plus", entryPoint = "nova_profile")) },
+                    )
+                },
+                // The OSGB management root is ported separately; until then managers keep the existing workspace screen.
+                manager = { onSwitch -> OsgbWorkspaceScreen(onBack = onSwitch) },
+            ))
+        }
         composable<Capture> {
             // Retained as a typed direct-camera entry point. The center quick-scan action no
             // longer uses it: live iOS first returns to Home and opens the source chooser there.

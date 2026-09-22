@@ -17,6 +17,9 @@ import kotlinx.serialization.Serializable
  * [com.riskdetectedan.app.navigation.MainShell] now, not distinct pushable routes (matching iOS:
  * tabs never show a back button, switching tabs isn't a back-stack operation). */
 @Serializable object MainShell
+
+/** The NOVA expert product; replaces [MainShell] only in the `osgbPilot` build type. */
+@Serializable object NovaPilot
 @Serializable object Capture
 
 /** Reached via [Capture]'s quick-scan single-shot flow (adds its one photo to the list itself,
