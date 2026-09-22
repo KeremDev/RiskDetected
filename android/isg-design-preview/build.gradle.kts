@@ -22,6 +22,9 @@ android {
 androidComponents { beforeVariants(selector().withBuildType("release")) { it.enable = false } }
 dependencies {
     implementation(project(":core:designsystem"))
+    // Screens only, fed synthetic lambdas; no Hilt graph or service is started here.
+    implementation(project(":feature:nova"))
+    implementation(project(":core:data"))
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.foundation)

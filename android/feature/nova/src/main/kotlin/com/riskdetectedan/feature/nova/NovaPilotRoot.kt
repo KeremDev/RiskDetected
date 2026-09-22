@@ -3,8 +3,6 @@ package com.riskdetectedan.feature.nova
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -59,6 +57,8 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                 NovaPageHeading("Profil", modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) { navigate(NovaDestination.home) }
                 Box(Modifier.weight(1f)) { slots.profile { navigate(NovaDestination.home) } }
             }
+            NovaDestination.findings -> NovaFindingsDestination(identity, NovaFindingsSurface.board, state.writable, navigate)
+            NovaDestination.newFinding -> NovaFindingsDestination(identity, NovaFindingsSurface.addFinding, state.writable, navigate)
             NovaDestination.companies, NovaDestination.newCompany -> NovaCompaniesScreen(
                 companies = companyItems(state, workspace),
                 isLoading = state.overview == null && !state.overviewFailed && workspace == null,
@@ -69,11 +69,7 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             else -> NovaModulePending(destination, state, onWorkspaceSwitch) { navigate(NovaDestination.home) }
         }
     }
-    state.message?.let { message ->
-        AlertDialog(onDismissRequest = viewModel::dismissMessage, confirmButton = {
-            TextButton(onClick = viewModel::dismissMessage) { NovaText("Tamam", style = NovaTypeToken.button) }
-        }, title = { NovaText("İSGADA pilot", style = NovaTypeToken.sheetTitle) }, text = { NovaText(message) })
-    }
+    NovaNoticeDialog(state.message, "İSGADA pilot", viewModel::dismissMessage)
 }
 
 /** A module whose Android page is not ported yet says so plainly; it never pretends to work. */

@@ -160,3 +160,26 @@ fun NovaFormValueRow(label: String, symbol: String = "calendar", modifier: Modif
         content()
     }
 }
+
+/** A NOVA-styled notice with one acknowledgement (replaces the platform alert, which ignores the palette). */
+@Composable
+fun NovaNoticeDialog(message: String?, title: String = "İSGADA", onDismiss: () -> Unit) {
+    NovaPopup(message != null, onDismiss, identifier = "nova.notice.dialog") {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            NovaPopupHeading(title, symbol = "info.circle")
+            NovaText(message.orEmpty())
+            NovaButton("Tamam", onDismiss)
+        }
+    }
+}
+
+/** A short list of choices in the NOVA popup (the iOS confirmation dialog counterpart). */
+@Composable
+fun NovaChoiceDialog(visible: Boolean, title: String, options: List<Triple<String, String, () -> Unit>>, onDismiss: () -> Unit) {
+    NovaPopup(visible, onDismiss, identifier = "nova.choice.dialog") {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            NovaPopupHeading(title, symbol = "square.and.arrow.up")
+            options.forEach { (label, symbol, action) -> NovaPopupOption(label, symbol) { onDismiss(); action() } }
+        }
+    }
+}
