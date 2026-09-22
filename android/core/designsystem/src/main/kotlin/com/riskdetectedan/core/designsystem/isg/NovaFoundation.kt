@@ -153,6 +153,8 @@ object NovaSymbols {
             "chevron.down" to Icons.Outlined.KeyboardArrowDown,
             "chevron.up" to Icons.Outlined.KeyboardArrowUp,
             "flame" to Icons.Outlined.LocalFireDepartment,
+            "questionmark" to Icons.AutoMirrored.Outlined.HelpOutline,
+            "signature" to Icons.Outlined.Draw,
             "checkmark.square.fill" to Icons.Filled.CheckBox,
             "circle" to Icons.Outlined.RadioButtonUnchecked,
             "largecircle.fill.circle" to Icons.Filled.RadioButtonChecked,

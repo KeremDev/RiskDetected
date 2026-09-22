@@ -82,6 +82,10 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             NovaDestination.emergencyPlans -> NovaEmergencyScreen(services.emergencyClient(identity), state.writable,
                 onBack = { navigate(NovaDestination.home) })
             NovaDestination.drills -> NovaDrillScreen(services.drillClient(identity), state.writable, onBack = { navigate(NovaDestination.home) })
+            NovaDestination.appointments -> NovaAppointmentScreen(services.appointmentClient(identity), state.writable,
+                onBack = { navigate(NovaDestination.home) })
+            NovaDestination.ppeHandovers -> NovaPPEScreen(services.ppeClient(identity), state.writable, onBack = { navigate(NovaDestination.home) })
+            NovaDestination.katipContracts -> NovaKatipScreen(services.katipClient(identity), state.writable, onBack = { navigate(NovaDestination.home) })
             else -> NovaModulePending(destination, state, onWorkspaceSwitch) { navigate(NovaDestination.home) }
         }
     }
@@ -205,6 +209,9 @@ class NovaRootServices @javax.inject.Inject constructor(
     private val equipment: NovaEquipmentService,
     private val emergency: NovaEmergencyService,
     private val drills: NovaDrillService,
+    private val appointments: NovaAppointmentService,
+    private val ppe: NovaPPEService,
+    private val katip: NovaKatipService,
     private val personnel: com.riskdetectedan.core.data.company.PersonnelRepository,
     val events: NovaRecordEvents,
 ) : androidx.lifecycle.ViewModel() {
@@ -227,6 +234,9 @@ class NovaRootServices @javax.inject.Inject constructor(
     }
     fun emergencyClient(identity: IsgWorkspaceIdentity) =
         NovaServiceEmergencyClient(emergency, identity, companies(identity), fileClient(identity), people(identity))
+    fun katipClient(identity: IsgWorkspaceIdentity) = NovaServiceKatipClient(katip, files, identity, companies(identity))
+    fun ppeClient(identity: IsgWorkspaceIdentity) = NovaServicePPEClient(ppe, identity, companies(identity))
+    fun appointmentClient(identity: IsgWorkspaceIdentity) = NovaServiceAppointmentClient(appointments, identity, companies(identity), fileClient(identity))
     fun drillClient(identity: IsgWorkspaceIdentity) = NovaServiceDrillClient(drills, identity, companies(identity))
     fun equipmentClient(identity: IsgWorkspaceIdentity) = NovaServiceEquipmentClient(equipment, identity, companies(identity), fileClient(identity))
     fun riskClient(identity: IsgWorkspaceIdentity) = NovaServiceRiskClient(risk, identity, companies(identity), fileClient(identity))

@@ -48,16 +48,6 @@ private fun NovaDrillState.status() = when (this) {
     NovaDrillState.performed -> NovaStatus.Success; NovaDrillState.cancelled -> NovaStatus.Neutral
 }
 
-@Composable
-private fun DrillFact(symbol: String, label: String, value: String) {
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-        NovaIcon(symbol, 10.dp, tint = NovaColorToken.textMuted.color())
-        Column {
-            NovaSizedText(label, 9f, FontWeight.Medium, NovaColorToken.textMuted.color())
-            NovaSizedText(value, 11f, FontWeight.Bold)
-        }
-    }
-}
 
 @Composable
 private fun DrillCard(drill: NovaDrill, modifier: Modifier, onClick: () -> Unit) {
@@ -73,9 +63,9 @@ private fun DrillCard(drill: NovaDrill, modifier: Modifier, onClick: () -> Unit)
             }
             NovaText(drill.explain, style = NovaTypeToken.meta, color = NovaColorToken.textSecondary.color())
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                DrillFact("calendar", "Planlanan", NovaDay.label(drill.plannedOn))
-                drill.performedOn?.let { DrillFact("checkmark.circle", "Yapılan", NovaDay.label(it)) }
-                DrillFact("number", "Plan sürümü", "v${drill.planVersion}")
+                NovaRowFact("calendar", "Planlanan", NovaDay.label(drill.plannedOn))
+                drill.performedOn?.let { NovaRowFact("checkmark.circle", "Yapılan", NovaDay.label(it)) }
+                NovaRowFact("number", "Plan sürümü", "v${drill.planVersion}")
             }
             if (drill.planVersionSuperseded) NovaTag("arrow.triangle.branch", "Prova edilen plan sürümü güncellendi", NovaStatus.Info)
         }
@@ -221,13 +211,13 @@ private fun DrillDetail(drill: NovaDrill, canWrite: Boolean, onRecord: () -> Uni
         NovaCard(Modifier.fillMaxWidth(), padding = 14) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DrillCell("calendar", "Planlanan", NovaDay.label(drill.plannedOn), Modifier.weight(1f))
-                    DrillCell("checkmark.circle", "Yapılan", drill.performedOn?.let(NovaDay::label) ?: "Yapılmadı", Modifier.weight(1f))
+                    NovaFactCell("calendar", "Planlanan", NovaDay.label(drill.plannedOn), Modifier.weight(1f))
+                    NovaFactCell("checkmark.circle", "Yapılan", drill.performedOn?.let(NovaDay::label) ?: "Yapılmadı", Modifier.weight(1f))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DrillCell("doc.text", "Plan sürümü", "v${drill.planVersion}", Modifier.weight(1f),
+                    NovaFactCell("doc.text", "Plan sürümü", "v${drill.planVersion}", Modifier.weight(1f),
                         if (drill.planVersionSuperseded) "sonradan güncellendi" else "")
-                    DrillCell("person.2", "Katılımcı", "${drill.participantCount}", Modifier.weight(1f))
+                    NovaFactCell("person.2", "Katılımcı", "${drill.participantCount}", Modifier.weight(1f))
                 }
                 NovaHelpHint(NovaDrillWords.pinnedNote)
             }
@@ -263,34 +253,7 @@ private fun DrillDetail(drill: NovaDrill, canWrite: Boolean, onRecord: () -> Uni
     }
 }
 
-@Composable
-private fun DrillCell(symbol: String, label: String, value: String, modifier: Modifier, detail: String = "") {
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        NovaIcon(symbol, 11.dp, Modifier.padding(top = 2.dp), tint = NovaColorToken.textMuted.color())
-        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-            NovaSizedText(label, 9f, FontWeight.Medium, NovaColorToken.textMuted.color())
-            NovaSizedText(value, 12f, FontWeight.Bold)
-            if (detail.isNotEmpty()) NovaSizedText(detail, 9.5f, FontWeight.Medium, NovaColorToken.textSecondary.color())
-        }
-    }
-}
 
-/** A task page with a header, scrolling body and sticky actions above the tab bar. */
-@Composable
-private fun DrillTask(title: String, step: Int, total: Int, stepTitle: String, primaryTitle: String, primarySymbol: String, working: Boolean,
-                      onBack: () -> Unit, onPrimary: () -> Unit, failure: String?, content: @Composable ColumnScope.() -> Unit) {
-    androidx.activity.compose.BackHandler(onBack = onBack)
-    Column(Modifier.fillMaxSize()) {
-        NovaTaskHeader(title, step, total, stepTitle, Modifier.padding(horizontal = 18.dp).padding(top = 10.dp), onClose = onBack)
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp).padding(bottom = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            content()
-            failure?.let { NovaTaskErrorSummary(it) }
-        }
-        NovaTaskStickyActions(primaryTitle, onBack, onPrimary, Modifier.navigationBarsPadding().padding(bottom = novaTabBarClearance),
-            primarySymbol, working, canGoBack = true)
-    }
-}
 
 /** Planning a drill; the plan is chosen and the server pins its version. */
 @Composable
@@ -309,7 +272,7 @@ private fun DrillPlanSheet(initial: NovaDrillPlanDraft, catalogue: NovaDrillCata
         return
     }
     val goBack: () -> Unit = { failure = null; if (step > 0) step-- else onClose() }
-    DrillTask("Tatbikat planla", step + 1, 3, listOf("Plan seçimi", "Tarih", "Kontrol")[step], if (step == 2) "Tatbikatı planla" else "Devam",
+    NovaModuleTask("Tatbikat planla", step + 1, 3, listOf("Plan seçimi", "Tarih", "Kontrol")[step], if (step == 2) "Tatbikatı planla" else "Devam",
         if (step == 2) "checkmark" else "arrow.right", saving, goBack, {
             failure = null
             when {
@@ -357,7 +320,7 @@ private fun DrillResultSheet(initial: NovaDrillResultDraft, catalogue: NovaDrill
         return
     }
     val goBack: () -> Unit = { failure = null; if (step > 0) step-- else onClose() }
-    DrillTask("Tatbikat kaydı", step + 1, 4, listOf("Tarih", "Katılımcılar", "Sonuçlar", "Kontrol")[step],
+    NovaModuleTask("Tatbikat kaydı", step + 1, 4, listOf("Tarih", "Katılımcılar", "Sonuçlar", "Kontrol")[step],
         if (step == 3) "Tatbikatı kaydet" else "Devam", if (step == 3) "checkmark" else "arrow.right", saving, goBack, {
             failure = null
             when {

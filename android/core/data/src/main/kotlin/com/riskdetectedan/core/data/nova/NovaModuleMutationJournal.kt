@@ -50,7 +50,7 @@ class NovaModuleMutationJournal @Inject constructor(
                         payload: JsonObject, ticket: NovaExpertTicket? = transport.capture(),
                         decode: (JsonElement) -> T): T {
         if (transport.identityNow() != identity) throw com.riskdetectedan.core.data.isg.NovaExpertFailure("ACCESS_DENIED")
-        val body = canonical(buildJsonObject {
+        val body = novaCanonicalJson(buildJsonObject {
             put("company", company?.let(::JsonPrimitive) ?: JsonNull); put("action", action); put("payload", payload)
         })
         val digest = MessageDigest.getInstance("SHA-256").digest(body.toByteArray()).joinToString("") { "%02x".format(it) }
@@ -71,12 +71,6 @@ class NovaModuleMutationJournal @Inject constructor(
         return answer
     }
 
-    /** Sorted keys, so the same request hashes the same regardless of build order. */
-    private fun canonical(element: JsonElement): String = when (element) {
-        is JsonObject -> element.keys.sorted().joinToString(",", "{", "}") { "\"$it\":${canonical(element.getValue(it))}" }
-        is JsonArray -> element.joinToString(",", "[", "]") { canonical(it) }
-        else -> element.toString()
-    }
 
     companion object {
         /** Terminal, user-requested saves only; drafts, autosaves and reads never celebrate. */
@@ -99,4 +93,11 @@ class NovaModuleMutationJournal @Inject constructor(
 
 object NovaSuccessWords {
     fun recordSaved(name: String) = "$name başarıyla kaydedildi!"
+}
+
+/** Sorted keys, so the same request hashes and compares the same regardless of build order. */
+internal fun novaCanonicalJson(element: JsonElement): String = when (element) {
+    is JsonObject -> element.keys.sorted().joinToString(",", "{", "}") { "\"$it\":${novaCanonicalJson(element.getValue(it))}" }
+    is JsonArray -> element.joinToString(",", "[", "]") { novaCanonicalJson(it) }
+    else -> element.toString()
 }
