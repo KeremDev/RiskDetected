@@ -52,6 +52,10 @@ class DesignPreviewActivity : ComponentActivity() {
                             onBack = { navigate(NovaDestination.home) })
                         NovaDestination.periodicChecks -> com.riskdetectedan.feature.nova.NovaEquipmentScreen(PreviewEquipmentClient, true,
                             onBack = { navigate(NovaDestination.home) })
+                        NovaDestination.emergencyPlans -> com.riskdetectedan.feature.nova.NovaEmergencyScreen(PreviewEmergencyClient, true,
+                            onBack = { navigate(NovaDestination.home) })
+                        NovaDestination.drills -> com.riskdetectedan.feature.nova.NovaDrillScreen(PreviewDrillClient, true,
+                            onBack = { navigate(NovaDestination.home) })
                         NovaDestination.companies -> NovaCompaniesScreen(listOf(NovaCompanyItem("fixture", "Koza Altın A.Ş", "Kaymaz Mah. · Maden · Çok tehlikeli")),
                             onSelect = { navigate(NovaDestination.memory) }, onBack = { navigate(NovaDestination.home) }, onRetry = {})
                         else -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {

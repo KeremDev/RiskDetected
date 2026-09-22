@@ -10,6 +10,10 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.core.data.isg.IsgWorkspaceIdentity
 import com.riskdetectedan.core.data.nova.*
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import com.riskdetectedan.core.designsystem.isg.*
 
 /**
@@ -75,6 +79,9 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                 onBack = { navigate(NovaDestination.home) })
             NovaDestination.periodicChecks -> NovaEquipmentScreen(services.equipmentClient(identity), state.writable,
                 onBack = { navigate(NovaDestination.home) })
+            NovaDestination.emergencyPlans -> NovaEmergencyScreen(services.emergencyClient(identity), state.writable,
+                onBack = { navigate(NovaDestination.home) })
+            NovaDestination.drills -> NovaDrillScreen(services.drillClient(identity), state.writable, onBack = { navigate(NovaDestination.home) })
             else -> NovaModulePending(destination, state, onWorkspaceSwitch) { navigate(NovaDestination.home) }
         }
     }
@@ -196,11 +203,31 @@ class NovaRootServices @javax.inject.Inject constructor(
     private val files: NovaFileLibraryService,
     private val risk: NovaRiskService,
     private val equipment: NovaEquipmentService,
+    private val emergency: NovaEmergencyService,
+    private val drills: NovaDrillService,
+    private val personnel: com.riskdetectedan.core.data.company.PersonnelRepository,
     val events: NovaRecordEvents,
 ) : androidx.lifecycle.ViewModel() {
     private fun companies(identity: IsgWorkspaceIdentity): suspend () -> List<NovaCompanyOption> =
         { runCatching { findings.companyOptions(identity) }.getOrDefault(emptyList()) }
     fun fileClient(identity: IsgWorkspaceIdentity) = NovaFileClient(files, identity)
+    /** Active personnel of one company, every page, capped like iOS at a thousand names. */
+    private fun people(identity: IsgWorkspaceIdentity): suspend (String) -> List<NovaPersonOption> = { company ->
+        val rows = mutableListOf<NovaPersonOption>()
+        var cursor: String? = null
+        do {
+            val page = personnel.read(identity.userId, identity.sessionId, company, "employees", cursor = cursor)
+            page["rows"]?.jsonArray?.forEach { row ->
+                val entry = row.jsonObject
+                rows += NovaPersonOption(entry.getValue("id").jsonPrimitive.content, entry.getValue("name").jsonPrimitive.content)
+            }
+            cursor = page["next"]?.jsonPrimitive?.contentOrNull
+        } while (cursor != null && rows.size < 1_000)
+        rows
+    }
+    fun emergencyClient(identity: IsgWorkspaceIdentity) =
+        NovaServiceEmergencyClient(emergency, identity, companies(identity), fileClient(identity), people(identity))
+    fun drillClient(identity: IsgWorkspaceIdentity) = NovaServiceDrillClient(drills, identity, companies(identity))
     fun equipmentClient(identity: IsgWorkspaceIdentity) = NovaServiceEquipmentClient(equipment, identity, companies(identity), fileClient(identity))
     fun riskClient(identity: IsgWorkspaceIdentity) = NovaServiceRiskClient(risk, identity, companies(identity), fileClient(identity))
 

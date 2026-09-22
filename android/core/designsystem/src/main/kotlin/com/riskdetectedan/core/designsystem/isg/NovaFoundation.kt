@@ -152,6 +152,7 @@ object NovaSymbols {
             "checkmark.shield" to Icons.Outlined.VerifiedUser,
             "chevron.down" to Icons.Outlined.KeyboardArrowDown,
             "chevron.up" to Icons.Outlined.KeyboardArrowUp,
+            "flame" to Icons.Outlined.LocalFireDepartment,
             "checkmark.square.fill" to Icons.Filled.CheckBox,
             "circle" to Icons.Outlined.RadioButtonUnchecked,
             "largecircle.fill.circle" to Icons.Filled.RadioButtonChecked,
