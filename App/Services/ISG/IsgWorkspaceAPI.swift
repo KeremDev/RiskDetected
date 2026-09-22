@@ -1446,6 +1446,12 @@ struct IsgWorkspaceAdvancedRecord: Identifiable, Equatable {
         try require(selection)
         guard let assetID = row.assetID, let filename = row.originalFilename,
               !filename.isEmpty else { throw IsgWorkspaceAPIFailure.invalidRequest }
+        return try await downloadAsset(selection: selection, assetID: assetID, filename: filename)
+    }
+
+    func downloadAsset(selection: NovaWorkspaceSelection, assetID: UUID,
+                       filename: String) async throws -> IsgWorkspaceFileDownload {
+        try require(selection)
         let expiresAt = ISO8601DateFormatter().string(from: Date().addingTimeInterval(120))
         let openedData = try await rpc("isg_workspace_download_open_v1", [
             "p_workspace": .id(selection.workspaceID), "p_asset": .id(assetID),

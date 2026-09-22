@@ -617,6 +617,7 @@ struct PaywallDesignFeature: Equatable, Identifiable, Sendable {
     var id: String { title }
 }
 
+@MainActor
 struct PaywallDesignFeatureIcon: View {
     var glyph: PaywallDesignFeatureGlyph
     var size: CGFloat
@@ -648,7 +649,7 @@ struct PaywallDesignFeatureIcon: View {
         .frame(width: size, height: size)
     }
 
-    private static func shield(_ path: inout Path) {
+    nonisolated private static func shield(_ path: inout Path) {
         path.move(to: CGPoint(x: 10, y: 2.4))
         path.addLine(to: CGPoint(x: 16.4, y: 5))
         path.addLine(to: CGPoint(x: 16.4, y: 9.8))
@@ -661,7 +662,7 @@ struct PaywallDesignFeatureIcon: View {
         path.addLine(to: CGPoint(x: 12.8, y: 8))
     }
 
-    private static func chart(_ path: inout Path) {
+    nonisolated private static func chart(_ path: inout Path) {
         path.move(to: CGPoint(x: 3.4, y: 3))
         path.addLine(to: CGPoint(x: 3.4, y: 16.4))
         path.addLine(to: CGPoint(x: 16.8, y: 16.4))
@@ -673,7 +674,7 @@ struct PaywallDesignFeatureIcon: View {
         path.addLine(to: CGPoint(x: 14.2, y: 5.2))
     }
 
-    private static func photos(_ path: inout Path) {
+    nonisolated private static func photos(_ path: inout Path) {
         path.addRoundedRect(
             in: CGRect(x: 6.6, y: 2.4, width: 11, height: 11),
             cornerSize: CGSize(width: 2.4, height: 2.4)
@@ -690,7 +691,7 @@ struct PaywallDesignFeatureIcon: View {
         path.addLine(to: CGPoint(x: 12.9, y: 15))
     }
 
-    private static func building(_ path: inout Path) {
+    nonisolated private static func building(_ path: inout Path) {
         path.move(to: CGPoint(x: 4, y: 17))
         path.addLine(to: CGPoint(x: 4, y: 3.4))
         path.addLine(to: CGPoint(x: 12.2, y: 3.4))
@@ -712,7 +713,7 @@ struct PaywallDesignFeatureIcon: View {
         path.addLine(to: CGPoint(x: 14.8, y: 14.2))
     }
 
-    private static func gauge(_ path: inout Path) {
+    nonisolated private static func gauge(_ path: inout Path) {
         path.addArc(
             center: CGPoint(x: 10, y: 13.2),
             radius: 6.8,
@@ -727,7 +728,7 @@ struct PaywallDesignFeatureIcon: View {
         path.addLine(to: CGPoint(x: 16.8, y: 15.6))
     }
 
-    private static func grid(_ path: inout Path) {
+    nonisolated private static func grid(_ path: inout Path) {
         path.addRoundedRect(
             in: CGRect(x: 2.8, y: 2.8, width: 14.4, height: 14.4),
             cornerSize: CGSize(width: 2.4, height: 2.4)
@@ -740,13 +741,13 @@ struct PaywallDesignFeatureIcon: View {
         }
     }
 
-    private static func magnifier(_ path: inout Path) {
+    nonisolated private static func magnifier(_ path: inout Path) {
         path.addEllipse(in: CGRect(x: 3, y: 3, width: 11.2, height: 11.2))
         path.move(to: CGPoint(x: 12.6, y: 12.6))
         path.addLine(to: CGPoint(x: 17.2, y: 17.2))
     }
 
-    private static func sliders(_ path: inout Path) {
+    nonisolated private static func sliders(_ path: inout Path) {
         let rows: [(y: CGFloat, knob: CGFloat)] = [(5.6, 13.2), (10, 7.2), (14.4, 14)]
         for row in rows {
             path.move(to: CGPoint(x: 3, y: row.y))
@@ -757,7 +758,7 @@ struct PaywallDesignFeatureIcon: View {
         }
     }
 
-    private static func archive(_ path: inout Path) {
+    nonisolated private static func archive(_ path: inout Path) {
         path.addRoundedRect(
             in: CGRect(x: 2.6, y: 3.2, width: 14.8, height: 4),
             cornerSize: CGSize(width: 1.2, height: 1.2)
@@ -772,7 +773,7 @@ struct PaywallDesignFeatureIcon: View {
         path.addLine(to: CGPoint(x: 12, y: 10.6))
     }
 
-    private static func assignee(_ path: inout Path) {
+    nonisolated private static func assignee(_ path: inout Path) {
         path.addEllipse(in: CGRect(x: 5.2, y: 3.4, width: 6.4, height: 6.4))
         path.move(to: CGPoint(x: 2.2, y: 17))
         path.addQuadCurve(to: CGPoint(x: 12.2, y: 17), control: CGPoint(x: 7.2, y: 11))
@@ -781,7 +782,7 @@ struct PaywallDesignFeatureIcon: View {
         path.addLine(to: CGPoint(x: 18.4, y: 9.4))
     }
 
-    private static func target(_ path: inout Path) {
+    nonisolated private static func target(_ path: inout Path) {
         path.addEllipse(in: CGRect(x: 3.4, y: 3.4, width: 13.2, height: 13.2))
         path.addEllipse(in: CGRect(x: 7.6, y: 7.6, width: 4.8, height: 4.8))
         path.move(to: CGPoint(x: 10, y: 1.2))

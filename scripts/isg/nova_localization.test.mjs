@@ -124,6 +124,9 @@ test('no shipped NOVA copy is left as a raw literal',()=>{
       for(const match of bare.matchAll(/"((?:[^"\\]|\\.)*)"/g)){
         const value=match[1];
         if(!value||RESOURCE.test(value))continue;
+        // This ICU expression recognises persisted Turkish month names; it is
+        // parser data, not copy rendered to a person.
+        if(file==='App/DesignSystem/ISG/NovaAnalysisDetail.swift' && value.startsWith('\\s*[·-]?'))continue;
         // A word with a Turkish letter or two words with a space is human copy.
         if(!/[çğıöşüÇĞİÖŞÜ]/.test(value))continue;
         offenders.push(`${file}:${number} ${value.slice(0,60)}`);

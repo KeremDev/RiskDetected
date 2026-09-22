@@ -25,9 +25,9 @@ struct NovaPilotCompanyIntent: Codable, Equatable {
             let phone = responsiblePhone.replacingOccurrences(of: "[ ()-]", with: "", options: .regularExpression)
             let mail = responsibleEmail.trimmingCharacters(in: .whitespacesAndNewlines)
             guard phone.range(of: "^[+]?[0-9]{7,15}$", options: .regularExpression) != nil,
-                  mail.utf8.count <= 254, mail.range(of: "^[^\\s@]+@[^\\s@]+[.][^\\s@]+$", options: .regularExpression) != nil
+                  mail.isEmpty || (mail.utf8.count <= 254 && mail.range(of: "^[^\\s@]+@[^\\s@]+[.][^\\s@]+$", options: .regularExpression) != nil)
             else { throw NovaPersonnelFailure.validation }
-            intent.responsiblePhone = phone; intent.responsibleEmail = mail
+            intent.responsiblePhone = phone; intent.responsibleEmail = mail.isEmpty ? nil : mail
         } else if !responsiblePhone.isEmpty || !responsibleEmail.isEmpty {
             throw NovaPersonnelFailure.validation
         }

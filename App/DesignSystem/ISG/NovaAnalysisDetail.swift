@@ -1,5 +1,36 @@
 import Foundation
 
+/// Keeps analysis titles and timestamps quiet and non-repetitive across the
+/// list, result and finding-detail screens. Older analyses sometimes persist
+/// their display date inside `title`; the server also returns the same value in
+/// `createdOn`, so presentation must remove that duplicate rather than expose
+/// storage history to the user.
+enum NovaAnalysisPresentation {
+    private static let trailingStamp = try! NSRegularExpression(
+        pattern: #"\s*[·-]?\s*\d{1,2}\s+(?:Oca(?:k)?|Şub(?:at)?|Mar(?:t)?|Nis(?:an)?|May(?:ıs)?|Haz(?:iran)?|Tem(?:muz)?|Ağu(?:stos)?|Eyl(?:ül)?|Eki(?:m)?|Kas(?:ım)?|Ara(?:lık)?)\s+\d{4}(?:\s*[·-]?\s*\d{1,2}:\d{2})?\s*$"#,
+        options: [.caseInsensitive]
+    )
+    private static let trailingNumericStamp = try! NSRegularExpression(
+        pattern: #"\s*[·-]?\s*\d{1,2}[./-]\d{1,2}[./-]\d{4}(?:\s*[·-]?\s*\d{1,2}:\d{2})?\s*$"#
+    )
+    private static let time = try! NSRegularExpression(pattern: #"\s*[·-]?\s*\d{1,2}:\d{2}\s*$"#)
+
+    static func title(_ value: String) -> String {
+        let range = NSRange(value.startIndex..<value.endIndex, in: value)
+        let withoutNamed = trailingStamp.stringByReplacingMatches(in: value, range: range, withTemplate: "")
+        let numericRange = NSRange(withoutNamed.startIndex..<withoutNamed.endIndex, in: withoutNamed)
+        let withoutNumeric = trailingNumericStamp.stringByReplacingMatches(in: withoutNamed, range: numericRange, withTemplate: "")
+        let cleaned = withoutNumeric.trimmingCharacters(in: .whitespacesAndNewlines)
+        return cleaned.isEmpty ? value : cleaned
+    }
+
+    static func dateOnly(_ value: String) -> String {
+        let range = NSRange(value.startIndex..<value.endIndex, in: value)
+        return time.stringByReplacingMatches(in: value, range: range, withTemplate: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
 /// The four parts of a finished analysis, in the order the product shows them.
 enum NovaAnalysisSectionKind: String, CaseIterable, Identifiable, Equatable {
     case riskAnalysis = "risk_analysis"

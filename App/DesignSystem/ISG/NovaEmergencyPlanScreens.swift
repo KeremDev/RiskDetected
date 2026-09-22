@@ -118,6 +118,7 @@ struct NovaEmergencyPlanScreen: View {
     @State private var openChooser: String?
     @State private var detail: NovaEmergencyPlan?
     @State private var drafting: NovaEmergencyPlanDraft?
+    @State private var savedDraft: NovaEmergencyPlanDraft?
     @Environment(\.colorScheme) private var scheme
 
     private var allCompanies: String {
@@ -132,7 +133,7 @@ struct NovaEmergencyPlanScreen: View {
         // cover, so it blurs the real company page instead of an empty
         // intermediate board screen. See NovaPopup's own doc comment.
         if startInAddMode {
-            addFlow(.init(preparedOn: NovaDayField.text(Date())))
+            addFlow(savedDraft ?? .init(preparedOn: NovaDayField.text(Date())))
         } else {
         NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
@@ -175,13 +176,15 @@ struct NovaEmergencyPlanScreen: View {
                     }
                 }
         }
-        .novaPopup(item: $drafting) { draft in
+        .novaFullScreenCover(item: $drafting) { draft in
             if draft.planID != nil {
                 NovaEmergencyPlanSheet(draft: draft, catalogue: catalogue,
                     fileClient: client.fileClient, fileCompany: draftCompany,
                     fileCategories: fileCategories, fileAccepts: fileAccepts, fileAssurance: fileAssurance,
-                    employees: client.employees,
-                    onSave: { edited in await publish(edited) }, onClose: { drafting = nil })
+                employees: client.employees,
+                    onSave: { edited in await publish(edited) },
+                    onSaveDraft: { value in savedDraft = value; drafting = nil },
+                    onClose: { drafting = nil })
             } else {
                 addFlow(draft)
             }
@@ -189,13 +192,15 @@ struct NovaEmergencyPlanScreen: View {
         }
     }
     private func addFlow(_ draft: NovaEmergencyPlanDraft) -> some View {
-        NovaCompanyCreateFlow(title: "Plan Ekle", companies: client.companies,
-            catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany) { selectedCatalogue, selectedCompany in
+        NovaCompanyCreateFlow(title: "Acil durum planı ekle", companies: client.companies,
+            catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany,
+            fullScreenTask: true, onClose: { if startInAddMode { onBack() } else { drafting = nil } }) { selectedCatalogue, selectedCompany in
             NovaEmergencyPlanSheet(draft: draft, catalogue: selectedCatalogue,
                 fileClient: client.fileClient, fileCompany: selectedCompany,
                 fileCategories: fileCategories, fileAccepts: fileAccepts, fileAssurance: fileAssurance,
                 employees: client.employees,
                 onSave: { edited in await publish(edited) },
+                onSaveDraft: { value in savedDraft = value; drafting = nil },
                 onClose: { if startInAddMode { onBack() } else { drafting = nil } })
         }
     }
@@ -310,7 +315,7 @@ struct NovaEmergencyPlanScreen: View {
 
     private func startCreate() {
         draftCompany = nil
-        drafting = .init(preparedOn: NovaDayField.text(Date()))
+        drafting = savedDraft ?? .init(preparedOn: NovaDayField.text(Date()))
     }
 
     private func load(reset: Bool) async {
@@ -349,6 +354,7 @@ struct NovaEmergencyPlanScreen: View {
         guard let company = draftCompany ?? query.company else { return NovaEmergencyFailure.validation.message }
         do {
             _ = try await client.publish(company, draft)
+            savedDraft = nil
             drafting = nil
             await load(reset: true)
             return nil

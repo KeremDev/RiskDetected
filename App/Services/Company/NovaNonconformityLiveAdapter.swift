@@ -19,9 +19,9 @@ extension NovaNonconformityService {
     }
 
     private static func makeLive(isCurrent: @escaping (NovaPersonnelScope) -> Bool) -> NovaNonconformityService {
-        let client = SupabaseService.shared.client
+        let ticket = NovaExpertTransport.shared.capture()
         return NovaNonconformityService(rpc: { function, args in
-            do { return try await client.rpc(function, params: args).execute().data }
+            do { return try await NovaExpertTransport.shared.execute(function, params: args, ticket: ticket) }
             catch let error as PostgrestError {
                 guard error.code == "P0001" || error.code == "28000" else { throw NovaNonconformityFailure.unavailable }
                 switch error.message {

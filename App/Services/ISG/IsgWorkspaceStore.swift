@@ -60,7 +60,10 @@ import Combine
     func refresh() {
         guard let identity else { return }
         let preferredWorkspaceID = selection?.workspaceID
-        invalidate()
+        // Revalidation is not a workspace switch. Keep the routing identity
+        // while invalidating requests/content; otherwise the shared expert
+        // transport briefly becomes personal and rejects its availability load.
+        invalidateContent()
         phase = .loading
         let token = generation
         request = Task { [weak self] in
@@ -176,6 +179,11 @@ import Combine
         companies.append(company)
         companies.sort { $0.id.uuidString.lowercased() < $1.id.uuidString.lowercased() }
         selectedCompanyID = company.id
+        // Every module needs an operational scope, but a newly-created firm
+        // should not force the user through a separate workplace setup. The
+        // initializer is idempotent and creates only the hidden/default MERKEZ
+        // scope when none exists.
+        try? await api.initializePersonnel(selection: selection, companyID: company.id)
         // The mutation is already committed at this point. A transient summary
         // failure must not turn a successful create into a false failure.
         try await refreshDashboardAfterMutation(selection)
@@ -508,6 +516,13 @@ import Combine
     func analysis(companyID: UUID, analysisID: UUID) async throws -> IsgWorkspaceAnalysisResult {
         let selection = try expectedSelection()
         return try await api.analysis(selection: selection, companyID: companyID, analysisID: analysisID)
+    }
+
+    func downloadAsset(_ assetID: UUID, filename: String) async throws -> Data {
+        let selection = try expectedSelection()
+        let result = try await api.downloadAsset(selection: selection, assetID: assetID, filename: filename)
+        try requireCurrent(selection)
+        return result.data
     }
 
     func submitPhotoAnalysis(mutationID: UUID, companyID: UUID,

@@ -44,6 +44,9 @@ enum NovaAnalysisWorkspace {
     /// count this call never asked for.
     static func summaries(identity: NovaSessionIdentity, method: RiskMethod,
                           limit: Int = 50, offset: Int = 0) async throws -> (rows: [NovaAnalysisSummary], hasMore: Bool) {
+        if let backend = try NovaExpertAnalysisBackend.current() {
+            return try await backend.summaries(method: method, limit: limit, offset: offset)
+        }
         let rows = try await AnalysisService.shared.listRecent(limit: limit, offset: offset)
         let companies = (try? await loadNovaPilotOverview(identity: identity)) ?? []
         let names = Dictionary(uniqueKeysWithValues: companies.map { ($0.id, $0.name) })
@@ -82,6 +85,7 @@ enum NovaAnalysisWorkspace {
     /// The reports the account produced from photo analyses. The archive is
     /// the product's own; nothing is recomputed from the analyses here.
     static func reports(identity: NovaSessionIdentity, limit: Int = 50) async throws -> [NovaAnalysisReportEntry] {
+        if let backend = try NovaExpertAnalysisBackend.current() { return try await backend.reports(limit: limit) }
         let rows = try await AnalysisService.shared.listReports(limit: limit, photoAnalysesOnly: true)
         let companies = (try? await loadNovaPilotOverview(identity: identity)) ?? []
         let names = Dictionary(uniqueKeysWithValues: companies.map { ($0.id, $0.name) })
@@ -114,6 +118,9 @@ enum NovaAnalysisWorkspace {
     /// The first picture of an analysis, for the list. A missing or unreadable
     /// picture is simply absent; the row still renders.
     static func thumbnail(analysisID: UUID) async -> UIImage? {
+        if NovaExpertTransport.shared.capture()?.access.workspaceID != nil {
+            return try? await NovaExpertAnalysisBackend.current()?.photos(analysisID).first
+        }
         guard let path = try? await AnalysisService.shared.firstPhotoPaths(analysisIDs: [analysisID])[analysisID],
               let data = try? await AnalysisService.shared.photoData(path: path) else { return nil }
         return UIImage(data: data)
@@ -123,6 +130,10 @@ enum NovaAnalysisWorkspace {
     /// one: the finding is looked up, then its analysis, then that analysis's
     /// first photo. A manual record simply has none.
     static func recordThumbnail(_ entry: NovaNonconformityEntry) async -> UIImage? {
+        if NovaExpertTransport.shared.capture()?.access.workspaceID != nil {
+            guard let backend = try? NovaExpertAnalysisBackend.current(), let id = try? await backend.source(entry.id) else { return nil }
+            return try? await backend.photos(id).first
+        }
         guard entry.row.camefromFinding, let reference = entry.row.source_ref,
               let finding = UUID(uuidString: reference) else { return nil }
         struct Row: Decodable { let analysis_id: UUID }
@@ -139,6 +150,16 @@ enum NovaAnalysisWorkspace {
     static func recordFinding(_ entry: NovaNonconformityEntry, identity: NovaSessionIdentity,
                               preferredMethod: RiskMethod) async throws -> RecordFindingPresentation {
         try Task.checkCancellation()
+        if let backend = try NovaExpertAnalysisBackend.current() {
+            let id = try await backend.source(entry.id)
+            let detail = try await backend.detail(id, method: preferredMethod)
+            guard let source = detail.sections.lazy.flatMap({ section in section.items.map { (section.kind, $0) } })
+                .first(where: { $0.1.id.uuidString.lowercased() == entry.row.source_ref?.lowercased() || entry.row.source_ref?.contains($0.1.id.uuidString.lowercased()) == true }) else { throw NovaNonconformityFailure.unavailable }
+            let photos = try await backend.photos(id)
+            return .init(analysisID: id, item: source.1, section: source.0,
+                method: preferredMethod == .matrix5x5 ? .matrix5x5 : .fineKinney,
+                photo: photos.first, analysisTitle: detail.title, companyName: detail.companyName ?? entry.companyName, createdOn: detail.createdOn)
+        }
         guard novaCurrentSessionIdentity() == identity,
               entry.row.camefromFinding,
               let reference = entry.row.source_ref,
@@ -177,17 +198,26 @@ enum NovaAnalysisWorkspace {
 
     /// Every picture of one analysis, in order.
     static func photos(analysisID: UUID) async -> [UIImage] {
+        if NovaExpertTransport.shared.capture()?.access.workspaceID != nil {
+            return (try? await NovaExpertAnalysisBackend.current()?.photos(analysisID)) ?? []
+        }
         guard let bundle = try? await AnalysisService.shared.result(analysisID: analysisID) else { return [] }
         return await photos(bundle)
     }
 
     static func remove(analysisID: UUID, findingID: UUID) async throws {
+        if let backend = try NovaExpertAnalysisBackend.current() {
+            return try await backend.mutate("remove", analysis: analysisID, item: findingID)
+        }
         _ = try await AnalysisService.shared.deleteFinding(analysisID: analysisID, findingID: findingID,
             expectedVersion: nil)
     }
 
     static func react(analysisID: UUID, itemID: UUID, section: NovaAnalysisSectionKind,
                       reaction: NovaAnalysisReaction) async throws {
+        if let backend = try NovaExpertAnalysisBackend.current() {
+            return try await backend.mutate("react", analysis: analysisID, item: itemID, extra: ["reaction": .string(reaction.rawValue)])
+        }
         guard let target = AnalysisResultSectionID(rawValue: section.rawValue) else { return }
         let value: AnalysisItemReaction = reaction == .like ? .like : reaction == .dislike ? .dislike : .none
         try await AnalysisResultHubService.shared.setFeedback(analysisID: analysisID, language: .current,
@@ -229,9 +259,9 @@ enum NovaAnalysisWorkspace {
     private struct WorkplaceEnvelope: Decodable { let rows: [NovaNonconformityWorkplace] }
 
     private static func read<T: Decodable>(company: UUID, kind: String, decoding: T.Type) async throws -> T {
-        let data = try await SupabaseService.shared.client.rpc("isg_nonconformity_read_v1", params: [
+        let data = try await NovaExpertTransport.shared.execute("isg_nonconformity_read_v1", params: [
             "p_company": PersonnelRPCValue.id(company), "p_kind": .string(kind),
-            "p_query": .null, "p_state": .null, "p_after": .null, "p_id": .null]).execute().data
+            "p_query": .null, "p_state": .null, "p_after": .null, "p_id": .null], ticket: NovaExpertTransport.shared.capture())
         return try JSONDecoder().decode(T.self, from: data)
     }
 
@@ -249,6 +279,7 @@ enum NovaAnalysisWorkspace {
     /// introduced still open from their durable finding rows.
     static func detail(analysisID: UUID, identity: NovaSessionIdentity,
                        method: RiskMethod, methodLabel: String) async throws -> NovaAnalysisDetailData {
+        if let backend = try NovaExpertAnalysisBackend.current() { return try await backend.detail(analysisID, method: method) }
         let bundle = try await AnalysisService.shared.result(analysisID: analysisID)
         let isFreshResult = date(bundle.analysis.createdAt).map {
             abs(Date().timeIntervalSince($0)) < 120
@@ -420,10 +451,14 @@ enum NovaAnalysisWorkspace {
     }
 
     static func assign(analysisID: UUID, companyID: UUID) async throws {
+        if let backend = try NovaExpertAnalysisBackend.current() {
+            return try await backend.mutate("assign", analysis: analysisID, extra: ["company_id": .id(companyID)])
+        }
         try await AnalysisService.shared.assignCompany(to: analysisID, companyID: companyID)
     }
 
     static func edit(_ change: NovaAnalysisFindingEdit) async throws {
+        if let backend = try NovaExpertAnalysisBackend.current() { return try await backend.edit(change) }
         var patch = FindingMutationPatch()
         patch.title = trimmed(change.title)
         patch.category = trimmed(change.category)
@@ -468,6 +503,7 @@ enum NovaAnalysisWorkspace {
     /// report against the company when one was chosen.
     static func report(_ request: NovaAnalysisReportRequest, profile: UserProfile?, userID: UUID,
                        company: Company?) async throws -> String {
+        if let backend = try NovaExpertAnalysisBackend.current() { return try await backend.report(request) }
         let requestID = UUID().uuidString
         let supportID = AppErrorMessage.newSupportID()
         let method: RiskMethod = request.method == .fineKinney ? .fineKinney : .matrix5x5

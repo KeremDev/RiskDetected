@@ -172,14 +172,15 @@ struct NovaDrillScreen: View {
                     }
                 }
         }
-        .novaPopup(item: $planning) { draft in
+        .novaFullScreenCover(item: $planning) { draft in
             NovaCompanyCreateFlow(title: "Tatbikat planla", companies: client.companies,
-                catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany) { selectedCatalogue, _ in
+                catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany,
+                fullScreenTask: true, onClose: { planning = nil }) { selectedCatalogue, _ in
                 NovaDrillPlanSheet(draft: draft, catalogue: selectedCatalogue,
                     onSave: { edited in await plan(edited) }, onClose: { planning = nil })
             }
         }
-        .novaPopup(item: $recording) { draft in
+        .novaFullScreenCover(item: $recording) { draft in
             NovaDrillResultSheet(draft: draft, catalogue: catalogue,
                 onSave: { edited in await record(edited) }, onClose: { recording = nil })
         }
@@ -330,7 +331,6 @@ struct NovaDrillScreen: View {
         guard let company = draftCompany ?? query.company else { return NovaDrillFailure.validation.message }
         do {
             _ = try await client.plan(company, draft)
-            planning = nil
             await load(reset: true)
             return nil
         } catch let error as NovaDrillFailure { return error.message }
@@ -341,7 +341,6 @@ struct NovaDrillScreen: View {
         guard let company = draftCompany ?? query.company else { return NovaDrillFailure.validation.message }
         do {
             _ = try await client.record(company, draft)
-            recording = nil
             await load(reset: true)
             return nil
         } catch let error as NovaDrillFailure { return error.message }

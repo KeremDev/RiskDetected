@@ -83,6 +83,7 @@ enum QuickScanSource {
 
 enum ProfileDestination {
     case preferences
+    case referral
 }
 
 private struct BackendSubscriptionRow: Decodable {
@@ -493,6 +494,7 @@ final class AppState: ObservableObject {
             applyTier(backendState.tier)
             flow = .main
             routePendingNotificationIfReady(defaultTab: .home)
+            routePendingReferralIfReady()
             return
         }
 
@@ -533,6 +535,7 @@ final class AppState: ObservableObject {
         await refreshPlanState()
         flow = .main
         routePendingNotificationIfReady(defaultTab: .home)
+        routePendingReferralIfReady()
     }
     #endif
 
@@ -546,6 +549,7 @@ final class AppState: ObservableObject {
             }
             flow = .main
             routePendingNotificationIfReady(defaultTab: .home)
+            routePendingReferralIfReady()
         } else {
             flow = .auth
         }
@@ -556,6 +560,7 @@ final class AppState: ObservableObject {
     func signIn() {
         flow = .main
         routePendingNotificationIfReady(defaultTab: .home)
+        routePendingReferralIfReady()
     }
 
     func requestProfileDestination(_ destination: ProfileDestination) {
@@ -1162,6 +1167,7 @@ final class AppState: ObservableObject {
                         self.flow = .main
                     }
                     self.routePendingNotificationIfReady(defaultTab: .home)
+                    self.routePendingReferralIfReady()
                 } else if self.flow == .main {
                     Task { await self.subscriptions.identify(userID: nil) }
                     self.backendSubscriptionState = .free
@@ -1213,6 +1219,14 @@ final class AppState: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    private func routePendingReferralIfReady() {
+        guard flow == .main,
+              isAuthenticated,
+              ReferralDeepLinkStore.shared.pendingCode != nil
+        else { return }
+        requestProfileDestination(.referral)
     }
 
     private func routePendingNotificationIfReady(defaultTab: RDTab? = nil) {

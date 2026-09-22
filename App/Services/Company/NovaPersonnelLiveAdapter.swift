@@ -4,8 +4,9 @@ import Supabase
 extension NovaPersonnelService {
     static func live(currentScope: @escaping () -> NovaPersonnelScope?) -> NovaPersonnelService {
         let client = SupabaseService.shared.client
+        let ticket = NovaExpertTransport.shared.capture()
         return NovaPersonnelService(rpc: { function, args in
-            do { return try await client.rpc(function, params: args).execute().data }
+            do { return try await NovaExpertTransport.shared.execute(function, params: args, ticket: ticket) }
             catch let error as PostgrestError {
                 // Unknown outcomes (including disabled rollout) retain the original journal.
                 guard error.code == "P0001" || error.code == "28000" else { throw NovaPersonnelFailure.unavailable }

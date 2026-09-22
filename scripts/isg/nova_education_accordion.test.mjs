@@ -17,14 +17,28 @@ test('the entry screen is presented as a page, not wrapped in a popup',()=>{
   assert.match(caller,/NovaEducationEntry\(identity: identity/);
 });
 
-test('the accordion follows the same shape as the manual nonconformity reference',()=>{
-  for(const source of [editor,reference]){
-    assert.match(source,/NovaCompanyAccordion\(title:/);
-    assert.match(source,/GeometryReader \{ proxy in/);
-    assert.match(source,/Capsule\(\)\.fill\(NovaColorToken\.accent\.color\(in: scheme\)\)/);
-  }
-  assert.match(editor,/@State private var open: NovaEducationStep\? = \.info/);
-  assert.match(editor,/ForEach\(NovaEducationStep\.allCases\) \{ step in accordion\(step\) \}/);
+test('every expert role stays on the guided editor when the catalogue flag is false',()=>{
+  // The server capability bit must not decide which product surface a role
+  // sees. Legacy rows are migrated inside the same five-step page instead of
+  // reopening the retired one-page v2 editor.
+  assert.match(editor,/else if let context \{/);
+  assert.doesNotMatch(editor,/NovaTrainingSessionEditor/);
+  assert.doesNotMatch(editor,/context\.catalog_enabled[\s\S]*NovaEducationEditor/);
+  assert.match(caller,/NovaEducationEntry\(identity: identity/);
+});
+
+test('the education editor is a guided one-step flow, not a long accordion',()=>{
+  // The manual nonconformity screen remains an accordion by design, but
+  // education is intentionally progressive: mounting one step at a time
+  // keeps the next action visible and prevents the old scan-heavy form from
+  // returning for any expert role.
+  assert.match(reference,/NovaCompanyAccordion\(title:/);
+  assert.match(editor,/@State private var currentStep: NovaEducationStep = \.info/);
+  assert.match(editor,/private var stepCard: some View/);
+  assert.match(editor,/private var stepNavigation: some View/);
+  assert.match(editor,/if currentStep == \.review/);
+  assert.doesNotMatch(editor,/ForEach\(NovaEducationStep\.allCases\) \{ step in accordion\(step\) \}/);
+  assert.doesNotMatch(editor,/@State private var open: NovaEducationStep\?/);
 });
 
 test('completion is computed the same way the manual form computes it',()=>{
@@ -39,12 +53,13 @@ test('a finished step offers the next unfinished one',()=>{
   assert.match(editor,/if draft\.isComplete\(step\), let next = draft\.nextIncomplete\(after: step\)/);
 });
 
-test('the record has four steps: info, schedule, trainers, participants',()=>{
-  assert.match(models,/case info, schedule, trainers, participants/);
+test('the record has five steps: info, schedule, trainers, participants, review',()=>{
+  assert.match(models,/case info, schedule, trainers, participants, review/);
   assert.match(editor,/case \.info: infoStep/);
   assert.match(editor,/case \.schedule: scheduleStep/);
   assert.match(editor,/case \.trainers: trainersStep/);
   assert.match(editor,/case \.participants: participantsStep/);
+  assert.match(editor,/case \.review: reviewStep/);
 });
 
 test('one shared template curriculum is mirrored into every scope, not edited per scope',()=>{

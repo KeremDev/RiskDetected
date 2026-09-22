@@ -13,7 +13,7 @@ final class NovaKeyboardDismissUITests: XCTestCase {
         years.typeText("3")
         let enteredValue = years.value as? String
         // A non-input label exercises the same background tap as blank form spacing.
-        app.staticTexts["Risk değerlendirmesi"].tap()
+        app.staticTexts["Risk değerlendirmesi ekle"].tap()
         assertKeyboardHidden(app)
         XCTAssertEqual(years.value as? String, enteredValue)
         years.tap()
@@ -21,7 +21,9 @@ final class NovaKeyboardDismissUITests: XCTestCase {
         years.typeText("4")
         XCTAssertTrue(app.keyboards.firstMatch.exists)
         // The same tap must continue to activate a button rather than being consumed.
-        app.buttons["nova.popup.close"].tap()
+        app.buttons["chevron.left"].tap()
+        XCTAssertTrue(app.buttons["Çık"].waitForExistence(timeout: 5))
+        app.buttons["Çık"].tap()
         XCTAssertFalse(years.exists)
         assertKeyboardHidden(app)
         #else

@@ -2,6 +2,7 @@ import Foundation
 import Supabase
 
 @MainActor final class NovaEducationService {
+    private let expertTicket = NovaExpertTransport.shared.capture()
     struct Receipt: Decodable { let schema_version: Int; let owner_id: UUID; let mutation_id: UUID; let row: NovaTrainingSession?; let curriculum_saved: Bool? }
     struct CertificateRequest: Codable, Equatable {
         var action = "preview"; var session_id: UUID?; var scope_id: UUID?; var person_id: UUID?
@@ -13,14 +14,14 @@ import Supabase
     private let storage = KeychainPersonnelPendingStorage(service: "com.riskdetected.education.v3", maximumBytes: 2_200_000)
     private static var busy = Set<UUID>()
     init(identity: NovaSessionIdentity) { self.identity = identity }
-    private func key(_ suffix: String) -> String { identity.userID.uuidString + ":" + suffix }
+    private func key(_ suffix: String) -> String { (expertTicket?.access.storageNamespace ?? identity.userID.uuidString) + ":" + suffix }
     func check() throws {
         try Task.checkCancellation()
         guard novaCurrentSessionIdentity() == identity else { throw NovaPersonnelFailure.denied }
     }
     private func rpc<T: Decodable, P: Encodable>(_ name: String, _ params: P) async throws -> T {
         try check()
-        let data = try await SupabaseService.shared.client.rpc(name, params: params).execute().data
+        let data = try await NovaExpertTransport.shared.execute(name, params: params, ticket: self.expertTicket)
         try check()
         guard data.count <= 16_777_216 else { throw NovaPersonnelFailure.unavailable }
         return try JSONDecoder().decode(T.self, from: data)

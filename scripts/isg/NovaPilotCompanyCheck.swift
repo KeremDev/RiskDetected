@@ -107,10 +107,14 @@ enum RDLocalization {
             responsiblePhone: "+90 (532) 123-4567", responsibleEmail: " ada@example.test ")
         check(contact.responsiblePhone == "+905321234567" && contact.responsibleEmail == "ada@example.test")
         check(try JSONDecoder().decode(NovaPilotCompanyIntent.self, from: JSONEncoder().encode(contact)) == contact)
-        for (phone, mail) in [("", "a@example.test"), ("123", "a@example.test"), ("+905321234567", "bad"), ("+905321234567", "")] {
+        for (phone, mail) in [("", "a@example.test"), ("123", "a@example.test"), ("+905321234567", "bad")] {
             check((try? NovaPilotCompanyIntent.makeContactProfile(ownerID: identity.userID, name: "Firma", hazard: "high",
                 sector: "Metal", email: "", employeeCount: "", responsibleName: "Ada Kaya", responsiblePhone: phone, responsibleEmail: mail)) == nil)
         }
+        let optionalContact = try NovaPilotCompanyIntent.makeContactProfile(ownerID: identity.userID, name: "Firma", hazard: "high",
+            sector: "Metal", email: "", employeeCount: "", responsibleName: "Ada Kaya",
+            responsiblePhone: "+90 (532) 123-4567", responsibleEmail: "")
+        check(optionalContact.responsibleEmail == nil)
         var contactRequests: [[String: PersonnelRPCValue]] = []
         var contactTimeout = true
         let v3 = NovaPilotCompanyService(rpc: { endpoint, args in

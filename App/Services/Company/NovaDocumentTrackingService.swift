@@ -183,7 +183,9 @@ import Foundation
             "p_operation": .id(operationID), "p_mutation": .id(mutationID),
             "p_payload": .object(payload)])
         try check(scope)
-        return obligation(try JSONDecoder().decode(MutationEnvelope.self, from: data).row)
+        let row = obligation(try JSONDecoder().decode(MutationEnvelope.self, from: data).row)
+        NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: scope.ownerID)
+        return row
     }
 
     private static func trimmed(_ value: String) -> String? {

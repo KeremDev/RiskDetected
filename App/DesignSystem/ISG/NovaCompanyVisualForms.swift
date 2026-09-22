@@ -23,6 +23,14 @@ struct NovaCompanyLiveEditor: View {
         value.hazardClass = company?.hazardClass ?? CompanyHazardClass(rawValue: fallbackHazard) ?? .medium
         value.logoPath = company?.logoPath
         value.address = company?.address ?? ""
+        value.city = company?.city ?? ""
+        value.phone = company?.phone ?? ""
+        value.naceCode = company?.naceCode ?? ""
+        value.workplaceRegistryNo = company?.workplaceRegistryNo ?? ""
+        value.workplaceProfile = company?.workplaceProfile
+        value.workplaceProfiles = company?.workplaceProfiles ?? (company?.workplaceProfile.map { [$0] } ?? [])
+        value.responsibleContacts = company?.responsibleContacts ?? []
+        value.departments = company?.departments ?? (company?.department.map { [$0] } ?? [])
         value.contactPerson = company?.contactPerson ?? ""
         value.department = company?.department ?? ""
         value.defaultResponsible = company?.defaultResponsible ?? ""

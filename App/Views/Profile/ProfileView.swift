@@ -14,6 +14,9 @@ struct ProfileView: View {
     @State private var showProfileEditor = false
     @State private var showCompanyPicker = false
     @State private var showNotebook = false
+    @ObservedObject private var notebookRelease = NotebookUIRelease.shared
+    @State private var showActivity = false
+    @State private var showReferrals = false
     @State private var showNotificationSettings = false
     @State private var showDataControls = false
     @State private var showPreferences = false
@@ -79,6 +82,11 @@ struct ProfileView: View {
         .background(Color.rdPaper)
         .accessibilityIdentifier("profile.root")
         .fullScreenCover(isPresented: $showNotebook) { NotebookDestination(onClose: { showNotebook = false }) }
+        .fullScreenCover(isPresented: $showActivity) { ExpertActivityDestination(onClose: { showActivity = false }) }
+        .fullScreenCover(isPresented: $showReferrals) {
+            ReferralRewardsView(onClose: { showReferrals = false })
+        }
+        .task { await notebookRelease.refresh() }
         .task {
             await loadStats()
             await loadProfessionalProgress()
@@ -826,10 +834,26 @@ struct ProfileView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("profile.row.companies")
-                if NotebookUIRelease.enabled {
+                if notebookRelease.enabled {
                     Button { showNotebook = true } label: { ProfileRow(icon: "note.text", title: RDLocalization.string("localizable.profile.view.kisisel.notlar.7b030a39", table: .localizable, fallback: "Kişisel Notlar"), detail: RDLocalization.string("localizable.profile.view.ucretsiz.5f5dd787", table: .localizable, fallback: "Ücretsiz")) }
                         .buttonStyle(.plain).accessibilityIdentifier("profile.row.notebook")
                 }
+                Button { showActivity = true } label: {
+                    ProfileRow(icon: "clock.arrow.circlepath", title: "Aktivitem", detail: "Kullanım ve işlemler")
+                }.buttonStyle(.plain).accessibilityIdentifier("profile.row.activity")
+                Divider().background(Color.rdLine).padding(.leading, 60)
+                Button {
+                    showReferrals = true
+                    UISelectionFeedbackGenerator().selectionChanged()
+                } label: {
+                    ProfileRow(
+                        icon: "gift",
+                        title: "Arkadaşını davet et",
+                        detail: "İkiniz de 7 gün Plus"
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("profile.row.referral")
                 Divider().background(Color.rdLine).padding(.leading, 60)
                 Button {
                     withAnimation(.easeInOut(duration: 0.15)) {
@@ -891,6 +915,8 @@ struct ProfileView: View {
         switch destination {
         case .preferences:
             showPreferences = true
+        case .referral:
+            showReferrals = true
         }
     }
 

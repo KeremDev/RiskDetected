@@ -205,7 +205,6 @@ struct NovaNonconformityListScreen: View {
                         }
                         HStack(spacing: 9) {
                             fact("building.2", entry.companyName)
-                            if let place = entry.workplaceName { fact("mappin", place) }
                         }
                         HStack(spacing: 9) {
                             fact("calendar", entry.row.opened_on)
@@ -213,13 +212,7 @@ struct NovaNonconformityListScreen: View {
                                 fact("clock", due, tone: entry.isOverdue(today: today)
                                     ? NovaColorToken.statusDangerInk.color(in: scheme) : nil)
                             }
-                            if entry.row.camefromFinding || entry.row.camefromExpertItem {
-                                NovaIcon(symbol: "sparkle", size: 12)
-                                    .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
-                                    .accessibilityLabel(Text(verbatim: entry.row.camefromFinding
-                                        ? RDLocalization.string("localizable.nova.nonconformity.from.analysis", table: .localizable, fallback: "Fotoğraf analizinden geldi")
-                                        : RDLocalization.string("localizable.nova.nonconformity.from.expert", table: .localizable, fallback: "Uzman görüşü maddesinden geldi")))
-                            }
+                            fact(entry.row.sourceSymbol, entry.row.sourceTitle)
                         }
                     }.frame(maxWidth: .infinity, alignment: .leading)
                     Image(systemName: "chevron.right").font(.system(size: 12))
@@ -245,7 +238,7 @@ struct NovaNonconformityListScreen: View {
                 Image(uiImage: image).resizable().scaledToFill()
             } else {
                 NovaColorToken.surfaceMuted.color(in: scheme)
-                    .overlay(NovaIcon(symbol: entry.row.camefromFinding ? "photo" : "square.and.pencil", size: 16)
+                    .overlay(NovaIcon(symbol: entry.row.camefromFinding ? "photo" : entry.row.sourceSymbol, size: 16)
                         .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme)))
             }
         }

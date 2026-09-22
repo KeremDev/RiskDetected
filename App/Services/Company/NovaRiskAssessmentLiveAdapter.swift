@@ -4,8 +4,9 @@ import Supabase
 extension NovaRiskAssessmentService {
     static func live() -> NovaRiskAssessmentService {
         let client = SupabaseService.shared.client
+        let ticket = NovaExpertTransport.shared.capture()
         return NovaRiskAssessmentService(rpc: { function, args in
-            do { return try await client.rpc(function, params: args).execute().data }
+            do { return try await NovaExpertTransport.shared.execute(function, params: args, ticket: ticket) }
             catch let error as PostgrestError {
                 guard error.code == "P0001" || error.code == "28000" else { throw NovaRiskFailure.unavailable }
                 switch error.message {

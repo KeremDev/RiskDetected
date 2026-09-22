@@ -28,7 +28,7 @@ const FINAL = "isg-documents";
 /** Beyond this the worker refuses rather than pulling the file into memory. */
 const MAX_INSPECT_BYTES = 52_428_800;
 
-type Body = { entry_id?: unknown };
+type Body = { entry_id?: unknown; workspace_id?: unknown };
 
 const json = (status: number, payload: Record<string, unknown>) =>
   new Response(JSON.stringify(payload), {
@@ -41,7 +41,7 @@ const isUuid = (value: unknown): value is string =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
 async function digest(bytes: Uint8Array): Promise<string> {
-  const hash = await crypto.subtle.digest("SHA-256", bytes);
+  const hash = await crypto.subtle.digest("SHA-256", Uint8Array.from(bytes).buffer);
   return Array.from(new Uint8Array(hash))
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");
@@ -49,7 +49,7 @@ async function digest(bytes: Uint8Array): Promise<string> {
 
 /** Async pre-pass: decompress the package parts the inspector wants to read. */
 async function inflateAll(input: Uint8Array, limit: number): Promise<Uint8Array> {
-  const stream = new Blob([input]).stream().pipeThrough(
+  const stream = new Blob([Uint8Array.from(input).buffer]).stream().pipeThrough(
     new DecompressionStream("deflate-raw"),
   );
   const chunks: Uint8Array[] = [];
@@ -124,16 +124,25 @@ serve(async (request: Request): Promise<Response> => {
   }
   if (!isUuid(body.entry_id)) return json(400, { error: "VALIDATION_ERROR" });
   const entryId = body.entry_id;
+  const workspace = body.workspace_id;
+  if (workspace !== undefined && !isUuid(workspace)) return json(400, { error: "VALIDATION_ERROR" });
 
   // The caller's own token decides whether this entry is theirs to inspect.
   const caller = createClient(url, anonKey, {
     global: { headers: { Authorization: authorization } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: owned, error: readError } = await caller.rpc("isg_file_library_read_v1", {
+  const readArguments = {
     p_company: null, p_kind: "detail", p_query: null, p_category: null,
     p_state: null, p_id: entryId, p_limit: null, p_offset: null,
-  });
+  };
+  const { data: response, error: readError } = workspace
+    ? await caller.rpc("isg_expert_rpc_v1", {
+      p_workspace: workspace, p_function: "isg_expert_file_inspection_access_v1", p_arguments: { entry_id: entryId },
+    })
+    : await caller.rpc("isg_file_library_read_v1", readArguments);
+  if (workspace && response?._expert_workspace_id !== workspace) return json(403, { error: "ACCESS_DENIED" });
+  const owned = workspace ? response?.payload : response;
   if (readError || !owned?.row) return json(403, { error: "ACCESS_DENIED" });
   const entry = owned.row as Record<string, unknown>;
   const intentId = entry.intent_id;
@@ -143,7 +152,7 @@ serve(async (request: Request): Promise<Response> => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const stage = async (name: string, payload: Record<string, unknown>) => {
-    const { data, error } = await worker.rpc("isg_file_inspection_v1", {
+    const { data, error } = await worker.rpc(workspace ? "isg_expert_file_inspection_v1" : "isg_file_inspection_v1", {
       p_intent: intentId, p_stage: name, p_payload: payload,
     });
     if (error) throw new Error(`STAGE_${name.toUpperCase()}_FAILED:${error.message}`);
@@ -203,7 +212,7 @@ serve(async (request: Request): Promise<Response> => {
     // Only now do the bytes leave quarantine. upsert stays off: a content
     // addressed path must never be written over.
     const upload = await worker.storage.from(FINAL).upload(
-      `assets/${claim.owner_id}/${sha256}`,
+      `assets/${claim.storage_scope ?? claim.owner_id}/${sha256}`,
       bytes,
       { contentType: storedContentType(String(claim.extension)), upsert: false },
     );

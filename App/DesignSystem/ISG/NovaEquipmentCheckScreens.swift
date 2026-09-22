@@ -136,12 +136,10 @@ struct NovaEquipmentCheckScreen: View {
                 Task { await openInspection() }
             }
         }
-        .novaPopupCover(item: $inspecting) { row in
-            NovaPopup {
-                NovaEquipmentItemSheet(item: row, rule: rule(for: row.equipmentType),
-                    workplaces: workplaces, client: client, canWrite: canWrite,
-                    onChanged: { reload = UUID() }, onClosed: { inspecting = nil })
-            }
+        .novaFullScreenCover(item: $inspecting) { row in
+            NovaEquipmentItemSheet(item: row, rule: rule(for: row.equipmentType),
+                workplaces: workplaces, client: client, canWrite: canWrite,
+                onChanged: { reload = UUID() }, onClosed: { inspecting = nil })
         }
         .novaPopupCover(isPresented: $adding) {
             NovaPopup {
@@ -152,8 +150,7 @@ struct NovaEquipmentCheckScreen: View {
                     }
             }
         }
-        .novaPopupCover(isPresented: $addingInspection) {
-            NovaPopup {
+        .novaFullScreenCover(isPresented: $addingInspection) {
                 if let company {
                     NovaEquipmentInspectionFlow(
                         // A full-screen cover can render on the same update in
@@ -169,7 +166,6 @@ struct NovaEquipmentCheckScreen: View {
                             Task { await loadInspectionItems() }
                         })
                 }
-            }
         }
         .novaPopupCover(isPresented: $editingPeriods) {
             NovaPopup {
@@ -194,14 +190,9 @@ struct NovaEquipmentCheckScreen: View {
                 if let selectedName { NovaText(text: selectedName, style: .metaQuiet) }
             }
             Spacer(minLength: 0)
-            if canWrite {
+            if canWrite, company != nil {
                 Button {
-                    if company == nil {
-                        pendingInspectionStart = true
-                        searchingCompany = true
-                    } else {
-                        Task { await openInspection() }
-                    }
+                    Task { await openInspection() }
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "plus").font(.system(size: 13, weight: .bold))

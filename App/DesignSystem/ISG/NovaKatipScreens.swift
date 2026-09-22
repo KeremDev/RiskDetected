@@ -183,7 +183,7 @@ struct NovaKatipScreen: View {
         }
         .onChange(of: drafting == nil) { _ in pending = (try? client.hasPending()) ?? pending }
         .onChange(of: ending == nil) { _ in pending = (try? client.hasPending()) ?? pending }
-        .novaPopup(item: $drafting) { draft in
+        .novaFullScreenCover(item: $drafting) { draft in
             NovaKatipContractSheet(draft: draft, catalogue: catalogue,
                 onSave: { edited in await save(edited) }, onClose: { drafting = nil })
         }

@@ -194,6 +194,7 @@ import Foundation
             try check(identity)
             let row = try JSONDecoder().decode(MutationEnvelope.self, from: data).row.map(contract)
             try storage.remove(account: account)
+            NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: identity.userID)
             return row
         } catch {
             // Network, decoding and changed-session outcomes keep the original

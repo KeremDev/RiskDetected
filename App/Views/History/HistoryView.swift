@@ -2,10 +2,9 @@ import SwiftUI
 
 private enum HistoryFilterChip: String, CaseIterable, Identifiable {
     case all
-    case thisWeek
     case critical
-    case ppe
-    case general
+    case unassigned
+    case unreviewed
 
     var id: String { rawValue }
 
@@ -16,26 +15,26 @@ private enum HistoryFilterChip: String, CaseIterable, Identifiable {
                 "localizable.history.filter.all",
                 fallback: "Tümü"
             )
-        case .thisWeek:
-            return RDLocalization.string(
-                "localizable.history.filter.this_week",
-                fallback: "Bu hafta"
-            )
         case .critical:
             return RDLocalization.string(
                 "localizable.history.filter.critical",
                 fallback: "Kritik"
             )
-        case .ppe:
-            return RDLocalization.string(
-                "localizable.history.filter.ppe",
-                fallback: "KKD"
-            )
-        case .general:
-            return RDLocalization.string(
-                "localizable.history.filter.general",
-                fallback: "Genel"
-            )
+        case .unassigned: return "Firmasız"
+        case .unreviewed: return "İncelenmemiş"
+        }
+    }
+}
+
+private enum HistorySort: String, CaseIterable, Identifiable {
+    case newest, highestRisk, mostFindings, unreviewed
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .newest: return "En yeni"
+        case .highestRisk: return "En yüksek risk"
+        case .mostFindings: return "En çok bulgu"
+        case .unreviewed: return "İncelenmemiş önce"
         }
     }
 }
@@ -45,6 +44,7 @@ struct HistoryView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var search: String = ""
     @State private var activeChip: HistoryFilterChip = .all
+    @State private var sort: HistorySort = .newest
     @State private var showFilter: Bool = false
     @State private var showCompanyFilter: Bool = false
     @State private var companies: [Company] = []
@@ -202,100 +202,41 @@ struct HistoryView: View {
     }
 
     private var analysisOverview: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "viewfinder")
-                    .font(RDTypography.font(size: RDFontScale.size(17), weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.rdGreenDark)
-                    .frame(width: 42, height: 42)
-                    .background(Color.rdGreenSoft)
-                    .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
-
-                VStack(alignment: .leading, spacing: 7) {
-                    Text(RDLocalization.string("localizable.history.view.saha.taramalari.aacc0bb4", table: .localizable, fallback: "Saha taramaları"))
-                        .font(RDTypography.font(size: RDFontScale.size(20), weight: .bold, design: .rounded))
-                        .foregroundStyle(Color.rdBlack)
-
-                    Text(RDLocalization.string("localizable.history.view.analizlerini.kritik.riskleri.ve.bulgu.sayisini.t.2e84c78d", table: .localizable, fallback: "Analizlerini, kritik riskleri ve bulgu sayısını tek yerden takip et."))
-                        .font(RDTypography.font(size: RDFontScale.size(13), weight: .medium, design: .rounded))
-                        .foregroundStyle(Color.rdSlate)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                VStack(spacing: 2) {
-                    Text("\(items.count)")
-                        .rdMono(size: 22, weight: .bold)
-                        .foregroundStyle(Color.white)
-                    Text(RDLocalization.string("localizable.history.view.analiz.c6a55aec", table: .localizable, fallback: "Analiz"))
-                        .rdMono(size: 10, weight: .bold)
-                        .foregroundStyle(Color.white.opacity(0.72))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.78)
-                }
-                .frame(width: 58, height: 54)
-                .background(overviewMetricBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(overviewMetricBorder, lineWidth: 1)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .historyCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Analizler")
+                .font(RDTypography.font(size: RDFontScale.size(28), weight: .bold, design: .rounded))
+                .foregroundStyle(Color.rdBlack)
+            HStack(spacing: 0) {
+                overviewMetric(icon: "viewfinder", title: "Analiz", value: "\(items.count)")
+                Rectangle().fill(Color.rdLine).frame(width: 1, height: 28)
+                overviewMetric(icon: "exclamationmark.triangle.fill", title: "Kritik", value: "\(criticalCount)")
+                Rectangle().fill(Color.rdLine).frame(width: 1, height: 28)
+                overviewMetric(icon: "list.bullet", title: "Bulgu", value: "\(findingTotal)")
             }
-
-            HStack(spacing: 8) {
-                overviewMetric(icon: "calendar", title: RDLocalization.string("localizable.history.view.bu.hafta.0f69ba35", table: .localizable, fallback: "Bu hafta"), value: "\(weekCount)")
-                overviewMetric(icon: "exclamationmark.triangle.fill", title: RDLocalization.string("localizable.history.view.kritik.955bc760", table: .localizable, fallback: "Kritik"), value: "\(criticalCount)")
-                overviewMetric(icon: "checkmark.seal.fill", title: RDLocalization.string("localizable.history.view.bulgu.24bdb5b2", table: .localizable, fallback: "Bulgu"), value: "\(findingTotal)")
-            }
+            .frame(minHeight: 50)
+            .background(Color.rdWhite)
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.rdLine, lineWidth: 1))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            LinearGradient(
-                colors: overviewCardGradientColors,
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(overviewCardBorder, lineWidth: 1.4)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .historyCardDepth(colorScheme: colorScheme, accent: Color.rdGreen, radius: 5, x: 6, y: 8)
     }
 
     private func overviewMetric(icon: String, title: String, value: String) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             Image(systemName: icon)
-                .font(RDTypography.font(size: RDFontScale.size(12), weight: .bold, design: .rounded))
-                .foregroundStyle(Color.white)
-                .frame(width: 26, height: 26)
-                .background(Color.white.opacity(0.14))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-
-            VStack(alignment: .leading, spacing: 1) {
+                .font(RDTypography.font(size: RDFontScale.size(11), weight: .bold, design: .rounded))
+                .foregroundStyle(title == "Kritik" ? Color.rdCriticalText : Color.rdSlate)
+            VStack(alignment: .leading, spacing: 0) {
                 Text(value)
-                    .rdMono(size: 14, weight: .bold)
-                    .foregroundStyle(Color.white)
+                    .rdMono(size: 16, weight: .bold)
+                    .foregroundStyle(title == "Kritik" ? Color.rdCriticalText : Color.rdBlack)
                     .lineLimit(1)
                 Text(title)
                     .font(RDTypography.font(size: RDFontScale.size(10), weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color.white.opacity(0.70))
+                    .foregroundStyle(Color.rdSlate)
                     .lineLimit(1)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(9)
-        .frame(maxWidth: .infinity)
-        .background(overviewMetricBackground)
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(overviewMetricBorder, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .historyCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
+        .frame(maxWidth: .infinity, minHeight: 48)
     }
 
     private var overviewCardGradientColors: [Color] {
@@ -318,12 +259,14 @@ struct HistoryView: View {
 
     private var filterSurface: some View {
         VStack(spacing: 10) {
+            searchField
             HStack(spacing: 8) {
-                searchField
+                filterButton
                 if app.currentTier.isPaid {
                     companyFilterButton
                 }
-                filterButton
+                sortButton
+                Spacer(minLength: 0)
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -335,14 +278,6 @@ struct HistoryView: View {
                 .padding(.vertical, 1)
             }
         }
-        .padding(12)
-        .background(Color.rdWhite)
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.rdLine, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .historyCardDepth(colorScheme: colorScheme, radius: 4, x: 5, y: 6)
     }
 
     private func filterChip(_ chip: HistoryFilterChip) -> some View {
@@ -390,22 +325,45 @@ struct HistoryView: View {
     }
 
     private var filterButton: some View {
-        Button {
-            showFilter = true
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        Menu {
+            ForEach(HistoryFilterChip.allCases) { option in
+                Button { activeChip = option } label: {
+                    if activeChip == option { Label(option.title, systemImage: "checkmark") }
+                    else { Text(option.title) }
+                }
+            }
         } label: {
-            Image(systemName: "line.3.horizontal.decrease")
-                .font(RDTypography.font(size: RDFontScale.size(16), weight: .semibold, design: .rounded))
-                .frame(width: 40, height: 40)
-                .foregroundStyle(Color.rdBlack)
-                .background(Color.rdCloud)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.rdLine, lineWidth: 1)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+            compactFilterLabel(symbol: "line.3.horizontal.decrease",
+                title: activeChip == .all ? "Filtre" : "Filtre · 1", active: activeChip != .all)
         }
-        .buttonStyle(RDPressableButtonStyle())
+        .accessibilityIdentifier("analysis.filter")
+    }
+
+    private var sortButton: some View {
+        Menu {
+            ForEach(HistorySort.allCases) { option in
+                Button { sort = option } label: {
+                    if sort == option { Label(option.title, systemImage: "checkmark") }
+                    else { Text(option.title) }
+                }
+            }
+        } label: {
+            compactFilterLabel(symbol: "arrow.up.arrow.down", title: sort.title, active: false)
+        }
+        .accessibilityIdentifier("analysis.sort")
+    }
+
+    private func compactFilterLabel(symbol: String, title: String, active: Bool) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: symbol).font(RDTypography.font(size: RDFontScale.size(11), weight: .semibold, design: .rounded))
+            Text(title).font(RDTypography.font(size: RDFontScale.size(12), weight: .semibold, design: .rounded))
+            Image(systemName: "chevron.down").font(RDTypography.font(size: RDFontScale.size(8), weight: .bold, design: .rounded))
+        }
+        .foregroundStyle(active ? Color.rdGreenDark : Color.rdBlack)
+        .padding(.horizontal, 11).frame(height: 38)
+        .background(active ? Color.rdGreenSoft : Color.rdWhite)
+        .overlay(Capsule().stroke(active ? Color.rdGreen : Color.rdLine, lineWidth: 1))
+        .clipShape(Capsule())
     }
 
     private var companyFilterButton: some View {
@@ -431,7 +389,7 @@ struct HistoryView: View {
 
     private var filteredItems: [HistoryItem] {
         let needle = search.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return items.filter { item in
+        let filtered = items.filter { item in
             let companyName = companyName(for: item.companyID).lowercased(with: .autoupdatingCurrent)
             let matchesSearch = needle.isEmpty
                 || item.title.lowercased().contains(needle)
@@ -441,21 +399,47 @@ struct HistoryView: View {
 
             let matchesChip: Bool
             switch activeChip {
-            case .thisWeek:
-                matchesChip = isThisWeek(item.createdAt)
             case .critical:
                 matchesChip = item.level == .critical
-            case .ppe:
-                matchesChip = item.kind.localizedCaseInsensitiveContains("KKD")
-            case .general:
-                matchesChip = item.kind.localizedCaseInsensitiveContains(
-                    AnalysisCanvas.general.title
-                )
+            case .unassigned:
+                matchesChip = item.companyID == nil
+            case .unreviewed:
+                matchesChip = item.status != .reviewed
             case .all:
                 matchesChip = true
             }
 
             return matchesSearch && matchesChip && matchesCompany
+        }
+        return filtered.sorted { left, right in
+            switch sort {
+            case .newest:
+                return (left.createdAt ?? .distantPast) > (right.createdAt ?? .distantPast)
+            case .highestRisk:
+                let leftRank = riskRank(left.level)
+                let rightRank = riskRank(right.level)
+                return leftRank == rightRank
+                    ? (left.createdAt ?? .distantPast) > (right.createdAt ?? .distantPast)
+                    : leftRank > rightRank
+            case .mostFindings:
+                return left.count == right.count
+                    ? (left.createdAt ?? .distantPast) > (right.createdAt ?? .distantPast)
+                    : left.count > right.count
+            case .unreviewed:
+                return left.status == right.status
+                    ? (left.createdAt ?? .distantPast) > (right.createdAt ?? .distantPast)
+                    : left.status != .reviewed
+            }
+        }
+    }
+
+    private func riskRank(_ level: RiskLevel) -> Int {
+        switch level {
+        case .critical: return 4
+        case .high: return 3
+        case .medium: return 2
+        case .low: return 1
+        case .unknown: return 0
         }
     }
 
@@ -716,18 +700,20 @@ private struct HistoryRow: View {
                 .foregroundStyle(Color.rdSlate)
 
                 HStack(spacing: 5) {
-                    HStack(spacing: 4) {
-                        Circle()
-                            .fill(item.status.textColor)
-                            .frame(width: 5, height: 5)
-                        Text(item.status.title)
-                            .font(RDTypography.font(size: RDFontScale.size(9.8), weight: .bold, design: .rounded))
-                            .foregroundStyle(item.status.textColor)
+                    if item.status != .reviewed {
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(item.status.textColor)
+                                .frame(width: 5, height: 5)
+                            Text(item.status.title)
+                                .font(RDTypography.font(size: RDFontScale.size(9.8), weight: .bold, design: .rounded))
+                                .foregroundStyle(item.status.textColor)
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                            .background(item.status.bgColor)
+                            .clipShape(RoundedRectangle(cornerRadius: 7))
                     }
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
-                        .background(item.status.bgColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 7))
 
                     if !companyName.isEmpty {
                         Text(companyName)
@@ -766,6 +752,8 @@ private struct HistoryRow: View {
         .onTapGesture {
             action()
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
     }
 
     private var rawTitleText: String {

@@ -20,13 +20,31 @@ test('organization API preserves owner, version, immutable retry and bounded pay
   const migrations=p05UpgradeFiles.filter(p=>p.endsWith('.sql'));
   assert.deepEqual(migrations,[...migrations].sort());
 });
-test('native notebook entry stays closed and never uses a paid capability gate',()=>{
+test('native notebook entry uses fail-closed server rollout and never a paid capability gate',()=>{
   const swift=readFileSync('App/Views/Components/NotebookDestination.swift','utf8');
   const kotlin=readFileSync('android/feature/profile/src/main/kotlin/com/riskdetectedan/feature/profile/NotebookScreen.kt','utf8');
+  assert.match(swift,/isg_notebook_rollout_v1/);
+  assert.match(swift,/identity == novaCurrentSessionIdentity\(\)/);
+  assert.doesNotMatch(swift,/static let enabled = false/);
   for(const source of [swift,kotlin]) {
     assert.match(source,/enabled = false/);
     assert.doesNotMatch(source,/isPaid|currentTier|company_id|Analytics|Logger|println\(/);
     assert.match(source,/Kaydetmeden çık/);
     assert.match(source,/İki sürümü incele/);
   }
+});
+test('native notebook presents one shared notes library and paper editor flow',()=>{
+  const swift=readFileSync('App/Views/Components/NotebookDestination.swift','utf8');
+  for(const expected of [
+    'private enum LibrarySection',
+    'case notes, reminders, drafts',
+    'LazyVStack',
+    'notebook.search',
+    'square.and.pencil',
+    'notebook.title',
+    'notebook.body',
+    'scrollDismissesKeyboard(.interactively)',
+    'Bu hatırlatıcı seçili nota bağlanacak'
+  ]) assert.ok(swift.includes(expected),expected);
+  assert.equal((swift.match(/struct NotebookDestination: View/g)??[]).length,1);
 });

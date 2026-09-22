@@ -8,6 +8,8 @@ struct NovaOwnedCompany: Equatable {
     let name: String
     let detail: String
     let isArchived: Bool
+    var progressCompleted: Int = 0
+    var progressTotal: Int = 8
 }
 
 enum NovaCompanyListPhase: String { case idle, loading, loaded, failed }

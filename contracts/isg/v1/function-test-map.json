@@ -190,7 +190,7 @@
     {
       "id": "ISG.WORKSPACE.API.SWIFT",
       "source": "App/Services/ISG/IsgWorkspaceAPI.swift",
-      "source_sha256": "acda1067b5c173fb6665a9c1a04d3b8fa8e595603283e773dbdc05b1c99b16ae",
+      "source_sha256": "00954c0347a440deff5631594e5c470a5451e31c57ddcf63f8aee88f32f41984",
       "symbols": [
         "IsgWorkspaceAPI.list",
         "IsgWorkspaceAPI.context",
@@ -226,6 +226,21 @@
       "coverage": "targeted_behavior_tests"
     },
     {
+      "id": "ISG.EXPERT.ACTIVITY.SWIFT",
+      "source": "App/Services/ISG/ExpertActivityService.swift",
+      "source_sha256": "0793cd96f250be9534a35cc006c4ffe79d44de330e75262cfb51932340732d3a",
+      "symbols": [
+        "ExpertActivityService.page",
+        "ExpertActivityService.detail",
+        "ExpertUsagePresence.foreground",
+        "ExpertUsagePresence.background"
+      ],
+      "harness": "scripts/isg/expert_activity_service.test.mjs",
+      "harness_sha256": "2f12a664c1d321191ed1e2ea4ba06246e2c2070ada94b44dfa21b4df8800fd14",
+      "runner": "node-expert-activity",
+      "coverage": "targeted_behavior_tests"
+    },
+    {
       "id": "ISG.WORKSPACE.ADAPTER.SWIFT",
       "source": "App/Services/ISG/IsgWorkspaceLiveAdapter.swift",
       "source_sha256": "26c6554e545cebb1525d174ba8e148c0dd255188b6a6b8a6cefcbe1c152011ef",
@@ -240,10 +255,11 @@
     {
       "id": "ISG.WORKSPACE.STORE.SWIFT",
       "source": "App/Services/ISG/IsgWorkspaceStore.swift",
-      "source_sha256": "95acbe8c8ee3bc0d67a794e92ccee265de4441eae95c0767c45c673c1cf9b198",
+      "source_sha256": "52f72caa80dd75f4d1fcd79060bae63ae7a4eb8841981e5c4b5a0279847848b0",
       "symbols": [
         "IsgWorkspaceStore.adopt",
         "IsgWorkspaceStore.select",
+        "IsgWorkspaceStore.refresh",
         "IsgWorkspaceStore.analyses",
         "IsgWorkspaceStore.fileAnalysisItem",
         "IsgWorkspaceStore.createExport",
@@ -266,14 +282,17 @@
         "IsgWorkspaceStore.mutateTrainingAdvanced",
         "IsgWorkspaceStore.createCompany",
         "IsgWorkspaceStore.updateCompany",
+        "IsgWorkspaceStore.archiveCompany",
         "IsgWorkspaceStore.domainDetail",
         "IsgWorkspaceStore.equipmentCatalog",
         "IsgWorkspaceStore.uploadFile",
-        "IsgWorkspaceStore.attachFile"
+        "IsgWorkspaceStore.attachFile",
+        "IsgWorkspaceStore.downloadAsset",
+        "IsgWorkspaceStore.submitPhotoAnalysis"
       ],
-      "harness": "scripts/isg/osgb_workspace_api.test.mjs",
-      "harness_sha256": "a9625b7de26214dedbd34fcc64c198def95f7fa1db589c4bfcd5cb28d70121f5",
-      "runner": "node-workspace-api",
+      "harness": "scripts/isg/osgb_workspace_store.test.mjs",
+      "harness_sha256": "008870985fe0ccfa2407ea46bb72d44c056e4702a458b66265adc3f9a7236348",
+      "runner": "node-workspace-store",
       "coverage": "targeted_behavior_tests"
     },
     {

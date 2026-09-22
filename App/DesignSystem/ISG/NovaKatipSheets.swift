@@ -230,6 +230,12 @@ struct NovaKatipDetailSheet: View {
 /// Recording a contract. Leaving the end date empty is a decision, not an
 /// omission: it records an open ended contract.
 struct NovaKatipContractSheet: View {
+    private enum Step: CaseIterable {
+        case scope, period, review
+        var title: String {
+            switch self { case .scope: return "Taraflar ve kapsam"; case .period: return "Dönem ve hizmet"; case .review: return "Kontrol ve kaydet" }
+        }
+    }
     @State var draft: NovaKatipDraft
     let catalogue: NovaKatipCatalogue?
     let onSave: (NovaKatipDraft) async -> String?
@@ -237,6 +243,9 @@ struct NovaKatipContractSheet: View {
     @State private var failure: String?
     @State private var saving = false
     @State private var openChooser = false
+    @State private var step: Step = .scope
+    @State private var didSave = false
+    @State private var confirmingExit = false
     @Environment(\.colorScheme) private var scheme
 
     private var placeTitle: String {
@@ -250,113 +259,37 @@ struct NovaKatipContractSheet: View {
             && !draft.expertContact.trimmingCharacters(in: .whitespaces).isEmpty
             && !draft.scope.trimmingCharacters(in: .whitespaces).isEmpty
     }
+    private var stepNumber: Int { (Step.allCases.firstIndex(of: step) ?? 0) + 1 }
 
     var body: some View {
-        NovaPopup {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    NovaPopupHeading(text: RDLocalization.string("localizable.nova.katip.form.title",
-                        table: .localizable, fallback: "Sözleşme kaydet"), symbol: "doc.text")
-                    // First thing on the form, before any field.
-                    NovaHelpHint(text: NovaKatipWords.noIntegrationNote)
-
-                    // A company with no workplace has nothing to ask, and one
-                    // with exactly one gets it silently — only a real choice
-                    // among several is shown as a picker.
-                    let workplaces = catalogue?.workplaces ?? []
-                    if workplaces.count <= 1 {
-                        VStack(alignment: .leading, spacing: 4) {
-                            NovaText(text: RDLocalization.string("localizable.nova.katip.form.workplace",
-                                table: .localizable, fallback: "İşyeri"), style: .label,
-                                color: NovaColorToken.textTertiary.color(in: scheme))
-                            NovaText(text: workplaces.isEmpty
-                                ? RDLocalization.string("localizable.nova.katip.form.noworkplace", table: .localizable,
-                                    fallback: "Bu firmada kayıt açılacak bir işyeri yok.")
-                                : placeTitle, style: .cardTitle)
-                        }
-                    } else {
-                        NovaFileChooserButton(
-                            label: RDLocalization.string("localizable.nova.katip.form.workplace",
-                                table: .localizable, fallback: "İşyeri"),
-                            value: placeTitle, isOpen: openChooser,
-                            identifier: "nova.katip.form.workplace") { openChooser.toggle() }
-                        if openChooser {
-                            NovaFileChooserPanel(
-                                options: workplaces.map { .init(id: $0.id.uuidString, title: $0.name) },
-                                selected: draft.workplaceID?.uuidString,
-                                identifier: "nova.katip.form.workplace.panel") { value in
-                                draft.workplaceID = value.flatMap(UUID.init(uuidString:))
-                                openChooser = false
+        Group {
+            if didSave {
+                NovaTaskSuccessView(title: "Sözleşme kaydedildi",
+                    message: "Sözleşme kaydı seçili firmanın İSG-KATİP arşivine eklendi.",
+                    doneTitle: "Sözleşmelere dön", onDone: onClose)
+            } else {
+                NovaPageSurface {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            NovaTaskHeader(title: "Sözleşme ekle", step: stepNumber,
+                                           total: Step.allCases.count, stepTitle: step.title) { confirmingExit = true }
+                            NovaHelpHint(text: NovaKatipWords.noIntegrationNote)
+                            if let failure { NovaTaskErrorSummary(message: failure) }
+                            switch step {
+                            case .scope: scopeStep
+                            case .period: periodStep
+                            case .review: reviewStep
                             }
                         }
+                        .padding(.horizontal, 18).padding(.top, 10).padding(.bottom, 28)
                     }
-
-                    field(RDLocalization.string("localizable.nova.katip.form.counterparty",
-                        table: .localizable, fallback: "Karşı taraf (OSGB veya işveren)"),
-                        $draft.counterparty, "nova.katip.form.counterparty")
-                    field(RDLocalization.string("localizable.nova.katip.form.expert",
-                        table: .localizable, fallback: "Uzman / hekim"),
-                        $draft.expertContact, "nova.katip.form.expert")
-                    field(RDLocalization.string("localizable.nova.katip.form.scope",
-                        table: .localizable, fallback: "Kapsam"),
-                        $draft.scope, "nova.katip.form.scope")
-
-                    NovaDayField(label: RDLocalization.string("localizable.nova.katip.row.starts",
-                        table: .localizable, fallback: "Başlangıç"),
-                        value: $draft.startsOn, identifier: "nova.katip.form.starts")
-                    VStack(alignment: .leading, spacing: 4) {
-                        NovaDayField(label: RDLocalization.string("localizable.nova.katip.row.ends",
-                            table: .localizable, fallback: "Bitiş"),
-                            value: $draft.endsBefore, identifier: "nova.katip.form.ends",
-                            isClearable: true)
-                        NovaText(text: RDLocalization.string("localizable.nova.katip.form.openhint",
-                            table: .localizable,
-                            fallback: "Bitiş tarihi boş bırakılırsa sözleşme süresiz olarak kaydedilir."),
-                            style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
-                    }
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        NovaText(text: RDLocalization.string("localizable.nova.katip.form.minutes",
-                            table: .localizable, fallback: "Beyan edilen aylık süre (dakika)"), style: .label)
-                        TextField("", text: $draft.declaredMonthlyMinutes)
-                            .textFieldStyle(.roundedBorder)
-                            .keyboardType(.numberPad)
-                            .accessibilityIdentifier("nova.katip.form.minutes")
-                        TextField(RDLocalization.string("localizable.nova.katip.form.declarednote",
-                            table: .localizable, fallback: "Süreye dair not"), text: $draft.declaredNote)
-                            .textFieldStyle(.roundedBorder)
-                            .accessibilityIdentifier("nova.katip.form.declarednote")
-                        NovaText(text: NovaKatipWords.declaredNote, style: .meta,
-                            color: NovaColorToken.textSecondary.color(in: scheme))
-                    }
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        NovaText(text: RDLocalization.string("localizable.nova.katip.form.location",
-                            table: .localizable, fallback: "Sözleşme aslı nerede"), style: .label)
-                        TextField("", text: $draft.contractLocation)
-                            .textFieldStyle(.roundedBorder)
-                            .accessibilityIdentifier("nova.katip.form.location")
-                        NovaText(text: NovaKatipWords.documentNote, style: .meta,
-                            color: NovaColorToken.textSecondary.color(in: scheme))
-                    }
-
-                    if let failure {
-                        NovaText(text: failure, style: .meta,
-                            color: NovaColorToken.statusDangerInk.color(in: scheme))
-                    }
-                    HStack(spacing: 10) {
-                        NovaButton(label: RDLocalization.string("localizable.nova.katip.cancel",
-                            table: .localizable, fallback: "Vazgeç"), symbol: "xmark",
-                            variant: .surface, action: onClose)
-                        NovaButton(label: RDLocalization.string("localizable.nova.katip.form.save",
-                            table: .localizable, fallback: "Kaydet"), symbol: "checkmark",
-                            variant: .primary) {
-                            Task { saving = true; failure = await onSave(draft); saving = false }
-                        }
-                        .disabled(saving || !canSave)
+                    .scrollDismissesKeyboard(.interactively)
+                    .safeAreaInset(edge: .bottom) {
+                        NovaTaskStickyActions(primaryTitle: step == .review ? "Sözleşmeyi kaydet" : "Devam",
+                            primarySymbol: step == .review ? "checkmark" : "arrow.right", isWorking: saving,
+                            canGoBack: step != .scope, onBack: previous, onPrimary: advance)
                     }
                 }
-                .padding(20)
             }
         }
         .accessibilityIdentifier("nova.katip.form")
@@ -365,6 +298,86 @@ struct NovaKatipContractSheet: View {
                 draft.workplaceID = only[0].id
             }
         }
+    }
+
+    private var scopeStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaText(text: "Firma bağlamı akış boyunca korunur.", style: .body)
+            let workplaces = catalogue?.workplaces ?? []
+            if workplaces.count <= 1 {
+                NovaCard(padding: 13) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        NovaText(text: "İşyeri", style: .label)
+                        NovaText(text: workplaces.isEmpty ? "Bu firmada kayıt açılacak bir işyeri yok." : placeTitle, style: .bodyStrong)
+                    }
+                }
+            } else {
+                NovaFileChooserButton(label: "İşyeri", value: placeTitle, isOpen: openChooser,
+                    identifier: "nova.katip.form.workplace") { openChooser.toggle() }
+                if openChooser {
+                    NovaFileChooserPanel(options: workplaces.map { .init(id: $0.id.uuidString, title: $0.name) },
+                        selected: draft.workplaceID?.uuidString, identifier: "nova.katip.form.workplace.panel") { value in
+                            draft.workplaceID = value.flatMap(UUID.init(uuidString:)); openChooser = false
+                        }
+                }
+            }
+            field("Karşı taraf (OSGB veya işveren)", $draft.counterparty, "nova.katip.form.counterparty")
+            field("Uzman / hekim", $draft.expertContact, "nova.katip.form.expert")
+            field("Kapsam", $draft.scope, "nova.katip.form.scope")
+        }
+    }
+
+    private var periodStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaDayField(label: "Başlangıç", value: $draft.startsOn, identifier: "nova.katip.form.starts")
+            NovaDayField(label: "Bitiş", value: $draft.endsBefore, identifier: "nova.katip.form.ends", isClearable: true)
+            NovaText(text: "Bitiş tarihi boş bırakılırsa sözleşme süresiz kaydedilir.", style: .metaQuiet)
+            VStack(alignment: .leading, spacing: 6) {
+                NovaText(text: "Beyan edilen aylık süre (dakika)", style: .label)
+                TextField("Dakika", text: $draft.declaredMonthlyMinutes).keyboardType(.numberPad)
+                    .font(NovaFont.font(.body)).frame(minHeight: 38).novaControlBackground(cornerRadius: 12)
+                    .accessibilityIdentifier("nova.katip.form.minutes")
+                TextField("Süreye dair not (isteğe bağlı)", text: $draft.declaredNote)
+                    .font(NovaFont.font(.body)).frame(minHeight: 38).novaControlBackground(cornerRadius: 12)
+                    .accessibilityIdentifier("nova.katip.form.declarednote")
+                NovaText(text: NovaKatipWords.declaredNote, style: .metaQuiet)
+            }
+        }
+    }
+
+    private var reviewStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaCard(padding: 14) {
+                VStack(alignment: .leading, spacing: 6) {
+                    NovaText(text: draft.counterparty.isEmpty ? "Karşı taraf belirtilmedi" : draft.counterparty, style: .cardTitle)
+                    NovaText(text: [placeTitle, draft.scope].filter { !$0.isEmpty }.joined(separator: " · "), style: .meta)
+                    NovaText(text: "\(draft.startsOn) → \(draft.endsBefore.isEmpty ? "Süresiz" : draft.endsBefore)", style: .body)
+                }
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                NovaText(text: "Sözleşme aslı nerede?", style: .label)
+                TextField("Örn. şirket arşivi / klasör", text: $draft.contractLocation)
+                    .font(NovaFont.font(.body)).frame(minHeight: 38).novaControlBackground(cornerRadius: 12)
+                    .accessibilityIdentifier("nova.katip.form.location")
+                NovaText(text: NovaKatipWords.documentNote, style: .metaQuiet)
+            }
+        }
+    }
+
+    private func previous() {
+        guard let index = Step.allCases.firstIndex(of: step), index > 0 else { return }
+        step = Step.allCases[index - 1]
+    }
+
+    private func advance() {
+        if step == .review {
+            guard canSave else { failure = NovaKatipFailure.validation.message; return }
+            Task { saving = true; failure = await onSave(draft); saving = false; if failure == nil { didSave = true } }
+            return
+        }
+        if step == .scope && !canSave { failure = NovaKatipFailure.validation.message; return }
+        guard let index = Step.allCases.firstIndex(of: step), index + 1 < Step.allCases.count else { return }
+        failure = nil; step = Step.allCases[index + 1]
     }
 
     @ViewBuilder private func field(_ label: String, _ value: Binding<String>,

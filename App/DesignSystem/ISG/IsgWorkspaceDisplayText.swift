@@ -65,7 +65,7 @@ enum IsgWorkspaceDisplayText {
         "owner": "OSGB sahibi", "admin": "OSGB yöneticisi", "expert": "İSG uzmanı",
         "primary": "Birincil uzman", "support": "Destek uzmanı", "current": "Güncel",
         "future": "İleri tarihli", "upcoming": "Başlayacak", "ended": "Sona erdi",
-        "untracked": "Takipsiz", "suspended": "Askıda",
+        "untracked": "Takip tarihi yok", "suspended": "Askıda",
         "never_inspected": "Kontrol yok", "period_unknown": "Süre belirlenmedi",
         "true": "Evet", "false": "Hayır",
         "lifting_equipment": "Kaldırma ekipmanı", "crane": "Vinç", "forklift": "Forklift",
@@ -123,7 +123,7 @@ enum IsgWorkspaceDisplayText {
         "completed_minutes": "Eğitim saati", "trained_people": "Eğitim alan",
         "person_minutes": "Adam × saat", "people_without_completed_training": "Eğitimi eksik",
         "employee_count": "Personel", "workplace_count": "İşyeri", "department_count": "Departman",
-        "positive": "Olumlu", "negative": "Olumsuz", "untracked": "Takipsiz", "approaching": "Yaklaşıyor",
+        "positive": "Olumlu", "negative": "Olumsuz", "untracked": "Takip tarihi yok", "approaching": "Yaklaşıyor",
         "upcoming": "Başlayacak", "ended": "Sona eren", "held": "Gerçekleşen",
         "board_open_decisions": "Açık karar", "open_decisions": "Açık karar"
     ]

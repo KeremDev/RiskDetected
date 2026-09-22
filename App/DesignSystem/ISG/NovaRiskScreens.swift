@@ -166,8 +166,7 @@ struct NovaRiskScreen: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
                         header
-                        NovaHelpHint(text: "Firmanın risk analizini, kapsamını ve dosyasını kaydedin; güncel sürümünü takip edin.")
-                        NovaHelpHint(text: NovaRiskWords.periodAttribution)
+                        NovaHelpHint(text: "Firmanın risk analizini, kapsamını ve dosyasını kaydedin; güncel sürümünü takip edin. \(NovaRiskWords.periodAttribution)")
                         if let board { counters(board) }
                         filters
                         if loading && board == nil {
@@ -186,7 +185,7 @@ struct NovaRiskScreen: View {
                 }
             }
             .task { await load(reset: true) }
-            .novaPopup(isPresented: $creating, onDismiss: { Task { await load(reset: true) } }) { addFlow }
+            .novaFullScreenCover(isPresented: $creating, onDismiss: { Task { await load(reset: true) } }) { addFlow }
             .novaPopup(item: $detail) { row in
             NovaRiskDetailSheet(row: row, canWrite: canWrite,
                 onNewVersion: { start(from: row) },
@@ -225,7 +224,8 @@ struct NovaRiskScreen: View {
         }
     }
     private var addFlow: some View {
-        NovaCompanyCreateFlow(title: "Risk değerlendirmesi kaydı", companies: client.companies, catalogue: { co in try await client.catalogue(co) }, onSelect: { _ in }, fixedCompany: initialCompany) { catalogue, co in
+        NovaCompanyCreateFlow(title: "Risk değerlendirmesi ekle", companies: client.companies, catalogue: { co in try await client.catalogue(co) }, onSelect: { _ in }, fixedCompany: initialCompany, fullScreenTask: true,
+            onClose: { if startInAddMode { onBack() } else { creating = false } }) { catalogue, co in
             NovaRiskQuickCreateSheet(client: client, company: co, catalogue: catalogue) {
                 if startInAddMode { onBack() } else { creating = false }
             }
@@ -415,11 +415,11 @@ extension NovaRiskVersionDraft: Identifiable { var id: String { (assessmentID?.u
 extension NovaRiskFinalizeDraft: Identifiable { var id: String { (assessmentID?.uuidString ?? "") + "\(version)" } }
 
 
-/// One page: pick the workplace (skipped when there is only one), answer a
-/// quick "new or revise" question only when a prior assessment exists, fill
-/// in the date/period/file, save. No separate "taslak" step to come back to —
-/// draft and finalize happen back to back, behind one button and one spinner.
+/// Guided risk creation. The old implementation rendered every field and both
+/// primary actions in one popup; this keeps the same service contract while
+/// making the decision sequence visible and recoverable.
 private struct NovaRiskQuickCreateSheet: View {
+    private enum Step: String, CaseIterable { case details, file, review }
     let client: NovaRiskClient
     let company: UUID
     let catalogue: NovaRiskCatalogue
@@ -440,51 +440,84 @@ private struct NovaRiskQuickCreateSheet: View {
     @State private var assetID = ""
     @State private var saving = false
     @State private var saveError: String?
+    @State private var currentStep: Step = .details
+    @State private var didSave = false
+    @State private var confirmingExit = false
 
     private var workplaces: [NovaRiskCatalogue.Workplace] { catalogue.workplaces }
     private var suggestedYears: Int? { workplaces.first { $0.id == workplaceID }?.suggestedPeriodYears }
     private var hasOpenDraft: Bool { row?.hasOpenDraft ?? false }
-    private var canSave: Bool {
-        guard row != nil, !saving else { return false }
-        if hasOpenDraft { return true }
+    private var stepNumber: Int { (Step.allCases.firstIndex(of: currentStep) ?? 0) + 1 }
+    private var detailsReady: Bool {
+        guard workplaceID != nil, row != nil, kindChosen else { return false }
+        if kind == .full, !(Int(periodYears).map { $0 > 0 } ?? false) { return false }
         if kind.needsScope && scope.isEmpty { return false }
         if kind.needsReason && reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return false }
         return true
     }
+    // Kept for the legacy form helper below; the guided flow uses detailsReady
+    // and the sticky action instead.
+    private var canSave: Bool { detailsReady && !saving }
+    private var validityText: String {
+        guard kind == .full, let years = Int(periodYears), years > 0,
+              let date = NovaDayField.date(assessmentOn),
+              let until = Calendar.current.date(byAdding: .year, value: years, to: date) else {
+            return "Geçerlilik bilgisi daha sonra kesinleştirilecek"
+        }
+        return NovaDayField.text(until)
+    }
 
     var body: some View {
-        ScrollView {
-        VStack(alignment: .leading, spacing: 12) {
-            NovaPopupHeading(text: RDLocalization.string("localizable.nova.risk.quick.title", table: .localizable,
-                fallback: "Risk değerlendirmesi"), symbol: "checkmark.shield")
-            if workplaces.isEmpty {
-                NovaText(text: RDLocalization.string("localizable.nova.risk.quick.noworkplace", table: .localizable,
-                    fallback: "Önce firma bilgilerinden işyeri ekleyin."), style: .body)
-            } else if workplaceID == nil, workplaces.count > 1 {
-                workplacePicker
-            } else if let openError {
-                NovaText(text: openError, style: .meta, color: NovaColorToken.statusDangerInk.color(in: scheme))
-                NovaButton(label: RDLocalization.string("localizable.nova.risk.quick.retry", table: .localizable,
-                    fallback: "Tekrar dene"), symbol: "arrow.clockwise", variant: .surface) { Task { await open() } }
-            } else if opening || row == nil {
-                ProgressView(RDLocalization.string("localizable.nova.risk.quick.opening", table: .localizable,
-                    fallback: "Kayıt açılıyor…"))
-            } else if row!.currentVersion > 0, !hasOpenDraft, !kindChosen {
-                kindChooser
+        Group {
+            if didSave {
+                NovaTaskSuccessView(title: "Risk değerlendirmesi kaydedildi",
+                    message: "(validityText) geçerlilik bilgisiyle kayıt oluşturuldu. Firma detayından sürümleri ve dosyayı takip edebilirsiniz.",
+                    doneTitle: "Risk değerlendirmelerine dön", onDone: onClose)
             } else {
-                form
-            }
-            if let saveError {
-                NovaText(text: saveError, style: .meta, color: NovaColorToken.statusDangerInk.color(in: scheme))
+                NovaPageSurface(onEdgeBack: onClose) {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 18) {
+                            NovaTaskHeader(title: "Risk değerlendirmesi ekle", step: stepNumber,
+                                total: Step.allCases.count, stepTitle: stepTitle(currentStep), onClose: { confirmingExit = true })
+                            if let openError { NovaTaskErrorSummary(message: openError) }
+                            if let saveError { NovaTaskErrorSummary(message: saveError) }
+                            if workplaces.isEmpty {
+                                NovaEmptyState(title: "İşyeri bulunamadı", message: "Önce firma bilgilerinden işyeri ekleyin.")
+                            } else if opening || row == nil {
+                                NovaLoadingView(message: "İşyeri ve risk sürümü hazırlanıyor…")
+                            } else {
+                                stepContent(currentStep)
+                            }
+                        }.padding(.horizontal, 18).padding(.top, 8).padding(.bottom, 28)
+                    }.scrollDismissesKeyboard(.interactively)
+                    .safeAreaInset(edge: .bottom) {
+                        if !workplaces.isEmpty && !opening && row != nil {
+                            NovaTaskStickyActions(primaryTitle: currentStep == .review ? "Kaydet" : "Devam",
+                                primarySymbol: currentStep == .review ? "checkmark" : "arrow.right",
+                                isWorking: saving, canGoBack: currentStep != .details,
+                                onBack: previousStep, onPrimary: advance)
+                        }
+                    }
+                }
             }
         }
-        .padding(20).novaPopupContentSize()
-        }
-        .preference(key: NovaPopupBusyKey.self, value: opening || saving)
         .task {
             if workplaces.count == 1 { workplaceID = workplaces[0].id }
         }
         .onChange(of: workplaceID) { _ in Task { await open() } }
+        .confirmationDialog("Risk değerlendirmesi akışından çıkılsın mı?", isPresented: $confirmingExit,
+            titleVisibility: .visible) {
+                Button("Çık", role: .destructive, action: onClose)
+                Button("Devam et", role: .cancel) {}
+            } message: { Text("Henüz kaydedilmemiş bilgiler silinir.") }
+    }
+
+    @ViewBuilder private func stepContent(_ step: Step) -> some View {
+        switch step {
+        case .details: detailsStep
+        case .file: fileStep
+        case .review: reviewStep
+        }
     }
 
     private var workplacePicker: some View {
@@ -508,6 +541,105 @@ private struct NovaRiskQuickCreateSheet: View {
                 kind = .partial; kindChosen = true
             }.accessibilityIdentifier("risk.quick.kind.revise")
         }
+    }
+
+    private var detailsStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if workplaces.count > 1, workplaceID == nil {
+                workplacePicker
+            } else if row?.currentVersion ?? 0 > 0, !hasOpenDraft, !kindChosen {
+                kindChooser
+            } else {
+                if kind.carriesAssessmentDate {
+                    NovaDayField(label: "Değerlendirme tarihi", value: $assessmentOn, identifier: "risk.quick.date")
+                } else {
+                    NovaFormValueRow(label: "Değerlendirme tarihi", symbol: "calendar") {
+                        NovaText(text: "İlk değerlendirme tarihi korunur", style: .bodyStrong)
+                    }
+                }
+                if kind == .full {
+                    NovaFormValueRow(label: "Geçerlilik süresi", symbol: "calendar.badge.clock") {
+                        HStack(spacing: 6) {
+                            TextField("", text: $periodYears)
+                                .keyboardType(.numberPad)
+                                .font(NovaFont.font(.body))
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 46).frame(minHeight: 36)
+                                .accessibilityLabel("Geçerlilik süresi, yıl")
+                                .accessibilityIdentifier("risk.quick.years")
+                            NovaText(text: "yıl", style: .meta)
+                        }
+                    }
+                    NovaHelpHint(text: "İşyerinin tehlike sınıfına göre otomatik dolduruldu. Gerekirse değiştirebilirsiniz. Geçerlilik: \(validityText)")
+                }
+                if kind.needsScope { scopeField }
+                if kind.needsReason {
+                    VStack(alignment: .leading, spacing: 4) {
+                        NovaText(text: "Değişiklik gerekçesi", style: .label)
+                        TextEditor(text: $reason).frame(minHeight: 70).accessibilityIdentifier("risk.quick.reason")
+                    }.padding(12).novaControlBackground(cornerRadius: 14)
+                }
+                if hasOpenDraft {
+                    NovaHelpHint(text: "Bu işyerinde açık bir taslak var. Bilgileri kontrol ederek tamamlayabilirsiniz.")
+                }
+            }
+        }
+    }
+
+    private var fileStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaText(text: "Dosya", style: .sectionTitle)
+            NovaInlineFileField(category: "risk_assessment", company: company,
+                fileClient: client.fileClient, assetID: $assetID)
+            NovaHelpHint(text: "Dosya eklemek zorunlu değil; değerlendirmeyi şimdi kaydedip belgeyi daha sonra bağlayabilirsiniz.")
+        }
+    }
+
+    private var reviewStep: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NovaText(text: "Kontrol et", style: .sectionTitle)
+            NovaCard(padding: 14) {
+                VStack(alignment: .leading, spacing: 12) {
+                    reviewRow("İşyeri", workplaces.first(where: { $0.id == workplaceID })?.name ?? "Belirtilmedi")
+                    reviewRow("Değerlendirme", kind.carriesAssessmentDate ? assessmentOn : "İlk tarih korunuyor")
+                    reviewRow("Geçerlilik", validityText)
+                    if !scope.isEmpty { reviewRow("Kapsam", scope.joined(separator: ", ")) }
+                    reviewRow("Dosya", assetID.isEmpty ? "Daha sonra eklenebilir" : "Dosya eklendi")
+                }
+            }
+        }
+    }
+
+    private func reviewRow(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            NovaText(text: label, style: .metaQuiet)
+            NovaText(text: value, style: .bodyStrong)
+        }.frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func stepTitle(_ step: Step) -> String {
+        switch step {
+        case .details: return "Tarih ve geçerlilik"
+        case .file: return "Dosya"
+        case .review: return "Kontrol ve kaydet"
+        }
+    }
+
+    private func advance() {
+        saveError = nil
+        guard currentStep != .review else { Task { await save() }; return }
+        guard currentStep != .details || detailsReady else {
+            saveError = "İşyeri, değerlendirme türü ve gerekli kapsam bilgilerini kontrol edin."
+            return
+        }
+        guard let index = Step.allCases.firstIndex(of: currentStep) else { return }
+        withAnimation(.easeInOut(duration: 0.2)) { currentStep = Step.allCases[index + 1] }
+    }
+
+    private func previousStep() {
+        saveError = nil
+        guard let index = Step.allCases.firstIndex(of: currentStep), index > 0 else { return }
+        withAnimation(.easeInOut(duration: 0.2)) { currentStep = Step.allCases[index - 1] }
     }
 
     @ViewBuilder private var form: some View {
@@ -595,8 +727,8 @@ private struct NovaRiskQuickCreateSheet: View {
     }
 
     private func primeSuggestedPeriod() {
-        guard periodYears.isEmpty, let years = suggestedYears else { return }
-        periodYears = String(years)
+        guard periodYears.isEmpty else { return }
+        periodYears = String(suggestedYears ?? 1)
     }
 
     private func open() async {
@@ -641,7 +773,7 @@ private struct NovaRiskQuickCreateSheet: View {
                 editRevision: draftVersion.editRevision)
             if draftVersion.kind == .full { finalize.periodYears = periodYears }
             _ = try await client.finalize(company, finalize)
-            onClose()
+            didSave = true
         } catch let e as NovaRiskFailure { saveError = e.message }
         catch { saveError = NovaRiskFailure.unavailable.message }
     }

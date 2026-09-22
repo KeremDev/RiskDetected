@@ -32,6 +32,7 @@ struct RiskDetailView: View {
     @State private var feedbackComposerExpanded = false
     @State private var feedbackToastToken: UUID?
     @State private var showPaywall = false
+    @State private var scoreExpanded = false
 
     private let green = Color.rdResultGreen
     private let greenDark = Color.rdResultGreenDark
@@ -84,29 +85,56 @@ struct RiskDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            redesignedHeader
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 0) {
-                    hero
-                    floatingActions
-                    if finding.isScored {
-                        scoreBanner
-                    } else {
-                        expertSummaryBanner
+                VStack(alignment: .leading, spacing: 0) {
+                    redesignedPhoto
+                    redesignedTitle
+                    findingSection(
+                        title: finding.isScored
+                            ? copy("analysis.risk.detail.v2.tehlike.aciklamasi.9083161c", "Ne gözlendi?", "What was observed?")
+                            : copy("analysis.risk.detail.v2.uzman.aciklamasi.8e3abad9", "Uzman açıklaması", "Expert description"),
+                        icon: "eye",
+                        text: finding.description
+                    )
+                    redesignedMeasures
+                    if !finding.rootCause.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        findingSection(
+                            title: copy("analysis.risk.detail.v2.kok.neden.080d851e", "Kök neden", "Root cause"),
+                            icon: "magnifyingglass",
+                            text: finding.rootCause
+                        )
                     }
-                    hazardCard
-                    detailBlocks
+                    if finding.isScored { redesignedScoreDisclosure }
+                    if showsRegulatoryReferences { redesignedReferences }
+                    membershipPromotionCard
+                    redesignedFeedback
                 }
+                .padding(.horizontal, 18)
+                .padding(.bottom, 28)
             }
-            .background(Color.rdResultBackground)
-
-            Capsule()
-                .fill(ink)
-                .frame(width: 145, height: 5)
-                .padding(.vertical, 11)
-                .background(Color.rdResultBackground)
         }
         .background(Color.rdResultBackground.ignoresSafeArea())
-        .ignoresSafeArea(edges: .top)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if onGenerateReport != nil {
+                Button { onGenerateReport?() } label: {
+                    Label(
+                        copy("analysis.risk.detail.v2.raporu.indir.5caa46b4", "Rapor oluştur", "Create report"),
+                        systemImage: "doc.badge.plus"
+                    )
+                    .font(referenceFont(15, .heavy))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, minHeight: 52)
+                    .background(Color.black)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                }
+                .buttonStyle(RDPressableButtonStyle())
+                .padding(.horizontal, 18)
+                .padding(.vertical, 8)
+                .background(Color.rdResultBackground.opacity(0.98))
+                .overlay(alignment: .top) { Divider() }
+            }
+        }
         .overlay(alignment: .top) {
             if feedbackToastToken != nil {
                 FeedbackThanksToast(language: feedbackLanguage)
@@ -142,6 +170,226 @@ struct RiskDetailView: View {
             )
             .preferredColorScheme(.dark)
         }
+    }
+
+    private var redesignedHeader: some View {
+        HStack(spacing: 10) {
+            Button { dismiss() } label: {
+                Image(systemName: "chevron.left")
+                    .font(RDTypography.font(size: 15, weight: .bold))
+                    .foregroundStyle(ink)
+                    .frame(width: 44, height: 44)
+                    .background(Color.rdResultSurface)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(copy("analysis.risk.detail.view.pencereyi.kapat.cde23dc0", "Geri", "Back"))
+            Text(copy("analysis.risk.detail.title", "Bulgu Detayı", "Finding Detail"))
+                .font(referenceFont(19, .heavy))
+                .foregroundStyle(ink)
+            Spacer(minLength: 0)
+            Menu {
+                if let onEdit { Button(action: onEdit) { Label("Düzenle", systemImage: "square.and.pencil") } }
+                if let onShareReport { Button(action: onShareReport) { Label("Paylaş", systemImage: "square.and.arrow.up") } }
+                if let onDelete { Button(role: .destructive, action: onDelete) { Label("Sil", systemImage: "trash") } }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(RDTypography.font(size: 15, weight: .bold))
+                    .foregroundStyle(ink)
+                    .frame(width: 44, height: 44)
+                    .background(Color.rdResultSurface)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .accessibilityLabel("Bulgu işlemleri")
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 7)
+    }
+
+    private var redesignedPhoto: some View {
+        ResultDetailPhoto(image: localPreviewImage, path: photoPath, cornerRadius: 16)
+            .frame(maxWidth: .infinity)
+            .frame(height: localPreviewImage == nil && photoPath == nil ? 120 : 190)
+            .background(Color.rdResultSubtleSurface)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay(alignment: .bottomTrailing) {
+                Label("Fotoğraf \(photoIndex)", systemImage: "photo")
+                    .font(referenceFont(9.5, .bold))
+                    .foregroundStyle(ink)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(Color.white.opacity(0.88))
+                    .clipShape(Capsule())
+                    .padding(9)
+            }
+            .accessibilityIdentifier("result.detail.photo_card")
+    }
+
+    private var redesignedTitle: some View {
+        let band = finding.band(for: method)
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 7) {
+                Circle()
+                    .fill(finding.isScored ? referenceRiskColor(band.level) : Color(hex: "#A66A13"))
+                    .frame(width: 7, height: 7)
+                Text(finding.isScored
+                     ? methodRiskBandLabel(band)
+                     : copy("analysis.risk.detail.v2.uzman.gorusu.81f7a08e", "Uzman görüşü", "Expert advice"))
+                    .font(referenceFont(10.5, .heavy))
+                    .foregroundStyle(finding.isScored ? referenceRiskColor(band.level) : Color(hex: "#A66A13"))
+                Text("Bulgu #F-\(String(format: "%04d", finding.id))")
+                    .font(referenceFont(9.5, .bold))
+                    .foregroundStyle(Color.rdResultTertiaryText)
+            }
+            Text(finding.displayTitle)
+                .font(referenceFont(22, .black))
+                .foregroundStyle(ink)
+                .fixedSize(horizontal: false, vertical: true)
+            if !heroMeta.isEmpty {
+                Text(heroMeta)
+                    .font(referenceFont(11, .medium))
+                    .foregroundStyle(Color.rdResultSecondaryText)
+                    .lineLimit(2)
+            }
+        }
+        .padding(.top, 14)
+    }
+
+    private var redesignedMeasures: some View {
+        let corrective = finding.controlMeasures.filter { $0.kind != .preventive }
+        let preventive = finding.controlMeasures.filter { $0.kind == .preventive }
+        return VStack(spacing: 0) {
+            if !corrective.isEmpty {
+                findingSection(
+                    title: copy("analysis.risk.detail.v2.duzeltici.onlem.12648a73", "Düzeltici önlem", "Corrective action"),
+                    icon: "checkmark.seal",
+                    text: corrective.map(\.text).joined(separator: "\n")
+                )
+            }
+            if !preventive.isEmpty {
+                findingSection(
+                    title: copy("analysis.risk.detail.v2.onleyici.faaliyet.ad95a8ff", "Önleyici faaliyet", "Preventive action"),
+                    icon: "shield",
+                    text: preventive.map(\.text).joined(separator: "\n")
+                )
+            }
+        }
+    }
+
+    private func findingSection(title: String, icon: String, text: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Divider().padding(.top, 16)
+            Label(title, systemImage: icon)
+                .font(referenceFont(12.5, .heavy))
+                .foregroundStyle(ink)
+            Text(text)
+                .font(referenceFont(13, .regular))
+                .foregroundStyle(Color.rdResultSecondaryText)
+                .lineSpacing(4)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var redesignedScoreDisclosure: some View {
+        let band = finding.band(for: method)
+        let score = finding.score(for: method)
+        return VStack(alignment: .leading, spacing: 9) {
+            Divider().padding(.top, 16)
+            Picker("Risk yöntemi", selection: $method) {
+                Text("Fine-Kinney").tag(RiskMethod.fineKinney)
+                Text("5×5").tag(RiskMethod.matrix5x5)
+            }
+            .pickerStyle(.segmented)
+            Button { withAnimation(.easeOut(duration: 0.18)) { scoreExpanded.toggle() } } label: {
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(scoreText(score)) · \(methodRiskBandLabel(band))")
+                            .font(referenceFont(15, .black))
+                            .foregroundStyle(referenceRiskColor(band.level))
+                        Text(method.fullName)
+                            .font(referenceFont(9.5, .semibold))
+                            .foregroundStyle(Color.rdResultSecondaryText)
+                    }
+                    Spacer(minLength: 0)
+                    Text("Skor nasıl oluştu?")
+                        .font(referenceFont(10.5, .heavy))
+                        .foregroundStyle(greenDark)
+                    Image(systemName: scoreExpanded ? "chevron.up" : "chevron.down")
+                        .font(RDTypography.font(size: 10, weight: .bold))
+                }
+                .padding(12)
+                .background(referenceRiskColor(band.level).opacity(0.09))
+                .clipShape(RoundedRectangle(cornerRadius: 13))
+            }
+            .buttonStyle(.plain)
+            if scoreExpanded {
+                factorRow(score: score)
+                    .foregroundStyle(Color.rdResultSecondaryText)
+                    .padding(.horizontal, 4)
+            }
+        }
+        .accessibilityIdentifier("result.detail.score.disclosure")
+    }
+
+    @ViewBuilder private var redesignedReferences: some View {
+        if app.currentTier.isPaid {
+            findingSection(
+                title: copy("analysis.risk.detail.v2.mevzuat.3eef1ac3", "Mevzuat ve ek bilgiler", "Regulatory references"),
+                icon: "book",
+                text: regulatoryReferenceText
+            )
+        } else {
+            Button {
+                beginPaywallEntry(at: .findingDetailRegulatoryReferences, targetTier: .plus)
+                showPaywall = true
+            } label: {
+                HStack(spacing: 9) {
+                    Image(systemName: "lock")
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(copy("analysis.risk.detail.v2.mevzuat.3eef1ac3", "Mevzuat ve ek bilgiler", "Regulatory references"))
+                            .font(referenceFont(12.5, .heavy))
+                        Text("Plus / Pro ile görüntüle")
+                            .font(referenceFont(10.5, .medium))
+                            .foregroundStyle(Color.rdResultSecondaryText)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                }
+                .foregroundStyle(ink)
+                .padding(.top, 16)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var redesignedFeedback: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            Divider().padding(.top, 16)
+            Text("Bu bulgu faydalı mıydı?")
+                .font(referenceFont(12.5, .heavy))
+                .foregroundStyle(ink)
+            HStack(spacing: 8) {
+                feedbackButton(.like, symbol: "hand.thumbsup", label: "Faydalı")
+                feedbackButton(.dislike, symbol: "hand.thumbsdown", label: "Faydalı değil")
+            }
+        }
+    }
+
+    private func feedbackButton(_ value: AnalysisItemReaction, symbol: String, label: String) -> some View {
+        let active = reaction == value
+        return Button { handleReactionTap(value) } label: {
+            Label(label, systemImage: active ? "\(symbol).fill" : symbol)
+                .font(referenceFont(11.5, .heavy))
+                .foregroundStyle(active ? greenDark : ink)
+                .frame(maxWidth: .infinity, minHeight: 42)
+                .background(active ? Color.rdResultGreenTint : Color.rdResultSurface)
+                .overlay(RoundedRectangle(cornerRadius: 12)
+                    .stroke(active ? green : Color.rdResultLine, lineWidth: 1))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+        .disabled(isReactionSaving)
     }
 
     private var hero: some View {

@@ -10,6 +10,11 @@ import Supabase
     private var request: Task<Void, Never>?
     private let sdk = SupabaseService.shared.client
     private var observing = false
+    private weak var workspaceStore: IsgWorkspaceStore?
+    private var transportTicket: NovaExpertTransport.Ticket?
+    init(workspaceStore: IsgWorkspaceStore? = nil) {
+        self.workspaceStore = workspaceStore
+    }
     typealias Capability = NovaWorkspaceCapability
     var isAvailable: Bool { capability?.can_read == true && host.phase == .ready }
     var canWrite: Bool { scope != nil && capability?.can_write == true }
@@ -39,6 +44,11 @@ import Supabase
     }
     func observe() async {
         guard !observing else { return }; observing = true
+        guard let identity = identity() else { resolving = false; observing = false; return }
+        transportTicket = NovaExpertTransport.shared.bind(identity: identity,
+            workspace: workspaceStore?.selection,
+            store: workspaceStore,
+            currentWorkspace: { [weak workspaceStore] in workspaceStore?.selection })
         adopt()
         defer { stop() }
         for await _ in sdk.auth.authStateChanges {
@@ -62,7 +72,8 @@ import Supabase
         request = Task { [weak self] in
             guard let self else { return }
             do {
-                let data = try await sdk.rpc("isg_workspace_availability_v1", params: ["p_company": PersonnelRPCValue.id(company)]).execute().data
+                let data = try await NovaExpertTransport.shared.execute("isg_workspace_availability_v1",
+                    params: ["p_company": PersonnelRPCValue.id(company)], ticket: transportTicket)
                 try Task.checkCancellation()
                 guard identity() == expectedIdentity, selectedCompanyID == company, data.count <= 16384 else { throw NovaPersonnelFailure.denied }
                 let value = try Capability.decode(data, owner: expectedIdentity.userID, company: company)
@@ -74,6 +85,8 @@ import Supabase
         }
     }
     func stop() {
+        if let transportTicket { NovaExpertTransport.shared.release(transportTicket) }
+        transportTicket = nil
         request?.cancel(); request = nil; capability = nil; selectedCompanyID = nil
         host.adopt(nil); observing = false; resolving = false
     }

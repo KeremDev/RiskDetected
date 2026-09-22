@@ -139,9 +139,7 @@ struct NovaAppointmentScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
-                    NovaHelpHint(text: "Firmayı ve personeli seçerek görevlendirme kaydı oluşturun; belgesini aynı kayda ekleyin.")
-                    NovaHelpHint(text: NovaAppointmentWords.noQualificationNote)
-                    NovaHelpHint(text: NovaAppointmentWords.noRequiredCountNote)
+                    NovaHelpHint(text: "Firmayı ve personeli seçerek görevlendirme kaydı oluşturun; belgesini aynı kayda ekleyin. \(NovaAppointmentWords.noQualificationNote) \(NovaAppointmentWords.noRequiredCountNote)")
                     if let board { counters(board) }
                     filters
                     if loading && board == nil {
@@ -178,7 +176,7 @@ struct NovaAppointmentScreen: View {
                     }
                 }
         }
-        .novaPopup(item: $drafting) { draft in addFlow(draft) }
+        .novaFullScreenCover(item: $drafting) { draft in addFlow(draft) }
         .novaPopup(item: $ending) { draft in
             NovaAppointmentEndSheet(draft: draft,
                 onSave: { edited in await finish(edited) }, onClose: { ending = nil })
@@ -187,7 +185,8 @@ struct NovaAppointmentScreen: View {
     }
     private func addFlow(_ draft: NovaAppointmentDraft) -> some View {
         NovaCompanyCreateFlow(title: "Görev ver", companies: client.companies,
-            catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany) { selectedCatalogue, selectedCompany in
+            catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany,
+            fullScreenTask: true, onClose: { if startInAddMode { onBack() } else { drafting = nil } }) { selectedCatalogue, selectedCompany in
             NovaAppointmentSheet(draft: draft, catalogue: selectedCatalogue,
                 fileClient: client.fileClient, fileCompany: selectedCompany,
                 onSave: { edited in await save(edited) },
@@ -335,7 +334,6 @@ struct NovaAppointmentScreen: View {
         guard let company = draftCompany ?? query.company else { return NovaAppointmentFailure.validation.message }
         do {
             _ = try await client.record(company, draft)
-            drafting = nil
             await load(reset: true)
             return nil
         } catch let error as NovaAppointmentFailure { return error.message }

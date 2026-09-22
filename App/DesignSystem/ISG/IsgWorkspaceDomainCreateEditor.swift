@@ -39,34 +39,196 @@ struct IsgWorkspaceDomainCreateEditor: View {
     @State private var workflowMutationIDs: [String: UUID] = [:]
     @State private var attachment: IsgWorkspaceAttachmentDraft?
     @State private var openSection: FormSection? = .record
+    @State private var wizardStep = 0
+    @State private var saved = false
     @Environment(\.novaCelebrate) private var celebrate
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                NovaPopupHeading(text: String(format: RDLocalization.string(
-                    "localizable.nova.workspace.domain.add", table: .localizable,
-                    fallback: "%@ ekle"), domain.title), symbol: domain.symbol,
-                    subtitle: RDLocalization.string("localizable.nova.workspace.domain.create.scope",
-                        table: .localizable, fallback: "Kayıt seçili firma kapsamında oluşturulur."))
-                if loading {
-                    NovaLoadingView(message: RDLocalization.string("localizable.nova.workspace.domain.form.loading",
-                        table: .localizable, fallback: "Form hazırlanıyor…"))
-                } else {
-                    form
-                    if let error { NovaHelpHint(text: error) }
-                    NovaCompactActionButton(title: saving ? RDLocalization.string(
-                        "localizable.nova.workspace.saving", table: .localizable, fallback: "Kaydediliyor…") :
-                        saveTitle,
-                        symbol: "checkmark", prominent: true, enabled: canSave && !saving) { save() }
+        Group {
+            if saved {
+                NovaTaskSuccessView(title: successTitle, message: successMessage,
+                    doneTitle: "Listeye dön", onDone: onDone)
+            } else {
+                NovaPageSurface(onEdgeBack: goBack) {
+                    VStack(spacing: 0) {
+                        NovaTaskHeader(title: String(format: RDLocalization.string(
+                            "localizable.nova.workspace.domain.add", table: .localizable,
+                            fallback: "%@ ekle"), domain.title),
+                            step: wizardVisibleStep, total: wizardVisibleTotal,
+                            stepTitle: wizardStepTitle, onClose: goBack)
+                            .padding(.horizontal, 18).padding(.top, 10)
+                        if loading {
+                            NovaLoadingView(message: RDLocalization.string("localizable.nova.workspace.domain.form.loading",
+                                table: .localizable, fallback: "Form hazırlanıyor…"))
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } else {
+                            ScrollView {
+                                VStack(alignment: .leading, spacing: 14) {
+                                    wizardContent
+                                    if let error { NovaTaskErrorSummary(message: error) }
+                                }.padding(18).padding(.bottom, 18)
+                            }
+                            .scrollDismissesKeyboard(.interactively)
+                            .safeAreaInset(edge: .bottom, spacing: 0) {
+                                NovaTaskStickyActions(primaryTitle: wizardStep == wizardTotal - 1 ? saveTitle : "Devam",
+                                    primarySymbol: wizardStep == wizardTotal - 1 ? "checkmark" : "arrow.right",
+                                    isWorking: saving, canGoBack: true, onBack: goBack, onPrimary: advance)
+                            }
+                        }
+                    }
                 }
-            }.padding(18).novaPopupContentSize()
-                .novaAsyncContent(isLoading: loading)
+            }
         }
-        .scrollDismissesKeyboard(.interactively)
         .task { await prepare() }
         .onChange(of: firstDate) { _ in refreshAutomaticValidity() }
         .onChange(of: overridesAutomaticValidity) { _ in refreshAutomaticValidity() }
+    }
+
+    private var wizardTotal: Int { domain == .visit ? 5 : 4 }
+    /// Company selection already scopes the request. With no extra scope
+    /// choice (or one automatically selected workplace), begin directly with
+    /// the first meaningful record step.
+    private var minimumWizardStep: Int { scopeNeedsInput ? 0 : 1 }
+    private var wizardVisibleStep: Int { wizardStep - minimumWizardStep + 1 }
+    private var wizardVisibleTotal: Int { wizardTotal - minimumWizardStep }
+    private var scopeNeedsInput: Bool {
+        (needsWorkplace && workplaces.count != 1) || needsEmployee || domain == .drill
+    }
+
+    private var wizardStepTitle: String {
+        if domain == .visit {
+            return ["İşyeri", "Tarih ve süre", "Ziyaret ayrıntıları", "Dosya", "Kontrol"][wizardStep]
+        }
+        return ["Kapsam", "Kayıt bilgileri", "Dosya", "Kontrol"][wizardStep]
+    }
+
+    @ViewBuilder private var wizardContent: some View {
+        switch wizardStep {
+        case 0:
+            NovaText(text: "Kapsam", style: .sectionTitle)
+            NovaHelpHint(text: "Firma bilgisi korunur; işyeri ve ilgili kayıt seçimi sonraki adımlara otomatik taşınır.")
+            scopeFields
+        case 1:
+            if domain == .visit { visitScheduleFields }
+            else {
+                NovaText(text: "Kayıt bilgileri", style: .sectionTitle)
+                recordFields
+            }
+        case 2 where domain == .visit:
+            visitDetailFields
+        case 2:
+            attachmentStep
+        case 3 where domain == .visit:
+            attachmentStep
+        default:
+            reviewStep
+        }
+    }
+
+    @ViewBuilder private var scopeFields: some View {
+        if needsWorkplace { workplacePicker }
+        if needsEmployee { employeePicker }
+        if domain == .drill { planPicker }
+        if !needsWorkplace && !needsEmployee && domain != .drill {
+            NovaFormValueRow(label: "Firma kapsamı", symbol: "building.2") {
+                NovaText(text: "Seçili firma", style: .bodyStrong)
+            }
+        }
+    }
+
+    private var visitScheduleFields: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaText(text: "Tarih, saat ve süre", style: .sectionTitle)
+            datePicker("Ziyaret tarihi ve saati", selection: $firstDate, components: [.date, .hourAndMinute])
+            numberField("Ziyaret süresi (dakika)")
+        }
+    }
+
+    private var visitDetailFields: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaText(text: "Ziyaret ayrıntıları", style: .sectionTitle)
+            textField("Ziyaret notu *", text: $primary)
+            textField("Ziyaret yeri", text: $secondary)
+            textField("Görüşülen kişi", text: $notes)
+        }
+    }
+
+    private var attachmentStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaText(text: "Dosya ve kanıt", style: .sectionTitle)
+            NovaHelpHint(text: "Dosya veya fotoğraf eklemek isteğe bağlıdır; kaydı dosyasız da tamamlayabilirsiniz.")
+            attachmentField
+        }
+    }
+
+    private var reviewStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaText(text: "Kontrol", style: .sectionTitle)
+            NovaHelpHint(text: "Bilgileri doğrulayın. Değişiklik gerekiyorsa Geri ile ilgili adıma dönebilirsiniz.")
+            NovaCard(padding: 14) {
+                VStack(alignment: .leading, spacing: 9) {
+                    reviewRow("Modül", domain.title)
+                    if needsWorkplace {
+                        reviewRow("İşyeri", workplaces.first(where: { $0.id == workplaceID })?.name ?? "Seçilmedi")
+                    }
+                    if domain == .visit {
+                        reviewRow("Ziyaret tarihi", Self.day(firstDate))
+                        reviewRow("Süre", "\(number) dakika")
+                        reviewRow("Ziyaret notu", primary)
+                    }
+                    reviewRow("Dosya", attachment == nil ? "Eklenmedi" : "Eklendi")
+                }
+            }
+        }
+    }
+
+    private func reviewRow(_ label: String, _ value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            NovaText(text: label, style: .metaQuiet)
+            Spacer(minLength: 8)
+            NovaText(text: value.isEmpty ? "—" : value, style: .bodyStrong)
+                .multilineTextAlignment(.trailing).lineLimit(3)
+        }
+    }
+
+    private func advance() {
+        error = nil
+        guard wizardStepValid else {
+            error = wizardStepError
+            return
+        }
+        if wizardStep < wizardTotal - 1 { wizardStep += 1 }
+        else { save() }
+    }
+
+    private func goBack() {
+        error = nil
+        if wizardStep > minimumWizardStep { wizardStep -= 1 } else { onDone() }
+    }
+
+    private var wizardStepValid: Bool {
+        if wizardStep == 0 {
+            if needsWorkplace && workplaceID == nil { return false }
+            if needsEmployee && employeeID == nil { return false }
+            if domain == .drill && planID == nil { return false }
+        }
+        if domain == .visit && wizardStep == 2 {
+            return !primary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+        return wizardStep == wizardTotal - 1 ? canSave : true
+    }
+
+    private var wizardStepError: String {
+        if wizardStep == 0 { return "İşyeri, personel veya bağlı plan seçimini tamamlayın." }
+        if domain == .visit && wizardStep == 2 { return "Ziyaret notunu yazın." }
+        return "Zorunlu alanları ve tarihleri kontrol edin."
+    }
+
+    private var successTitle: String { "\(domain.title) kaydedildi" }
+    private var successMessage: String {
+        domain == .visit
+            ? "Ziyaret bilgileri ve eklediğiniz kanıtlar firma kaydına işlendi."
+            : "Kayıt firma kapsamına eklendi ve ilgili listelerde kullanıma hazır."
     }
 
     @ViewBuilder private var form: some View {
@@ -84,9 +246,6 @@ struct IsgWorkspaceDomainCreateEditor: View {
     }
 
     @ViewBuilder private var recordFields: some View {
-        if needsWorkplace { workplacePicker }
-        if needsEmployee { employeePicker }
-        if domain == .drill { planPicker }
         switch domain {
         case .training:
             trainingForm
@@ -172,11 +331,20 @@ struct IsgWorkspaceDomainCreateEditor: View {
             attachment: $attachment)
     }
 
-    private var workplacePicker: some View {
-        Picker(RDLocalization.string("localizable.nova.workspace.personnel.workplace", table: .localizable,
-            fallback: "İşyeri"), selection: $workplaceID) {
-            ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
-        }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+    @ViewBuilder private var workplacePicker: some View {
+        if workplaces.isEmpty {
+            NovaTaskErrorSummary(message: "Firma için işyeri kaydı hazırlanamadı. Yeniden deneyin veya firma ayrıntılarından işyeri ekleyin.")
+        } else if workplaces.count == 1 {
+            NovaFormValueRow(label: "İşyeri", symbol: "building") {
+                NovaText(text: workplaces[0].name, style: .bodyStrong)
+            }
+        } else {
+            Picker(RDLocalization.string("localizable.nova.workspace.personnel.workplace", table: .localizable,
+                fallback: "İşyeri"), selection: $workplaceID) {
+                Text("İşyeri seçin").tag(Optional<UUID>.none)
+                ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
+            }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+        }
     }
     private var employeePicker: some View {
         Picker(RDLocalization.string("localizable.nova.workspace.personnel.employee", table: .localizable,
@@ -482,7 +650,7 @@ struct IsgWorkspaceDomainCreateEditor: View {
         case .nonconformity, .ppe, .equipment, .workPermit, .visit:
             return !primary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         case .emergencyPlan:
-            return !selectedEmployeeIDs.isEmpty && secondDate > firstDate
+            return secondDate > firstDate
         case .appointment:
             return employeeID != nil && (!hasEndDate || secondDate > firstDate)
         case .board:
@@ -502,7 +670,17 @@ struct IsgWorkspaceDomainCreateEditor: View {
     @MainActor private func prepare() async {
         loading = true; error = nil
         do {
-            if needsWorkplace { workplaces = try await store.directory(.workplace); workplaceID = workplaces.first?.id }
+            if needsWorkplace {
+                workplaces = try await store.directory(.workplace)
+                if workplaces.isEmpty {
+                    // A zero-workplace company uses one invisible/default
+                    // operational scope. The user must not be asked to create
+                    // or choose it before every module action.
+                    try await store.initializePersonnel()
+                    workplaces = try await store.directory(.workplace)
+                }
+                workplaceID = workplaces.count == 1 ? workplaces.first?.id : nil
+            }
             if needsEmployee { employees = try await store.employees(); employeeID = employees.first?.id }
             if [.training, .emergencyPlan, .appointment, .board].contains(domain) {
                 employees = try await store.employees()
@@ -516,8 +694,9 @@ struct IsgWorkspaceDomainCreateEditor: View {
                 checklistTemplateID = checklistTemplates.first?.id
             }
             option = defaultOption
-            number = domain == .training ? 60 : 1
+            number = domain == .training || domain == .visit ? 60 : 1
             if domain == .emergencyPlan { primary = "Acil Durum Planı" }
+            if !scopeNeedsInput { wizardStep = 1 }
         } catch {
             self.error = RDLocalization.string("localizable.nova.workspace.connection.retry", table: .localizable,
                                                fallback: "Bağlantınızı kontrol edip yeniden deneyin.")
@@ -541,7 +720,7 @@ struct IsgWorkspaceDomainCreateEditor: View {
                     mutationID: mutationID, domain: domain, payload: command)
                 try await attach(uploaded, to: created.recordID)
                 celebrate(NovaSuccessMessage.recordSaved(domain.title))
-                onDone()
+                saved = true
             } catch {
                 self.error = RDLocalization.string("localizable.nova.workspace.mutation.failed", table: .localizable,
                     fallback: "İşlem tamamlanamadı. Bilgileri kontrol edip yeniden deneyin.")
@@ -577,7 +756,7 @@ struct IsgWorkspaceDomainCreateEditor: View {
                     domain: .training, payload: complete)
                 try await attach(uploaded, to: trainingID)
                 celebrate(NovaSuccessMessage.trainingSaved)
-                onDone()
+                saved = true
             } catch {
                 self.error = "Eğitim kaydı tamamlanamadı. Tarih, süre ve katılımcıları kontrol edip yeniden deneyin."
             }
@@ -627,7 +806,7 @@ struct IsgWorkspaceDomainCreateEditor: View {
                 }
                 try await attach(uploaded, to: meetingID)
                 celebrate(NovaSuccessMessage.recordSaved("Kurul toplantısı"))
-                onDone()
+                saved = true
             } catch {
                 self.error = "Toplantı kaydı tamamlanamadı. Gündem, katılımcı ve tarih bilgilerini kontrol edip yeniden deneyin."
             }
@@ -752,8 +931,9 @@ struct IsgWorkspaceDomainCreateEditor: View {
                 "workspace_asset_id": assetID.map(IsgWorkspaceRPCValue.id) ?? .null]
         case .visit:
             return ["kind": .string("site_visit"), "action": .string("create"), "workplace_id": place,
-                "visited_on": .string(Self.day(firstDate)), "location_note": .string(secondary),
-                "expert_note": .string(primary), "responsible_contact": .string(notes)]
+                "visited_on": .string(Self.day(firstDate)), "duration_minutes": .number(number),
+                "location_note": .string(secondary), "expert_note": .string(primary),
+                "responsible_contact": .string(notes)]
         case .personnel, .files: return [:]
         }
     }

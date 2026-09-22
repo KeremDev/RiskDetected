@@ -182,7 +182,7 @@ struct NovaModuleEditor: View {
         busy=true; failure=nil; defer { busy=false }
         do {
             try check()
-            let data=try await SupabaseService.shared.client.rpc("isg_pilot_module_editor_v1",params:["p_module":PersonnelRPCValue.string(module),"p_company":.id(company),"p_id":.id(record)]).execute().data
+            let data=try await NovaExpertTransport.shared.execute("isg_pilot_module_editor_v1",params:["p_module":PersonnelRPCValue.string(module),"p_company":.id(company),"p_id":.id(record)], ticket: NovaExpertTransport.shared.capture())
             try check(); let result=try JSONDecoder().decode(Envelope.self,from:data)
             if preserveValues, let previous = envelope,
                previous.snapshot.filter({ $0.key != "document_id" }) != result.snapshot.filter({ $0.key != "document_id" }) {
@@ -200,7 +200,7 @@ struct NovaModuleEditor: View {
                 "values":.object(Dictionary(uniqueKeysWithValues:keys.map { ($0,values[$0]?.rpc ?? .null) })),
                 "document_id":document.isEmpty ? .null : .string(document)]
             let _: [String: NovaModuleValue] = try await NovaModuleMutationJournal.run(function:"isg_pilot_module_mutate_v1",identity:identity,company:company,action:action,payload:payload,
-                rpc:{ function,args in try await SupabaseService.shared.client.rpc(function,params:args).execute().data },validate:check,
+                rpc:{ function,args in try await NovaExpertTransport.shared.execute(function,params:args, ticket: NovaExpertTransport.shared.capture()) },validate:check,
                 decode:{ try JSONDecoder().decode([String:NovaModuleValue].self,from:$0) })
             busy=false
             if close { dismiss() } else { await load(preserveValues:true) }

@@ -43,25 +43,32 @@ struct NovaEquipmentItemSheet: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 10) {
-                heading
-                chips
-                if startRecording {
-                    compactPeriod
-                    if canWrite { recordPanel }
-                } else {
-                    explanation
-                    facts
-                    periodCard
-                    if canWrite { recordPanel }
-                    history
-                }
-                if let error {
-                    NovaText(text: error, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme))
-                }
-                if !startRecording { controls }
-            }.padding(16).novaPopupContentSize()
+        NovaPageSurface(onEdgeBack: onClosed) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 9) {
+                        NovaBackButton { onClosed() }
+                        NovaText(text: "Ekipman detayı", style: .screenTitle)
+                        Spacer(minLength: 0)
+                    }
+                    heading
+                    chips
+                    if startRecording {
+                        compactPeriod
+                        if canWrite { recordPanel }
+                    } else {
+                        explanation
+                        facts
+                        periodCard
+                        if canWrite { recordPanel }
+                        history
+                    }
+                    if let error {
+                        NovaText(text: error, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme))
+                    }
+                    if !startRecording { controls }
+                }.padding(.horizontal, 16).padding(.top, 8).padding(.bottom, novaTabBarInset)
+            }
         }
         .task {
             guard let company = row.companyID else { return }
@@ -158,20 +165,25 @@ struct NovaEquipmentItemSheet: View {
         NovaCard(padding: 11) {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 7), GridItem(.flexible(), spacing: 7)],
                       alignment: .leading, spacing: 7) {
-                cell("calendar", RDLocalization.string("localizable.nova.equipment.field.last", table: .localizable, fallback: "Son kontrol"),
-                     row.lastPerformedOn ?? "—")
-                cell("checkmark.seal", RDLocalization.string("localizable.nova.equipment.field.result", table: .localizable, fallback: "Sonuç"),
-                     NovaEquipmentWords.result(row.lastResult))
-                cell("calendar.badge.clock", RDLocalization.string("localizable.nova.equipment.field.next", table: .localizable, fallback: "Sonraki kontrol"),
+                if let performed = row.lastPerformedOn {
+                    cell("calendar", RDLocalization.string("localizable.nova.equipment.field.last", table: .localizable, fallback: "Son kontrol"), performed)
+                }
+                if let result = row.lastResult {
+                    cell("checkmark.seal", RDLocalization.string("localizable.nova.equipment.field.result", table: .localizable, fallback: "Sonuç"), NovaEquipmentWords.result(result))
+                }
+                cell("calendar.badge.clock",
+                     RDLocalization.string("localizable.nova.equipment.field.next", table: .localizable, fallback: "Sonraki kontrol"),
                      row.nextDueOn ?? RDLocalization.string("localizable.nova.equipment.no.due", table: .localizable, fallback: "Tarih yok"),
-                     // Whose answer that date is, said rather than assumed.
-                     detail: NovaEquipmentWords.due(row.dueSource))
-                cell("person", RDLocalization.string("localizable.nova.equipment.field.inspector", table: .localizable, fallback: "Kontrolü yapan"),
-                     row.lastInspector ?? "—")
-                cell("building.2", RDLocalization.string("localizable.nova.document.field.scope", table: .localizable, fallback: "Kapsam"),
-                     workplaces.first { $0.id == row.workplaceID }?.name ?? "—")
-                cell("number", RDLocalization.string("localizable.nova.equipment.field.ref", table: .localizable, fallback: "Rapor no"),
-                     row.lastExternalRef ?? "—")
+                     detail: row.nextDueOn == nil ? "" : NovaEquipmentWords.due(row.dueSource))
+                if let inspector = row.lastInspector, !inspector.isEmpty {
+                    cell("person", RDLocalization.string("localizable.nova.equipment.field.inspector", table: .localizable, fallback: "Kontrolü yapan"), inspector)
+                }
+                if let scope = workplaces.first(where: { $0.id == row.workplaceID })?.name {
+                    cell("building.2", RDLocalization.string("localizable.nova.document.field.scope", table: .localizable, fallback: "Kapsam"), scope)
+                }
+                if let reference = row.lastExternalRef, !reference.isEmpty {
+                    cell("number", RDLocalization.string("localizable.nova.equipment.field.ref", table: .localizable, fallback: "Rapor no"), reference)
+                }
                 // Informational only: it moves no state and no counter, and the
                 // detail line says whose statement it is.
                 cell("text.bubble", RDLocalization.string("localizable.nova.equipment.field.katip", table: .localizable, fallback: "İSG-KATİP"),
@@ -181,6 +193,10 @@ struct NovaEquipmentItemSheet: View {
                      detail: row.katipDeclared
                         ? RDLocalization.string("localizable.nova.equipment.katip.declared", table: .localizable, fallback: "uzman beyanı")
                         : "")
+            }
+            if row.lastPerformedOn == nil && row.nextDueOn == nil && row.lastResult == nil {
+                NovaText(text: "Bu ekipman için henüz kontrol kaydı yok.", style: .metaQuiet)
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.top, 3)
             }
             if row.katipDeclared, let note = row.katipNote, !note.isEmpty {
                 NovaText(text: note, style: .metaQuiet)
@@ -203,17 +219,19 @@ struct NovaEquipmentItemSheet: View {
                 if let months = row.periodMonths {
                     NovaText(text: String(format: RDLocalization.string("localizable.nova.equipment.period.value", table: .localizable,
                         fallback: "%1$d ay · %2$@"), months, NovaEquipmentWords.source(row.periodSource)), style: .meta)
-                    if row.periodNeedsReview == true {
-                        NovaText(text: row.periodSource == .regulationDefault
-                            ? RDLocalization.string("localizable.nova.equipment.period.default.review", table: .localizable,
-                                fallback: "Bu, ürünün bu tür için başlattığı genel süredir; bu firma için henüz onaylanmadı. Süreler ekranından onaylayın veya değiştirin.")
-                            : RDLocalization.string("localizable.nova.equipment.period.review", table: .localizable,
-                                fallback: "Bu süre uzmanın kendi kararıdır; doğrulanmış bir mevzuat kaynağına bağlanmadı."),
-                            style: .micro, color: NovaColorToken.statusWarningInk.color(in: scheme))
-                    }
-                    if let note = row.periodExceptionNote, !note.isEmpty {
-                        NovaText(text: note, style: .metaQuiet)
-                    }
+                    DisclosureGroup("Neden bu süre?") {
+                        VStack(alignment: .leading, spacing: 5) {
+                            if row.periodNeedsReview == true {
+                                NovaText(text: row.periodSource == .regulationDefault
+                                    ? RDLocalization.string("localizable.nova.equipment.period.default.review", table: .localizable,
+                                        fallback: "Bu, ürünün bu tür için başlattığı genel süredir; bu firma için henüz onaylanmadı. Süreler ekranından onaylayın veya değiştirin.")
+                                    : RDLocalization.string("localizable.nova.equipment.period.review", table: .localizable,
+                                        fallback: "Bu süre uzmanın kendi kararıdır; doğrulanmış bir mevzuat kaynağına bağlanmadı."),
+                                    style: .micro, color: NovaColorToken.statusWarningInk.color(in: scheme))
+                            }
+                            if let note = row.periodExceptionNote, !note.isEmpty { NovaText(text: note, style: .metaQuiet) }
+                        }.padding(.top, 3)
+                    }.font(NovaFont.font(.meta))
                 } else {
                     NovaText(text: RDLocalization.string("localizable.nova.equipment.period.none", table: .localizable,
                         fallback: "Bu tür için süre tanımlı değil. Süre tanımlanana kadar sonraki kontrol tarihi üretilmez."),
@@ -540,8 +558,21 @@ struct NovaEquipmentItemSheet: View {
             HStack(spacing: 8) {
                 action("square.and.pencil", RDLocalization.string("localizable.nova.document.edit.short", table: .localizable, fallback: "Düzenle"),
                        id: "edit", status: .neutral) { editing = true }
-                action("archivebox", RDLocalization.string("localizable.nova.equipment.archive", table: .localizable, fallback: "Envanterden çıkar"),
-                       id: "archive", status: .danger) { confirmingArchive = true }
+                Menu {
+                    Button(role: .destructive) {
+                        confirmingArchive = true
+                    } label: {
+                        Label(RDLocalization.string("localizable.nova.equipment.archive", table: .localizable, fallback: "Envanterden çıkar"), systemImage: "archivebox")
+                    }
+                } label: {
+                    HStack(spacing: 7) {
+                        Image(systemName: "ellipsis.circle").font(.system(size: 14, weight: .semibold))
+                        NovaText(text: "Diğer", style: .meta)
+                    }
+                    .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 14))
+                }.accessibilityIdentifier("equipment.more")
             }
             if confirmingArchive {
                 NovaText(text: RDLocalization.string("localizable.nova.equipment.archive.confirm", table: .localizable,
@@ -755,6 +786,7 @@ struct NovaEquipmentInspectionFlow: View {
     var canWrite = true
     let onChanged: () -> Void
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.dismiss) private var dismiss
     @State private var selected: NovaEquipmentItem?
     @State private var addingEquipment = false
     @State private var query = ""
@@ -766,11 +798,12 @@ struct NovaEquipmentInspectionFlow: View {
 
     var body: some View {
         if let selected {
-            NovaEquipmentItemSheet(item: selected,
+            NovaEquipmentInspectionTask(item: selected,
                 rule: rules.first { $0.equipmentType == selected.equipmentType },
-                workplaces: workplaces, client: client, canWrite: canWrite,
-                startRecording: true, onChanged: onChanged,
-                onClosed: { self.selected = nil })
+                client: client, canWrite: canWrite,
+                onChanged: onChanged,
+                onClose: { self.selected = nil },
+                onDone: { dismiss() })
         } else if addingEquipment {
             NovaEquipmentAddSheet(companies: companies, preselected: company,
                 suggestions: suggestions, rules: rules, workplaces: workplaces, client: client) {
@@ -778,10 +811,12 @@ struct NovaEquipmentInspectionFlow: View {
                     onChanged()
                 }
         } else {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
-                    NovaPopupHeading(text: "Periyodik kontrol ekle", symbol: "checkmark.shield",
-                        subtitle: "Kontrolün uygulanacağı ekipmanı seçin.")
+            NovaPageSurface {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
+                        NovaTaskHeader(title: "Periyodik kontrol", step: 1, total: 3,
+                                       stepTitle: "Ekipman") { dismiss() }
+                        NovaText(text: "Kontrol yapılacak ekipmanı seçin. Kayıt, seçtiğiniz ekipmanın geçmişine eklenir.", style: .body)
                     if !items.isEmpty {
                         NovaAnalysisSearchField(text: $query, placeholder: "Ekipman türü veya seri/kod ara",
                             identifier: "equipment.inspection.search")
@@ -818,8 +853,214 @@ struct NovaEquipmentInspectionFlow: View {
                     }
                     NovaButton(label: items.isEmpty ? "İlk ekipmanı ekle" : "Yeni ekipman ekle",
                         symbol: "plus", variant: .surface, isEnabled: canWrite) { addingEquipment = true }
-                }.padding(16).novaPopupContentSize()
+                    }.padding(.horizontal, 18).padding(.top, 10).padding(.bottom, 28)
+                }
             }
+        }
+    }
+}
+
+/// The actual inspection is a short, linear task. The equipment picker above
+/// is deliberately separate so the control itself can keep the three promised
+/// steps visible: result, optional details, and report.
+private struct NovaEquipmentInspectionTask: View {
+    private enum Step: CaseIterable { case control, details, report
+        var title: String {
+            switch self { case .control: return "Kontrol"; case .details: return "Detaylar"; case .report: return "Rapor" }
+        }
+    }
+
+    let item: NovaEquipmentItem
+    let rule: NovaEquipmentRule?
+    let client: NovaEquipmentCheckClient
+    var canWrite = true
+    let onChanged: () -> Void
+    let onClose: () -> Void
+    let onDone: () -> Void
+    @Environment(\.colorScheme) private var scheme
+    @State private var draft = NovaEquipmentInspectionDraft()
+    @State private var step: Step = .control
+    @State private var reports: [NovaFileEntry] = []
+    @State private var choosingReport = false
+    @State private var busy = false
+    @State private var didSave = false
+    @State private var error: String?
+    @State private var confirmingExit = false
+
+    private var stepNumber: Int { (Step.allCases.firstIndex(of: step) ?? 0) + 1 }
+    private var canContinue: Bool {
+        switch step {
+        case .control: return !draft.performedOn.trimmingCharacters(in: .whitespaces).isEmpty
+        case .details: return true
+        case .report: return draft.isReady
+        }
+    }
+
+    var body: some View {
+        Group {
+            if didSave {
+                NovaTaskSuccessView(title: "Kontrol kaydedildi",
+                    message: "\(NovaEquipmentWords.type(item.equipmentType)) kontrolü ekipman geçmişine eklendi.",
+                    doneTitle: "Kontrollere dön", onDone: onDone)
+            } else {
+                NovaPageSurface {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            NovaTaskHeader(title: "Periyodik kontrol", step: stepNumber,
+                                           total: Step.allCases.count, stepTitle: step.title) {
+                                confirmingExit = true
+                            }
+                            NovaCard(padding: 13, tint: NovaColorToken.surfaceMuted.color(in: scheme)) {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    NovaText(text: NovaEquipmentWords.type(item.equipmentType), style: .bodyStrong)
+                                    NovaText(text: [item.serialTag, item.locationNote].compactMap { $0 }.joined(separator: " · "), style: .metaQuiet)
+                                }
+                            }
+                            if let error { NovaTaskErrorSummary(message: error) }
+                            switch step {
+                            case .control: controlStep
+                            case .details: detailsStep
+                            case .report: reportStep
+                            }
+                        }
+                        .padding(.horizontal, 18).padding(.top, 10).padding(.bottom, 28)
+                    }
+                    .scrollDismissesKeyboard(.interactively)
+                    .safeAreaInset(edge: .bottom) {
+                        NovaTaskStickyActions(primaryTitle: step == .report ? "Kontrolü kaydet" : "Devam",
+                            primarySymbol: step == .report ? "checkmark" : "arrow.right",
+                            isWorking: busy, canGoBack: step != .control,
+                            onBack: previous, onPrimary: advance)
+                    }
+                }
+            }
+        }
+        .task {
+            if draft.performedOn.isEmpty { draft.performedOn = NovaDayField.text(Date()) }
+            fillNextDue()
+            if let company = item.companyID { reports = (try? await client.filedReports(company)) ?? [] }
+        }
+        .onChange(of: draft.performedOn) { _ in fillNextDue() }
+        .onChange(of: draft.result) { value in if value == "fail" { draft.nextDueOn = "" } else { fillNextDue() } }
+        .confirmationDialog("Kontrol akışından çıkılsın mı?", isPresented: $confirmingExit,
+            titleVisibility: .visible) {
+                Button("Çık", role: .destructive, action: onClose)
+                Button("Devam et", role: .cancel) {}
+            } message: { Text("Henüz kaydedilmemiş bilgiler silinir.") }
+    }
+
+    private var controlStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaText(text: "Kontrol sonucu", style: .sectionTitle)
+            NovaDayField(label: "Kontrol tarihi", value: $draft.performedOn,
+                         identifier: "equipment.task.performed")
+            VStack(alignment: .leading, spacing: 7) {
+                NovaText(text: "Sonuç", style: .label)
+                HStack(spacing: 7) {
+                    ForEach(["pass", "conditional", "fail"], id: \.self) { value in
+                        Button { draft.result = value } label: {
+                            NovaText(text: NovaEquipmentWords.result(value), style: .buttonSm)
+                                .frame(maxWidth: .infinity, minHeight: 42)
+                                .background(draft.result == value ? NovaColorToken.accent.color(in: scheme) : NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 12))
+                        }.buttonStyle(NovaRowPressStyle()).accessibilityIdentifier("equipment.task.result.\(value)")
+                    }
+                }
+            }
+            if draft.result == "fail" {
+                NovaTaskErrorSummary(message: "Olumsuz sonuçta sonraki kontrol tarihi oluşturulmaz.")
+            } else {
+                NovaDayField(label: "Sonraki kontrol (isteğe bağlı)", value: $draft.nextDueOn,
+                             identifier: "equipment.task.due", isClearable: true)
+                if let months = item.periodMonths {
+                    NovaText(text: "\(months) aylık süreye göre otomatik dolduruldu; gerekirse değiştirebilirsiniz.", style: .micro)
+                }
+            }
+        }
+    }
+
+    private var detailsStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaText(text: "Ek bilgileri yalnız gerekiyorsa doldurun.", style: .body)
+            taskField("Kontrolü yapan", value: $draft.inspector, id: "inspector")
+            taskField("Rapor no", value: $draft.externalRef, id: "ref")
+            Button { draft.katipDeclared.toggle() } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: draft.katipDeclared ? "checkmark.square.fill" : "square")
+                    NovaText(text: "İSG-KATİP ataması yapıldı", style: .body)
+                    Spacer(minLength: 0)
+                }.frame(minHeight: 42)
+            }.buttonStyle(NovaRowPressStyle())
+            if draft.katipDeclared { taskField("Atama notu", value: $draft.katipNote, id: "katip") }
+            taskField("Not (isteğe bağlı)", value: $draft.note, id: "note")
+        }
+    }
+
+    private var reportStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaText(text: "Rapor bağlamak isteğe bağlıdır. Arşivde hazır olan bir dosyayı seçebilirsiniz.", style: .body)
+            NovaFileChooserButton(label: "Arşivdeki rapor",
+                value: draft.evidenceTitle ?? "Rapor seçilmedi", symbol: "doc",
+                isOpen: choosingReport, isAnswered: draft.evidenceAssetID != nil,
+                identifier: "equipment.task.report") { choosingReport.toggle() }
+            if choosingReport {
+                if reports.isEmpty {
+                    NovaText(text: "Bu firmaya ait hazır rapor bulunamadı.", style: .metaQuiet)
+                } else {
+                    NovaFileChooserPanel(options: [.init(id: nil, title: "Rapor seçilmedi", symbol: "xmark")] + reports.map { .init(id: $0.id.uuidString, title: $0.title, symbol: "doc") },
+                        selected: draft.evidenceAssetID?.uuidString, identifier: "equipment.task.report.panel") { id in
+                            let file = reports.first { $0.id.uuidString == id }
+                            draft.evidenceAssetID = file?.id; draft.evidenceTitle = file?.title; choosingReport = false
+                        }
+                }
+            }
+            NovaCard(padding: 13, tint: NovaColorToken.surfaceMuted.color(in: scheme)) {
+                VStack(alignment: .leading, spacing: 5) {
+                    NovaText(text: "Kayda hazır", style: .bodyStrong)
+                    NovaText(text: "Tarih, sonuç ve eklediğiniz bilgiler ekipmanın kontrol geçmişine yazılacak.", style: .metaQuiet)
+                }
+            }
+        }
+    }
+
+    private func taskField(_ label: String, value: Binding<String>, id: String) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            NovaText(text: label, style: .label)
+            TextField(label, text: value).font(NovaFont.font(.body)).frame(minHeight: 38)
+                .accessibilityIdentifier("equipment.task.\(id)")
+                .novaControlBackground(cornerRadius: 12)
+        }
+    }
+
+    private func previous() {
+        guard let index = Step.allCases.firstIndex(of: step), index > 0 else { return }
+        step = Step.allCases[index - 1]
+    }
+
+    private func advance() {
+        if step == .report { save(); return }
+        if !canContinue { error = "Bu adımı tamamlamak için kontrol tarihini girin."; return }
+        guard let index = Step.allCases.firstIndex(of: step), index + 1 < Step.allCases.count else { return }
+        error = nil; step = Step.allCases[index + 1]
+    }
+
+    private func fillNextDue() {
+        guard draft.result != "fail", let months = item.periodMonths,
+              let performed = NovaDayField.date(draft.performedOn),
+              let next = Calendar(identifier: .gregorian).date(byAdding: .month, value: months, to: performed)
+        else { return }
+        draft.nextDueOn = NovaDayField.text(next)
+    }
+
+    private func save() {
+        guard canWrite, draft.isReady else { error = "Kontrol tarihi ve geçerli bir sonuç girin."; return }
+        Task {
+            busy = true; error = nil
+            do {
+                _ = try await client.recordInspection(item, draft)
+                onChanged(); didSave = true
+            }
+            catch { self.error = NovaEquipmentWords.failure(.unavailable) }
+            busy = false
         }
     }
 }

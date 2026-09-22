@@ -48,6 +48,20 @@ import Foundation
         return try JSONDecoder().decode(WorkplaceEnvelope.self, from: data).rows
     }
 
+    /// Legacy companies can predate the invariant that every company has one
+    /// default workplace. Filing must repair that server-side gap instead of
+    /// leaving the user on a disabled confirmation button.
+    func filingWorkplaces(_ scope: NovaPersonnelScope) async throws -> [NovaNonconformityWorkplace] {
+        let existing = try await workplaces(scope)
+        guard existing.isEmpty else { return existing }
+        try check(scope)
+        _ = try await rpc("isg_analysis_filing_workplace_v1", ["p_company": .id(scope.companyID)])
+        try check(scope)
+        let repaired = try await workplaces(scope)
+        guard !repaired.isEmpty else { throw NovaNonconformityFailure.unavailable }
+        return repaired
+    }
+
     /// The operation and mutation identifiers travel with the request, so a retry
     /// returns the first answer instead of opening a second record.
     func open(_ scope: NovaPersonnelScope, intent: NovaNonconformityIntent,
@@ -116,7 +130,9 @@ import Foundation
             "p_operation": .id(operationID), "p_mutation": .id(mutationID),
             "p_payload": .object(payload)])
         try check(scope)
-        return try JSONDecoder().decode(MutationEnvelope.self, from: data).row
+        let row = try JSONDecoder().decode(MutationEnvelope.self, from: data).row
+        NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: scope.ownerID)
+        return row
     }
 
     func detail(_ scope: NovaPersonnelScope, id: UUID) async throws -> NovaNonconformityRow {
@@ -138,7 +154,9 @@ import Foundation
             "p_company": .id(scope.companyID), "p_action": .string("add_action"),
             "p_operation": .id(operationID), "p_mutation": .id(mutationID), "p_payload": .object(payload)])
         try check(scope)
-        return try JSONDecoder().decode(MutationEnvelope.self, from: data).row
+        let row = try JSONDecoder().decode(MutationEnvelope.self, from: data).row
+        NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: scope.ownerID)
+        return row
     }
 
     func verify(_ scope: NovaPersonnelScope, id: UUID, accepted: Bool, note: String?,
@@ -151,7 +169,9 @@ import Foundation
             "p_company": .id(scope.companyID), "p_action": .string("verify"),
             "p_operation": .id(operationID), "p_mutation": .id(mutationID), "p_payload": .object(payload)])
         try check(scope)
-        return try JSONDecoder().decode(MutationEnvelope.self, from: data).row
+        let row = try JSONDecoder().decode(MutationEnvelope.self, from: data).row
+        NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: scope.ownerID)
+        return row
     }
 
     /// The published Fine-Kinney values are sent as text so no floating-point
@@ -200,7 +220,8 @@ import Foundation
             "p_operation": .id(operationID), "p_mutation": .id(mutationID),
             "p_payload": .object(payload)])
         try check(scope)
-        return try JSONDecoder().decode(MutationEnvelope.self, from: data).row
+        let row = try JSONDecoder().decode(MutationEnvelope.self, from: data).row
+        NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: scope.ownerID)
+        return row
     }
 }
-

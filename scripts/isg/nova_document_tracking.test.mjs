@@ -10,6 +10,7 @@ const model=read('App/DesignSystem/ISG/NovaDocumentTracking.swift');
 const screen=read('App/DesignSystem/ISG/NovaDocumentTrackingScreens.swift');
 const sheets=read('App/DesignSystem/ISG/NovaDocumentTrackingSheets.swift');
 const service=read('App/Services/Company/NovaDocumentTrackingService.swift');
+const adapter=read('App/Services/Company/NovaDocumentTrackingLiveAdapter.swift');
 const gate=read('App/Views/Components/NovaPilotDocumentGate.swift');
 const portfolio=read('supabase/migrations/20260914230000_isg_document_portfolio.sql');
 // The ban is on what the product says and does, not on the word appearing in a
@@ -97,7 +98,8 @@ test('every read and every write re-checks the scope it was given',()=>{
 
 test('the menu entry lands on the tracker and on nothing else',()=>{
   const main=read('App/Views/Components/NovaPilotMainGate.swift');
-  assert.match(main,/case \.documentChecklist:\s*\n\s*if let workspaceStore \{ workspaceDomain\(workspaceStore, \.files\) \} else \{ documents \}/);
+  assert.match(main,/case \.documentChecklist:\s*\n\s*documents/);
+  assert.match(adapter,/NovaExpertTransport\.shared\.capture\(\)/);
   assert.match(main,/NovaPilotDocumentGate\(identity: identity/);
   const navigation=read('App/DesignSystem/ISG/NovaNavigation.swift');
   assert.ok(navigation.includes('.documentChecklist,'));

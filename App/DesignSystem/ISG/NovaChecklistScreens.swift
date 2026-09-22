@@ -4,333 +4,340 @@ import SwiftUI
 /// module these closures.
 struct NovaChecklistClient {
     let catalogue: (UUID?) async throws -> NovaChecklistCatalogue
+    let library: (String, String?, String?, Int) async throws -> NovaChecklistLibrary
+    let templateDetail: (String) async throws -> NovaChecklistTemplateDetail
     let templates: (UUID?) async throws -> [NovaChecklistTemplate]
+    let assignments: (UUID) async throws -> [NovaChecklistAssignment]
     let board: (NovaChecklistQuery) async throws -> NovaChecklistBoard
     let companies: () async throws -> [NovaAnalysisCompanyOption]
     let detail: (UUID) async throws -> NovaChecklistRun
-    let startRun: (UUID, UUID, String, String) async throws -> NovaChecklistRun?
-    let answer: (UUID, NovaChecklistAnswerDraft) async throws -> NovaChecklistRun?
-    let submit: (UUID, UUID) async throws -> NovaChecklistRun?
-    let cancel: (UUID, UUID) async throws -> NovaChecklistRun?
-    let draftTemplate: (UUID, String) async throws -> Void
-    let setItem: (UUID, String, Int, String, String, Bool, Int) async throws -> Void
-    let removeItem: (UUID, String, Int, String) async throws -> Void
-    let publishTemplate: (UUID, String, Int, String) async throws -> Void
+    let startRun: (UUID?, UUID?, String, String, String, String, String) async throws -> NovaChecklistRun?
+    let answer: (UUID?, NovaChecklistAnswerDraft) async throws -> NovaChecklistRun?
+    let uploadEvidence: (UUID, IsgWorkspaceAttachmentDraft) async throws -> UUID
+    let submit: (UUID?, UUID, Int64) async throws -> NovaChecklistRun?
+    let cancel: (UUID?, UUID, Int64) async throws -> NovaChecklistRun?
+    let revise: (UUID?, UUID, Int64, String) async throws -> NovaChecklistRun?
+    let draftTemplate: (UUID?, String) async throws -> Void
+    let setItem: (UUID?, String, Int, Int64, String, String, Bool, Int) async throws -> Void
+    let copyItems: (UUID?, String, Int, Int64, [NovaChecklistItemSelection]) async throws -> Void
+    let reorderItems: (UUID?, String, Int, Int64, [String]) async throws -> Void
+    let removeItem: (UUID?, String, Int, Int64, String) async throws -> Void
+    let publishTemplate: (UUID?, String, Int, Int64, String) async throws -> Void
+    let copyTemplate: (UUID?, String, String?) async throws -> Void
+    let assignTemplate: (UUID, UUID?, String) async throws -> Void
+    let deactivateAssignment: (UUID, UUID) async throws -> Void
+    let pendingAnswers: () -> (total: Int, conflicts: Int)
+    let syncPendingAnswers: () async -> (total: Int, conflicts: Int)
 }
 
-/// One counter, in the same shape the rest of the modules use.
-struct NovaChecklistStatCard: View {
-    let state: NovaChecklistRunState
-    let value: Int
-    var isSelected = false
-    let onTap: () -> Void
-    var body: some View {
-        NovaListStat(title: state.title, symbol: state.symbol, value: value,
-            isSelected: isSelected, onTap: onTap)
-            .accessibilityIdentifier("nova.checklist.stat.\(state.rawValue)")
-    }
-}
-
-/// One run as a row.
-struct NovaChecklistRunCard: View {
-    let run: NovaChecklistRun
-    let onTap: () -> Void
-    @Environment(\.colorScheme) private var scheme
-
-    private var status: NovaStatus {
-        switch run.state {
-        case .open: return .info
-        case .submitted: return run.nonconform > 0 ? .warning : .success
-        case .cancelled: return .neutral
-        }
-    }
-
-    var body: some View {
-        Button(action: onTap) {
-            NovaCard(padding: 14) {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(alignment: .top, spacing: 8) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            NovaText(text: run.templateTitle ?? run.templateCode, style: .cardTitle)
-                            NovaText(text: [run.workplaceName, run.companyName]
-                                .compactMap { $0 }.joined(separator: " · "), style: .meta,
-                                color: NovaColorToken.textSecondary.color(in: scheme))
-                        }
-                        Spacer(minLength: 0)
-                        NovaStatusPill(label: run.state.title, status: status)
-                    }
-                    NovaText(text: NovaChecklistWords.explain(run), style: .meta,
-                        color: NovaColorToken.textSecondary.color(in: scheme))
-                    HStack(spacing: 10) {
-                        fact("calendar", RDLocalization.string("localizable.nova.checklist.row.started",
-                            table: .localizable, fallback: "Başlangıç"), run.startedOn)
-                        fact("number", RDLocalization.string("localizable.nova.checklist.row.version",
-                            table: .localizable, fallback: "Liste sürümü"), "v\(run.templateVersion)")
-                    }
-                    if run.nonconformitiesOpened > 0 {
-                        NovaAnalysisTag(symbol: "exclamationmark.triangle",
-                            text: String(format: RDLocalization.string("localizable.nova.checklist.row.opened",
-                                table: .localizable, fallback: "%d uygunsuzluk kaydı açıldı"),
-                                run.nonconformitiesOpened), status: .warning)
-                    }
-                }
-            }
-        }
-        .buttonStyle(NovaRowPressStyle())
-        .accessibilityIdentifier("nova.checklist.row.\(run.id.uuidString)")
-    }
-
-    @ViewBuilder private func fact(_ symbol: String, _ label: String, _ value: String) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: symbol).font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(NovaColorToken.textMuted.color(in: scheme))
-            VStack(alignment: .leading, spacing: 0) {
-                NovaSizedText(text: label, size: 9, weight: "Medium",
-                    color: NovaColorToken.textMuted.color(in: scheme))
-                NovaSizedText(text: value, size: 11, weight: "Bold")
-            }
-        }
-    }
-}
-
-/// The Kontrol Listeleri surface: the runs, and the lists they are filled
-/// against.
+/// The module opens on real controls. Reusable lists live on their own page,
+/// because a template and a field control are different mental objects.
 struct NovaChecklistScreen: View {
     let client: NovaChecklistClient
     let onBack: () -> Void
-    var canWrite: Bool = true
+    var canWrite = true
     var initialCompany: UUID?
     var headingOverride: String?
 
     @State private var board: NovaChecklistBoard?
-    @State private var catalogue: NovaChecklistCatalogue?
-    @State private var templates: [NovaChecklistTemplate] = []
     @State private var companies: [NovaAnalysisCompanyOption] = []
-    @State private var query = NovaChecklistQuery()
-    @State private var tab = 0
+    @State private var query = NovaChecklistQuery(state: NovaChecklistRunState.open.rawValue)
     @State private var loading = true
     @State private var failure: String?
-    @State private var openChooser: String?
-    @State private var detail: NovaChecklistRun?
-    @State private var showingTemplates = false
+    @State private var showingFilters = false
     @State private var showingStart = false
+    @State private var showingLists = false
+    @State private var detail: NovaChecklistRun?
     @State private var startedRun: NovaChecklistRun?
+    @State private var preselectedTemplate: String?
+    @State private var pendingAnswerCount = 0
+    @State private var conflictAnswerCount = 0
     @Environment(\.colorScheme) private var scheme
 
-    private var allCompanies: String {
-        RDLocalization.string("localizable.nova.checklist.filter.companies", table: .localizable, fallback: "Tüm firmalar")
-    }
-    private var allStates: String {
-        RDLocalization.string("localizable.nova.checklist.filter.states", table: .localizable, fallback: "Tüm durumlar")
+    private var selectedState: NovaChecklistRunState {
+        NovaChecklistRunState(rawValue: query.state ?? "open") ?? .open
     }
 
     var body: some View {
         NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
+                LazyVStack(alignment: .leading, spacing: 16) {
                     header
-                    NovaHelpHint(text: "Kontrol listesini seçin, soruları yanıtlayın ve sonucu kaydedin.")
-                    NovaHelpHint(text: NovaChecklistWords.noProductList)
-                    if let board { counters(board) }
-                    filters
-                    if loading && board == nil {
-                        ProgressView().frame(maxWidth: .infinity).padding(.vertical, 30)
-                    } else if let failure {
-                        NovaCard(padding: 16) {
-                            NovaText(text: failure, style: .body,
-                                color: NovaColorToken.statusDangerInk.color(in: scheme))
-                        }
-                    } else if let board {
-                        list(board)
-                    }
-
+                    templateLibraryLink
+                    offlineNotice
+                    statePicker
+                    searchAndFilter
+                    summary
+                    content
                 }
-                .padding(.horizontal, 20).padding(.top, 12)
+                .padding(.horizontal, 18)
+                .padding(.top, 12)
                 .padding(.bottom, 24 + novaTabBarInset)
             }
+            .refreshable { await syncPending(); await load(reset: true) }
         }
-        .task { await load(reset: true) }
-        .novaPopup(isPresented: $showingStart, onDismiss: {
-            if let startedRun { detail = startedRun; self.startedRun = nil }
-            Task { await load(reset: true) }
-        }) {
-            NovaCompanyCreateFlow(title: "Kontrol başlat", companies: client.companies,
-                catalogue: client.catalogue, onSelect: { _ in }, fixedCompany: initialCompany) { catalogue, company in
-                NovaChecklistStartForm(catalogue: catalogue) { workplace, template, day in
-                    do {
-                        guard let run = try await client.startRun(company, workplace, template, day) else {
-                            return NovaChecklistFailure.unavailable.message
-                        }
-                        startedRun = (try? await client.detail(run.id)) ?? run
-                        showingStart = false
-                        return nil
-                    } catch let error as NovaChecklistFailure { return error.message }
-                    catch { return NovaChecklistFailure.unavailable.message }
-                }
+        .task { await syncPending(); await load(reset: true) }
+        .task(id: query.search) {
+            do { try await Task.sleep(nanoseconds: 280_000_000) }
+            catch { return }
+            guard !Task.isCancelled else { return }
+            await load(reset: true)
+        }
+        .sheet(isPresented: $showingFilters) {
+            NovaChecklistRunFilterSheet(companies: companies, selectedCompany: $query.company) {
+                showingFilters = false
+                Task { await load(reset: true) }
             }
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
         }
-        .novaPopup(item: $detail) { run in
-            NovaChecklistRunSheet(run: run, canWrite: canWrite,
-                onAnswer: { draft in await answer(draft) },
-                onSubmit: { await submit(run) },
-                onCancel: { await cancel(run) },
-                onClose: { detail = nil })
+        .novaFullScreenCover(isPresented: $showingLists) {
+            NovaChecklistListsScreen(client: client, canWrite: canWrite,
+                initialCompany: initialCompany, onBack: { showingLists = false },
+                onStart: { template in
+                    preselectedTemplate = template
+                    showingLists = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        startedRun = nil
+                        showingStart = true
+                    }
+                })
         }
-        .novaPopup(isPresented: $showingTemplates, onDismiss: { Task { await load(reset: true) } }) {
-            NovaCompanyCreateFlow(title: "Kontrol Listeleri", companies: client.companies,
-                catalogue: client.catalogue, onSelect: { _ in }, fixedCompany: initialCompany) { _, company in
-                NovaChecklistAuthoring(client: client, company: company, onClose: { showingTemplates = false })
+        .novaFullScreenCover(isPresented: $showingStart, onDismiss: finishStarting) {
+            NovaChecklistStartFlowScreen(client: client, initialCompany: initialCompany,
+                preselectedTemplate: preselectedTemplate, onStarted: { run in
+                    startedRun = run
+                    preselectedTemplate = nil
+                    showingStart = false
+                }, onClose: { showingStart = false })
+        }
+        .novaFullScreenCover(isPresented: detailPresentation) {
+            if let run = detail {
+                NovaChecklistRunTaskScreen(run: run, canWrite: canWrite,
+                    onAnswer: answer,
+                    onSubmit: { await submit(run) },
+                    onCancel: { await cancel(run) },
+                    onRevise: { await revise(run) },
+                    onClose: { detail = nil })
             }
         }
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            NovaListHeading(title: headingOverride ?? NovaDestination.checklists.title, onBack: onBack) {
-                if canWrite {
-                    NovaButton(label: "Listelerim", symbol: "list.bullet.rectangle", variant: .surface, compact: true) { showingTemplates = true }
-                }
-            }
+        NovaListHeading(title: headingOverride ?? "Kontroller", onBack: onBack) {
             if canWrite {
-                NovaButton(label: "Kontrol başlat", symbol: "play", compact: true) { showingStart = true }
-                    .accessibilityIdentifier("nova.checklist.start")
+                NovaButton(label: "Yeni kontrol", symbol: "plus", compact: true) {
+                    showingStart = true
+                }
+                .accessibilityIdentifier("nova.checklist.start")
             }
         }
     }
 
-    @ViewBuilder private func counters(_ board: NovaChecklistBoard) -> some View {
-        let columns = [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8),
-                       GridItem(.flexible(), spacing: 8)]
-        LazyVGrid(columns: columns, spacing: 8) {
-            ForEach(NovaChecklistRunState.allCases) { state in
-                NovaChecklistStatCard(state: state, value: board.count(state),
-                    isSelected: query.state == state.rawValue) {
-                    query.state = query.state == state.rawValue ? nil : state.rawValue
-                    Task { await load(reset: true) }
+    private var templateLibraryLink: some View {
+        Button { showingLists = true } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "list.bullet.rectangle")
+                    .font(.system(size: 17, weight: .semibold))
+                    .frame(width: 28)
+                VStack(alignment: .leading, spacing: 2) {
+                    NovaText(text: "Kontrol Listeleri", style: .label)
+                    NovaText(text: "Hazır listeleri bulun veya kendi listelerinizi yönetin.", style: .meta,
+                        color: NovaColorToken.textSecondary.color(in: scheme))
                 }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(NovaColorToken.textMuted.color(in: scheme))
             }
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(NovaRowPressStyle())
+        .accessibilityIdentifier("nova.checklist.lists.open")
+    }
+
+    @ViewBuilder private var offlineNotice: some View {
+        if pendingAnswerCount > 0 {
+            HStack(alignment: .top, spacing: 9) {
+                Image(systemName: conflictAnswerCount > 0
+                    ? "exclamationmark.arrow.triangle.2.circlepath" : "icloud.slash")
+                NovaText(text: conflictAnswerCount > 0
+                    ? "\(pendingAnswerCount) çevrimdışı yanıt bekliyor; \(conflictAnswerCount) yanıt yeniden doğrulanmalı."
+                    : "Çevrimdışısınız. \(pendingAnswerCount) değişiklik cihazda güvenle bekliyor.",
+                    style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
+            }
+            .padding(12)
+            .background(NovaColorToken.statusWarningBg.color(in: scheme),
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .accessibilityElement(children: .combine)
         }
     }
 
-    /// Side by side, and the list opens below what was tapped.
-    @ViewBuilder private var filters: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 8) {
-                NovaFileChooserButton(
-                    label: RDLocalization.string("localizable.nova.checklist.filter.company", table: .localizable, fallback: "Firma"),
-                    value: companies.first { $0.id == query.company }?.name ?? allCompanies,
-                    isOpen: openChooser == "company",
-                    identifier: "nova.checklist.chooser.company") {
-                    openChooser = openChooser == "company" ? nil : "company"
-                }
-                NovaFileChooserButton(
-                    label: RDLocalization.string("localizable.nova.checklist.filter.state", table: .localizable, fallback: "Durum"),
-                    value: query.state.flatMap { NovaChecklistRunState(rawValue: $0)?.title } ?? allStates,
-                    isOpen: openChooser == "state",
-                    identifier: "nova.checklist.chooser.state") {
-                    openChooser = openChooser == "state" ? nil : "state"
-                }
-            }
-            if openChooser == "company" {
-                NovaFileChooserPanel(options: companyOptions, selected: query.company?.uuidString,
-                    identifier: "nova.checklist.panel.company") { value in
-                    query.company = value.flatMap(UUID.init(uuidString:))
-                    openChooser = nil
-                    Task { await load(reset: true) }
-                }
-            }
-            if openChooser == "state" {
-                NovaFileChooserPanel(options: stateOptions, selected: query.state,
-                    identifier: "nova.checklist.panel.state") { value in
-                    query.state = value
-                    openChooser = nil
-                    Task { await load(reset: true) }
-                }
-            }
-            NovaAnalysisSearchField(
-                text: $query.search,
-                placeholder: RDLocalization.string("localizable.nova.checklist.search", table: .localizable,
-                    fallback: "Liste, işyeri veya firma ara"),
+    private var statePicker: some View {
+        Picker("Kontrol durumu", selection: Binding(get: { selectedState }, set: { state in
+            query.state = state.rawValue
+            Task { await load(reset: true) }
+        })) {
+            ForEach(NovaChecklistRunState.allCases) { state in Text(state.title).tag(state) }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityIdentifier("nova.checklist.state.picker")
+    }
+
+    private var searchAndFilter: some View {
+        HStack(spacing: 10) {
+            NovaAnalysisSearchField(text: $query.search, placeholder: "Kontrol ara",
                 identifier: "nova.checklist.search")
-                .onSubmit { Task { await load(reset: true) } }
-        }
-    }
-
-    private var companyOptions: [NovaFileChooserOption] {
-        (initialCompany == nil ? [.init(id: nil, title: allCompanies)] : [])
-            + companies.filter { initialCompany == nil || $0.id == initialCompany }.map { .init(id: $0.id.uuidString, title: $0.name) }
-    }
-    private var stateOptions: [NovaFileChooserOption] {
-        [.init(id: nil, title: allStates)]
-            + NovaChecklistRunState.allCases.map {
-                .init(id: $0.rawValue, title: $0.title, count: board?.count($0), symbol: $0.symbol) }
-    }
-
-    @ViewBuilder private func list(_ board: NovaChecklistBoard) -> some View {
-        if board.rows.isEmpty {
-            NovaEmptyState(title: RDLocalization.string("localizable.nova.checklist.empty.title",
-                table: .localizable, fallback: "Henüz kontrol kaydı yok"),
-                message: "Bir kontrol listesi seçerek işyeri denetimini başlatabilir ve sonuçları dijital ortamda saklayabilirsiniz.")
-        } else {
-            VStack(spacing: 10) {
-                ForEach(board.rows) { run in
-                    NovaChecklistRunCard(run: run) { Task { await openDetail(run) } }
-                }
-                NovaText(text: String(format: RDLocalization.string("localizable.nova.checklist.count",
-                    table: .localizable, fallback: "%d / %d kayıt"), board.rows.count, board.total),
-                    style: .meta, color: NovaColorToken.textMuted.color(in: scheme))
-                if board.hasMore {
-                    NovaButton(label: RDLocalization.string("localizable.nova.checklist.more", table: .localizable,
-                        fallback: "Daha fazla göster"), symbol: "chevron.down", variant: .surface) {
-                        Task { await load(reset: false) }
+            Button { showingFilters = true } label: {
+                ZStack(alignment: .topTrailing) {
+                    Image(systemName: "line.3.horizontal.decrease")
+                        .font(.system(size: 16, weight: .semibold))
+                        .frame(width: 46, height: 46)
+                        .background(NovaColorToken.surface.color(in: scheme),
+                            in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    if query.company != nil {
+                        Circle().fill(NovaColorToken.accent.color(in: scheme))
+                            .frame(width: 9, height: 9).padding(7)
                     }
                 }
             }
+            .buttonStyle(NovaRowPressStyle())
+            .accessibilityLabel(query.company == nil ? "Filtre" : "Filtre, 1 etkin")
+            .accessibilityIdentifier("nova.checklist.filter")
         }
     }
 
-    // MARK: work
+    @ViewBuilder private var summary: some View {
+        if let board {
+            HStack(spacing: 5) {
+                NovaText(text: "\(board.count(.open)) devam eden", style: .meta,
+                    color: NovaColorToken.textSecondary.color(in: scheme))
+                NovaText(text: "·", style: .meta, color: NovaColorToken.textMuted.color(in: scheme))
+                NovaText(text: "\(board.count(.submitted)) tamamlanan", style: .meta,
+                    color: NovaColorToken.textSecondary.color(in: scheme))
+            }
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    @ViewBuilder private var content: some View {
+        if loading && board == nil {
+            NovaChecklistRunSkeleton()
+        } else if let failure {
+            NovaChecklistMessageState(symbol: "wifi.exclamationmark",
+                title: "Kontrol bilgileri yüklenemedi", message: failure,
+                actionTitle: "Yeniden dene") { Task { await load(reset: true) } }
+        } else if let board, board.rows.isEmpty {
+            NovaChecklistMessageState(symbol: "checklist", title: emptyTitle,
+                message: emptyMessage, actionTitle: nil, action: {})
+        } else if let board {
+            LazyVStack(spacing: 0) {
+                ForEach(board.rows) { run in
+                    NovaChecklistRunRow(run: run) { Task { await openDetail(run) } }
+                    Divider().overlay(NovaColorToken.hairline.color(in: scheme))
+                }
+                if board.hasMore {
+                    NovaButton(label: "Daha fazla göster", symbol: "chevron.down", variant: .surface) {
+                        Task { await load(reset: false) }
+                    }
+                    .padding(.top, 14)
+                }
+            }
+        }
+    }
+
+    private var emptyTitle: String {
+        switch selectedState {
+        case .open: return "Devam eden kontrol yok"
+        case .submitted: return "Tamamlanan kontrol yok"
+        case .cancelled: return "İptal edilen kontrol yok"
+        }
+    }
+
+    private var emptyMessage: String {
+        query.search.isEmpty && query.company == nil
+            ? "Bu durumdaki kontroller burada görünecek."
+            : "Arama kelimenizi veya filtreleri değiştirin."
+    }
+
+    private var detailPresentation: Binding<Bool> {
+        Binding(get: { detail != nil }, set: { if !$0 { detail = nil } })
+    }
+
+    private func finishStarting() {
+        if let startedRun {
+            detail = startedRun
+            self.startedRun = nil
+        }
+        Task { await load(reset: true) }
+    }
 
     private func load(reset: Bool) async {
         if reset { query.offset = 0 } else { query.offset += query.limit }
-        loading = true; failure = nil
+        loading = true
+        failure = nil
         do {
             if companies.isEmpty { companies = try await client.companies() }
             if query.company == nil, let initialCompany { query.company = initialCompany }
-            catalogue = try await client.catalogue(query.company)
-            templates = try await client.templates(query.company)
             let answer = try await client.board(query)
-            if reset || board == nil { board = answer }
-            else if let existing = board {
-                board = .init(rows: existing.rows + answer.rows, counts: answer.counts,
-                              companies: answer.companies, total: answer.total,
-                              hasMore: answer.hasMore, offset: answer.offset)
+            if reset || board == nil {
+                board = answer
+            } else if let current = board {
+                board = .init(rows: current.rows + answer.rows, counts: answer.counts,
+                    companies: answer.companies, total: answer.total,
+                    hasMore: answer.hasMore, offset: answer.offset)
             }
-        } catch let error as NovaChecklistFailure { failure = error.message }
-        catch { failure = NovaChecklistFailure.unavailable.message }
+        } catch let error as NovaChecklistFailure {
+            failure = error.message
+        } catch {
+            failure = "İnternet bağlantınızı kontrol edip yeniden deneyin."
+        }
         loading = false
     }
 
     private func openDetail(_ run: NovaChecklistRun) async {
-        do { detail = try await client.detail(run.id) } catch { detail = run }
+        do { detail = try await client.detail(run.id) }
+        catch { detail = run }
     }
 
-    private func company(for run: NovaChecklistRun) -> UUID? { run.companyID ?? query.company }
+    private func syncPending() async {
+        let pending = await client.syncPendingAnswers()
+        pendingAnswerCount = pending.total
+        conflictAnswerCount = pending.conflicts
+    }
 
-    private func answer(_ draft: NovaChecklistAnswerDraft) async -> String? {
-        guard let run = detail, let company = company(for: run) else { return NovaChecklistFailure.validation.message }
+    private func answer(_ input: NovaChecklistAnswerDraft) async -> String? {
+        guard let current = detail else { return NovaChecklistFailure.validation.message }
         do {
-            if let updated = try await client.answer(company, draft) { detail = updated }
+            var draft = input
+            draft.expectedRevision = current.revision
+            if let attachment = draft.attachment {
+                guard let company = current.companyID else {
+                    return "Bağımsız kontrole firma kanıtı eklenemez."
+                }
+                draft.evidenceAssetID = try await client.uploadEvidence(company, attachment)
+            }
+            if let updated = try await client.answer(current.companyID, draft) {
+                detail = updated
+            } else {
+                detail = NovaChecklistOptimisticAnswer.apply(draft, to: current)
+            }
+            let pending = client.pendingAnswers()
+            pendingAnswerCount = pending.total
+            conflictAnswerCount = pending.conflicts
             await load(reset: true)
             return nil
-        } catch let error as NovaChecklistFailure { return error.message }
-        catch { return NovaChecklistFailure.unavailable.message }
+        } catch let error as NovaChecklistFailure {
+            return error.message
+        } catch {
+            return NovaChecklistFailure.unavailable.message
+        }
     }
 
     private func submit(_ run: NovaChecklistRun) async -> String? {
-        guard let company = company(for: run) else { return NovaChecklistFailure.validation.message }
         do {
-            if let updated = try await client.submit(company, run.id) { detail = updated }
+            if let updated = try await client.submit(run.companyID, run.id, run.revision) { detail = updated }
             await load(reset: true)
             return nil
         } catch let error as NovaChecklistFailure { return error.message }
@@ -338,49 +345,216 @@ struct NovaChecklistScreen: View {
     }
 
     private func cancel(_ run: NovaChecklistRun) async -> String? {
-        guard let company = company(for: run) else { return NovaChecklistFailure.validation.message }
         do {
-            if let updated = try await client.cancel(company, run.id) { detail = updated }
+            if let updated = try await client.cancel(run.companyID, run.id, run.revision) { detail = updated }
             await load(reset: true)
             return nil
         } catch let error as NovaChecklistFailure { return error.message }
         catch { return NovaChecklistFailure.unavailable.message }
     }
 
-    private func draftTemplate(_ title: String) async -> String? {
-        guard let company = query.company else { return NovaChecklistFailure.validation.message }
-        do { try await client.draftTemplate(company, title); templates = try await client.templates(company); return nil }
-        catch let error as NovaChecklistFailure { return error.message }
-        catch { return NovaChecklistFailure.unavailable.message }
-    }
-
-    private func setItem(_ code: String, _ version: Int, _ item: String, _ prompt: String,
-                         _ allowsNA: Bool, _ position: Int) async -> String? {
-        guard let company = query.company else { return NovaChecklistFailure.validation.message }
+    private func revise(_ run: NovaChecklistRun) async -> String? {
         do {
-            try await client.setItem(company, code, version, item, prompt, allowsNA, position)
-            templates = try await client.templates(company); return nil
-        } catch let error as NovaChecklistFailure { return error.message }
-        catch { return NovaChecklistFailure.unavailable.message }
-    }
-
-    private func removeItem(_ code: String, _ version: Int, _ item: String) async -> String? {
-        guard let company = query.company else { return NovaChecklistFailure.validation.message }
-        do {
-            try await client.removeItem(company, code, version, item)
-            templates = try await client.templates(company); return nil
-        } catch let error as NovaChecklistFailure { return error.message }
-        catch { return NovaChecklistFailure.unavailable.message }
-    }
-
-    private func publish(_ code: String, _ version: Int, _ note: String) async -> String? {
-        guard let company = query.company else { return NovaChecklistFailure.validation.message }
-        do {
-            try await client.publishTemplate(company, code, version, note)
-            templates = try await client.templates(company)
-            catalogue = try await client.catalogue(company)
+            if let updated = try await client.revise(run.companyID, run.id, run.revision,
+                NovaDayField.text(Date())) { detail = updated }
+            await load(reset: true)
             return nil
         } catch let error as NovaChecklistFailure { return error.message }
         catch { return NovaChecklistFailure.unavailable.message }
+    }
+}
+
+struct NovaChecklistRunRow: View {
+    let run: NovaChecklistRun
+    let action: () -> Void
+    @Environment(\.colorScheme) private var scheme
+
+    private var scope: String {
+        let text = [run.companyName, run.workplaceName].compactMap { $0 }.joined(separator: " · ")
+        return text.isEmpty ? "Bağımsız kontrol" : text
+    }
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        NovaText(text: run.templateTitle ?? run.templateCode, style: .cardTitle)
+                        NovaText(text: scope, style: .meta,
+                            color: NovaColorToken.textSecondary.color(in: scheme))
+                        NovaText(text: NovaChecklistUXDate.display(run.startedOn), style: .meta,
+                            color: NovaColorToken.textMuted.color(in: scheme))
+                    }
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(NovaColorToken.textMuted.color(in: scheme))
+                        .frame(width: 32, height: 44)
+                }
+                if run.state == .open {
+                    VStack(spacing: 6) {
+                        HStack {
+                            NovaText(text: "\(run.answered) / \(run.expected)", style: .meta)
+                            Spacer()
+                        }
+                        ProgressView(value: Double(run.answered), total: Double(max(run.expected, 1)))
+                            .tint(NovaColorToken.accentInk.color(in: scheme))
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Kontrol ilerlemesi: \(run.expected) sorudan \(run.answered) tamamlandı")
+                } else if run.state == .submitted {
+                    NovaText(text: "\(run.conform) uygun · \(run.nonconform) uygun değil · \(run.notApplicable) uygulanamaz",
+                        style: .meta, color: NovaColorToken.textSecondary.color(in: scheme))
+                }
+                if run.nonconformitiesOpened > 0 {
+                    Label("\(run.nonconformitiesOpened) uygunsuzluk", systemImage: "exclamationmark.triangle")
+                        .font(NovaFont.font(.meta))
+                        .foregroundStyle(NovaColorToken.statusWarningInk.color(in: scheme))
+                }
+            }
+            .padding(.vertical, 14)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(NovaRowPressStyle())
+        .accessibilityIdentifier("nova.checklist.row.\(run.id.uuidString)")
+    }
+}
+
+struct NovaChecklistRunFilterSheet: View {
+    let companies: [NovaAnalysisCompanyOption]
+    @Binding var selectedCompany: UUID?
+    let onApply: () -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Firma") {
+                    choice("Tüm firmalar", id: nil)
+                    ForEach(companies) { company in choice(company.name, id: company.id) }
+                }
+                if selectedCompany != nil {
+                    Section { Button("Tüm filtreleri temizle") { selectedCompany = nil } }
+                }
+            }
+            .navigationTitle("Filtre")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Vazgeç") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Uygula") { onApply(); dismiss() }
+                }
+            }
+        }
+    }
+
+    private func choice(_ title: String, id: UUID?) -> some View {
+        Button { selectedCompany = id } label: {
+            HStack {
+                Text(title)
+                Spacer()
+                if selectedCompany == id { Image(systemName: "checkmark") }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct NovaChecklistRunSkeleton: View {
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(0..<4, id: \.self) { _ in
+                VStack(alignment: .leading, spacing: 10) {
+                    RoundedRectangle(cornerRadius: 4).frame(width: 230, height: 18)
+                    RoundedRectangle(cornerRadius: 4).frame(width: 150, height: 12)
+                    RoundedRectangle(cornerRadius: 4).frame(height: 5)
+                }
+                .padding(.vertical, 15)
+                Divider()
+            }
+        }
+        .foregroundStyle(.secondary.opacity(0.22))
+        .redacted(reason: .placeholder)
+        .accessibilityLabel("Kontroller yükleniyor")
+    }
+}
+
+struct NovaChecklistMessageState: View {
+    let symbol: String
+    let title: String
+    let message: String
+    let actionTitle: String?
+    let action: () -> Void
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        VStack(spacing: 10) {
+            Image(systemName: symbol).font(.system(size: 30, weight: .regular))
+                .foregroundStyle(NovaColorToken.textMuted.color(in: scheme))
+            NovaText(text: title, style: .cardTitle).multilineTextAlignment(.center)
+            NovaText(text: message, style: .meta,
+                color: NovaColorToken.textSecondary.color(in: scheme))
+                .multilineTextAlignment(.center)
+            if let actionTitle {
+                NovaButton(label: actionTitle, symbol: "arrow.clockwise", variant: .surface, action: action)
+                    .frame(maxWidth: 220)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 36)
+    }
+}
+
+enum NovaChecklistUXDate {
+    private static let input: DateFormatter = {
+        let value = DateFormatter(); value.locale = Locale(identifier: "en_US_POSIX")
+        value.dateFormat = "yyyy-MM-dd"; return value
+    }()
+    private static let output: DateFormatter = {
+        let value = DateFormatter(); value.locale = Locale(identifier: "tr_TR")
+        value.dateFormat = "d MMM yyyy"; return value
+    }()
+    static func display(_ value: String) -> String {
+        input.date(from: value).map(output.string(from:)) ?? value
+    }
+}
+
+/// The real server remains authoritative. This only keeps a queued offline
+/// answer visible until replay succeeds; it never invents a submitted state.
+enum NovaChecklistOptimisticAnswer {
+    static func apply(_ draft: NovaChecklistAnswerDraft, to run: NovaChecklistRun) -> NovaChecklistRun {
+        let answers = run.answers.map { answer -> NovaChecklistAnswer in
+            guard answer.itemCode == draft.itemCode else { return answer }
+            return .init(itemCode: answer.itemCode, prompt: answer.prompt, position: answer.position,
+                atomicItemCode: answer.atomicItemCode, sectionTitle: answer.sectionTitle,
+                scopeKey: answer.scopeKey, allowsNotApplicable: answer.allowsNotApplicable,
+                verificationMethod: answer.verificationMethod, helpText: answer.helpText,
+                tags: answer.tags, riskTopic: answer.riskTopic,
+                naReasonRequired: answer.naReasonRequired,
+                evidenceRecommended: answer.evidenceRecommended, photoRequired: answer.photoRequired,
+                result: draft.result, note: draft.note,
+                evidenceAssetID: draft.evidenceAssetID ?? answer.evidenceAssetID,
+                nonconformityID: answer.nonconformityID)
+        }
+        let answered = answers.filter(\.isAnswered).count
+        let conform = answers.filter { $0.result == .conform }.count
+        let nonconform = answers.filter { $0.result == .nonconform }.count
+        let notApplicable = answers.filter { $0.result == .notApplicable }.count
+        return .init(id: run.id, companyID: run.companyID, companyName: run.companyName,
+            workplaceID: run.workplaceID, workplaceName: run.workplaceName,
+            templateCode: run.templateCode, templateTitle: run.templateTitle,
+            templateVersion: run.templateVersion, state: run.state, startedOn: run.startedOn,
+            submittedAt: run.submittedAt, revision: run.revision, revisesRunID: run.revisesRunID,
+            areaLabel: run.areaLabel, equipmentLabel: run.equipmentLabel,
+            documentNumber: run.documentNumber, expected: run.expected, answered: answered,
+            remaining: max(0, run.expected - answered), conform: conform,
+            nonconform: nonconform, notApplicable: notApplicable,
+            progressPercent: run.expected > 0 ? Double(answered) * 100 / Double(run.expected) : nil,
+            coveragePercent: run.coveragePercent, applicableCoveragePercent: run.applicableCoveragePercent,
+            scorePercent: run.scorePercent, sourceIDs: run.sourceIDs,
+            nonconformitiesOpened: run.nonconformitiesOpened, answers: answers)
     }
 }

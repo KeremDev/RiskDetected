@@ -198,6 +198,7 @@ struct NovaEmergencyDetailSheet: View {
 /// Publishing a plan, or the next version of one. There is no edit form,
 /// because a published version is never edited.
 struct NovaEmergencyPlanSheet: View {
+    private enum Step: String, CaseIterable { case scope, dates, team, file, review }
     @State var draft: NovaEmergencyPlanDraft
     let catalogue: NovaEmergencyCatalogue?
     /// The plan attaches one of the archive's own filed entries; adding one
@@ -212,6 +213,7 @@ struct NovaEmergencyPlanSheet: View {
         throw NovaPersonnelFailure.unavailable
     }
     let onSave: (NovaEmergencyPlanDraft) async -> String?
+    var onSaveDraft: ((NovaEmergencyPlanDraft) -> Void)? = nil
     let onClose: () -> Void
     @State private var failure: String?
     @State private var saving = false
@@ -225,6 +227,9 @@ struct NovaEmergencyPlanSheet: View {
     @State private var memberRole: NovaEmergencyRole = .coordinator
     @State private var memberContact = ""
     @State private var addingFile = false
+    @State private var currentStep: Step = .scope
+    @State private var didSave = false
+    @State private var confirmingExit = false
     @Environment(\.colorScheme) private var scheme
 
     private var emergencyFileCategories: [NovaFileCategory] {
@@ -251,93 +256,39 @@ struct NovaEmergencyPlanSheet: View {
         draft.validUntil = NovaDayField.text(until)
     }
 
+    private var stepNumber: Int { (Step.allCases.firstIndex(of: currentStep) ?? 0) + 1 }
+    private var scopeReady: Bool { draft.workplaceID != nil }
+    private var datesReady: Bool {
+        guard let prepared = NovaDayField.date(draft.preparedOn),
+              let until = NovaDayField.date(draft.validUntil) else { return false }
+        return until > prepared
+    }
+    private var teamReady: Bool { true }
+
     var body: some View {
-        NovaPopup {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    NovaPopupHeading(text: draft.isRenewal
-                        ? RDLocalization.string("localizable.nova.emergency.form.renew", table: .localizable,
-                            fallback: "Yeni sürüm")
-                        : "Plan Ekle", symbol: "shield")
-
-                    // The workplace of a renewal is the plan's own and does not
-                    // move, so it is shown rather than offered. A company with
-                    // no workplace has nothing to ask, and one with exactly one
-                    // gets it silently — only a real choice is shown.
-                    let workplaces = catalogue?.workplaces ?? []
-                    NovaCard(padding: 12) {
-                        fieldIcon("building.2") {
-                            if draft.isRenewal || workplaces.count == 1 {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    NovaText(text: RDLocalization.string("localizable.nova.emergency.form.workplace",
-                                        table: .localizable, fallback: "İşyeri"), style: .label)
-                                    NovaText(text: workplaceTitle, style: .cardTitle)
-                                }
-                            } else if workplaces.isEmpty {
-                                NovaText(text: RDLocalization.string("localizable.nova.emergency.form.noworkplace",
-                                    table: .localizable, fallback: "Bu firmada kayıt açılacak bir işyeri yok."), style: .metaQuiet)
-                            } else {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    NovaFileChooserButton(
-                                        label: RDLocalization.string("localizable.nova.emergency.form.workplace",
-                                            table: .localizable, fallback: "İşyeri"),
-                                        value: workplaceTitle, isOpen: choosingWorkplace,
-                                        identifier: "nova.emergency.form.workplace") { choosingWorkplace.toggle() }
-                                    if choosingWorkplace {
-                                        NovaFileChooserPanel(
-                                            options: workplaces.map { .init(id: $0.id.uuidString, title: $0.name) },
-                                            selected: draft.workplaceID?.uuidString,
-                                            identifier: "nova.emergency.form.workplace.panel") { value in
-                                            draft.workplaceID = value.flatMap(UUID.init(uuidString:))
-                                            choosingWorkplace = false
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    NovaCard(padding: 12) {
-                        VStack(spacing: 4) {
-                            compactDateRow(label: RDLocalization.string("localizable.nova.emergency.row.prepared",
-                                table: .localizable, fallback: "Hazırlanma"), symbol: "calendar",
-                                value: $draft.preparedOn, identifier: "nova.emergency.form.prepared")
-                            Divider().opacity(0.45)
-                            compactDateRow(label: RDLocalization.string("localizable.nova.emergency.row.until",
-                                table: .localizable, fallback: "Geçerlilik"), symbol: "calendar.badge.clock",
-                                value: $draft.validUntil, identifier: "nova.emergency.form.until", isClearable: true)
-                        }
-                    }
-                    if let years = suggestedYears {
-                        NovaHelpHint(text: String(format: RDLocalization.string("localizable.nova.emergency.form.hazard.hint",
-                            table: .localizable,
-                            fallback: "İşyerinin tehlike sınıfına göre %d yıl otomatik dolduruldu. Gerekirse değiştirebilirsiniz."), years))
-                    }
-
-                    NovaCard(padding: 12) {
-                        fieldIcon("person.2") { teamEditor }
-                    }
-                    NovaCard(padding: 12) {
-                        fieldIcon("paperclip") { fileEditor }
-                    }
-
-                    if let failure {
-                        NovaText(text: failure, style: .meta,
-                            color: NovaColorToken.statusDangerInk.color(in: scheme))
-                    }
-                    HStack(spacing: 10) {
-                        NovaButton(label: RDLocalization.string("localizable.nova.emergency.cancel",
-                            table: .localizable, fallback: "Vazgeç"), symbol: "xmark",
-                            variant: .surface, action: onClose).disabled(saving)
-                        NovaButton(label: RDLocalization.string("localizable.nova.emergency.form.save",
-                            table: .localizable, fallback: "Yayımla"), symbol: "checkmark.seal",
-                            variant: .primary) {
-                            Task { saving = true; failure = await onSave(draft); saving = false }
-                        }
-                        .disabled(saving || draft.team.isEmpty || draft.workplaceID == nil)
+        Group {
+            if didSave {
+                NovaTaskSuccessView(title: "Acil durum planı kaydedildi",
+                    message: "Hazırlama: \(draft.preparedOn)\nGeçerlilik: \(draft.validUntil)\nEkip: \(draft.team.count) kişi\n\nSıradaki önerilen işlem: tatbikat kaydı oluştur.",
+                    doneTitle: "Planlara dön", onDone: onClose)
+            } else {
+                NovaPageSurface(onEdgeBack: onClose) {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 18) {
+                            NovaTaskHeader(title: draft.isRenewal ? "Acil durum planını yenile" : "Acil durum planı ekle",
+                                step: stepNumber, total: Step.allCases.count,
+                                stepTitle: stepTitle(currentStep), onClose: { confirmingExit = true })
+                            if let failure { NovaTaskErrorSummary(message: failure) }
+                            stepContent(currentStep)
+                        }.padding(.horizontal, 18).padding(.top, 8).padding(.bottom, 28)
+                    }.scrollDismissesKeyboard(.interactively)
+                    .safeAreaInset(edge: .bottom) {
+                        NovaTaskStickyActions(primaryTitle: currentStep == .review ? "Yayımla" : "Devam",
+                            primarySymbol: currentStep == .review ? "checkmark.seal" : "arrow.right",
+                            isWorking: saving, canGoBack: currentStep != .scope,
+                            onBack: previousStep, onPrimary: advance)
                     }
                 }
-                .padding(20).novaPopupContentSize()
             }
         }
         .accessibilityIdentifier("nova.emergency.form")
@@ -350,6 +301,165 @@ struct NovaEmergencyPlanSheet: View {
         .onChange(of: draft.workplaceID) { _ in fillSuggestedValidity() }
         .onChange(of: draft.preparedOn) { _ in fillSuggestedValidity() }
         .task(id: fileCompany) { await loadPersonnel() }
+        .confirmationDialog("Acil durum planı akışından çıkılsın mı?", isPresented: $confirmingExit,
+            titleVisibility: .visible) {
+                Button("Çık", role: .destructive, action: onClose)
+                Button("Devam et", role: .cancel) {}
+            } message: { Text("Henüz kaydedilmemiş bilgiler silinir.") }
+    }
+
+    @ViewBuilder private func stepContent(_ step: Step) -> some View {
+        switch step {
+        case .scope: scopeStep
+        case .dates: datesStep
+        case .team: teamStep
+        case .file: fileStep
+        case .review: reviewStep
+        }
+    }
+
+    private var scopeStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            let workplaces = catalogue?.workplaces ?? []
+            NovaCard(padding: 12) {
+                fieldIcon("building.2") {
+                    if draft.isRenewal || workplaces.count == 1 {
+                        VStack(alignment: .leading, spacing: 4) {
+                            NovaText(text: "İşyeri", style: .label)
+                            NovaText(text: workplaceTitle, style: .cardTitle)
+                        }
+                    } else if workplaces.isEmpty {
+                        NovaText(text: "Bu firmada kayıt açılacak bir işyeri yok.", style: .metaQuiet)
+                    } else {
+                        VStack(alignment: .leading, spacing: 4) {
+                            NovaFileChooserButton(label: "İşyeri", value: workplaceTitle,
+                                isOpen: choosingWorkplace, identifier: "nova.emergency.form.workplace") {
+                                    choosingWorkplace.toggle()
+                                }
+                            if choosingWorkplace {
+                                NovaFileChooserPanel(options: workplaces.map { .init(id: $0.id.uuidString, title: $0.name) },
+                                    selected: draft.workplaceID?.uuidString,
+                                    identifier: "nova.emergency.form.workplace.panel") { value in
+                                        draft.workplaceID = value.flatMap(UUID.init(uuidString:))
+                                        choosingWorkplace = false
+                                    }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var datesStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaCard(padding: 12) {
+                VStack(spacing: 4) {
+                    compactDateRow(label: "Hazırlama tarihi", symbol: "calendar",
+                        value: $draft.preparedOn, identifier: "nova.emergency.form.prepared")
+                    Divider().opacity(0.45)
+                    compactDateRow(label: "Geçerlilik", symbol: "calendar.badge.clock",
+                        value: $draft.validUntil, identifier: "nova.emergency.form.until", isClearable: true)
+                }
+            }
+            if let years = suggestedYears {
+                NovaWhyDisclosure {
+                    NovaText(text: String(format: "İşyerinin tehlike sınıfına göre %d yıl otomatik dolduruldu. Gerekirse değiştirebilirsiniz.", years), style: .metaQuiet)
+                }
+            }
+        }
+    }
+
+    private var teamStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaText(text: "Acil durum ekibi", style: .sectionTitle)
+            NovaHelpHint(text: "Ekip eklemek isteğe bağlıdır. Şimdi kişi seçebilir veya bu adımı boş geçip ekibi daha sonra tamamlayabilirsiniz.")
+            NovaCard(padding: 12) { fieldIcon("person.2") { teamEditor } }
+        }
+    }
+
+    private var fileStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaText(text: "Plan dosyası", style: .sectionTitle)
+            NovaCard(padding: 12) { fieldIcon("paperclip") { fileEditor } }
+            DisclosureGroup("Dosya bilgileri") {
+                NovaText(text: "Dosya eklemek zorunlu değil; planı kaydedip belgeyi daha sonra bağlayabilirsiniz.", style: .metaQuiet)
+                    .padding(.top, 8)
+            }.padding(12).novaControlBackground(cornerRadius: 14)
+        }
+    }
+
+    private var reviewStep: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NovaText(text: "Kaydetmeden önce kontrol edin", style: .sectionTitle)
+            NovaCard(padding: 14) {
+                VStack(alignment: .leading, spacing: 12) {
+                    reviewRow("İşyeri", workplaceTitle)
+                    reviewRow("Hazırlama", draft.preparedOn)
+                    reviewRow("Geçerlilik", draft.validUntil)
+                    reviewRow("Ekip", "\(draft.team.count) kişi")
+                    reviewRow("Dosya", draft.assetID == nil ? "Daha sonra eklenebilir" : "Dosya eklendi")
+                }
+            }
+            if let onSaveDraft {
+                NovaButton(label: "Taslak olarak kaydet", symbol: "tray.and.arrow.down", variant: .surface) {
+                    onSaveDraft(draft)
+                }.accessibilityIdentifier("nova.emergency.form.save-draft")
+                NovaText(text: "Taslak yayımlanmaz ve plan listesinde görünmez; daha sonra bu bilgilerle devam edebilirsiniz.", style: .metaQuiet)
+            }
+        }
+    }
+
+    private func reviewRow(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            NovaText(text: label, style: .metaQuiet)
+            NovaText(text: value, style: .bodyStrong)
+        }.frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func stepTitle(_ step: Step) -> String {
+        switch step {
+        case .scope: return "Kapsam"
+        case .dates: return "Tarih ve geçerlilik"
+        case .team: return "Acil durum ekibi"
+        case .file: return "Plan dosyası"
+        case .review: return "Kontrol ve kaydet"
+        }
+    }
+
+    private func advance() {
+        failure = nil
+        let valid: Bool
+        switch currentStep {
+        case .scope: valid = scopeReady
+        case .dates: valid = datesReady
+        case .team: valid = true
+        case .file, .review: valid = true
+        }
+        guard valid else {
+            failure = "Bu adımı tamamlamak için eksik bilgileri kontrol edin."
+            return
+        }
+        guard currentStep != .review else {
+            Task { await save() }
+            return
+        }
+        guard let index = Step.allCases.firstIndex(of: currentStep) else { return }
+        withAnimation(.easeInOut(duration: 0.2)) { currentStep = Step.allCases[index + 1] }
+    }
+
+    private func previousStep() {
+        failure = nil
+        guard let index = Step.allCases.firstIndex(of: currentStep), index > 0 else { return }
+        withAnimation(.easeInOut(duration: 0.2)) { currentStep = Step.allCases[index - 1] }
+    }
+
+    private func save() async {
+        guard !saving else { return }
+        saving = true
+        failure = await onSave(draft)
+        saving = false
+        if failure == nil { didSave = true }
     }
 
     /// A plain line icon in front of one field group — no tint, no background
@@ -482,6 +592,7 @@ struct NovaEmergencyPlanSheet: View {
                             .background(isSelected ? NovaColorToken.accent.color(in: scheme)
                                                     : NovaColorToken.surfaceMuted.color(in: scheme),
                                 in: Capsule())
+                            .animation(NovaMotion.easeOut(0.14), value: isSelected)
                         }
                         .buttonStyle(NovaRowPressStyle())
                         .accessibilityIdentifier("nova.emergency.form.role.\(role.rawValue)")

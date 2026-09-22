@@ -157,6 +157,7 @@ enum PersonnelRPCValue: Encodable, Equatable {
                   dto.company_id == intent.scope.companyID, intent.employeeID == nil || dto.employee_id == intent.employeeID,
                   dto.version == (intent.action == .create ? 0 : intent.expectedVersion + 1), dto.is_archived == (intent.action == .archive) else { throw NovaPersonnelFailure.unavailable }
             try storage.remove(account: account(intent.scope))
+            NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: intent.scope.ownerID)
             return .init(operationID: dto.operation_id, id: dto.employee_id, ownerID: dto.owner_id, companyID: dto.company_id, version: dto.version, isArchived: dto.is_archived)
         } catch {
             // A late scope change or cancellation leaves the original account's durable receipt request intact.

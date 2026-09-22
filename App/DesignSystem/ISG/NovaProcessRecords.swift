@@ -66,7 +66,7 @@ struct NovaProcessKind {
         case "completed_drill": return .init(code:code,title:"Tatbikatlar",fields:[workplace,f("held_on","Tatbikat tarihi","date",true),f("drill_type","Tatbikat türü","choice",true,["emergency":"Acil durum","fire":"Yangın"]),f("announcement","Haber durumu","choice",true,["announced":"Haberli","unannounced":"Habersiz"]),f("bekra","BEKRA tatbikatı","bool"),f("duration_minutes","Tamamlanma süresi (dakika)","number"),f("scenario","Senaryo","multiline",true),f("note","Notlar","multiline"),f("photo_ids","Fotoğraflar · en fazla 10","photos"),f("asset_id","Tatbikat raporu · PDF","pdf"),f("due_override","Takip tarihini değiştir","bool"),f("valid_until","Sonraki tatbikat tarihi","date")])
         case "personnel_certificate": return .init(code:code,title:"Personel Belgeleri",fields:[f("employee_id","Personel","employee",true),f("certificate_kind","Belge türü","choice",true,["first_aid":"İlk yardım","myk":"MYK","custom":"Diğer"]),f("title","Belge adı","text",true),f("issued_on","Düzenleme tarihi","date",true),f("due_override","Geçerlilik tarihini değiştir","bool"),f("valid_until","Geçerlilik tarihi","date"),f("asset_id","Belge dosyası · isteğe bağlı","file"),f("note","Not","multiline")])
         case "approved_notebook": return .init(code:code,title:"Onaylı Defter",fields:[f("title","Başlık","text",true),f("asset_id","Defter görseli","photo",true),f("note","Not","multiline")])
-        case "site_visit": return .init(code:code,title:"Saha Ziyaretleri",fields:[workplace,f("visited_on","Ziyaret tarihi","date",true),f("location_note","Ziyaret yeri"),f("expert_note","Ziyaret notu","multiline",true),f("responsible_contact","Görüşülen kişi"),f("duration_minutes","Ziyaret süresi (dakika)","number"),f("visit_asset_id","Ziyaret fotoğrafı","photo")],child:"site_observation")
+        case "site_visit": return .init(code:code,title:"Saha Ziyaretleri",fields:[workplace,f("visited_on","Ziyaret tarihi","date",true),f("expert_note","Ziyaret notu","multiline",true),f("location_note","Ziyaret yeri"),f("responsible_contact","Görüşülen kişi"),f("duration_minutes","Ziyaret süresi (dakika)","number"),f("visit_asset_id","Ziyaret fotoğrafı","photo")],child:"site_observation")
         case "site_observation": return .init(code:code,title:"Gözlemler",fields:[f("note","Gözlem / aksiyon","multiline",true),f("external_ref","Uygunsuzluk / kanıt referansı")],parentKey:"visit_id")
         case "work_permit": return .init(code:code,title:"Çalışma İzni Formları",fields:[workplace,f("template_code","Form türü","choice",true,["general":"Genel çalışma","hot_work":"Sıcak iş","work_at_height":"Yüksekte çalışma","confined_space":"Kapalı alan","electrical":"Elektrik işi"]),f("job_description","İş tanımı","multiline",true),f("planned_on","Planlanan tarih","date",true),f("work_location","Çalışma yeri"),f("starts_at","Başlangıç saati","datetime"),f("ends_at","Bitiş saati","datetime"),f("parties","İlgili personeller","employees"),f("risk_precautions","Riskler, önlemler ve sorumlular","multiline")])
         case "contractor": return .init(code:code,title:"Taşeron ve Dış Firmalar",fields:[f("code","Firma kodu","text",true),f("name","Ticari ad","text",true),f("relationship","İlişki","choice",true,["subcontractor":"Alt işveren (beyan)","contractor":"Yüklenici","supplier":"Tedarikçi","other":"Diğer"]),f("contact","Yetkili / iletişim"),f("identifiers","Vergi / işyeri tanımlayıcısı"),f("notes","Notlar","multiline")],child:"contractor_engagement")
@@ -110,13 +110,13 @@ struct NovaVisitSummary: Decodable {
     func read(kind: String, company: UUID?, id: UUID? = nil, parent: UUID? = nil, query: String = "", offset: Int = 0) async throws -> Data {
         try check()
         let args: [String:PersonnelRPCValue] = ["p_kind":.string(kind),"p_company":company.map(PersonnelRPCValue.id) ?? .null,"p_id":id.map(PersonnelRPCValue.id) ?? .null,"p_parent":parent.map(PersonnelRPCValue.id) ?? .null,"p_query":.string(query),"p_offset":.number(Int64(offset))]
-        let data = try await SupabaseService.shared.client.rpc("isg_pilot_process_read_v1",params:args).execute().data
+        let data = try await NovaExpertTransport.shared.execute("isg_pilot_process_read_v1",params:args, ticket: NovaExpertTransport.shared.capture())
         try check(); return data
     }
     func visitSummary(company: UUID?, from: String? = nil, to: String? = nil) async throws -> NovaVisitSummary {
         try check()
-        let data = try await SupabaseService.shared.client.rpc("isg_pilot_visit_summary_v1", params: [
-            "p_company": PersonnelRPCValue.id(company), "p_from": from.map(PersonnelRPCValue.string) ?? .null, "p_to": to.map(PersonnelRPCValue.string) ?? .null]).execute().data
+        let data = try await NovaExpertTransport.shared.execute("isg_pilot_visit_summary_v1", params: [
+            "p_company": PersonnelRPCValue.id(company), "p_from": from.map(PersonnelRPCValue.string) ?? .null, "p_to": to.map(PersonnelRPCValue.string) ?? .null], ticket: NovaExpertTransport.shared.capture())
         try check()
         let result = try JSONDecoder().decode(NovaVisitSummary.self, from: data)
         guard result.schema_version == 1, result.owner_id == identity.userID, result.company_id == company,
@@ -125,8 +125,8 @@ struct NovaVisitSummary: Decodable {
     }
     func attachment(kind: String, record: UUID, field: String) async throws -> NovaFileEntry {
         try check()
-        let data = try await SupabaseService.shared.client.rpc("isg_pilot_process_attachment_v1", params: [
-            "p_kind": PersonnelRPCValue.string(kind), "p_record": .id(record), "p_field": .string(field)]).execute().data
+        let data = try await NovaExpertTransport.shared.execute("isg_pilot_process_attachment_v1", params: [
+            "p_kind": PersonnelRPCValue.string(kind), "p_record": .id(record), "p_field": .string(field)], ticket: NovaExpertTransport.shared.capture())
         try check()
         struct Result: Decodable { let entry_id: UUID }
         let id = try JSONDecoder().decode(Result.self, from: data).entry_id
@@ -136,7 +136,7 @@ struct NovaVisitSummary: Decodable {
     func references(kind: String, company: UUID, id: UUID? = nil, query: String = "", offset: Int = 0) async throws -> NovaProcessPage {
         try check()
         let args: [String: PersonnelRPCValue] = ["p_kind": .string(kind), "p_company": .id(company), "p_id": id.map(PersonnelRPCValue.id) ?? .null, "p_query": .string(query), "p_offset": .number(Int64(offset))]
-        let data = try await SupabaseService.shared.client.rpc("isg_pilot_process_references_v1", params: args).execute().data
+        let data = try await NovaExpertTransport.shared.execute("isg_pilot_process_references_v1", params: args, ticket: NovaExpertTransport.shared.capture())
         try check(); return try JSONDecoder().decode(NovaProcessPage.self, from: data)
     }
     static func referenceTitle(_ kind: String) -> String {
@@ -150,7 +150,7 @@ struct NovaVisitSummary: Decodable {
     }
     func mutate(company: UUID, action: String, payload: [String:PersonnelRPCValue]) async throws -> Data {
         try await NovaModuleMutationJournal.run(function:"isg_pilot_process_mutate_v1",identity:identity,company:company,action:action,payload:payload,rpc:{ fn,args in
-            try await SupabaseService.shared.client.rpc(fn,params:args).execute().data
+            try await NovaExpertTransport.shared.execute(fn,params:args, ticket: NovaExpertTransport.shared.capture())
         },validate:{try check()},decode:{ data in
             if action == "delete" {
                 struct Deleted: Decodable { let deleted: Bool }
@@ -165,7 +165,7 @@ struct NovaVisitSummary: Decodable {
     func documents(company: UUID? = nil, document: UUID? = nil, version: Int? = nil, offset: Int = 0) async throws -> Data {
         try check()
         let args: [String: PersonnelRPCValue] = ["p_company":company.map(PersonnelRPCValue.id) ?? .null,"p_document":document.map(PersonnelRPCValue.id) ?? .null,"p_version":version.map{.number(Int64($0))} ?? .null,"p_offset":.number(Int64(offset))]
-        let data = try await SupabaseService.shared.client.rpc("isg_pilot_process_documents_v1",params:args).execute().data
+        let data = try await NovaExpertTransport.shared.execute("isg_pilot_process_documents_v1",params:args, ticket: NovaExpertTransport.shared.capture())
         try check();return data
     }
     static func message(_ error: Error) -> String {

@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UIKit
 
 /// Private device build only. This UUID is a presentation selector, NOT authority.
 /// Ordinary Debug/Release builds execute exactly the existing MainTabView route.
@@ -54,7 +55,11 @@ struct NovaIntegratedWorkspaceGate: View {
 
     var body: some View {
         Group {
-            if choosing || store.phase == .choosing || (store.phase == .failed && !store.contexts.isEmpty) {
+            if store.selection == nil && (store.phase == .signedOut || store.phase == .loading) {
+                NovaPageSurface {
+                    NovaLoadingView(message: "Çalışma alanı yükleniyor…")
+                }
+            } else if choosing || store.phase == .choosing || (store.phase == .failed && !store.contexts.isEmpty) {
                 IsgWorkspaceChooser(identity: identity, store: store, canCancel: store.selection != nil) { choosing = false }
             } else if store.selection?.kind == "osgb" {
                 if selectedContext?.membership.role == "expert" {
@@ -66,7 +71,7 @@ struct NovaIntegratedWorkspaceGate: View {
                         workspaceLabel: selectedContext?.name,
                         onWorkspaceSwitch: { choosing = true },
                         workspaceStore: store)
-                        .id("expert:\(identity.userID):\(selectedContext?.workspaceID.uuidString ?? "none")")
+                        .id("expert:\(identity.userID):\(selectedContext?.workspaceID.uuidString ?? "none"):\(store.selection?.permissionRevision ?? 0):\(store.selection?.workspaceVersion ?? 0)")
                 } else if store.phase == .ready || !store.companies.isEmpty {
                     IsgOSGBWorkspaceRoot(identity: identity, store: store) { choosing = true }
                 } else {
@@ -114,7 +119,7 @@ private struct IsgWorkspaceChooser: View {
                                 fallback: "Çalışma alanlarını yenile"))
                     }
                     NovaHelpHint(text: RDLocalization.string("localizable.nova.workspace.choose.hint", table: .localizable,
-                        fallback: "Kişisel kayıtlarınız ile yetkili olduğunuz OSGB alanları birbirinden ayrı tutulur."))
+                        fallback: "Yetkili olduğunuz çalışma alanını seçin."))
                     HStack(spacing: 8) {
                         NovaCompactActionButton(title: RDLocalization.string("localizable.nova.workspace.create", table: .localizable,
                             fallback: "OSGB oluştur"), symbol: "building.2.crop.circle", prominent: true) {
@@ -131,7 +136,9 @@ private struct IsgWorkspaceChooser: View {
                             message: RDLocalization.string("localizable.nova.workspace.connection.retry", table: .localizable,
                                 fallback: "Bağlantınızı kontrol edip yeniden deneyin."))
                     }
-                    ForEach(store.contexts, id: \.workspaceID) { context in
+                    // Personal records stay as the default backend scope, but
+                    // are not presented as a separate workspace card.
+                    ForEach(store.contexts.filter { $0.kind == "osgb" }, id: \.workspaceID) { context in
                         Button {
                             store.select(context)
                             onClose()
@@ -144,9 +151,7 @@ private struct IsgWorkspaceChooser: View {
                                         .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 13))
                                     VStack(alignment: .leading, spacing: 3) {
                                         NovaText(text: context.name, style: .cardTitle)
-                                        NovaText(text: context.kind == "osgb" ? role(context.membership.role) :
-                                            RDLocalization.string("localizable.nova.workspace.personal", table: .localizable,
-                                                fallback: "Kişisel çalışma alanı"), style: .metaQuiet)
+                                        NovaText(text: role(context.membership.role), style: .metaQuiet)
                                     }
                                     Spacer(minLength: 0)
                                     Image(systemName: "chevron.right")
@@ -252,11 +257,12 @@ private struct IsgOSGBWorkspaceRoot: View {
     let onSwitchWorkspace: () -> Void
     @EnvironmentObject private var app: AppState
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.novaCelebrate) private var celebrate
     @State private var navigation = NovaNavigationState(epoch: UUID().uuidString,
-        // Tenant experts get the complete operational surface. Company
-        // creation is manager-only and is exposed through the manager
-        // callback actions rather than a navigable expert route.
-        available: NovaWorkspaceRole.osgbExpert.destinations)
+        // Keep the shared route catalog available to the shell. Company
+        // creation is still capability-gated by the manager callback, while
+        // experts receive the same operational menu without that action.
+        available: NovaWorkspaceRole.osgbManager.destinations)
     @State private var editor: IsgCompanyEditorRoute?
     @State private var personnel: IsgPersonnelMetrics?
     @State private var query = ""
@@ -271,7 +277,19 @@ private struct IsgOSGBWorkspaceRoot: View {
     @State private var companyWorkspaceDomain: IsgWorkspaceDomain?
     @State private var companyWorkspaceAnalyses = false
     @State private var companyPersonnel: IsgPersonnelMetrics?
+    @State private var companyDomainSnapshots: [String: IsgWorkspaceDomainSnapshot] = [:]
+    @State private var companyOverviewLoading = false
+    @State private var companyOverviewError: String?
+    @State private var companyLogo: UIImage?
+    @State private var companyLogoEntryID: UUID?
+    @State private var companyLogoPicker: PhotosPickerItem?
+    @State private var companyLogoSaving = false
+    @State private var companyLogoError: String?
+    @State private var companyLogoUploadAttempt = IsgWorkspaceMutationAttempt()
+    @State private var companyLogoLinkAttempt = IsgWorkspaceMutationAttempt()
     @State private var expertDashboard: IsgWorkspaceDashboard?
+    @State private var recentAnalyses: [NovaAnalysisSummary] = []
+    @State private var profileAvatarImage: Image?
     /// A company can be created successfully even if a following assignment
     /// request loses its response. Keep the same receipt IDs and start instant
     /// across a retry so the server replays instead of duplicating the access.
@@ -289,6 +307,7 @@ private struct IsgOSGBWorkspaceRoot: View {
         guard let context else { return false }
         return context.canOperate && ["owner", "admin"].contains(context.membership.role)
     }
+    private var canManageCompanyLogo: Bool { context?.canOperate == true }
     private var isExpert: Bool { context?.membership.role == "expert" }
     private var companyWorkspace: IsgWorkspaceCompany? {
         guard let companyWorkspaceID else { return nil }
@@ -301,9 +320,58 @@ private struct IsgOSGBWorkspaceRoot: View {
     private var companyTaskKey: String {
         "\(companyWorkspaceID?.uuidString ?? "none"):\(store.selectedCompanyID?.uuidString ?? "none"):\(store.phase)"
     }
+    private var menuBoard: IsgWorkspaceDashboard? { isExpert ? expertDashboard : store.dashboard }
+    private var menuProgressCompleted: Int {
+        guard !store.companies.isEmpty else { return 0 }
+        var completed = 1 // firma bilgileri
+        if (menuBoard?.nonconformities.first ?? 0) > 0 { completed += 1 }
+        if (personnel?.employees.active ?? 0) > 0 { completed += 1 }
+        if (menuBoard?.training.second ?? 0) > 0 { completed += 1 }
+        if (menuBoard?.visits.first ?? 0) > 0 { completed += 1 }
+        return min(completed, 8)
+    }
+    private var menuStats: [NovaMenuStat] {
+        let board = menuBoard
+        return [
+            .init(id: "upcoming", title: "Yaklaşan İşler",
+                  value: board.map { String(($0.deadlines.first ?? 0) + ($0.deadlines.second ?? 0)) } ?? "—",
+                  symbol: "calendar.badge.clock", destination: .periodicChecks),
+            .init(id: "overdue", title: "Süresi biten",
+                  value: board?.nonconformities.second.map(String.init) ?? "—",
+                  symbol: "exclamationmark.triangle", destination: .findings),
+            .init(id: "analyses", title: "Analiz",
+                  value: board?.nonconformities.first.map(String.init) ?? "—",
+                  symbol: "photo.on.rectangle.angled", destination: .analyses)
+        ]
+    }
+    private var menuNextAction: NovaMenuNextAction? {
+        if store.companies.isEmpty {
+            return .init(title: "Firma ekle", symbol: "building.2.crop.circle",
+                destination: canManageCompanies ? .newCompany : .companies, completed: 0, total: 1)
+        }
+        let analysisCount = Int(menuBoard?.nonconformities.first ?? 0)
+        if analysisCount == 0 {
+            return .init(title: "Fotoğraf analiz et", symbol: "camera", destination: .newAnalysis,
+                completed: 0, total: 8)
+        }
+        return .init(title: "Risk analizi ekle", symbol: "shield.lefthalf.filled", destination: .riskAssessments,
+            completed: menuProgressCompleted, total: 8)
+    }
+    private struct CompanyNextAction: Identifiable {
+        let id: String
+        let title: String
+        let detail: String
+        let symbol: String
+        let status: NovaStatus
+        let domain: IsgWorkspaceDomain
+    }
 
     var body: some View {
         NovaExpertShell(navigation: $navigation, userName: app.profile?.fullName ?? "",
+            profileAvatar: profileAvatarImage,
+            menuRoleTitle: canManageCompanies ? "OSGB Yetkilisi" : "İSG Uzmanı",
+            menuStats: menuStats, menuNextAction: menuNextAction,
+            onInvite: { app.requestProfileDestination(.referral); navigate(.profile) },
             connectionLabel: context.map { "\($0.name) · \(role($0.membership.role))" } ?? "",
             onCompanyCreate: canManageCompanies ? { editor = .create } : nil,
             isManager: canManageCompanies,
@@ -319,9 +387,12 @@ private struct IsgOSGBWorkspaceRoot: View {
             onLogout: { app.signOut() }) { destination in
             switch destination {
             case .home: dashboard
+            case .activity: ExpertActivityDestination(onClose: { navigate(.home) })
+            case .notebook, .newNote: NotebookDestination(onClose: { navigate(.home) })
             case .statistics: statistics
             case .companies: companies
-            case .reports, .reportArchive: reportCenter
+            case .reports: reportCenter
+            case .reportArchive: NovaProcessArchive(identity: identity, onBack: { navigate(.reports) })
             case .findings: domain(.nonconformity)
             case .newFinding: domain(.nonconformity, startInAddMode: true)
             case .analyses: analyses()
@@ -371,14 +442,28 @@ private struct IsgOSGBWorkspaceRoot: View {
             }
             query = ""; searchRows = nil; searchError = nil
         }
+        .task(id: "\(summaryTaskKey):recent-analyses") {
+            guard store.phase == .ready else { recentAnalyses = []; return }
+            do {
+                recentAnalyses = try await NovaAnalysisWorkspace.summaries(
+                    identity: identity, method: .fineKinney, limit: 6).rows
+            } catch {
+                recentAnalyses = []
+            }
+        }
+        .task(id: app.profile?.avatarURL) { await loadProfileAvatarImage() }
         .task(id: companyTaskKey) {
             guard let companyWorkspaceID, store.phase == .ready,
                   store.selectedCompanyID == companyWorkspaceID else { return }
-            companyPersonnel = try? await store.personnelMetrics(companyID: companyWorkspaceID)
+            await loadCompanyOverview(companyWorkspaceID)
         }
-        .novaPopupCover(item: $editor) { route in
-            NovaPopup {
-                IsgWorkspaceCompanyEditor(company: route.company, store: store,
+        .onChange(of: companyLogoPicker) { item in
+            guard let item else { return }
+            Task { await saveCompanyLogo(item) }
+        }
+        .novaFullScreenCover(item: $editor) { route in
+            IsgWorkspaceCompanyEditor(company: route.company, store: store,
+                    onClose: { editor = nil },
                     onSave: { mutationID, profileMutationID, draft, selectedExpertIDs, assignmentRole in
                         if let company = route.company {
                             _ = try await store.updateCompany(mutationID: mutationID,
@@ -406,7 +491,6 @@ private struct IsgOSGBWorkspaceRoot: View {
                                     reason: "Firma ekleme sırasında hızlı atama")
                             }
                         }
-                        editor = nil
                     },
                     onArchive: route.company.map { company in
                         { reason in
@@ -415,10 +499,15 @@ private struct IsgOSGBWorkspaceRoot: View {
                             editor = nil
                         }
                     })
-            }
         }
         .novaPopupCover(isPresented: $showingMembers) {
-            NovaPopup { IsgWorkspaceMemberManagement(store: store) }
+            NovaPopup { IsgWorkspaceMemberManagement(store: store, onOpenRecord: { detail, _ in
+                guard let company = detail.link_company_id else { return }
+                showingMembers = false
+                companyWorkspaceID = company
+                store.selectCompany(company)
+                navigate(.companies)
+            }) }
         }
         .novaFullScreenCover(isPresented: $showingAssignments) {
             if let company = selectedCompany {
@@ -426,6 +515,22 @@ private struct IsgOSGBWorkspaceRoot: View {
             }
         }
         .modifier(NovaSuccessPresentation(account: identity.userID))
+    }
+
+    private func loadProfileAvatarImage() async {
+        guard let path = app.profile?.avatarURL?.trimmingCharacters(in: .whitespacesAndNewlines), !path.isEmpty else {
+            profileAvatarImage = nil
+            return
+        }
+        do {
+            if let image = try await app.auth.profileAvatarImage(path: path) {
+                profileAvatarImage = Image(uiImage: image)
+            } else {
+                profileAvatarImage = nil
+            }
+        } catch {
+            profileAvatarImage = nil
+        }
     }
 
     @ViewBuilder private var dashboard: some View {
@@ -474,9 +579,15 @@ private struct IsgOSGBWorkspaceRoot: View {
             metrics: metrics,
             activity: isExpert ? nil : selectedCompany.map { "\($0.name) firması için güncel kayıtlar" },
             trainingMessage: "Gerçekleşen eğitimler ve katılımcı kayıtları",
+            recentAnalyses: recentAnalyses.map { analysis in
+                NovaRecentAnalysis(id: analysis.id.uuidString.lowercased(),
+                    title: NovaAnalysisPresentation.title(analysis.title),
+                    companyName: analysis.companyName ?? "Firmasız",
+                    createdOn: NovaAnalysisPresentation.dateOnly(analysis.createdOn))
+            },
             summaryMessage: context.map { isExpert
                 ? "Atandığınız firmalardaki toplam güncel kayıtlar."
-                : "\($0.name) çalışma alanının güncel kayıtları."
+                : "\($0.name) için güncel kayıtlar."
             } ?? "Özet yükleniyor…")
     }
 
@@ -527,7 +638,6 @@ private struct IsgOSGBWorkspaceRoot: View {
                 HStack(alignment: .top, spacing: 10) {
                     VStack(alignment: .leading, spacing: 3) {
                         NovaText(text: "Merhaba, \(app.profile?.fullName?.split(separator: " ").first.map(String.init) ?? "İSGADA")", style: .cardTitle)
-                        NovaText(text: "OSGB çalışma alanını bugün tek yerden yönetin.", style: .metaQuiet)
                     }
                     Spacer(minLength: 0)
                     NovaIcon(symbol: "hand.wave", size: 20)
@@ -545,45 +655,14 @@ private struct IsgOSGBWorkspaceRoot: View {
     }
 
     private var reportCenter: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                workspaceHeading(title: "Rapor Merkezi")
-                NovaHelpHint(text: "OSGB çalışma alanındaki analiz ve operasyon çıktılarını tek yerden açın.")
-                NovaCard(padding: 14) {
-                    Button { navigate(.analyses) } label: {
-                        HStack(spacing: 10) {
-                            NovaIcon(symbol: "chart.doc", size: 20)
-                            VStack(alignment: .leading, spacing: 2) {
-                                NovaText(text: "Analiz raporları", style: .bodyStrong)
-                                NovaText(text: "Risk analizi çıktılarınızı inceleyin ve dışa aktarın.", style: .metaQuiet)
-                            }
-                            Spacer(minLength: 0)
-                            Image(systemName: "chevron.right")
-                        }.contentShape(Rectangle())
-                    }.buttonStyle(NovaRowPressStyle())
-                }
-                NovaCard(padding: 14) {
-                    Button { navigate(.documents) } label: {
-                        HStack(spacing: 10) {
-                            NovaIcon(symbol: "doc.text", size: 20)
-                            VStack(alignment: .leading, spacing: 2) {
-                                NovaText(text: "Firma dokümanları", style: .bodyStrong)
-                                NovaText(text: "Dosya ve geçerlilik kayıtlarını yönetin.", style: .metaQuiet)
-                            }
-                            Spacer(minLength: 0)
-                            Image(systemName: "chevron.right")
-                        }.contentShape(Rectangle())
-                    }.buttonStyle(NovaRowPressStyle())
-                }
-            }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
-        }
+        NovaReportCenter(identity: identity, onBack: { navigate(.home) })
     }
 
     private var statistics: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 NovaPageHeading(title: NovaDestination.statistics.title, onBack: { navigate(.home) })
-                NovaHelpHint(text: "OSGB çalışma alanındaki firma, uzman ve operasyon göstergeleri.")
+                NovaHelpHint(text: "Firma, uzman ve operasyon göstergeleri.")
                 if let board = isExpert ? expertDashboard : store.dashboard {
                     statGrid(board)
                     if let personnel { personnelGrid(personnel) }
@@ -606,6 +685,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                     }.buttonStyle(NovaRowPressStyle()).disabled(selectedCompany == nil)
                 }
             }.padding(16).padding(.bottom, novaTabBarInset)
+                .novaAsyncContent(isLoading: store.phase == .loading)
         }
     }
 
@@ -675,8 +755,8 @@ private struct IsgOSGBWorkspaceRoot: View {
         } else {
             NovaCompaniesScreen(
                 companies: store.companies.map { company in
-                    NovaCompanyItem(id: company.id.uuidString, name: company.name,
-                        detail: companySummary(company))
+                        NovaCompanyItem(id: company.id.uuidString, name: company.name,
+                        detail: companySummary(company), progressCompleted: companyProfileProgress(company), progressTotal: 8)
                 },
                 isLoading: store.phase == .loading && store.companies.isEmpty,
                 isOwnedList: !isExpert,
@@ -696,78 +776,456 @@ private struct IsgOSGBWorkspaceRoot: View {
 
     private func companyOverview(_ company: IsgWorkspaceCompany) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 20) {
                 NovaPageHeading(title: "Firma Detayı", onBack: {
                     companyWorkspaceID = nil
                     companyWorkspaceDomain = nil
                     companyWorkspaceAnalyses = false
                 })
-                NovaCard(padding: 14) {
-                    HStack(spacing: 11) {
-                        NovaIcon(symbol: "building.2", size: 22)
-                        VStack(alignment: .leading, spacing: 3) {
-                            NovaText(text: company.name, style: .cardTitle)
-                            NovaText(text: companySummary(company), style: .metaQuiet)
-                        }
-                        Spacer(minLength: 0)
-                        if canManageCompanies {
-                            Button { editor = .edit(company) } label: {
-                                Image(systemName: "pencil").frame(width: 44, height: 44)
-                            }.buttonStyle(NovaRowPressStyle()).accessibilityLabel("Firmayı düzenle")
-                        }
-                    }
-                }
+                companyOverviewSummary(company)
+                NovaCompanyReadinessCard(items: companyReadinessItems(company))
+                companyLogoRow(company)
                 if store.phase == .loading || store.selectedCompanyID != company.id {
                     NovaLoadingView(message: "Firma çalışma alanı hazırlanıyor…")
                 } else {
-                    if let companyPersonnel { personnelGrid(companyPersonnel) }
-                    NovaCard(padding: 12) {
-                        Button { showingSearch = true } label: {
-                            HStack(spacing: 10) {
-                                NovaIcon(symbol: "magnifyingglass", size: 19)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    NovaText(text: "Firma kayıtlarında ara", style: .bodyStrong)
-                                    NovaText(text: "Personel, uygunsuzluk, ekipman ve dosyalarda arayın.", style: .metaQuiet)
-                                }
-                                Spacer(minLength: 0)
-                                Image(systemName: "chevron.right")
-                            }.contentShape(Rectangle())
-                        }.buttonStyle(NovaRowPressStyle())
+                    if companyOverviewLoading && companyDomainSnapshots.isEmpty {
+                        NovaLoadingView(message: "Sıradaki işler hazırlanıyor…")
+                    } else {
+                        nextActionsSection
+                        companySearchRow
+                        companyCategorySections(company)
                     }
-                    companyModuleGrid
+                    if let companyOverviewError {
+                        NovaTaskErrorSummary(message: companyOverviewError)
+                        NovaCompactActionButton(title: "Firma özetini yeniden yükle", symbol: "arrow.clockwise") {
+                            Task { await loadCompanyOverview(company.id) }
+                        }
+                    }
                 }
             }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
+                .novaAsyncContent(isLoading: store.phase == .loading)
         }
     }
 
-    private var companyModuleGrid: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            NovaText(text: "Firma işlemleri", style: .sectionTitle)
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                ForEach(IsgWorkspaceDomain.allCases, id: \.self) { item in
-                    Button { companyWorkspaceDomain = item } label: {
-                        NovaCard(padding: 12) {
-                            HStack(spacing: 8) {
-                                NovaIcon(symbol: item.symbol, size: 18)
-                                NovaText(text: item.title, style: .bodyStrong)
+    private func companyOverviewSummary(_ company: IsgWorkspaceCompany) -> some View {
+        NovaCard(padding: 16) {
+            VStack(alignment: .leading, spacing: 13) {
+                HStack(alignment: .top, spacing: 12) {
+                    companyLogoMark
+                    VStack(alignment: .leading, spacing: 4) {
+                        NovaText(text: company.name, style: .cardTitle)
+                        NovaText(text: [IsgWorkspaceDisplayText.value(company.hazardClass),
+                            companyPersonnel.map { "\($0.employees.active) personel" }]
+                            .compactMap { $0 }.joined(separator: " · "), style: .metaQuiet)
+                    }
+                    Spacer(minLength: 0)
+                    if canManageCompanies {
+                        Button { editor = .edit(company) } label: {
+                            Image(systemName: "pencil").frame(width: 44, height: 44)
+                        }.buttonStyle(NovaRowPressStyle()).accessibilityLabel("Firmayı düzenle")
+                    }
+                }
+                NovaMetricStrip(items: [
+                    .init(id: "open-findings", value: String(openCompanyNonconformityCount),
+                          label: "açık uygunsuzluk", symbol: "exclamationmark.triangle",
+                          status: openCompanyNonconformityCount > 0 ? .danger : .success),
+                    .init(id: "actions", value: String(companyNextActions.count),
+                          label: "işlem gerekli", symbol: "checklist",
+                          status: companyNextActions.isEmpty ? .success : .warning)
+                ])
+            }
+        }
+    }
+
+    @ViewBuilder private var companyLogoMark: some View {
+        if let companyLogo {
+            Image(uiImage: companyLogo).resizable().scaledToFit().padding(5)
+                .frame(width: 44, height: 44)
+                .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 13))
+                .overlay(RoundedRectangle(cornerRadius: 13)
+                    .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
+                .accessibilityLabel("Firma logosu")
+        } else {
+            NovaIcon(symbol: "building.2", size: 22)
+                .frame(width: 44, height: 44)
+                .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 13))
+        }
+    }
+
+    private func companyLogoRow(_ company: IsgWorkspaceCompany) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            NovaCard(padding: 11) {
+                HStack(spacing: 11) {
+                    companyLogoMark
+                    VStack(alignment: .leading, spacing: 2) {
+                        NovaText(text: companyLogo == nil ? "Firma logosu ekleyin" : "Firma logosu", style: .bodyStrong)
+                        NovaText(text: companyLogoSaving ? "Logo yükleniyor…" : "Firma kartında ve oluşturulan raporlarda kullanılır.",
+                                 style: .micro, color: NovaColorToken.textMuted.color(in: scheme))
+                    }
+                    Spacer(minLength: 0)
+                    if companyLogoSaving {
+                        ProgressView().controlSize(.small).frame(width: 44, height: 44)
+                    } else {
+                        PhotosPicker(selection: $companyLogoPicker, matching: .images) {
+                            HStack(spacing: 5) {
+                                Image(systemName: companyLogo == nil ? "plus" : "arrow.triangle.2.circlepath")
+                                Text(companyLogo == nil ? "Logo seç" : "Değiştir")
+                            }
+                            .font(.custom("PlusJakartaSans-SemiBold", size: 10))
+                            .foregroundStyle(Color.black)
+                            .padding(.horizontal, 10).frame(minHeight: 44)
+                            .background(NovaColorToken.surfaceMuted.color(in: scheme), in: Capsule())
+                            .contentShape(Capsule())
+                        }
+                        .buttonStyle(NovaRowPressStyle())
+                        .accessibilityIdentifier("company.logo.picker")
+                    }
+                }.frame(maxWidth: .infinity, minHeight: 54)
+            }
+            if let companyLogoError {
+                NovaText(text: companyLogoError, style: .micro,
+                         color: NovaColorToken.statusDangerInk.color(in: scheme))
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(company.name) firma logosu")
+    }
+
+    private var nextActionsSection: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack {
+                NovaText(text: "Sıradaki işler", style: .sectionTitle)
+                Spacer(minLength: 0)
+                if companyOverviewLoading { ProgressView().controlSize(.small) }
+            }
+            if companyNextActions.isEmpty {
+                NovaCard(padding: 14, tint: NovaColorToken.statusSuccessBg.color(in: scheme)) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "checkmark.circle.fill")
+                        VStack(alignment: .leading, spacing: 2) {
+                            NovaText(text: "Şu anda kritik iş görünmüyor", style: .bodyStrong)
+                            NovaText(text: "Kayıt kategorilerinden ayrıntıları inceleyebilirsiniz.", style: .metaQuiet)
+                        }
+                    }
+                }
+            } else {
+                ForEach(companyNextActions.prefix(3)) { item in
+                    Button { companyWorkspaceDomain = item.domain } label: {
+                        NovaCard(padding: 13) {
+                            HStack(alignment: .top, spacing: 11) {
+                                Image(systemName: item.symbol).font(.system(size: 18, weight: .semibold))
+                                    .frame(width: 36, height: 36)
+                                    .background(item.status.tokens.background.color(in: scheme),
+                                                in: RoundedRectangle(cornerRadius: 11))
+                                VStack(alignment: .leading, spacing: 3) {
+                                    NovaText(text: item.title, style: .bodyStrong)
+                                    NovaText(text: item.detail, style: .metaQuiet)
+                                }
                                 Spacer(minLength: 0)
                                 Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
+                                    .padding(.top, 5)
                             }.frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
                         }
                     }.buttonStyle(NovaRowPressStyle())
                 }
-                Button { companyWorkspaceAnalyses = true } label: {
-                    NovaCard(padding: 12) {
-                        HStack(spacing: 8) {
-                            NovaIcon(symbol: NovaDestination.analyses.symbol, size: 18)
-                            NovaText(text: NovaDestination.analyses.title, style: .bodyStrong)
-                            Spacer(minLength: 0)
-                            Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
-                        }.frame(maxWidth: .infinity, minHeight: 44).contentShape(Rectangle())
-                    }
-                }.buttonStyle(NovaRowPressStyle())
             }
         }
+    }
+
+    private var companySearchRow: some View {
+        Button { showingSearch = true } label: {
+            HStack(spacing: 10) {
+                NovaIcon(symbol: "magnifyingglass", size: 18)
+                NovaText(text: "Firma kayıtlarında ara", style: .bodyStrong)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
+            }.padding(.horizontal, 12).frame(maxWidth: .infinity, minHeight: 50)
+                .novaControlBackground(cornerRadius: 14).contentShape(Rectangle())
+        }.buttonStyle(NovaRowPressStyle())
+    }
+
+    private func companyCategorySections(_ company: IsgWorkspaceCompany) -> some View {
+        VStack(alignment: .leading, spacing: 22) {
+            companyCategory("Firma ve kadro") {
+                companyPlainRow(title: "Firma bilgileri", subtitle: company.sector?.isEmpty == false ? company.sector! : "Profil bilgileri",
+                    symbol: "building.2", status: company.sector?.isEmpty == false ? ("Güncel", .success) : ("Takip gerekli", .warning),
+                    action: canManageCompanies ? { editor = .edit(company) } : nil)
+                companyPlainRow(title: "Personel", subtitle: companyPersonnel.map { "\($0.employees.active) kişi" } ?? "Yükleniyor",
+                    symbol: IsgWorkspaceDomain.personnel.symbol,
+                    status: (companyPersonnel?.employees.active ?? 0) > 0 ? ("Güncel", .success) : ("Başlanmadı", .warning)) {
+                        companyWorkspaceDomain = .personnel
+                    }
+                companyDomainRow(.appointment)
+            }
+            companyCategory("Risk ve acil durum") {
+                companyDomainRow(.risk)
+                companyDomainRow(.emergencyPlan)
+                companyDomainRow(.drill)
+            }
+            companyCategory("Kontrol ve kayıtlar") {
+                companyDomainRow(.equipment)
+                companyDomainRow(.nonconformity)
+                companyDomainRow(.checklist)
+                companyDomainRow(.files)
+                companyPlainRow(title: NovaDestination.analyses.title, subtitle: "Fotoğraflı saha analizleri",
+                    symbol: NovaDestination.analyses.symbol, status: nil) { companyWorkspaceAnalyses = true }
+            }
+            companyCategory("Eğitim ve organizasyon") {
+                companyDomainRow(.training)
+                companyDomainRow(.board)
+                companyDomainRow(.katip)
+            }
+            companyCategory("Diğer kayıtlar") {
+                companyDomainRow(.annualPlan)
+                companyDomainRow(.workPermit)
+                companyDomainRow(.visit)
+                companyDomainRow(.ppe)
+            }
+        }
+    }
+
+    private func companyCategory<Content: View>(_ title: String,
+                                                @ViewBuilder content: @escaping () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            NovaText(text: title, style: .sectionTitle)
+            NovaCard(padding: 0) {
+                VStack(spacing: 0) { content() }
+            }
+        }
+    }
+
+    private func companyDomainRow(_ domain: IsgWorkspaceDomain) -> some View {
+        let value = companyModuleStatus(domain)
+        return companyPlainRow(title: domain.title, subtitle: companyModuleSubtitle(domain),
+            symbol: domain.symbol, status: value) { companyWorkspaceDomain = domain }
+    }
+
+    private func companyPlainRow(title: String, subtitle: String, symbol: String,
+                                 status: (String, NovaStatus)?, action: (() -> Void)?) -> some View {
+        Button { action?() } label: {
+            HStack(spacing: 11) {
+                NovaIcon(symbol: symbol, size: 17).frame(width: 28)
+                VStack(alignment: .leading, spacing: 2) {
+                    NovaText(text: title, style: .bodyStrong)
+                    NovaText(text: subtitle, style: .metaQuiet)
+                }
+                Spacer(minLength: 8)
+                if let status { NovaStatusPill(label: status.0, status: status.1) }
+                if action != nil { Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold)) }
+            }.padding(.horizontal, 13).frame(maxWidth: .infinity, minHeight: 58).contentShape(Rectangle())
+        }.buttonStyle(NovaRowPressStyle()).disabled(action == nil)
+    }
+
+    private func companyModuleSubtitle(_ domain: IsgWorkspaceDomain) -> String {
+        guard let snapshot = companyDomainSnapshots[domain.rawValue] else {
+            return companyOverviewLoading ? "Yükleniyor…" : "Kayıtları görüntüle"
+        }
+        return snapshot.rows.isEmpty ? "Henüz kayıt yok" : "\(snapshot.rows.count) kayıt"
+    }
+
+    private func companyModuleStatus(_ domain: IsgWorkspaceDomain) -> (String, NovaStatus)? {
+        guard let snapshot = companyDomainSnapshots[domain.rawValue] else { return nil }
+        guard !snapshot.rows.isEmpty else { return ("Başlanmadı", .warning) }
+        let statuses = snapshot.rows.compactMap(\.status)
+        let metric = snapshot.metrics.filter { $0.value > 0 }.map(\.id)
+        if statuses.contains(where: { ["overdue", "expired", "failed", "critical"].contains($0) }) ||
+            metric.contains(where: { $0.contains("overdue") || $0.contains("expired") || $0.contains("failed") }) {
+            return ("Dikkat", .danger)
+        }
+        if statuses.contains(where: { ["due_soon", "upcoming"].contains($0) }) ||
+            metric.contains(where: { $0.contains("due_soon") || $0.contains("upcoming") }) {
+            return ("Yaklaşıyor", .warning)
+        }
+        if statuses.contains(where: { ["open", "assigned", "in_progress", "pending_verification", "untracked", "never_inspected", "period_unknown"].contains($0) }) ||
+            metric.contains(where: { $0.contains("untracked") || $0.contains("open") }) {
+            return ("Takip gerekli", .warning)
+        }
+        if statuses.contains(where: { ["draft", "planned"].contains($0) }) { return ("Devam ediyor", .info) }
+        return ("Güncel", .success)
+    }
+
+    private func companyReadinessItems(_ company: IsgWorkspaceCompany) -> [NovaCompanyReadinessItem] {
+        let hasCompanyInfo = company.sector?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+            && company.address?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+        let personnelStatus: NovaCompanyReadinessStatus = companyPersonnel.map {
+            $0.employees.active > 0 ? .complete : .missing
+        } ?? .unknown
+        let logoStatus: NovaCompanyReadinessStatus = companyOverviewLoading
+            && companyDomainSnapshots[IsgWorkspaceDomain.files.rawValue] == nil ? .unknown
+            : (companyLogo == nil ? .missing : .complete)
+        let responsible = company.responsibleName?.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return [
+            .init(id: "company", title: "Firma Bilgileri",
+                detail: hasCompanyInfo ? "Temel firma bilgileri güncel." : "Sektör veya adres bilgisi eksik.",
+                status: hasCompanyInfo ? .complete : .missing),
+            readinessItem(id: "risk", title: "Risk Analizi", domain: .risk),
+            readinessItem(id: "emergency", title: "Acil Durum Planı", domain: .emergencyPlan),
+            readinessItem(id: "training", title: "Eğitim", domain: .training),
+            .init(id: "personnel", title: "Personel",
+                detail: companyPersonnel.map { "\($0.employees.active) aktif personel kayıtlı." } ?? "Personel verisi yükleniyor.",
+                status: personnelStatus),
+            readinessItem(id: "nonconformity", title: "Uygunsuzluk", domain: .nonconformity),
+            readinessItem(id: "equipment", title: "Periyodik Kontrol", domain: .equipment),
+            .init(id: "logo", title: "Logo",
+                detail: companyLogo == nil ? "Firma logosu eklenmemiş." : "Firma logosu kayıtlı.",
+                status: logoStatus),
+            .init(id: "responsible", title: "Sorumlu Kişi",
+                detail: responsible?.isEmpty == false ? responsible! : "Sorumlu kişi tanımlanmamış.",
+                status: responsible?.isEmpty == false ? .complete : .missing),
+            readinessItem(id: "visits", title: "Ziyaretler", domain: .visit)
+        ]
+    }
+
+    private func readinessItem(id: String, title: String,
+                               domain: IsgWorkspaceDomain) -> NovaCompanyReadinessItem {
+        guard let snapshot = companyDomainSnapshots[domain.rawValue] else {
+            return .init(id: id, title: title,
+                detail: companyOverviewLoading ? "Durum yükleniyor." : "Durum bilgisi alınamadı.", status: .unknown)
+        }
+        guard !snapshot.rows.isEmpty else {
+            return .init(id: id, title: title, detail: "Henüz kayıt yok.", status: .missing)
+        }
+        let status: NovaCompanyReadinessStatus
+        switch companyModuleStatus(domain)?.1 {
+        case .success: status = .complete
+        case .warning, .danger, .info: status = .needsReview
+        case .neutral, .none: status = .unknown
+        }
+        let detail = companyModuleStatus(domain).map { "\(snapshot.rows.count) kayıt · \($0.0)" }
+            ?? "\(snapshot.rows.count) kayıt bulundu."
+        return .init(id: id, title: title, detail: detail, status: status)
+    }
+
+    private var monitoredCompanyDomains: [IsgWorkspaceDomain] {
+        [.risk, .emergencyPlan, .equipment, .nonconformity, .training, .appointment,
+         .drill, .checklist, .board, .katip, .files, .visit]
+    }
+    private var monitoredCompanyModuleCount: Int { monitoredCompanyDomains.count }
+    private var currentCompanyModuleCount: Int {
+        monitoredCompanyDomains.filter { companyModuleStatus($0)?.1 == .success }.count
+    }
+    private var openCompanyNonconformityCount: Int {
+        (companyDomainSnapshots[IsgWorkspaceDomain.nonconformity.rawValue]?.rows ?? [])
+            .filter { !["closed", "cancelled"].contains($0.status ?? "") }.count
+    }
+    private var companyNextActions: [CompanyNextAction] {
+        var result: [CompanyNextAction] = []
+        if openCompanyNonconformityCount > 0 {
+            result.append(.init(id: "nonconformity", title: "Açık uygunsuzlukları incele",
+                detail: "\(openCompanyNonconformityCount) kayıt takip bekliyor", symbol: "exclamationmark.triangle",
+                status: .danger, domain: .nonconformity))
+        }
+        for (domain, title, detail, symbol) in [
+            (IsgWorkspaceDomain.risk, "Risk değerlendirmesi oluştur", "Henüz değerlendirme kaydı yok", "checkmark.shield"),
+            (.emergencyPlan, "Acil durum planı oluştur", "Henüz yürürlükte bir plan yok", "light.beacon.max"),
+            (.equipment, "Ekipman ve kontrol takibini başlat", "Henüz ekipman kaydı yok", "wrench.and.screwdriver"),
+            (.appointment, "Çalışan görevlerini tanımla", "Henüz atama kaydı yok", "person.badge.shield.checkmark"),
+            (.training, "İlk eğitim kaydını oluştur", "Henüz gerçekleşen eğitim yok", "graduationcap")
+        ] {
+            if let snapshot = companyDomainSnapshots[domain.rawValue], snapshot.rows.isEmpty {
+                result.append(.init(id: domain.rawValue, title: title, detail: detail,
+                    symbol: symbol, status: .warning, domain: domain))
+            }
+        }
+        return result
+    }
+
+    @MainActor private func loadCompanyOverview(_ companyID: UUID) async {
+        companyOverviewLoading = true; companyOverviewError = nil
+        async let personnelValue = try? await store.personnelMetrics(companyID: companyID)
+        async let risk = try? await store.domain(.risk, companyID: companyID, limit: 20)
+        async let emergency = try? await store.domain(.emergencyPlan, companyID: companyID, limit: 20)
+        async let equipment = try? await store.domain(.equipment, companyID: companyID, limit: 20)
+        async let nonconformity = try? await store.domain(.nonconformity, companyID: companyID, limit: 20)
+        async let training = try? await store.domain(.training, companyID: companyID, limit: 20)
+        async let appointment = try? await store.domain(.appointment, companyID: companyID, limit: 20)
+        async let drill = try? await store.domain(.drill, companyID: companyID, limit: 20)
+        async let checklist = try? await store.domain(.checklist, companyID: companyID, limit: 20)
+        async let board = try? await store.domain(.board, companyID: companyID, limit: 20)
+        async let katip = try? await store.domain(.katip, companyID: companyID, limit: 20)
+        async let files = try? await store.domain(.files, companyID: companyID, limit: 20)
+        async let visits = try? await store.domain(.visit, companyID: companyID, limit: 20)
+        let values = await (personnelValue, risk, emergency, equipment, nonconformity, training,
+                            appointment, drill, checklist, board, katip, files, visits)
+        guard companyWorkspaceID == companyID, store.selectedCompanyID == companyID else { return }
+        companyPersonnel = values.0
+        let snapshots = [values.1, values.2, values.3, values.4, values.5, values.6,
+                         values.7, values.8, values.9, values.10, values.11, values.12].compactMap { $0 }
+        companyDomainSnapshots = Dictionary(uniqueKeysWithValues: snapshots.map { ($0.domain.rawValue, $0) })
+        await loadCompanyLogo(from: values.11, companyID: companyID)
+        if companyPersonnel == nil || snapshots.count < monitoredCompanyDomains.count {
+            companyOverviewError = "Bazı firma durumları alınamadı. Görünen kayıtları kullanabilir veya özeti yenileyebilirsiniz."
+        }
+        companyOverviewLoading = false
+    }
+
+    @MainActor private func loadCompanyLogo(from files: IsgWorkspaceDomainSnapshot?, companyID: UUID) async {
+        guard companyWorkspaceID == companyID, store.selectedCompanyID == companyID else { return }
+        guard let row = files?.rows.first(where: { record in
+            record.facts.contains { $0.0 == "category" && $0.1 == "company_logo" }
+        }) else {
+            companyLogo = nil; companyLogoEntryID = nil
+            return
+        }
+        guard row.id != companyLogoEntryID || companyLogo == nil else { return }
+        guard let download = try? await store.downloadFile(row, companyID: companyID),
+              !Task.isCancelled, companyWorkspaceID == companyID,
+              let image = UIImage(data: download.data) else { return }
+        companyLogo = image
+        companyLogoEntryID = row.id
+    }
+
+    @MainActor private func saveCompanyLogo(_ item: PhotosPickerItem) async {
+        guard canManageCompanyLogo, let companyID = companyWorkspaceID else {
+            companyLogoPicker = nil
+            return
+        }
+        companyLogoSaving = true; companyLogoError = nil
+        defer { companyLogoSaving = false; companyLogoPicker = nil }
+        do {
+            guard let source = try await item.loadTransferable(type: Data.self),
+                  let image = UIImage(data: source),
+                  let data = normalizedCompanyLogo(image) else {
+                throw IsgWorkspaceAPIFailure.invalidRequest
+            }
+            let digest = IsgWorkspaceMutationAttempt.digest(data)
+            let uploadMutationID = companyLogoUploadAttempt.id(namespace: "company.logo.upload",
+                components: [companyID.uuidString.lowercased(), digest])
+            let upload = try await store.uploadFile(mutationID: uploadMutationID, title: "Firma logosu",
+                filename: "firma-logo.jpg", category: "company_logo", data: data, companyID: companyID)
+            let linkMutationID = companyLogoLinkAttempt.id(namespace: "company.logo.link",
+                components: [companyID.uuidString.lowercased(), upload.entryID.uuidString.lowercased()])
+            _ = try await store.mutateDomain(mutationID: linkMutationID, domain: .files, payload: [
+                "action": .string("set_company_logo"), "entry_id": .id(upload.entryID)
+            ], companyID: companyID)
+            guard companyWorkspaceID == companyID else { return }
+            companyLogo = image; companyLogoEntryID = upload.entryID
+            celebrate(NovaSuccessMessage.companyLogoAdded)
+        } catch {
+            companyLogoError = "Logo eklenemedi. JPG veya PNG görseliyle yeniden deneyin."
+        }
+    }
+
+    private func normalizedCompanyLogo(_ image: UIImage) -> Data? {
+        func render(maximum: CGFloat, quality: CGFloat) -> Data? {
+            let longest = max(image.size.width, image.size.height)
+            guard longest > 0 else { return nil }
+            let scale = min(1, maximum / longest)
+            let size = CGSize(width: max(1, image.size.width * scale), height: max(1, image.size.height * scale))
+            let format = UIGraphicsImageRendererFormat(); format.scale = 1; format.opaque = true
+            let rendered = UIGraphicsImageRenderer(size: size, format: format).image { _ in
+                UIColor.white.setFill(); UIBezierPath(rect: CGRect(origin: .zero, size: size)).fill()
+                image.draw(in: CGRect(origin: .zero, size: size))
+            }
+            return rendered.jpegData(compressionQuality: quality)
+        }
+        for candidate in [(CGFloat(1_600), CGFloat(0.84)), (1_200, 0.72), (900, 0.60)] {
+            if let data = render(maximum: candidate.0, quality: candidate.1), data.count <= 5 * 1_024 * 1_024 {
+                return data
+            }
+        }
+        return nil
     }
 
     private var search: some View {
@@ -1000,13 +1458,28 @@ private struct IsgOSGBWorkspaceRoot: View {
         if let count = company.declaredEmployeeCount { parts.append("\(count) çalışan") }
         return parts.joined(separator: " · ")
     }
+    private func companyProfileProgress(_ company: IsgWorkspaceCompany) -> Int {
+        func present(_ value: String?) -> String? {
+            guard let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+            return value
+        }
+        return [present(company.sector), company.declaredEmployeeCount.map(String.init),
+            present(company.email), present(company.address), present(company.responsibleName),
+            present(company.responsiblePhone), present(company.responsibleEmail), present(company.hazardClass)].compactMap { $0 }.count
+    }
     private func symbol(_ kind: String) -> String {
         switch kind { case "employee": return "person"; case "equipment": return "shippingbox"; case "training": return "graduationcap"; case "file": return "doc"; default: return "checklist" }
     }
 }
 
 private struct IsgWorkspaceMemberManagement: View {
+    private struct ActivitySelection: Identifiable {
+        let id: UUID
+        let workspace: UUID
+    }
+    @State private var activityMember: ActivitySelection?
     @ObservedObject var store: IsgWorkspaceStore
+    var onOpenRecord: ((BusinessActivityDetail, Bool) -> Void)? = nil
     @State private var members: [IsgWorkspaceMember] = []
     @State private var invitations: [IsgWorkspaceInvitation] = []
     @State private var email = ""
@@ -1041,9 +1514,17 @@ private struct IsgWorkspaceMemberManagement: View {
                     invitationList
                 }
             }.padding(18).padding(.bottom, 24).novaPopupContentSize()
+                .novaAsyncContent(isLoading: loading)
         }
         .scrollDismissesKeyboard(.interactively)
         .task { await load() }
+        .sheet(item: $activityMember) { selection in
+            ExpertActivityDestination(workspace: selection.workspace, member: selection.id,
+                onClose: { activityMember = nil }, onOpenRecord: { detail, companyOnly in
+                    activityMember = nil
+                    onOpenRecord?(detail, companyOnly)
+                })
+        }
     }
 
     private var invitationForm: some View {
@@ -1099,6 +1580,7 @@ private struct IsgWorkspaceMemberManagement: View {
                         VStack(alignment: .leading, spacing: 3) {
                             NovaText(text: role(member.role), style: .bodyStrong)
                             NovaText(text: String((member.userID ?? member.id).uuidString.prefix(8)) + " · " + status(member.status), style: .metaQuiet)
+                            Text("Kullanım ve işlem geçmişi").font(NovaFont.font(.metaQuiet)).foregroundStyle(.secondary)
                         }
                         Spacer(minLength: 0)
                         if member.role != "owner" {
@@ -1132,6 +1614,12 @@ private struct IsgWorkspaceMemberManagement: View {
                                 }
                             } label: { Image(systemName: "ellipsis.circle").frame(width: 44, height: 44) }
                                 .disabled(working)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        if let user = member.userID, let workspace = store.selection?.workspaceID {
+                            activityMember = ActivitySelection(id: user, workspace: workspace)
                         }
                     }
                 }
@@ -1307,6 +1795,7 @@ private struct IsgCompanyEditorRoute: Identifiable {
 private struct IsgWorkspaceCompanyEditor: View {
     let company: IsgWorkspaceCompany?
     @ObservedObject var store: IsgWorkspaceStore
+    let onClose: () -> Void
     let onSave: (UUID, UUID, IsgWorkspaceCompanyDraft, Set<UUID>, String) async throws -> Void
     let onArchive: ((String) async throws -> Void)?
     @State private var name: String
@@ -1329,12 +1818,15 @@ private struct IsgWorkspaceCompanyEditor: View {
     @State private var error: String?
     @State private var companyAttempt = IsgWorkspaceMutationAttempt()
     @State private var profileAttempt = IsgWorkspaceMutationAttempt()
+    @State private var step = 0
+    @State private var saved = false
     @Environment(\.novaCelebrate) private var celebrate
 
-    init(company: IsgWorkspaceCompany?, store: IsgWorkspaceStore,
+    init(company: IsgWorkspaceCompany?, store: IsgWorkspaceStore, onClose: @escaping () -> Void,
          onSave: @escaping (UUID, UUID, IsgWorkspaceCompanyDraft, Set<UUID>, String) async throws -> Void,
          onArchive: ((String) async throws -> Void)?) {
-        self.company = company; self.store = store; self.onSave = onSave; self.onArchive = onArchive
+        self.company = company; self.store = store; self.onClose = onClose
+        self.onSave = onSave; self.onArchive = onArchive
         _name = State(initialValue: company?.name ?? "")
         _hazard = State(initialValue: company?.hazardClass ?? "medium")
         _sector = State(initialValue: company?.sector ?? "")
@@ -1349,84 +1841,34 @@ private struct IsgWorkspaceCompanyEditor: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                NovaPopupHeading(text: company == nil
-                    ? RDLocalization.string("localizable.nova.navigation.firma.ekle.b4073323", table: .localizable, fallback: "Firma Ekle")
-                    : RDLocalization.string("localizable.nova.workspace.company.edit", table: .localizable, fallback: "Firmayı düzenle"),
-                    symbol: "building.2", subtitle: "Firma bilgileri OSGB çalışma alanındaki tüm modüllerde kullanılır.")
-                accordionSection("basic", title: "Temel bilgiler", symbol: "building.2",
-                                 summary: name.isEmpty ? "Firma adı, tehlike sınıfı ve sektör" : name) {
-                    field("Firma adı *", symbol: "building.2", text: $name)
-                    HStack(spacing: 8) {
-                        hazardMenu
-                        field("Sektör *", symbol: "square.grid.2x2", text: $sector)
-                    }
-                }
-                accordionSection("osgb", title: "OSGB bilgileri", symbol: "checkmark.seal",
-                                 summary: "Sicil ve yetki alanları için hazır bölüm") {
-                    NovaHelpHint(text: "OSGB sicil numarası, yetki belgesi ve sorumlu uzman alanları bu bölümde tutulacak.")
-                    HStack(spacing: 8) {
-                        field("OSGB sicil no", symbol: "number", text: .constant(""))
-                            .disabled(true).opacity(0.52)
-                        NovaStatusPill(label: "Yakında", status: .neutral)
-                    }
-                }
-                accordionSection("contact", title: "İletişim ve kapasite", symbol: "person.2",
-                                 summary: "İsteğe bağlı iletişim ve çalışan bilgileri") {
-                    field("Firma e-posta", symbol: "envelope", text: $email)
-                    field("Çalışan sayısı", symbol: "person.2", text: $employeeCount)
-                    field("Adres", symbol: "mappin.and.ellipse", text: $address)
-                    Toggle("Sorumlu personel ekle", isOn: $addResponsible)
-                    if addResponsible {
-                        field("Ad soyad *", symbol: "person", text: $responsibleName)
-                        field("Telefon *", symbol: "phone", text: $responsiblePhone)
-                        field("E-posta *", symbol: "envelope", text: $responsibleEmail)
-                        NovaText(text: "Sorumlu kişi firma iletişim bilgisinde gösterilir. Personel kaydı ayrı personel ekranından oluşturulur.", style: .metaQuiet)
-                    }
-                }
-                if company == nil {
-                    accordionSection("experts", title: "Uzman ataması", symbol: "person.2.badge.gearshape",
-                                     summary: selectedExpertIDs.isEmpty ? "İsteğe bağlı hızlı atama" : "\(selectedExpertIDs.count) uzman seçildi") {
-                        if membersLoading {
-                            NovaLoadingView(message: "Uzmanlar yükleniyor…")
-                        } else if experts.isEmpty {
-                            NovaHelpHint(text: "Önce ekip yönetiminden aktif bir İSG uzmanı davet edin.")
-                        } else {
-                            Picker("Atama rolü", selection: $assignmentRole) {
-                                Text("Destek uzmanı").tag("support")
-                                Text("Birincil uzman").tag("primary")
-                            }.pickerStyle(.segmented)
-                            ForEach(experts, id: \.id) { member in
-                                Button { toggleExpert(member.id) } label: {
-                                    HStack(spacing: 10) {
-                                        NovaIcon(symbol: "person.badge.shield.checkmark", size: 17)
-                                        NovaText(text: expertLabel(member), style: .body)
-                                        Spacer(minLength: 0)
-                                        Image(systemName: selectedExpertIDs.contains(member.id) ? "checkmark.circle.fill" : "circle")
-                                    }.frame(minHeight: 42).contentShape(Rectangle())
-                                }.buttonStyle(NovaRowPressStyle())
-                            }
+        Group {
+            if saved {
+                NovaTaskSuccessView(title: company == nil ? "Firma oluşturuldu" : "Firma güncellendi",
+                    message: "Firma bilgileri kaydedildi ve sonraki modül işlemlerinde otomatik kullanılacak.",
+                    doneTitle: "Firmalara dön", onDone: onClose)
+            } else {
+                NovaPageSurface(onEdgeBack: goBack) {
+                    VStack(spacing: 0) {
+                        NovaTaskHeader(title: company == nil ? "Firma ekle" : "Firmayı düzenle",
+                            step: step + 1, total: totalSteps, stepTitle: stepTitle, onClose: goBack)
+                            .padding(.horizontal, 18).padding(.top, 10)
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 14) {
+                                stepContent
+                                if let error { NovaTaskErrorSummary(message: error) }
+                            }.padding(20).padding(.bottom, 18)
+                        }
+                        .scrollDismissesKeyboard(.interactively)
+                        .safeAreaInset(edge: .bottom, spacing: 0) {
+                            NovaTaskStickyActions(primaryTitle: step == totalSteps - 1
+                                ? (company == nil ? "Firmayı kaydet" : "Değişiklikleri kaydet") : "Devam",
+                                primarySymbol: step == totalSteps - 1 ? "checkmark" : "arrow.right",
+                                isWorking: saving, canGoBack: true, onBack: goBack, onPrimary: advance)
                         }
                     }
                 }
-                if let error { NovaHelpHint(text: error) }
-                NovaButton(label: saving
-                    ? RDLocalization.string("localizable.nova.workspace.saving", table: .localizable, fallback: "Kaydediliyor…")
-                    : company == nil ? "Firmayı kaydet" : "Değişiklikleri kaydet",
-                    symbol: saving ? "hourglass" : "checkmark", isEnabled: canSave && !saving) { save() }
-                if let onArchive {
-                    NovaCard(padding: 12) {
-                        TextField(RDLocalization.string("localizable.nova.workspace.archive.reason", table: .localizable,
-                            fallback: "Arşivleme gerekçesi"), text: $reason).font(NovaFont.font(.body))
-                    }
-                    NovaButton(label: RDLocalization.string("localizable.nova.workspace.company.archive", table: .localizable,
-                        fallback: "Firmayı arşivle"), symbol: "archivebox", variant: .danger,
-                        isEnabled: !saving && !reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) { archive(onArchive) }
-                }
-            }.padding(18).novaPopupContentSize()
+            }
         }
-        .scrollDismissesKeyboard(.interactively)
         .task(id: company == nil) {
             guard company == nil else { return }
             membersLoading = true
@@ -1437,6 +1879,116 @@ private struct IsgWorkspaceCompanyEditor: View {
             }
             membersLoading = false
         }
+    }
+
+    private var totalSteps: Int { company == nil ? 4 : 3 }
+    private var stepTitle: String {
+        if step == 0 { return "Temel bilgiler" }
+        if step == 1 { return "İletişim ve kapasite" }
+        if company == nil && step == 2 { return "Uzman ataması" }
+        return "Kontrol ve kaydet"
+    }
+
+    @ViewBuilder private var stepContent: some View {
+        if step == 0 { basicStep }
+        else if step == 1 { contactStep }
+        else if company == nil && step == 2 { expertStep }
+        else { reviewStep }
+    }
+
+    private var basicStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaHelpHint(text: "Firma ve sektör bilgisi bir kez kaydedilir; işyeri ve modül akışlarında yeniden kullanılır.")
+            NovaCard(padding: 14) {
+                VStack(alignment: .leading, spacing: 10) {
+                    field("Firma adı *", symbol: "building.2", text: $name)
+                    Divider()
+                    hazardMenu
+                    Divider()
+                    field("Sektör *", symbol: "square.grid.2x2", text: $sector)
+                }
+            }
+        }
+    }
+
+    private var contactStep: some View {
+        NovaCard(padding: 14) {
+            VStack(alignment: .leading, spacing: 10) {
+                field("Firma e-posta", symbol: "envelope", text: $email)
+                Divider(); field("Çalışan sayısı", symbol: "person.2", text: $employeeCount)
+                Divider(); field("Adres", symbol: "mappin.and.ellipse", text: $address)
+                Divider(); Toggle("Sorumlu personel ekle", isOn: $addResponsible)
+                if addResponsible {
+                    field("Ad soyad *", symbol: "person", text: $responsibleName)
+                    field("Telefon *", symbol: "phone", text: $responsiblePhone)
+                    field("E-posta *", symbol: "envelope", text: $responsibleEmail)
+                    NovaWhyDisclosure {
+                        NovaText(text: "Sorumlu kişi firma iletişim bilgisinde gösterilir. Personel kaydı ayrı personel ekranından oluşturulur.", style: .metaQuiet)
+                    }
+                }
+            }
+        }
+    }
+
+    private var expertStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaHelpHint(text: "Uzman ataması isteğe bağlıdır; firmayı şimdi kaydedip atamayı daha sonra da yapabilirsiniz.")
+            if membersLoading { NovaLoadingView(message: "Uzmanlar yükleniyor…") }
+            else if experts.isEmpty { NovaEmptyState(title: "Atanabilir uzman yok", message: "Ekip yönetiminden uzman davet ettikten sonra atama yapabilirsiniz.") }
+            else {
+                NovaCard(padding: 14) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Picker("Atama rolü", selection: $assignmentRole) {
+                            Text("Destek uzmanı").tag("support"); Text("Birincil uzman").tag("primary")
+                        }.pickerStyle(.segmented)
+                        ForEach(experts, id: \.id) { member in
+                            Button { toggleExpert(member.id) } label: {
+                                HStack(spacing: 10) {
+                                    NovaIcon(symbol: "person.badge.shield.checkmark", size: 17)
+                                    NovaText(text: expertLabel(member), style: .body); Spacer(minLength: 0)
+                                    Image(systemName: selectedExpertIDs.contains(member.id) ? "checkmark.circle.fill" : "circle")
+                                }.frame(minHeight: 44).contentShape(Rectangle())
+                            }.buttonStyle(NovaRowPressStyle())
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var reviewStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaCard(padding: 15) {
+                VStack(alignment: .leading, spacing: 7) {
+                    NovaText(text: "Firma özeti", style: .bodyStrong)
+                    NovaText(text: name, style: .cardTitle)
+                    NovaText(text: "\(hazardTitle) · \(sector)", style: .metaQuiet)
+                    if !address.isEmpty { NovaText(text: address, style: .metaQuiet) }
+                    if company == nil { NovaText(text: "\(selectedExpertIDs.count) uzman seçildi", style: .metaQuiet) }
+                }.frame(maxWidth: .infinity, alignment: .leading)
+            }
+            if let onArchive {
+                NovaWhyDisclosure(label: "Arşivleme") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        TextField(RDLocalization.string("localizable.nova.workspace.archive.reason", table: .localizable,
+                            fallback: "Arşivleme gerekçesi"), text: $reason).font(NovaFont.font(.body))
+                        NovaButton(label: RDLocalization.string("localizable.nova.workspace.company.archive", table: .localizable,
+                            fallback: "Firmayı arşivle"), symbol: "archivebox", variant: .danger,
+                            isEnabled: !saving && !reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) { archive(onArchive) }
+                    }
+                }
+            }
+        }
+    }
+
+    private func goBack() { error = nil; if step > 0 { step -= 1 } else { onClose() } }
+    private func advance() {
+        error = nil
+        if step == 0 && (name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || sector.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
+            error = "Firma adı ve sektör zorunludur."; return
+        }
+        if step == 1 && !canSave { error = "Çalışan sayısı ve sorumlu personel bilgilerini kontrol edin."; return }
+        if step < totalSteps - 1 { step += 1 } else { save() }
     }
 
     private var canSave: Bool {
@@ -1547,6 +2099,8 @@ private struct IsgWorkspaceCompanyEditor: View {
             do {
                 try await onSave(companyMutationID, profileMutationID, draft, selectedExpertIDs, assignmentRole)
                 celebrate(company == nil ? NovaSuccessMessage.companyCreated : NovaSuccessMessage.companyUpdated)
+                saving = false
+                saved = true
             } catch {
                 self.error = RDLocalization.string("localizable.nova.workspace.save.failed", table: .localizable,
                     fallback: "İşlem tamamlanamadı. Bilgileri kontrol edip yeniden deneyin.")
@@ -1571,6 +2125,7 @@ private struct IsgWorkspaceCompanyEditor: View {
 }
 
 struct NovaPilotRoot: View {
+    @ObservedObject private var notebookRelease = NotebookUIRelease.shared
     let identity: NovaSessionIdentity
     var previewOnly = false
     var workspaceLabel: String? = nil
@@ -1580,13 +2135,14 @@ struct NovaPilotRoot: View {
     var workspaceStore: IsgWorkspaceStore? = nil
     @EnvironmentObject private var app: AppState
     @Environment(\.scenePhase) private var scenePhase
-    @StateObject private var controller = NovaWorkspaceController()
+    @StateObject private var controller: NovaWorkspaceController
     @State private var navigation: NovaNavigationState
     @State private var showingCreate = false
     @State private var notice: String?
     @State private var listRevision = UUID()
     @State private var overview: [NovaPilotCompanySummary]?
     @State private var overviewFailed = false
+    @State private var recentAnalyses: [NovaAnalysisSummary] = []
     @State private var sceneRevalidation = NovaSceneRevalidation()
     /// The account's equipment standing, for the home page's own summary. One
     /// read, and the card says nothing until it answers.
@@ -1597,10 +2153,7 @@ struct NovaPilotRoot: View {
     @State private var trainingNoticeSource: NovaFollowupPage.Row?
     @State private var notices = NovaNoticeFeed.empty
     @State private var noticeRevision = UUID()
-    @State private var workspaceRevision = UUID()
-    @State private var workspaceDashboard: IsgWorkspaceDashboard?
-    @State private var workspacePersonnel: IsgPersonnelMetrics?
-    @State private var workspaceCompanyID: UUID?
+    @State private var profileAvatarImage: Image?
 
     init(identity: NovaSessionIdentity, previewOnly: Bool = false,
          workspaceLabel: String? = nil, onWorkspaceSwitch: (() -> Void)? = nil,
@@ -1610,6 +2163,7 @@ struct NovaPilotRoot: View {
         self.workspaceLabel = workspaceLabel
         self.onWorkspaceSwitch = onWorkspaceSwitch
         self.workspaceStore = workspaceStore
+        _controller = StateObject(wrappedValue: NovaWorkspaceController(workspaceStore: workspaceStore))
         _navigation = State(initialValue: NovaNavigationState(epoch: UUID().uuidString,
             available: workspaceStore == nil
                 ? NovaWorkspaceRole.personnel.destinations
@@ -1620,7 +2174,60 @@ struct NovaPilotRoot: View {
     /// after every mark.
     private var noticeKey: String { "\(controller.host.navigation.epoch):\(ready):\(listRevision):\(noticeRevision)" }
     private var isWorkspaceExpert: Bool { workspaceStore != nil }
-    private var activeCompanies: [NovaPilotCompanySummary]? { ready && !isWorkspaceExpert ? overview?.filter { !$0.is_archived } : nil }
+    private var activeCompanies: [NovaPilotCompanySummary]? { ready ? overview?.filter { !$0.is_archived } : nil }
+    private var menuAnalysisCount: Int? {
+        if let value = workspaceStore?.dashboard?.nonconformities.first { return Int(value) }
+        return activeCompanies?.reduce(0) { $0 + ($1.finding_count ?? 0) }
+    }
+    private var menuProgressCompleted: Int {
+        guard let companies = activeCompanies, !companies.isEmpty else { return 0 }
+        var completed = 1 // firma bilgileri
+        if (menuAnalysisCount ?? 0) > 0 { completed += 1 }
+        if (equipmentBoard?.tracked ?? 0) > 0 { completed += 1 }
+        if let board = workspaceStore?.dashboard {
+            if (board.training.second ?? 0) > 0 { completed += 1 }
+            if (board.visits.first ?? 0) > 0 { completed += 1 }
+        }
+        return min(completed, 8)
+    }
+    private var menuOverdueCount: Int? {
+        if let value = workspaceStore?.dashboard?.nonconformities.second { return Int(value) }
+        return equipmentBoard?.count(NovaEquipmentState.overdue)
+    }
+    private var menuStats: [NovaMenuStat] {
+        let upcoming: String
+        if let board = workspaceStore?.dashboard {
+            let count = (board.deadlines.first ?? 0) + (board.deadlines.second ?? 0)
+            upcoming = String(count)
+        } else if let equipmentBoard {
+            upcoming = String(equipmentBoard.needsAttention)
+        } else {
+            upcoming = "—"
+        }
+        let overdue = menuOverdueCount.map { String($0) } ?? "—"
+        let analyses = menuAnalysisCount.map { String($0) } ?? "—"
+        return [
+            .init(id: "upcoming", title: "Yaklaşan İşler", value: upcoming,
+                  symbol: "calendar.badge.clock", destination: .periodicChecks),
+            .init(id: "overdue", title: "Süresi biten", value: overdue,
+                  symbol: "exclamationmark.triangle", destination: .findings),
+            .init(id: "analyses", title: "Analiz", value: analyses,
+                  symbol: "photo.on.rectangle.angled", destination: .analyses)
+        ]
+    }
+    private var menuNextAction: NovaMenuNextAction? {
+        guard let companies = activeCompanies else { return nil }
+        if companies.isEmpty {
+            return .init(title: "Firma ekle", symbol: "building.2.crop.circle",
+                destination: isWorkspaceExpert ? .companies : .newCompany, completed: 0, total: 1)
+        }
+        if (menuAnalysisCount ?? 0) == 0 {
+            return .init(title: "Fotoğraf analiz et", symbol: "camera", destination: .newAnalysis,
+                completed: 0, total: 8)
+        }
+        return .init(title: "Risk analizi ekle", symbol: "shield.lefthalf.filled", destination: .riskAssessments,
+            completed: menuProgressCompleted, total: 8)
+    }
     private var metrics: [NovaMetricItem] {
         [
             .init(id: "companies", value: activeCompanies.map { String($0.count) } ?? "—", label: "Firmalar", footer: RDLocalization.string("localizable.nova.pilot.main.gate.aktif.pilot.1a73541a", table: .localizable, fallback: "Aktif pilot"), symbol: "building.2", tone: .accent, destination: .companies),
@@ -1635,39 +2242,12 @@ struct NovaPilotRoot: View {
                   symbol: "checkmark.shield", tone: .accent, destination: .periodicChecks)
         ]
     }
-    private var dashboardMetrics: [NovaMetricItem] {
-        guard isWorkspaceExpert else { return metrics }
-        let board = workspaceDashboard
-        return [
-            .init(id: "companies", value: board?.companies.first.map(String.init) ?? "—",
-                  label: "Firmalar", footer: "Atanmış", symbol: "building.2", tone: .accent,
-                  destination: .companies),
-            .init(id: "personnel", value: workspacePersonnel.map { String($0.employees.active) } ?? "—",
-                  label: "Personel", footer: "Toplam", symbol: "person.2", tone: .accent,
-                  destination: .companies),
-            .init(id: "open", value: board?.nonconformities.first.map(String.init) ?? "—",
-                  label: "Açık uygunsuzluk", footer: "Tüm firmalar", symbol: "checklist", tone: .accent,
-                  destination: .findings),
-            .init(id: "overdue", value: board?.nonconformities.second.map(String.init) ?? "—",
-                  label: "Süresi geçen", footer: "Tüm firmalar", symbol: "exclamationmark.triangle", tone: .accent,
-                  destination: .findings),
-            .init(id: "training", value: board?.training.second.map(String.init) ?? "—",
-                  label: "Tamamlanan eğitim", footer: "Toplam", symbol: "graduationcap", tone: .accent,
-                  destination: .training),
-            .init(id: "deadlines", value: board.map { String(($0.deadlines.first ?? 0) + ($0.deadlines.second ?? 0)) } ?? "—",
-                  label: "Yaklaşan kontroller", footer: "Tüm firmalar", symbol: "calendar.badge.clock", tone: .accent,
-                  destination: .periodicChecks)
-        ]
-    }
-    private var workspaceTaskKey: String {
-        let companyIDs = workspaceStore?.companies.map(\.id.uuidString).joined(separator: ",") ?? "none"
-        return "\(workspaceStore?.selection?.workspaceID.uuidString ?? "none"):\(String(describing: workspaceStore?.phase)):\(companyIDs):\(workspaceRevision)"
-    }
-
     private var name: String { app.profile?.fullName ?? "" }
     private var ready: Bool {
-        if let workspaceStore { return !previewOnly && workspaceStore.phase == .ready }
         return !previewOnly && controller.isAvailable && controller.host.identity == identity
+    }
+    private var writable: Bool {
+        ready && (workspaceStore?.selection?.canOperate ?? true)
     }
     private var status: String {
         if previewOnly { return RDLocalization.string("localizable.nova.pilot.main.gate.tasarim.kontrolu.canli.veri.kullanilmiyor.d6b551c8", table: .localizable, fallback: "Tasarım kontrolü · canlı veri kullanılmıyor") }
@@ -1679,7 +2259,11 @@ struct NovaPilotRoot: View {
     }
 
     var body: some View {
-        NovaExpertShell(navigation: $navigation, userName: name,
+        NovaExpertShell(notebookAvailable: notebookRelease.enabled, navigation: $navigation, userName: name,
+            profileAvatar: profileAvatarImage,
+            menuRoleTitle: "İSG Uzmanı",
+            menuStats: menuStats, menuNextAction: menuNextAction,
+            onInvite: { app.requestProfileDestination(.referral); navigate(.profile) },
             hasUnread: notices.unread > 0, unreadCount: notices.unread,
             notificationItems: notices.rows.map(noticeItem),
             noticeNote: notices.rows.isEmpty ? "" : NovaNoticeWords.dismissNote,
@@ -1696,32 +2280,32 @@ struct NovaPilotRoot: View {
                 // than in NavigationStack's path. Selecting Firmalar from the
                 // drawer/tab therefore must clear that feature-local scope.
                 if destination == .companies {
-                    if isWorkspaceExpert { workspaceCompanyID = nil }
-                    else { controller.select(nil) }
+                    controller.select(nil)
                 }
             },
             onLogout: { app.signOut() }) { destination in
             switch destination {
             case .home:
                 VStack(spacing: 0) {
-                    statusCard
                     NovaDashboardScreen(data: .init(firstName: name.split(separator: " ").first.map(String.init) ?? "",
-                        openCount: nil, metrics: dashboardMetrics, activity: nil,
+                        openCount: nil, metrics: metrics, activity: nil,
                         trainingMessage: "Gerçekleşen eğitimler ve katılımcı kayıtları",
+                        recentAnalyses: recentAnalyses.map { analysis in
+                            NovaRecentAnalysis(id: analysis.id.uuidString.lowercased(),
+                                title: NovaAnalysisPresentation.title(analysis.title),
+                                companyName: analysis.companyName ?? "Firmasız",
+                                createdOn: NovaAnalysisPresentation.dateOnly(analysis.createdOn))
+                        },
                         summaryMessage: isWorkspaceExpert
                             ? "Atandığınız firmalardaki toplam güncel kayıtlar."
                             : activeCompanies != nil ? RDLocalization.string("localizable.nova.pilot.main.gate.pilot.firmalarinizin.guncel.kayitlari.01d48da7", table: .localizable, fallback: "Pilot firmalarınızın güncel kayıtları.") : overviewFailed ? RDLocalization.string("localizable.nova.pilot.main.gate.ozet.alinamadi.yenileyerek.tekrar.deneyin.9b6a6077", table: .localizable, fallback: "Özet alınamadı. Yenileyerek tekrar deneyin.") : RDLocalization.string("localizable.nova.pilot.main.gate.ozet.verileri.henuz.bagli.degil.4508136e", table: .localizable, fallback: "Özet verileri henüz bağlı değil.")),
                         onNavigate: navigate,
                         onPhoto: { navigate(.newAnalysis) }, onAssistant: unavailable,
-                        trackingIdentity: ready && !isWorkspaceExpert ? identity : nil,
-                        trackingCanWrite: !isWorkspaceExpert && controller.canWrite)
+                        trackingIdentity: ready ? identity : nil,
+                        trackingCanWrite: controller.canWrite)
                 }
             case .statistics:
-                if let workspaceStore {
-                    NovaWorkspaceExpertStatisticsScreen(store: workspaceStore,
-                        dashboard: workspaceDashboard, personnel: workspacePersonnel,
-                        onBack: { navigate(.home) }, onNavigate: navigate)
-                } else if ready {
+                if ready {
                     NovaStatisticsScreen(trackingIdentity: identity, trackingCanWrite: controller.canWrite, load: { company, months in
                         try await NovaStatisticsService(identity: identity).load(company: company, months: months)
                     }, onBack: { navigate(.home) }, onNavigate: navigate)
@@ -1730,11 +2314,9 @@ struct NovaPilotRoot: View {
             case .companies:
                 companies
             case .training, .newTraining:
-                if let workspaceStore {
-                    workspaceDomain(workspaceStore, .training, startInAddMode: destination == .newTraining)
-                } else {
+                Group {
                     NovaTrainingHub(identity: identity, scope: controller.scope, personnel: controller.personnelClient,
-                        canWrite: ready, select: controller.select,
+                        canWrite: writable, select: controller.select,
                         onBack: { navigate(.home) }, createOnOpen: destination == .newTraining)
                         .id(destination)
                 }
@@ -1747,38 +2329,33 @@ struct NovaPilotRoot: View {
             case .newFinding:
                 nonconformities(.addFinding)
             case .documentChecklist:
-                if let workspaceStore { workspaceDomain(workspaceStore, .files) } else { documents }
+                documents
             case .documents:
-                if let workspaceStore { workspaceDomain(workspaceStore, .files) } else { files() }
+                files()
             case .newDocument:
-                if let workspaceStore { workspaceDomain(workspaceStore, .files, startInAddMode: true) }
-                else { files(startInAddMode: true) }
+                files(startInAddMode: true)
             case .periodicChecks:
-                if let workspaceStore { workspaceDomain(workspaceStore, .equipment) } else { equipment }
+                equipment
             case .riskAssessments:
-                if let workspaceStore { workspaceDomain(workspaceStore, .risk) } else { risk }
+                risk
             case .checklists:
-                if let workspaceStore { workspaceDomain(workspaceStore, .checklist) } else { checklists }
+                checklists
             case .emergencyPlans:
-                if let workspaceStore { workspaceDomain(workspaceStore, .emergencyPlan) } else { emergencyPlans }
+                emergencyPlans
             case .drills:
-                if let workspaceStore { workspaceDomain(workspaceStore, .drill) } else { drills }
+                drills
             case .ppeHandovers:
-                if let workspaceStore { workspaceDomain(workspaceStore, .ppe) } else { ppe }
+                ppe
             case .appointments:
-                if let workspaceStore { workspaceDomain(workspaceStore, .appointment) } else { appointments }
+                appointments
             case .katipContracts, .annualWorkPlans, .boardMeetings, .visits, .workPermits, .contractors:
-                if let workspaceStore, let domain = workspaceDomain(for: destination) {
-                    workspaceDomain(workspaceStore, domain)
-                } else if ready {
-                    NovaPilotProcessGate(identity: identity, kind: processKind(destination), canWrite: ready, onBack: { navigate(.home) })
+                if ready {
+                    NovaPilotProcessGate(identity: identity, kind: processKind(destination), canWrite: writable, onBack: { navigate(.home) })
                         .id(destination)
                 } else { statusCard }
             case .newVisit:
-                if let workspaceStore {
-                    workspaceDomain(workspaceStore, .visit, startInAddMode: true)
-                } else if ready {
-                    NovaPilotProcessGate(identity: identity, kind: "site_visit", canWrite: ready,
+                if ready {
+                    NovaPilotProcessGate(identity: identity, kind: "site_visit", canWrite: writable,
                         onBack: { navigate(.home) })
                 } else { statusCard }
             case .newCompany:
@@ -1787,24 +2364,21 @@ struct NovaPilotRoot: View {
                     companies.onAppear { showingCreate = true }
                 }
             case .memory:
-                if let workspaceStore {
-                    IsgWorkspaceChangeScreen(store: workspaceStore,
-                        companyName: workspaceSelectedCompany(in: workspaceStore)?.name,
-                        onBack: { navigate(.home) })
-                } else { NovaProcessArchive(identity: identity, onBack: { navigate(.home) }) }
+                NovaProcessArchive(identity: identity, onBack: { navigate(.home) })
             case .notifications:
-                if let workspaceStore {
-                    IsgWorkspaceChangeScreen(store: workspaceStore,
-                        companyName: workspaceSelectedCompany(in: workspaceStore)?.name,
-                        onBack: { navigate(.home) })
-                } else if ready {
+                if ready {
                     NovaPilotNoticeGate(identity: identity,
                         onOpen: { target in navigate(target) },
                         onBack: { navigate(.home) })
                 } else { statusCard }
-            case .reports, .reportArchive:
-                if let workspaceStore { workspaceReportCenter(workspaceStore) }
-                else { NovaProcessArchive(identity: identity, onBack: { navigate(.home) }) }
+            case .reports:
+                NovaReportCenter(identity: identity, onBack: { navigate(.home) })
+            case .reportArchive:
+                NovaProcessArchive(identity: identity, onBack: { navigate(.reports) })
+            case .activity:
+                ExpertActivityDestination(onClose: { navigate(.home) }, onOpenRecord: openActivityRecord)
+            case .notebook, .newNote:
+                NotebookDestination(startWithNewNote: destination == .newNote, onClose: { navigate(.home) })
             case .profile:
                 NovaPageSurface(onEdgeBack: { navigate(.home) }) {
                     VStack(spacing: 0) {
@@ -1812,13 +2386,11 @@ struct NovaPilotRoot: View {
                         ProfileView()
                     }
                 }
-            default:
-                NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.bu.modul.hazirlaniyor.henuz.canli.islem.yapmiyor.b652656a", table: .localizable, fallback: "Bu modül hazırlanıyor; henüz canlı işlem yapmıyor.")).padding(20)
             }
         }
         .preferredColorScheme(.light)
         .overlay {
-            if !isWorkspaceExpert && controller.resolving && !previewOnly {
+            if controller.resolving && !previewOnly {
                 ZStack {
                     NovaColorToken.canvas.color(in: .light).opacity(0.96).ignoresSafeArea()
                     NovaLoadingView(message: "Verileriniz güncelleniyor…")
@@ -1828,6 +2400,7 @@ struct NovaPilotRoot: View {
                 .accessibilityAddTraits(.isModal)
             }
         }
+        .novaAsyncContent(isLoading: controller.resolving)
         .overlay(alignment: .topLeading) {
             // A container identifier propagates to SwiftUI toolbar/tab descendants.
             // Keep the QA marker separate so each button retains its own identifier.
@@ -1836,55 +2409,71 @@ struct NovaPilotRoot: View {
                 .accessibilityIdentifier("nova.pilot.root")
                 .allowsHitTesting(false)
         }
-        .novaPopupCover(isPresented: $showingCreate) {
-            NovaPopup {
+        .novaFullScreenCover(isPresented: $showingCreate) {
             NovaPilotCompanyCreateView(identity: identity, service: .live()) { companyID in
                 listRevision = UUID()
                 controller.select(companyID)
             }
-            }
         }
         .novaFullScreenCover(item: $trainingNoticeSource) { source in
-            NovaFollowupDestination(identity: identity, row: source, canWrite: ready, onBack: { trainingNoticeSource = nil })
+            NovaFollowupDestination(identity: identity, row: source, canWrite: writable, onBack: { trainingNoticeSource = nil })
         }
         .novaPopup(item: $noticeSource) { source in
-            NovaFollowupDestination(identity: identity, row: source, canWrite: ready, onBack: { noticeSource = nil })
+            NovaFollowupDestination(identity: identity, row: source, canWrite: writable, onBack: { noticeSource = nil })
         }
         .alert(RDLocalization.string("localizable.nova.pilot.main.gate.nova.pilot.d20fb7f1", table: .localizable, fallback: "İSGADA pilot"), isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
             Button("Tamam", role: .cancel) { notice = nil }
         } message: { Text(notice ?? "") }
-        .task { if !previewOnly && !isWorkspaceExpert { await controller.observe() } }
+        .task { if !previewOnly { await controller.observe() } }
+        .task(id: app.profile?.avatarURL) { await loadProfileAvatarImage() }
+        .task { if !previewOnly { await notebookRelease.refresh() } }
+        .onReceive(NetworkMonitor.shared.$isOnline) { online in
+            guard !previewOnly else { return }
+            if online && scenePhase == .active { ExpertUsagePresence.shared.foreground(workspace: workspaceStore?.selection?.workspaceID) }
+            else { Task { await ExpertUsagePresence.shared.background() } }
+        }
+        .task(id: workspaceStore?.selection?.workspaceID) {
+            if !previewOnly, scenePhase == .active {
+                ExpertUsagePresence.shared.foreground(workspace: workspaceStore?.selection?.workspaceID)
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: Notification.Name("isgada.records.changed"))) { event in
             if event.object as? UUID == identity.userID { listRevision = UUID() }
         }
         .task(id: overviewKey) {
-            guard ready, !isWorkspaceExpert else { return }
+            guard ready else { return }
             overviewFailed = false
             do { overview = try await loadNovaPilotOverview(identity: identity) }
             catch { if !Task.isCancelled { overviewFailed = true } }
         }
         .task(id: overviewKey) {
-            guard ready, !isWorkspaceExpert else { return }
+            guard ready else { return }
             equipmentBoard = try? await NovaEquipmentCheckService.live().board(identity, query: .init(limit: 1))
         }
-        .task(id: noticeKey) {
-            guard ready, !previewOnly, !isWorkspaceExpert else { return }
-            notices = (try? await NovaNoticeService.live().feed(identity)) ?? .empty
+        .task(id: "\(overviewKey):recent-analyses") {
+            guard ready, !previewOnly else { recentAnalyses = []; return }
+            do {
+                recentAnalyses = try await NovaAnalysisWorkspace.summaries(
+                    identity: identity, method: .fineKinney, limit: 6).rows
+            } catch {
+                recentAnalyses = []
+            }
         }
-        .task(id: workspaceTaskKey) {
-            guard let workspaceStore, ready else { return }
-            async let dashboardValue = workspaceStore.aggregateExpertDashboard()
-            async let personnelValue = workspaceStore.aggregateExpertPersonnelMetrics()
-            workspaceDashboard = try? await dashboardValue
-            workspacePersonnel = try? await personnelValue
+        .task(id: noticeKey) {
+            guard ready, !previewOnly else { return }
+            notices = (try? await NovaNoticeService.live().feed(identity)) ?? .empty
         }
         .onChange(of: scenePhase) { phase in
             // Screenshots, permission prompts and Control Center can cause inactive → active.
+            if !previewOnly {
+                if phase == .active { ExpertUsagePresence.shared.foreground(workspace: workspaceStore?.selection?.workspaceID) }
+                else if phase == .background { Task { await ExpertUsagePresence.shared.background() } }
+            }
             // They are not a new session and must not destroy a sheet or its draft.
             if sceneRevalidation.update(isBackground: phase == .background, isActive: phase == .active) {
                 if !previewOnly {
-                    if let workspaceStore { workspaceStore.refresh(); workspaceRevision = UUID() }
-                    else { controller.refresh() }
+                    controller.refresh()
+                    workspaceStore?.refresh()
                 }
             }
         }
@@ -1892,6 +2481,22 @@ struct NovaPilotRoot: View {
             if next != identity { showingCreate = false; notice = nil; noticeSource = nil; trainingNoticeSource = nil }
         }
         .modifier(NovaSuccessPresentation(account: identity.userID))
+    }
+
+    private func loadProfileAvatarImage() async {
+        guard let path = app.profile?.avatarURL?.trimmingCharacters(in: .whitespacesAndNewlines), !path.isEmpty else {
+            profileAvatarImage = nil
+            return
+        }
+        do {
+            if let image = try await app.auth.profileAvatarImage(path: path) {
+                profileAvatarImage = Image(uiImage: image)
+            } else {
+                profileAvatarImage = nil
+            }
+        } catch {
+            profileAvatarImage = nil
+        }
     }
 
     private var statusCard: some View {
@@ -1912,8 +2517,8 @@ struct NovaPilotRoot: View {
                 }
                 if !previewOnly {
                     Button {
-                        if let workspaceStore { workspaceStore.refresh(); workspaceRevision = UUID() }
-                        else { controller.refresh() }
+                        controller.refresh()
+                        workspaceStore?.refresh()
                     } label: { Image(systemName: "arrow.clockwise").frame(width: 44, height: 44) }
                         .accessibilityLabel(RDLocalization.string("localizable.nova.pilot.main.gate.pilot.erisimini.tekrar.kontrol.et.bfce533e", table: .localizable, fallback: "Pilot erişimini tekrar kontrol et"))
                 }
@@ -1924,7 +2529,7 @@ struct NovaPilotRoot: View {
     /// Evrak takibi reads one company at a time and says which one.
     @ViewBuilder private var documents: some View {
         if ready {
-            NovaPilotDocumentGate(identity: identity, scope: controller.scope, canWrite: ready,
+            NovaPilotDocumentGate(identity: identity, scope: controller.scope, canWrite: writable,
                 select: { controller.select($0) }, currentScope: { controller.scope },
                 onBack: { navigate(.home) }, onCompanies: { navigate(.companies) })
         } else {
@@ -1936,7 +2541,7 @@ struct NovaPilotRoot: View {
     /// when the expert picks one.
     @ViewBuilder private var risk: some View {
         if ready {
-            NovaPilotRiskGate(identity: identity, canWrite: ready, showBackButton: true,
+            NovaPilotRiskGate(identity: identity, canWrite: writable, showBackButton: true,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
@@ -1945,7 +2550,7 @@ struct NovaPilotRoot: View {
 
     @ViewBuilder private var checklists: some View {
         if ready {
-            NovaPilotChecklistGate(identity: identity, canWrite: ready,
+            NovaPilotChecklistGate(identity: identity, canWrite: writable,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
@@ -1954,7 +2559,7 @@ struct NovaPilotRoot: View {
 
     @ViewBuilder private var emergencyPlans: some View {
         if ready {
-            NovaPilotEmergencyGate(identity: identity, canWrite: ready,
+            NovaPilotEmergencyGate(identity: identity, canWrite: writable,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
@@ -1963,7 +2568,7 @@ struct NovaPilotRoot: View {
 
     @ViewBuilder private var drills: some View {
         if ready {
-            NovaPilotDrillGate(identity: identity, canWrite: ready,
+            NovaPilotDrillGate(identity: identity, canWrite: writable,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
@@ -1983,7 +2588,7 @@ struct NovaPilotRoot: View {
 
     @ViewBuilder private var ppe: some View {
         if ready {
-            NovaPilotPPEGate(identity: identity, canWrite: ready,
+            NovaPilotPPEGate(identity: identity, canWrite: writable,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
@@ -1992,7 +2597,7 @@ struct NovaPilotRoot: View {
 
     @ViewBuilder private var appointments: some View {
         if ready {
-            NovaPilotAppointmentGate(identity: identity, canWrite: ready,
+            NovaPilotAppointmentGate(identity: identity, canWrite: writable,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
@@ -2001,7 +2606,7 @@ struct NovaPilotRoot: View {
 
     @ViewBuilder private var katip: some View {
         if ready {
-            NovaPilotKatipGate(identity: identity, canWrite: ready,
+            NovaPilotKatipGate(identity: identity, canWrite: writable,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
@@ -2010,7 +2615,7 @@ struct NovaPilotRoot: View {
 
     @ViewBuilder private var equipment: some View {
         if ready {
-            NovaPilotEquipmentGate(identity: identity, canWrite: ready,
+            NovaPilotEquipmentGate(identity: identity, canWrite: writable,
                 onBack: { navigate(.home) })
         } else {
             NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")).padding(20)
@@ -2021,7 +2626,7 @@ struct NovaPilotRoot: View {
     /// the expert picks one.
     @ViewBuilder private func files(startInAddMode: Bool = false) -> some View {
         if ready {
-            NovaPilotFileGate(identity: identity, canWrite: ready,
+            NovaPilotFileGate(identity: identity, canWrite: writable,
                 startInAddMode: startInAddMode, onBack: { navigate(.home) })
                 .id(startInAddMode)
         } else {
@@ -2031,11 +2636,7 @@ struct NovaPilotRoot: View {
 
     /// Each menu entry lands on exactly one page; the surface says which.
     @ViewBuilder private func nonconformities(_ surface: NovaFindingsSurface) -> some View {
-        if let workspaceStore {
-            NovaWorkspaceExpertFindingsGate(store: workspaceStore, surface: surface,
-                onNavigate: navigate, onBack: { navigate(.home) })
-                .id("workspace:\(surface):\(workspaceRevision)")
-        } else if ready {
+        if ready {
             NovaPilotFindingsGate(identity: identity, scope: controller.scope, canWrite: controller.canWrite,
                 select: controller.select, currentScope: { controller.scope }, surface: surface,
                 onNavigate: navigate, onCompanies: { navigate(.companies) }, onHome: { navigate(.home) })
@@ -2054,12 +2655,7 @@ struct NovaPilotRoot: View {
     }
 
     @ViewBuilder private var companies: some View {
-        if let workspaceStore {
-            NovaWorkspaceExpertCompaniesGate(store: workspaceStore,
-                selectedCompanyID: $workspaceCompanyID,
-                onBack: { navigate(.home) })
-                .id("workspace-companies:\(workspaceRevision)")
-        } else if ready, let scope = controller.scope {
+        if ready, let scope = controller.scope {
             NovaCompanyWorkspace(scope: scope, companyName: controller.capability?.company_name ?? "Firma",
                 canWrite: controller.canWrite, personnel: controller.personnelClient, directory: controller.directoryClient,
                 onBack: { controller.select(nil) },
@@ -2070,12 +2666,40 @@ struct NovaPilotRoot: View {
                 onOpenNonconformities: { navigate(.findings) })
                 .id(scope.epoch)
         } else if ready && controller.selectedCompanyID == nil {
-            VStack(spacing: 0) {
-                NovaCompanyDestination(host: Binding(get: { controller.host }, set: { _ in }),
-                    loadCompanies: { try await loadNovaPilotCompanies(identity: identity, includeArchived: $0) },
-                    includeArchived: true, onSelect: controller.select,
-                    onBack: { navigate(.home) }, onCreate: { showingCreate = true })
-                    .id(listRevision)
+            if let workspaceStore {
+                // Assigned OSGB companies already live in the workspace store.
+                // Reading the personal-owner list here started a second request
+                // that could be cancelled while navigating Home -> Companies,
+                // leaving the visible list in an idle/loading state.
+                NovaCompaniesScreen(
+                    companies: workspaceStore.companies.map {
+                        NovaCompanyItem(id: $0.id.uuidString.lowercased(), name: $0.name,
+                            detail: [IsgWorkspaceDisplayText.value($0.hazardClass), $0.sector]
+                                .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
+                    },
+                    isLoading: workspaceStore.phase == .loading && workspaceStore.companies.isEmpty,
+                    error: workspaceStore.phase == .failed
+                        ? "Atanmış firmalar yenilenemedi. Bağlantınızı kontrol edip tekrar deneyin."
+                        : nil,
+                    isOwnedList: false,
+                    onSelect: { raw in
+                        guard let companyID = UUID(uuidString: raw) else { return }
+                        if workspaceStore.selectedCompanyID != companyID {
+                            workspaceStore.selectCompany(companyID)
+                        }
+                        controller.select(companyID)
+                    },
+                    onBack: { navigate(.home) },
+                    onRetry: { workspaceStore.refresh() })
+                    .id("workspace-companies:\(workspaceStore.selection?.workspaceID.uuidString ?? "none")")
+            } else {
+                VStack(spacing: 0) {
+                    NovaCompanyDestination(host: Binding(get: { controller.host }, set: { _ in }),
+                        loadCompanies: { try await loadNovaPilotCompanies(identity: identity, includeArchived: $0) },
+                        includeArchived: true, onSelect: controller.select,
+                        onBack: { navigate(.home) }, onCreate: { showingCreate = true })
+                        .id(listRevision)
+                }
             }
         } else {
             ScrollView {
@@ -2089,36 +2713,6 @@ struct NovaPilotRoot: View {
                 }.padding(20)
             }
         }
-    }
-
-    @ViewBuilder private func workspaceDomain(_ store: IsgWorkspaceStore,
-                                              _ domain: IsgWorkspaceDomain,
-                                              startInAddMode: Bool = false) -> some View {
-        NovaWorkspaceExpertDomainGate(store: store, domain: domain,
-            startInAddMode: startInAddMode, onBack: { navigate(.home) })
-            .id("workspace-domain:\(domain.rawValue):\(startInAddMode):\(workspaceRevision)")
-    }
-
-    private func workspaceDomain(for destination: NovaDestination) -> IsgWorkspaceDomain? {
-        switch destination {
-        case .katipContracts: return .katip
-        case .annualWorkPlans: return .annualPlan
-        case .boardMeetings: return .board
-        case .visits: return .visit
-        case .workPermits: return .workPermit
-        case .contractors: return .personnel
-        default: return nil
-        }
-    }
-
-    private func workspaceSelectedCompany(in store: IsgWorkspaceStore) -> IsgWorkspaceCompany? {
-        let id = workspaceCompanyID ?? store.selectedCompanyID
-        return store.companies.first { $0.id == id }
-    }
-
-    private func workspaceReportCenter(_ store: IsgWorkspaceStore) -> some View {
-        NovaWorkspaceExpertReportCenter(onAnalyses: { navigate(.analyses) },
-            onDocuments: { navigate(.documents) }, onBack: { navigate(.home) })
     }
 
     /// One notice as the shell draws it. The kind and the company are the
@@ -2148,6 +2742,27 @@ struct NovaPilotRoot: View {
         }
     }
 
+    private func openActivityRecord(_ detail: BusinessActivityDetail, companyOnly: Bool) {
+        guard let company = detail.link_company_id else { return }
+        guard detail.link_workspace_id == workspaceStore?.selection?.workspaceID else {
+            notice = "Bu kayıt başka bir çalışma alanına ait. Önce ilgili çalışma alanına geçin."
+            return
+        }
+        if !companyOnly, let record = detail.entity_id,
+           let kind = ["drill": "completed_drill", "certificate": "personnel_certificate",
+                       "contract": "katip_contract", "visit": "site_visit", "board": "board",
+                       "risk": "risk_assessment", "equipment": "equipment", "emergency": "emergency_plan",
+                       "assignment": "appointment", "training_session": "training"][detail.entity_type] {
+            noticeSource = .init(kind: kind, company_id: company, company_name: "", record_id: record,
+                source_id: record, title: BusinessActivityItem.title(action: detail.action), due_on: nil, status: "active")
+        } else {
+            controller.select(company)
+            navigate(companyOnly ? .companies : ["nonconformity": .findings, "training": .training,
+                "file": .documents, "checklist": .checklists, "ppe": .ppeHandovers,
+                "permit": .workPermits, "plan": .annualWorkPlans][detail.entity_type] ?? .companies)
+        }
+    }
+
     private func noticeBadge(_ entry: NovaNoticeEntry) -> String {
         if entry.severity == .overdue {
             return String(format: RDLocalization.string("localizable.nova.notice.badge.overdue",
@@ -2173,500 +2788,4 @@ struct NovaPilotRoot: View {
         navigation.apply(.navigate(destination), from: navigation.epoch)
     }
     private func unavailable() { notice = RDLocalization.string("localizable.nova.pilot.main.gate.bu.modul.hazirlaniyor.bu.build.de.henuz.canli.is.cdb9ea95", table: .localizable, fallback: "Bu modül hazırlanıyor. Bu build’de henüz canlı işlem yapmıyor.") }
-}
-
-// MARK: - OSGB expert data adapters for the shared expert root
-
-/// Chooses a tenant company only when a module actually needs company scope.
-/// The home page remains an aggregate expert dashboard and never owns a
-/// company picker.
-private struct NovaWorkspaceExpertDomainGate: View {
-    @ObservedObject var store: IsgWorkspaceStore
-    let domain: IsgWorkspaceDomain
-    var startInAddMode = false
-    let onBack: () -> Void
-    @State private var selectedCompanyID: UUID?
-
-    private var context: IsgWorkspaceContext? {
-        guard let id = store.selection?.workspaceID else { return nil }
-        return store.contexts.first { $0.workspaceID == id }
-    }
-    private var selectedCompany: IsgWorkspaceCompany? {
-        guard let id = selectedCompanyID else { return nil }
-        return store.companies.first { $0.id == id }
-    }
-
-    var body: some View {
-        Group {
-            if let company = selectedCompany, store.phase == .ready,
-               store.selectedCompanyID == company.id {
-                if domain == .personnel {
-                    IsgWorkspacePersonnelScreen(store: store, companyName: company.name,
-                        canOperate: context?.canOperate == true, canManageDirectory: false,
-                        initialSection: .employee, onBack: { selectedCompanyID = nil })
-                        .id("\(company.id):personnel")
-                } else {
-                    IsgWorkspaceDomainScreen(store: store, domain: domain,
-                        companyName: company.name, companyHazardClass: company.hazardClass,
-                        canOperate: context?.canOperate == true,
-                        startInAddMode: startInAddMode,
-                        onBack: { selectedCompanyID = nil })
-                        .id("\(company.id):\(domain.rawValue):\(startInAddMode)")
-                }
-            } else if selectedCompanyID != nil || store.phase == .loading {
-                NovaPageSurface {
-                    VStack(spacing: 14) {
-                        NovaPageHeading(title: domain.title, onBack: { selectedCompanyID = nil })
-                        NovaLoadingView(message: "Firma çalışma alanı hazırlanıyor…")
-                    }.padding(.horizontal, 18)
-                }
-            } else {
-                NovaCompaniesScreen(companies: store.companies.map {
-                    .init(id: $0.id.uuidString, name: $0.name,
-                          detail: [$0.hazardClass, $0.sector].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
-                }, isLoading: store.phase == .loading && store.companies.isEmpty,
-                    isOwnedList: false,
-                    onSelect: { value in
-                        guard let id = UUID(uuidString: value) else { return }
-                        selectedCompanyID = id
-                        if store.selectedCompanyID != id { store.selectCompany(id) }
-                    }, onBack: onBack, onRetry: { store.refresh() })
-            }
-        }
-        .onAppear {
-            if selectedCompanyID == nil, store.companies.count == 1,
-               let only = store.companies.first {
-                selectedCompanyID = only.id
-                if store.selectedCompanyID != only.id { store.selectCompany(only.id) }
-            }
-        }
-    }
-}
-
-/// Findings and analyses keep the normal expert navigation contract. Only the
-/// persistence provider changes to the selected OSGB workspace.
-private struct NovaWorkspaceExpertFindingsGate: View {
-    @ObservedObject var store: IsgWorkspaceStore
-    let surface: NovaFindingsSurface
-    let onNavigate: (NovaDestination) -> Void
-    let onBack: () -> Void
-    @State private var addRoute: AddRoute?
-
-    private enum AddRoute: String, Identifiable { case analysis, manual; var id: String { rawValue } }
-
-    var body: some View {
-        Group {
-            switch surface {
-            case .board:
-                NovaWorkspaceExpertDomainGate(store: store, domain: .nonconformity, onBack: onBack)
-            case .analyses:
-                analysisGate(startInCreateMode: false)
-            case .newAnalysis:
-                analysisGate(startInCreateMode: true)
-            case .addFinding:
-                addFinding
-            }
-        }
-        .novaFullScreenCover(item: $addRoute) { route in
-            switch route {
-            case .analysis:
-                analysisGate(startInCreateMode: false, onBack: { addRoute = nil })
-            case .manual:
-                NovaWorkspaceExpertDomainGate(store: store, domain: .nonconformity,
-                    startInAddMode: true, onBack: { addRoute = nil })
-            }
-        }
-    }
-
-    private var addFinding: some View {
-        NovaPageSurface(onEdgeBack: { onNavigate(.findings) }) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    NovaPageHeading(title: NovaDestination.newFinding.title,
-                        onBack: { onNavigate(.findings) })
-                    NovaHelpHint(text: "Daha önce yaptığınız bir analizin bulgularından seçebilir ya da kaydı kendiniz girebilirsiniz.")
-                    addCard(title: "Analiz bulgularından seç", detail: "Bir analizi açın, bulguları seçin ve firmaya uygunsuzluk olarak aktarın.",
-                            symbol: "sparkles.rectangle.stack", action: { addRoute = .analysis })
-                    addCard(title: "Manuel uygunsuzluk ekle", detail: "Firma, işyeri, tehlike, önlem, sorumlu ve termin bilgileriyle ayrıntılı kayıt açın.",
-                            symbol: "square.and.pencil", action: { addRoute = .manual })
-                }.padding(.horizontal, 18).padding(.bottom, novaTabBarInset)
-            }
-        }
-    }
-
-    private func addCard(title: String, detail: String, symbol: String,
-                         action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            NovaCard(padding: 16) {
-                HStack(spacing: 12) {
-                    NovaIcon(symbol: symbol, size: 22)
-                    VStack(alignment: .leading, spacing: 4) {
-                        NovaText(text: title, style: .cardTitle)
-                        NovaText(text: detail, style: .metaQuiet)
-                    }
-                    Spacer(minLength: 0)
-                    Image(systemName: "chevron.right")
-                }.frame(maxWidth: .infinity, minHeight: 58).contentShape(Rectangle())
-            }
-        }.buttonStyle(NovaRowPressStyle())
-    }
-
-    private func analysisGate(startInCreateMode: Bool,
-                              onBack: (() -> Void)? = nil) -> some View {
-        NovaWorkspaceExpertAnalysisGate(store: store, startInCreateMode: startInCreateMode,
-            onBack: onBack ?? self.onBack)
-    }
-}
-
-private struct NovaWorkspaceExpertAnalysisGate: View {
-    @ObservedObject var store: IsgWorkspaceStore
-    let startInCreateMode: Bool
-    let onBack: () -> Void
-    @State private var selectedCompanyID: UUID?
-
-    private var context: IsgWorkspaceContext? {
-        guard let id = store.selection?.workspaceID else { return nil }
-        return store.contexts.first { $0.workspaceID == id }
-    }
-    private var selectedCompany: IsgWorkspaceCompany? {
-        guard let id = selectedCompanyID else { return nil }
-        return store.companies.first { $0.id == id }
-    }
-
-    var body: some View {
-        Group {
-            if let company = selectedCompany, store.phase == .ready,
-               store.selectedCompanyID == company.id {
-                IsgWorkspaceAnalysisScreen(store: store, companyID: company.id,
-                    companyName: company.name, canOperate: context?.canOperate == true,
-                    startInCreateMode: startInCreateMode,
-                    onBack: { selectedCompanyID = nil })
-                    .id("\(company.id):analysis:\(startInCreateMode)")
-            } else if selectedCompanyID != nil || store.phase == .loading {
-                NovaPageSurface {
-                    VStack(spacing: 14) {
-                        NovaPageHeading(title: NovaDestination.analyses.title,
-                            onBack: { selectedCompanyID = nil })
-                        NovaLoadingView(message: "Firma analizleri hazırlanıyor…")
-                    }.padding(.horizontal, 18)
-                }
-            } else {
-                NovaCompaniesScreen(companies: store.companies.map {
-                    .init(id: $0.id.uuidString, name: $0.name,
-                          detail: [$0.hazardClass, $0.sector].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
-                }, isLoading: store.phase == .loading && store.companies.isEmpty,
-                    isOwnedList: false,
-                    onSelect: { value in
-                        guard let id = UUID(uuidString: value) else { return }
-                        selectedCompanyID = id
-                        if store.selectedCompanyID != id { store.selectCompany(id) }
-                    }, onBack: onBack, onRetry: { store.refresh() })
-            }
-        }
-        .onAppear {
-            if selectedCompanyID == nil, store.companies.count == 1,
-               let only = store.companies.first {
-                selectedCompanyID = only.id
-                if store.selectedCompanyID != only.id { store.selectCompany(only.id) }
-            }
-        }
-    }
-}
-
-private struct NovaWorkspaceExpertCompaniesGate: View {
-    @ObservedObject var store: IsgWorkspaceStore
-    @Binding var selectedCompanyID: UUID?
-    let onBack: () -> Void
-
-    var body: some View {
-        if let id = selectedCompanyID,
-           let company = store.companies.first(where: { $0.id == id }) {
-            NovaWorkspaceExpertCompanyDetail(store: store, company: company,
-                onBack: { selectedCompanyID = nil })
-                .id("workspace-company:\(id)")
-        } else {
-            NovaCompaniesScreen(companies: store.companies.map {
-                .init(id: $0.id.uuidString, name: $0.name,
-                      detail: [$0.hazardClass, $0.sector].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
-            }, isLoading: store.phase == .loading && store.companies.isEmpty,
-                isOwnedList: false,
-                onSelect: { value in
-                    guard let id = UUID(uuidString: value) else { return }
-                    selectedCompanyID = id
-                    if store.selectedCompanyID != id { store.selectCompany(id) }
-                }, onBack: onBack, onRetry: { store.refresh() })
-        }
-    }
-}
-
-private struct NovaWorkspaceExpertCompanyDetail: View {
-    @ObservedObject var store: IsgWorkspaceStore
-    let company: IsgWorkspaceCompany
-    let onBack: () -> Void
-    @State private var expanded = Set<NovaCompanySection>()
-    @State private var snapshots: [IsgWorkspaceDomain: IsgWorkspaceDomainSnapshot] = [:]
-    @State private var selectedDomain: IsgWorkspaceDomain?
-    @State private var showingAnalyses = false
-    @State private var loading = true
-
-    private var context: IsgWorkspaceContext? {
-        guard let id = store.selection?.workspaceID else { return nil }
-        return store.contexts.first { $0.workspaceID == id }
-    }
-    private var progress: NovaCompanyProgress {
-        var states: [NovaCompanySection: NovaCompletionState] = [:]
-        for section in NovaCompanySection.allCases {
-            guard let domain = domain(for: section), let snapshot = snapshots[domain] else {
-                states[section] = .unknown; continue
-            }
-            states[section] = snapshot.rows.isEmpty ? .missing : .complete
-        }
-        return .init(states: states)
-    }
-
-    var body: some View {
-        Group {
-            if let selectedDomain {
-                if selectedDomain == .personnel {
-                    IsgWorkspacePersonnelScreen(store: store, companyName: company.name,
-                        canOperate: context?.canOperate == true, canManageDirectory: false,
-                        initialSection: .employee, onBack: { self.selectedDomain = nil })
-                } else {
-                    IsgWorkspaceDomainScreen(store: store, domain: selectedDomain,
-                        companyName: company.name, companyHazardClass: company.hazardClass,
-                        canOperate: context?.canOperate == true,
-                        onBack: { self.selectedDomain = nil })
-                }
-            } else if showingAnalyses {
-                IsgWorkspaceAnalysisScreen(store: store, companyID: company.id,
-                    companyName: company.name, canOperate: context?.canOperate == true,
-                    onBack: { showingAnalyses = false })
-            } else {
-                overview
-            }
-        }
-        .onAppear {
-            if store.selectedCompanyID != company.id { store.selectCompany(company.id) }
-        }
-        .task(id: "\(company.id):\(store.phase)") { await loadSnapshots() }
-    }
-
-    private var overview: some View {
-        NovaPageSurface(onEdgeBack: onBack) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    NovaPageHeading(title: "Firma Detayı", onBack: onBack)
-                    companyCard
-                    NovaCompanyScoreCard(progress: progress)
-                    Button { showingAnalyses = true } label: {
-                        NovaCard(padding: 14) {
-                            HStack(spacing: 10) {
-                                NovaIcon(symbol: NovaDestination.analyses.symbol, size: 20)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    NovaText(text: "Analizler ve uygunsuzluklar", style: .bodyStrong)
-                                    NovaText(text: "Analiz sonuçlarını açın veya firma kayıtlarını takip edin.", style: .metaQuiet)
-                                }
-                                Spacer(minLength: 0)
-                                Image(systemName: "chevron.right")
-                            }.contentShape(Rectangle())
-                        }
-                    }.buttonStyle(NovaRowPressStyle())
-                    if loading { NovaLoadingView(message: "Firma başlıkları güncelleniyor…") }
-                    NovaCompanyAccordion(title: "Firma Bilgileri", symbol: "building.2",
-                        identifier: "workspace.company.info",
-                        expanded: Binding(get: { expanded.contains(.logo) }, set: { setExpanded(.logo, $0) })) {
-                        infoRows
-                    }
-                    ForEach(NovaCompanySection.allCases.filter { $0 != .logo }) { section in
-                        NovaCompanyAccordion(title: section.title, symbol: section.symbol,
-                            state: progress[section], identifier: "workspace.company.section.\(section.rawValue)",
-                            expanded: Binding(get: { expanded.contains(section) }, set: { setExpanded(section, $0) })) {
-                            sectionContents(section)
-                        }
-                    }
-                }.padding(.horizontal, 18).padding(.top, 4).padding(.bottom, novaTabBarInset)
-            }
-        }
-    }
-
-    private var companyCard: some View {
-        NovaCard(padding: 16) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 12) {
-                    NovaIcon(symbol: "building.2", size: 24)
-                    VStack(alignment: .leading, spacing: 3) {
-                        NovaText(text: company.name, style: .cardTitle)
-                        NovaText(text: company.address?.nilIfBlank ?? "Adres bilgisi eklenmemiş", style: .metaQuiet)
-                    }
-                }
-                HStack(spacing: 8) {
-                    NovaStatusPill(label: hazardLabel(company.hazardClass), status: .warning)
-                    if let sector = company.sector?.nilIfBlank {
-                        NovaStatusPill(label: sector, status: .info)
-                    }
-                }
-            }.frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    private var infoRows: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            info("Tehlike sınıfı", hazardLabel(company.hazardClass))
-            info("Sektör", company.sector?.nilIfBlank ?? "Belirtilmemiş")
-            info("E-posta", company.email?.nilIfBlank ?? "Belirtilmemiş")
-            info("Çalışan sayısı", company.declaredEmployeeCount.map(String.init) ?? "Belirtilmemiş")
-            info("Sorumlu", company.responsibleName?.nilIfBlank ?? "Belirtilmemiş")
-        }
-    }
-
-    private func info(_ label: String, _ value: String) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            NovaText(text: label, style: .metaQuiet).frame(width: 110, alignment: .leading)
-            NovaText(text: value, style: .bodyStrong).frame(maxWidth: .infinity, alignment: .leading)
-        }.padding(.horizontal, 10).frame(minHeight: 42).novaControlBackground(cornerRadius: 12)
-    }
-
-    private func sectionContents(_ section: NovaCompanySection) -> some View {
-        let domain = domain(for: section)
-        let count = domain.flatMap { snapshots[$0]?.rows.count }
-        return VStack(alignment: .leading, spacing: 9) {
-            if let count {
-                NovaText(text: count == 0 ? "Henüz kayıt yok" : "\(count) kayıt",
-                         style: count == 0 ? .metaQuiet : .bodyStrong)
-            } else {
-                NovaText(text: "Kayıt durumu yükleniyor…", style: .metaQuiet)
-            }
-            if let domain {
-                NovaCompactActionButton(title: count == 0 ? "İlk kaydı ekle" : "Kayıtları aç",
-                    symbol: count == 0 ? "plus" : "arrow.right", prominent: count == 0,
-                    enabled: context?.canOperate == true || count != 0) {
-                        selectedDomain = domain
-                    }
-            }
-        }.frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func setExpanded(_ section: NovaCompanySection, _ value: Bool) {
-        if value { expanded.insert(section) } else { expanded.remove(section) }
-    }
-
-    private func domain(for section: NovaCompanySection) -> IsgWorkspaceDomain? {
-        switch section {
-        case .logo: return nil
-        case .personnel: return .personnel
-        case .representative, .support: return .appointment
-        case .risk: return .risk
-        case .emergency: return .emergencyPlan
-        case .inspections: return .equipment
-        case .accidents, .files: return .files
-        case .board: return .board
-        case .training: return .training
-        case .handover: return .ppe
-        }
-    }
-
-    @MainActor private func loadSnapshots() async {
-        guard store.phase == .ready, store.selectedCompanyID == company.id else { return }
-        loading = true
-        let domains = Set(NovaCompanySection.allCases.compactMap(domain(for:)))
-        var values: [IsgWorkspaceDomain: IsgWorkspaceDomainSnapshot] = [:]
-        for domain in domains {
-            if let snapshot = try? await store.domain(domain, companyID: company.id) {
-                values[domain] = snapshot
-            }
-        }
-        if !Task.isCancelled { snapshots = values; loading = false }
-    }
-
-    private func hazardLabel(_ value: String) -> String {
-        switch value.lowercased() {
-        case "low", "az_tehlikeli", "az tehlikeli": return "Az Tehlikeli"
-        case "high", "cok_tehlikeli", "çok tehlikeli": return "Çok Tehlikeli"
-        default: return "Tehlikeli"
-        }
-    }
-}
-
-private struct NovaWorkspaceExpertStatisticsScreen: View {
-    @ObservedObject var store: IsgWorkspaceStore
-    let dashboard: IsgWorkspaceDashboard?
-    let personnel: IsgPersonnelMetrics?
-    let onBack: () -> Void
-    let onNavigate: (NovaDestination) -> Void
-
-    var body: some View {
-        NovaPageSurface(onEdgeBack: onBack) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    NovaPageHeading(title: NovaDestination.statistics.title, onBack: onBack)
-                    NovaHelpHint(text: "Atandığınız tüm firmalardaki güncel kayıtların toplamı gösterilir.")
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
-                        stat("Firmalar", dashboard?.companies.first, "building.2", .companies)
-                        stat("Personel", personnel?.employees.active, "person.2", .companies)
-                        stat("Açık uygunsuzluk", dashboard?.nonconformities.first, "checklist", .findings)
-                        stat("Süresi geçen", dashboard?.nonconformities.second, "exclamationmark.triangle", .findings)
-                        stat("Tamamlanan eğitim", dashboard?.training.second, "graduationcap", .training)
-                        stat("Yaklaşan kontroller", (dashboard?.deadlines.first ?? 0) + (dashboard?.deadlines.second ?? 0), "calendar.badge.clock", .periodicChecks)
-                    }
-                    NovaCompactActionButton(title: "Verileri yenile", symbol: "arrow.clockwise") { store.refresh() }
-                }.padding(.horizontal, 18).padding(.bottom, novaTabBarInset)
-            }
-        }
-    }
-
-    private func stat(_ title: String, _ value: Int64?, _ symbol: String,
-                      _ destination: NovaDestination) -> some View {
-        Button { onNavigate(destination) } label: {
-            NovaCard(padding: 14) {
-                VStack(alignment: .leading, spacing: 7) {
-                    NovaIcon(symbol: symbol, size: 20)
-                    NovaText(text: value.map(String.init) ?? "—", style: .screenTitle)
-                    NovaText(text: title, style: .meta)
-                }.frame(maxWidth: .infinity, minHeight: 100, alignment: .leading)
-            }
-        }.buttonStyle(NovaRowPressStyle())
-    }
-}
-
-private struct NovaWorkspaceExpertReportCenter: View {
-    let onAnalyses: () -> Void
-    let onDocuments: () -> Void
-    let onBack: () -> Void
-
-    var body: some View {
-        NovaPageSurface(onEdgeBack: onBack) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    NovaPageHeading(title: "Rapor Merkezi", onBack: onBack)
-                    NovaHelpHint(text: "Atandığınız firmaların analiz çıktılarını ve belgelerini açın.")
-                    row("Analiz raporları", "Risk analizi sonuçlarını inceleyin ve dışa aktarın.", "chart.doc", onAnalyses)
-                    row("Firma dokümanları", "Dosya ve geçerlilik kayıtlarını yönetin.", "doc.text", onDocuments)
-                }.padding(.horizontal, 18).padding(.bottom, novaTabBarInset)
-            }
-        }
-    }
-
-    private func row(_ title: String, _ detail: String, _ symbol: String,
-                     _ action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            NovaCard(padding: 14) {
-                HStack(spacing: 10) {
-                    NovaIcon(symbol: symbol, size: 20)
-                    VStack(alignment: .leading, spacing: 2) {
-                        NovaText(text: title, style: .bodyStrong)
-                        NovaText(text: detail, style: .metaQuiet)
-                    }
-                    Spacer(minLength: 0)
-                    Image(systemName: "chevron.right")
-                }.contentShape(Rectangle())
-            }
-        }.buttonStyle(NovaRowPressStyle())
-    }
-}
-
-private extension String {
-    var nilIfBlank: String? {
-        let value = trimmingCharacters(in: .whitespacesAndNewlines)
-        return value.isEmpty ? nil : value
-    }
 }

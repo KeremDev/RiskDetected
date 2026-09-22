@@ -5,7 +5,7 @@ import CryptoKit
 /// Only a decoded, session-validated response removes the saved request.
 @MainActor struct NovaModuleMutationJournal {
     private struct Receipt: Codable { let operation: UUID; let mutation: UUID }
-    static func run<T>(function: String, identity: NovaSessionIdentity, company: UUID, action: String,
+    static func run<T>(function: String, identity: NovaSessionIdentity, company: UUID?, action: String,
                        payload: [String: PersonnelRPCValue],
                        rpc: (String, [String: PersonnelRPCValue]) async throws -> Data,
                        validate: () throws -> Void, decode: (Data) throws -> T,

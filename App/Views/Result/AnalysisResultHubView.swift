@@ -70,6 +70,7 @@ struct AnalysisResultHubView: View {
     @State private var reportFormat = "pdf"
     @State private var funnelSessionID = UUID()
     @State private var selectedTrainingGroup: String?
+    @State private var selectionMode = false
 
     private let green = Color.rdResultGreen
     private let greenDark = Color.rdResultGreenDark
@@ -218,7 +219,7 @@ struct AnalysisResultHubView: View {
         .onChange(of: reactionSignature) { _ in
             syncReactionsFromHub()
         }
-        .sheet(item: $detailItem) { item in
+        .fullScreenCover(item: $detailItem) { item in
             ReferenceHubDetailView(
                 item: item,
                 section: selectedSection,
@@ -226,8 +227,6 @@ struct AnalysisResultHubView: View {
                 onEdit: { edit(item) },
                 onDelete: { delete(item) }
             )
-            .presentationDetents([.large])
-            .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $reportSheetPresented) {
             ReferenceReportSheet(
@@ -257,6 +256,7 @@ struct AnalysisResultHubView: View {
                     let format = reportKind == .standard ? "pdf" : reportFormat
                     reportSheetPresented = false
                     onCreateReport(selectedSection, Array(selectedIDs), format, reportKind)
+                    leaveSelectionMode()
                 }
             )
             .presentationDragIndicator(.hidden)
@@ -277,22 +277,20 @@ struct AnalysisResultHubView: View {
         }
     }
 
-    // MARK: Connected section selector
+    // MARK: Compact section selector
 
-    @ScaledMetric(relativeTo: .caption) private var sectionTabHeight: CGFloat = 80
-    @ScaledMetric(relativeTo: .caption) private var sectionTitleHeight: CGFloat = 30
+    @ScaledMetric(relativeTo: .caption) private var sectionTabHeight: CGFloat = 40
 
     private func sectionSelector(profile: RDLayoutProfile) -> some View {
         GeometryReader { proxy in
             let count = max(1, hub.sections.count)
-            let gaps = CGFloat(max(0, count - 1)) * 6.7
-            let canFitAll = profile.widthClass != .narrow && !profile.isAccessibilityText
+            let gaps = CGFloat(max(0, count - 1)) * 7
             let fitted = (proxy.size.width - (profile.horizontalPadding * 2) - gaps) / CGFloat(count)
-            let tabWidth = canFitAll ? fitted : max(profile.isAccessibilityText ? 160 : 104, fitted)
+            let tabWidth = max(profile.isAccessibilityText ? 170 : 112, fitted)
 
             ScrollViewReader { tabProxy in
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(alignment: .bottom, spacing: 6.7) {
+                    HStack(spacing: 7) {
                         ForEach(hub.sections) { section in
                             sectionTab(
                                 section,
@@ -305,8 +303,8 @@ struct AnalysisResultHubView: View {
                     .padding(.horizontal, profile.horizontalPadding)
                     .frame(
                         minWidth: proxy.size.width,
-                        minHeight: sectionTabHeight + 8,
-                        alignment: .bottomLeading
+                        minHeight: sectionTabHeight + 10,
+                        alignment: .leading
                     )
                 }
                 .onChange(of: selectedSection) { section in
@@ -315,15 +313,8 @@ struct AnalysisResultHubView: View {
                     }
                 }
             }
-            // Keep the shared rail behind the tabs. The selected tab's white
-            // bottom mask interrupts the rail and connects it to the content.
-            .background(alignment: .bottom) {
-                Rectangle()
-                    .fill(sectionAccentColor(selectedSection))
-                    .frame(height: 1.5)
-            }
         }
-        .frame(height: sectionTabHeight + 8)
+        .frame(height: sectionTabHeight + 10)
         .background(Color.rdResultBackground)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("result.hub.section_selector")
@@ -336,9 +327,11 @@ struct AnalysisResultHubView: View {
         height: CGFloat
     ) -> some View {
         let selected = selectedSection == section.id
-        let tabSurface = selected ? Color.rdResultElevatedSurface : Color.rdResultSurface
         return Button {
-            withAnimation(.easeOut(duration: 0.18)) { selectedSection = section.id }
+            withAnimation(.easeOut(duration: 0.18)) {
+                selectedSection = section.id
+                selectionMode = false
+            }
             Task {
                 await AnalysisResultHubService.shared.recordEvent(
                     analysisID: analysisID,
@@ -358,55 +351,29 @@ struct AnalysisResultHubView: View {
                 }
             }
         } label: {
-            VStack(spacing: 4) {
+            HStack(spacing: 7) {
                 Image(systemName: sectionIcon(section.id))
-                    .font(RDTypography.font(size: 18, weight: .regular))
-                    .foregroundStyle(selected ? sectionAccentColor(section.id) : Color.rdResultPrimaryText)
+                    .font(RDTypography.font(size: 13, weight: .semibold))
                 Text(section.id.compactTitle(language: language))
-                    .font(referenceFont(11, .heavy))
-                    .foregroundStyle(Color.rdResultPrimaryText)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.85)
-                    .frame(height: sectionTitleHeight)
-                Text("\(section.count) \(section.id.countLabel(language: language, count: section.count))")
-                    .font(referenceFont(9.5, .semibold))
-                    .foregroundStyle(Color.rdResultSecondaryText)
+                    .font(referenceFont(11.5, .heavy))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                    .multilineTextAlignment(.center)
+                Text("\(section.count)")
+                    .font(referenceFont(10, .black))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(selected ? Color.white.opacity(0.18) : sectionAccentColor(section.id).opacity(0.12))
+                    .clipShape(Capsule())
             }
+            .foregroundStyle(selected ? Color.white : Color.rdResultPrimaryText)
             .frame(width: width, height: height)
-            .background(
-                Group {
-                    if selected {
-                        ConnectedTabFill(cornerRadius: 8)
-                            .fill(tabSurface)
-                    }
-                }
-            )
-            .overlay {
-                if selected {
-                    ConnectedTabBorder(cornerRadius: 8)
-                        .stroke(
-                            sectionAccentColor(section.id),
-                            style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round)
-                        )
-                }
-            }
-            .overlay(alignment: .bottom) {
-                if selected {
-                    Rectangle()
-                        .fill(tabSurface)
-                        .frame(height: 2.5)
-                }
-            }
-            .padding(.bottom, 0)
+            .background(selected ? sectionAccentColor(section.id) : Color.rdResultSurface)
+            .overlay(Capsule().stroke(selected ? sectionAccentColor(section.id) : Color.rdResultLine, lineWidth: 1))
+            .clipShape(Capsule())
         }
         .buttonStyle(.plain)
-        .zIndex(selected ? 2 : 1)
         .accessibilityLabel("\(section.id.title(language: language)), \(section.count) \(section.id.countLabel(language: language, count: section.count))")
         .accessibilityIdentifier("result.hub.section.\(section.id.rawValue)")
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     private func sectionIcon(_ id: AnalysisResultSectionID) -> String {
@@ -450,8 +417,10 @@ struct AnalysisResultHubView: View {
             analysisInfoCard.padding(.top, 12)
             riskSummary.padding(.top, 10)
             methodSelector.padding(.top, 9)
-            selectionControls.padding(.top, 12).padding(.bottom, 20)
-            LazyVStack(spacing: 34) {
+            if selectionMode {
+                selectionControls.padding(.top, 12).padding(.bottom, 12)
+            }
+            LazyVStack(spacing: 10) {
                 ForEach(Array(activeSection.items.enumerated()), id: \.element.id) { index, item in
                     VStack(spacing: 16) {
                         riskCard(item, position: index + 1)
@@ -478,8 +447,10 @@ struct AnalysisResultHubView: View {
 
         return VStack(spacing: 0) {
             nonRiskSummary.padding(.top, 12)
-            selectionControls.padding(.top, 12).padding(.bottom, 26)
-            LazyVStack(spacing: 34) {
+            if selectionMode {
+                selectionControls.padding(.top, 12).padding(.bottom, 12)
+            }
+            LazyVStack(spacing: 10) {
                 ForEach(Array(activeSection.items.enumerated()), id: \.element.id) { index, item in
                     VStack(spacing: 16) {
                         expertCard(item, position: index + 1)
@@ -1428,58 +1399,72 @@ struct AnalysisResultHubView: View {
         return "\(selectedIDs.count)/\(activeSection.count) \(unit) \(copy("analysis.result_hub.v2.secili.59f2bc7b", "seçili", "selected"))"
     }
 
+    private func toggleSelection(_ item: AnalysisResultHubItem) {
+        var values = selectedIDs
+        if values.contains(item.id) { values.remove(item.id) }
+        else { values.insert(item.id) }
+        selections[selectedSection] = values
+        UISelectionFeedbackGenerator().selectionChanged()
+    }
+
     // MARK: Finding cards
 
     private func riskCard(_ item: AnalysisResultHubItem, position: Int) -> some View {
         let level = riskLevel(for: item)
         let score = method == .fineKinney ? item.fkScore : item.m5Score.map(Double.init)
-        return VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 8) {
+        return HStack(alignment: .top, spacing: 11) {
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(spacing: 7) {
+                    Circle()
+                        .fill(referenceRiskColor(level))
+                        .frame(width: 7, height: 7)
                     Text(methodRiskBandLabel(for: item, fallback: level))
-                        .font(referenceFont(9.25, .heavy)).tracking(0.3).foregroundStyle(.white)
-                        .padding(.horizontal, 6).padding(.vertical, 2.5)
-                        .background(referenceRiskColor(level)).clipShape(RoundedRectangle(cornerRadius: 2))
-                    HStack(alignment: .lastTextBaseline, spacing: 3) {
-                        Text(score.map(scoreText) ?? "—").font(referenceFont(14, .black))
-                        Text(method == .fineKinney ? copy("analysis.result_hub.v2.puan.1c38ab37", "puan", "points") : "/25")
-                            .font(referenceFont(9.5, .bold)).foregroundStyle(Color.rdResultTertiaryText)
+                        .font(referenceFont(10, .heavy))
+                        .foregroundStyle(referenceRiskColor(level))
+                    Text(score.map(scoreText) ?? "—")
+                        .font(referenceFont(12, .black))
+                        .foregroundStyle(ink)
+                    Spacer(minLength: 0)
+                    if activeSection.access == .full && selectionMode {
+                        selectionControl(item)
+                    } else {
+                        Image(systemName: "chevron.right")
+                            .font(RDTypography.font(size: 11, weight: .bold))
+                            .foregroundStyle(Color.rdResultTertiaryText)
                     }
-                    Spacer()
-                    if activeSection.access == .full { selectionControl(item) }
                 }
                 Text(item.displayTitle(language: language))
-                    .font(referenceFont(15, .heavy)).foregroundStyle(ink).lineSpacing(1)
-                    .padding(.top, 12).fixedSize(horizontal: false, vertical: true)
+                    .font(referenceFont(14, .heavy))
+                    .foregroundStyle(ink)
+                    .lineLimit(2)
                 Text(item.displayBody)
-                    .font(referenceFont(12.5, .regular)).foregroundStyle(muted).lineSpacing(3)
-                    .padding(.top, 8).lineLimit(activeSection.access == .teaser ? 2 : nil)
-                    .fixedSize(horizontal: false, vertical: true)
-                if activeSection.access == .full {
-                    correctiveActionPreview(item).padding(.top, 12)
-                }
-                featureTags(item).padding(.top, 12)
-                if activeSection.access == .teaser { lockedContent(item).padding(.top, 12) }
+                    .font(referenceFont(12, .regular))
+                    .foregroundStyle(muted)
+                    .lineSpacing(2)
+                    .lineLimit(activeSection.access == .teaser ? 2 : 3)
             }
-            .padding(.horizontal, 12).padding(.top, 24).padding(.bottom, 16)
-            if activeSection.access == .full { actionStrip(item) }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Text("#\(item.ordinal ?? position)")
+                .font(referenceFont(10, .bold))
+                .foregroundStyle(Color.rdResultTertiaryText)
+                .padding(.top, 1)
         }
+        .padding(13)
         .background(Color.rdResultSurface)
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(activeAccent, lineWidth: 1.5))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .shadow(color: Color.black.opacity(0.10), radius: 7, x: 4, y: 6)
-        .overlay(alignment: .topLeading) {
-            HStack(spacing: 2) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(RDTypography.font(size: 25, weight: .regular)).foregroundStyle(referenceRiskColor(level))
-                    .frame(width: 36, height: 36)
-                Text("\(position) -").font(referenceFont(13, .black)).foregroundStyle(Color.rdResultSecondaryText)
-            }
-            .padding(.trailing, 7).background(Color.rdResultSurface).clipShape(Capsule()).offset(x: 15, y: -18)
-        }
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.rdResultLine, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
         .contentShape(Rectangle())
-        .onTapGesture { openDetails(item) }
+        .onTapGesture {
+            if activeSection.access == .teaser {
+                openLockedTeaser(item)
+            } else if selectionMode {
+                toggleSelection(item)
+            } else {
+                openDetails(item)
+            }
+        }
         .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("result.hub.item.\(item.id.uuidString)")
     }
 
@@ -1668,59 +1653,62 @@ struct AnalysisResultHubView: View {
     }
 
     private func expertCard(_ item: AnalysisResultHubItem, position: Int) -> some View {
-        VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 0) {
+        let isLocked = activeSection.access != .full
+        return HStack(alignment: .top, spacing: 11) {
+            Image(systemName: "lightbulb")
+                .font(RDTypography.font(size: 17, weight: .semibold))
+                .foregroundStyle(activeStrong)
+                .frame(width: 24, height: 24)
+            VStack(alignment: .leading, spacing: 7) {
                 HStack(spacing: 7) {
-                    HStack(spacing: 5) { Image(systemName: "photo"); Text("\(max(1, item.sourcePhotoIndices?.count ?? 1))") }
-                        .font(referenceFont(10.5, .black)).foregroundStyle(Color.rdResultPrimaryText)
-                        .padding(.horizontal, 7).padding(.vertical, 4).background(Color.rdResultSubtleSurface)
-                        .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.rdResultLine, lineWidth: 1))
-                        .clipShape(RoundedRectangle(cornerRadius: 5))
                     Text("\(copy("analysis.result_hub.v2.bulgu.192859cb", "BULGU", "FINDING")) #\(item.ordinal ?? position)")
-                        .font(referenceFont(10, .heavy)).tracking(0.4).foregroundStyle(muted)
-                    Spacer()
-                    if activeSection.access == .full { selectionControl(item) }
+                        .font(referenceFont(10, .heavy))
+                        .foregroundStyle(muted)
+                    Spacer(minLength: 0)
+                    if activeSection.access == .full && selectionMode {
+                        selectionControl(item)
+                    } else {
+                        Image(systemName: isLocked ? "lock.fill" : "chevron.right")
+                            .font(RDTypography.font(size: 11, weight: .bold))
+                            .foregroundStyle(Color.rdResultTertiaryText)
+                    }
                 }
-                if activeSection.access == .full {
+                if isLocked {
+                    expertPremiumTeaserContent(item)
+                } else {
                     Text(item.displayTitle(language: language))
-                        .font(referenceFont(14, .black)).foregroundStyle(ink).padding(.top, 10)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .font(referenceFont(14, .heavy))
+                        .foregroundStyle(ink)
+                        .lineLimit(2)
                     if let summary = expertSummaryText(for: item) {
                         Text(summary)
-                            .font(referenceFont(12, .regular)).foregroundStyle(Color.rdResultSecondaryText)
-                            .lineSpacing(3).padding(.top, 6)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .font(referenceFont(12, .regular))
+                            .foregroundStyle(Color.rdResultSecondaryText)
+                            .lineSpacing(2)
+                            .lineLimit(3)
                     }
-                    expertRecommendationPreview(item).padding(.top, 13)
-                } else {
-                    expertPremiumTeaserContent(item)
-                        .padding(.top, 10)
                 }
             }
-            .padding(.horizontal, 13).padding(.top, 26).padding(.bottom, 14)
-            if activeSection.access == .full { actionStrip(item) }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .padding(13)
         .background(Color.rdResultSurface)
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(activeAccent, lineWidth: 1.5))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .shadow(color: Color.black.opacity(0.10), radius: 7, x: 4, y: 6)
-        .overlay(alignment: .topLeading) {
-            Image(systemName: "lightbulb")
-                .font(RDTypography.font(size: 23, weight: .regular)).foregroundStyle(activeStrong)
-                .frame(width: 36, height: 36).background(Color.rdResultSurface).clipShape(Circle()).offset(x: 15, y: -18)
-        }
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.rdResultLine, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
         .contentShape(Rectangle())
         .onTapGesture {
-            if activeSection.access == .full {
-                openDetails(item)
-            } else {
+            if isLocked {
                 openLockedTeaser(item)
+            } else if selectionMode {
+                toggleSelection(item)
+            } else {
+                openDetails(item)
             }
         }
         .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("result.hub.item.\(item.id.uuidString)")
     }
-
     private func expertSummaryText(for item: AnalysisResultHubItem) -> String? {
         guard let summary = item.description?
             .trimmingCharacters(in: .whitespacesAndNewlines),
@@ -2109,7 +2097,7 @@ struct AnalysisResultHubView: View {
                 bottomBackButton(profile: profile)
                 reportActionButton
             }
-            if selectedSection != .approvedNotebook {
+            if selectionMode && selectedSection != .approvedNotebook {
                 Text(selectedCountText)
                     .font(referenceFont(10.5, .bold))
                     .foregroundStyle(Color.rdResultSecondaryText)
@@ -2121,7 +2109,7 @@ struct AnalysisResultHubView: View {
     }
 
     private func bottomBackButton(profile: RDLayoutProfile) -> some View {
-        Button(action: onBack) {
+        Button(action: selectionMode ? leaveSelectionMode : onBack) {
             Group {
                 if profile.isAccessibilityText {
                     Label(
@@ -2131,9 +2119,9 @@ struct AnalysisResultHubView: View {
                     .font(referenceFont(12, .heavy))
                 } else {
                     VStack(spacing: 1) {
-                        Image(systemName: "chevron.left")
+                        Image(systemName: selectionMode ? "xmark" : "chevron.left")
                             .font(RDTypography.font(size: 15, weight: .black))
-                        Text(copy("analysis.result_hub.v2.geri.don.be8542b6", "Geri Dön", "Go Back"))
+                        Text(selectionMode ? "Vazgeç" : copy("analysis.result_hub.v2.geri.don.be8542b6", "Geri Dön", "Go Back"))
                             .font(referenceFont(8.5, .heavy))
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -2162,17 +2150,23 @@ struct AnalysisResultHubView: View {
                     placement: "sticky_report_cta",
                     entryKind: "report_gate"
                 )
-            } else if !selectedIDs.isEmpty {
-                reportKind = selectedSection == .riskAnalysis ? nil : .section
-                reportFormat = "pdf"
-                reportSheetPresented = true
+            } else if selectionMode {
+                if !selectedIDs.isEmpty {
+                    reportKind = selectedSection == .riskAnalysis ? nil : .section
+                    reportFormat = "pdf"
+                    reportSheetPresented = true
+                }
+            } else {
+                beginSelectionMode()
             }
         } label: {
             HStack(spacing: 0) {
                 HStack(spacing: 9) {
                     Image(systemName: activeSection.access == .teaser ? "lock.fill" : "slider.horizontal.3")
                         .font(RDTypography.font(size: 18, weight: .regular))
-                    Text(activeSection.access == .teaser ? copy("analysis.result_hub.v2.plus.pro.ile.ac.ad2bd639", "Plus / Pro ile Aç", "Unlock with Plus / Pro") : copy("analysis.result_hub.v2.rapor.olustur.e0a43f76", "Rapor Oluştur", "Create Report"))
+                    Text(activeSection.access == .teaser
+                         ? copy("analysis.result_hub.v2.plus.pro.ile.ac.ad2bd639", "Plus / Pro ile Aç", "Unlock with Plus / Pro")
+                         : selectionMode ? "Seçilenlerle devam" : copy("analysis.result_hub.v2.rapor.olustur.e0a43f76", "Rapor Oluştur", "Create Report"))
                         .font(referenceFont(15.5, .heavy))
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
@@ -2186,12 +2180,12 @@ struct AnalysisResultHubView: View {
             .padding(.trailing, 6)
             .padding(.vertical, 6)
             .frame(minHeight: 50)
-            .background(selectedIDs.isEmpty && activeSection.access == .full ? Color(hex: "#6D6D6D") : Color(hex: "#111111"))
+            .background(selectionMode && selectedIDs.isEmpty && activeSection.access == .full ? Color(hex: "#6D6D6D") : Color(hex: "#111111"))
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .shadow(color: Color.black.opacity(0.28), radius: 8, x: 4, y: 7)
         }
         .buttonStyle(.plain)
-        .disabled(selectedIDs.isEmpty && activeSection.access == .full)
+        .disabled(selectionMode && selectedIDs.isEmpty && activeSection.access == .full)
         .accessibilityLabel(activeSection.access == .teaser
                             ? copy("analysis.result_hub.v2.plus.pro.ile.ac.ad2bd639", "Plus / Pro ile Aç", "Unlock with Plus / Pro")
                             : selectedSection == .approvedNotebook
@@ -2405,9 +2399,19 @@ struct AnalysisResultHubView: View {
     }
     private func initializeState() {
         for section in hub.sections {
-            if selections[section.id] == nil { selections[section.id] = section.access == .full ? Set(section.items.map(\.id)) : [] }
+            if selections[section.id] == nil { selections[section.id] = [] }
             for item in section.items { reactions[item.id] = item.userReaction ?? AnalysisItemReaction.none }
         }
+    }
+
+    private func beginSelectionMode() {
+        selectionMode = true
+        selections[selectedSection] = Set(activeSection.items.map(\.id))
+    }
+
+    private func leaveSelectionMode() {
+        selectionMode = false
+        selections[selectedSection] = []
     }
 
     private func syncReactionsFromHub() {

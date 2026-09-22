@@ -111,20 +111,54 @@ struct NovaPilotProcessGate: View {
         .font(.custom("PlusJakartaSans-Regular",size:14)).tint(.primary)
         .task { company = initialCompany; await load() }
         .onChange(of:company) { _ in Task { await load() } }
-        .novaPopup(isPresented:$creating,onDismiss:{Task { await load() }}) {
-            if (parent != nil || initialCompany != nil), let company {
-                NovaProcessEditor(identity:identity,kind:kind,company:company,parent:parent,canWrite:canWrite,fileClient:fileClient)
-            } else {
-                NovaCompanyCreateFlow(title:spec.title,companies:{try await NovaAnalysisWorkspace.companyOptions(identity:identity)},catalogue:{ selected in
-                    try JSONDecoder().decode(NovaProcessPage.self,from:await service.read(kind:kind,company:selected))
-                },onSelect:{_ in}) { _, company in
-                    NovaProcessEditor(identity:identity,kind:kind,company:company,parent:parent,canWrite:canWrite,fileClient:fileClient)
-                }
-            }
+        .novaFullScreenCover(isPresented: longCreatePresentation, onDismiss: { Task { await load() } }) {
+            createContent
         }
-        .novaPopup(item:$selected,onDismiss:{Task { await load() }}) { row in
+        .novaPopup(isPresented: shortCreatePresentation, onDismiss: { Task { await load() } }) {
+            createContent
+        }
+        .novaFullScreenCover(item: longSelection, onDismiss: { Task { await load() } }) { row in
             NovaProcessEditor(identity:identity,kind:kind,company:row.company_id,parent:parent,record:row.id,canWrite:canWrite,fileClient:fileClient)
         }
+        .novaPopup(item: shortSelection,onDismiss:{Task { await load() }}) { row in
+            NovaProcessEditor(identity:identity,kind:kind,company:row.company_id,parent:parent,record:row.id,canWrite:canWrite,fileClient:fileClient)
+        }
+        }
+    }
+
+    private var longTaskKinds: Set<String> {
+        ["site_visit", "annual_work_plan", "board", "completed_drill", "work_permit",
+         "katip_contract", "contractor", "contractor_engagement"]
+    }
+    private var isLongTask: Bool { longTaskKinds.contains(kind) }
+    private var longCreatePresentation: Binding<Bool> {
+        Binding(get: { creating && isLongTask }, set: { if !$0 { creating = false } })
+    }
+    private var shortCreatePresentation: Binding<Bool> {
+        Binding(get: { creating && !isLongTask }, set: { if !$0 { creating = false } })
+    }
+    private var longSelection: Binding<NovaProcessRow?> {
+        Binding(get: { isLongTask ? selected : nil }, set: { selected = $0 })
+    }
+    private var shortSelection: Binding<NovaProcessRow?> {
+        Binding(get: { isLongTask ? nil : selected }, set: { selected = $0 })
+    }
+
+    @ViewBuilder private var createContent: some View {
+        if (parent != nil || initialCompany != nil), let company {
+            NovaProcessEditor(identity: identity, kind: kind, company: company, parent: parent,
+                canWrite: canWrite, fileClient: fileClient)
+        } else {
+            NovaCompanyCreateFlow(title: spec.title,
+                companies: { try await NovaAnalysisWorkspace.companyOptions(identity: identity) },
+                catalogue: { selected in
+                    try JSONDecoder().decode(NovaProcessPage.self,
+                        from: await service.read(kind: kind, company: selected))
+                }, onSelect: { _ in }, fullScreenTask: isLongTask,
+                onClose: { creating = false }) { _, company in
+                    NovaProcessEditor(identity: identity, kind: kind, company: company, parent: parent,
+                        canWrite: canWrite, fileClient: fileClient)
+                }
         }
     }
     private func load(more:Bool = false) async {
@@ -169,6 +203,10 @@ struct NovaProcessEditor: View {
     @State private var pdf: URL?
     @State private var attachment: NovaFileEntry?
     @State private var cancelling = false
+    @State private var visitStep = 0
+    @State private var visitSaved = false
+    @State private var processStep = 0
+    @State private var processSaved = false
     @State private var personSearch = ""
     @State private var photoDraft = ""
     @State private var cancelReason = ""
@@ -191,13 +229,290 @@ struct NovaProcessEditor: View {
         return spec.fields.filter { !["applicability","state","held_on","cancelled_reason"].contains($0.id) && ($0.id != "initial_decisions" || record == nil) }
     }
     var body: some View {
-        NovaPopup {
+        Group {
+            if kind == "site_visit" {
+                if visitSaved {
+                    NovaTaskSuccessView(title: record == nil ? "Saha ziyareti kaydedildi" : "Saha ziyareti güncellendi",
+                        message: "Ziyaret bilgileri ve eklediğiniz kanıtlar firma kaydına işlendi.",
+                        nextTitle: nil, onNext: nil, doneTitle: "Ziyaretlere dön") { dismiss() }
+                } else {
+                    NovaPageSurface(onEdgeBack: visitBack) { siteVisitWizard }
+                }
+            } else if usesGenericWizard {
+                if processSaved {
+                    NovaTaskSuccessView(title: "\(spec.title) kaydedildi",
+                        message: "Kayıt firma kapsamına eklendi ve ilgili listede kullanıma hazır.",
+                        doneTitle: "Listeye dön") { dismiss() }
+                } else {
+                    NovaPageSurface(onEdgeBack: processBack) { processWizard }
+                }
+            } else if isLongTaskKind {
+                NovaPageSurface(onEdgeBack: { dismiss() }) { formContent }
+            } else {
+                NovaPopup { formContent }
+            }
+        }
+        .preference(key:NovaPopupBusyKey.self,value:busy)
+        .task { await load() }
+        .onChange(of: values["certificate_kind"]?.text) { new in
+            guard kind == "personnel_certificate", row == nil else { return }
+            let defaults = ["first_aid":"İlk Yardım Belgesi", "myk":"MYK Belgesi", "custom":""]
+            let current = values["title"]?.text ?? ""
+            if current.isEmpty || defaults.values.contains(current) { values["title"] = .string(defaults[new ?? ""] ?? "") }
+        }
+        .confirmationDialog("Kayıt aktif listeden kaldırılacak. Geçmişi korunur.",isPresented:$deletePrompt,titleVisibility:.visible) {
+            Button("Sil",role:.destructive) { Task { await remove() } }
+        }
+        .novaPopup(isPresented:$children, onDismiss: { Task { await load() } }) {
+            if let child = spec.child, let row {
+                NovaPilotProcessGate(identity:identity,kind:child,initialCompany:company,parent:row.id,canWrite:canWrite,onBack:{children = false})
+            }
+        }
+        .novaPopup(isPresented: $choosingRelated) {
+            NovaProcessLinkPicker(identity: identity, company: company, excluding: record) { selected, selectedKind in
+                relatedKind = selectedKind; relatedID = selected.id.uuidString; relatedTitle = selected.title
+            }
+        }
+        .novaPopup(item: $attachment) { file in
+            NovaFileEntrySheet(entry: file, catalogue: [], assurance: .init(), client: fileClient,
+                canWrite: false, onChanged: {}, onClosed: { attachment = nil })
+        }
+        .sheet(item:$pdf) { NovaFileShareSheet(url:$0) }
+    }
+
+    private var isLongTaskKind: Bool {
+        ["annual_work_plan", "board", "completed_drill", "work_permit", "katip_contract",
+         "contractor", "contractor_engagement"].contains(kind)
+    }
+    private var usesGenericWizard: Bool { record == nil && isLongTaskKind }
+
+    private var processWizard: some View {
+        VStack(spacing: 0) {
+            NovaTaskHeader(title: spec.title, step: processStep + 1, total: 4,
+                stepTitle: processStepTitle, onClose: processBack)
+                .padding(.horizontal, 18).padding(.top, 10)
+            if loading {
+                NovaLoadingView(message: "Form hazırlanıyor…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let catalogue {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
+                        processStepContent(catalogue)
+                        if let failure { NovaTaskErrorSummary(message: failure) }
+                    }.padding(20).padding(.bottom, 18)
+                }
+                .scrollDismissesKeyboard(.interactively)
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    NovaTaskStickyActions(primaryTitle: processStep == 3 ? "Kaydet" : "Devam",
+                        primarySymbol: processStep == 3 ? "checkmark" : "arrow.right",
+                        isWorking: busy, canGoBack: true, onBack: processBack, onPrimary: processAdvance)
+                }
+            } else {
+                NovaTaskErrorSummary(message: failure ?? "Form hazırlanamadı.").padding(20)
+                Spacer()
+            }
+        }
+        .accessibilityIdentifier("nova.process.wizard.\(kind).step.\(processStep + 1)")
+    }
+
+    @ViewBuilder private func processStepContent(_ catalogue: NovaProcessPage) -> some View {
+        let scopeTypes = Set(["workplaces", "employee", "organizations"])
+        let fileTypes = Set(["file", "photo", "pdf", "photos"])
+        switch processStep {
+        case 0:
+            NovaText(text: "Kapsam", style: .sectionTitle)
+            NovaHelpHint(text: "Firma seçimi korunur; işyeri ve ilgili kapsam sonraki adımlara otomatik taşınır.")
+            ForEach(visibleFields.filter { scopeTypes.contains($0.type) }) { field in
+                fieldRow(field) { control(field, catalogue) }
+            }
+            if visibleFields.allSatisfy({ !scopeTypes.contains($0.type) }) {
+                NovaFormValueRow(label: "Firma kapsamı", symbol: "building.2") {
+                    NovaText(text: "Seçili firma", style: .bodyStrong)
+                }
+            }
+        case 1:
+            NovaText(text: "Kayıt bilgileri", style: .sectionTitle)
+            ForEach(visibleFields.filter { !scopeTypes.contains($0.type) && !fileTypes.contains($0.type) }) { field in
+                fieldRow(field) { control(field, catalogue) }
+            }
+        case 2:
+            NovaText(text: "Dosya ve kanıt", style: .sectionTitle)
+            NovaHelpHint(text: "Dosya ve fotoğraflar isteğe bağlıdır; kaydı daha sonra da tamamlayabilirsiniz.")
+            ForEach(visibleFields.filter { fileTypes.contains($0.type) }) { field in
+                fieldRow(field) { control(field, catalogue) }
+            }
+            if visibleFields.allSatisfy({ !fileTypes.contains($0.type) }) {
+                NovaEmptyState(title: "Bu kayıt için dosya gerekmiyor",
+                    message: "Devam ederek girdiğiniz bilgileri kontrol edebilirsiniz.")
+            }
+        default:
+            NovaText(text: "Kontrol", style: .sectionTitle)
+            NovaHelpHint(text: "Kaydetmeden önce bilgileri doğrulayın; değişiklik için Geri ile ilgili adıma dönebilirsiniz.")
+            NovaCard(padding: 14) {
+                VStack(alignment: .leading, spacing: 9) {
+                    visitReviewRow("Kayıt", spec.title)
+                    visitReviewRow("Zorunlu alanlar", valid ? "Tamamlandı" : "Eksik bilgi var")
+                    visitReviewRow("Dosya", visibleFields.filter { fileTypes.contains($0.type) }
+                        .contains { !(values[$0.id]?.text.isEmpty ?? true) } ? "Eklendi" : "Eklenmedi")
+                }
+            }
+        }
+    }
+
+    private var processStepTitle: String {
+        ["Kapsam", "Kayıt bilgileri", "Dosya", "Kontrol"][processStep]
+    }
+    private func processBack() {
+        failure = nil
+        if processStep > 0 { processStep -= 1 } else { dismiss() }
+    }
+    private func processAdvance() {
+        failure = nil
+        if processStep == 0 {
+            let scopeFields = visibleFields.filter { ["workplaces", "employee", "organizations"].contains($0.type) && $0.required }
+            guard scopeFields.allSatisfy({ !(values[$0.id]?.text.isEmpty ?? true) }) else {
+                failure = "Kapsam seçimini tamamlayın."
+                return
+            }
+        }
+        if processStep == 3 {
+            guard valid else { failure = "Zorunlu alanları ve tarihleri kontrol edin."; return }
+            Task { await save() }
+        } else { processStep += 1 }
+    }
+
+    private var siteVisitWizard: some View {
+        VStack(spacing: 0) {
+            NovaTaskHeader(title: record == nil ? "Saha ziyareti ekle" : "Saha ziyaretini düzenle",
+                step: visitStep + 1, total: 4, stepTitle: visitStepTitle, onClose: visitBack)
+                .padding(.horizontal, 18).padding(.top, 10)
+            if loading {
+                NovaLoadingView(message: "Ziyaret formu hazırlanıyor…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let catalogue {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
+                        siteVisitStep(catalogue)
+                        if let failure { NovaTaskErrorSummary(message: failure) }
+                    }
+                    .padding(20).padding(.bottom, 18)
+                }
+                .scrollDismissesKeyboard(.interactively)
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    NovaTaskStickyActions(primaryTitle: visitStep == 3 ? "Ziyareti kaydet" : "Devam",
+                        primarySymbol: visitStep == 3 ? "checkmark" : "arrow.right",
+                        isWorking: busy, canGoBack: true, onBack: visitBack) {
+                            visitAdvance()
+                        }
+                }
+            } else {
+                NovaTaskErrorSummary(message: failure ?? "Ziyaret formu hazırlanamadı.")
+                    .padding(20)
+                Spacer()
+            }
+        }
+        .accessibilityIdentifier("nova.site.visit.wizard.step.\(visitStep + 1)")
+    }
+
+    @ViewBuilder private func siteVisitStep(_ catalogue: NovaProcessPage) -> some View {
+        switch visitStep {
+        case 0:
+            NovaText(text: "İşyeri", style: .sectionTitle)
+            NovaHelpHint(text: "Ziyaretin yapıldığı işyerini seçin. Bu seçim sonraki adımlara otomatik taşınır.")
+            if let field = spec.fields.first(where: { $0.id == "workplace_id" }) {
+                fieldRow(field) { control(field, catalogue) }
+            }
+        case 1:
+            NovaText(text: "Tarih, saat ve süre", style: .sectionTitle)
+            if let field = spec.fields.first(where: { $0.id == "visited_on" }) {
+                fieldRow(field) { control(field, catalogue) }
+            }
+            NovaCard(padding: 12) {
+                fieldIcon("clock") {
+                    VStack(alignment: .leading, spacing: 5) {
+                        NovaText(text: "Ziyaret süresi (dakika)", style: .label)
+                        TextField("Örn. 60", text: text("duration_minutes"))
+                            .keyboardType(.numberPad)
+                    }
+                }
+            }
+            NovaText(text: "Saat bilgisi dosya zaman çizelgesinde korunur; süreyi bilmiyorsanız boş bırakabilirsiniz.", style: .metaQuiet)
+        case 2:
+            NovaText(text: "Ziyaret ayrıntıları", style: .sectionTitle)
+            ForEach(spec.fields.filter { ["expert_note", "location_note", "responsible_contact"].contains($0.id) }) { field in
+                fieldRow(field) { control(field, catalogue) }
+            }
+        default:
+            NovaText(text: "Dosya ve kontrol", style: .sectionTitle)
+            NovaHelpHint(text: "Fotoğraf veya belge eklemek isteğe bağlıdır. Kaydetmeden önce özet bilgileri kontrol edin.")
+            if let field = spec.fields.first(where: { $0.id == "visit_asset_id" }) {
+                fieldRow(field) { control(field, catalogue) }
+            }
+            NovaCard(padding: 14) {
+                VStack(alignment: .leading, spacing: 9) {
+                    NovaText(text: "Ziyaret özeti", style: .bodyStrong)
+                    visitReviewRow("İşyeri", catalogue.workplaces.first(where: {
+                        $0.id.uuidString.lowercased() == values["workplace_id"]?.text.lowercased()
+                    })?.name ?? "—")
+                    visitReviewRow("Tarih", values["visited_on"]?.text ?? "—")
+                    visitReviewRow("Süre", (values["duration_minutes"]?.text).flatMap { $0.isEmpty ? nil : "\($0) dk" } ?? "Belirtilmedi")
+                    visitReviewRow("Görüşülen kişi", values["responsible_contact"]?.text.isEmpty == false
+                        ? values["responsible_contact"]!.text : "Belirtilmedi")
+                }
+            }
+        }
+    }
+
+    private func visitReviewRow(_ title: String, _ value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            NovaText(text: title, style: .metaQuiet)
+            Spacer(minLength: 8)
+            NovaText(text: value, style: .bodyStrong).multilineTextAlignment(.trailing)
+        }
+    }
+
+    private var visitStepTitle: String {
+        ["İşyeri", "Tarih ve süre", "Ziyaret ayrıntıları", "Dosya ve kontrol"][visitStep]
+    }
+
+    private func visitBack() {
+        failure = nil
+        if visitStep > 0 { visitStep -= 1 } else { dismiss() }
+    }
+
+    private func visitAdvance() {
+        failure = nil
+        guard visitStepIsValid else {
+            failure = visitStep == 0 ? "Ziyaretin yapıldığı işyerini seçin."
+                : visitStep == 1 ? "Süre girildiğinde 1 ile 1440 dakika arasında olmalıdır."
+                : "Ziyaret notunu yazın."
+            return
+        }
+        if visitStep < 3 { visitStep += 1 }
+        else { Task { await save() } }
+    }
+
+    private var visitStepIsValid: Bool {
+        switch visitStep {
+        case 0: return !(values["workplace_id"]?.text.isEmpty ?? true)
+        case 1:
+            guard !(values["visited_on"]?.text.isEmpty ?? true) else { return false }
+            let duration = values["duration_minutes"]?.text ?? ""
+            return duration.isEmpty || (Int(duration).map { (1...1440).contains($0) } ?? false)
+        case 2: return !(values["expert_note"]?.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+        default: return valid
+        }
+    }
+
+    @ViewBuilder private var formContent: some View {
             ScrollView {
                 VStack(alignment:.leading,spacing:10) {
                     HStack(spacing: 10) {
                         Image(systemName: kindSymbol).font(.system(size: 19, weight: .regular))
                             .foregroundStyle(NovaColorToken.text.color(in: scheme)).frame(width: 34, height: 34)
-                        NovaText(text:spec.title,style:.sheetTitle)
+                        NovaText(text: kind == "site_visit"
+                            ? (record == nil ? "Saha ziyareti ekle" : "Saha ziyaretini düzenle")
+                            : spec.title, style: .sheetTitle)
                         Spacer(minLength: 0)
                     }
                     if kind == "katip_contract" { NovaText(text:"Uzmanın sözleşme kaydıdır; resmî İSG-KATİP işlemi yapılmaz.",style:.meta) }
@@ -274,33 +589,6 @@ struct NovaProcessEditor: View {
                     if let failure { Text(failure).font(NovaFont.font(.meta)) }
                 }.padding(20).novaPopupContentSize().disabled(busy)
             }
-        }
-        .preference(key:NovaPopupBusyKey.self,value:busy)
-        .task { await load() }
-        .onChange(of: values["certificate_kind"]?.text) { new in
-            guard kind == "personnel_certificate", row == nil else { return }
-            let defaults = ["first_aid":"İlk Yardım Belgesi", "myk":"MYK Belgesi", "custom":""]
-            let current = values["title"]?.text ?? ""
-            if current.isEmpty || defaults.values.contains(current) { values["title"] = .string(defaults[new ?? ""] ?? "") }
-        }
-        .confirmationDialog("Kayıt aktif listeden kaldırılacak. Geçmişi korunur.",isPresented:$deletePrompt,titleVisibility:.visible) {
-            Button("Sil",role:.destructive) { Task { await remove() } }
-        }
-        .novaPopup(isPresented:$children, onDismiss: { Task { await load() } }) {
-            if let child = spec.child, let row {
-                NovaPilotProcessGate(identity:identity,kind:child,initialCompany:company,parent:row.id,canWrite:canWrite,onBack:{children = false})
-            }
-        }
-        .novaPopup(isPresented: $choosingRelated) {
-            NovaProcessLinkPicker(identity: identity, company: company, excluding: record) { selected, selectedKind in
-                relatedID = selected.id.uuidString; relatedKind = selectedKind; relatedTitle = selected.title
-            }
-        }
-        .novaPopup(item: $attachment) { file in
-            NovaFileEntrySheet(entry: file, catalogue: [], assurance: .init(), client: fileClient,
-                canWrite: false, onChanged: {}, onClosed: { attachment = nil })
-        }
-        .sheet(item:$pdf) { NovaFileShareSheet(url:$0) }
     }
     private var automaticDeadline: Bool { kind == "completed_drill" || (kind == "personnel_certificate" && values["certificate_kind"]?.text == "first_aid") }
     private var deadlineHint: String {
@@ -617,7 +905,12 @@ struct NovaProcessEditor: View {
     }
     private func save() async {
         busy = true; failure = nil; defer {busy = false}
-        do { _ = try await service.mutate(company:company,action:"save",payload:payload()); dismiss() }
+        do {
+            _ = try await service.mutate(company:company,action:"save",payload:payload())
+            if kind == "site_visit" { visitSaved = true }
+            else if usesGenericWizard { processSaved = true }
+            else { dismiss() }
+        }
         catch { failure = NovaProcessService.message(error) }
     }
     private func remove() async {

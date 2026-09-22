@@ -10,6 +10,7 @@ struct RiskDetectedApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var appState: AppState
     @StateObject private var networkMonitor = NetworkMonitor.shared
+    @State private var showNotebookReminder = false
 
     init() {
         #if DEBUG
@@ -45,13 +46,28 @@ struct RiskDetectedApp: App {
                 #endif
             }
                 .background(RDKeyboardDismissBehavior())
+                .onReceive(NotificationService.shared.$pendingOpenNotebook) { open in
+                    guard open else { return }
+                    Task {
+                        await NotebookUIRelease.shared.refresh()
+                        if NotebookUIRelease.shared.enabled { showNotebookReminder = true }
+                        NotificationService.shared.pendingOpenNotebook = false
+                    }
+                }
+                .fullScreenCover(isPresented: $showNotebookReminder) {
+                    NotebookDestination(onClose: { showNotebookReminder = false })
+                }
                 .font(RDTypography.font(17, .regular))
                 .environmentObject(appState)
                 .environmentObject(networkMonitor)
                 .preferredColorScheme(buildColorScheme)
                 .onOpenURL { url in
                     MetaAppEventsService.shared.handle(url)
-                    if !GoogleSignInService.handle(url) {
+                    if ReferralDeepLinkStore.shared.capture(url) {
+                        if appState.isAuthenticated {
+                            appState.requestProfileDestination(.referral)
+                        }
+                    } else if !GoogleSignInService.handle(url) {
                         SupabaseService.shared.handleAuthURL(url)
                     }
                 }

@@ -22,7 +22,14 @@ const runners = {
   'node-file-inspector': 'scripts/isg/file_format_inspector.test.mjs',
   'node-workspace-context': 'scripts/isg/osgb_workspace_context.test.mjs',
   'node-workspace-api': 'scripts/isg/osgb_workspace_api.test.mjs',
+  'node-workspace-store': 'scripts/isg/osgb_workspace_store.test.mjs',
+  'node-expert-activity': 'scripts/isg/expert_activity_service.test.mjs',
 };
+const nonTransportFiles = new Set([
+  // Static report resource generated from the bundled font. It performs no
+  // network, persistence or mutation transport.
+  'supabase/functions/_shared/isg/report-font.ts',
+]);
 const digest = value => createHash('sha256').update(value).digest('hex');
 export function runtimeFiles(root = ROOT) {
   const files = [];
@@ -31,7 +38,7 @@ export function runtimeFiles(root = ROOT) {
       if (entry.isSymbolicLink()) throw new Error('FUNCTION_MAP_SYMLINK_REFUSED');
       const name = `${directory}/${entry.name}`;
       if (entry.isDirectory()) visit(name);
-      else if (/\.(ts|swift|kt)$/.test(name) && !/_test\.ts$/.test(name)) files.push(name);
+      else if (/\.(ts|swift|kt)$/.test(name) && !/_test\.ts$/.test(name) && !nonTransportFiles.has(name)) files.push(name);
     }
   }
   roots.forEach(visit); return files.sort();

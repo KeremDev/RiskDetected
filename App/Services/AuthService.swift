@@ -177,6 +177,7 @@ final class AuthService: ObservableObject {
 
     /// Çıkış yapar.
     func signOut() async throws {
+        await ExpertUsagePresence.shared.background()
         do {
             try await supabase.auth.signOut()
         } catch {

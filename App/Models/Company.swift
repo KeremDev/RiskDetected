@@ -31,6 +31,14 @@ struct Company: Codable, Identifiable, Equatable {
     let hazardClass: CompanyHazardClass
     let logoPath: String?
     let address: String?
+    let city: String? = nil
+    let phone: String? = nil
+    let naceCode: String? = nil
+    let workplaceRegistryNo: String? = nil
+    let workplaceProfile: CompanyWorkplaceProfile? = nil
+    let workplaceProfiles: [CompanyWorkplaceProfile]? = nil
+    let responsibleContacts: [CompanyResponsibleContact]? = nil
+    let departments: [String]? = nil
     let contactPerson: String?
     let department: String?
     let defaultResponsible: String?
@@ -72,6 +80,14 @@ struct Company: Codable, Identifiable, Equatable {
         case hazardClass = "hazard_class"
         case logoPath = "logo_path"
         case address
+        case city
+        case phone
+        case naceCode = "nace_code"
+        case workplaceRegistryNo = "workplace_registry_no"
+        case workplaceProfile = "workplace_profile"
+        case workplaceProfiles = "workplace_profiles"
+        case responsibleContacts = "responsible_contacts"
+        case departments
         case contactPerson = "contact_person"
         case department
         case defaultResponsible = "default_responsible"
@@ -88,6 +104,14 @@ struct CompanyDraft: Equatable {
     var hazardClass: CompanyHazardClass = .medium
     var logoPath: String?
     var address: String = ""
+    var city: String = ""
+    var phone: String = ""
+    var naceCode: String = ""
+    var workplaceRegistryNo: String = ""
+    var workplaceProfile: CompanyWorkplaceProfile?
+    var workplaceProfiles: [CompanyWorkplaceProfile] = []
+    var responsibleContacts: [CompanyResponsibleContact] = []
+    var departments: [String] = []
     var contactPerson: String = ""
     var department: String = ""
     var defaultResponsible: String = ""
@@ -108,6 +132,21 @@ struct CompanyDraft: Equatable {
         let dueIsValid = dueText.isEmpty || (defaultDueDays.map { (1...365).contains($0) } ?? false)
         return !trimmedName.isEmpty && dueIsValid
     }
+}
+
+struct CompanyWorkplaceProfile: Codable, Equatable {
+    var name: String = ""
+    var hazardClass: CompanyHazardClass = .medium
+    var address: String = ""
+    var city: String = ""
+}
+
+struct CompanyResponsibleContact: Codable, Identifiable, Equatable {
+    var id: UUID = UUID()
+    var name: String = ""
+    var phone: String = ""
+    var email: String = ""
+    var role: String = ""
 }
 
 struct CompanySnapshot: Codable, Equatable {

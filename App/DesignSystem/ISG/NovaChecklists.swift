@@ -7,7 +7,7 @@ enum NovaChecklistRunState: String, CaseIterable, Identifiable, Equatable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .open: return RDLocalization.string("localizable.nova.checklist.state.open", table: .localizable, fallback: "Sürüyor")
+        case .open: return RDLocalization.string("localizable.nova.checklist.state.open", table: .localizable, fallback: "Devam eden")
         case .submitted: return RDLocalization.string("localizable.nova.checklist.state.submitted", table: .localizable, fallback: "Tamamlandı")
         case .cancelled: return RDLocalization.string("localizable.nova.checklist.state.cancelled", table: .localizable, fallback: "İptal edildi")
         }
@@ -41,6 +41,21 @@ enum NovaChecklistResult: String, CaseIterable, Identifiable, Equatable {
         case .notApplicable: return RDLocalization.string("localizable.nova.checklist.result.na", table: .localizable, fallback: "Uygulanamaz")
         }
     }
+    var wireValue: String {
+        switch self {
+        case .conform: return "compliant"
+        case .nonconform: return "non_compliant"
+        case .notApplicable: return "not_applicable"
+        }
+    }
+    init?(wireValue: String) {
+        switch wireValue {
+        case "compliant", "conform": self = .conform
+        case "non_compliant", "nonconform": self = .nonconform
+        case "not_applicable": self = .notApplicable
+        default: return nil
+        }
+    }
     var symbol: String {
         switch self {
         case .conform: return "checkmark.circle"
@@ -72,9 +87,20 @@ struct NovaChecklistAnswer: Identifiable, Equatable {
     let itemCode: String
     let prompt: String
     let position: Int
+    let atomicItemCode: String?
+    let sectionTitle: String?
+    let scopeKey: String?
     let allowsNotApplicable: Bool
+    let verificationMethod: String?
+    let helpText: String?
+    let tags: [String]
+    let riskTopic: String?
+    let naReasonRequired: Bool
+    let evidenceRecommended: Bool
+    let photoRequired: Bool
     let result: NovaChecklistResult?
     let note: String?
+    let evidenceAssetID: UUID?
     let nonconformityID: UUID?
     var isAnswered: Bool { result != nil }
 }
@@ -94,16 +120,31 @@ struct NovaChecklistRun: Identifiable, Equatable {
     let state: NovaChecklistRunState
     let startedOn: String
     let submittedAt: String?
+    let revision: Int64
+    let revisesRunID: UUID?
+    let areaLabel: String?
+    let equipmentLabel: String?
+    let documentNumber: String?
     let expected: Int
     let answered: Int
     let remaining: Int
     let conform: Int
     let nonconform: Int
     let notApplicable: Int
+    let progressPercent: Double?
+    let coveragePercent: Double?
+    let applicableCoveragePercent: Double?
+    let scorePercent: Double?
+    let sourceIDs: [String]
     /// How many failing answers the expert chose to turn into a record. Never
     /// all of them by default, because nothing converts on its own.
     let nonconformitiesOpened: Int
     let answers: [NovaChecklistAnswer]
+    var isPersonal: Bool { companyID == nil }
+    var isComplete: Bool { expected > 0 && remaining == 0 }
+    /// A partial run must never read as fully compliant. The server score is
+    /// meaningful only after every question has an answer.
+    var completedScorePercent: Double? { isComplete ? scorePercent : nil }
 }
 
 /// One question in a template the expert is editing.
@@ -112,13 +153,25 @@ struct NovaChecklistTemplateItem: Identifiable, Equatable {
     let itemCode: String
     let prompt: String
     let position: Int
+    let atomicItemCode: String?
+    let sectionTitle: String?
+    let scopeKey: String?
     let allowsNotApplicable: Bool
+    let verificationMethod: String?
+    let helpText: String?
+    let tags: [String]
+    let riskTopic: String?
+    let naReasonRequired: Bool
+    let evidenceRecommended: Bool
+    let photoRequired: Bool
+    let sourceIDs: [String]
 }
 
 /// One version of a list. Only a draft is editable.
 struct NovaChecklistTemplateVersion: Identifiable, Equatable {
     var id: Int { version }
     let version: Int
+    let revision: Int64
     let status: String
     let publishedAt: String?
     let approvalNote: String?
@@ -155,14 +208,110 @@ struct NovaChecklistStarter: Identifiable, Equatable {
     let version: Int
     let items: Int
     let isProduct: Bool
+    let catalogTemplateCode: String?
+    let sectorCode: String?
+    let kind: String?
+    let scopeNote: String?
+    let professionalReviewStatus: String?
+
+    var kindTitle: String {
+        switch kind {
+        case "sector": return "Saha"
+        case "activity": return "Faaliyet"
+        case "equipment": return "Ekipman"
+        case "hazard": return "Tehlike"
+        default: return "Genel"
+        }
+    }
+
+    var selectionSubtitle: String {
+        let context = [sectorCode, kindTitle, "\(items) soru"]
+            .compactMap { $0 }.joined(separator: " · ")
+        guard let scopeNote, !scopeNote.isEmpty else { return context }
+        return context + "\n" + scopeNote
+    }
 }
 
 struct NovaChecklistCatalogue: Equatable {
     struct Workplace: Identifiable, Equatable { let id: UUID; let name: String; let needsReview: Bool }
     let workplaces: [Workplace]
     let starters: [NovaChecklistStarter]
-    /// Said plainly rather than implied by an empty list.
     let productTemplatesOffered: Bool
+    let catalogVersion: String?
+    let publicationStatus: String?
+    let professionalReviewStatus: String?
+}
+
+struct NovaChecklistLibrarySector: Identifiable, Equatable {
+    var id: String { code }
+    let code: String
+    let name: String
+    let count: Int
+}
+
+struct NovaChecklistLibraryItem: Identifiable, Equatable {
+    var id: String { templateCode }
+    let templateCode: String
+    let catalogTemplateCode: String
+    let title: String
+    let sectorCode: String?
+    let sectorName: String?
+    let kind: String
+    let aliases: [String]
+    let scopeNote: String
+    let professionalReviewStatus: String
+    let items: Int
+    let sourceIDs: [String]
+}
+
+struct NovaChecklistLibraryMatch: Identifiable, Equatable {
+    struct Context: Identifiable, Equatable {
+        var id: String { templateCode + ":" + itemCode }
+        let templateCode: String
+        let catalogTemplateCode: String
+        let title: String
+        let sectorCode: String?
+        let sectorName: String?
+        let itemCode: String
+    }
+    var id: String { atomicItemCode }
+    let atomicItemCode: String
+    let prompt: String
+    let verificationMethod: String?
+    let riskTopic: String?
+    let tags: [String]
+    let sourceIDs: [String]
+    let contexts: [Context]
+}
+
+struct NovaChecklistLibrary: Equatable {
+    let catalogVersion: String
+    let publicationStatus: String
+    let professionalReviewStatus: String
+    let sectors: [NovaChecklistLibrarySector]
+    let rows: [NovaChecklistLibraryItem]
+    let matchedItems: [NovaChecklistLibraryMatch]
+    let total: Int
+    let limit: Int
+    let offset: Int
+    var hasMore: Bool { offset + rows.count < total }
+}
+
+struct NovaChecklistTemplateDetail: Identifiable, Equatable {
+    var id: String { templateCode }
+    let templateCode: String
+    let catalogTemplateCode: String?
+    let catalogVersion: String?
+    let title: String
+    let sectorCode: String?
+    let kind: String?
+    let aliases: [String]
+    let scopeNote: String?
+    let sourceIDs: [String]
+    let isProduct: Bool
+    let professionalReviewStatus: String?
+    let version: Int
+    let items: [NovaChecklistTemplateItem]
 }
 
 struct NovaChecklistBoard: Equatable {
@@ -200,16 +349,43 @@ struct NovaChecklistAnswerDraft: Equatable {
     var itemCode: String = ""
     var prompt: String = ""
     var allowsNotApplicable: Bool = true
+    var verificationMethod: String?
+    var helpText: String?
+    var naReasonRequired: Bool = false
+    var evidenceRecommended: Bool = false
+    var photoRequired: Bool = false
     var result: NovaChecklistResult = .conform
     var note: String = ""
+    var attachment: IsgWorkspaceAttachmentDraft?
+    var evidenceAssetID: UUID?
     var openNonconformity: Bool = false
     var severity: NovaChecklistSeverity = .medium
     var dueOn: String = ""
+    var expectedRevision: Int64 = 0
+}
+
+struct NovaChecklistItemSelection: Equatable {
+    let sourceTemplateCode: String
+    let sourceItemCode: String
+    var sectionTitle: String = ""
+    var scopeKey: String = ""
+    var allowDuplicate = false
+}
+
+struct NovaChecklistAssignment: Identifiable, Equatable {
+    let id: UUID
+    let companyID: UUID
+    let workplaceID: UUID?
+    let workplaceName: String?
+    let templateCode: String
+    let templateTitle: String
+    let templateVersion: Int
+    let assignedAt: String
 }
 
 enum NovaChecklistFailure: Error, Equatable {
-    case denied, planRequired, moduleUnavailable, validation, conflict
-    case runSubmitted, runIncomplete, templatePublished
+    case denied, planRequired, moduleUnavailable, validation, explanationRequired, conflict
+    case runSubmitted, runIncomplete, templatePublished, duplicateItem, companyRequired
     case unavailable
     var message: String {
         switch self {
@@ -221,6 +397,7 @@ enum NovaChecklistFailure: Error, Equatable {
             fallback: "Kontrol listeleri modülü henüz açık değil.")
         case .validation: return RDLocalization.string("localizable.nova.checklist.error.validation", table: .localizable,
             fallback: "Girilen bilgiler eksik veya birbiriyle uyumsuz.")
+        case .explanationRequired: return "Uygun değil ve Uygulanamaz yanıtlarında açıklama zorunludur."
         case .conflict: return RDLocalization.string("localizable.nova.checklist.error.conflict", table: .localizable,
             fallback: "Kayıt bu sırada başka bir yerden değişti. Yenileyip tekrar deneyin.")
         case .runSubmitted: return RDLocalization.string("localizable.nova.checklist.error.submitted", table: .localizable,
@@ -229,6 +406,8 @@ enum NovaChecklistFailure: Error, Equatable {
             fallback: "Yanıtlanmamış soru var. Tamamlamak için hepsini yanıtlayın.")
         case .templatePublished: return RDLocalization.string("localizable.nova.checklist.error.published", table: .localizable,
             fallback: "Yayımlanmış liste değiştirilemez. Değişiklik için yeni sürüm açın.")
+        case .duplicateItem: return "Bu madde aynı kapsam anahtarıyla listede zaten var. Gerçekten farklı bir alan veya ekipman içinse ayrı bir kapsam adı girin."
+        case .companyRequired: return "Kanıt veya uygunsuzluk kaydı için kontrolü bir firmada başlatın."
         case .unavailable: return RDLocalization.string("localizable.nova.checklist.error.unavailable", table: .localizable,
             fallback: "Kayıt alınamadı. Bağlantıyı kontrol edip tekrar deneyin.")
         }
@@ -242,8 +421,8 @@ enum NovaChecklistWords {
     static let neverAutomatic = RDLocalization.string("localizable.nova.checklist.auto.note", table: .localizable,
         fallback: "Olumsuz yanıt kendiliğinden uygunsuzluk kaydı açmaz. Kayıt açmak sizin seçiminizdir.")
     /// The sentence the templates screen carries at the top.
-    static let noProductList = RDLocalization.string("localizable.nova.checklist.product.note", table: .localizable,
-        fallback: "Ürün hazır kontrol listesi göndermez. Onaylanmış bir soru kataloğu yok; listeyi siz yazarsınız.")
+    static let catalogNotice = RDLocalization.string("localizable.nova.checklist.product.note", table: .localizable,
+        fallback: "Hazır listeler saha kontrolünü yapılandıran uzman yardımcılarıdır. Mevzuata uygunluk kararı değildir; firma, iş ve ekipman kapsamını uzman doğrular.")
     /// The sentence beside a published version.
     static let selfApproved = RDLocalization.string("localizable.nova.checklist.approval.note", table: .localizable,
         fallback: "Yayımlamak listenin sizin onayınızdan geçtiği anlamına gelir; mevzuat onayı değildir.")

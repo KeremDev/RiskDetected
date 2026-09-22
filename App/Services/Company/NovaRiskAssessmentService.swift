@@ -242,7 +242,9 @@ import Foundation
             "p_operation": .id(UUID()), "p_mutation": .id(UUID()),
             "p_payload": .object(["workplace_id": .id(workplace)])])
         try check(identity)
-        return try JSONDecoder().decode(MutationEnvelope.self, from: data).row.map(row)
+        let result = try JSONDecoder().decode(MutationEnvelope.self, from: data).row.map(row)
+        NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: identity.userID)
+        return result
     }
 
     func draft(_ identity: NovaSessionIdentity, company: UUID,

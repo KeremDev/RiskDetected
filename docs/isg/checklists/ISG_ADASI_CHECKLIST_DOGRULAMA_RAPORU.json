@@ -1,0 +1,1625 @@
+{
+  "result": "PASS",
+  "markdown_file": "ISG_ADASI_CHECKLIST_TAM_MADDE_KATALOGU_DOGRULANMIS.md",
+  "markdown_bytes": 435416,
+  "markdown_lines": 4832,
+  "markdown_sha256": "1b8596eb35be83bc991205eb35ff3cc026c22fd0f4c4316f3432f1111eb73925",
+  "seed_file": "ISG_ADASI_CHECKLIST_SEED.json",
+  "seed_sha256": "c32e8ab71ae86663972eb89f02de158bc2b899892963312b0695ebb7ec79d62d",
+  "sector_count": 24,
+  "sector_templates": 192,
+  "supplemental_templates": 8,
+  "templates": 200,
+  "visible_rows": 2000,
+  "distinct_question_texts": 1169,
+  "topic_packs": 117,
+  "pack_item_occurrences": 1170,
+  "source_records": 54,
+  "structural_assertions_passed": 4425,
+  "every_template_has_10": true,
+  "no_placeholder_questions": true,
+  "md_seed_question_equality": true,
+  "domain_expert_approval": false,
+  "checklists": [
+    {
+      "code": "INS-01",
+      "title": "Şantiye başlangıcı ve saha yerleşimi",
+      "sector": "İnşaat ve şantiye",
+      "start_line": 55,
+      "end_line": 73,
+      "item_count": 10
+    },
+    {
+      "code": "INS-02",
+      "title": "Yüksekte çalışma ve düşmeye karşı koruma",
+      "sector": "İnşaat ve şantiye",
+      "start_line": 76,
+      "end_line": 94,
+      "item_count": 10
+    },
+    {
+      "code": "INS-03",
+      "title": "Cephe ve mobil iskele kullanım öncesi kontrolü",
+      "sector": "İnşaat ve şantiye",
+      "start_line": 97,
+      "end_line": 115,
+      "item_count": 10
+    },
+    {
+      "code": "INS-04",
+      "title": "Kazı ve hendek çalışması ön kontrolü",
+      "sector": "İnşaat ve şantiye",
+      "start_line": 118,
+      "end_line": 136,
+      "item_count": 10
+    },
+    {
+      "code": "INS-05",
+      "title": "Kule vinç kullanım hazırlığı",
+      "sector": "İnşaat ve şantiye",
+      "start_line": 139,
+      "end_line": 157,
+      "item_count": 10
+    },
+    {
+      "code": "INS-06",
+      "title": "Beton dökümü, kalıp ve donatı işleri",
+      "sector": "İnşaat ve şantiye",
+      "start_line": 160,
+      "end_line": 178,
+      "item_count": 10
+    },
+    {
+      "code": "INS-07",
+      "title": "Elektrik panosu ve taşınabilir elektrikli donanım",
+      "sector": "İnşaat ve şantiye",
+      "start_line": 181,
+      "end_line": 199,
+      "item_count": 10
+    },
+    {
+      "code": "INS-08",
+      "title": "Sıcak çalışma hazırlığı ve iş bitimi",
+      "sector": "İnşaat ve şantiye",
+      "start_line": 202,
+      "end_line": 220,
+      "item_count": 10
+    },
+    {
+      "code": "DPO-01",
+      "title": "Depo genel düzeni ve istifleme",
+      "sector": "Depo ve lojistik",
+      "start_line": 228,
+      "end_line": 246,
+      "item_count": 10
+    },
+    {
+      "code": "DPO-02",
+      "title": "Forklift kullanım öncesi kontrolü",
+      "sector": "Depo ve lojistik",
+      "start_line": 249,
+      "end_line": 267,
+      "item_count": 10
+    },
+    {
+      "code": "DPO-03",
+      "title": "Manuel ve elektrikli transpalet kontrolü",
+      "sector": "Depo ve lojistik",
+      "start_line": 270,
+      "end_line": 288,
+      "item_count": 10
+    },
+    {
+      "code": "DPO-04",
+      "title": "Reach truck ve istifleyici kontrolü",
+      "sector": "Depo ve lojistik",
+      "start_line": 291,
+      "end_line": 309,
+      "item_count": 10
+    },
+    {
+      "code": "DPO-05",
+      "title": "Depolama rafları saha kontrolü",
+      "sector": "Depo ve lojistik",
+      "start_line": 312,
+      "end_line": 330,
+      "item_count": 10
+    },
+    {
+      "code": "DPO-06",
+      "title": "Yükleme ve boşaltma alanı",
+      "sector": "Depo ve lojistik",
+      "start_line": 333,
+      "end_line": 351,
+      "item_count": 10
+    },
+    {
+      "code": "DPO-07",
+      "title": "Saha trafiği ve yaya ayrımı",
+      "sector": "Depo ve lojistik",
+      "start_line": 354,
+      "end_line": 372,
+      "item_count": 10
+    },
+    {
+      "code": "DPO-08",
+      "title": "Yangın önleme ve söndürme ekipmanı",
+      "sector": "Depo ve lojistik",
+      "start_line": 375,
+      "end_line": 393,
+      "item_count": 10
+    },
+    {
+      "code": "MTL-01",
+      "title": "Metal imalat atölyesi genel kontrolü",
+      "sector": "Metal ve makine imalatı",
+      "start_line": 401,
+      "end_line": 419,
+      "item_count": 10
+    },
+    {
+      "code": "MTL-02",
+      "title": "Pres tezgâhı kullanım hazırlığı",
+      "sector": "Metal ve makine imalatı",
+      "start_line": 422,
+      "end_line": 440,
+      "item_count": 10
+    },
+    {
+      "code": "MTL-03",
+      "title": "Torna tezgâhı ön kullanım kontrolü",
+      "sector": "Metal ve makine imalatı",
+      "start_line": 443,
+      "end_line": 461,
+      "item_count": 10
+    },
+    {
+      "code": "MTL-04",
+      "title": "Freze tezgâhı saha kontrolü",
+      "sector": "Metal ve makine imalatı",
+      "start_line": 464,
+      "end_line": 482,
+      "item_count": 10
+    },
+    {
+      "code": "MTL-05",
+      "title": "Sütunlu matkap kontrolü",
+      "sector": "Metal ve makine imalatı",
+      "start_line": 485,
+      "end_line": 503,
+      "item_count": 10
+    },
+    {
+      "code": "MTL-06",
+      "title": "CNC tezgâhı ve otomatik hücre",
+      "sector": "Metal ve makine imalatı",
+      "start_line": 506,
+      "end_line": 524,
+      "item_count": 10
+    },
+    {
+      "code": "MTL-07",
+      "title": "Taşlama ve spiral kesici kontrolü",
+      "sector": "Metal ve makine imalatı",
+      "start_line": 527,
+      "end_line": 545,
+      "item_count": 10
+    },
+    {
+      "code": "MTL-08",
+      "title": "Bakımda enerji izolasyonu ve yeniden başlatma",
+      "sector": "Metal ve makine imalatı",
+      "start_line": 548,
+      "end_line": 566,
+      "item_count": 10
+    },
+    {
+      "code": "OTO-01",
+      "title": "Otomotiv bakım-servis alanı",
+      "sector": "Otomotiv bakım ve servis",
+      "start_line": 574,
+      "end_line": 592,
+      "item_count": 10
+    },
+    {
+      "code": "OTO-02",
+      "title": "Araç kaldırma lifti",
+      "sector": "Otomotiv bakım ve servis",
+      "start_line": 595,
+      "end_line": 613,
+      "item_count": 10
+    },
+    {
+      "code": "OTO-03",
+      "title": "Elektrikli ve hibrit araç servis hazırlığı",
+      "sector": "Otomotiv bakım ve servis",
+      "start_line": 616,
+      "end_line": 634,
+      "item_count": 10
+    },
+    {
+      "code": "OTO-04",
+      "title": "Elektrik ark kaynağı ekipmanı ve çalışma yeri",
+      "sector": "Otomotiv bakım ve servis",
+      "start_line": 637,
+      "end_line": 655,
+      "item_count": 10
+    },
+    {
+      "code": "OTO-05",
+      "title": "Kompresör ve basınçlı hava tankı saha kontrolü",
+      "sector": "Otomotiv bakım ve servis",
+      "start_line": 658,
+      "end_line": 676,
+      "item_count": 10
+    },
+    {
+      "code": "OTO-06",
+      "title": "Boya, solvent ve püskürtme işleri",
+      "sector": "Otomotiv bakım ve servis",
+      "start_line": 679,
+      "end_line": 697,
+      "item_count": 10
+    },
+    {
+      "code": "OTO-07",
+      "title": "Elektrikli ve mekanik el aletleri",
+      "sector": "Otomotiv bakım ve servis",
+      "start_line": 700,
+      "end_line": 718,
+      "item_count": 10
+    },
+    {
+      "code": "OTO-08",
+      "title": "Yangın önleme ve söndürme ekipmanı",
+      "sector": "Otomotiv bakım ve servis",
+      "start_line": 721,
+      "end_line": 739,
+      "item_count": 10
+    },
+    {
+      "code": "GDA-01",
+      "title": "Gıda üretim sahası iş güvenliği",
+      "sector": "Gıda üretimi",
+      "start_line": 747,
+      "end_line": 765,
+      "item_count": 10
+    },
+    {
+      "code": "GDA-02",
+      "title": "Gıda karıştırıcı, kıyma ve dilimleme makineleri",
+      "sector": "Gıda üretimi",
+      "start_line": 768,
+      "end_line": 786,
+      "item_count": 10
+    },
+    {
+      "code": "GDA-03",
+      "title": "Soğuk oda ve dondurucu çalışma alanı",
+      "sector": "Gıda üretimi",
+      "start_line": 789,
+      "end_line": 807,
+      "item_count": 10
+    },
+    {
+      "code": "GDA-04",
+      "title": "Konveyör ve aktarma hattı",
+      "sector": "Gıda üretimi",
+      "start_line": 810,
+      "end_line": 828,
+      "item_count": 10
+    },
+    {
+      "code": "GDA-05",
+      "title": "Kazan dairesi ve sıcak akışkan hatları",
+      "sector": "Gıda üretimi",
+      "start_line": 831,
+      "end_line": 849,
+      "item_count": 10
+    },
+    {
+      "code": "GDA-06",
+      "title": "Islak temizlik ve zemin güvenliği",
+      "sector": "Gıda üretimi",
+      "start_line": 852,
+      "end_line": 870,
+      "item_count": 10
+    },
+    {
+      "code": "GDA-07",
+      "title": "Kimyasal kullanımı ve aktarımı",
+      "sector": "Gıda üretimi",
+      "start_line": 873,
+      "end_line": 891,
+      "item_count": 10
+    },
+    {
+      "code": "GDA-08",
+      "title": "Ergonomi ve tekrarlı iş düzeni",
+      "sector": "Gıda üretimi",
+      "start_line": 894,
+      "end_line": 912,
+      "item_count": 10
+    },
+    {
+      "code": "MUT-01",
+      "title": "Sıcak mutfak ve pişirme hattı",
+      "sector": "Restoran ve endüstriyel mutfak",
+      "start_line": 920,
+      "end_line": 938,
+      "item_count": 10
+    },
+    {
+      "code": "MUT-02",
+      "title": "Mutfakta bıçak ve kesici donanım",
+      "sector": "Restoran ve endüstriyel mutfak",
+      "start_line": 941,
+      "end_line": 959,
+      "item_count": 10
+    },
+    {
+      "code": "MUT-03",
+      "title": "Mutfak gaz tesisatı ve cihazları",
+      "sector": "Restoran ve endüstriyel mutfak",
+      "start_line": 962,
+      "end_line": 980,
+      "item_count": 10
+    },
+    {
+      "code": "MUT-04",
+      "title": "Soğuk oda ve dondurucu çalışma alanı",
+      "sector": "Restoran ve endüstriyel mutfak",
+      "start_line": 983,
+      "end_line": 1001,
+      "item_count": 10
+    },
+    {
+      "code": "MUT-05",
+      "title": "Elle taşıma ve yük hareketi",
+      "sector": "Restoran ve endüstriyel mutfak",
+      "start_line": 1004,
+      "end_line": 1022,
+      "item_count": 10
+    },
+    {
+      "code": "MUT-06",
+      "title": "Islak temizlik ve zemin güvenliği",
+      "sector": "Restoran ve endüstriyel mutfak",
+      "start_line": 1025,
+      "end_line": 1043,
+      "item_count": 10
+    },
+    {
+      "code": "MUT-07",
+      "title": "Yangın önleme ve söndürme ekipmanı",
+      "sector": "Restoran ve endüstriyel mutfak",
+      "start_line": 1046,
+      "end_line": 1064,
+      "item_count": 10
+    },
+    {
+      "code": "MUT-08",
+      "title": "Elektrik panosu ve taşınabilir elektrikli donanım",
+      "sector": "Restoran ve endüstriyel mutfak",
+      "start_line": 1067,
+      "end_line": 1085,
+      "item_count": 10
+    },
+    {
+      "code": "OFS-01",
+      "title": "Ekranlı çalışma istasyonu",
+      "sector": "Ofis ve idari bina",
+      "start_line": 1093,
+      "end_line": 1111,
+      "item_count": 10
+    },
+    {
+      "code": "OFS-02",
+      "title": "Ofis ortak alanları ve bina kullanımı",
+      "sector": "Ofis ve idari bina",
+      "start_line": 1114,
+      "end_line": 1132,
+      "item_count": 10
+    },
+    {
+      "code": "OFS-03",
+      "title": "Acil durum ve tahliye hazırlığı",
+      "sector": "Ofis ve idari bina",
+      "start_line": 1135,
+      "end_line": 1153,
+      "item_count": 10
+    },
+    {
+      "code": "OFS-04",
+      "title": "Elektrik panosu ve taşınabilir elektrikli donanım",
+      "sector": "Ofis ve idari bina",
+      "start_line": 1156,
+      "end_line": 1174,
+      "item_count": 10
+    },
+    {
+      "code": "OFS-05",
+      "title": "Ergonomi ve tekrarlı iş düzeni",
+      "sector": "Ofis ve idari bina",
+      "start_line": 1177,
+      "end_line": 1195,
+      "item_count": 10
+    },
+    {
+      "code": "OFS-06",
+      "title": "İş organizasyonu ve psikososyal saha göstergeleri",
+      "sector": "Ofis ve idari bina",
+      "start_line": 1198,
+      "end_line": 1216,
+      "item_count": 10
+    },
+    {
+      "code": "OFS-07",
+      "title": "Aydınlatma ve kapalı ortam konforu",
+      "sector": "Ofis ve idari bina",
+      "start_line": 1219,
+      "end_line": 1237,
+      "item_count": 10
+    },
+    {
+      "code": "OFS-08",
+      "title": "İlk yardım organizasyonu ve ekipmanı",
+      "sector": "Ofis ve idari bina",
+      "start_line": 1240,
+      "end_line": 1258,
+      "item_count": 10
+    },
+    {
+      "code": "PRK-01",
+      "title": "Mağaza satış alanı iş güvenliği",
+      "sector": "Perakende ve mağazacılık",
+      "start_line": 1266,
+      "end_line": 1284,
+      "item_count": 10
+    },
+    {
+      "code": "PRK-02",
+      "title": "Teşhir rafları ve ürün yerleştirme",
+      "sector": "Perakende ve mağazacılık",
+      "start_line": 1287,
+      "end_line": 1305,
+      "item_count": 10
+    },
+    {
+      "code": "PRK-03",
+      "title": "Manuel ve elektrikli transpalet kontrolü",
+      "sector": "Perakende ve mağazacılık",
+      "start_line": 1308,
+      "end_line": 1326,
+      "item_count": 10
+    },
+    {
+      "code": "PRK-04",
+      "title": "Yükleme ve boşaltma alanı",
+      "sector": "Perakende ve mağazacılık",
+      "start_line": 1329,
+      "end_line": 1347,
+      "item_count": 10
+    },
+    {
+      "code": "PRK-05",
+      "title": "Saha trafiği ve yaya ayrımı",
+      "sector": "Perakende ve mağazacılık",
+      "start_line": 1350,
+      "end_line": 1368,
+      "item_count": 10
+    },
+    {
+      "code": "PRK-06",
+      "title": "Acil durum ve tahliye hazırlığı",
+      "sector": "Perakende ve mağazacılık",
+      "start_line": 1371,
+      "end_line": 1389,
+      "item_count": 10
+    },
+    {
+      "code": "PRK-07",
+      "title": "Yalnız çalışma güvenlik düzeni",
+      "sector": "Perakende ve mağazacılık",
+      "start_line": 1392,
+      "end_line": 1410,
+      "item_count": 10
+    },
+    {
+      "code": "PRK-08",
+      "title": "Taşınabilir merdiven ve basamak",
+      "sector": "Perakende ve mağazacılık",
+      "start_line": 1413,
+      "end_line": 1431,
+      "item_count": 10
+    },
+    {
+      "code": "SAG-01",
+      "title": "Sağlık kuruluşu çalışma alanı güvenliği",
+      "sector": "Sağlık kuruluşları — saha iş güvenliği",
+      "start_line": 1439,
+      "end_line": 1457,
+      "item_count": 10
+    },
+    {
+      "code": "SAG-02",
+      "title": "Kesici-delici araç ve atık güvenliği",
+      "sector": "Sağlık kuruluşları — saha iş güvenliği",
+      "start_line": 1460,
+      "end_line": 1478,
+      "item_count": 10
+    },
+    {
+      "code": "SAG-03",
+      "title": "Biyolojik etkenlerden korunma saha düzeni",
+      "sector": "Sağlık kuruluşları — saha iş güvenliği",
+      "start_line": 1481,
+      "end_line": 1499,
+      "item_count": 10
+    },
+    {
+      "code": "SAG-04",
+      "title": "Basınçlı gaz tüpü ve manifold alanı",
+      "sector": "Sağlık kuruluşları — saha iş güvenliği",
+      "start_line": 1502,
+      "end_line": 1520,
+      "item_count": 10
+    },
+    {
+      "code": "SAG-05",
+      "title": "Acil duş ve göz yıkama istasyonu",
+      "sector": "Sağlık kuruluşları — saha iş güvenliği",
+      "start_line": 1523,
+      "end_line": 1541,
+      "item_count": 10
+    },
+    {
+      "code": "SAG-06",
+      "title": "Atıkların güvenli toplanması ve geçici tutulması",
+      "sector": "Sağlık kuruluşları — saha iş güvenliği",
+      "start_line": 1544,
+      "end_line": 1562,
+      "item_count": 10
+    },
+    {
+      "code": "SAG-07",
+      "title": "Elle taşıma ve yük hareketi",
+      "sector": "Sağlık kuruluşları — saha iş güvenliği",
+      "start_line": 1565,
+      "end_line": 1583,
+      "item_count": 10
+    },
+    {
+      "code": "SAG-08",
+      "title": "Acil durum ve tahliye hazırlığı",
+      "sector": "Sağlık kuruluşları — saha iş güvenliği",
+      "start_line": 1586,
+      "end_line": 1604,
+      "item_count": 10
+    },
+    {
+      "code": "TEM-01",
+      "title": "Temizlik hizmeti iş hazırlığı",
+      "sector": "Temizlik hizmetleri",
+      "start_line": 1612,
+      "end_line": 1630,
+      "item_count": 10
+    },
+    {
+      "code": "TEM-02",
+      "title": "Kimyasal kullanımı ve aktarımı",
+      "sector": "Temizlik hizmetleri",
+      "start_line": 1633,
+      "end_line": 1651,
+      "item_count": 10
+    },
+    {
+      "code": "TEM-03",
+      "title": "Cam ve dış cephe temizliği hazırlığı",
+      "sector": "Temizlik hizmetleri",
+      "start_line": 1654,
+      "end_line": 1672,
+      "item_count": 10
+    },
+    {
+      "code": "TEM-04",
+      "title": "Taşınabilir merdiven ve basamak",
+      "sector": "Temizlik hizmetleri",
+      "start_line": 1675,
+      "end_line": 1693,
+      "item_count": 10
+    },
+    {
+      "code": "TEM-05",
+      "title": "Elektrikli ve mekanik el aletleri",
+      "sector": "Temizlik hizmetleri",
+      "start_line": 1696,
+      "end_line": 1714,
+      "item_count": 10
+    },
+    {
+      "code": "TEM-06",
+      "title": "Elle taşıma ve yük hareketi",
+      "sector": "Temizlik hizmetleri",
+      "start_line": 1717,
+      "end_line": 1735,
+      "item_count": 10
+    },
+    {
+      "code": "TEM-07",
+      "title": "Biyolojik etkenlerden korunma saha düzeni",
+      "sector": "Temizlik hizmetleri",
+      "start_line": 1738,
+      "end_line": 1756,
+      "item_count": 10
+    },
+    {
+      "code": "TEM-08",
+      "title": "Yalnız çalışma güvenlik düzeni",
+      "sector": "Temizlik hizmetleri",
+      "start_line": 1759,
+      "end_line": 1777,
+      "item_count": 10
+    },
+    {
+      "code": "OTL-01",
+      "title": "Otel kat hizmetleri ve oda temizliği",
+      "sector": "Otel ve konaklama",
+      "start_line": 1785,
+      "end_line": 1803,
+      "item_count": 10
+    },
+    {
+      "code": "OTL-02",
+      "title": "Çamaşırhane ve ütü-pres alanı",
+      "sector": "Otel ve konaklama",
+      "start_line": 1806,
+      "end_line": 1824,
+      "item_count": 10
+    },
+    {
+      "code": "OTL-03",
+      "title": "Havuz teknik alanı ve bakım işleri",
+      "sector": "Otel ve konaklama",
+      "start_line": 1827,
+      "end_line": 1845,
+      "item_count": 10
+    },
+    {
+      "code": "OTL-04",
+      "title": "Sıcak mutfak ve pişirme hattı",
+      "sector": "Otel ve konaklama",
+      "start_line": 1848,
+      "end_line": 1866,
+      "item_count": 10
+    },
+    {
+      "code": "OTL-05",
+      "title": "Yangın önleme ve söndürme ekipmanı",
+      "sector": "Otel ve konaklama",
+      "start_line": 1869,
+      "end_line": 1887,
+      "item_count": 10
+    },
+    {
+      "code": "OTL-06",
+      "title": "Acil durum ve tahliye hazırlığı",
+      "sector": "Otel ve konaklama",
+      "start_line": 1890,
+      "end_line": 1908,
+      "item_count": 10
+    },
+    {
+      "code": "OTL-07",
+      "title": "Yalnız çalışma güvenlik düzeni",
+      "sector": "Otel ve konaklama",
+      "start_line": 1911,
+      "end_line": 1929,
+      "item_count": 10
+    },
+    {
+      "code": "OTL-08",
+      "title": "Gece çalışması ve vardiya devri",
+      "sector": "Otel ve konaklama",
+      "start_line": 1932,
+      "end_line": 1950,
+      "item_count": 10
+    },
+    {
+      "code": "TAR-01",
+      "title": "Traktör ve bağlı tarım ekipmanı",
+      "sector": "Tarım, sera ve hayvancılık",
+      "start_line": 1958,
+      "end_line": 1976,
+      "item_count": 10
+    },
+    {
+      "code": "TAR-02",
+      "title": "Tarla ve tarımsal saha işleri",
+      "sector": "Tarım, sera ve hayvancılık",
+      "start_line": 1979,
+      "end_line": 1997,
+      "item_count": 10
+    },
+    {
+      "code": "TAR-03",
+      "title": "Sera çalışmaları",
+      "sector": "Tarım, sera ve hayvancılık",
+      "start_line": 2000,
+      "end_line": 2018,
+      "item_count": 10
+    },
+    {
+      "code": "TAR-04",
+      "title": "Hayvancılık tesisinde çalışma güvenliği",
+      "sector": "Tarım, sera ve hayvancılık",
+      "start_line": 2021,
+      "end_line": 2039,
+      "item_count": 10
+    },
+    {
+      "code": "TAR-05",
+      "title": "Kompresör ve basınçlı hava tankı saha kontrolü",
+      "sector": "Tarım, sera ve hayvancılık",
+      "start_line": 2042,
+      "end_line": 2060,
+      "item_count": 10
+    },
+    {
+      "code": "TAR-06",
+      "title": "Kimyasal kullanımı ve aktarımı",
+      "sector": "Tarım, sera ve hayvancılık",
+      "start_line": 2063,
+      "end_line": 2081,
+      "item_count": 10
+    },
+    {
+      "code": "TAR-07",
+      "title": "Açık alanda sıcak, soğuk ve hava koşulları",
+      "sector": "Tarım, sera ve hayvancılık",
+      "start_line": 2084,
+      "end_line": 2102,
+      "item_count": 10
+    },
+    {
+      "code": "TAR-08",
+      "title": "Yalnız çalışma güvenlik düzeni",
+      "sector": "Tarım, sera ve hayvancılık",
+      "start_line": 2105,
+      "end_line": 2123,
+      "item_count": 10
+    },
+    {
+      "code": "ENR-01",
+      "title": "Elektrik işi ve teknik oda hazırlığı",
+      "sector": "Enerji ve elektrik işleri",
+      "start_line": 2131,
+      "end_line": 2149,
+      "item_count": 10
+    },
+    {
+      "code": "ENR-02",
+      "title": "Bakımda enerji izolasyonu ve yeniden başlatma",
+      "sector": "Enerji ve elektrik işleri",
+      "start_line": 2152,
+      "end_line": 2170,
+      "item_count": 10
+    },
+    {
+      "code": "ENR-03",
+      "title": "Güneş enerjisi sahası ve çatı PV işleri",
+      "sector": "Enerji ve elektrik işleri",
+      "start_line": 2173,
+      "end_line": 2191,
+      "item_count": 10
+    },
+    {
+      "code": "ENR-04",
+      "title": "Yükseltilebilir çalışma platformu",
+      "sector": "Enerji ve elektrik işleri",
+      "start_line": 2194,
+      "end_line": 2212,
+      "item_count": 10
+    },
+    {
+      "code": "ENR-05",
+      "title": "Jeneratör ve yedek güç alanı",
+      "sector": "Enerji ve elektrik işleri",
+      "start_line": 2215,
+      "end_line": 2233,
+      "item_count": 10
+    },
+    {
+      "code": "ENR-06",
+      "title": "Yüksekte çalışma ve düşmeye karşı koruma",
+      "sector": "Enerji ve elektrik işleri",
+      "start_line": 2236,
+      "end_line": 2254,
+      "item_count": 10
+    },
+    {
+      "code": "ENR-07",
+      "title": "Kişisel koruyucu donanım saha kontrolü",
+      "sector": "Enerji ve elektrik işleri",
+      "start_line": 2257,
+      "end_line": 2275,
+      "item_count": 10
+    },
+    {
+      "code": "ENR-08",
+      "title": "Çalışma izni formu ön kontrolü",
+      "sector": "Enerji ve elektrik işleri",
+      "start_line": 2278,
+      "end_line": 2296,
+      "item_count": 10
+    },
+    {
+      "code": "MAD-01",
+      "title": "Taş ocağı ve açık işletme saha kontrolü",
+      "sector": "Maden ve taş ocağı",
+      "start_line": 2304,
+      "end_line": 2322,
+      "item_count": 10
+    },
+    {
+      "code": "MAD-02",
+      "title": "Yeraltı madeninde işe giriş hazırlığı",
+      "sector": "Maden ve taş ocağı",
+      "start_line": 2325,
+      "end_line": 2343,
+      "item_count": 10
+    },
+    {
+      "code": "MAD-03",
+      "title": "Konveyör ve aktarma hattı",
+      "sector": "Maden ve taş ocağı",
+      "start_line": 2346,
+      "end_line": 2364,
+      "item_count": 10
+    },
+    {
+      "code": "MAD-04",
+      "title": "Saha trafiği ve yaya ayrımı",
+      "sector": "Maden ve taş ocağı",
+      "start_line": 2367,
+      "end_line": 2385,
+      "item_count": 10
+    },
+    {
+      "code": "MAD-05",
+      "title": "Toz oluşumu ve havalandırma kontrolleri",
+      "sector": "Maden ve taş ocağı",
+      "start_line": 2388,
+      "end_line": 2406,
+      "item_count": 10
+    },
+    {
+      "code": "MAD-06",
+      "title": "Kompresör ve basınçlı hava tankı saha kontrolü",
+      "sector": "Maden ve taş ocağı",
+      "start_line": 2409,
+      "end_line": 2427,
+      "item_count": 10
+    },
+    {
+      "code": "MAD-07",
+      "title": "Kaldırma operasyonu hazırlığı",
+      "sector": "Maden ve taş ocağı",
+      "start_line": 2430,
+      "end_line": 2448,
+      "item_count": 10
+    },
+    {
+      "code": "MAD-08",
+      "title": "Çalışma izni formu ön kontrolü",
+      "sector": "Maden ve taş ocağı",
+      "start_line": 2451,
+      "end_line": 2469,
+      "item_count": 10
+    },
+    {
+      "code": "KIM-01",
+      "title": "Kimyasal üretim ve karışım hazırlığı",
+      "sector": "Kimya ve boya üretimi",
+      "start_line": 2477,
+      "end_line": 2495,
+      "item_count": 10
+    },
+    {
+      "code": "KIM-02",
+      "title": "Kimyasal depo ve dolap düzeni",
+      "sector": "Kimya ve boya üretimi",
+      "start_line": 2498,
+      "end_line": 2516,
+      "item_count": 10
+    },
+    {
+      "code": "KIM-03",
+      "title": "Kimyasal kullanımı ve aktarımı",
+      "sector": "Kimya ve boya üretimi",
+      "start_line": 2519,
+      "end_line": 2537,
+      "item_count": 10
+    },
+    {
+      "code": "KIM-04",
+      "title": "Boya, solvent ve püskürtme işleri",
+      "sector": "Kimya ve boya üretimi",
+      "start_line": 2540,
+      "end_line": 2558,
+      "item_count": 10
+    },
+    {
+      "code": "KIM-05",
+      "title": "Basınçlı gaz tüpü ve manifold alanı",
+      "sector": "Kimya ve boya üretimi",
+      "start_line": 2561,
+      "end_line": 2579,
+      "item_count": 10
+    },
+    {
+      "code": "KIM-06",
+      "title": "Acil duş ve göz yıkama istasyonu",
+      "sector": "Kimya ve boya üretimi",
+      "start_line": 2582,
+      "end_line": 2600,
+      "item_count": 10
+    },
+    {
+      "code": "KIM-07",
+      "title": "Kapalı alan işi için hazırlık kontrolü",
+      "sector": "Kimya ve boya üretimi",
+      "start_line": 2603,
+      "end_line": 2621,
+      "item_count": 10
+    },
+    {
+      "code": "KIM-08",
+      "title": "Yangın önleme ve söndürme ekipmanı",
+      "sector": "Kimya ve boya üretimi",
+      "start_line": 2624,
+      "end_line": 2642,
+      "item_count": 10
+    },
+    {
+      "code": "TEK-01",
+      "title": "Dikiş, kesim ve konfeksiyon hattı",
+      "sector": "Tekstil ve konfeksiyon",
+      "start_line": 2650,
+      "end_line": 2668,
+      "item_count": 10
+    },
+    {
+      "code": "TEK-02",
+      "title": "Tekstil terbiye, boyama ve sıcak silindirler",
+      "sector": "Tekstil ve konfeksiyon",
+      "start_line": 2671,
+      "end_line": 2689,
+      "item_count": 10
+    },
+    {
+      "code": "TEK-03",
+      "title": "Elyaf açma, tarak ve iplik hazırlama",
+      "sector": "Tekstil ve konfeksiyon",
+      "start_line": 2692,
+      "end_line": 2710,
+      "item_count": 10
+    },
+    {
+      "code": "TEK-04",
+      "title": "Kazan dairesi ve sıcak akışkan hatları",
+      "sector": "Tekstil ve konfeksiyon",
+      "start_line": 2713,
+      "end_line": 2731,
+      "item_count": 10
+    },
+    {
+      "code": "TEK-05",
+      "title": "Ergonomi ve tekrarlı iş düzeni",
+      "sector": "Tekstil ve konfeksiyon",
+      "start_line": 2734,
+      "end_line": 2752,
+      "item_count": 10
+    },
+    {
+      "code": "TEK-06",
+      "title": "Toz oluşumu ve havalandırma kontrolleri",
+      "sector": "Tekstil ve konfeksiyon",
+      "start_line": 2755,
+      "end_line": 2773,
+      "item_count": 10
+    },
+    {
+      "code": "TEK-07",
+      "title": "Gürültü kontrolü ve iş organizasyonu",
+      "sector": "Tekstil ve konfeksiyon",
+      "start_line": 2776,
+      "end_line": 2794,
+      "item_count": 10
+    },
+    {
+      "code": "TEK-08",
+      "title": "Yangın önleme ve söndürme ekipmanı",
+      "sector": "Tekstil ve konfeksiyon",
+      "start_line": 2797,
+      "end_line": 2815,
+      "item_count": 10
+    },
+    {
+      "code": "AHS-01",
+      "title": "Ahşap ve mobilya atölyesi",
+      "sector": "Ahşap ve mobilya",
+      "start_line": 2823,
+      "end_line": 2841,
+      "item_count": 10
+    },
+    {
+      "code": "AHS-02",
+      "title": "Daire testere ve panel kesim makinesi",
+      "sector": "Ahşap ve mobilya",
+      "start_line": 2844,
+      "end_line": 2862,
+      "item_count": 10
+    },
+    {
+      "code": "AHS-03",
+      "title": "Şerit testere",
+      "sector": "Ahşap ve mobilya",
+      "start_line": 2865,
+      "end_line": 2883,
+      "item_count": 10
+    },
+    {
+      "code": "AHS-04",
+      "title": "Toz oluşumu ve havalandırma kontrolleri",
+      "sector": "Ahşap ve mobilya",
+      "start_line": 2886,
+      "end_line": 2904,
+      "item_count": 10
+    },
+    {
+      "code": "AHS-05",
+      "title": "Boya, solvent ve püskürtme işleri",
+      "sector": "Ahşap ve mobilya",
+      "start_line": 2907,
+      "end_line": 2925,
+      "item_count": 10
+    },
+    {
+      "code": "AHS-06",
+      "title": "Yangın önleme ve söndürme ekipmanı",
+      "sector": "Ahşap ve mobilya",
+      "start_line": 2928,
+      "end_line": 2946,
+      "item_count": 10
+    },
+    {
+      "code": "AHS-07",
+      "title": "Elle taşıma ve yük hareketi",
+      "sector": "Ahşap ve mobilya",
+      "start_line": 2949,
+      "end_line": 2967,
+      "item_count": 10
+    },
+    {
+      "code": "AHS-08",
+      "title": "Bakımda enerji izolasyonu ve yeniden başlatma",
+      "sector": "Ahşap ve mobilya",
+      "start_line": 2970,
+      "end_line": 2988,
+      "item_count": 10
+    },
+    {
+      "code": "MAT-01",
+      "title": "Baskı makinesi ve baskı hattı",
+      "sector": "Matbaa ve ambalaj",
+      "start_line": 2996,
+      "end_line": 3014,
+      "item_count": 10
+    },
+    {
+      "code": "MAT-02",
+      "title": "Giyotin ve kâğıt kesim tezgâhı",
+      "sector": "Matbaa ve ambalaj",
+      "start_line": 3017,
+      "end_line": 3035,
+      "item_count": 10
+    },
+    {
+      "code": "MAT-03",
+      "title": "Konveyör ve aktarma hattı",
+      "sector": "Matbaa ve ambalaj",
+      "start_line": 3038,
+      "end_line": 3056,
+      "item_count": 10
+    },
+    {
+      "code": "MAT-04",
+      "title": "Kimyasal kullanımı ve aktarımı",
+      "sector": "Matbaa ve ambalaj",
+      "start_line": 3059,
+      "end_line": 3077,
+      "item_count": 10
+    },
+    {
+      "code": "MAT-05",
+      "title": "Bakımda enerji izolasyonu ve yeniden başlatma",
+      "sector": "Matbaa ve ambalaj",
+      "start_line": 3080,
+      "end_line": 3098,
+      "item_count": 10
+    },
+    {
+      "code": "MAT-06",
+      "title": "Elle taşıma ve yük hareketi",
+      "sector": "Matbaa ve ambalaj",
+      "start_line": 3101,
+      "end_line": 3119,
+      "item_count": 10
+    },
+    {
+      "code": "MAT-07",
+      "title": "Gürültü kontrolü ve iş organizasyonu",
+      "sector": "Matbaa ve ambalaj",
+      "start_line": 3122,
+      "end_line": 3140,
+      "item_count": 10
+    },
+    {
+      "code": "MAT-08",
+      "title": "Yangın önleme ve söndürme ekipmanı",
+      "sector": "Matbaa ve ambalaj",
+      "start_line": 3143,
+      "end_line": 3161,
+      "item_count": 10
+    },
+    {
+      "code": "ATK-01",
+      "title": "Atık ayrıştırma hattı",
+      "sector": "Atık ve geri dönüşüm",
+      "start_line": 3169,
+      "end_line": 3187,
+      "item_count": 10
+    },
+    {
+      "code": "ATK-02",
+      "title": "Balya presi ve atık sıkıştırıcı",
+      "sector": "Atık ve geri dönüşüm",
+      "start_line": 3190,
+      "end_line": 3208,
+      "item_count": 10
+    },
+    {
+      "code": "ATK-03",
+      "title": "Elektronik atık söküm ve batarya ayrımı",
+      "sector": "Atık ve geri dönüşüm",
+      "start_line": 3211,
+      "end_line": 3229,
+      "item_count": 10
+    },
+    {
+      "code": "ATK-04",
+      "title": "Atıkların güvenli toplanması ve geçici tutulması",
+      "sector": "Atık ve geri dönüşüm",
+      "start_line": 3232,
+      "end_line": 3250,
+      "item_count": 10
+    },
+    {
+      "code": "ATK-05",
+      "title": "Biyolojik etkenlerden korunma saha düzeni",
+      "sector": "Atık ve geri dönüşüm",
+      "start_line": 3253,
+      "end_line": 3271,
+      "item_count": 10
+    },
+    {
+      "code": "ATK-06",
+      "title": "Konveyör ve aktarma hattı",
+      "sector": "Atık ve geri dönüşüm",
+      "start_line": 3274,
+      "end_line": 3292,
+      "item_count": 10
+    },
+    {
+      "code": "ATK-07",
+      "title": "Saha trafiği ve yaya ayrımı",
+      "sector": "Atık ve geri dönüşüm",
+      "start_line": 3295,
+      "end_line": 3313,
+      "item_count": 10
+    },
+    {
+      "code": "ATK-08",
+      "title": "Bakımda enerji izolasyonu ve yeniden başlatma",
+      "sector": "Atık ve geri dönüşüm",
+      "start_line": 3316,
+      "end_line": 3334,
+      "item_count": 10
+    },
+    {
+      "code": "LAB-01",
+      "title": "Laboratuvar tezgâhı ve çalışma hazırlığı",
+      "sector": "Laboratuvar",
+      "start_line": 3342,
+      "end_line": 3360,
+      "item_count": 10
+    },
+    {
+      "code": "LAB-02",
+      "title": "Çeker ocak ve lokal emiş kabini",
+      "sector": "Laboratuvar",
+      "start_line": 3363,
+      "end_line": 3381,
+      "item_count": 10
+    },
+    {
+      "code": "LAB-03",
+      "title": "Basınçlı gaz tüpü ve manifold alanı",
+      "sector": "Laboratuvar",
+      "start_line": 3384,
+      "end_line": 3402,
+      "item_count": 10
+    },
+    {
+      "code": "LAB-04",
+      "title": "Acil duş ve göz yıkama istasyonu",
+      "sector": "Laboratuvar",
+      "start_line": 3405,
+      "end_line": 3423,
+      "item_count": 10
+    },
+    {
+      "code": "LAB-05",
+      "title": "Kimyasal depo ve dolap düzeni",
+      "sector": "Laboratuvar",
+      "start_line": 3426,
+      "end_line": 3444,
+      "item_count": 10
+    },
+    {
+      "code": "LAB-06",
+      "title": "Elektrik panosu ve taşınabilir elektrikli donanım",
+      "sector": "Laboratuvar",
+      "start_line": 3447,
+      "end_line": 3465,
+      "item_count": 10
+    },
+    {
+      "code": "LAB-07",
+      "title": "Acil durum ve tahliye hazırlığı",
+      "sector": "Laboratuvar",
+      "start_line": 3468,
+      "end_line": 3486,
+      "item_count": 10
+    },
+    {
+      "code": "LAB-08",
+      "title": "Kişisel koruyucu donanım saha kontrolü",
+      "sector": "Laboratuvar",
+      "start_line": 3489,
+      "end_line": 3507,
+      "item_count": 10
+    },
+    {
+      "code": "LIM-01",
+      "title": "Liman rıhtımı ve su kenarı çalışma alanı",
+      "sector": "Liman ve terminal",
+      "start_line": 3515,
+      "end_line": 3533,
+      "item_count": 10
+    },
+    {
+      "code": "LIM-02",
+      "title": "Konteyner ve liman yük elleçleme",
+      "sector": "Liman ve terminal",
+      "start_line": 3536,
+      "end_line": 3554,
+      "item_count": 10
+    },
+    {
+      "code": "LIM-03",
+      "title": "Gemiye erişim ve güverte geçişi",
+      "sector": "Liman ve terminal",
+      "start_line": 3557,
+      "end_line": 3575,
+      "item_count": 10
+    },
+    {
+      "code": "LIM-04",
+      "title": "Mobil vinç kurulum ve kullanım hazırlığı",
+      "sector": "Liman ve terminal",
+      "start_line": 3578,
+      "end_line": 3596,
+      "item_count": 10
+    },
+    {
+      "code": "LIM-05",
+      "title": "Sapan ve kaldırma aksesuarı",
+      "sector": "Liman ve terminal",
+      "start_line": 3599,
+      "end_line": 3617,
+      "item_count": 10
+    },
+    {
+      "code": "LIM-06",
+      "title": "Yükleme ve boşaltma alanı",
+      "sector": "Liman ve terminal",
+      "start_line": 3620,
+      "end_line": 3638,
+      "item_count": 10
+    },
+    {
+      "code": "LIM-07",
+      "title": "Saha trafiği ve yaya ayrımı",
+      "sector": "Liman ve terminal",
+      "start_line": 3641,
+      "end_line": 3659,
+      "item_count": 10
+    },
+    {
+      "code": "LIM-08",
+      "title": "Gece çalışması ve vardiya devri",
+      "sector": "Liman ve terminal",
+      "start_line": 3662,
+      "end_line": 3680,
+      "item_count": 10
+    },
+    {
+      "code": "TER-01",
+      "title": "Tersane ve gemi onarım sahası",
+      "sector": "Tersane ve gemi onarım",
+      "start_line": 3688,
+      "end_line": 3706,
+      "item_count": 10
+    },
+    {
+      "code": "TER-02",
+      "title": "Gemiye erişim ve güverte geçişi",
+      "sector": "Tersane ve gemi onarım",
+      "start_line": 3709,
+      "end_line": 3727,
+      "item_count": 10
+    },
+    {
+      "code": "TER-03",
+      "title": "Kapalı alan işi için hazırlık kontrolü",
+      "sector": "Tersane ve gemi onarım",
+      "start_line": 3730,
+      "end_line": 3748,
+      "item_count": 10
+    },
+    {
+      "code": "TER-04",
+      "title": "Sıcak çalışma hazırlığı ve iş bitimi",
+      "sector": "Tersane ve gemi onarım",
+      "start_line": 3751,
+      "end_line": 3769,
+      "item_count": 10
+    },
+    {
+      "code": "TER-05",
+      "title": "Elektrik ark kaynağı ekipmanı ve çalışma yeri",
+      "sector": "Tersane ve gemi onarım",
+      "start_line": 3772,
+      "end_line": 3790,
+      "item_count": 10
+    },
+    {
+      "code": "TER-06",
+      "title": "Sapan ve kaldırma aksesuarı",
+      "sector": "Tersane ve gemi onarım",
+      "start_line": 3793,
+      "end_line": 3811,
+      "item_count": 10
+    },
+    {
+      "code": "TER-07",
+      "title": "Yüksekte çalışma ve düşmeye karşı koruma",
+      "sector": "Tersane ve gemi onarım",
+      "start_line": 3814,
+      "end_line": 3832,
+      "item_count": 10
+    },
+    {
+      "code": "TER-08",
+      "title": "Boya, solvent ve püskürtme işleri",
+      "sector": "Tersane ve gemi onarım",
+      "start_line": 3835,
+      "end_line": 3853,
+      "item_count": 10
+    },
+    {
+      "code": "EGT-01",
+      "title": "Eğitim kurumlarında derslik ve ortak alan",
+      "sector": "Eğitim kurumları",
+      "start_line": 3861,
+      "end_line": 3879,
+      "item_count": 10
+    },
+    {
+      "code": "EGT-02",
+      "title": "Eğitim atölyesi ve uygulamalı ders alanı",
+      "sector": "Eğitim kurumları",
+      "start_line": 3882,
+      "end_line": 3900,
+      "item_count": 10
+    },
+    {
+      "code": "EGT-03",
+      "title": "Laboratuvar tezgâhı ve çalışma hazırlığı",
+      "sector": "Eğitim kurumları",
+      "start_line": 3903,
+      "end_line": 3921,
+      "item_count": 10
+    },
+    {
+      "code": "EGT-04",
+      "title": "Sıcak mutfak ve pişirme hattı",
+      "sector": "Eğitim kurumları",
+      "start_line": 3924,
+      "end_line": 3942,
+      "item_count": 10
+    },
+    {
+      "code": "EGT-05",
+      "title": "Acil durum ve tahliye hazırlığı",
+      "sector": "Eğitim kurumları",
+      "start_line": 3945,
+      "end_line": 3963,
+      "item_count": 10
+    },
+    {
+      "code": "EGT-06",
+      "title": "Elektrik panosu ve taşınabilir elektrikli donanım",
+      "sector": "Eğitim kurumları",
+      "start_line": 3966,
+      "end_line": 3984,
+      "item_count": 10
+    },
+    {
+      "code": "EGT-07",
+      "title": "Güvenlik işaretleri ve ziyaretçi saha bilgilendirmesi",
+      "sector": "Eğitim kurumları",
+      "start_line": 3987,
+      "end_line": 4005,
+      "item_count": 10
+    },
+    {
+      "code": "EGT-08",
+      "title": "İlk yardım organizasyonu ve ekipmanı",
+      "sector": "Eğitim kurumları",
+      "start_line": 4008,
+      "end_line": 4026,
+      "item_count": 10
+    },
+    {
+      "code": "BEL-01",
+      "title": "Yol bakım ve belediye açık alan işleri",
+      "sector": "Belediye ve saha hizmetleri",
+      "start_line": 4034,
+      "end_line": 4052,
+      "item_count": 10
+    },
+    {
+      "code": "BEL-02",
+      "title": "Çöp toplama aracı ve saha ekibi",
+      "sector": "Belediye ve saha hizmetleri",
+      "start_line": 4055,
+      "end_line": 4073,
+      "item_count": 10
+    },
+    {
+      "code": "BEL-03",
+      "title": "Kanalizasyon ve menhol çevresi iş hazırlığı",
+      "sector": "Belediye ve saha hizmetleri",
+      "start_line": 4076,
+      "end_line": 4094,
+      "item_count": 10
+    },
+    {
+      "code": "BEL-04",
+      "title": "Elektrikli ve mekanik el aletleri",
+      "sector": "Belediye ve saha hizmetleri",
+      "start_line": 4097,
+      "end_line": 4115,
+      "item_count": 10
+    },
+    {
+      "code": "BEL-05",
+      "title": "Saha trafiği ve yaya ayrımı",
+      "sector": "Belediye ve saha hizmetleri",
+      "start_line": 4118,
+      "end_line": 4136,
+      "item_count": 10
+    },
+    {
+      "code": "BEL-06",
+      "title": "Açık alanda sıcak, soğuk ve hava koşulları",
+      "sector": "Belediye ve saha hizmetleri",
+      "start_line": 4139,
+      "end_line": 4157,
+      "item_count": 10
+    },
+    {
+      "code": "BEL-07",
+      "title": "Biyolojik etkenlerden korunma saha düzeni",
+      "sector": "Belediye ve saha hizmetleri",
+      "start_line": 4160,
+      "end_line": 4178,
+      "item_count": 10
+    },
+    {
+      "code": "BEL-08",
+      "title": "Gece çalışması ve vardiya devri",
+      "sector": "Belediye ve saha hizmetleri",
+      "start_line": 4181,
+      "end_line": 4199,
+      "item_count": 10
+    },
+    {
+      "code": "GEN-01",
+      "title": "Genel günlük saha turu",
+      "sector": null,
+      "start_line": 4207,
+      "end_line": 4226,
+      "item_count": 10
+    },
+    {
+      "code": "GEN-02",
+      "title": "Haftalık İSG saha takibi",
+      "sector": null,
+      "start_line": 4229,
+      "end_line": 4248,
+      "item_count": 10
+    },
+    {
+      "code": "GEN-03",
+      "title": "Aylık genel İSG süreç kontrolü",
+      "sector": null,
+      "start_line": 4251,
+      "end_line": 4270,
+      "item_count": 10
+    },
+    {
+      "code": "GEN-04",
+      "title": "Caraskal ve zincirli kaldırıcı",
+      "sector": null,
+      "start_line": 4273,
+      "end_line": 4291,
+      "item_count": 10
+    },
+    {
+      "code": "GEN-05",
+      "title": "Köprülü ve portal vinç",
+      "sector": null,
+      "start_line": 4294,
+      "end_line": 4312,
+      "item_count": 10
+    },
+    {
+      "code": "GEN-06",
+      "title": "Titreşim ve titreşimli alet kullanımı",
+      "sector": null,
+      "start_line": 4315,
+      "end_line": 4333,
+      "item_count": 10
+    },
+    {
+      "code": "GEN-07",
+      "title": "Makine koruyucuları genel denetimi",
+      "sector": null,
+      "start_line": 4336,
+      "end_line": 4354,
+      "item_count": 10
+    },
+    {
+      "code": "GEN-08",
+      "title": "Oksi-gaz kaynak ve kesme hazırlığı",
+      "sector": null,
+      "start_line": 4357,
+      "end_line": 4375,
+      "item_count": 10
+    }
+  ]
+}

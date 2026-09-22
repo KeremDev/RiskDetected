@@ -75,7 +75,7 @@ struct NovaEmployeeLearningCard: View {
         result = nil; failure = false
         do {
             try checkSession()
-            let data = try await SupabaseService.shared.client.rpc("isg_pilot_employee_learning_v1", params: ["p_company": PersonnelRPCValue.id(company), "p_employee": .id(employee)]).execute().data
+            let data = try await NovaExpertTransport.shared.execute("isg_pilot_employee_learning_v1", params: ["p_company": PersonnelRPCValue.id(company), "p_employee": .id(employee)], ticket: NovaExpertTransport.shared.capture())
             try checkSession(); try Task.checkCancellation()
             let value = try JSONDecoder().decode(Learning.self, from: data)
             guard value.schema_version == 1, value.owner_id == identity.userID, value.company_id == company, value.employee_id == employee else { throw NovaPPEFailure.denied }

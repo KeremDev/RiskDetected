@@ -61,6 +61,7 @@ struct NovaTrainingDraft: Codable, Equatable {
 }
 
 @MainActor final class NovaTrainingService {
+    private let expertTicket = NovaExpertTransport.shared.capture()
     struct Page: Decodable {
         let schema_version: Int; let owner_id: UUID; let company_id: UUID
         let rows: [NovaTrainingRecord]; let next_id: UUID?; let total: Int?; let completed: Int?
@@ -86,8 +87,8 @@ struct NovaTrainingDraft: Codable, Equatable {
     }
     func list(_ company: UUID, after: UUID? = nil, id: UUID? = nil) async throws -> Page {
         try check()
-        let data = try await SupabaseService.shared.client.rpc("isg_pilot_training_read_v1", params: [
-            "p_company": PersonnelRPCValue.id(company), "p_id": .id(id), "p_after": .id(after)]).execute().data
+        let data = try await NovaExpertTransport.shared.execute("isg_pilot_training_read_v1", params: [
+            "p_company": PersonnelRPCValue.id(company), "p_id": .id(id), "p_after": .id(after)], ticket: self.expertTicket)
         try check()
         guard data.count <= 8_388_608 else { throw NovaPersonnelFailure.unavailable }
         let page = try JSONDecoder().decode(Page.self, from: data)
@@ -122,8 +123,8 @@ struct NovaTrainingDraft: Codable, Equatable {
             let schema_version: Int; let owner_id: UUID; let company_id: UUID; let mutation_id: UUID; let row: NovaTrainingRecord
         }
         do {
-            let data = try await SupabaseService.shared.client.rpc("isg_pilot_training_save_v1", params:
-                Args(p_company: intent.company, p_mutation: intent.mutation, p_payload: intent.payload)).execute().data
+            let data = try await NovaExpertTransport.shared.execute("isg_pilot_training_save_v1", params:
+                Args(p_company: intent.company, p_mutation: intent.mutation, p_payload: intent.payload), ticket: self.expertTicket)
             try check()
             guard data.count <= 262144 else { throw NovaPersonnelFailure.unavailable }
             let receipt = try JSONDecoder().decode(Receipt.self, from: data)
@@ -132,6 +133,7 @@ struct NovaTrainingDraft: Codable, Equatable {
                   receipt.row.owner_id == identity.userID,
                   intent.payload.id == nil || intent.payload.id == receipt.row.id else { throw NovaPersonnelFailure.denied }
             try storage.remove(account: account)
+            NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: identity.userID)
             return receipt.row
         } catch let error as PostgrestError {
             // Only a definite SQL rejection clears the request. Network/unknown

@@ -224,12 +224,16 @@ import Foundation
 
     // MARK: writes
 
-    private func mutate(company: UUID, action: String, payload: [String: PersonnelRPCValue],
+    private func mutate(_ identity: NovaSessionIdentity, company: UUID, action: String, payload: [String: PersonnelRPCValue],
                         operationID: UUID = UUID(), mutationID: UUID = UUID()) async throws -> Data {
-        try await rpc("isg_equipment_checks_mutate_v1", [
+        try check(identity)
+        let data = try await rpc("isg_equipment_checks_mutate_v1", [
             "p_company": .id(company), "p_action": .string(action),
             "p_operation": .id(operationID), "p_mutation": .id(mutationID),
             "p_payload": .object(payload)])
+        try check(identity)
+        NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: identity.userID)
+        return data
     }
 
     private static func trimmed(_ value: String) -> String? {
@@ -248,7 +252,7 @@ import Foundation
             "serial_tag": .string(draft.serialTag.trimmingCharacters(in: .whitespacesAndNewlines))]
         payload["acquired_on"] = Self.trimmed(draft.acquiredOn).map { .string($0) } ?? .null
         payload["location_note"] = Self.trimmed(draft.locationNote).map { .string($0) } ?? .null
-        let data = try await mutate(company: company, action: "register_equipment", payload: payload)
+        let data = try await mutate(identity, company: company, action: "register_equipment", payload: payload)
         try check(identity)
         guard let row = try JSONDecoder().decode(MutationEnvelope.self, from: data).row else {
             throw NovaEquipmentFailure.unavailable
@@ -265,7 +269,7 @@ import Foundation
         payload["serial_tag"] = .string(draft.serialTag.trimmingCharacters(in: .whitespacesAndNewlines))
         payload["acquired_on"] = Self.trimmed(draft.acquiredOn).map { .string($0) } ?? .null
         payload["location_note"] = Self.trimmed(draft.locationNote).map { .string($0) } ?? .null
-        let data = try await mutate(company: company, action: "update_equipment", payload: payload)
+        let data = try await mutate(identity, company: company, action: "update_equipment", payload: payload)
         try check(identity)
         guard let row = try JSONDecoder().decode(MutationEnvelope.self, from: data).row else {
             throw NovaEquipmentFailure.unavailable
@@ -276,7 +280,7 @@ import Foundation
     func archive(_ identity: NovaSessionIdentity, equipment: NovaEquipmentItem) async throws {
         try check(identity)
         guard let company = equipment.companyID else { throw NovaEquipmentFailure.denied }
-        _ = try await mutate(company: company, action: "archive_equipment",
+        _ = try await mutate(identity, company: company, action: "archive_equipment",
                              payload: ["equipment_id": .id(equipment.id)])
     }
 
@@ -292,7 +296,7 @@ import Foundation
             "equipment_type": .string(type), "period_months": .number(Int64(months)),
             "period_source": .string(draft.source.rawValue)]
         payload["exception_note"] = Self.trimmed(draft.exceptionNote).map { .string($0) } ?? .null
-        let data = try await mutate(company: company, action: "set_rule", payload: payload)
+        let data = try await mutate(identity, company: company, action: "set_rule", payload: payload)
         try check(identity)
         let rule = try JSONDecoder().decode(RuleEnvelope.self, from: data).rule
         return .init(equipmentType: rule.equipment_type, periodMonths: rule.period_months,
@@ -318,7 +322,7 @@ import Foundation
         payload["katip_declared"] = .bool(draft.katipDeclared)
         payload["katip_note"] = draft.katipDeclared
             ? (Self.trimmed(draft.katipNote).map { .string($0) } ?? .null) : .null
-        let data = try await mutate(company: company, action: "update_inspection", payload: payload)
+        let data = try await mutate(identity, company: company, action: "update_inspection", payload: payload)
         try check(identity)
         guard let row = try JSONDecoder().decode(MutationEnvelope.self, from: data).row else {
             throw NovaEquipmentFailure.unavailable
@@ -348,7 +352,7 @@ import Foundation
         payload["katip_declared"] = .bool(draft.katipDeclared)
         payload["katip_note"] = draft.katipDeclared
             ? (Self.trimmed(draft.katipNote).map { .string($0) } ?? .null) : .null
-        let data = try await mutate(company: company, action: "record_inspection",
+        let data = try await mutate(identity, company: company, action: "record_inspection",
                                     payload: payload, mutationID: mutationID)
         try check(identity)
         guard let row = try JSONDecoder().decode(MutationEnvelope.self, from: data).row else {

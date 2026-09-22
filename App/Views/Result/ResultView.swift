@@ -531,30 +531,24 @@ struct ResultView: View {
     // MARK: - Header
 
     private var resultHubHeader: some View {
-        HStack {
-            HStack(spacing: 10) {
-                roundIconButton(systemName: "chevron.left", action: onClose)
-                    .accessibilityLabel(RDLocalization.string(
-                        "analysis.result_hub.accessibility.go_back",
-                        table: .analysis,
-                        fallback: "Geri dön",
-                        language: analysisOutputLanguage
-                    ))
-                    .accessibilityIdentifier("result.hub.back")
-
-                RDLogo(size: 17)
-                    .accessibilityHidden(true)
-            }
-
-            Spacer()
-
-            RDHeaderAccountCTA(
-                directEntryPoint: .resultHeaderUpgrade,
-                menuEntryPoint: .resultHeaderProfileMenuUpgrade,
-                analysisID: analysisID
-            ) {
-                showPaywall = true
-            }
+        HStack(spacing: 10) {
+            roundIconButton(systemName: "chevron.left", action: onClose)
+                .accessibilityLabel(RDLocalization.string(
+                    "analysis.result_hub.accessibility.go_back",
+                    table: .analysis,
+                    fallback: "Geri dön",
+                    language: analysisOutputLanguage
+                ))
+                .accessibilityIdentifier("result.hub.back")
+            Text(RDLocalization.string(
+                "analysis.result_hub.title",
+                table: .analysis,
+                fallback: "Analiz Sonucu",
+                language: analysisOutputLanguage
+            ))
+            .font(RDTypography.font(size: RDFontScale.size(20), weight: .bold, design: .rounded))
+            .foregroundStyle(Color.rdBlack)
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, 20)
         .padding(.top, 8)

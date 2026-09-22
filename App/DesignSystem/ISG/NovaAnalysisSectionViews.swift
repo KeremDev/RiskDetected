@@ -309,17 +309,21 @@ struct NovaAnalysisFindingCard: View {
     private var band: String? { item.band(method) }
 
     var body: some View {
-        VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 8) {
-                head
-                if !item.body.isEmpty { NovaText(text: item.body, style: .metaQuiet).lineLimit(3) }
-            }.padding(13).frame(maxWidth: .infinity, alignment: .leading)
-            Rectangle().fill(NovaColorToken.hairline.color(in: scheme)).frame(height: 1)
-            NovaAnalysisItemBar(canEdit: canEdit, canReact: canReact, reaction: item.reaction, onEdit: onEdit, onDelete: onDelete,
-                onReact: onReact, onOpen: onOpen, identifier: identifier)
+        VStack(alignment: .leading, spacing: 8) {
+            head
+            if !item.body.isEmpty { NovaText(text: item.body, style: .metaQuiet).lineLimit(3) }
         }
+        .padding(13)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(NovaColorToken.surface.color(in: scheme))
-        .clipShape(RoundedRectangle(cornerRadius: NovaDimensionToken.radiusCard.value))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16)
+            .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
+        .contentShape(Rectangle())
+        .onTapGesture { isSelectable ? onSelect() : onOpen() }
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier(identifier)
     }
 
     private var head: some View {
@@ -332,11 +336,21 @@ struct NovaAnalysisFindingCard: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if let band {
-                    NovaStatusPill(label: NovaNonconformityWords.band(band), status: NovaNonconformityWords.tone(band), showsDot: false)
-                        .fixedSize(horizontal: true, vertical: false)
+                    HStack(spacing: 7) {
+                        NovaStatusPill(label: NovaNonconformityWords.band(band), status: NovaNonconformityWords.tone(band), showsDot: true)
+                        if let value = item.value(method) {
+                            NovaText(text: "\(NovaNonconformityWords.score(value)) puan", style: .meta,
+                                color: NovaColorToken.textSecondary.color(in: scheme))
+                        }
+                    }
                 }
             }.frame(maxWidth: .infinity, alignment: .leading)
             if isSelectable { selectButton }
+            else {
+                Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
+                    .frame(width: 28, height: 34)
+            }
         }
     }
 
@@ -372,41 +386,50 @@ struct NovaAnalysisAdviceCard: View {
 
     var body: some View {
         let tone = NovaAnalysisSectionTone.of(kind)
-        VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 7) {
-                HStack(spacing: 6) {
-                    NovaIcon(symbol: tone.symbol, size: 13)
-                        .foregroundStyle(tone.status.tokens.ink.color(in: scheme))
-                    if let overline = item.category ?? item.audience {
-                        NovaText(text: overline.uppercased(), style: .micro,
-                            color: tone.status.tokens.ink.color(in: scheme)).lineLimit(1)
-                    } else {
-                        NovaText(text: String(format: RDLocalization.string("localizable.nova.analysis.item.ordinal", table: .localizable,
-                            fallback: "Kayıt #%d"), item.ordinal), style: .micro,
-                            color: tone.status.tokens.ink.color(in: scheme))
-                    }
-                    Spacer(minLength: 0)
-                    if isSelectable { selectButton }
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 6) {
+                NovaIcon(symbol: tone.symbol, size: 13)
+                    .foregroundStyle(tone.status.tokens.ink.color(in: scheme))
+                if let overline = item.category ?? item.audience {
+                    NovaText(text: overline.uppercased(), style: .micro,
+                        color: tone.status.tokens.ink.color(in: scheme)).lineLimit(1)
+                } else {
+                    NovaText(text: String(format: RDLocalization.string("localizable.nova.analysis.item.ordinal", table: .localizable,
+                        fallback: "Kayıt #%d"), item.ordinal), style: .micro,
+                        color: tone.status.tokens.ink.color(in: scheme))
                 }
-                NovaText(text: item.title, style: .cardTitle).lineLimit(3)
-                if let audience = item.audience, item.category != nil {
-                    HStack(spacing: 5) {
-                        Image(systemName: "person.2").font(.system(size: 10))
-                            .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
-                        NovaText(text: audience, style: .meta, color: NovaColorToken.textSecondary.color(in: scheme)).lineLimit(1)
-                    }
+                Spacer(minLength: 0)
+                if isSelectable { selectButton }
+                else {
+                    Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
+                        .frame(width: 28, height: 30)
                 }
-                if !item.body.isEmpty { NovaText(text: item.body, style: .metaQuiet).lineLimit(4) }
-                if let value = item.durationValue, let label = item.durationLabel {
-                    NovaAnalysisTag(symbol: "clock", text: "\(label): \(value)", status: .neutral)
+            }
+            NovaText(text: item.title, style: .cardTitle).lineLimit(3)
+            if let audience = item.audience, item.category != nil {
+                HStack(spacing: 5) {
+                    Image(systemName: "person.2").font(.system(size: 10))
+                        .foregroundStyle(NovaColorToken.textTertiary.color(in: scheme))
+                    NovaText(text: audience, style: .meta, color: NovaColorToken.textSecondary.color(in: scheme)).lineLimit(1)
                 }
-            }.padding(13).frame(maxWidth: .infinity, alignment: .leading)
-            Rectangle().fill(NovaColorToken.hairline.color(in: scheme)).frame(height: 1)
-            NovaAnalysisItemBar(canEdit: false, canReact: canReact, reaction: item.reaction, onEdit: {}, onDelete: {},
-                onReact: onReact, onOpen: onOpen, identifier: identifier)
+            }
+            if !item.body.isEmpty { NovaText(text: item.body, style: .metaQuiet).lineLimit(3) }
+            if let value = item.durationValue, let label = item.durationLabel {
+                NovaAnalysisTag(symbol: "clock", text: "\(label): \(value)", status: .neutral)
+            }
         }
+        .padding(13)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(NovaColorToken.surface.color(in: scheme))
-        .clipShape(RoundedRectangle(cornerRadius: NovaDimensionToken.radiusCard.value))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16)
+            .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
+        .contentShape(Rectangle())
+        .onTapGesture { isSelectable ? onSelect() : onOpen() }
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityIdentifier(identifier)
     }
 
     private var selectButton: some View {

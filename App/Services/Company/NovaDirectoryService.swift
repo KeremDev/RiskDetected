@@ -2,6 +2,7 @@ import Foundation
 import Supabase
 
 @MainActor final class NovaDirectoryService {
+    private let expertTicket = NovaExpertTransport.shared.capture()
     private static var inFlight = Set<String>()
     private let isCurrent: (NovaPersonnelScope) -> Bool
     private let sdk: SupabaseClient
@@ -34,7 +35,7 @@ import Supabase
     var client: NovaDirectoryClient {
         .init(read: { scope, kind, parent, after, archived in
             try self.check(scope)
-            let data = try await self.sdk.rpc("isg_directory_read_v1", params: Read(p_company: scope.companyID.uuidString.lowercased(), p_kind: kind.rawValue, p_parent: .id(parent), p_after: .id(after), p_archived: archived)).execute().data
+            let data = try await NovaExpertTransport.shared.execute("isg_directory_read_v1", params: Read(p_company: scope.companyID.uuidString.lowercased(), p_kind: kind.rawValue, p_parent: .id(parent), p_after: .id(after), p_archived: archived), ticket: self.expertTicket)
             guard data.count <= 262144 else { throw NovaPersonnelFailure.unavailable }
             let dto = try JSONDecoder().decode(Page.self, from: data)
             try self.check(scope)
@@ -64,7 +65,7 @@ import Supabase
         if let old = try pending(intent.scope), old != intent { throw NovaPersonnelFailure.unavailable }
         try storage.write(JSONEncoder().encode(Saved(schema: 1, intent: intent)), account: key)
         do {
-            let data = try await sdk.rpc("isg_directory_mutate_v1", params: Write(intent)).execute().data
+            let data = try await NovaExpertTransport.shared.execute("isg_directory_mutate_v1", params: Write(intent), ticket: self.expertTicket)
             guard data.count <= 16384 else { throw NovaPersonnelFailure.unavailable }
             let r = try JSONDecoder().decode(Commit.self, from: data)
             try check(intent.scope)
@@ -72,6 +73,7 @@ import Supabase
             guard r.schema_version == 1, r.operation_id == intent.operationID, r.owner_id == intent.scope.ownerID, r.company_id == intent.scope.companyID,
                   r.kind == intent.kind.rawValue, intent.entityID == nil || intent.entityID == r.entity_id, r.version == expected else { throw NovaPersonnelFailure.unavailable }
             try storage.remove(account: key)
+            NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: intent.scope.ownerID)
             return .init(operationID: r.operation_id, entityID: r.entity_id, version: r.version)
         } catch {
             try Task.checkCancellation()

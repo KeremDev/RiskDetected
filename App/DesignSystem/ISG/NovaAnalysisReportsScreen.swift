@@ -76,20 +76,12 @@ struct NovaAnalysisReportsScreen: View {
     }
 
     private var overview: some View {
-        NovaAnalysisOverviewCard(symbol: "doc.text",
-            title: RDLocalization.string("localizable.nova.analysis.reports.overview.title", table: .localizable, fallback: "Denetime hazır çıktılar"),
-            detail: RDLocalization.string("localizable.nova.analysis.reports.overview.detail", table: .localizable,
-                fallback: "Fotoğraflı analizlerden ürettiğiniz PDF ve Excel raporları burada durur."),
-            headline: "\(stats.total)",
-            headlineCaption: RDLocalization.string("localizable.nova.analysis.reports.unit", table: .localizable, fallback: "dosya"),
-            figures: [
-                .init(symbol: "doc.text", value: "\(stats.documents)",
-                      label: RDLocalization.string("localizable.nova.analysis.reports.filter.pdf", table: .localizable, fallback: "PDF")),
-                .init(symbol: "tablecells", value: "\(stats.spreadsheets)",
-                      label: RDLocalization.string("localizable.nova.analysis.reports.filter.excel", table: .localizable, fallback: "Excel")),
-                .init(symbol: "building.2", value: "\(stats.companies)",
-                      label: RDLocalization.string("localizable.nova.nonconformity.filter.company", table: .localizable, fallback: "Firma"))
-            ])
+        NovaMetricStrip(items: [
+            .init(id: "total", value: rows == nil ? "—" : "\(stats.total)", label: "Dosya", symbol: "doc.text", status: .neutral),
+            .init(id: "pdf", value: rows == nil ? "—" : "\(stats.documents)", label: "PDF", symbol: "doc.text", status: .info),
+            .init(id: "excel", value: rows == nil ? "—" : "\(stats.spreadsheets)", label: "Excel", symbol: "tablecells", status: .neutral),
+            .init(id: "companies", value: rows == nil ? "—" : "\(stats.companies)", label: "Firma", symbol: "building.2", status: .neutral)
+        ])
     }
 
     private var chips: some View {

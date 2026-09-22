@@ -44,7 +44,7 @@ struct IsgWorkspaceTrainingCreateEditor: View {
         let topics: [TopicDraft]
         var minutes: Int { topics.reduce(0) { $0 + $1.minutes } }
     }
-    private enum Step: String, CaseIterable { case info, schedule, trainers, participants, attachment }
+    private enum Step: String, CaseIterable { case info, schedule, trainers, participants, review }
     @ObservedObject var store: IsgWorkspaceStore
     let companyHazardClass: String
     let onDone: () -> Void
@@ -66,10 +66,14 @@ struct IsgWorkspaceTrainingCreateEditor: View {
     @State private var employeeQuery = ""
     @State private var selectedEmployees = Set<UUID>()
     @State private var attachment: IsgWorkspaceAttachmentDraft?
-    @State private var open: Step? = .info
+    @State private var currentStep: Step = .info
     @State private var loading = true
     @State private var saving = false
     @State private var error: String?
+    @State private var validationError: String?
+    @State private var showingTopics = false
+    @State private var confirmingExit = false
+    @State private var didSave = false
     @State private var workflowMutationIDs: [String: UUID] = [:]
     @Environment(\.novaCelebrate) private var celebrate
 
@@ -96,58 +100,70 @@ struct IsgWorkspaceTrainingCreateEditor: View {
             $0.code.localizedCaseInsensitiveContains(needle) }
     }
     private var completed: Int { Step.allCases.filter(isComplete).count }
+    private var stepNumber: Int { (Step.allCases.firstIndex(of: currentStep) ?? 0) + 1 }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                NovaPopupHeading(text: "Eğitim Ekle", symbol: "graduationcap",
-                    subtitle: "Bireysel pilot ile aynı gerçekleşen eğitim akışı")
-                if loading {
-                    NovaLoadingView(message: "Eğitim kataloğu ve personel hazırlanıyor…")
-                } else {
-                    IsgParityProgress(completed: completed, total: Step.allCases.count)
-                    ForEach(Step.allCases, id: \.self) { step in accordion(step) }
-                    if let error { NovaHelpHint(text: error) }
-                    NovaButton(label: saving ? "Kaydediliyor…" : "Eğitimi kaydet", symbol: "checkmark",
-                               isEnabled: !saving && completed == Step.allCases.count) { save() }
-                }
-            }.padding(18).novaPopupContentSize(extra: 150)
-                .novaAsyncContent(isLoading: loading)
-        }
-        .scrollDismissesKeyboard(.interactively)
-        .task { await prepare() }
-        .onChange(of: templateKey) { _ in applyTemplate() }
-        .onChange(of: hasValidity) { enabled in
-            if enabled { refreshSuggestedValidity() }
-        }
-        .onChange(of: heldOn) { _ in
-            if hasValidity { refreshSuggestedValidity() }
-        }
-        .onChange(of: topics) { _ in syncMinutes() }
-    }
-
-    @ViewBuilder private func accordion(_ step: Step) -> some View {
-        NovaCompanyAccordion(title: stepTitle(step), symbol: stepSymbol(step),
-            state: isComplete(step) ? .complete : .missing,
-            identifier: "workspace.training.step.\(step.rawValue)",
-            expanded: Binding(get: { open == step }, set: { open = $0 ? step : nil })) {
-            VStack(alignment: .leading, spacing: 10) {
-                switch step {
-                case .info: infoStep
-                case .schedule: scheduleStep
-                case .trainers: trainerStep
-                case .participants: participantStep
-                case .attachment:
-                    IsgWorkspaceInlineAttachmentField(
-                        title: "Eğitim belgesi veya yoklama ekle (isteğe bağlı)",
-                        attachment: $attachment)
-                }
-                if isComplete(step), let next = nextIncomplete(after: step) {
-                    NovaButton(label: "Sonraki: \(stepTitle(next))", symbol: "chevron.down", variant: .surface) {
-                        withAnimation { open = next }
+        Group {
+            if didSave {
+                NovaTaskSuccessView(
+                    title: "Eğitim kaydedildi",
+                    message: "\(selectedEmployees.count) katılımcı için \(minutes) dakikalık gerçekleşen eğitim kaydı oluşturuldu.",
+                    doneTitle: "Eğitimlere dön",
+                    onDone: onDone)
+            } else {
+                NovaPageSurface {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 18) {
+                            NovaTaskHeader(title: "Eğitim ekle", step: stepNumber,
+                                total: Step.allCases.count, stepTitle: stepTitle(currentStep)) {
+                                    confirmingExit = true
+                                }
+                            if loading {
+                                NovaLoadingView(message: "Eğitim kataloğu ve personel hazırlanıyor…")
+                            } else {
+                                NovaText(text: "Bilgiler akış boyunca korunur.", style: .micro)
+                                if let validationError { NovaTaskErrorSummary(message: validationError) }
+                                stepContent(currentStep)
+                                if let error { NovaTaskErrorSummary(message: error) }
+                            }
+                        }
+                        .padding(.horizontal, 18).padding(.top, 8).padding(.bottom, 28)
+                        .novaAsyncContent(isLoading: loading)
+                    }
+                    .scrollDismissesKeyboard(.interactively)
+                    .safeAreaInset(edge: .bottom) {
+                        if !loading {
+                            NovaTaskStickyActions(primaryTitle: currentStep == .review ? "Eğitimi kaydet" : "Devam",
+                                primarySymbol: currentStep == .review ? "checkmark" : "arrow.right",
+                                isWorking: saving, canGoBack: currentStep != .info,
+                                onBack: previousStep, onPrimary: advance)
+                        }
                     }
                 }
             }
+        }
+        .task { await prepare() }
+        .onChange(of: templateKey) { _ in applyTemplate() }
+        .onChange(of: hasValidity) { enabled in if enabled { refreshSuggestedValidity() } }
+        .onChange(of: heldOn) { _ in if hasValidity { refreshSuggestedValidity() } }
+        .onChange(of: topics) { _ in syncMinutes() }
+        .novaFullScreenCover(isPresented: $showingTopics) { topicEditor }
+        .confirmationDialog("Eğitim akışından çıkılsın mı?", isPresented: $confirmingExit,
+            titleVisibility: .visible) {
+                Button("Çık", role: .destructive, action: onDone)
+                Button("Devam et", role: .cancel) {}
+            } message: {
+                Text("Henüz kaydedilmemiş bilgiler silinir.")
+            }
+    }
+
+    @ViewBuilder private func stepContent(_ step: Step) -> some View {
+        switch step {
+        case .info: infoStep
+        case .schedule: scheduleStep
+        case .trainers: trainerStep
+        case .participants: participantStep
+        case .review: reviewStep
         }
     }
 
@@ -171,39 +187,25 @@ struct IsgWorkspaceTrainingCreateEditor: View {
             }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
             field("Eğitim başlığı", text: $title, symbol: "text.book.closed")
             if !topics.isEmpty {
-                NovaCard(padding: 11, tint: NovaColorToken.surfaceMuted.color(in: .light)) {
-                    VStack(alignment: .leading, spacing: 7) {
-                        HStack {
-                            NovaText(text: "Konular ve süreler", style: .label)
-                            Spacer(minLength: 0)
-                            NovaText(text: "Düzenlenebilir", style: .micro)
+                Button { showingTopics = true } label: {
+                    HStack(spacing: 11) {
+                        Image(systemName: "list.bullet.rectangle").frame(width: 24)
+                        VStack(alignment: .leading, spacing: 3) {
+                            NovaText(text: "Konular ve süre", style: .bodyStrong)
+                            NovaText(text: "\(topics.count) konu · \(minutes) dakika", style: .metaQuiet)
                         }
-                        ForEach($topics) { $topic in
-                            HStack(alignment: .top, spacing: 8) {
-                                TextField("Konu", text: $topic.title, axis: .vertical)
-                                    .font(NovaFont.font(.meta)).lineLimit(1...3)
-                                TextField("Dakika", value: $topic.minutes, format: .number)
-                                    .keyboardType(.numberPad)
-                                    .multilineTextAlignment(.trailing)
-                                    .frame(width: 68)
-                                    .font(NovaFont.font(.meta))
-                                Button { topics.removeAll { $0.id == topic.id }; syncMinutes() } label: {
-                                    Image(systemName: "xmark.circle.fill").frame(width: 32, height: 32)
-                                }.buttonStyle(NovaRowPressStyle()).accessibilityLabel("Konuyu sil")
-                            }
-                        }
-                        Divider()
-                        NovaText(text: "Toplam \(minutes) dakika", style: .bodyStrong)
-                        NovaCompactActionButton(title: "Konu ekle", symbol: "plus") {
-                            topics.append(.init(title: "", minutes: 30)); syncMinutes()
-                        }
-                    }
-                }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                    }.frame(minHeight: 54).contentShape(Rectangle())
+                }.buttonStyle(NovaRowPressStyle()).padding(12).novaControlBackground(cornerRadius: 14)
             } else {
                 Stepper("Süre: \(minutes) dakika", value: $minutes, in: 1...100_000)
                     .padding(12).novaControlBackground(cornerRadius: 14)
             }
-            field("Eğitim notu (isteğe bağlı)", text: $notes, symbol: "note.text")
+            DisclosureGroup("Ek bilgiler") {
+                field("Eğitim notu (isteğe bağlı)", text: $notes, symbol: "note.text")
+                    .padding(.top, 8)
+            }.font(NovaFont.font(.bodyStrong)).padding(12).novaControlBackground(cornerRadius: 14)
         }
     }
 
@@ -239,6 +241,13 @@ struct IsgWorkspaceTrainingCreateEditor: View {
                 Spacer(); NovaText(text: "\(selectedEmployees.count) seçili", style: .metaQuiet)
             }
             searchField
+            if !employees.isEmpty {
+                NovaCompactActionButton(title: selectedEmployees.count == employees.count ? "Seçimi temizle" : "Tümünü seç",
+                    symbol: selectedEmployees.count == employees.count ? "xmark.circle" : "checkmark.circle") {
+                        if selectedEmployees.count == employees.count { selectedEmployees.removeAll() }
+                        else { selectedEmployees = Set(employees.map(\.id)) }
+                    }
+            }
             if employees.isEmpty {
                 NovaHelpHint(text: "Eğitim kaydetmek için önce firma personeli ekleyin.")
             } else if filteredEmployees.isEmpty {
@@ -260,6 +269,72 @@ struct IsgWorkspaceTrainingCreateEditor: View {
         }
     }
 
+    private var reviewStep: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NovaText(text: "Kaydetmeden önce kontrol edin", style: .sectionTitle)
+            NovaCard(padding: 14) {
+                VStack(alignment: .leading, spacing: 12) {
+                    reviewRow("Eğitim", title)
+                    Divider()
+                    reviewRow("Yöntem", IsgWorkspaceDisplayText.value(method))
+                    reviewRow("Tarih", Self.day(heldOn))
+                    reviewRow("Süre", "\(minutes) dakika")
+                    reviewRow("Eğitici", trainer)
+                    reviewRow("Katılımcı", "\(selectedEmployees.count) kişi")
+                    if !location.trimmed.isEmpty { reviewRow("Yer", location.trimmed) }
+                }
+            }
+            IsgWorkspaceInlineAttachmentField(
+                title: "Eğitim belgesi veya yoklama ekle (isteğe bağlı)",
+                attachment: $attachment)
+            NovaHelpHint(text: "Bir bilgiyi değiştirmek için Geri ile ilgili adıma dönebilirsiniz.")
+        }
+    }
+
+    private var topicEditor: some View {
+        NovaPageSurface {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    NovaPageHeading(title: "Konular ve süre", onBack: { showingTopics = false })
+                    HStack {
+                        NovaText(text: "Toplam süre", style: .metaQuiet)
+                        Spacer()
+                        NovaText(text: "\(minutes) dakika", style: .sectionTitle)
+                    }
+                    ForEach($topics) { $topic in
+                        NovaCard(padding: 12) {
+                            VStack(alignment: .leading, spacing: 9) {
+                                TextField("Konu", text: $topic.title, axis: .vertical)
+                                    .font(NovaFont.font(.body)).lineLimit(1...3)
+                                HStack {
+                                    Stepper("\(topic.minutes) dakika", value: $topic.minutes, in: 5...2_000, step: 5)
+                                    Button { topics.removeAll { $0.id == topic.id }; syncMinutes() } label: {
+                                        Image(systemName: "trash").frame(width: 44, height: 44)
+                                    }.buttonStyle(NovaRowPressStyle()).accessibilityLabel("Konuyu sil")
+                                }
+                            }
+                        }
+                    }
+                    NovaCompactActionButton(title: "İşyerine özgü konu ekle", symbol: "plus") {
+                        topics.append(.init(title: "", minutes: 30)); syncMinutes()
+                    }
+                }.padding(18).padding(.bottom, 80)
+            }
+            .safeAreaInset(edge: .bottom) {
+                NovaTaskStickyActions(primaryTitle: "Bitti", primarySymbol: "checkmark",
+                    canGoBack: false, onBack: {}, onPrimary: { showingTopics = false })
+            }
+        }
+    }
+
+    private func reviewRow(_ label: String, _ value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            NovaText(text: label, style: .metaQuiet).frame(width: 82, alignment: .leading)
+            NovaText(text: value.isEmpty ? "Belirtilmedi" : value, style: .bodyStrong)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
     private var searchField: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
@@ -278,22 +353,45 @@ struct IsgWorkspaceTrainingCreateEditor: View {
                 (!hasValidity || validUntil > heldOn)
         case .trainers: return !trainer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         case .participants: return !selectedEmployees.isEmpty
-        case .attachment: return true
+        case .review: return Step.allCases.filter { $0 != .review }.allSatisfy(isComplete)
         }
-    }
-    private func nextIncomplete(after step: Step) -> Step? {
-        guard let index = Step.allCases.firstIndex(of: step) else { return nil }
-        return (Array(Step.allCases.dropFirst(index + 1)) + Array(Step.allCases.prefix(index))).first { !isComplete($0) }
     }
     private func stepTitle(_ step: Step) -> String {
         switch step { case .info: return "Eğitim ve konular"; case .schedule: return "Tarih, yöntem ve yer"
         case .trainers: return "Eğiticiler"; case .participants: return "Katılımcılar"
-        case .attachment: return "Dosya ve kanıt" }
+        case .review: return "Kontrol ve kaydet" }
     }
     private func stepSymbol(_ step: Step) -> String {
         switch step { case .info: return "text.book.closed"; case .schedule: return "calendar.badge.clock"
         case .trainers: return "person.crop.rectangle"; case .participants: return "person.3"
-        case .attachment: return "doc.badge.plus" }
+        case .review: return "checkmark.circle" }
+    }
+
+    private func advance() {
+        validationError = nil
+        guard isComplete(currentStep) else {
+            validationError = validationMessage(currentStep)
+            return
+        }
+        guard currentStep != .review else { save(); return }
+        guard let index = Step.allCases.firstIndex(of: currentStep) else { return }
+        withAnimation(.easeInOut(duration: 0.2)) { currentStep = Step.allCases[index + 1] }
+    }
+
+    private func previousStep() {
+        validationError = nil
+        guard let index = Step.allCases.firstIndex(of: currentStep), index > 0 else { return }
+        withAnimation(.easeInOut(duration: 0.2)) { currentStep = Step.allCases[index - 1] }
+    }
+
+    private func validationMessage(_ step: Step) -> String {
+        switch step {
+        case .info: return "Eğitim başlığını ve toplam süreyi kontrol edin."
+        case .schedule: return "Eğitim tarihi ve geçerlilik bilgisini kontrol edin."
+        case .trainers: return "En az bir eğitici adı veya kurum bilgisi girin."
+        case .participants: return "En az bir katılımcı seçin."
+        case .review: return "Önceki adımlarda tamamlanmamış bilgi var."
+        }
     }
 
     @MainActor private func prepare() async {
@@ -389,7 +487,8 @@ struct IsgWorkspaceTrainingCreateEditor: View {
                         ]), entryID: uploaded.entryID, parentKind: "training",
                         parentID: id, fieldName: "attachment")
                 }
-                celebrate(NovaSuccessMessage.trainingSaved); onDone()
+                celebrate(NovaSuccessMessage.trainingSaved)
+                didSave = true
             } catch {
                 self.error = "Eğitim tamamlanamadı. Katalog, tarih, eğitici ve katılımcı bilgilerini kontrol edip yeniden deneyin."
             }
@@ -721,7 +820,7 @@ struct IsgWorkspaceManualNonconformityEditor: View {
 }
 
 struct IsgWorkspaceRiskCreateEditor: View {
-    private enum Step: String, CaseIterable { case kind, scope, reason, attachment }
+    private enum Step: String, CaseIterable { case details, file, review }
     @ObservedObject var store: IsgWorkspaceStore
     let onDone: () -> Void
     @State private var workplaces: [IsgWorkspaceDirectoryEntry] = []
@@ -732,10 +831,13 @@ struct IsgWorkspaceRiskCreateEditor: View {
     @State private var reason = ""
     @State private var date = Calendar.current.startOfDay(for: Date())
     @State private var attachment: IsgWorkspaceAttachmentDraft?
-    @State private var open: Step? = .kind
+    @State private var currentStep: Step = .details
     @State private var loading = true
     @State private var saving = false
     @State private var error: String?
+    @State private var validationError: String?
+    @State private var confirmingExit = false
+    @State private var didSave = false
     @State private var mutationAttempt = IsgWorkspaceMutationAttempt()
     @State private var workflowMutationIDs: [String: UUID] = [:]
     @Environment(\.novaCelebrate) private var celebrate
@@ -747,90 +849,153 @@ struct IsgWorkspaceRiskCreateEditor: View {
     private var needsReason: Bool { assessment != nil && ["partial", "metadata"].contains(kind) }
     private var needsScope: Bool { kind == "partial" }
     private var completed: Int { Step.allCases.filter(isComplete).count }
+    private var stepNumber: Int { (Step.allCases.firstIndex(of: currentStep) ?? 0) + 1 }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                NovaPopupHeading(text: assessment == nil ? "Risk Değerlendirmesi Ekle" : "Yeni Sürüm",
-                    symbol: "checkmark.shield", subtitle: "Değerlendirme tarihi ve sürüm mantığı korunur")
-                if loading { NovaLoadingView(message: "İşyeri ve sürüm bilgileri hazırlanıyor…") }
-                else {
-                    IsgParityProgress(completed: completed, total: Step.allCases.count)
-                    ForEach(Step.allCases, id: \.self) { step in accordion(step) }
-                    if let error { NovaHelpHint(text: error) }
-                    NovaButton(label: saving ? "Kaydediliyor…" : "Taslağı kaydet", symbol: "checkmark",
-                               isEnabled: !saving && completed == Step.allCases.count) { save() }
+        Group {
+            if didSave {
+                NovaTaskSuccessView(title: "Risk değerlendirmesi taslağı oluşturuldu",
+                    message: "Değerlendirme sürümü kaydedildi. Ayrıntı ekranından kontrol edip kesinleştirebilirsiniz.",
+                    doneTitle: "Risk değerlendirmelerine dön", onDone: onDone)
+            } else {
+                NovaPageSurface {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 18) {
+                            NovaTaskHeader(title: assessment == nil ? "Risk değerlendirmesi ekle" : "Yeni sürüm",
+                                step: stepNumber, total: Step.allCases.count, stepTitle: stepTitle(currentStep)) {
+                                    confirmingExit = true
+                                }
+                            if loading { NovaLoadingView(message: "İşyeri ve sürüm bilgileri hazırlanıyor…") }
+                            else {
+                                if let validationError { NovaTaskErrorSummary(message: validationError) }
+                                stepContent(currentStep)
+                                if let error { NovaTaskErrorSummary(message: error) }
+                            }
+                        }.padding(.horizontal, 18).padding(.top, 8).padding(.bottom, 28)
+                            .novaAsyncContent(isLoading: loading)
+                    }
+                    .scrollDismissesKeyboard(.interactively)
+                    .safeAreaInset(edge: .bottom) {
+                        if !loading {
+                            NovaTaskStickyActions(primaryTitle: currentStep == .review ? "Taslağı kaydet" : "Devam",
+                                primarySymbol: currentStep == .review ? "checkmark" : "arrow.right",
+                                isWorking: saving, canGoBack: currentStep != .details,
+                                onBack: previousStep, onPrimary: advance)
+                        }
+                    }
                 }
-            }.padding(18).novaPopupContentSize(extra: 120)
-                .novaAsyncContent(isLoading: loading)
+            }
         }
         .task { await prepare() }
         .onChange(of: workplaceID) { _ in configureKind() }
+        .confirmationDialog("Risk değerlendirmesi akışından çıkılsın mı?", isPresented: $confirmingExit,
+            titleVisibility: .visible) {
+                Button("Çık", role: .destructive, action: onDone)
+                Button("Devam et", role: .cancel) {}
+            } message: { Text("Henüz kaydedilmemiş bilgiler silinir.") }
     }
 
-    @ViewBuilder private func accordion(_ step: Step) -> some View {
-        NovaCompanyAccordion(title: stepTitle(step), symbol: stepSymbol(step),
-            state: isComplete(step) ? .complete : .missing,
-            identifier: "workspace.risk.step.\(step.rawValue)",
-            expanded: Binding(get: { open == step }, set: { open = $0 ? step : nil })) {
-            VStack(alignment: .leading, spacing: 10) {
-                switch step {
-                case .kind:
-                    Picker("İşyeri", selection: $workplaceID) {
-                        ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
-                    }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
-                    if assessment == nil {
-                        NovaFormValueRow(label: "Sürüm türü", symbol: "square.stack.3d.up") {
-                            NovaText(text: "Tam değerlendirme", style: .bodyStrong)
-                        }
-                        NovaHelpHint(text: "Bu işyerindeki ilk kayıt tam değerlendirme olarak açılır.")
-                    } else {
-                        Picker("Sürüm türü", selection: $kind) {
-                            Text("Tam yenileme").tag("full")
-                            Text("Kısmi revizyon").tag("partial")
-                            Text("Bilgi düzeltmesi").tag("metadata")
-                        }.pickerStyle(.segmented)
-                        NovaHelpHint(text: kind == "full"
-                            ? "Yeni bir değerlendirme tarihi taşır ve süreyi yeniden başlatır."
-                            : kind == "partial"
-                                ? "Yeni veya değişen bölümün kapsamını ve gerekçesini kaydedin. İlk değerlendirme tarihi korunur."
-                                : "Belgenin kapsamını değiştirmeyen bilgi düzeltmesini ve gerekçesini kaydedin.")
-                    }
-                case .scope:
-                    compactDate(kind == "full" ? "Değerlendirme tarihi" : "Revizyon tarihi", selection: $date)
-                    if kind != "full", let base = assessment.flatMap({ fact("base_assessment_on", in: $0) }) {
-                        NovaHelpHint(text: "İlk değerlendirme tarihi \(base) olarak korunur.")
-                    }
-                    if needsScope { field("Kapsam özeti", text: $scope, symbol: "square.dashed") }
-                    else { NovaHelpHint(text: "Bilgi düzeltmesi mevcut kapsamı değiştirmez.") }
-                case .reason:
-                    if needsReason {
-                        field("Değişiklik gerekçesi · en az 10 karakter", text: $reason, symbol: "text.quote")
-                    } else {
-                        NovaHelpHint(text: "İlk tam değerlendirme için ayrıca revizyon gerekçesi gerekmez.")
-                    }
-                case .attachment:
-                    IsgWorkspaceInlineAttachmentField(
-                        title: "Risk değerlendirme dosyası ekle (isteğe bağlı)",
-                        attachment: $attachment)
+    @ViewBuilder private func stepContent(_ step: Step) -> some View {
+        switch step {
+        case .details: detailsStep
+        case .file:
+            VStack(alignment: .leading, spacing: 12) {
+                NovaText(text: "Risk değerlendirmesi dosyası", style: .sectionTitle)
+                IsgWorkspaceInlineAttachmentField(
+                    title: "PDF veya belge ekle (isteğe bağlı)", attachment: $attachment)
+                NovaHelpHint(text: "Dosya eklemeden de taslak oluşturabilir, daha sonra kayıt ayrıntısından belge bağlayabilirsiniz.")
+            }
+        case .review: reviewStep
+        }
+    }
+
+    private var detailsStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Picker("İşyeri", selection: $workplaceID) {
+                ForEach(workplaces) { Text($0.name).tag(Optional($0.id)) }
+            }.pickerStyle(.menu).padding(12).novaControlBackground(cornerRadius: 14)
+            if assessment == nil {
+                NovaFormValueRow(label: "Sürüm türü", symbol: "square.stack.3d.up") {
+                    NovaText(text: "Tam değerlendirme", style: .bodyStrong)
+                }
+                NovaHelpHint(text: "Bu işyerindeki ilk kayıt tam değerlendirme olarak açılır.")
+            } else {
+                Picker("Sürüm türü", selection: $kind) {
+                    Text("Tam yenileme").tag("full")
+                    Text("Kısmi revizyon").tag("partial")
+                    Text("Bilgi düzeltmesi").tag("metadata")
+                }.pickerStyle(.segmented)
+            }
+            compactDate(kind == "full" ? "Değerlendirme tarihi" : "Revizyon tarihi", selection: $date)
+            if kind != "full", let base = assessment.flatMap({ fact("base_assessment_on", in: $0) }) {
+                NovaFormValueRow(label: "İlk değerlendirme", symbol: "calendar") {
+                    NovaText(text: base, style: .bodyStrong)
+                }
+            }
+            if needsScope { field("Kapsam özeti", text: $scope, symbol: "square.dashed") }
+            if needsReason { field("Değişiklik gerekçesi · en az 10 karakter", text: $reason, symbol: "text.quote") }
+            NovaHelpHint(text: kind == "full"
+                ? "Geçerlilik, taslak kesinleştirilirken işyeri tehlike sınıfına göre hesaplanır."
+                : "İlk değerlendirme tarihi korunur; yalnız bu sürümün değişiklikleri kaydedilir.")
+        }
+    }
+
+    private var reviewStep: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            NovaText(text: "Kaydetmeden önce kontrol edin", style: .sectionTitle)
+            NovaCard(padding: 14) {
+                VStack(alignment: .leading, spacing: 12) {
+                    reviewRow("İşyeri", workplaces.first(where: { $0.id == workplaceID })?.name ?? "Belirtilmedi")
+                    reviewRow("Sürüm", IsgWorkspaceDisplayText.value(kind))
+                    reviewRow(kind == "full" ? "Değerlendirme" : "Revizyon", Self.day(date))
+                    if needsScope { reviewRow("Kapsam", scope.trimmed) }
+                    if needsReason { reviewRow("Gerekçe", reason.trimmed) }
+                    reviewRow("Dosya", attachment?.filename ?? "Daha sonra eklenebilir")
                 }
             }
         }
     }
 
+    private func reviewRow(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            NovaText(text: label, style: .metaQuiet)
+            NovaText(text: value, style: .bodyStrong)
+        }.frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     private func isComplete(_ step: Step) -> Bool {
         switch step {
-        case .kind: return workplaceID != nil
-        case .scope: return date <= Date() && (!needsScope || !scope.trimmed.isEmpty)
-        case .reason: return !needsReason || reason.trimmed.count >= 10
-        case .attachment: return true
+        case .details:
+            return workplaceID != nil && date <= Date() && (!needsScope || !scope.trimmed.isEmpty)
+                && (!needsReason || reason.trimmed.count >= 10)
+        case .file: return true
+        case .review: return isComplete(.details)
         }
     }
     private func stepTitle(_ step: Step) -> String {
-        switch step { case .kind: return "İşyeri ve sürüm"; case .scope: return "Tarih ve kapsam"; case .reason: return "Değişiklik gerekçesi"; case .attachment: return "Dosya ve kanıt" }
+        switch step { case .details: return "Tarih ve kapsam"; case .file: return "Dosya"; case .review: return "Kontrol ve kaydet" }
     }
     private func stepSymbol(_ step: Step) -> String {
-        switch step { case .kind: return "square.stack.3d.up"; case .scope: return "calendar"; case .reason: return "text.quote"; case .attachment: return "doc.badge.plus" }
+        switch step { case .details: return "calendar"; case .file: return "doc.badge.plus"; case .review: return "checkmark.circle" }
+    }
+
+    private func advance() {
+        validationError = nil
+        guard isComplete(currentStep) else {
+            validationError = currentStep == .details
+                ? "İşyeri, tarih ve gerekiyorsa kapsam ile gerekçe bilgilerini kontrol edin."
+                : "Bu adım tamamlanmadan devam edilemiyor."
+            return
+        }
+        guard currentStep != .review else { save(); return }
+        guard let index = Step.allCases.firstIndex(of: currentStep) else { return }
+        withAnimation(.easeInOut(duration: 0.2)) { currentStep = Step.allCases[index + 1] }
+    }
+
+    private func previousStep() {
+        validationError = nil
+        guard let index = Step.allCases.firstIndex(of: currentStep), index > 0 else { return }
+        withAnimation(.easeInOut(duration: 0.2)) { currentStep = Step.allCases[index - 1] }
     }
     @MainActor private func prepare() async {
         loading = true; error = nil
@@ -866,7 +1031,8 @@ struct IsgWorkspaceRiskCreateEditor: View {
                         entryID: uploaded.entryID, parentKind: "risk_assessment",
                         parentID: id, fieldName: "assessment")
                 }
-                celebrate(NovaSuccessMessage.recordSaved("Risk değerlendirmesi")); onDone()
+                celebrate(NovaSuccessMessage.recordSaved("Risk değerlendirmesi"))
+                didSave = true
             } catch { self.error = "Risk sürümü oluşturulamadı. Tarih, kapsam ve gerekçe bilgilerini kontrol edip yeniden deneyin." }
             saving = false
         }

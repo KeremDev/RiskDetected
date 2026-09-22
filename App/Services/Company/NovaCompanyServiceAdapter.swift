@@ -28,8 +28,8 @@ struct NovaPilotCompanySummary: Decodable, Identifiable {
         guard novaCurrentSessionIdentity() == identity else { throw NovaPersonnelFailure.denied }
     }
     try check()
-    let data = try await SupabaseService.shared.client.rpc("isg_pilot_overview_v2",
-        params: ["p_company": PersonnelRPCValue.id(companyID)]).execute().data
+    let data = try await NovaExpertTransport.shared.execute("isg_pilot_overview_v2",
+        params: ["p_company": PersonnelRPCValue.id(companyID)], ticket: NovaExpertTransport.shared.capture())
     try check()
     guard data.count <= 1_048_576 else { throw NovaPersonnelFailure.unavailable }
     struct Response: Decodable {
@@ -52,8 +52,12 @@ func loadNovaOwnedCompanies(includeArchived: Bool) async throws -> [NovaOwnedCom
         let address = company.address?.trimmingCharacters(in: .whitespacesAndNewlines)
         let detail = [address?.isEmpty == false ? address : nil, company.hazardClass.title]
             .compactMap { $0 }.joined(separator: " · ")
+        let progressCompleted = [company.address, company.city, company.phone, company.naceCode,
+            company.workplaceRegistryNo, company.department, company.contactPerson,
+            company.defaultResponsible].compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }.count
         return NovaOwnedCompany(id: company.id, ownerID: company.userID, name: company.name,
-            detail: detail, isArchived: company.isArchived)
+            detail: detail, isArchived: company.isArchived, progressCompleted: progressCompleted, progressTotal: 8)
     }
 }
 
@@ -67,7 +71,7 @@ func loadNovaOwnedCompanies(includeArchived: Bool) async throws -> [NovaOwnedCom
 extension NovaPilotCompanyService {
     @MainActor static func live() -> NovaPilotCompanyService {
         .init(rpc: { name, args in
-            try await SupabaseService.shared.client.rpc(name, params: args).execute().data
+            try await NovaExpertTransport.shared.execute(name, params: args, ticket: NovaExpertTransport.shared.capture())
         }, currentIdentity: novaCurrentSessionIdentity,
         storage: KeychainPersonnelPendingStorage(service: "com.riskdetected.pilot.company.pending.v1"))
     }
@@ -86,16 +90,17 @@ extension NovaPilotCompanyService {
     var result: [NovaOwnedCompany] = []
     for row in candidates {
         guard row.ownerID == identity.userID else { throw NovaPersonnelFailure.denied }
-        let data = try await SupabaseService.shared.client.rpc("isg_workspace_availability_v1", params: ["p_company": PersonnelRPCValue.id(row.id)]).execute().data
+        let data = try await NovaExpertTransport.shared.execute("isg_workspace_availability_v1", params: ["p_company": PersonnelRPCValue.id(row.id)], ticket: NovaExpertTransport.shared.capture())
         try check()
         let capability = try NovaWorkspaceCapability.decode(data, owner: identity.userID, company: row.id)
         if capability.can_read {
             result.append(.init(id: row.id, ownerID: row.ownerID, name: capability.company_name ?? row.name,
-                detail: row.detail, isArchived: capability.is_archived ?? row.isArchived))
+                detail: row.detail, isArchived: capability.is_archived ?? row.isArchived,
+                progressCompleted: 0, progressTotal: 8))
         }
     }
     // Also recheck the account gate, including the zero-company case.
-    let data = try await SupabaseService.shared.client.rpc("isg_workspace_availability_v1", params: ["p_company": PersonnelRPCValue.null]).execute().data
+    let data = try await NovaExpertTransport.shared.execute("isg_workspace_availability_v1", params: ["p_company": PersonnelRPCValue.null], ticket: NovaExpertTransport.shared.capture())
     try check()
     guard try NovaWorkspaceCapability.decode(data, owner: identity.userID, company: nil).can_read else { throw NovaPersonnelFailure.denied }
     return result

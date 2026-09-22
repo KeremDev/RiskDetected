@@ -63,6 +63,7 @@ struct NovaTrainingSessionDraft: Codable, Equatable {
 }
 
 @MainActor final class NovaTrainingSessionService {
+    private let expertTicket = NovaExpertTransport.shared.capture()
     struct Page: Decodable {
         let schema_version: Int; let owner_id: UUID
         let rows: [NovaTrainingSession]; let next_id: UUID?; let catalog: [NovaTrainingCatalog]
@@ -77,7 +78,7 @@ struct NovaTrainingSessionDraft: Codable, Equatable {
     init(identity: NovaSessionIdentity) { self.identity = identity }
     private let storage = KeychainPersonnelPendingStorage(service: "com.riskdetected.pilot.training.pending.v2")
     private static var inFlight = Set<UUID>()
-    private var key: String { identity.userID.uuidString }
+    private var key: String { expertTicket?.access.storageNamespace ?? identity.userID.uuidString }
     private func check() throws {
         try Task.checkCancellation()
         guard novaCurrentSessionIdentity() == identity else { throw NovaPersonnelFailure.denied }
@@ -86,7 +87,7 @@ struct NovaTrainingSessionDraft: Codable, Equatable {
         try check()
         let scope = NovaPersonnelScope(ownerID: identity.userID, sessionID: identity.sessionID, companyID: company, epoch: "training-\(identity.sessionID)")
         let client = NovaPersonnelService(rpc: { name, params in
-            try await SupabaseService.shared.client.rpc(name, params: params).execute().data
+            try await NovaExpertTransport.shared.execute(name, params: params, ticket: self.expertTicket)
         }, isCurrent: { candidate in
             candidate == scope && novaCurrentSessionIdentity() == self.identity
         }, storage: KeychainPersonnelPendingStorage()).client
@@ -108,8 +109,8 @@ struct NovaTrainingSessionDraft: Codable, Equatable {
     }
     func list(company: UUID? = nil, after: UUID? = nil) async throws -> Page {
         try check()
-        let data = try await SupabaseService.shared.client.rpc("isg_pilot_training_sessions_v2", params:
-            ["p_company": PersonnelRPCValue.id(company), "p_after": .id(after)]).execute().data
+        let data = try await NovaExpertTransport.shared.execute("isg_pilot_training_sessions_v2", params:
+            ["p_company": PersonnelRPCValue.id(company), "p_after": .id(after)], ticket: self.expertTicket)
         try check()
         guard data.count <= 16_777_216 else { throw NovaPersonnelFailure.unavailable }
         let page = try JSONDecoder().decode(Page.self, from: data)
@@ -140,8 +141,8 @@ struct NovaTrainingSessionDraft: Codable, Equatable {
         defer { Self.inFlight.remove(identity.userID) }
         struct Args: Encodable { let p_mutation: UUID; let p_payload: NovaTrainingSessionDraft }
         do {
-            let data = try await SupabaseService.shared.client.rpc("isg_pilot_training_record_v2", params:
-                Args(p_mutation: pending.mutation, p_payload: pending.draft)).execute().data
+            let data = try await NovaExpertTransport.shared.execute("isg_pilot_training_record_v2", params:
+                Args(p_mutation: pending.mutation, p_payload: pending.draft), ticket: self.expertTicket)
             try check()
             guard data.count <= 8_388_608 else { throw NovaPersonnelFailure.unavailable }
             let receipt = try JSONDecoder().decode(Receipt.self, from: data)
@@ -150,6 +151,7 @@ struct NovaTrainingSessionDraft: Codable, Equatable {
                   receipt.catalog == nil || receipt.catalog?.owner_id == identity.userID,
                   pending.draft.id == nil || receipt.row?.id == pending.draft.id else { throw NovaPersonnelFailure.denied }
             try storage.remove(account: key)
+            NotificationCenter.default.post(name: Notification.Name("isgada.records.changed"), object: identity.userID)
             return receipt
         } catch let e as PostgrestError {
             if ["P0001", "28000", "22007", "22008", "22P02", "23514", "23502"].contains(e.code ?? "") { try storage.remove(account: key) }

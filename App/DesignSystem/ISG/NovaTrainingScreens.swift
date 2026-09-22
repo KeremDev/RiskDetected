@@ -8,15 +8,22 @@ struct NovaTrainingHub: View {
     let select: (UUID?) -> Void
     let onBack: () -> Void
     var createOnOpen = false
+    @State private var createRequest = 0
     var body: some View {
         VStack(spacing: 8) {
             HStack {
                 NovaBackButton(action: onBack)
                 NovaText(text: "Eğitimler", style: .screenTitle)
                 Spacer()
+                if canWrite {
+                    NovaButton(label: "Eğitim Ekle", symbol: "plus", compact: true) {
+                        createRequest += 1
+                    }
+                    .accessibilityIdentifier("training.add.header")
+                }
             }.padding(.horizontal, 18).padding(.top, 12)
             NovaTrainingRegister(identity: identity, personnel: personnel, canWrite: canWrite,
-                initialCompany: nil, createOnOpen: createOnOpen)
+                initialCompany: nil, createOnOpen: createOnOpen, createRequest: createRequest)
         }
         .novaEdgeBackGesture(action: onBack)
     }
@@ -40,6 +47,7 @@ struct NovaTrainingRegister: View {
     let canWrite: Bool
     let initialCompany: UUID?
     var createOnOpen = false
+    var createRequest = 0
     @State private var companies: [NovaPilotCompanySummary] = []
     @State private var sessions: [NovaTrainingSession] = []
     @State private var catalog: [NovaTrainingCatalog] = []
@@ -87,10 +95,6 @@ struct NovaTrainingRegister: View {
                 VStack(alignment: .leading, spacing: 8) {
                     NovaFilterField(label: "Firma", options: [.init(id: nil, title: "Tüm firmalar")] + companies.map { .init(id: $0.id.uuidString, title: $0.name) },
                         selected: company?.uuidString, identifier: "training.company") { company = $0.flatMap(UUID.init(uuidString:)) }
-                    Button { editor = Editor(session: nil) } label: {
-                        Label("Eğitim Ekle", systemImage: "plus").font(.system(size: 13))
-                            .padding(.horizontal, 16).frame(minHeight: 36).background(Color.green, in: Capsule()).foregroundStyle(.black)
-                    }.disabled(!canWrite || loading || pending || error != nil || writableCompanies.isEmpty)
                 }
                 NovaHelpHint(text: "Gerçekleşen eğitimi ve katılımcılarını kaydedin. Aynı eğitimde birden fazla firmanın personelini seçebilirsiniz.")
                 trainingStats
@@ -142,28 +146,27 @@ struct NovaTrainingRegister: View {
         }.task(id: revision) { await load() }
             .task(id: company) { await loadEmployeeTotal() }
             .onAppear { if !initializedFilter { company = initialCompany; initializedFilter = true } }
+            .onChange(of: createRequest) { _ in
+                guard canWrite, !loading, !pending, error == nil, !writableCompanies.isEmpty else { return }
+                editor = Editor(session: nil)
+            }
             .refreshable { revision = UUID() }
             .novaFullScreenCover(item: $editor, onDismiss: { revision = UUID() }) { value in
-                // A full page, not a popup: the entry supplies its own back
-                // control and accordion chrome (the pre-catalogue fallback
-                // path still uses its own small card internally).
-                NovaEducationEntry(identity: identity, personnel: personnel, companies: companies,
-                    initialCompany: company, catalog: catalog, original: value.session,
+                // A full page, not a popup: every role receives the same
+                // five-step editor and its own back/accordion chrome.
+                NovaEducationEntry(identity: identity, companies: companies,
+                    initialCompany: company, original: value.session,
                     canWrite: canWrite && (value.session?.companies.allSatisfy { writableCompanies.contains($0.company_id) } ?? !writableCompanies.isEmpty),
                     writableCompanies: writableCompanies)
             }
     }
     private var trainingStats: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                NovaListStat(title: "Eğitim saati", symbol: "clock", value: hours(trainingMinutes)).frame(width: 104)
-                NovaListStat(title: "Eğitim alan", symbol: "person.2", value: trainedPeople.count).frame(width: 104)
-                NovaListStat(title: "Adam × saat", symbol: "person.badge.clock", value: hours(personMinutes)).frame(width: 104)
-                NovaListStat(title: "Eğitimi eksik", symbol: "person.crop.circle.badge.exclamationmark",
-                    value: employeeTotal.map { max(0, $0 - trainedPeople.count) }.map(String.init) ?? "—")
-                    .frame(width: 104)
-            }.padding(.vertical, 2)
-        }.accessibilityIdentifier("training.stats")
+        NovaMetricStrip(items: [
+            .init(id: "minutes", value: hours(trainingMinutes), label: "Eğitim saati", symbol: "clock", status: .neutral),
+            .init(id: "people", value: "\(trainedPeople.count)", label: "Eğitim alan", symbol: "person.2", status: .success),
+            .init(id: "person-minutes", value: hours(personMinutes), label: "Adam × saat", symbol: "person.badge.clock", status: .neutral),
+            .init(id: "missing", value: employeeTotal.map { String(max(0, $0 - trainedPeople.count)) } ?? "—", label: "Eğitimi eksik", symbol: "person.crop.circle.badge.exclamationmark", status: .warning)
+        ]).accessibilityIdentifier("training.stats")
     }
     @MainActor private func loadEmployeeTotal() async {
         employeeTotal = nil

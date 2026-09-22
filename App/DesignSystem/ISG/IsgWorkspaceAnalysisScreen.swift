@@ -115,7 +115,12 @@ struct IsgWorkspaceAnalysisScreen: View {
             assign: { _ in throw IsgWorkspaceAPIFailure.invalidRequest },
             workplaces: { requestedCompany in
                 guard requestedCompany == companyID else { throw IsgWorkspaceAPIFailure.invalidRequest }
-                return try await store.directory(.workplace, companyID: companyID).map {
+                var rows = try await store.directory(.workplace, companyID: companyID)
+                if rows.isEmpty {
+                    try await store.initializePersonnel(companyID: companyID)
+                    rows = try await store.directory(.workplace, companyID: companyID)
+                }
+                return rows.map {
                     .init(id: $0.id, name: $0.name, needs_review: false)
                 }
             },

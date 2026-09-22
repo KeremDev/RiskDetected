@@ -4,8 +4,9 @@ import Supabase
 extension NovaFileLibraryService {
     static func live() -> NovaFileLibraryService {
         let client = SupabaseService.shared.client
+        let ticket = NovaExpertTransport.shared.capture()
         return NovaFileLibraryService(rpc: { function, args in
-            do { return try await client.rpc(function, params: args).execute().data }
+            do { return try await NovaExpertTransport.shared.execute(function, params: args, ticket: ticket) }
             catch let error as PostgrestError {
                 guard error.code == "P0001" || error.code == "28000" else { throw NovaFileFailure.unavailable }
                 switch error.message {
@@ -23,31 +24,42 @@ extension NovaFileLibraryService {
                 }
             }
         }, upload: { bucket, path, data, fileExtension in
+            try NovaExpertTransport.shared.validate(ticket)
             do {
                 // upsert stays off: the quarantine bucket has no update policy,
                 // so bytes that were already checked can never be swapped.
                 _ = try await client.storage.from(bucket).upload(
                     path, data: data,
                     options: FileOptions(contentType: contentType(fileExtension), upsert: false))
+                try NovaExpertTransport.shared.validate(ticket)
             } catch {
                 throw NovaFileFailure.uploadFailed
             }
         }, inspect: { entryID in
-            struct Request: Encodable { let entry_id: String }
+            try NovaExpertTransport.shared.validate(ticket)
+            struct Request: Encodable { let entry_id: String; let workspace_id: String? }
             struct Answer: Decodable { let state: String? }
             do {
                 let _: Answer = try await client.functions.invoke(
                     "isg-file-inspect",
-                    options: FunctionInvokeOptions(body: Request(entry_id: entryID.uuidString.lowercased())))
+                    options: FunctionInvokeOptions(body: Request(entry_id: entryID.uuidString.lowercased(),
+                        workspace_id: ticket?.access.workspaceID?.uuidString.lowercased())))
+                try NovaExpertTransport.shared.validate(ticket)
             } catch {
                 // The upload keeps whatever state it really reached. Nothing here
                 // may report the file as cleared because the call did not land.
                 throw NovaFileFailure.inspectionUnavailable
             }
         }, download: { bucket, path in
-            do { return try await client.storage.from(bucket).download(path: path) }
+            try NovaExpertTransport.shared.validate(ticket)
+            do {
+                let data = try await client.storage.from(bucket).download(path: path)
+                try NovaExpertTransport.shared.validate(ticket)
+                return data
+            }
             catch { throw NovaFileFailure.unavailable }
         }, isSession: { identity in
+            guard (try? NovaExpertTransport.shared.validate(ticket)) != nil else { return false }
             guard let session = client.auth.currentSession, session.user.id == identity.userID else { return false }
             return NovaPersonnelService.sessionID(session.accessToken) == identity.sessionID
         })

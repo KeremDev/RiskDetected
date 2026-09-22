@@ -203,7 +203,7 @@ test('filing only reports success after the company read path sees the record', 
 test('analysis filing uses its selected company without racing the global company scope', () => {
   const gate = read('App/Views/Components/NovaPilotFindingsGate.swift');
   assert.match(gate, /analysisFilingService: NovaNonconformityService \{ \.live\(identity: identity\) \}/);
-  assert.match(gate, /analysisFilingService\.workplaces\(analysisFilingScope\(company\)\)/);
+  assert.match(gate, /analysisFilingService\.filingWorkplaces\(analysisFilingScope\(company\)\)/);
   const fileBlock = gate.slice(gate.indexOf('private func file(_ request:'), gate.indexOf('// MARK: manual'));
   assert.match(fileBlock, /analysisFilingService\.open\(current, intent: intent\)/);
   assert.match(fileBlock, /analysisFilingService\.list\(current\)/);
@@ -243,11 +243,13 @@ test('a filed finding reuses the analysis detail sheet without another filing ac
   assert.match(sourceLookup, /section\.items\.first\(where: \{ \$0\.id == findingID \}\)/);
 });
 
-test('successful filing closes the popup and celebrates only after readback', () => {
+test('successful filing closes its child task and celebrates only after readback', () => {
   const sheet = read('App/DesignSystem/ISG/NovaAnalysisSheets.swift');
   assert.match(sheet, /case \.opened, \.alreadyOpen: succeeded = true/);
   assert.match(sheet, /if succeeded && !failed \{\s*celebrate\(NovaSuccessMessage\.findingCreated\)\s*onFinished\(\)/);
-  assert.match(sheet, /loaded\.count == 1,[\s\S]{0,140}?ready\.count == items\.count[\s\S]{0,100}?await run\(target: only\.id\)/);
+  assert.match(sheet, /workplace = loaded\.count == 1 \? loaded\.first\?\.id : nil/);
+  assert.match(sheet, /accessibilityIdentifier\("analysis\.file\.run"\)/);
+  assert.doesNotMatch(sheet, /\.task \{[\s\S]{0,500}?await run\(/);
   const gate = read('App/Views/Components/NovaPilotFindingsGate.swift');
   assert.match(gate, /\.modifier\(NovaSuccessPresentation\(\)\)/);
 });
@@ -286,8 +288,8 @@ test('every count on the analysis pages is counted from the rows on screen', () 
   // method being read, not taken from anywhere else.
   assert.match(model, /items\.filter \{ \$0\.band\(method\) == band \}\.count/);
   const screen = read('App/DesignSystem/ISG/NovaAnalysisDetailScreens.swift');
-  // Counts are now in the section navigation, after removal of the large summary card.
-  assert.match(screen, /caption: NovaAnalysisWords\.unit\(entry\.kind, entry\.items\.count\)/);
+  // Counts are in the compact section navigation, next to the section title.
+  assert.match(screen, /NovaText\(text: "\\\(entry\.items\.count\)"/);
 });
 
 test('the report archive page reads the photo analyses it claims to list', () => {
@@ -305,11 +307,45 @@ test('the analysis detail owns the bottom of its own page', () => {
   // The bar is pinned, so scrolling never takes the two controls away.
   assert.match(screen, /\.safeAreaInset\(edge: \.bottom, spacing: 0\) \{ if data != nil \{ actionBar \} \}/);
   assert.match(screen, /accessibilityIdentifier\("analysis\.detail\.back"\)/);
-  assert.match(screen, /symbol: "slider\.horizontal\.3", id: "report"/);
+  assert.match(screen, /symbol: "doc\.text", id: "report"/);
+  assert.match(screen, /reporting = true/);
+  assert.doesNotMatch(screen, /Seçilenlerle devam|beginSelectionMode|selectionMode/);
   assert.match(screen, /accessibilityIdentifier\("analysis\.detail\.\\\(id\)"\)/);
   // The page is presented over the shell, so the shell's tab bar is not under it.
   const gate = read('App/Views/Components/NovaPilotFindingsGate.swift');
   assert.match(gate, /\.novaFullScreenCover\(item: \$openAnalysis\) \{ target in\s+detail\(target\.id\)/);
   // Risk analysis is what the detail opens on.
   assert.match(screen, /@State private var section: NovaAnalysisSectionKind = \.riskAnalysis/);
+});
+
+test('analysis cards remove duplicate time and keep metadata quiet', () => {
+  const model = read('App/DesignSystem/ISG/NovaAnalysisDetail.swift');
+  const list = read('App/DesignSystem/ISG/NovaAnalysisListScreen.swift');
+  const detail = read('App/DesignSystem/ISG/NovaAnalysisDetailScreens.swift');
+  assert.match(model, /enum NovaAnalysisPresentation/);
+  assert.match(model, /static func dateOnly/);
+  assert.match(list, /NovaAnalysisPresentation\.dateOnly\(row\.createdOn\)/);
+  assert.match(list, /NovaText\(text: text, style: \.metaQuiet/);
+  assert.doesNotMatch(list.slice(list.indexOf('private func card('), list.indexOf('private var placeholderCard')), /NovaStatusPill/);
+  assert.match(detail, /NovaAnalysisPresentation\.title\(analysisTitle\)/);
+  assert.match(detail, /NovaAnalysisPresentation\.dateOnly\(createdOn\)/);
+});
+
+test('finding filing stays over the detail as a full-screen child task', () => {
+  const screen = read('App/DesignSystem/ISG/NovaAnalysisDetailScreens.swift');
+  assert.match(screen, /private struct NovaAnalysisFilingScreen/);
+  assert.match(screen, /\.novaFullScreenCover\(isPresented: \$filing\)/);
+  assert.match(screen, /fullScreenTask: true/);
+  assert.match(screen, /showsSelectedTaskHeader: true/);
+  assert.doesNotMatch(screen, /fileAfterDetail|\.novaPopup\(isPresented: \$filing\)/);
+  const sheet = read('App/DesignSystem/ISG/NovaAnalysisSheets.swift');
+  assert.doesNotMatch(sheet, /await run\(target:/);
+  assert.match(sheet, /ready\.count == items\.count/);
+  const service = read('App/Services/Company/NovaNonconformityService.swift');
+  assert.match(service, /func filingWorkplaces/);
+  assert.match(service, /isg_analysis_filing_workplace_v1/);
+  const migration = read('supabase/migrations/20260922093000_analysis_filing_default_workplace.sql');
+  assert.match(migration, /private_isg\.require_company\(p_company,true\)/);
+  assert.match(migration, /private_isg\.ensure_default\(p_company\)/);
+  assert.doesNotMatch(migration, /GRANT EXECUTE ON FUNCTION private_isg\.analysis_filing_workplace/);
 });

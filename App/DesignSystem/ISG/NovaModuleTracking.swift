@@ -78,8 +78,8 @@ struct NovaModuleTrackingSnapshot: Decodable {
     static func load(identity: NovaSessionIdentity, company: UUID?) async throws -> NovaModuleTrackingSnapshot {
         try Task.checkCancellation()
         guard novaCurrentSessionIdentity() == identity else { throw NovaPersonnelFailure.denied }
-        let data = try await SupabaseService.shared.client.rpc("isg_pilot_module_tracking_v2",
-            params: ["p_company": company.map(PersonnelRPCValue.id) ?? .null]).execute().data
+        let data = try await NovaExpertTransport.shared.execute("isg_pilot_module_tracking_v2",
+            params: ["p_company": company.map(PersonnelRPCValue.id) ?? .null], ticket: NovaExpertTransport.shared.capture())
         try Task.checkCancellation()
         guard novaCurrentSessionIdentity() == identity else { throw NovaPersonnelFailure.denied }
         return try JSONDecoder().decode(NovaModuleTrackingSnapshot.self, from: data)

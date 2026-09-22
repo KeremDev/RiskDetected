@@ -127,8 +127,9 @@ test('the company page reads the archive from the same tally the archive uses',(
 });
 
 test('Diğer Dosyalar is reachable from the menu and from the company page',()=>{
-  assert.match(main,/case \.documents:\n\s+if let workspaceStore \{ workspaceDomain\(workspaceStore, \.files\) \} else \{ files\(\) \}/);
-  assert.match(main,/NovaPilotFileGate\(identity: identity, canWrite: ready/);
+  assert.match(main,/case \.documents:\n\s+files\(\)/);
+  assert.match(adapter,/NovaExpertTransport\.shared\.capture\(\)/);
+  assert.match(main,/NovaPilotFileGate\(identity: identity, canWrite: writable/);
   // Its position in the drawer list belongs to whichever slice added the
   // newest entry, so only its presence is pinned here.
   assert.match(navigation,/sharedDestinations:[\s\S]*\.documents/);

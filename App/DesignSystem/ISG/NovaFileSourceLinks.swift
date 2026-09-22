@@ -23,7 +23,7 @@ struct NovaFileSourceLinks: View {
                 guard let session = SupabaseService.shared.client.auth.currentSession,
                       let sid = NovaPersonnelService.sessionID(session.accessToken) else { return }
                 let user = NovaSessionIdentity(userID: session.user.id, sessionID: sid)
-                let data = try await SupabaseService.shared.client.rpc("isg_pilot_file_sources_v1", params: ["p_entry": PersonnelRPCValue.id(entry.id)]).execute().data
+                let data = try await NovaExpertTransport.shared.execute("isg_pilot_file_sources_v1", params: ["p_entry": PersonnelRPCValue.id(entry.id)], ticket: NovaExpertTransport.shared.capture())
                 guard let current = SupabaseService.shared.client.auth.currentSession, current.user.id == user.userID,
                       NovaPersonnelService.sessionID(current.accessToken) == user.sessionID else { return }
                 try Task.checkCancellation()

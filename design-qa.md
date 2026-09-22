@@ -55,4 +55,115 @@ Android cihaz koşusu, fiziksel iOS, VoiceOver/TalkBack tam akışı ve gerçek 
 - [x] iOS/Android derleme ve tasarım kaynak kontrollerini doğrula.
 - [ ] Ayrı geçiş işi: gerçek domain ekranları, veri adaptörleri ve üretim root entegrasyonu.
 
+---
+
+# Design QA — Firma, işyeri ve rapor akışları
+
+Tarih: 21 Eylül 2026. Cihaz: RD QA iPhone 16 Pro simulator, iOS 26.5, açık tema.
+
+## Karşılaştırma ve bulgular
+
+- Kullanıcının Rapor Merkezi ekranı `design-qa-captures/report-center.png` ile; eski rapor türü ekranı yeni `design-qa-captures/report-content.png` ile yan yana incelendi.
+- Bir rapor kartı artık “Kapsam ve dönem” adımına açılıyor; tekrar rapor türü seçtirmiyor.
+- Sonraki ekran varsayılan seçili modül başlıkları, tümünü seç/temizle ve özel alan ekleme sunuyor.
+- Firma detayında özet kartının hemen altında görünür “Logo seç” eylemi bulunuyor.
+- Ana/ikincil eylemler güvenli alan üzerinde, uzun içerik kaydırılabilir ve hedefler en az 44 pt.
+- Kontrol listesi filtreleri aynı kompakt filtre sistemini ve okunur loading/empty durumlarını koruyor.
+
+## Otomatik kanıt
+
+- `NovaPilotUITests/testWizardExpansionVisualAudit`: passed.
+- `NovaPilotUITests/testCompanyCardExposesDirectLogoPickerAndLargePopupCloseTarget`: passed.
+- `scripts/isg/run_suite.mjs nova-design`: 217/217 passed.
+- Simulator build ve fiziksel OSGB pilot build 138: passed.
+
+final result: passed
+
+---
+
+# Design QA — Analiz yoğunluğu ve işlem akışları
+
+Tarih: 22 Eylül 2026. Cihaz: RD QA iPhone 16 Pro simulator, iOS 26.5, açık tema.
+
+## Kaynak ve son görünüm
+
+- Kaynaklar: kullanıcının analiz listesi, analiz sonucu, bulgu detayı, firma aktarımı ve rapor seçim ekranı görselleri (`codex-clipboard-e429f3f5-df84-4cc4-bc3f-21188663e57c.png` ile başlayan altı ekran).
+- Son render'lar: `/Users/keremkayalar/.codex/visualizations/2026/09/21/01a0c3a6-6b69-7020-9efe-d00259cdb702/xcresult-analysis-final/` içindeki `01-analysis-list`, `02-analysis-result-risk`, `02b-analysis-report-options`, `04-analysis-finding-detail` ve `04b-analysis-filing-company` isimli test ekleri.
+- Kaynak ve son ekranlar aynı görsel inceleme turunda açıldı. Kaynak canlı verili 440×956 pt ekran, final sentetik fixture verili 402×874 pt ekran olduğundan içerik/piksel eşitliği değil; yoğunluk, tipografi, tekrar, eylem sırası ve geri dönüş davranışı karşılaştırıldı.
+
+## Bulgular ve kapanış
+
+- Liste kartlarında yalnız başlık kalın; tarih, firma, sektör ve sayaçlar normal ağırlıkta. Saat ve ikinci tarih tekrarı kaldırıldı; “İncelenmedi” satır içi etiketi kaldırılarak firma/sektör alanı açıldı.
+- Sonuç bağlam kartındaki renkli etiket yüzeyleri kaldırıldı. Fotoğraf küçültüldü; firma atama ve tarih sakin, tek renkli satırlar olarak gösteriliyor. Öncelikli bulgu alanı nötr yüzeye çekildi.
+- Bulgu detayında analiz başlığı içindeki tarih/saat temizleniyor ve tarih yalnız bir kez gösteriliyor.
+- `Uygunsuzluk oluştur` artık bulgu detayını geri kapatmıyor. Tam sayfa firma seçimi görünür geri düğmesiyle açılıyor; tek işyeri varsa ikinci onay istemeden kaydı açıp bulgu detayına dönüyor. İşyeri olmayan kişisel firmalar için yetkili varsayılan işyeri hazırlama yolu eklendi.
+- `Rapor oluştur` seçim modunu ve “Seçilenlerle devam” ara adımını kaldırdı; doğrudan PDF/Excel seçeneklerine açılıyor ve PDF varsayılan seçili geliyor.
+
+## Otomatik doğrulama
+
+- Simulator build: passed.
+- `scripts/isg/nova_analysis_flow.test.mjs`: 25/25 passed.
+- `NovaDesignAuditUITests/testAnalysisResultAndSectionSurfaces`: passed; liste, sonuç, doğrudan rapor seçenekleri, bulgu detayı, tam sayfa firma seçimi ve başarılı kayıt sonrası bulgu detayına dönüş doğrulandı.
+- Görsel turda açık P0/P1/P2 bulgu kalmadı.
+
+final result: passed
+
+---
+
+# Design QA — Analiz listesi, sonuç ve bulgu detayı
+
+Tarih: 22 Eylül 2026. Kaynak: `ISGADA_Analiz_Ekranlari_UX_UI_Yeniden_Tasarim_2026.md`. Cihaz: RD QA iPhone 16 Pro simulator, açık tema.
+
+## Uygulanan hiyerarşi
+
+- Analiz listesi kompakt toplam/kritik/bulgu metrikleri, tek arama, tek filtre girişi, sıralama ve bütün satırı açan kayıt kartlarına dönüştürüldü.
+- Analiz sonucu global başlıktan ayrıldı; bağlam kartını bulgu/kritik/yüksek/en yüksek skor özeti ve öncelikli bulgu takip ediyor.
+- Risk, uzman görüşü ve eğitim sekmeleri sayaçlı kompakt pill yapısında; normal okumada checkbox ve satır içi düzenle/sil/geri bildirim eylemleri yok.
+- `Rapor oluştur` bulgu seçim ara adımı olmadan doğrudan PDF/Excel seçeneklerini açıyor; PDF varsayılan seçili geliyor.
+- Bulgu ayrıntısı tam ekran geri navigasyonu, ayrı fotoğraf, semantik seviye, katlanmış skor formülü, overflow işlemleri ve tek `Uygunsuzluk oluştur` eylemi kullanıyor.
+
+## Doğrulama
+
+- `NovaDesignAuditUITests`: önceki 3/3 turuna ek olarak güncel hedefli tur geçti; analiz listesi, sonuç, doğrudan rapor seçenekleri, uzman/eğitim sekmeleri, bulgu detayı ve tam sayfa uygunsuzluk akışı doğrulandı.
+- `scripts/isg/pilot_native.test.mjs`: 6/6 geçti.
+- Simulator derleme ve çalıştırma: geçti (`com.riskdetected.app.osgbpilot`).
+- `git diff --check`: geçti.
+
+final result: passed
+
+---
+
+# Design QA — Firma ilerleme halkası
+
+Tarih: 21 Eylül 2026.
+
+## Kaynak ve uygulama kanıtı
+
+- Görsel doğruluk kaynağı: `/var/folders/b8/1ntgctld0x9_wm3ms9cxkdtr0000gn/T/codex-clipboard-c77a386c-a2c0-4883-ad1f-152c53b2351a.png`.
+- Uygulama görüntüsü: `/Users/keremkayalar/.codex/visualizations/2026/09/21/01a0c3a6-6b69-7020-9efe-d00259cdb702/company-progress/177B5E33-51A3-4A15-ACB1-BB6B0627184F.png`.
+- Kaynak 1320×1051 px bağımsız yatay karttır. Uygulama 1178×2556 px, iPhone 14 Pro 393×852 pt @3 açık tema ekran görüntüsüdür.
+- Durum: Firma Detayı, Risk Analizi segmenti seçili; iki tamamlanan, bir kontrol gereken ve yedi veri bekleyen sentetik QA kaydı.
+- Kaynak kart ile uygulama kartı aynı karşılaştırma girdisinde birlikte açıldı. Kaynak bağımsız yatay bileşen, uygulama ise gerçek mobil sayfa içinde olduğundan piksel eşitliği iddia edilmedi; bilgi mimarisi, halka/legend oranı, tooltip, özet alanı ve yüzey dili karşılaştırıldı.
+- Odaklı ayrı kırpma gerekmedi: kaynak yalnızca karttan oluşuyor ve uygulama görüntüsündeki kart bütün tipografi ile segmentleri okunur ölçekte gösteriyor.
+
+## Bulgular ve karşılaştırma geçmişi
+
+- İlk uygulamada başlık, sağ üst kapsam kapsülü, siyah seçim balonu, 10 ayrı halka parçası, merkezde tamamlanma sayısı, sağda renkli durum sayımları ve altta özet alanı aynı hiyerarşide kuruldu.
+- P0/P1/P2 fark bulunmadı. Mobil sütun genişliği nedeniyle kaynakta üst üste binen seçim balonu uygulamada halka satırının hemen üstünde konumlanıyor; bu, metnin kırpılmasını önleyen kabul edilebilir responsive uyarlamadır.
+- P3: Kaynaktaki balonun küçük üçgen kuyruğu uygulanmadı. Balonun seçili segmenti metin ve renk noktasıyla açıkça belirtmesi nedeniyle kullanım etkilenmiyor.
+
+## Zorunlu yüzey kontrolü
+
+- Font/tipografi: Plus Jakarta Sans; başlık, merkez sayı, legend ve yardımcı metin ağırlıkları kaynak hiyerarşisiyle uyumlu ve kırpılmıyor.
+- Boşluk/yerleşim: 10 parçalı halka ile legend tek satır düzeninde; 393 pt genişlikte taşma yok. Bilgi alanı ve mevcut firma kartı ayrı yüzeyler olarak okunuyor.
+- Renk/token: Kaynak yeşil/lavanta/turuncu ayrımı uygulamanın marka yeşili, erişilebilir lavanta, turuncu ve nötr gri durum renkleriyle korunuyor.
+- Görüntü/ikon: Kaynakta raster içerik yok. Uygulama sistem ikonlarını ve native SwiftUI şekillerini keskin, çözünürlük bağımsız olarak kullanıyor.
+- Metin/içerik: Kullanıcının belirttiği 10 başlık gerçek durum verisinden hesaplanıyor; tarihli modüllerde süresi geçen, yaklaşan veya takipsiz kayıt “Kontrol gerekli” sayılıyor.
+
+## Etkileşim ve doğrulama
+
+- Her halka parçası ayrı 44 pt üzeri erişilebilir düğmedir; telefonda dokunma, işaretçi bulunan cihazlarda hover seçimi değiştirir.
+- `NovaPilotUITests/testCompanyDetailShowsCompactSectionsWithoutTrackingCard`: passed; 10 segment ve Risk Analizi dokunma durumu doğrulandı.
+- Simulator build ve `scripts/isg/nova_wizard_expansion.test.mjs` (9/9): passed.
+
 final result: passed

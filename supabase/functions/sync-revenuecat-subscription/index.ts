@@ -725,6 +725,22 @@ serve(async (req) => {
   }
 
   if (resolved.tier === "free") {
+    if (
+      previousSubscription?.source === "referral_reward" &&
+      isActivePaidBackendSubscription(previousSubscription)
+    ) {
+      return json(200, {
+        ok: true,
+        tier: previousSubscription.tier ?? "plus",
+        status: previousSubscription.status ?? "active",
+        entitlement_id: previousSubscription.entitlement_id ?? "plus",
+        product_id: previousSubscription.product_id ?? null,
+        current_period_ends_at:
+          previousSubscription.current_period_ends_at ?? null,
+        revenuecat_tier: "free",
+        sponsor_reward_preserved: true,
+      });
+    }
     await writeFreeSubscriptionState(supabase, user.id, "revenuecat_sync");
 
     return json(200, {

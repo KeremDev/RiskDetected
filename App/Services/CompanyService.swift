@@ -15,6 +15,13 @@ final class CompanyService {
     private let supabase = SupabaseService.shared
 
     func listCompanies(includeArchived: Bool = false) async throws -> [Company] {
+        let ticket = NovaExpertTransport.shared.capture()
+        if ticket?.access.workspaceID != nil {
+            struct Result: Decodable { let rows: [Company] }
+            let data = try await NovaExpertTransport.shared.execute("isg_expert_companies_v1",
+                params: ["p_archived": includeArchived], ticket: ticket)
+            return try JSONDecoder().decode(Result.self, from: data).rows
+        }
         do {
             let rows: [Company]
             if includeArchived {
@@ -47,6 +54,7 @@ final class CompanyService {
     }
 
     func saveCompany(_ draft: CompanyDraft) async throws -> Company {
+        try requirePersonalCompanyManagement()
         guard let userID = supabase.currentUserID else {
             throw AnalysisService.AnalysisError.notAuthenticated
         }
@@ -60,6 +68,14 @@ final class CompanyService {
                 let hazard_class: String
                 let logo_path: String?
                 let address: String?
+                let city: String?
+                let phone: String?
+                let nace_code: String?
+                let workplace_registry_no: String?
+                let workplace_profile: CompanyWorkplaceProfile?
+                let workplace_profiles: [CompanyWorkplaceProfile]
+                let responsible_contacts: [CompanyResponsibleContact]
+                let departments: [String]
                 let contact_person: String?
                 let department: String?
                 let default_responsible: String?
@@ -70,6 +86,14 @@ final class CompanyService {
                 hazard_class: draft.hazardClass.rawValue,
                 logo_path: draft.logoPath,
                 address: draft.address.trimmedNonEmpty,
+                city: draft.city.trimmedNonEmpty,
+                phone: draft.phone.trimmedNonEmpty,
+                nace_code: draft.naceCode.trimmedNonEmpty,
+                workplace_registry_no: draft.workplaceRegistryNo.trimmedNonEmpty,
+                workplace_profile: draft.workplaceProfile,
+                workplace_profiles: draft.workplaceProfiles,
+                responsible_contacts: draft.responsibleContacts,
+                departments: draft.departments,
                 contact_person: draft.contactPerson.trimmedNonEmpty,
                 department: draft.department.trimmedNonEmpty,
                 default_responsible: draft.defaultResponsible.trimmedNonEmpty,
@@ -96,6 +120,14 @@ final class CompanyService {
                 let hazard_class: String
                 let logo_path: String?
                 let address: String?
+                let city: String?
+                let phone: String?
+                let nace_code: String?
+                let workplace_registry_no: String?
+                let workplace_profile: CompanyWorkplaceProfile?
+                let workplace_profiles: [CompanyWorkplaceProfile]
+                let responsible_contacts: [CompanyResponsibleContact]
+                let departments: [String]
                 let contact_person: String?
                 let department: String?
                 let default_responsible: String?
@@ -107,6 +139,14 @@ final class CompanyService {
                 hazard_class: draft.hazardClass.rawValue,
                 logo_path: draft.logoPath,
                 address: draft.address.trimmedNonEmpty,
+                city: draft.city.trimmedNonEmpty,
+                phone: draft.phone.trimmedNonEmpty,
+                nace_code: draft.naceCode.trimmedNonEmpty,
+                workplace_registry_no: draft.workplaceRegistryNo.trimmedNonEmpty,
+                workplace_profile: draft.workplaceProfile,
+                workplace_profiles: draft.workplaceProfiles,
+                responsible_contacts: draft.responsibleContacts,
+                departments: draft.departments,
                 contact_person: draft.contactPerson.trimmedNonEmpty,
                 department: draft.department.trimmedNonEmpty,
                 default_responsible: draft.defaultResponsible.trimmedNonEmpty,
@@ -129,6 +169,7 @@ final class CompanyService {
     }
 
     func archiveCompany(_ company: Company) async throws {
+        try requirePersonalCompanyManagement()
         struct Payload: Encodable {
             let is_archived: Bool
         }
@@ -146,6 +187,7 @@ final class CompanyService {
     }
 
     func uploadLogo(_ image: UIImage, companyID: UUID) async throws -> String {
+        try requirePersonalCompanyManagement()
         guard let userID = supabase.currentUserID else {
             throw AnalysisService.AnalysisError.notAuthenticated
         }
@@ -174,6 +216,13 @@ final class CompanyService {
             .from(RDConfig.Bucket.logos)
             .download(path: path)
         return UIImage(data: data)
+    }
+
+    private func requirePersonalCompanyManagement() throws {
+        let transport = NovaExpertTransport.shared
+        let ticket = transport.capture()
+        try transport.validate(ticket)
+        guard ticket?.access.canManageCompany != false else { throw NovaPersonnelFailure.denied }
     }
 
     private func normalizedCompanyError(_ error: Error) -> Error {

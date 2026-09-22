@@ -137,6 +137,8 @@ struct NovaAppointmentSheet: View {
     @State private var saving = false
     @State private var openChooser: String?
     @State private var personSearch = ""
+    @State private var step = 0
+    @State private var saved = false
     @Environment(\.colorScheme) private var scheme
 
     init(draft: NovaAppointmentDraft, catalogue: NovaAppointmentCatalogue?, fileClient: NovaFileLibraryClient,
@@ -158,7 +160,10 @@ struct NovaAppointmentSheet: View {
     private var matchingEmployees: [NovaAppointmentCatalogue.Employee] {
         let all = catalogue?.employees ?? []
         let needle = personSearch.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !needle.isEmpty else { return all }
+        // Large personnel registers must not render in full just because the
+        // picker opened. Wait for a search term, then filter the already scoped
+        // company catalogue locally.
+        guard !needle.isEmpty else { return [] }
         return all.filter { $0.fullName.localizedCaseInsensitiveContains(needle) }
     }
 
@@ -174,188 +179,157 @@ struct NovaAppointmentSheet: View {
     }
 
     var body: some View {
-        NovaPopup {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    NovaPopupHeading(text: RDLocalization.string("localizable.nova.appointment.form.title",
-                        table: .localizable, fallback: "Görev ver"), symbol: "person.badge.plus")
-
-                    fieldCard("person.2") {
-                        NovaFileChooserButton(
-                            label: RDLocalization.string("localizable.nova.appointment.form.person",
-                                table: .localizable, fallback: "Personel"),
-                            value: personTitle, isOpen: openChooser == "person",
-                            identifier: "nova.appointment.form.person") {
-                            openChooser = openChooser == "person" ? nil : "person"
+        Group {
+            if saved {
+                NovaTaskSuccessView(title: "Atama kaydedildi",
+                    message: "Görev, süre ve varsa atama yazısı personel kaydına eklendi.",
+                    doneTitle: "Atamalara dön", onDone: onClose)
+            } else {
+                NovaPageSurface(onEdgeBack: goBack) {
+                    VStack(spacing: 0) {
+                        NovaTaskHeader(title: "Görev ver", step: step + 1, total: 4,
+                            stepTitle: ["Personel ve işyeri", "Görev ve dayanak", "Tarih", "Dosya ve kontrol"][step],
+                            onClose: goBack)
+                            .padding(.horizontal, 18).padding(.top, 10)
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 12) {
+                                stepContent
+                                if let failure { NovaTaskErrorSummary(message: failure) }
+                            }.padding(20).padding(.bottom, 18)
                         }
-                        if openChooser == "person" {
-                            // Firma zaten seçili: burada yalnız o firmanın
-                            // personeli içinde arama yapılır.
-                            NovaAnalysisSearchField(text: $personSearch,
-                                placeholder: RDLocalization.string("localizable.nova.appointment.form.person.search",
-                                    table: .localizable, fallback: "Personel ara"),
-                                identifier: "nova.appointment.form.person.search")
-                            if matchingEmployees.isEmpty {
-                                NovaText(text: RDLocalization.string("localizable.nova.appointment.form.person.empty",
-                                    table: .localizable, fallback: "Eşleşen personel yok"), style: .meta,
-                                    color: NovaColorToken.textSecondary.color(in: scheme))
-                            } else {
-                                NovaFileChooserPanel(
-                                    options: matchingEmployees.map { .init(id: $0.id.uuidString, title: $0.fullName) },
-                                    selected: draft.employeeID?.uuidString,
-                                    identifier: "nova.appointment.form.person.panel") { value in
-                                    draft.employeeID = value.flatMap(UUID.init(uuidString:))
-                                    openChooser = nil
-                                    personSearch = ""
-                                }
-                            }
+                        .scrollDismissesKeyboard(.interactively)
+                        .safeAreaInset(edge: .bottom, spacing: 0) {
+                            NovaTaskStickyActions(primaryTitle: step == 3 ? "Atamayı kaydet" : "Devam",
+                                primarySymbol: step == 3 ? "checkmark" : "arrow.right", isWorking: saving,
+                                canGoBack: true, onBack: goBack, onPrimary: advance)
                         }
-                    }
-                    // A company with no workplace has nothing to ask, and one
-                    // with exactly one gets it silently — only a real choice
-                    // among several is shown as a picker.
-                    let workplaceCount = catalogue?.workplaces.count ?? 0
-                    fieldCard("building.2") {
-                        if workplaceCount <= 1 {
-                            VStack(alignment: .leading, spacing: 4) {
-                                NovaText(text: RDLocalization.string("localizable.nova.appointment.form.workplace",
-                                    table: .localizable, fallback: "İşyeri"), style: .label,
-                                    color: NovaColorToken.textTertiary.color(in: scheme))
-                                NovaText(text: workplaceCount == 1 ? placeTitle
-                                    : RDLocalization.string("localizable.nova.appointment.form.noworkplace",
-                                        table: .localizable, fallback: "Bu firmada kayıt açılacak bir işyeri yok."),
-                                    style: .cardTitle)
-                            }
-                        } else {
-                            NovaFileChooserButton(
-                                label: RDLocalization.string("localizable.nova.appointment.form.workplace",
-                                    table: .localizable, fallback: "İşyeri"),
-                                value: placeTitle, isOpen: openChooser == "place",
-                                identifier: "nova.appointment.form.workplace") {
-                                openChooser = openChooser == "place" ? nil : "place"
-                            }
-                            if openChooser == "place" {
-                                NovaFileChooserPanel(
-                                    options: (catalogue?.workplaces ?? []).map {
-                                        .init(id: $0.id.uuidString, title: $0.name) },
-                                    selected: draft.workplaceID?.uuidString,
-                                    identifier: "nova.appointment.form.workplace.panel") { value in
-                                    draft.workplaceID = value.flatMap(UUID.init(uuidString:))
-                                    openChooser = nil
-                                }
-                            }
-                        }
-                    }
-
-                    fieldCard("person.badge.shield.checkmark") {
-                        VStack(alignment: .leading, spacing: 6) {
-                            NovaText(text: RDLocalization.string("localizable.nova.appointment.form.role",
-                                table: .localizable, fallback: "Görev"), style: .label,
-                                color: NovaColorToken.textTertiary.color(in: scheme))
-                            // Only the roles the server accepts.
-                            ForEach(catalogue?.roles
-                                ?? NovaAppointmentKind.allCases.map { .init(kind: $0, usualBasis: .appointed) }) { role in
-                                Button {
-                                    draft.kind = role.kind
-                                    // The usual basis fills the field; the expert
-                                    // still states what actually happened.
-                                    draft.basis = role.usualBasis
-                                } label: {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: draft.kind == role.kind
-                                            ? "largecircle.fill.circle" : "circle")
-                                            .font(.system(size: 13, weight: .semibold))
-                                        NovaText(text: role.kind.title, style: .body)
-                                        Spacer(minLength: 0)
-                                    }
-                                    .padding(.vertical, 6).padding(.horizontal, 9)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                            .strokeBorder(NovaColorToken.hairline.color(in: scheme), lineWidth: 1))
-                                }
-                                .buttonStyle(NovaRowPressStyle())
-                                .accessibilityIdentifier("nova.appointment.form.role.\(role.kind.rawValue)")
-                            }
-                        }
-                    }
-
-                    fieldCard("checkmark.seal") {
-                        VStack(alignment: .leading, spacing: 6) {
-                            NovaText(text: RDLocalization.string("localizable.nova.appointment.detail.basis",
-                                table: .localizable, fallback: "Dayanak"), style: .label,
-                                color: NovaColorToken.textTertiary.color(in: scheme))
-                            HStack(spacing: 6) {
-                                ForEach(catalogue?.bases ?? NovaAppointmentBasis.allCases) { basis in
-                                    Button { draft.basis = basis } label: {
-                                        HStack(spacing: 4) {
-                                            Image(systemName: basis.symbol).font(.system(size: 10, weight: .semibold))
-                                            NovaSizedText(text: basis.title, size: 10.5,
-                                                weight: draft.basis == basis ? "Bold" : "Medium")
-                                        }
-                                        .foregroundStyle(draft.basis == basis
-                                            ? NovaColorToken.accentInk.color(in: scheme)
-                                            : NovaColorToken.textSecondary.color(in: scheme))
-                                        .padding(.vertical, 6).padding(.horizontal, 9)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                                .strokeBorder(NovaColorToken.hairline.color(in: scheme), lineWidth: 1))
-                                    }
-                                    .buttonStyle(NovaRowPressStyle())
-                                    .accessibilityIdentifier("nova.appointment.form.basis.\(basis.rawValue)")
-                                }
-                                Spacer(minLength: 0)
-                            }
-                            TextField(RDLocalization.string("localizable.nova.appointment.form.basisnote",
-                                table: .localizable, fallback: "Tutanak veya karar no"), text: $draft.basisNote)
-                                .textFieldStyle(.roundedBorder)
-                                .accessibilityIdentifier("nova.appointment.form.basisnote")
-                        }
-                    }
-
-                    fieldCard("calendar") {
-                        HStack(spacing: 10) {
-                            NovaDayField(label: RDLocalization.string("localizable.nova.appointment.row.starts",
-                                table: .localizable, fallback: "Başlangıç"),
-                                value: $draft.startsOn, identifier: "nova.appointment.form.starts")
-                            NovaDayField(label: RDLocalization.string("localizable.nova.appointment.row.ends",
-                                table: .localizable, fallback: "Bitiş"),
-                                value: $draft.endsBefore, identifier: "nova.appointment.form.ends", isClearable: true)
-                        }
-                    }
-
-                    fieldCard("paperclip") {
-                        VStack(alignment: .leading, spacing: 4) {
-                            NovaText(text: RDLocalization.string("localizable.nova.appointment.form.letter",
-                                table: .localizable, fallback: "Atama yazısı"), style: .label,
-                                color: NovaColorToken.textTertiary.color(in: scheme))
-                            NovaInlineFileField(category: "personnel_document", company: fileCompany,
-                                fileClient: fileClient, assetID: $draft.letterLocation)
-                            NovaText(text: NovaAppointmentWords.letterNote, style: .meta,
-                                color: NovaColorToken.textSecondary.color(in: scheme))
-                        }
-                    }
-                    NovaHelpHint(text: NovaAppointmentWords.noQualificationNote)
-
-                    if let failure {
-                        NovaText(text: failure, style: .meta,
-                            color: NovaColorToken.statusDangerInk.color(in: scheme))
-                    }
-                    HStack(spacing: 10) {
-                        NovaButton(label: RDLocalization.string("localizable.nova.appointment.cancel",
-                            table: .localizable, fallback: "Vazgeç"), symbol: "xmark",
-                            variant: .surface, action: onClose).disabled(saving)
-                        NovaButton(label: RDLocalization.string("localizable.nova.appointment.form.save",
-                            table: .localizable, fallback: "Kaydet"), symbol: "checkmark",
-                            variant: .primary) {
-                            Task { saving = true; failure = await onSave(draft); saving = false }
-                        }
-                        .disabled(saving || draft.employeeID == nil || draft.workplaceID == nil)
                     }
                 }
-                .padding(20).novaPopupContentSize()
             }
         }
         .accessibilityIdentifier("nova.appointment.form")
+    }
+
+    @ViewBuilder private var stepContent: some View {
+        switch step {
+        case 0: personAndWorkplace
+        case 1: roleAndBasis
+        case 2: dates
+        default: fileAndReview
+        }
+    }
+
+    private var personAndWorkplace: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaHelpHint(text: "Personel ve işyeri seçimi sonraki adımlara otomatik taşınır.")
+            fieldCard("person.2") {
+                NovaFileChooserButton(label: "Personel", value: personTitle,
+                    isOpen: openChooser == "person", identifier: "nova.appointment.form.person") {
+                    openChooser = openChooser == "person" ? nil : "person"
+                }
+                if openChooser == "person" {
+                    NovaAnalysisSearchField(text: $personSearch, placeholder: "Personel ara",
+                        identifier: "nova.appointment.form.person.search")
+                    if matchingEmployees.isEmpty {
+                        NovaText(text: personSearch.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            ? "Personel adını yazarak arayın."
+                            : "Aramanızla eşleşen personel bulunamadı.", style: .metaQuiet)
+                            .padding(.vertical, 8)
+                    } else {
+                        NovaFileChooserPanel(options: matchingEmployees.map { .init(id: $0.id.uuidString, title: $0.fullName) },
+                            selected: draft.employeeID?.uuidString,
+                            identifier: "nova.appointment.form.person.panel") { value in
+                            draft.employeeID = value.flatMap(UUID.init(uuidString:)); openChooser = nil; personSearch = ""
+                        }
+                    }
+                }
+            }
+            fieldCard("building.2") {
+                let count = catalogue?.workplaces.count ?? 0
+                if count <= 1 {
+                    NovaText(text: count == 1 ? placeTitle : "Bu firmada kayıt açılacak bir işyeri yok.", style: .cardTitle)
+                } else {
+                    NovaFileChooserButton(label: "İşyeri", value: placeTitle, isOpen: openChooser == "place",
+                        identifier: "nova.appointment.form.workplace") { openChooser = openChooser == "place" ? nil : "place" }
+                    if openChooser == "place" {
+                        NovaFileChooserPanel(options: (catalogue?.workplaces ?? []).map { .init(id: $0.id.uuidString, title: $0.name) },
+                            selected: draft.workplaceID?.uuidString, identifier: "nova.appointment.form.workplace.panel") {
+                            draft.workplaceID = $0.flatMap(UUID.init(uuidString:)); openChooser = nil
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var roleAndBasis: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            fieldCard("person.badge.shield.checkmark") {
+                VStack(alignment: .leading, spacing: 6) {
+                    NovaText(text: "Görev", style: .label)
+                    ForEach(catalogue?.roles ?? NovaAppointmentKind.allCases.map { .init(kind: $0, usualBasis: .appointed) }) { role in
+                        Button { draft.kind = role.kind; draft.basis = role.usualBasis } label: {
+                            HStack { Image(systemName: draft.kind == role.kind ? "largecircle.fill.circle" : "circle"); NovaText(text: role.kind.title, style: .body); Spacer() }
+                                .frame(minHeight: 42).contentShape(Rectangle())
+                        }.buttonStyle(NovaRowPressStyle())
+                    }
+                }
+            }
+            fieldCard("checkmark.seal") {
+                VStack(alignment: .leading, spacing: 8) {
+                    NovaText(text: "Dayanak", style: .label)
+                    ForEach(catalogue?.bases ?? NovaAppointmentBasis.allCases) { basis in
+                        Button { draft.basis = basis } label: {
+                            HStack { Image(systemName: draft.basis == basis ? "checkmark.circle.fill" : "circle"); NovaText(text: basis.title, style: .body); Spacer() }
+                                .frame(minHeight: 40).contentShape(Rectangle())
+                        }.buttonStyle(NovaRowPressStyle())
+                    }
+                    TextField("Tutanak veya karar no", text: $draft.basisNote).textFieldStyle(.roundedBorder)
+                }
+            }
+            NovaWhyDisclosure { NovaText(text: "\(NovaAppointmentWords.noQualificationNote) \(NovaAppointmentWords.noRequiredCountNote)", style: .metaQuiet) }
+        }
+    }
+
+    private var dates: some View {
+        fieldCard("calendar") {
+            VStack(alignment: .leading, spacing: 12) {
+                NovaDayField(label: "Başlangıç", value: $draft.startsOn, identifier: "nova.appointment.form.starts")
+                NovaDayField(label: "Bitiş", value: $draft.endsBefore, identifier: "nova.appointment.form.ends", isClearable: true)
+            }
+        }
+    }
+
+    private var fileAndReview: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaHelpHint(text: "Atama yazısı isteğe bağlıdır; belgeyi daha sonra da ekleyebilirsiniz. \(NovaAppointmentWords.letterNote)")
+            fieldCard("paperclip") {
+                NovaInlineFileField(category: "personnel_document", company: fileCompany,
+                    fileClient: fileClient, assetID: $draft.letterLocation)
+            }
+            NovaCard(padding: 14) {
+                VStack(alignment: .leading, spacing: 8) {
+                    NovaText(text: "Atama özeti", style: .bodyStrong)
+                    NovaText(text: personTitle, style: .body)
+                    NovaText(text: "\(placeTitle) · \(draft.kind.title) · \(draft.startsOn)", style: .metaQuiet)
+                }.frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private func goBack() { failure = nil; if step > 0 { step -= 1 } else { onClose() } }
+    private func advance() {
+        failure = nil
+        if step == 0 && (draft.employeeID == nil || draft.workplaceID == nil) {
+            failure = "Personel ve işyeri seçimini tamamlayın."; return
+        }
+        if step < 3 { step += 1; return }
+        Task {
+            saving = true
+            let result = await onSave(draft)
+            saving = false
+            if let result { failure = result } else { saved = true }
+        }
     }
 
     /// A compact icon chip in front of one field's content, matching the

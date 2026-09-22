@@ -156,6 +156,8 @@ struct NovaDrillPlanSheet: View {
     @State private var failure: String?
     @State private var saving = false
     @State private var choosingPlan = false
+    @State private var step = 0
+    @State private var saved = false
     @Environment(\.colorScheme) private var scheme
 
     private var chosen: NovaDrillPlanOption? {
@@ -163,11 +165,41 @@ struct NovaDrillPlanSheet: View {
     }
 
     var body: some View {
-        NovaPopup {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    NovaPopupHeading(text: RDLocalization.string("localizable.nova.drill.form.title",
-                        table: .localizable, fallback: "Tatbikat planla"), symbol: "figure.walk")
+        Group {
+            if saved {
+                NovaTaskSuccessView(title: "Tatbikat planlandı",
+                    message: "Plan tarihi ve prova edilecek acil durum planı firma kaydına eklendi.",
+                    doneTitle: "Tatbikatlara dön", onDone: onClose)
+            } else {
+                NovaPageSurface(onEdgeBack: goBack) {
+                    VStack(spacing: 0) {
+                        NovaTaskHeader(title: "Tatbikat planla", step: step + 1, total: 3,
+                            stepTitle: ["Plan seçimi", "Tarih", "Kontrol"][step], onClose: goBack)
+                            .padding(.horizontal, 18).padding(.top, 10)
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 12) {
+                                if step == 0 { planStep }
+                                else if step == 1 { dateStep }
+                                else { reviewStep }
+                                if let failure { NovaTaskErrorSummary(message: failure) }
+                            }.padding(20).padding(.bottom, 18)
+                        }
+                        .safeAreaInset(edge: .bottom, spacing: 0) {
+                            NovaTaskStickyActions(primaryTitle: step == 2 ? "Tatbikatı planla" : "Devam",
+                                primarySymbol: step == 2 ? "checkmark" : "arrow.right", isWorking: saving,
+                                canGoBack: true, onBack: goBack, onPrimary: advance)
+                        }
+                    }
+                }
+            }
+        }
+        .preference(key: NovaPopupBusyKey.self, value: saving)
+        .accessibilityIdentifier("nova.drill.form")
+    }
+
+    private var planStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            NovaHelpHint(text: "Prova edilecek planı seçin. Plan sürümü arka planda sabitlenir ve sonraki adımlara taşınır.")
                     if catalogue?.plans.isEmpty ?? true {
                         NovaHelpHint(text: RDLocalization.string("localizable.nova.drill.empty.noplan",
                             table: .localizable,
@@ -192,39 +224,46 @@ struct NovaDrillPlanSheet: View {
                                 choosingPlan = false
                             }
                         }
-                        // The version is a fact about the plan, not a choice.
                         if let chosen {
-                            NovaHelpHint(text: String(format: RDLocalization.string(
-                                "localizable.nova.drill.form.version", table: .localizable,
-                                fallback: "Planın yürürlükteki %d. sürümü prova edilecek."), chosen.version))
+                            NovaWhyDisclosure {
+                                NovaText(text: String(format: RDLocalization.string(
+                                    "localizable.nova.drill.form.version", table: .localizable,
+                                    fallback: "Planın yürürlükteki %d. sürümü prova edilecek."), chosen.version), style: .metaQuiet)
+                            }
                         }
                     }
+        }
+    }
+
+    private var dateStep: some View {
+        VStack(alignment: .leading, spacing: 12) {
                     NovaDayField(label: RDLocalization.string("localizable.nova.drill.row.planned",
                         table: .localizable, fallback: "Planlanan"),
                         value: $draft.plannedOn, identifier: "nova.drill.form.planned")
                     NovaText(text: NovaDrillWords.planningIsNotPerforming, style: .meta,
                         color: NovaColorToken.textSecondary.color(in: scheme))
-                    if let failure {
-                        NovaText(text: failure, style: .meta,
-                            color: NovaColorToken.statusDangerInk.color(in: scheme))
-                    }
-                    HStack(spacing: 10) {
-                        NovaButton(label: RDLocalization.string("localizable.nova.drill.cancel",
-                            table: .localizable, fallback: "Vazgeç"), symbol: "xmark",
-                            variant: .surface, action: onClose).disabled(saving)
-                        NovaButton(label: RDLocalization.string("localizable.nova.drill.form.save",
-                            table: .localizable, fallback: "Planla"), symbol: "checkmark",
-                            variant: .primary) {
-                            Task { saving = true; failure = await onSave(draft); saving = false }
-                        }
-                        .disabled(saving || draft.planID == nil)
-                    }
-                }
-                .padding(20).novaPopupContentSize()
-            }
         }
-        .preference(key: NovaPopupBusyKey.self, value: saving)
-        .accessibilityIdentifier("nova.drill.form")
+    }
+
+    private var reviewStep: some View {
+        NovaCard(padding: 14) {
+            VStack(alignment: .leading, spacing: 8) {
+                NovaText(text: "Tatbikat özeti", style: .bodyStrong)
+                NovaText(text: chosen.map { $0.scope + " · " + $0.workplaceName } ?? "Plan seçilmedi", style: .body)
+                NovaText(text: draft.plannedOn, style: .metaQuiet)
+            }.frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func goBack() { failure = nil; if step > 0 { step -= 1 } else { onClose() } }
+    private func advance() {
+        failure = nil
+        if step == 0 && draft.planID == nil { failure = "Prova edilecek planı seçin."; return }
+        if step < 2 { step += 1; return }
+        Task {
+            saving = true; let result = await onSave(draft); saving = false
+            if let result { failure = result } else { saved = true }
+        }
     }
 }
 
@@ -237,55 +276,79 @@ struct NovaDrillResultSheet: View {
     let onClose: () -> Void
     @State private var failure: String?
     @State private var saving = false
+    @State private var step = 0
+    @State private var saved = false
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        NovaPopup {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    NovaPopupHeading(text: RDLocalization.string("localizable.nova.drill.result.title",
-                        table: .localizable, fallback: "Tatbikat kaydı"), symbol: "figure.walk")
-                    if !draft.planScope.isEmpty {
-                        NovaText(text: draft.planScope, style: .meta,
-                            color: NovaColorToken.textSecondary.color(in: scheme))
-                    }
-                    NovaDayField(label: RDLocalization.string("localizable.nova.drill.row.performed",
-                        table: .localizable, fallback: "Yapılan"),
-                        value: $draft.performedOn, identifier: "nova.drill.result.performed")
-                    participants
-                    VStack(alignment: .leading, spacing: 4) {
-                        NovaText(text: RDLocalization.string("localizable.nova.drill.detail.observation",
-                            table: .localizable, fallback: "Gözlem"), style: .label)
-                        TextEditor(text: $draft.observation).frame(minHeight: 60)
-                            .preference(key: NovaPopupBusyKey.self, value: saving)
-        .accessibilityIdentifier("nova.drill.result.observation")
-                    }
-                    VStack(alignment: .leading, spacing: 4) {
-                        NovaText(text: RDLocalization.string("localizable.nova.drill.detail.improvement",
-                            table: .localizable, fallback: "İyileştirme"), style: .label)
-                        TextEditor(text: $draft.improvement).frame(minHeight: 60)
-                            .accessibilityIdentifier("nova.drill.result.improvement")
-                    }
-                    if let failure {
-                        NovaText(text: failure, style: .meta,
-                            color: NovaColorToken.statusDangerInk.color(in: scheme))
-                    }
-                    HStack(spacing: 10) {
-                        NovaButton(label: RDLocalization.string("localizable.nova.drill.cancel",
-                            table: .localizable, fallback: "Vazgeç"), symbol: "xmark",
-                            variant: .surface, action: onClose).disabled(saving)
-                        NovaButton(label: RDLocalization.string("localizable.nova.drill.result.save",
-                            table: .localizable, fallback: "Kaydet"), symbol: "checkmark",
-                            variant: .primary) {
-                            Task { saving = true; failure = await onSave(draft); saving = false }
+        Group {
+            if saved {
+                NovaTaskSuccessView(title: "Tatbikat kaydedildi",
+                    message: "Tarih, katılımcılar, gözlem ve iyileştirme bilgileri firma kaydına eklendi.",
+                    doneTitle: "Tatbikatlara dön", onDone: onClose)
+            } else {
+                NovaPageSurface(onEdgeBack: goBack) {
+                    VStack(spacing: 0) {
+                        NovaTaskHeader(title: "Tatbikat kaydı", step: step + 1, total: 4,
+                            stepTitle: ["Tarih", "Katılımcılar", "Sonuçlar", "Kontrol"][step], onClose: goBack)
+                            .padding(.horizontal, 18).padding(.top, 10)
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 12) {
+                                resultStep
+                                if let failure { NovaTaskErrorSummary(message: failure) }
+                            }.padding(20).padding(.bottom, 18)
                         }
-                        .disabled(saving || draft.participants.isEmpty)
+                        .safeAreaInset(edge: .bottom, spacing: 0) {
+                            NovaTaskStickyActions(primaryTitle: step == 3 ? "Tatbikatı kaydet" : "Devam",
+                                primarySymbol: step == 3 ? "checkmark" : "arrow.right", isWorking: saving,
+                                canGoBack: true, onBack: goBack, onPrimary: advance)
+                        }
                     }
                 }
-                .padding(20).novaPopupContentSize()
             }
         }
         .accessibilityIdentifier("nova.drill.result")
+    }
+
+    @ViewBuilder private var resultStep: some View {
+        switch step {
+        case 0:
+            if !draft.planScope.isEmpty { NovaText(text: draft.planScope, style: .bodyStrong) }
+            NovaDayField(label: "Yapılan", value: $draft.performedOn,
+                identifier: "nova.drill.result.performed")
+        case 1:
+            participants
+        case 2:
+            VStack(alignment: .leading, spacing: 5) {
+                NovaText(text: "Gözlem", style: .label)
+                TextEditor(text: $draft.observation).frame(minHeight: 100)
+                    .accessibilityIdentifier("nova.drill.result.observation")
+            }
+            VStack(alignment: .leading, spacing: 5) {
+                NovaText(text: "İyileştirme", style: .label)
+                TextEditor(text: $draft.improvement).frame(minHeight: 100)
+                    .accessibilityIdentifier("nova.drill.result.improvement")
+            }
+        default:
+            NovaCard(padding: 14) {
+                VStack(alignment: .leading, spacing: 8) {
+                    NovaText(text: "Tatbikat özeti", style: .bodyStrong)
+                    NovaText(text: draft.planScope, style: .body)
+                    NovaText(text: "\(draft.performedOn) · \(draft.participants.count) katılımcı", style: .metaQuiet)
+                }.frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private func goBack() { failure = nil; if step > 0 { step -= 1 } else { onClose() } }
+    private func advance() {
+        failure = nil
+        if step == 1 && draft.participants.isEmpty { failure = "En az bir katılımcı seçin."; return }
+        if step < 3 { step += 1; return }
+        Task {
+            saving = true; let result = await onSave(draft); saving = false
+            if let result { failure = result } else { saved = true }
+        }
     }
 
     @ViewBuilder private var participants: some View {

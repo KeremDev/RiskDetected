@@ -61,7 +61,7 @@ test('the next date is filled from the period and stays the expert’s to change
   // What the saved date MEANS is still the server's call, and the popup shows
   // that answer rather than assuming the field it came from.
   assert.match(service,/dueSource: row\.due_source\.flatMap\(NovaEquipmentDueSource\.init\(rawValue:\)\)/);
-  assert.match(sheets,/detail: NovaEquipmentWords\.due\(row\.dueSource\)/);
+  assert.match(sheets,/row\.nextDueOn == nil \? "" : NovaEquipmentWords\.due\(row\.dueSource\)/);
   assert.match(code(periods),/WHEN chosen IS NULL OR chosen=derived THEN 'period' ELSE 'expert' END/);
   // A failed check has no next date to fill.
   assert.match(sheets,/if draft\.result == "fail" \{/);
@@ -90,7 +90,7 @@ test('a filed report can be corrected and the date stays editable afterwards',()
   assert.match(sheets,/client\.updateInspection\(row, entry, value\)/);
   // The date and the result are shown, never bound to an editable field.
   const sheet=sheets.slice(sheets.indexOf('struct NovaEquipmentReportEditSheet'),
-    sheets.indexOf('/// Registering equipment'));
+    sheets.indexOf('/// Starts a periodic control'));
   assert.doesNotMatch(sheet,/value: \$draft\.performedOn/);
   assert.doesNotMatch(sheet,/draft\.result = /);
   assert.match(sheet,/localizable\.nova\.equipment\.report\.edit\.hint/);
@@ -177,12 +177,14 @@ test('the company page reads the module from the same tally the module uses',()=
 });
 
 test('Periyodik Kontroller is reachable from the menu and the home summary',()=>{
-  assert.match(main,/case \.periodicChecks:\n\s+if let workspaceStore \{ workspaceDomain\(workspaceStore, \.equipment\) \} else \{ equipment \}/);
+  assert.match(main,/case \.periodicChecks:\n\s+equipment/);
+  assert.match(adapter,/NovaExpertTransport\.shared\.capture\(\)/);
   // canWrite here must not depend on a company already being selected: this
   // route is opened straight from the menu, with no company chosen yet, so
   // controller.canWrite (which requires controller.scope) would always be
   // false and silently disable every write control on the page.
-  assert.match(main,/NovaPilotEquipmentGate\(identity: identity, canWrite: ready/);
+  assert.match(main,/NovaPilotEquipmentGate\(identity: identity, canWrite: writable/);
+  assert.match(main,/private var writable: Bool \{\s*ready && \(workspaceStore\?\.selection\?\.canOperate \?\? true\)/);
   assert.match(navigation,/sharedDestinations:[\s\S]*\.periodicChecks/);
   // The home card counts records and lands on this page; it states no verdict.
   assert.match(main,/id: "equipment", value: equipmentBoard\.map \{ String\(\$0\.needsAttention\) \} \?\? "—"/);

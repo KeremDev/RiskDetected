@@ -16,7 +16,7 @@ struct NovaPilotReviewHarness: View {
     private static let employee = UUID(uuidString: "00000000-0000-4000-8000-000000000004")!
     @State private var selected = false
     @State private var create = false
-    @State private var riskPopup = false
+    @State private var riskFlowClosed = false
     @State private var navigation = NovaNavigationState(epoch: "review-only", available: [.riskAssessments, .emergencyPlans, .statistics, .companies, .findings, .newFinding, .analyses, .newAnalysis, .documentChecklist, .documents, .periodicChecks])
     @State private var draft = NovaAnalysisIntakeDraft()
     @State private var showingReviewReports = false
@@ -27,6 +27,9 @@ struct NovaPilotReviewHarness: View {
     /// Review-only: assigning in the fixture flips the same screen into its
     /// with-a-company shape, so the transfer step can be seen as well.
     @State private var reviewAssigned = false
+    init() {
+        _selected = State(initialValue: CommandLine.arguments.contains("RD_UI_TEST_COMPANY_PROGRESS"))
+    }
     private var identity: NovaSessionIdentity { .init(userID: Self.owner, sessionID: Self.session) }
     private var scope: NovaPersonnelScope { .init(ownerID: Self.owner, sessionID: Self.session, companyID: Self.company, epoch: "review-only") }
     private var row: NovaEmployeeRow { .init(id: Self.employee, ownerID: Self.owner, companyID: Self.company, name: "Ada Kaya", departmentID: nil, departmentName: nil, version: 0, isArchived: false) }
@@ -74,14 +77,32 @@ struct NovaPilotReviewHarness: View {
     }
     var body: some View {
         Group {
-        if CommandLine.arguments.contains("RD_UI_TEST_AUDIT_ANALYSIS") {
+        if CommandLine.arguments.contains("RD_UI_TEST_CHECKLIST_PICKER") {
+            NovaChecklistStartFlowScreen(client: reviewChecklistClient, initialCompany: nil,
+                onStarted: { _ in }, onClose: {})
+        } else if CommandLine.arguments.contains("RD_UI_TEST_REPORT_CENTER") {
+            NovaReportCenter(identity: identity, onBack: {})
+        } else if CommandLine.arguments.contains("RD_UI_TEST_COMPANY_WIZARD") {
+            NovaPilotCompanyCreateView(identity: identity,
+                service: .init(rpc: { endpoint, _ in
+                    Data("{\"schema_version\":\(endpoint.hasSuffix("v3") ? 3 : 2),\"company\":{\"id\":\"\(Self.company)\",\"user_id\":\"\(Self.owner)\",\"name\":\"Fixture company\",\"hazard_class\":\"medium\",\"is_archived\":false},\"replayed\":false}".utf8)
+                }, currentIdentity: { identity }, storage: NovaReviewStorage()), onCreated: { _ in })
+        } else if CommandLine.arguments.contains("RD_UI_TEST_AUDIT_ANALYSIS") {
             analysisReview(.analyses)
         } else if CommandLine.arguments.contains("RD_UI_TEST_AUDIT_FINDING") {
             analysisReview(.findings)
+        } else if CommandLine.arguments.contains("RD_UI_TEST_RISK_POPUP") && !riskFlowClosed {
+            NovaRiskScreen(client: reviewRiskClient, onBack: { riskFlowClosed = true },
+                initialCompany: CommandLine.arguments.contains("RD_UI_TEST_POPUP_SELECTED") ? Self.company : nil,
+                startInAddMode: true)
         } else {
         NovaExpertShell(navigation: $navigation, userName: "Tasarım Provası", connectionLabel: "Sentetik veriler · canlı bağlantı yok",
             onCompanyCreate: { create = true },
-            onDestination: { destination in if destination == .companies { selected = false } }) { destination in
+            onDestination: { destination in
+                if destination == .companies && !CommandLine.arguments.contains("RD_UI_TEST_COMPANY_PROGRESS") {
+                    selected = false
+                }
+            }) { destination in
             if destination == .riskAssessments {
                 NovaRiskScreen(client: reviewRiskClient, onBack: { navigation.apply(.navigate(.home), from: navigation.epoch) })
             } else if destination == .emergencyPlans {
@@ -107,26 +128,17 @@ struct NovaPilotReviewHarness: View {
             }
         }
         }
-        .novaPopupCover(isPresented: $create) {
-            NovaPopup {
+        .novaFullScreenCover(isPresented: $create) {
             NovaPilotCompanyCreateView(identity: identity,
                 service: .init(rpc: { endpoint, _ in
                     Data("{\"schema_version\":\(endpoint.hasSuffix("v3") ? 3 : 2),\"company\":{\"id\":\"\(Self.company)\",\"user_id\":\"\(Self.owner)\",\"name\":\"Fixture company\",\"hazard_class\":\"medium\",\"is_archived\":false},\"replayed\":false}".utf8)
                 }, currentIdentity: { identity }, storage: NovaReviewStorage()), onCreated: { _ in })
-            }
-        }
-        // Opened straight into its create form, so the screen is a NovaPopup
-        // from its first frame and arrives like one.
-        .novaPopupCover(isPresented: $riskPopup) {
-            NovaRiskScreen(client: reviewRiskClient, onBack: { riskPopup = false },
-                initialCompany: CommandLine.arguments.contains("RD_UI_TEST_POPUP_SELECTED") ? Self.company : nil,
-                startInAddMode: true)
         }
         .modifier(NovaSuccessPresentation())
         .onAppear {
+            if CommandLine.arguments.contains("RD_UI_TEST_COMPANY_PROGRESS") { selected = true }
             if CommandLine.arguments.contains("RD_UI_TEST_RISK_LIST") { navigation.apply(.navigate(.riskAssessments), from: navigation.epoch) }
             if CommandLine.arguments.contains("RD_UI_TEST_EMERGENCY_LIST") { navigation.apply(.navigate(.emergencyPlans), from: navigation.epoch) }
-            if CommandLine.arguments.contains("RD_UI_TEST_RISK_POPUP") { riskPopup = true }
             if CommandLine.arguments.contains("RD_UI_TEST_USABILITY_POPUP") { create = true }
             if CommandLine.arguments.contains("RD_UI_TEST_STATISTICS") {
                 navigation.apply(.navigate(.statistics), from: navigation.epoch)
@@ -138,6 +150,60 @@ struct NovaPilotReviewHarness: View {
                 navigation.apply(.navigate(.findings), from: navigation.epoch)
             }
         }
+    }
+
+    private var reviewChecklistClient: NovaChecklistClient {
+        let items = (1...10).map { index in
+            NovaChecklistTemplateItem(itemCode: "acil-\(index)",
+                prompt: [
+                    "Çalışma alanından en yakın acil çıkışa kesintisiz geçiş sağlanıyor mu?",
+                    "Acil çıkış kapısı anahtar aramayı gerektirmeyen düzende mi?",
+                    "Tahliye yönlendirmeleri güzergâh değişim noktalarında görülebiliyor mu?",
+                    "Acil aydınlatmanın uygun kontrol kaydı mevcut mu?",
+                    "Toplanma alanı işaretli ve başka amaçla işgal edilmemiş mi?"
+                ][(index - 1) % 5], position: index, atomicItemCode: "atomic-\(index)",
+                sectionTitle: "Acil durum", scopeKey: nil, allowsNotApplicable: true,
+                verificationMethod: "Saha gözlemi", helpText: nil, tags: ["acil durum"],
+                riskTopic: "Tahliye", naReasonRequired: true, evidenceRecommended: false,
+                photoRequired: false, sourceIDs: ["arka-plan-kaynak-\(index)"])
+        }
+        let starters = [
+            NovaChecklistStarter(templateCode: "emergency-retail", title: "Acil durum ve tahliye hazırlığı",
+                version: 3, items: 10, isProduct: true, catalogTemplateCode: "emergency-retail",
+                sectorCode: "retail", kind: "hazard", scopeNote: "Perakende ve mağazacılık için başlangıç listesi.",
+                professionalReviewStatus: "approved"),
+            NovaChecklistStarter(templateCode: "eyewash", title: "Acil duş ve göz yıkama istasyonu",
+                version: 2, items: 10, isProduct: true, catalogTemplateCode: "eyewash",
+                sectorCode: "manufacturing", kind: "equipment", scopeNote: "Kimyasal çalışma alanları için.",
+                professionalReviewStatus: "approved"),
+            NovaChecklistStarter(templateCode: "open-weather", title: "Açık alanda sıcak, soğuk ve hava koşulları",
+                version: 1, items: 10, isProduct: true, catalogTemplateCode: "open-weather",
+                sectorCode: "construction", kind: "hazard", scopeNote: "Açık alan çalışmaları için.",
+                professionalReviewStatus: "approved")
+        ]
+        let catalogue = NovaChecklistCatalogue(workplaces: [.init(id: Self.workplace, name: "Merkez tesis", needsReview: false)],
+            starters: starters, productTemplatesOffered: true, catalogVersion: "2026.09",
+            publicationStatus: "pilot_approved", professionalReviewStatus: "approved")
+        let detail: (String) -> NovaChecklistTemplateDetail = { code in
+            let starter = starters.first(where: { $0.templateCode == code }) ?? starters[0]
+            return .init(templateCode: starter.templateCode, catalogTemplateCode: starter.catalogTemplateCode,
+                catalogVersion: "2026.09", title: starter.title, sectorCode: starter.sectorCode,
+                kind: starter.kind, aliases: [], scopeNote: starter.scopeNote,
+                sourceIDs: ["arka-plan-kaynak"], isProduct: true,
+                professionalReviewStatus: "approved", version: starter.version, items: items)
+        }
+        return .init(catalogue: { _ in catalogue }, library: { _, _, _, _ in
+            .init(catalogVersion: "2026.09", publicationStatus: "pilot_approved",
+                professionalReviewStatus: "approved", sectors: [], rows: [], matchedItems: [], total: 0, limit: 20, offset: 0)
+        }, templateDetail: { detail($0) }, templates: { _ in [] }, assignments: { _ in [] },
+            board: { query in .init(rows: [], counts: [:], companies: [], total: 0, hasMore: false, offset: query.offset) },
+            companies: { reviewCompanies }, detail: { _ in throw NovaChecklistFailure.unavailable },
+            startRun: { _, _, _, _, _, _, _ in nil }, answer: { _, _ in nil },
+            uploadEvidence: { _, _ in UUID() }, submit: { _, _, _ in nil }, cancel: { _, _, _ in nil },
+            revise: { _, _, _, _ in nil }, draftTemplate: { _, _ in }, setItem: { _, _, _, _, _, _, _, _ in },
+            copyItems: { _, _, _, _, _ in }, reorderItems: { _, _, _, _, _ in }, removeItem: { _, _, _, _, _ in },
+            publishTemplate: { _, _, _, _, _ in }, copyTemplate: { _, _, _ in }, assignTemplate: { _, _, _ in },
+            deactivateAssignment: { _, _ in }, pendingAnswers: { (0, 0) }, syncPendingAnswers: { (0, 0) })
     }
 
     // MARK: synthetic analysis surface

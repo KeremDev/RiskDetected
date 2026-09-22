@@ -6,7 +6,7 @@ final class NovaStatisticsUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["RD_UI_TEST_MAIN","RD_UI_TEST_NOVA_REVIEW","RD_UI_TEST_STATISTICS"]
         app.launch(); defer { app.terminate() }
-        XCTAssertTrue(app.staticTexts["PORTFÖYÜNÜZ"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["Portföyünüz"].waitForExistence(timeout: 20))
         capture(app,"statistics-overview")
         app.buttons["nova.statistics.period"].tap()
         app.buttons["nova.statistics.period.options.12"].tap()
@@ -22,7 +22,7 @@ final class NovaStatisticsUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["01.07.2026 – 14.09.2026"].waitForExistence(timeout: 5))
         app.buttons["nova.statistics.company"].tap()
         app.buttons["Atlas Metal Sanayi"].tap()
-        XCTAssertTrue(app.staticTexts["48"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label == %@", "Personel, 48")).firstMatch.waitForExistence(timeout: 5))
         app.swipeUp()
         let chart = app.descendants(matching: .any).matching(identifier:"nova.statistics.chart").firstMatch
         XCTAssertTrue(chart.waitForExistence(timeout: 5))
@@ -46,14 +46,14 @@ final class NovaStatisticsUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["RD_UI_TEST_MAIN","RD_UI_TEST_NOVA_REVIEW","RD_UI_TEST_STATISTICS","RD_UI_TEST_STATISTICS_EMPTY"]
         app.launch()
-        XCTAssertTrue(app.staticTexts["PORTFÖYÜNÜZ"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["Portföyünüz"].waitForExistence(timeout: 20))
         app.swipeUp()
         XCTAssertTrue(app.staticTexts["Bu dönemde henüz kayıt yok."].waitForExistence(timeout: 5))
         capture(app,"statistics-empty"); app.terminate()
         app.launchArguments = ["RD_UI_TEST_MAIN","RD_UI_TEST_NOVA_REVIEW","RD_UI_TEST_STATISTICS","RD_UI_TEST_STATISTICS_ERROR"]
         app.launch(); defer { app.terminate() }
         XCTAssertTrue(app.staticTexts["Veriler alınamadı"].waitForExistence(timeout: 20))
-        XCTAssertFalse(app.staticTexts["PORTFÖYÜNÜZ"].exists)
+        XCTAssertFalse(app.staticTexts["Portföyünüz"].exists)
         app.buttons["Tekrar dene"].tap()
         XCTAssertTrue(app.staticTexts["Veriler alınamadı"].waitForExistence(timeout: 5))
         capture(app,"statistics-error")

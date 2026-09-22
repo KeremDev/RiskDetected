@@ -101,16 +101,16 @@ struct NovaNonconformityRecordSheet: View {
             LazyVGrid(columns: [GridItem(.flexible(), alignment: .topLeading),
                                 GridItem(.flexible(), alignment: .topLeading)], spacing: 9) {
                 fact("building.2", entry.companyName)
-                if let place = entry.workplaceName { fact("mappin", place) }
+                if let place = entry.workplaceName,
+                   NovaSectorMatch.normalize(place) != NovaSectorMatch.normalize(entry.companyName) {
+                    fact("mappin", String(format: RDLocalization.string("localizable.nova.nonconformity.workplace.value", table: .localizable,
+                        fallback: "İşyeri · %@"), place))
+                }
                 fact("calendar", current.opened_on)
                 if let due = current.due_on { fact("clock", due) }
                 if let closed = current.closed_on { fact("checkmark.seal", closed) }
                 if let who = current.assignee_contact, !who.isEmpty { fact("person.crop.rectangle", who) }
-                if current.camefromFinding || current.camefromExpertItem {
-                    fact("sparkle", current.camefromFinding
-                        ? RDLocalization.string("localizable.nova.nonconformity.from.analysis", table: .localizable, fallback: "Fotoğraf analizinden geldi")
-                        : RDLocalization.string("localizable.nova.nonconformity.from.expert", table: .localizable, fallback: "Uzman görüşü maddesinden geldi"))
-                }
+                fact(current.sourceSymbol, current.sourceTitle)
             }
         }
     }
@@ -169,8 +169,15 @@ struct NovaNonconformityRecordSheet: View {
                         }
                     }
                 } else {
-                    NovaText(text: RDLocalization.string("localizable.nova.nonconformity.detail.empty", table: .localizable,
-                        fallback: "Bu kayıtta henüz detay yok."), style: .metaQuiet)
+                    NovaHelpHint(text: RDLocalization.string("localizable.nova.nonconformity.detail.incomplete", table: .localizable,
+                        fallback: "Bu kaydın ayrıntıları henüz tamamlanmamış. Düzenle ile gözlemi, alınacak önlemi, sorumluyu ve risk puanını ekleyebilirsiniz."))
+                    if canWrite {
+                        NovaButton(label: RDLocalization.string("localizable.nova.nonconformity.detail.complete", table: .localizable,
+                            fallback: "Kaydı tamamla"), symbol: "square.and.pencil", variant: .surface) {
+                            detail = NovaNonconformityDetailDraft(current.detail)
+                            panel = .detail
+                        }
+                    }
                 }
             }.frame(maxWidth: .infinity, alignment: .leading)
         }

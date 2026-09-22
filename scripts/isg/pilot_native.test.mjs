@@ -81,3 +81,18 @@ test('OSGB pilot opens a scoped password login without changing production OTP',
   assert.match(config, /if isOSGBPilotBundle \{[\s\S]*return URL\(string: osgbPilotSupabaseURLString\)!/);
   assert.match(config, /if isOSGBPilotBundle \{[\s\S]*return osgbPilotPublishableKey/);
 });
+
+test('OSGB pilot Google token audience is accepted by Supabase Auth config', () => {
+  const plist = readFileSync(join(ROOT, 'Config/RiskDetectedInfo.plist'), 'utf8');
+  const supabaseConfig = readFileSync(join(ROOT, 'supabase/config.toml'), 'utf8');
+  const serverClientID = plist.match(
+    /<key>GIDServerClientID<\/key>\s*<string>([^<]+)<\/string>/,
+  )?.[1];
+
+  assert.ok(serverClientID, 'GIDServerClientID must be configured');
+  assert.match(
+    supabaseConfig,
+    new RegExp(`\\[auth\\.external\\.google\\][\\s\\S]*client_id = "[^"]*${serverClientID}`),
+    'Supabase must accept the audience emitted by the native Google sign-in flow',
+  );
+});

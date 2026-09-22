@@ -15,6 +15,7 @@ enum NovaTab: String, CaseIterable, Hashable {
 }
 
 enum NovaDestination: String, CaseIterable, Hashable {
+    case activity, notebook, newNote
     case home, newFinding, findings, companies, memory, documentChecklist, documents, visits, statistics, training, reports, reportArchive, notifications, profile, newDocument, newVisit, newTraining
     case periodicChecks, newCompany
     /// P08: the workplace risk assessment record and its versions.
@@ -37,13 +38,16 @@ enum NovaDestination: String, CaseIterable, Hashable {
     case analyses, newAnalysis
     var title: String {
         switch self {
+        case .activity: return "Aktivitem"
+        case .notebook: return RDLocalization.string("localizable.nova.navigation.notebook", table: .localizable, fallback: "Kişisel Not Defteri")
+        case .newNote: return "Not ekle"
         case .newCompany: return RDLocalization.string("localizable.nova.navigation.firma.ekle.b4073323", table: .localizable, fallback: "Firma Ekle")
         case .periodicChecks: return RDLocalization.string("localizable.nova.navigation.periodic.checks", table: .localizable, fallback: "Periyodik Kontroller")
         case .riskAssessments: return RDLocalization.string("localizable.nova.navigation.risk.assessments", table: .localizable, fallback: "Risk Değerlendirmesi")
         case .checklists: return RDLocalization.string("localizable.nova.navigation.checklists", table: .localizable, fallback: "Kontrol Listeleri")
         case .emergencyPlans: return RDLocalization.string("localizable.nova.navigation.emergency.plans", table: .localizable, fallback: "Acil Durum Planları")
         case .drills: return RDLocalization.string("localizable.nova.navigation.drills", table: .localizable, fallback: "Tatbikatlar")
-        case .ppeHandovers: return RDLocalization.string("localizable.nova.navigation.ppe", table: .localizable, fallback: "KKD Zimmetleri")
+        case .ppeHandovers: return RDLocalization.string("localizable.nova.navigation.ppe", table: .localizable, fallback: "KKD Zimmet Formları")
         case .appointments: return RDLocalization.string("localizable.nova.navigation.appointments", table: .localizable, fallback: "Atama ve Temsilciler")
         case .annualWorkPlans: return RDLocalization.string("localizable.nova.navigation.annual.work.plans", table: .localizable, fallback: "Yıllık Çalışma Planı")
         case .boardMeetings: return RDLocalization.string("localizable.nova.navigation.board.meetings", table: .localizable, fallback: "Kurul ve Toplantılar")
@@ -73,6 +77,7 @@ enum NovaDestination: String, CaseIterable, Hashable {
     }
     var tab: NovaTab {
         switch self {
+        case .activity, .notebook, .newNote: return .profile
         case .newCompany: return .companies
         case .periodicChecks: return .home
         case .riskAssessments: return .home
@@ -104,6 +109,8 @@ enum NovaDestination: String, CaseIterable, Hashable {
     }
     var symbol: String {
         switch self {
+        case .activity: return "clock.arrow.circlepath"
+        case .notebook, .newNote: return "note.text"
         case .newCompany: return "building.2"
         case .periodicChecks: return "checkmark.shield"
         case .riskAssessments: return "shield.lefthalf.filled"
@@ -129,7 +136,7 @@ enum NovaDestination: String, CaseIterable, Hashable {
         case .visits: return "mappin.and.ellipse"
         case .statistics: return "chart.bar"
         case .training: return "graduationcap"
-        case .reports: return "chart.doc"
+        case .reports: return "chart.bar"
         case .reportArchive: return "archivebox"
         case .notifications: return "bell"
         case .profile: return "person"
@@ -140,7 +147,7 @@ enum NovaDestination: String, CaseIterable, Hashable {
     }
     // Historical route values remain decodable; removed product features are not offered.
     static let drawer: [Self] = [.home, .findings, .analyses, .newAnalysis, .newFinding, .companies, .newCompany, .riskAssessments, .checklists, .emergencyPlans, .drills, .ppeHandovers, .appointments, .katipContracts, .annualWorkPlans, .boardMeetings, .visits, .workPermits, .contractors, .periodicChecks, .documentChecklist, .documents, .statistics, .training, .reports, .reportArchive, .notifications]
-    static let quickAdd: [Self] = [.newCompany, .newAnalysis, .newFinding, .newDocument]
+    static let quickAdd: [Self] = [.newCompany, .newAnalysis, .newFinding, .newDocument, .newNote]
 }
 
 /// The panel is a product surface, not a role-specific screen.  Roles only
@@ -155,6 +162,7 @@ enum NovaWorkspaceRole: String, CaseIterable {
     /// Management actions are capability-gated at the shell, while the
     /// operational pages remain available to every authorized expert.
     static let sharedDestinations: Set<NovaDestination> = [
+        .activity, .notebook, .newNote,
         .riskAssessments, .statistics, .companies, .newCompany,
         .findings, .newFinding, .analyses, .newAnalysis,
         .training, .newTraining, .documentChecklist, .documents, .newDocument,
@@ -189,14 +197,10 @@ struct NovaDrawerGroup: Identifiable {
         // Written as literal keys, not a prefix + id concatenation: the
         // catalog scanner can only verify a key it can read whole.
         [
-            .init(id: "analysis",
-                  title: RDLocalization.string("localizable.nova.drawer.group.analysis", table: .localizable, fallback: "Analiz"),
+            .init(id: "analysis-audit",
+                  title: RDLocalization.string("localizable.nova.drawer.group.analysis.audit", table: .localizable, fallback: "Analiz & Denetim"),
                   symbol: "magnifyingglass",
-                  destinations: [.newAnalysis, .analyses]),
-            .init(id: "audit",
-                  title: RDLocalization.string("localizable.nova.drawer.group.audit", table: .localizable, fallback: "Denetim"),
-                  symbol: "exclamationmark.triangle",
-                  destinations: [.newFinding, .findings]),
+                  destinations: [.newAnalysis, .analyses, .newFinding, .findings]),
             .init(id: "company",
                   title: RDLocalization.string("localizable.nova.drawer.group.company", table: .localizable, fallback: "Firma"),
                   symbol: "building.2",
@@ -204,16 +208,17 @@ struct NovaDrawerGroup: Identifiable {
             .init(id: "forms",
                   title: RDLocalization.string("localizable.nova.drawer.group.forms", table: .localizable, fallback: "Formlar"),
                   symbol: "doc.text",
-                  destinations: [.checklists, .ppeHandovers, .documentChecklist, .documents, .reports, .reportArchive]),
+                  destinations: [.ppeHandovers, .workPermits, .documentChecklist, .documents]),
             .init(id: "safety",
                   title: RDLocalization.string("localizable.nova.drawer.group.safety", table: .localizable, fallback: "İş Güvenliği"),
                   symbol: "shield.lefthalf.filled",
-                  destinations: [.riskAssessments, .emergencyPlans, .appointments, .boardMeetings, .annualWorkPlans, .drills])
+                  destinations: [.riskAssessments, .emergencyPlans, .appointments, .boardMeetings, .annualWorkPlans, .drills,
+                                 .periodicChecks, .katipContracts, .checklists])
         ]
     }
-    /// Left out of every named group on purpose — each shown as its own
-    /// top-level row, same as Ana Sayfa/İstatistikler/Bildirimler.
-    static let direct: [NovaDestination] = [.home, .periodicChecks, .training, .katipContracts, .workPermits, .visits, .statistics, .notifications]
+    /// Destinations rendered by the shell's named sections. Bildirim Merkezi
+    /// intentionally stays out of the drawer and is owned by Profil.
+    static let direct: [NovaDestination] = [.home, .training, .visits, .statistics, .reports, .activity, .notebook]
 }
 
 enum NovaOverlay: String, CaseIterable { case drawer, quickAdd, notifications }

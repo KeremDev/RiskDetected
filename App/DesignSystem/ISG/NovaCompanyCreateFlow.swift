@@ -7,6 +7,14 @@ struct NovaCompanyCreateFlow<Catalogue, Content: View>: View {
     let catalogue: (UUID?) async throws -> Catalogue
     let onSelect: (UUID) -> Void
     var fixedCompany: UUID?
+    /// Long records (risk, emergency plans, training) use the same guided
+    /// full-screen task shell as the rest of the expert workspace.
+    var fullScreenTask = false
+    /// A few focused child tasks own no second wizard header after company
+    /// selection. Let the shared flow keep the title/back action above the
+    /// selected-company bar for those callers only.
+    var showsSelectedTaskHeader = false
+    var onClose: (() -> Void)? = nil
     // `content` also gets the selected company id directly, alongside the
     // catalogue. It used to be Catalogue-only, forcing every caller that
     // needed the company inside its form to stash it via `onSelect` into
@@ -30,9 +38,24 @@ struct NovaCompanyCreateFlow<Catalogue, Content: View>: View {
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        NovaPopup {
+        Group {
+            if fullScreenTask {
+                NovaPageSurface(onEdgeBack: { onClose?() }) {
+                    flowContent
+                }
+            } else {
+                NovaPopup { flowContent }
+            }
+        }
+        .onPreferenceChange(NovaCompanyBarHeightKey.self) { companyBarHeight = $0 }
+        .onPreferenceChange(NovaPopupBusyKey.self) { formBusy = $0 }
+        .task { await loadCompanies() }
+    }
+
+    @ViewBuilder private var flowContent: some View {
             if let loaded, let selected {
                 VStack(spacing: 0) {
+                    if fullScreenTask && showsSelectedTaskHeader { taskHeader }
                     HStack(spacing: 9) {
                         Image(systemName: "building.2").font(.system(size: 16, weight: .regular))
                         NovaText(text: selected.name, style: .label).lineLimit(2)
@@ -48,10 +71,33 @@ struct NovaCompanyCreateFlow<Catalogue, Content: View>: View {
                     content(loaded, selected.id).id(selected.id)
                         .transformPreference(NovaPopupHeightKey.self) { $0 += companyBarHeight }
                 }
+            } else if fullScreenTask {
+                VStack(spacing: 0) {
+                    taskHeader
+                    companyPicker(showHeading: false)
+                }
             } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
-                        NovaPopupHeading(text: title, symbol: "building.2", subtitle: "Kaydı eklemek istediğiniz firmayı seçin.")
+                companyPicker(showHeading: true).novaPopupContentSize()
+            }
+    }
+
+    private var taskHeader: some View {
+        HStack(spacing: 10) {
+            NovaBackButton { onClose?() }
+            NovaText(text: title, style: .screenTitle)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16).padding(.bottom, 8)
+    }
+
+    private func companyPicker(showHeading: Bool) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                        if showHeading {
+                            NovaPopupHeading(text: title, symbol: "building.2", subtitle: "Kaydı eklemek istediğiniz firmayı seçin.")
+                        } else {
+                            NovaHelpHint(text: "Kaydı eklemek istediğiniz firmayı seçin.")
+                        }
                         HStack {
                             Image(systemName: "magnifyingglass")
                             TextField("Firma ara", text: $search)
@@ -71,13 +117,8 @@ struct NovaCompanyCreateFlow<Catalogue, Content: View>: View {
                                 Task { await select(company) }
                             }.disabled(busy)
                         }
-                    }.padding(20).novaPopupContentSize()
-                }
-            }
+            }.padding(showHeading ? 20 : 16)
         }
-        .onPreferenceChange(NovaCompanyBarHeightKey.self) { companyBarHeight = $0 }
-        .onPreferenceChange(NovaPopupBusyKey.self) { formBusy = $0 }
-        .task { await loadCompanies() }
     }
     private func loadCompanies() async {
         busy = true; failure = nil

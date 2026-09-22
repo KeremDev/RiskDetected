@@ -24,6 +24,7 @@ final class NotificationService: NSObject, ObservableObject {
     @Published var pendingAnalysisHistoryID: UUID?
     @Published var pendingDestinationTab: RDTab?
     @Published var pendingOpenNewAnalysis = false
+    @Published var pendingOpenNotebook = false
 
     var isLoadingSettings: Bool {
         settingsLoadState == .loading
@@ -510,6 +511,10 @@ extension NotificationService: UNUserNotificationCenterDelegate {
             eventID: rawEventID.flatMap(UUID.init(uuidString:))
         )
 
+        if data?["destination"] as? String == "notebook" {
+            await MainActor.run { NotificationService.shared.pendingOpenNotebook = true }
+            return
+        }
         if data?["destination"] as? String == "new_analysis" {
             await MainActor.run {
                 NotificationService.shared.pendingOpenNewAnalysis = true

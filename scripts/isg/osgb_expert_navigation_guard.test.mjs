@@ -4,64 +4,65 @@ import { readFileSync } from 'node:fs';
 
 const read = path => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8');
 const gate = read('App/Views/Components/NovaPilotMainGate.swift');
-const store = read('App/Services/ISG/IsgWorkspaceStore.swift');
-const domain = read('App/DesignSystem/ISG/IsgWorkspaceDomainScreen.swift');
-const personnel = read('App/DesignSystem/ISG/IsgWorkspacePersonnelScreen.swift');
-const navigation = read('App/DesignSystem/ISG/NovaNavigation.swift');
-const shell = read('App/DesignSystem/ISG/NovaExpertShell.swift');
+const sharedRoot = gate.slice(gate.indexOf('struct NovaPilotRoot'));
+const transport = read('App/Services/Company/NovaExpertTransport.swift');
 
-const osgbRoot = gate.slice(gate.indexOf('private struct IsgOSGBWorkspaceRoot'),
-  gate.indexOf('private struct IsgWorkspaceMemberManagement'));
-const destinationSwitch = osgbRoot.slice(osgbRoot.indexOf('switch destination {'),
-  osgbRoot.indexOf('.preferredColorScheme'));
+test('workspace revalidation retains tenant routing and initial loading cannot mount personal transport', () => {
+  const store = read('App/Services/ISG/IsgWorkspaceStore.swift');
+  const refresh = store.slice(store.indexOf('    func refresh()'), store.indexOf('    func selectCompany('));
+  assert.match(refresh, /invalidateContent\(\)/);
+  assert.doesNotMatch(refresh, /\binvalidate\(\)/);
+  assert.match(gate, /store.selection == nil && \(store.phase == .signedOut \|\| store.phase == .loading\)/);
+});
 
-const sharedRoot = gate.slice(gate.indexOf('struct NovaPilotRoot'),
-  gate.indexOf('// MARK: - OSGB expert data adapters'));
-
-test('OSGB expert is routed into the normal expert root and home has no company selector', () => {
-  assert.match(store, /func aggregateExpertDashboard\(\)/);
-  assert.match(store, /func aggregateExpertPersonnelMetrics\(\)/);
-  assert.match(store, /for company in assignedCompanies/);
+test('both expert roles enter the actual normal expert root', () => {
   assert.match(gate, /membership\.role == "expert"[\s\S]*NovaPilotRoot\(identity: identity,[\s\S]*workspaceStore: store/);
-  assert.match(sharedRoot, /dashboardMetrics/);
-  assert.match(sharedRoot, /aggregateExpertDashboard\(\)/);
-  assert.doesNotMatch(sharedRoot.slice(sharedRoot.indexOf('case .home:'), sharedRoot.indexOf('case .statistics:')), /companySelector/);
-  assert.match(navigation, /osgbExpert:[\s\S]*subtracting\(\[\.newCompany\]\)/);
-  assert.match(shell, /if showsPhotoCapture \{/);
-  assert.match(sharedRoot, /Atandığınız firmalardaki toplam güncel kayıtlar\./);
+  assert.doesNotMatch(sharedRoot, /NovaWorkspaceExpert|IsgWorkspace\w+Screen|workspaceDomain\(/);
+  assert.doesNotMatch(gate, /struct NovaWorkspaceExpert/);
 });
 
-test('company selection does not unmount the shared expert root while dashboard reloads', () => {
-  const integrated = gate.slice(gate.indexOf('struct NovaIntegratedWorkspaceGate'),
-    gate.indexOf('private struct IsgWorkspaceChooser'));
-  const expertBranch = integrated.slice(integrated.indexOf('membership.role == "expert"'),
-    integrated.indexOf('} else if store.phase == .ready'));
-  assert.match(expertBranch, /NovaPilotRoot\(/);
-  assert.doesNotMatch(expertBranch, /store\.phase == \.ready/);
-  assert.match(sharedRoot, /if !isWorkspaceExpert && controller\.resolving/);
+test('company detail, training and module routes use the original components', () => {
+  for (const component of ['NovaCompanyWorkspace', 'NovaCompanyDestination', 'NovaTrainingHub',
+    'NovaPilotFindingsGate', 'NovaPilotRiskGate', 'NovaPilotChecklistGate',
+    'NovaPilotEquipmentGate', 'NovaPilotEmergencyGate', 'NovaPilotDrillGate',
+    'NovaPilotPPEGate', 'NovaPilotAppointmentGate', 'NovaPilotFileGate',
+    'NovaPilotDocumentGate', 'NovaPilotProcessGate']) {
+    assert.ok(sharedRoot.includes(component), component);
+  }
+  assert.match(sharedRoot, /includeArchived: true, onSelect: controller.select/);
+  assert.match(sharedRoot, /onBack: \{ controller.select\(nil\) \}/);
+  assert.match(sharedRoot, /loadSummary: \{ try await loadNovaPilotOverview/);
 });
 
-test('company rows open the shared-root tenant company detail instead of returning home', () => {
-  assert.match(sharedRoot, /NovaWorkspaceExpertCompaniesGate/);
-  assert.match(gate, /NovaWorkspaceExpertCompanyDetail/);
-  assert.match(gate, /NovaCompanyAccordion/);
-  const companyList = gate.slice(gate.indexOf('private struct NovaWorkspaceExpertCompaniesGate'),
-    gate.indexOf('private struct NovaWorkspaceExpertCompanyDetail'));
-  assert.doesNotMatch(companyList, /onSelect:[\s\S]{0,500}navigate\(\.home\)/);
+test('both roles load the same dashboard; no company selection on home', () => {
+  assert.doesNotMatch(sharedRoot, /aggregateExpertDashboard|workspaceMetrics|companySelector/);
+  assert.match(sharedRoot, /NovaDashboardScreen/);
+  assert.match(sharedRoot, /metrics: metrics/);
+  assert.match(sharedRoot, /loadNovaPilotOverview/);
 });
 
-test('shared expert destination switch connects OSGB workspace routes explicitly', () => {
-  for (const marker of [
-    'case .newFinding:', 'case .newAnalysis:', 'case .training, .newTraining:',
-    'case .newDocument:', 'case .newVisit:', 'case .newCompany:',
-    'case .memory:'
-  ]) assert.ok(sharedRoot.includes(marker), marker);
-  assert.match(sharedRoot, /workspaceDomain\(workspaceStore, \.visit, startInAddMode: true\)/);
+test('tenant access is selected in services, with no personal fallback on failure', () => {
+  assert.match(transport, /isg_expert_rpc_v1/);
+  assert.match(transport, /_expert_workspace_id/);
+  assert.match(transport, /expected == ticket/);
+  assert.match(transport, /try validate\(expected\)[\s\S]*let result: Data/);
+  assert.match(transport, /try validate\(expected\)\s+return result/);
+  assert.doesNotMatch(transport, /catch/);
+  const controller = read('App/Services/Company/NovaWorkspaceController.swift');
+  assert.match(controller, /NovaExpertTransport.shared.bind/);
+  assert.match(controller, /NovaExpertTransport.shared.release/);
 });
 
-test('quick-add routes present their editor and contractor route selects its own section', () => {
-  assert.match(domain, /var startInAddMode = false/);
-  assert.match(domain, /showingCreate = true/);
-  assert.match(personnel, /initialSection: IsgPersonnelSection = \.employee/);
-  assert.match(personnel, /_section = State\(initialValue: initialSection\)/);
+test('assigned experts operate records without inheriting company ownership', () => {
+  const company = read('App/Views/Components/NovaCompanyManagementGate.swift');
+  assert.match(company, /canManageCompany/);
+  assert.match(company, /if canManageCompany \{/);
+  assert.match(sharedRoot, /onCreate: isWorkspaceExpert \? nil/);
+});
+
+test('education continues through the original form service, scoped pending storage', () => {
+  const service = read('App/Services/Company/NovaEducationService.swift');
+  assert.match(service, /NovaExpertTransport/);
+  assert.match(service, /storageNamespace/);
+  assert.match(service, /isg_pilot_training_record_v3/);
 });

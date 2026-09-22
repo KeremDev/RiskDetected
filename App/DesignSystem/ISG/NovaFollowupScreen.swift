@@ -28,7 +28,7 @@ struct NovaFollowupPage: Decodable {
     let identity: NovaSessionIdentity
     func load(company: UUID?, status: String? = nil, query: String = "", offset: Int = 0) async throws -> NovaFollowupPage {
         try check()
-        let data = try await SupabaseService.shared.client.rpc("isg_pilot_followup_v1", params: ["p_company": PersonnelRPCValue.id(company), "p_status": status.map(PersonnelRPCValue.string) ?? .null, "p_query": .string(query), "p_offset": .number(Int64(offset))]).execute().data
+        let data = try await NovaExpertTransport.shared.execute("isg_pilot_followup_v1", params: ["p_company": PersonnelRPCValue.id(company), "p_status": status.map(PersonnelRPCValue.string) ?? .null, "p_query": .string(query), "p_offset": .number(Int64(offset))], ticket: NovaExpertTransport.shared.capture())
         try check(); try Task.checkCancellation()
         let result = try JSONDecoder().decode(NovaFollowupPage.self, from: data)
         guard result.schema_version == 1, result.owner_id == identity.userID, result.company_id == company else { throw NovaPPEFailure.denied }

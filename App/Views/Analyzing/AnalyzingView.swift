@@ -212,6 +212,8 @@ struct AnalyzingView: View {
     var photoCount: Int = 0
     var onComplete: (AnalysisResultBundle?) -> Void = { _ in }
     var onError: (String) -> Void = { _ in }
+    var identityWork: ((@escaping @MainActor (AnalysisProgressUpdate) -> Void) async throws -> UUID)? = nil
+    var onCompleteIdentity: (UUID) -> Void = { _ in }
 
     @StateObject private var progressController = AnalysisProgressController()
     @State private var workTask: Task<Void, Never>?
@@ -219,6 +221,7 @@ struct AnalyzingView: View {
     @State private var workDone = false
     @State private var minimumDisplayDone = false
     @State private var workResult: AnalysisResultBundle? = nil
+    @State private var completedIdentity: UUID?
     @State private var progressUpdate: AnalysisProgressUpdate?
     @State private var signalPulse = false
     @State private var isFinishing = false
@@ -609,24 +612,28 @@ struct AnalyzingView: View {
     // MARK: - Gercek is
 
     private func startWork() {
-        guard let work = asyncWork else {
+        guard asyncWork != nil || identityWork != nil else {
             workDone = true
             finishIfReady()
             return
         }
         workTask = Task { @MainActor in
             do {
-                let result = try await work { update in
+                let progress: @MainActor (AnalysisProgressUpdate) -> Void = { update in
                     withAnimation(.easeInOut(duration: 0.22)) {
                         progressUpdate = update
                     }
                     progressController.apply(update)
                 }
+                if let identityWork {
+                    completedIdentity = try await identityWork(progress)
+                } else if let asyncWork {
+                    workResult = try await asyncWork(progress)
+                }
                 if Task.isCancelled {
                     workTask = nil
                     return
                 }
-                workResult = result
                 workDone = true
                 finishIfReady()
             } catch {
@@ -653,7 +660,8 @@ struct AnalyzingView: View {
         Task { @MainActor in
             await progressController.complete()
             isPresented = false
-            onComplete(result)
+            if let completedIdentity { onCompleteIdentity(completedIdentity) }
+            else { onComplete(result) }
         }
     }
 }

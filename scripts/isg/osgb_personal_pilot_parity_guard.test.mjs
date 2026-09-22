@@ -10,18 +10,21 @@ const store = read('App/Services/ISG/IsgWorkspaceStore.swift');
 const gate = read('App/Views/Components/NovaPilotMainGate.swift');
 const migration = read('supabase/pilot-release/candidates/20260918020000_osgb_personal_pilot_parity.sql');
 
-test('OSGB realised training reuses the personal-pilot accordion and registered-curriculum behavior', () => {
+test('OSGB realised training uses the shared guided flow and registered-curriculum behavior', () => {
   for (const source of [
-    'IsgWorkspaceTrainingCreateEditor', 'case info, schedule, trainers, participants',
+    'IsgWorkspaceTrainingCreateEditor', 'case info, schedule, trainers, participants, review',
+    'NovaTaskHeader', 'NovaTaskStickyActions', 'topicEditor',
     'store.trainingAdvanced(.curricula)', 'applyTemplate()', 'curriculum.topics',
     'training_link_curriculum', '"action": .string("complete")', 'store.employees()'
   ]) assert.match(editors, new RegExp(source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.doesNotMatch(editors.slice(editors.indexOf('struct IsgWorkspaceTrainingCreateEditor'), editors.indexOf('struct IsgWorkspaceManualNonconformityEditor')), /NovaCompanyAccordion/);
   assert.doesNotMatch(editors, /plan_create|plan_activate|annualPlans/);
   assert.match(screen, /domain == \.training[\s\S]*IsgWorkspaceTrainingCreateEditor/);
 });
 
 test('OSGB risk revisions preserve the original assessment date and use the personal 2-4-6 period rule', () => {
-  assert.match(editors, /case kind, scope, reason/);
+  assert.match(editors, /case details, file, review/);
+  assert.match(editors, /NovaTaskHeader\(title: assessment == nil/);
   assert.match(editors, /Text\("Kısmi revizyon"\)\.tag\("partial"\)/);
   assert.match(editors, /Text\("Bilgi düzeltmesi"\)\.tag\("metadata"\)/);
   assert.match(editors, /"assessment_on": \.string\(kind == "full" \? Self\.day\(date\) : baseDate\)/);
@@ -77,7 +80,7 @@ test('personal and OSGB experts use the same root, route catalog and dashboard s
   assert.match(gate, /membership\.role == "expert"[\s\S]*NovaPilotRoot\(identity: identity,[\s\S]*workspaceStore: store/);
   assert.match(gate, /workspaceStore == nil[\s\S]*NovaWorkspaceRole\.personnel\.destinations[\s\S]*NovaWorkspaceRole\.osgbExpert\.destinations/);
   assert.match(gate, /NovaDashboardScreen\(data: osgbDashboardData/);
-  assert.match(gate, /NovaDashboardScreen\(data: \.init\([\s\S]*metrics: dashboardMetrics/);
+  assert.match(gate, /NovaDashboardScreen\(data: \.init\([\s\S]*metrics: metrics/);
   assert.match(shell, /destination != \.newCompany \|\| onCompanyCreate != nil/);
 });
 
@@ -86,7 +89,7 @@ test('statutory training presets are editable and suggest class-based validity',
     'Temel İSG Eğitimi · Az Tehlikeli', 'total: 480', 'validityYears: 3',
     'Temel İSG Eğitimi · Tehlikeli', 'total: 720', 'validityYears: 2',
     'Temel İSG Eğitimi · Çok Tehlikeli', 'total: 960', 'validityYears: 1',
-    'ForEach($topics)', 'TextField("Dakika"', 'refreshSuggestedValidity()'
+    'ForEach($topics)', 'Stepper("\\(topic.minutes) dakika"', 'refreshSuggestedValidity()'
   ]) assert.ok(editors.includes(marker), marker);
 });
 

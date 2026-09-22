@@ -72,10 +72,15 @@ struct IsgWorkspaceDomainScreen: View {
     private var rows: [IsgWorkspaceDomainRecord] {
         let source = snapshot?.rows ?? []
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !needle.isEmpty else { return source }
-        return source.filter { row in
+        let filtered = needle.isEmpty ? source : source.filter { row in
             ([row.title, row.subtitle, row.status].compactMap { $0 } + row.facts.map(\.1))
                 .contains { $0.localizedCaseInsensitiveContains(needle) }
+        }
+        return filtered.sorted {
+            let left = actionPriority($0)
+            let right = actionPriority($1)
+            if left != right { return left < right }
+            return recordTitle($0).localizedStandardCompare(recordTitle($1)) == .orderedAscending
         }
     }
 
@@ -152,9 +157,8 @@ struct IsgWorkspaceDomainScreen: View {
                             }
                         }
                     }
-                    NovaHelpHint(text: helpText)
-                    if let snapshot, !displayMetrics(snapshot.metrics).isEmpty { metrics(snapshot.metrics) }
                     search
+                    if let snapshot, !displayMetrics(snapshot.metrics).isEmpty { metrics(snapshot.metrics) }
                     if loading {
                         NovaLoadingView(message: RDLocalization.string(
                             "localizable.nova.workspace.domain.loading", table: .localizable,
@@ -192,9 +196,18 @@ struct IsgWorkspaceDomainScreen: View {
                 revision = UUID()
             }
         }
-        .novaPopup(isPresented: $showingCreate, onDismiss: { revision = UUID() }) {
+        .novaFullScreenCover(isPresented: Binding(get: { showingCreate && usesFullScreenCreate },
+            set: { if !$0 { showingCreate = false } }), onDismiss: { revision = UUID() }) {
             createEditor
         }
+        .novaPopup(isPresented: Binding(get: { showingCreate && !usesFullScreenCreate },
+            set: { if !$0 { showingCreate = false } }), onDismiss: { revision = UUID() }) { createEditor }
+    }
+
+    private var usesFullScreenCreate: Bool {
+        // Consequential records are tasks, not quick decisions. Keep their
+        // company/workplace context and progress in a full-screen flow.
+        domain != .files && domain != .personnel
     }
 
     @ViewBuilder private var createEditor: some View {
@@ -207,6 +220,10 @@ struct IsgWorkspaceDomainScreen: View {
             IsgWorkspaceManualNonconformityEditor(store: store) { showingCreate = false }
         } else if domain == .risk {
             IsgWorkspaceRiskCreateEditor(store: store) { showingCreate = false }
+        } else if domain == .emergencyPlan {
+            IsgWorkspaceEmergencyPlanCreateFlow(store: store, companyName: companyName) {
+                showingCreate = false
+            }
         } else if domain == .equipment {
             IsgWorkspaceEquipmentCreateEditor(store: store) { showingCreate = false }
         } else {
@@ -230,25 +247,13 @@ struct IsgWorkspaceDomainScreen: View {
         }.padding(.horizontal, 12).frame(minHeight: 48).novaControlBackground(cornerRadius: 16)
     }
 
-    @ViewBuilder private func metrics(_ values: [IsgWorkspaceDomainMetric]) -> some View {
-        if domain == .equipment {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(displayMetrics(values)) { metric in
-                        NovaListStat(title: metricTitle(metric.id), symbol: metricSymbol(metric.id),
-                                     value: IsgWorkspaceDisplayText.metricValue(id: metric.id, value: metric.value))
-                            .frame(width: 102)
-                    }
-                }
-            }
-        } else {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
-                ForEach(displayMetrics(values)) { metric in
-                    NovaListStat(title: metricTitle(metric.id), symbol: metricSymbol(metric.id),
-                                 value: IsgWorkspaceDisplayText.metricValue(id: metric.id, value: metric.value))
-                }
-            }
-        }
+    private func metrics(_ values: [IsgWorkspaceDomainMetric]) -> some View {
+        NovaMetricStrip(items: displayMetrics(values).map { metric in
+            .init(id: metric.id,
+                  value: IsgWorkspaceDisplayText.metricValue(id: metric.id, value: metric.value),
+                  label: metricTitle(metric.id), symbol: metricSymbol(metric.id),
+                  status: metricStatus(metric.id))
+        })
     }
 
     private func displayMetrics(_ values: [IsgWorkspaceDomainMetric]) -> [IsgWorkspaceDomainMetric] {
@@ -423,6 +428,24 @@ struct IsgWorkspaceDomainScreen: View {
         if key.contains("held") { return "person.3" }
         if key.contains("decision") { return "checklist" }
         return domain.symbol
+    }
+
+    private func metricStatus(_ key: String) -> NovaStatus {
+        if key.contains("overdue") || key.contains("expired") || key.contains("failed") { return .danger }
+        if key.contains("untracked") || key.contains("due_soon") || key.contains("upcoming") || key.contains("open") { return .warning }
+        if key.contains("valid") || key.contains("completed") || key.contains("active") || key.contains("held") { return .success }
+        return .neutral
+    }
+
+    private func actionPriority(_ row: IsgWorkspaceDomainRecord) -> Int {
+        let status = recordStatus(row) ?? ""
+        switch status {
+        case "overdue", "expired", "failed", "critical": return 0
+        case "open", "in_progress", "pending_verification", "untracked", "never_inspected", "period_unknown": return 1
+        case "due_soon", "upcoming", "draft", "planned": return 2
+        case "valid", "active", "completed", "closed", "held", "performed": return 4
+        default: return 3
+        }
     }
 
     private func recordTitle(_ row: IsgWorkspaceDomainRecord) -> String {

@@ -4,8 +4,9 @@ import Supabase
 extension NovaEquipmentCheckService {
     static func live() -> NovaEquipmentCheckService {
         let client = SupabaseService.shared.client
+        let ticket = NovaExpertTransport.shared.capture()
         return NovaEquipmentCheckService(rpc: { function, args in
-            do { return try await client.rpc(function, params: args).execute().data }
+            do { return try await NovaExpertTransport.shared.execute(function, params: args, ticket: ticket) }
             catch let error as PostgrestError {
                 guard error.code == "P0001" || error.code == "28000" else { throw NovaEquipmentFailure.unavailable }
                 switch error.message {

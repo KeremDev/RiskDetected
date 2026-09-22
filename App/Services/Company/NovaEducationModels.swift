@@ -148,7 +148,10 @@ enum NovaEducationClock {
 /// finished only when it carries what the record needs — the same rule the
 /// manual nonconformity form uses for its own accordion.
 enum NovaEducationStep: String, CaseIterable, Identifiable {
-    case info, schedule, trainers, participants
+    /// The last step is deliberately explicit: a long education form should
+    /// never make the expert hunt for the final save action after selecting
+    /// people. It is a review checkpoint, not another data-entry section.
+    case info, schedule, trainers, participants, review
     var id: String { rawValue }
 }
 
@@ -161,6 +164,9 @@ extension NovaEducationDraft {
         case .schedule: return scopes.contains { !$0.lessons.isEmpty }
         case .trainers: return trainers.contains { filled($0.name) }
         case .participants: return scopes.contains { !$0.participants.isEmpty }
+        case .review:
+            return isComplete(.info) && isComplete(.schedule) &&
+                isComplete(.trainers) && isComplete(.participants)
         }
     }
     var completedCount: Int { NovaEducationStep.allCases.filter { isComplete($0) }.count }

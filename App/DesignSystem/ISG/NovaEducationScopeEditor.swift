@@ -72,10 +72,12 @@ struct NovaEducationTopicsPopup: View {
                 scope.topics.append(.init(code: "G4-" + UUID().uuidString, group: "G4", title: "", instruction_minutes: 0))
             }
             TextField(RDLocalization.string("localizable.nova.education.topics.context", table: .localizable, fallback: "İşyeri, görev ve risk dayanağı açıklaması"), text: $scope.context_note, axis: .vertical).lineLimit(3...8)
-            Text(basic && scope.cycle == "initial"
-                ? RDLocalization.string("localizable.nova.education.topics.hint.official", table: .localizable, fallback: "Dakikalar Bakanlık rehberindeki örnek dağılımdan gelir; düzenlenebilir.")
-                : RDLocalization.string("localizable.nova.education.topics.hint.custom", table: .localizable, fallback: "Tekrar eğitimi dağılımı düzenlenebilir ürün önerisidir."))
-                .font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
+            NovaWhyDisclosure {
+                Text(basic && scope.cycle == "initial"
+                    ? RDLocalization.string("localizable.nova.education.topics.hint.official", table: .localizable, fallback: "Dakikalar Bakanlık rehberindeki örnek dağılımdan gelir; düzenlenebilir.")
+                    : RDLocalization.string("localizable.nova.education.topics.hint.custom", table: .localizable, fallback: "Tekrar eğitimi dağılımı düzenlenebilir ürün önerisidir."))
+                    .font(NovaFont.font(.meta)).foregroundStyle(NovaFont.secondaryInk)
+            }
             HStack {
                 Button(RDLocalization.string("localizable.nova.education.topics.resetdefaults", table: .localizable, fallback: "Varsayılanlara dön")) { defaults() }
                 Spacer()

@@ -519,6 +519,25 @@ async function writeSubscriptionState(params: {
   state: ResolvedSubscriberState;
   trialPatch?: TrialMetadataPatch | null;
 }) {
+  if (params.state.tier === "free") {
+    const { data: sponsorReward } = await params.supabase
+      .from("user_subscriptions")
+      .select("source,tier,status,current_period_ends_at")
+      .eq("user_id", params.userID)
+      .maybeSingle();
+    const rewardExpiresAt = Date.parse(
+      String(sponsorReward?.current_period_ends_at ?? ""),
+    );
+    if (
+      sponsorReward?.source === "referral_reward" &&
+      sponsorReward?.tier === "plus" &&
+      sponsorReward?.status === "active" &&
+      Number.isFinite(rewardExpiresAt) && rewardExpiresAt > Date.now()
+    ) {
+      return;
+    }
+  }
+
   const payload: Record<string, unknown> = {
     user_id: params.userID,
     tier: params.state.tier,

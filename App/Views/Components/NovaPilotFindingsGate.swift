@@ -45,6 +45,9 @@ struct NovaPilotFindingsGate: View {
     private var files: NovaFileLibraryService { .live() }
     private var today: String { NovaAnalysisWorkspace.todayISO() }
     private var method: RiskMethod { app.profile?.preferredMethod?.domain ?? .fineKinney }
+    private var organizationEntitlements: Bool {
+        NovaExpertTransport.shared.capture()?.access.usesOrganizationEntitlements == true
+    }
 
     var body: some View {
         Group {
@@ -63,19 +66,18 @@ struct NovaPilotFindingsGate: View {
             openAnalysis = .init(id: id)
         }) { work in
             AnalyzingView(isPresented: Binding(get: { job != nil }, set: { if !$0 { job = nil } }),
-                asyncWork: work.work, previewImage: work.preview, photoCount: work.photoCount,
-                onComplete: { bundle in
-                    guard let bundle else { job = nil; return }
+                previewImage: work.preview, photoCount: work.photoCount,
+                onError: { message in job = nil; notice = message },
+                identityWork: work.work, onCompleteIdentity: { analysisID in
                     images = []
-                    pending = bundle.analysis.id
+                    pending = analysisID
                     job = nil
-                },
-                onError: { message in job = nil; notice = message })
+                })
         }
         .novaFullScreenCover(item: $openAnalysis) { target in
             detail(target.id)
         }
-        .novaFullScreenCover(item: $record) { entry in
+        .novaPopupCover(item: $record) { entry in
             NovaPopup {
                 if entry.row.camefromFinding {
                     NovaFiledFindingSheet(entry: entry, identity: identity, preferredMethod: method,
@@ -230,7 +232,7 @@ struct NovaPilotFindingsGate: View {
             }
             intakeOpen = true
         }, onBack: { onNavigate(.findings) })
-        .novaFullScreenCover(isPresented: $intakeOpen) {
+        .novaPopupCover(isPresented: $intakeOpen) {
             NovaPopup {
                 NovaAnalysisIntakePopup(companies: companies, sectors: Self.sectorOptions, focuses: focusOptions,
                     draft: $draft, isStarting: job != nil, onStart: { intakeOpen = false; start() })
@@ -247,7 +249,7 @@ struct NovaPilotFindingsGate: View {
     private var focusOptions: [NovaAnalysisFocusOption] {
         AnalysisCanvas.all.map { canvas in
             .init(id: canvas.id, title: canvas.title, detail: canvas.body, symbol: canvas.icon,
-                  isLocked: !app.currentTier.includes(canvas.minTier),
+                  isLocked: !organizationEntitlements && !app.currentTier.includes(canvas.minTier),
                   lockLabel: canvas.minTier.title)
         }
     }
@@ -262,7 +264,7 @@ struct NovaPilotFindingsGate: View {
                 fallback: "Güvenlik terminolojisi profili tamamlanmadan analiz başlatılamaz.")
             return
         }
-        let canvases = AnalysisCanvas.all.filter { draft.focusIDs.contains($0.id) && app.currentTier.includes($0.minTier) }
+        let canvases = AnalysisCanvas.all.filter { draft.focusIDs.contains($0.id) && (organizationEntitlements || app.currentTier.includes($0.minTier)) }
         guard !canvases.isEmpty else {
             notice = RDLocalization.string("localizable.nova.analysis.focus.required", table: .localizable,
                 fallback: "Planınızın kapsadığı en az bir odak seçin.")
@@ -274,8 +276,11 @@ struct NovaPilotFindingsGate: View {
         let captured = images
         let owner = identity.userID
         job = NovaPhotoBridgeJob(work: { progress in
-            try await AnalysisService.shared.runPhotoAnalysis(userID: owner, images: captured, canvases: canvases,
-                localization: localization, analysisSector: sector, companyID: company, onProgress: progress)
+            if let backend = try NovaExpertAnalysisBackend.current() {
+                return try await backend.run(company: company, images: captured, focuses: canvases.map(\.id), sector: sector?.rawValue, progress: progress)
+            }
+            return try await AnalysisService.shared.runPhotoAnalysis(userID: owner, images: captured, canvases: canvases,
+                localization: localization, analysisSector: sector, companyID: company, onProgress: progress).analysis.id
         }, preview: captured.first, photoCount: captured.count)
     }
 
@@ -300,7 +305,8 @@ struct NovaPilotFindingsGate: View {
 
     private func detail(_ analysisID: UUID) -> some View {
         NovaAnalysisDetailScreen(analysisID: analysisID, client: detailClient(analysisID),
-            onBack: { openAnalysis = nil; boardRevision = UUID() }, canWrite: true)
+            onBack: { openAnalysis = nil; boardRevision = UUID() },
+            canWrite: NovaExpertTransport.shared.capture()?.access.canOperate ?? canWrite)
             .modifier(NovaSuccessPresentation())
     }
 
@@ -314,8 +320,8 @@ struct NovaPilotFindingsGate: View {
                 try await NovaAnalysisWorkspace.assign(analysisID: analysisID, companyID: company)
                 select(company)
             },
-            workplaces: { company in try await analysisFilingService.workplaces(analysisFilingScope(company)) },
-            file: { request in await file(request) },
+            workplaces: { company in try await analysisFilingService.filingWorkplaces(analysisFilingScope(company)) },
+            file: { request in await file(request, analysisID: analysisID) },
             edit: { try await NovaAnalysisWorkspace.edit($0) },
             remove: { try await NovaAnalysisWorkspace.remove(analysisID: analysisID, findingID: $0.id) },
             react: { item, section, reaction in
@@ -329,7 +335,15 @@ struct NovaPilotFindingsGate: View {
     }
 
     /// The server serializes company/source and returns an existing record on repeat clicks.
-    private func file(_ request: NovaAnalysisFileRequest) async -> NovaFindingOutcome {
+    private func file(_ request: NovaAnalysisFileRequest, analysisID: UUID) async -> NovaFindingOutcome {
+        do {
+            if let backend = try NovaExpertAnalysisBackend.current() {
+                let created = try await backend.file(request, analysis: analysisID)
+                boardRevision = UUID()
+                return created ? .opened : .alreadyOpen
+            }
+        } catch { return .failed(RDLocalization.string("localizable.nova.finding.file.company.failed", table: .localizable,
+            fallback: "Kayıt oluşturulamadı. Firma erişiminizi kontrol edip tekrar deneyin.")) }
         guard let company = request.companyID ?? currentScope()?.companyID else {
             return .failed(NovaNonconformityWords.failure(.denied))
         }

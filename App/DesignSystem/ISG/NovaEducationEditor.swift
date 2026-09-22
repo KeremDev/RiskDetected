@@ -5,39 +5,29 @@ import SwiftUI
 /// branch below supplies its own back control rather than relying on outer chrome.
 struct NovaEducationEntry: View {
     let identity: NovaSessionIdentity
-    let personnel: NovaPersonnelClient
     let companies: [NovaPilotCompanySummary]
     let initialCompany: UUID?
-    let catalog: [NovaTrainingCatalog]
     let original: NovaTrainingSession?
     let canWrite: Bool
     let writableCompanies: Set<UUID>
     @State private var context: NovaEducationContext?
     @State private var error: String?
-    @State private var migrate = false
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         Group {
             if context == nil && error == nil {
                 NovaPageSurface { ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity) }
-            } else if let context, original?.education != nil || (context.catalog_enabled && (original == nil || migrate)) {
+            } else if let context {
+                // Every expert context uses the same guided editor. The old
+                // single-page v2 form used to appear here whenever the
+                // catalogue rollout bit was false, which made normal experts
+                // and OSGB experts see a different product from the OSGB
+                // workspace. `catalog_enabled` now describes certificate /
+                // catalogue capabilities returned by the server; it must not
+                // choose a legacy UI. Legacy records are seeded into the same
+                // five-step editor and remain explicitly marked as migrated.
                 NovaEducationEditor(identity: identity, companies: companies, initialCompany: initialCompany,
-                    original: context.row ?? original, context: context, canWrite: canWrite && context.catalog_enabled, writableCompanies: writableCompanies)
-            } else if original?.education == nil {
-                // The pre-catalogue path: a simpler, single-session record.
-                // Kept in its own card rather than reworked here.
-                NovaPopup {
-                    VStack(spacing: 8) {
-                        if let context, context.catalog_enabled, original != nil, canWrite {
-                            NovaButton(label: RDLocalization.string("localizable.nova.education.entry.migrate", table: .localizable,
-                                fallback: "Yeni sertifika için müfredatı tamamla"), symbol: "arrow.up.doc", variant: .surface) { migrate = true }
-                                .padding(.top, 12)
-                        }
-                        if let error { NovaText(text: error, style: .meta, color: .red) }
-                        NovaTrainingSessionEditor(identity: identity, personnel: personnel, companies: companies,
-                            initialCompany: initialCompany, catalog: catalog, original: original, canWrite: canWrite, writableCompanies: writableCompanies)
-                    }
-                }
+                    original: context.row ?? original, context: context, canWrite: canWrite, writableCompanies: writableCompanies)
             } else {
                 NovaPageSurface {
                     VStack(spacing: 16) {
@@ -59,9 +49,8 @@ struct NovaEducationEntry: View {
     }
 }
 
-/// The accordion form: one step at a time, a progress bar that counts only
-/// finished steps. The reference is the manual nonconformity screen's own
-/// accordion.
+/// The guided five-step form. Only the current step is mounted at a time so
+/// the expert never has to scan a long accordion to find the next action.
 ///
 /// One training record is one curriculum, shared by every company/workplace
 /// attending it — `template` holds that shared curriculum, method, schedule
@@ -96,9 +85,7 @@ struct NovaEducationEditor: View {
     @State private var restoredDraft = false
     @State private var selectedCertificate: Selection?
     @State private var certificatesKnown: [NovaEducationContext.Certificate] = []
-    // The picture in the manual form starts open because that is what the
-    // expert has in hand; here the title is what the expert types first.
-    @State private var open: NovaEducationStep? = .info
+    @State private var currentStep: NovaEducationStep = .info
     @State private var showingTopics = false
     /// One company expanded at a time in the participants step, with its own
     /// personnel search reset whenever a different company opens.
@@ -120,7 +107,7 @@ struct NovaEducationEditor: View {
                         ProgressView().frame(maxWidth: .infinity).padding(.vertical, 40)
                     } else {
                         progress
-                        ForEach(NovaEducationStep.allCases) { step in accordion(step) }
+                        stepCard
                         if let error {
                             NovaCard(padding: 14) {
                                 NovaText(text: error, style: .metaQuiet, color: NovaColorToken.statusDangerInk.color(in: scheme))
@@ -147,7 +134,11 @@ struct NovaEducationEditor: View {
                                 fallback: "Bekleyen kaydı aynı işlemle tamamla"), symbol: "arrow.clockwise", variant: .surface) { Task { await retry() } }
                                 .disabled(busy)
                         }
-                        saveButton
+                        if currentStep == .review {
+                            saveButton
+                        } else {
+                            stepNavigation
+                        }
                         certificates
                     }
                 }.padding(20).padding(.bottom, novaTabBarInset)
@@ -185,9 +176,8 @@ struct NovaEducationEditor: View {
                 NovaPopup { NovaEducationCertificateScreen(identity: identity, session: saved, scopeID: selection.scope, personID: selection.person, canIssue: context.certificate_enabled && canWrite, documentID: selection.document, documentRevision: selection.revision) }
             }
         }
-        // Only topics/minutes open as their own popup, reached from the info
-        // step's link; everything else (cycle, method, schedule, location,
-        // who is attending) is a plain accordion step.
+        // Topics/minutes open as their own popup from the info step; the rest
+        // stay inside the guided flow.
         .novaFullScreenCover(isPresented: $showingTopics, onDismiss: { showingTopics = false; recomputeLessons() }) {
             NovaEducationTopicsPopup(scope: $template, context: context,
                 hazardLocked: !draft.scopes.isEmpty,
@@ -240,21 +230,58 @@ struct NovaEducationEditor: View {
         }.accessibilityElement(children: .combine).accessibilityIdentifier("education.progress")
     }
 
-    @ViewBuilder private func accordion(_ step: NovaEducationStep) -> some View {
-        NovaCompanyAccordion(title: title(step), symbol: symbol(step),
-            state: draft.isComplete(step) ? .complete : .missing,
-            identifier: "education.step.\(step.rawValue)",
-            expanded: Binding(get: { open == step }, set: { open = $0 ? step : nil })) {
-            VStack(alignment: .leading, spacing: 10) {
-                switch step {
-                case .info: infoStep
-                case .schedule: scheduleStep
-                case .trainers: trainersStep
-                case .participants: participantsStep
+    private var stepCard: some View {
+        NovaCard(padding: 16) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 10) {
+                    Image(systemName: symbol(currentStep))
+                        .font(.system(size: 17, weight: .semibold))
+                        .frame(width: 24)
+                    NovaText(text: title(currentStep), style: .cardTitle)
+                    Spacer(minLength: 0)
+                    NovaStatusPill(label: "\((NovaEducationStep.allCases.firstIndex(of: currentStep) ?? 0) + 1)/\(NovaEducationStep.allCases.count)",
+                        status: draft.isComplete(currentStep) ? .success : .warning)
                 }
-                advance(step)
-            }.frame(maxWidth: .infinity, alignment: .leading)
+                Divider()
+                activeStep
+            }
+        }.accessibilityIdentifier("education.current-step.\(currentStep.rawValue)")
+    }
+
+    @ViewBuilder private var activeStep: some View {
+        switch currentStep {
+        case .info: infoStep
+        case .schedule: scheduleStep
+        case .trainers: trainersStep
+        case .participants: participantsStep
+        case .review: reviewStep
         }
+    }
+
+    private var stepNavigation: some View {
+        HStack(spacing: 10) {
+            if let previous = previousStep {
+                NovaButton(label: "Geri", symbol: "chevron.left", variant: .surface) {
+                    currentStep = previous
+                }
+            }
+            Spacer(minLength: 0)
+            NovaButton(label: "Devam", symbol: "chevron.right", variant: .primary,
+                isEnabled: draft.isComplete(currentStep)) {
+                if let next = nextStep { currentStep = next }
+            }.accessibilityIdentifier("education.next.\(currentStep.rawValue)")
+        }
+        .padding(.top, 2)
+    }
+
+    private var previousStep: NovaEducationStep? {
+        guard let index = NovaEducationStep.allCases.firstIndex(of: currentStep), index > 0 else { return nil }
+        return NovaEducationStep.allCases[index - 1]
+    }
+
+    private var nextStep: NovaEducationStep? {
+        guard let index = NovaEducationStep.allCases.firstIndex(of: currentStep), index + 1 < NovaEducationStep.allCases.count else { return nil }
+        return NovaEducationStep.allCases[index + 1]
     }
 
     private func title(_ step: NovaEducationStep) -> String {
@@ -263,6 +290,7 @@ struct NovaEducationEditor: View {
         case .schedule: return RDLocalization.string("localizable.nova.education.step.schedule", table: .localizable, fallback: "Tarih, saat ve yer")
         case .trainers: return RDLocalization.string("localizable.nova.education.step.trainers", table: .localizable, fallback: "Eğiticiler")
         case .participants: return RDLocalization.string("localizable.nova.education.step.participants", table: .localizable, fallback: "Katılımcılar")
+        case .review: return "Kontrol ve kaydet"
         }
     }
     private func symbol(_ step: NovaEducationStep) -> String {
@@ -271,6 +299,7 @@ struct NovaEducationEditor: View {
         case .schedule: return "calendar.badge.clock"
         case .trainers: return "person.crop.rectangle"
         case .participants: return "person.3"
+        case .review: return "checkmark.circle"
         }
     }
     /// A finished step offers the next unfinished one instead of leaving the
@@ -278,7 +307,7 @@ struct NovaEducationEditor: View {
     @ViewBuilder private func advance(_ step: NovaEducationStep) -> some View {
         if draft.isComplete(step), let next = draft.nextIncomplete(after: step) {
             NovaButton(label: String(format: RDLocalization.string("localizable.nova.education.next", table: .localizable,
-                fallback: "Sıradaki: %@"), title(next)), symbol: "chevron.down", variant: .surface) { open = next }
+                fallback: "Sıradaki: %@"), title(next)), symbol: "chevron.down", variant: .surface) { currentStep = next }
                 .accessibilityIdentifier("education.next.\(step.rawValue)")
         }
     }
@@ -516,6 +545,35 @@ struct NovaEducationEditor: View {
             }
             ForEach(added) { company in companySection(company) }
         }.disabled(!canWrite)
+    }
+
+    /// A compact final checkpoint makes the five-step flow explicit. It
+    /// mirrors the payload that will be sent and keeps the primary action in
+    /// the same place for both new and edited records.
+    private var reviewStep: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            NovaText(text: "Kaydetmeden önce kontrol edin", style: .sectionTitle)
+            NovaCard(padding: 12) {
+                VStack(alignment: .leading, spacing: 8) {
+                    reviewRow("Eğitim", draft.title.isEmpty ? template.cycleName : draft.title)
+                    reviewRow("Toplam süre", formatDuration(template.net + template.breakTotal))
+                    reviewRow("Gün sayısı", "\(scheduleDays.count) gün")
+                    reviewRow("Eğiticiler", "\(draft.trainers.filter { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }.count) kişi")
+                    reviewRow("Katılımcılar", "\(draft.scopes.reduce(0) { $0 + $1.participants.count }) kişi")
+                    reviewRow("Firma / işyeri", draft.scopes.map { [$0.company_name, $0.workplace_name].compactMap { $0 }.joined(separator: " · ") }.joined(separator: ", "))
+                }
+            }
+            NovaText(text: "Bu özet onaylandığında eğitim kaydı ve kişi bazlı katılım bilgisi oluşturulur.", style: .metaQuiet)
+        }
+    }
+
+    private func reviewRow(_ label: String, _ value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            NovaText(text: label, style: .metaQuiet)
+            Spacer(minLength: 8)
+            NovaText(text: value.isEmpty ? "Belirtilmedi" : value, style: .bodyStrong)
+                .multilineTextAlignment(.trailing)
+        }
     }
     /// Adds a company straight from the search results: with one eligible
     /// workplace it is picked automatically (still changeable afterward via

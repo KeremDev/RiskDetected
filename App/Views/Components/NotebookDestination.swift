@@ -12,17 +12,41 @@ private func notebookRecurrenceLabel(_ recurrence: NotebookReminderRecurrence) -
     }
 }
 
-/// Local UI release gate is independent of paid capabilities. Server rollout still authorizes RPCs.
-enum NotebookUIRelease { static let enabled = false }
+/// Server owned, account-bound rollout. A previously enabled account can edit
+/// its encrypted local drafts offline; server mutations still enforce rollout.
+@MainActor final class NotebookUIRelease: ObservableObject {
+    static let shared = NotebookUIRelease()
+    @Published private(set) var enabled = false
+    func refresh() async {
+        let identity = novaCurrentSessionIdentity()
+        enabled = false
+        guard let identity else { return }
+        let cacheKey = "notebook.rollout." + identity.userID.uuidString
+        let cached = UserDefaults.standard.object(forKey: cacheKey) as? Date
+        enabled = cached.map { Date().timeIntervalSince($0) < 7 * 86400 } ?? false
+        struct Rollout: Decodable { let schema_version: Int; let enabled: Bool }
+        do {
+            let data = try await SupabaseService.shared.client.rpc("isg_notebook_rollout_v1").execute().data
+            let value = try JSONDecoder().decode(Rollout.self, from: data)
+            guard !Task.isCancelled, identity == novaCurrentSessionIdentity() else { return }
+            enabled = value.schema_version == 1 && value.enabled
+            if enabled { UserDefaults.standard.set(Date(), forKey: cacheKey) }
+            else { UserDefaults.standard.removeObject(forKey: cacheKey) }
+        } catch {
+            if identity != novaCurrentSessionIdentity() { enabled = false }
+        }
+    }
+}
 
 struct NotebookDestination: View {
+    var startWithNewNote = false
     let onClose: () -> Void
     @State private var repository = NotebookRepository(sdk: SupabaseService.shared.client)
     @State private var identity: NotebookIdentity?
     var body: some View {
         Group {
             if let identity {
-                NotebookContent(repository: repository, identity: identity, onClose: onClose)
+                NotebookContent(repository: repository, identity: identity, startWithNewNote: startWithNewNote, onClose: onClose)
                     .id(identity.owner.uuidString + identity.session.uuidString)
             } else {
                 NovaPageSurface { VStack { NovaText(text: RDLocalization.string("localizable.notebook.destination.not.defteri.icin.oturum.acin.b71c112d", table: .localizable, fallback: "Not defteri için oturum açın.")); NovaButton(label: RDLocalization.string("localizable.notebook.destination.kapat.77119d45", table: .localizable, fallback: "Kapat"), symbol: "xmark", action: onClose) }.padding(18) }
@@ -43,6 +67,8 @@ private struct NotebookEditorState {
     var body: String
     var pending: NotebookPending?
     var serverText: String?
+    var originalTitle: String?
+    var originalBody: String?
 }
 private struct NotebookOrganizationEditor {
     let note: UUID; let version: Int64
@@ -53,10 +79,27 @@ private struct NotebookReminderEditor {
     var title = ""
     var recurrence = NotebookReminderRecurrence.once
     var dueAt = Date().addingTimeInterval(60 * 60)
+    var note: UUID?
 }
 private struct NotebookContent: View {
+    private enum LibrarySection: String, CaseIterable, Identifiable {
+        case notes, reminders, drafts
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .notes: return RDLocalization.string("localizable.notebook.section.notes", table: .localizable, fallback: "Notlar")
+            case .reminders: return RDLocalization.string("localizable.notebook.section.reminders", table: .localizable, fallback: "Hatırlatıcılar")
+            case .drafts: return RDLocalization.string("localizable.notebook.section.drafts", table: .localizable, fallback: "Taslaklar")
+            }
+        }
+        var symbol: String {
+            switch self { case .notes: return "note.text"; case .reminders: return "bell"; case .drafts: return "icloud.slash" }
+        }
+    }
+    private enum EditorFocus { case title, body }
     let repository: NotebookRepository
     let identity: NotebookIdentity
+    var startWithNewNote = false
     let onClose: () -> Void
     @State private var snapshot = NotebookReader.Snapshot(notes: [], drafts: [])
     @State private var editor: NotebookEditorState?
@@ -68,25 +111,23 @@ private struct NotebookContent: View {
     @State private var confirmDelete = false
     @State private var confirmExit = false
     @State private var closeAfterExit = false
+    @State private var librarySection = LibrarySection.notes
+    @State private var searchText = ""
+    @FocusState private var editorFocus: EditorFocus?
+    @ObservedObject private var notifications = NotificationService.shared
+    @Environment(\.colorScheme) private var colorScheme
     var body: some View {
         NovaPageSurface {
             ZStack {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            NovaButton(label: RDLocalization.string("localizable.notebook.destination.kapat.fc1bf7d5", table: .localizable, fallback: "Kapat"), symbol: "chevron.left", variant: .surface) {
-                                if editor == nil && organization == nil && reminderEditor == nil { onClose() } else { closeAfterExit = true; confirmExit = true }
-                            }
-                            NovaText(text: RDLocalization.string("localizable.notebook.destination.kisisel.notlar.a3d7499d", table: .localizable, fallback: "Kişisel Notlar"), style: .screenTitle)
-                        }
-                        NovaText(text: RDLocalization.string("localizable.notebook.destination.ucretsiz.yalniz.size.ait.firmalardan.bagimsiz.0a2e3688", table: .localizable, fallback: "Ücretsiz · Yalnız size ait · Firmalardan bağımsız"), style: .metaQuiet)
-                        if let message { NovaCard(padding: 16) { Label(message, systemImage: "info.circle") } }
-                        if organization != nil { organizationFields }
-                        else if reminderEditor != nil { reminderFields }
-                        else if editor != nil { editorFields }
-                        else { list }
-                    }.padding(18)
-                }.disabled(busy || confirmDelete || confirmExit).blur(radius: confirmDelete || confirmExit ? 7 : 0)
+                VStack(spacing: 0) {
+                    topBar
+                    if organization != nil { organizationFields }
+                    else if reminderEditor != nil { reminderFields }
+                    else if editor != nil { editorFields }
+                    else { list }
+                }
+                .disabled(busy || confirmDelete || confirmExit)
+                .blur(radius: confirmDelete || confirmExit ? 7 : 0)
                 if confirmExit {
                     Color.black.opacity(0.34).ignoresSafeArea().onTapGesture { confirmExit = false }
                     NovaPopupSurface {
@@ -113,120 +154,437 @@ private struct NotebookContent: View {
                 }
                 if busy { ProgressView().accessibilityLabel(RDLocalization.string("localizable.notebook.destination.islem.suruyor.3e5058a7", table: .localizable, fallback: "İşlem sürüyor")) }
             }
-        }.preferredColorScheme(.light).task { await refresh() }.privacySensitive()
+        }.preferredColorScheme(.light).task {
+            if startWithNewNote { openNewNote() }
+            await refresh()
+        }.onReceive(NetworkMonitor.shared.$isOnline) { online in
+            if online { Task { await sync() } }
+        }.privacySensitive()
+    }
+    private var topBar: some View {
+        HStack(spacing: 12) {
+            Button(action: backAction) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 16, weight: .bold))
+                    .frame(width: 42, height: 42)
+                    .background(Circle().fill(NovaColorToken.surface.color(in: colorScheme)))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(editor == nil && organization == nil && reminderEditor == nil
+                ? RDLocalization.string("localizable.notebook.close", table: .localizable, fallback: "Kapat")
+                : RDLocalization.string("localizable.notebook.back.to.notes", table: .localizable, fallback: "Notlara dön"))
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(topBarTitle)
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundStyle(NovaColorToken.text.color(in: colorScheme))
+                Text(topBarSubtitle)
+                    .font(.caption)
+                    .foregroundStyle(NovaColorToken.textTertiary.color(in: colorScheme))
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            if editor != nil {
+                Button("Bitti") { Task { await finishEditor(closeDestination: false) } }
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(NovaColorToken.accentInk.color(in: colorScheme))
+                    .padding(.horizontal, 15).frame(height: 42)
+                    .background(Capsule().fill(NovaColorToken.accentSoft.color(in: colorScheme)))
+                    .buttonStyle(.plain)
+            } else if organization == nil && reminderEditor == nil {
+                notebookIconButton("arrow.triangle.2.circlepath", label: RDLocalization.string("localizable.notebook.destination.esitle.ec7babeb", table: .localizable, fallback: "Eşitle")) { Task { await sync() } }
+                notebookIconButton("square.and.pencil", label: RDLocalization.string("localizable.notebook.new.note", table: .localizable, fallback: "Yeni not")) { openNewNote() }
+                    .accessibilityIdentifier("notebook.add")
+            }
+        }
+        .padding(.horizontal, 18).padding(.vertical, 12)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .bottom) { Rectangle().fill(NovaColorToken.hairline.color(in: colorScheme)).frame(height: 1) }
+        .zIndex(2)
+    }
+    private var topBarTitle: String {
+        if organization != nil { return RDLocalization.string("localizable.notebook.checklist.tags", table: .localizable, fallback: "Checklist ve Etiketler") }
+        if reminderEditor != nil { return RDLocalization.string("localizable.notebook.new.reminder", table: .localizable, fallback: "Yeni Hatırlatıcı") }
+        if editor != nil { return RDLocalization.string("localizable.notebook.note", table: .localizable, fallback: "Not") }
+        return RDLocalization.string("localizable.notebook.destination.kisisel.notlar.a3d7499d", table: .localizable, fallback: "Kişisel Notlar")
+    }
+    private var topBarSubtitle: String {
+        if organization != nil { return RDLocalization.string("localizable.notebook.organization", table: .localizable, fallback: "Not düzeni") }
+        if reminderEditor != nil { return RDLocalization.string("localizable.notebook.server.notification", table: .localizable, fallback: "Sunucu bildirimi") }
+        if editor != nil { return RDLocalization.string("localizable.notebook.device.safe", table: .localizable, fallback: "Değişiklikler cihazda güvenle saklanır") }
+        return String(format: RDLocalization.string("localizable.notebook.private.count", table: .localizable,
+            fallback: "Yalnızca size ait · %d not"), snapshot.notes.count)
+    }
+    private func notebookIconButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol).font(.system(size: 16, weight: .semibold))
+                .frame(width: 42, height: 42)
+                .background(Circle().fill(NovaColorToken.surface.color(in: colorScheme)))
+        }.buttonStyle(.plain).accessibilityLabel(label)
+    }
+    private func backAction() {
+        if organization != nil || reminderEditor != nil { closeAfterExit = false; confirmExit = true }
+        else if editor != nil { Task { await finishEditor(closeDestination: false) } }
+        else { onClose() }
+    }
+    private var filteredNotes: [NotebookRecord] {
+        snapshot.notes
+            .filter { searchText.isEmpty || ($0.title ?? "").localizedCaseInsensitiveContains(searchText) || ($0.body ?? "").localizedCaseInsensitiveContains(searchText) }
+            .sorted { (NotebookReminderDate.parse($0.updated_at) ?? .distantPast) > (NotebookReminderDate.parse($1.updated_at) ?? .distantPast) }
+    }
+    private var filteredDrafts: [NotebookPending] {
+        snapshot.drafts.filter {
+            searchText.isEmpty || ($0.intent.title ?? "").localizedCaseInsensitiveContains(searchText) ||
+            ($0.intent.body ?? "").localizedCaseInsensitiveContains(searchText)
+        }
+    }
+    private var filteredReminders: [NotebookReminder] {
+        reminders.filter { $0.state == "active" && (searchText.isEmpty || $0.title.localizedCaseInsensitiveContains(searchText)) }
+            .sorted { (NotebookReminderDate.parse($0.next_occurrence?.effective_due_at ?? "") ?? .distantFuture) < (NotebookReminderDate.parse($1.next_occurrence?.effective_due_at ?? "") ?? .distantFuture) }
     }
     private var list: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            NovaButton(label: RDLocalization.string("localizable.notebook.destination.yeni.not.96d419d7", table: .localizable, fallback: "Yeni not"), symbol: "square.and.pencil") {
-                editor = .init(note: UUID(), version: 0, title: "", body: "")
-            }.accessibilityIdentifier("notebook.add")
-            NovaButton(label: RDLocalization.string("localizable.notebook.destination.esitle.ec7babeb", table: .localizable, fallback: "Eşitle"), symbol: "arrow.triangle.2.circlepath", variant: .surface) { Task { await sync() } }
-            HStack {
-                NovaText(text: RDLocalization.string("localizable.notebook.destination.hatirlaticilar.sunucu.bildirimi.1de99c40", table: .localizable, fallback: "Hatırlatıcılar · Sunucu bildirimi"), style: .cardTitle)
-                Spacer()
-                Image(systemName: "bell.badge")
-            }
-            NovaText(text: RDLocalization.string("localizable.notebook.destination.ilk.surumde.yerel.alarm.kullanilmaz.teslimat.bu..a5c0ee4a", table: .localizable, fallback: "İlk sürümde yerel alarm kullanılmaz. Teslimat, bu kurulumun yetkili bildirim kaydına bağlanır."), style: .metaQuiet)
-            NovaButton(label: RDLocalization.string("localizable.notebook.destination.yeni.hatirlatici.dbfa239c", table: .localizable, fallback: "Yeni hatırlatıcı"), symbol: "bell.badge") {
-                reminderEditor = NotebookReminderEditor()
-            }
-            ForEach(reminders.filter { $0.state == "active" }) { reminder in
-                NovaCard(padding: 18) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label(reminder.title, systemImage: "bell")
-                        NovaText(text: notebookRecurrenceLabel(reminder.recurrence) + reminderSchedule(reminder), style: .metaQuiet)
-                        if let occurrence = reminder.next_occurrence {
-                            HStack {
-                                NovaButton(label: "Tamamla", symbol: "checkmark", variant: .surface) {
-                                    Task { await settleReminder("complete", reminder: reminder, occurrence: occurrence) }
-                                }
-                                NovaButton(label: RDLocalization.string("localizable.notebook.destination.10.dk.ertele.5de1fe5a", table: .localizable, fallback: "10 dk ertele"), symbol: "clock.arrow.circlepath", variant: .surface) {
-                                    Task { await settleReminder("snooze", reminder: reminder, occurrence: occurrence) }
-                                }
-                            }
-                        }
-                        NovaButton(label: RDLocalization.string("localizable.notebook.destination.hatirlaticiyi.iptal.et.66814eec", table: .localizable, fallback: "Hatırlatıcıyı iptal et"), symbol: "bell.slash", variant: .danger) {
-                            Task { await settleReminder("cancel", reminder: reminder) }
-                        }
+        VStack(spacing: 0) {
+            VStack(spacing: 12) {
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass").foregroundStyle(NovaColorToken.textTertiary.color(in: colorScheme))
+                    TextField(RDLocalization.string("localizable.notebook.search", table: .localizable, fallback: "Notlarda ara"), text: $searchText)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    if !searchText.isEmpty {
+                        Button { searchText = "" } label: { Image(systemName: "xmark.circle.fill") }
+                            .buttonStyle(.plain).foregroundStyle(NovaColorToken.textMuted.color(in: colorScheme))
+                            .accessibilityLabel(RDLocalization.string("localizable.notebook.search.clear", table: .localizable,
+                                fallback: "Aramayı temizle"))
                     }
                 }
-            }
-            if snapshot.notes.isEmpty && snapshot.drafts.isEmpty { NovaCard(padding: 20) { Label(RDLocalization.string("localizable.notebook.destination.henuz.not.yok.01cfb913", table: .localizable, fallback: "Henüz not yok"), systemImage: "note.text") } }
-            ForEach(snapshot.drafts, id: \.intent.mutation) { pending in
-                NovaCard(padding: 18) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Label(pending.blocked == nil ? RDLocalization.string("localizable.notebook.destination.gonderilmeyi.bekliyor.303c7ae8", table: .localizable, fallback: "Gönderilmeyi bekliyor") : RDLocalization.string("localizable.notebook.destination.taslaginiz.korunuyor.islem.gerekli.9cc6b790", table: .localizable, fallback: "Taslağınız korunuyor · işlem gerekli"), systemImage: "icloud.slash")
-                        NovaText(text: pending.intent.title ?? RDLocalization.string("localizable.notebook.destination.basliksiz.not.032c1b51", table: .localizable, fallback: "Başlıksız not"), style: .cardTitle)
-                        NovaText(text: pending.intent.body ?? (pending.intent.action == "organize" ? RDLocalization.string("localizable.notebook.destination.checklist.ve.etiket.taslagi.e192ce35", table: .localizable, fallback: "Checklist ve etiket taslağı") : RDLocalization.string("localizable.notebook.destination.silme.istegi.fa696aef", table: .localizable, fallback: "Silme isteği")))
-                        if pending.intent.action == "organize" {
-                            Text((pending.intent.items ?? []).map { ($0.done ? "✓ " : "○ ") + $0.text }.joined(separator: "\n"))
-                            Text((pending.intent.tags ?? []).joined(separator: ", "))
-                            if pending.blocked == "VERSION_CONFLICT" {
-                                NovaButton(label: RDLocalization.string("localizable.notebook.destination.checklist.surumlerini.incele.97092e1b", table: .localizable, fallback: "Checklist sürümlerini incele"), symbol: "checklist", variant: .surface) { Task { await openOrganization(pending.intent.note, pending: pending) } }
+                .padding(.horizontal, 14).frame(height: 46)
+                .background(RoundedRectangle(cornerRadius: 15).fill(NovaColorToken.surface.color(in: colorScheme)))
+                .overlay(RoundedRectangle(cornerRadius: 15).stroke(NovaColorToken.border.color(in: colorScheme)))
+                .accessibilityIdentifier("notebook.search")
+
+                HStack(spacing: 6) {
+                    ForEach(LibrarySection.allCases) { section in
+                        Button {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 1)) { librarySection = section }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: section.symbol)
+                                Text(section.title)
+                                if section == .drafts && !snapshot.drafts.isEmpty {
+                                    Text("\(snapshot.drafts.count)").font(.caption2.bold())
+                                }
                             }
-                        }
-                        if pending.conflictID != nil {
-                            NovaButton(label: RDLocalization.string("localizable.notebook.destination.iki.surumu.incele.df04069e", table: .localizable, fallback: "İki sürümü incele"), symbol: "arrow.triangle.branch", variant: .surface) { Task { await resolve(pending) } }
-                        }
+                            .font(.system(size: 12.5, weight: .semibold))
+                            .foregroundStyle(librarySection == section ? NovaColorToken.onInverse.color(in: colorScheme) : NovaColorToken.textSecondary.color(in: colorScheme))
+                            .frame(maxWidth: .infinity).padding(.vertical, 10)
+                            .background(Capsule().fill(librarySection == section ? NovaColorToken.inverse.color(in: colorScheme) : .clear))
+                        }.buttonStyle(.plain)
                     }
                 }
+                .padding(4).background(Capsule().fill(NovaColorToken.surfaceMuted.color(in: colorScheme)))
+                if let message { notebookMessage(message) }
             }
-            ForEach(snapshot.notes, id: \.note_id) { note in
-                Button {
-                    editor = .init(note: note.note_id, version: note.version, title: note.title ?? "", body: note.body ?? "")
-                } label: {
-                    NovaCard(padding: 18) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Label(note.title?.isEmpty == false ? note.title! : RDLocalization.string("localizable.notebook.destination.basliksiz.not.0ceaa7da", table: .localizable, fallback: "Başlıksız not"), systemImage: "note.text")
-                            NovaText(text: note.body ?? "", style: .metaQuiet).lineLimit(3)
-                        }.frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 18).padding(.top, 14).padding(.bottom, 10)
+
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 12) {
+                    switch librarySection {
+                    case .notes: notesLibrary
+                    case .reminders: reminderLibrary
+                    case .drafts: draftsLibrary
                     }
-                }.buttonStyle(.plain).disabled(snapshot.drafts.contains { $0.intent.note == note.note_id })
-                NovaButton(label: RDLocalization.string("localizable.notebook.destination.checklist.ve.etiketler.8bf05f5e", table: .localizable, fallback: "Checklist ve etiketler"), symbol: "checklist", variant: .surface,
-                    isEnabled: !snapshot.drafts.contains { $0.intent.note == note.note_id }) { Task { await openOrganization(note.note_id) } }
+                }.padding(.horizontal, 18).padding(.top, 4).padding(.bottom, 110)
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .refreshable { await refresh() }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            Button { openNewNote() } label: {
+                Image(systemName: "square.and.pencil")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(NovaColorToken.onInverse.color(in: colorScheme))
+                    .frame(width: 58, height: 58)
+                    .background(Circle().fill(NovaColorToken.inverse.color(in: colorScheme)))
+                    .shadow(color: .black.opacity(0.18), radius: 14, y: 7)
+            }.buttonStyle(.plain).padding(22).accessibilityLabel(RDLocalization.string("localizable.notebook.new.note", table: .localizable, fallback: "Yeni not"))
+        }
+    }
+    @ViewBuilder private var notesLibrary: some View {
+        if !filteredDrafts.isEmpty {
+            libraryHeading(RDLocalization.string("localizable.notebook.device.drafts", table: .localizable, fallback: "Cihazdaki Taslaklar"), detail: "\(filteredDrafts.count)")
+            ForEach(filteredDrafts, id: \.intent.mutation) { draftRow($0, compact: true) }
+        }
+        libraryHeading(searchText.isEmpty
+            ? RDLocalization.string("localizable.notebook.recent.notes", table: .localizable, fallback: "Son Notlar")
+            : RDLocalization.string("localizable.notebook.search.results", table: .localizable, fallback: "Arama Sonuçları"), detail: "\(filteredNotes.count)")
+        if filteredNotes.isEmpty && filteredDrafts.isEmpty {
+            notebookEmpty(symbol: "note.text",
+                title: searchText.isEmpty
+                    ? RDLocalization.string("localizable.notebook.empty.title", table: .localizable, fallback: "İlk notunuzu oluşturun")
+                    : RDLocalization.string("localizable.notebook.no.match.title", table: .localizable, fallback: "Eşleşen not bulunamadı"),
+                detail: searchText.isEmpty
+                    ? RDLocalization.string("localizable.notebook.empty.detail", table: .localizable, fallback: "Düşüncelerinizi, yapılacakları ve saha notlarını tek yerde tutun.")
+                    : RDLocalization.string("localizable.notebook.no.match.detail", table: .localizable, fallback: "Farklı bir sözcükle aramayı deneyin."))
+        } else {
+            ForEach(filteredNotes, id: \.note_id) { noteRow($0) }
+        }
+    }
+    @ViewBuilder private var draftsLibrary: some View {
+        HStack {
+            libraryHeading(RDLocalization.string("localizable.notebook.pending.actions", table: .localizable, fallback: "Bekleyen İşlemler"), detail: "\(filteredDrafts.count)")
+            Spacer()
+            if !snapshot.drafts.isEmpty {
+                Button(RDLocalization.string("localizable.notebook.sync.now", table: .localizable, fallback: "Şimdi eşitle")) { Task { await sync() } }
+                    .font(.caption.bold()).foregroundStyle(NovaColorToken.accentInk.color(in: colorScheme))
             }
         }
+        if filteredDrafts.isEmpty {
+            notebookEmpty(symbol: "checkmark.icloud",
+                title: RDLocalization.string("localizable.notebook.synced.title", table: .localizable, fallback: "Tüm değişiklikler eşitlendi"),
+                detail: RDLocalization.string("localizable.notebook.synced.detail", table: .localizable, fallback: "Çevrimdışı kaydettiğiniz notlar burada görünür."))
+        } else {
+            ForEach(filteredDrafts, id: \.intent.mutation) { draftRow($0, compact: false) }
+        }
+    }
+    @ViewBuilder private var reminderLibrary: some View {
+        HStack {
+            libraryHeading(RDLocalization.string("localizable.notebook.upcoming.reminders", table: .localizable, fallback: "Yaklaşan Hatırlatıcılar"), detail: "\(filteredReminders.count)")
+            Spacer()
+            Button { reminderEditor = NotebookReminderEditor() } label: {
+                Label("Yeni", systemImage: "plus").font(.caption.bold())
+            }.buttonStyle(.plain).foregroundStyle(NovaColorToken.accentInk.color(in: colorScheme))
+        }
+        if filteredReminders.isEmpty {
+            notebookEmpty(symbol: "bell",
+                title: RDLocalization.string("localizable.notebook.no.reminder.title", table: .localizable, fallback: "Hatırlatıcı yok"),
+                detail: RDLocalization.string("localizable.notebook.no.reminder.detail", table: .localizable, fallback: "Bir nota bağlı veya bağımsız sunucu bildirimi oluşturabilirsiniz."))
+        } else {
+            ForEach(filteredReminders) { reminderRow($0) }
+        }
+    }
+    private func libraryHeading(_ title: String, detail: String) -> some View {
+        HStack(spacing: 8) {
+            Text(title).font(.system(size: 17, weight: .bold, design: .rounded))
+            Text(detail).font(.caption.bold()).foregroundStyle(NovaColorToken.textTertiary.color(in: colorScheme))
+        }.frame(maxWidth: .infinity, alignment: .leading).padding(.top, 4)
+    }
+    private func noteRow(_ note: NotebookRecord) -> some View {
+        let blocked = snapshot.drafts.contains { $0.intent.note == note.note_id }
+        return Button {
+            editor = .init(note: note.note_id, version: note.version, title: note.title ?? "", body: note.body ?? "",
+                           originalTitle: note.title ?? "", originalBody: note.body ?? "")
+        } label: {
+            HStack(alignment: .top, spacing: 13) {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(NovaColorToken.accentSoft.color(in: colorScheme))
+                    .frame(width: 46, height: 54)
+                    .overlay(Image(systemName: "note.text").font(.system(size: 18, weight: .semibold)).foregroundStyle(NovaColorToken.accentInk.color(in: colorScheme)))
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(note.title?.isEmpty == false ? note.title! : RDLocalization.string("localizable.notebook.untitled", table: .localizable, fallback: "Başlıksız Not"))
+                        .font(.system(size: 15, weight: .bold)).foregroundStyle(NovaColorToken.text.color(in: colorScheme)).lineLimit(1)
+                    Text(notePreview(note.body))
+                        .font(.system(size: 13)).foregroundStyle(NovaColorToken.textSecondary.color(in: colorScheme)).lineLimit(2)
+                    HStack(spacing: 6) {
+                        Text(noteDate(note.updated_at))
+                        if blocked { Label(RDLocalization.string("localizable.notebook.sync.pending", table: .localizable, fallback: "Eşitleme bekliyor"), systemImage: "icloud.slash") }
+                    }.font(.caption2).foregroundStyle(NovaColorToken.textTertiary.color(in: colorScheme))
+                }
+                Spacer(minLength: 4)
+                Image(systemName: "chevron.right").font(.caption.bold()).foregroundStyle(NovaColorToken.textSubtle.color(in: colorScheme)).padding(.top, 18)
+            }
+            .padding(15).frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 18).fill(NovaColorToken.surface.color(in: colorScheme)).shadow(color: .black.opacity(0.045), radius: 9, y: 3))
+            .overlay(RoundedRectangle(cornerRadius: 18).stroke(NovaColorToken.hairline.color(in: colorScheme)))
+        }
+        .buttonStyle(.plain).disabled(blocked)
+        .contextMenu {
+            Button { Task { await openOrganization(note.note_id) } } label: { Label("Checklist ve Etiketler", systemImage: "checklist") }
+            Button { reminderEditor = NotebookReminderEditor(title: note.title ?? "", note: note.note_id) } label: {
+                Label(RDLocalization.string("localizable.notebook.add.reminder", table: .localizable, fallback: "Hatırlatıcı Ekle"), systemImage: "bell.badge")
+            }
+        }
+    }
+    private func draftRow(_ pending: NotebookPending, compact: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack {
+                Label(pending.blocked == nil
+                    ? RDLocalization.string("localizable.notebook.destination.gonderilmeyi.bekliyor.303c7ae8", table: .localizable, fallback: "Gönderilmeyi bekliyor")
+                    : RDLocalization.string("localizable.notebook.action.required", table: .localizable, fallback: "İşlem gerekli"), systemImage: pending.blocked == nil ? "icloud.slash" : "exclamationmark.icloud")
+                    .font(.caption.bold()).foregroundStyle(pending.blocked == nil ? NovaColorToken.statusWarningInk.color(in: colorScheme) : NovaColorToken.statusDangerInk.color(in: colorScheme))
+                Spacer()
+                if pending.intent.action == "organize" { Image(systemName: "checklist") }
+            }
+            Text(pending.intent.title ?? (pending.intent.action == "organize"
+                ? RDLocalization.string("localizable.notebook.destination.checklist.ve.etiket.taslagi.e192ce35", table: .localizable, fallback: "Checklist ve etiket taslağı")
+                : pending.intent.action == "delete"
+                    ? RDLocalization.string("localizable.notebook.destination.silme.istegi.fa696aef", table: .localizable, fallback: "Silme isteği")
+                    : RDLocalization.string("localizable.notebook.untitled", table: .localizable, fallback: "Başlıksız Not")))
+                .font(.system(size: 15, weight: .bold)).lineLimit(1)
+            if !compact { Text(notePreview(pending.intent.body)).font(.system(size: 13)).foregroundStyle(NovaColorToken.textSecondary.color(in: colorScheme)).lineLimit(3) }
+            if pending.blocked == "VERSION_CONFLICT" && pending.intent.action == "organize" {
+                Button(RDLocalization.string("localizable.notebook.destination.checklist.surumlerini.incele.97092e1b", table: .localizable, fallback: "Checklist sürümlerini incele")) { Task { await openOrganization(pending.intent.note, pending: pending) } }.font(.caption.bold())
+            }
+            if pending.conflictID != nil {
+                Button(RDLocalization.string("localizable.notebook.destination.iki.surumu.incele.df04069e", table: .localizable, fallback: "İki sürümü incele")) { Task { await resolve(pending) } }.font(.caption.bold())
+            }
+        }
+        .padding(15).frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 18).fill(NovaColorToken.statusWarningBg.color(in: colorScheme)))
+    }
+    private func reminderRow(_ reminder: NotebookReminder) -> some View {
+        VStack(alignment: .leading, spacing: 11) {
+            HStack(alignment: .top) {
+                Image(systemName: "bell.fill").foregroundStyle(NovaColorToken.statusWarningInk.color(in: colorScheme))
+                    .frame(width: 38, height: 38).background(Circle().fill(NovaColorToken.statusWarningBg.color(in: colorScheme)))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(reminder.title).font(.system(size: 15, weight: .bold))
+                    Text(notebookRecurrenceLabel(reminder.recurrence) + reminderSchedule(reminder))
+                        .font(.caption).foregroundStyle(NovaColorToken.textSecondary.color(in: colorScheme))
+                }
+                Spacer()
+            }
+            if let occurrence = reminder.next_occurrence {
+                HStack(spacing: 8) {
+                    Button { Task { await settleReminder("complete", reminder: reminder, occurrence: occurrence) } } label: { Label("Tamamla", systemImage: "checkmark") }
+                    Button { Task { await settleReminder("snooze", reminder: reminder, occurrence: occurrence) } } label: { Label("10 dk ertele", systemImage: "clock.arrow.circlepath") }
+                }.font(.caption.bold()).buttonStyle(.bordered)
+            }
+        }
+        .padding(15).frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 18).fill(NovaColorToken.surface.color(in: colorScheme)).shadow(color: .black.opacity(0.045), radius: 9, y: 3))
+        .contextMenu { Button(role: .destructive) { Task { await settleReminder("cancel", reminder: reminder) } } label: {
+            Label(RDLocalization.string("localizable.notebook.destination.hatirlaticiyi.iptal.et.66814eec", table: .localizable, fallback: "Hatırlatıcıyı iptal et"), systemImage: "bell.slash")
+        } }
+    }
+    private func notebookEmpty(symbol: String, title: String, detail: String) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: symbol).font(.system(size: 28, weight: .light)).foregroundStyle(NovaColorToken.textTertiary.color(in: colorScheme))
+            Text(title).font(.system(size: 16, weight: .bold))
+            Text(detail).font(.system(size: 13)).foregroundStyle(NovaColorToken.textSecondary.color(in: colorScheme)).multilineTextAlignment(.center)
+        }.padding(.vertical, 42).padding(.horizontal, 22).frame(maxWidth: .infinity)
+    }
+    private func notebookMessage(_ text: String) -> some View {
+        Label(text, systemImage: "info.circle.fill")
+            .font(.caption).foregroundStyle(NovaColorToken.statusInfoInk.color(in: colorScheme))
+            .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 13).fill(NovaColorToken.statusInfoBg.color(in: colorScheme)))
+    }
+    private func notePreview(_ body: String?) -> String {
+        let value = (body ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? "Metin yok" : value.replacingOccurrences(of: "\n", with: " ")
+    }
+    private func noteDate(_ raw: String) -> String {
+        guard let date = NotebookReminderDate.parse(raw) else { return "" }
+        return date.formatted(.relative(presentation: .named))
     }
     private var reminderFields: some View {
-        VStack(spacing: 14) {
-            NovaCard(padding: 18) {
-                VStack(alignment: .leading, spacing: 14) {
-                    Label(RDLocalization.string("localizable.notebook.destination.yeni.hatirlatici.acb2b922", table: .localizable, fallback: "Yeni hatırlatıcı"), systemImage: "bell.badge")
-                    TextField(RDLocalization.string("localizable.notebook.destination.baslik.f4cde22e", table: .localizable, fallback: "Başlık"), text: Binding(get: { reminderEditor?.title ?? "" }, set: { reminderEditor?.title = $0 }))
-                        .accessibilityIdentifier("notebook.reminder.title")
-                    Picker("Tekrar", selection: Binding(get: { reminderEditor?.recurrence ?? .once }, set: { reminderEditor?.recurrence = $0 })) {
-                        ForEach(NotebookReminderRecurrence.allCases) { recurrence in
-                            Text(notebookRecurrenceLabel(recurrence)).tag(recurrence)
-                        }
-                    }.pickerStyle(.menu)
-                    DatePicker(RDLocalization.string("localizable.notebook.destination.tarih.ve.saat.12f085f6", table: .localizable, fallback: "Tarih ve saat"), selection: Binding(get: { reminderEditor?.dueAt ?? Date() }, set: { reminderEditor?.dueAt = $0 }),
-                               in: Date()..., displayedComponents: [.date, .hourAndMinute])
-                    NovaText(text: RDLocalization.string("localizable.notebook.destination.teslimat.sahibi.bu.cihazdaki.sunucu.bildirimi.ka.d07077c3", table: .localizable, fallback: "Teslimat sahibi: bu cihazdaki sunucu bildirimi kaydı. Bildirim izni veya güncel cihaz kaydı yoksa hatırlatıcı oluşturulmaz."), style: .metaQuiet)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(spacing: 0) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "bell.badge.fill").font(.system(size: 21))
+                            .foregroundStyle(NovaColorToken.statusWarningInk.color(in: colorScheme))
+                            .frame(width: 46, height: 46).background(Circle().fill(NovaColorToken.statusWarningBg.color(in: colorScheme)))
+                        TextField(RDLocalization.string("localizable.notebook.reminder.title", table: .localizable, fallback: "Hatırlatıcı başlığı"), text: Binding(get: { reminderEditor?.title ?? "" }, set: { reminderEditor?.title = $0 }))
+                            .font(.system(size: 18, weight: .semibold)).accessibilityIdentifier("notebook.reminder.title")
+                    }.padding(16)
+                    Divider().padding(.leading, 74)
+                    HStack {
+                        Label("Tekrar", systemImage: "repeat")
+                        Spacer()
+                        Picker("Tekrar", selection: Binding(get: { reminderEditor?.recurrence ?? .once }, set: { reminderEditor?.recurrence = $0 })) {
+                            ForEach(NotebookReminderRecurrence.allCases) { recurrence in Text(notebookRecurrenceLabel(recurrence)).tag(recurrence) }
+                        }.pickerStyle(.menu).labelsHidden()
+                    }.padding(16)
+                    Divider().padding(.leading, 16)
+                    DatePicker("Tarih ve saat", selection: Binding(get: { reminderEditor?.dueAt ?? Date() }, set: { reminderEditor?.dueAt = $0 }),
+                               in: Date()..., displayedComponents: [.date, .hourAndMinute]).padding(16)
                 }
-            }
-            NovaButton(label: RDLocalization.string("localizable.notebook.destination.hatirlaticiyi.olustur.f3065fd2", table: .localizable, fallback: "Hatırlatıcıyı oluştur"), symbol: "checkmark") { Task { await createReminder() } }
-            NovaButton(label: RDLocalization.string("localizable.notebook.destination.listeye.don.b77bb4b3", table: .localizable, fallback: "Listeye dön"), symbol: "chevron.left", variant: .surface) { closeAfterExit = false; confirmExit = true }
-        }
+                .background(RoundedRectangle(cornerRadius: 20).fill(NovaColorToken.surface.color(in: colorScheme)))
+                .overlay(RoundedRectangle(cornerRadius: 20).stroke(NovaColorToken.hairline.color(in: colorScheme)))
+
+                if let note = reminderEditor?.note {
+                    Label(RDLocalization.string("localizable.notebook.reminder.linked", table: .localizable, fallback: "Bu hatırlatıcı seçili nota bağlanacak"), systemImage: "link")
+                        .font(.caption).foregroundStyle(NovaColorToken.textSecondary.color(in: colorScheme))
+                        .accessibilityValue(note.uuidString)
+                }
+                if let message { notebookMessage(message) }
+                if let error = notifications.lastError { notebookMessage(error) }
+                Button { notifications.enableNotifications() } label: {
+                    Label(notifications.isRegistering
+                        ? RDLocalization.string("localizable.notebook.device.registering", table: .localizable, fallback: "Cihaz kaydı yenileniyor…")
+                        : RDLocalization.string("localizable.notebook.notifications.enable", table: .localizable, fallback: "Bildirimleri aç / cihaz kaydını yenile"), systemImage: "bell.badge")
+                        .font(.system(size: 14, weight: .semibold)).frame(maxWidth: .infinity).padding(.vertical, 14)
+                        .background(RoundedRectangle(cornerRadius: 15).fill(NovaColorToken.surface.color(in: colorScheme)))
+                }.buttonStyle(.plain).disabled(notifications.isRegistering)
+                NovaText(text: RDLocalization.string("localizable.notebook.destination.teslimat.sahibi.bu.cihazdaki.sunucu.bildirimi.ka.d07077c3", table: .localizable, fallback: "Teslimat sahibi: bu cihazdaki sunucu bildirimi kaydı. Bildirim izni veya güncel cihaz kaydı yoksa hatırlatıcı oluşturulmaz."), style: .metaQuiet)
+                NovaButton(label: RDLocalization.string("localizable.notebook.destination.hatirlaticiyi.olustur.f3065fd2", table: .localizable, fallback: "Hatırlatıcıyı oluştur"), symbol: "checkmark") { Task { await createReminder() } }
+            }.padding(18)
+        }.scrollDismissesKeyboard(.interactively)
     }
     private var editorFields: some View {
-        VStack(spacing: 14) {
-            if let text = editor?.serverText { NovaCard(padding: 18) { VStack(alignment: .leading) { Label(RDLocalization.string("localizable.notebook.destination.guncel.sunucu.surumu.df387713", table: .localizable, fallback: "Güncel sunucu sürümü"), systemImage: "icloud"); Text(text).textSelection(.enabled) } } }
-            NovaCard(padding: 18) {
-                VStack(alignment: .leading, spacing: 12) {
-                    TextField(RDLocalization.string("localizable.notebook.destination.baslik.035bd998", table: .localizable, fallback: "Başlık"), text: Binding(get: { editor?.title ?? "" }, set: { editor?.title = $0 })).accessibilityIdentifier("notebook.title")
-                    TextEditor(text: Binding(get: { editor?.body ?? "" }, set: { editor?.body = $0 })).frame(minHeight: 200).accessibilityIdentifier("notebook.body")
-                    NovaText(text: RDLocalization.string("localizable.notebook.destination.baslik.en.cok.200.metin.en.cok.20.000.karakter.158acde5", table: .localizable, fallback: "Başlık en çok 200, metin en çok 20.000 karakter."), style: .metaQuiet)
+        VStack(spacing: 0) {
+            if let text = editor?.serverText {
+                VStack(alignment: .leading, spacing: 5) {
+                    Label(RDLocalization.string("localizable.notebook.destination.guncel.sunucu.surumu.df387713", table: .localizable, fallback: "Güncel sunucu sürümü"), systemImage: "icloud") .font(.caption.bold())
+                    Text(text).font(.caption).lineLimit(4).textSelection(.enabled)
+                }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                    .background(NovaColorToken.statusInfoBg.color(in: colorScheme))
+            }
+            if let message { notebookMessage(message).padding(.horizontal, 18).padding(.top, 12) }
+            VStack(alignment: .leading, spacing: 0) {
+                TextField(RDLocalization.string("localizable.notebook.destination.baslik.035bd998", table: .localizable, fallback: "Başlık"), text: Binding(get: { editor?.title ?? "" }, set: { editor?.title = $0 }), axis: .vertical)
+                    .font(.system(size: 27, weight: .bold, design: .rounded))
+                    .focused($editorFocus, equals: .title).submitLabel(.next)
+                    .onSubmit { editorFocus = .body }
+                    .accessibilityIdentifier("notebook.title")
+                    .padding(.horizontal, 20).padding(.top, 22).padding(.bottom, 8)
+                Rectangle().fill(NovaColorToken.hairline.color(in: colorScheme)).frame(height: 1).padding(.horizontal, 20)
+                TextEditor(text: Binding(get: { editor?.body ?? "" }, set: { editor?.body = $0 }))
+                    .font(.system(size: 17, weight: .regular, design: .rounded))
+                    .lineSpacing(5).scrollContentBackground(.hidden)
+                    .focused($editorFocus, equals: .body)
+                    .padding(.horizontal, 15).padding(.vertical, 10)
+                    .accessibilityIdentifier("notebook.body")
+            }
+            .background(NovaColorToken.surface.color(in: colorScheme))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            HStack(spacing: 8) {
+                Button {
+                    guard let note = editor?.note, editor?.version ?? 0 > 0 else { return }
+                    Task {
+                        await finishEditor(closeDestination: false)
+                        guard editor == nil else { return }
+                        await openOrganization(note)
+                    }
+                } label: { Label("Checklist", systemImage: "checklist") }
+                    .disabled((editor?.version ?? 0) == 0 || editor?.pending != nil)
+                Button {
+                    guard let note = editor?.note else { return }
+                    let title = editor?.title ?? ""
+                    Task {
+                        await finishEditor(closeDestination: false)
+                        guard editor == nil else { return }
+                        reminderEditor = NotebookReminderEditor(title: title, note: note)
+                    }
+                } label: { Label(RDLocalization.string("localizable.notebook.remind", table: .localizable, fallback: "Hatırlat"), systemImage: "bell.badge") }
+                    .disabled((editor?.version ?? 0) == 0)
+                Spacer()
+                Text("\((editor?.body ?? "").count) karakter").font(.caption2).foregroundStyle(NovaColorToken.textTertiary.color(in: colorScheme))
+                if editor?.version ?? 0 > 0 && editor?.pending == nil {
+                    Button(role: .destructive) { confirmDelete = true } label: { Image(systemName: "trash") }.accessibilityLabel("Notu sil")
                 }
             }
-            NovaButton(label: RDLocalization.string("localizable.notebook.destination.taslagi.guvenle.kaydet.53b9a015", table: .localizable, fallback: "Taslağı güvenle kaydet"), symbol: "checkmark") { Task { await save() } }
-            if editor?.version ?? 0 > 0 && editor?.pending == nil {
-                NovaButton(label: RDLocalization.string("localizable.notebook.destination.notu.sil.e405f33b", table: .localizable, fallback: "Notu sil"), symbol: "trash", variant: .danger) { confirmDelete = true }
-            }
-            NovaButton(label: RDLocalization.string("localizable.notebook.destination.listeye.don.d70e4dff", table: .localizable, fallback: "Listeye dön"), symbol: "chevron.left", variant: .surface) { closeAfterExit = false; confirmExit = true }
+            .font(.system(size: 13, weight: .semibold)).buttonStyle(.borderless)
+            .padding(.horizontal, 18).frame(height: 54)
+            .background(.ultraThinMaterial)
+            .overlay(alignment: .top) { Rectangle().fill(NovaColorToken.hairline.color(in: colorScheme)).frame(height: 1) }
         }
+        .onAppear { if editor?.version == 0 { editorFocus = .title } }
     }
     private var organizationFields: some View {
-        VStack(spacing: 14) {
+        ScrollView { VStack(spacing: 14) {
+            if let message { notebookMessage(message) }
             if let text = organization?.serverText { NovaCard(padding: 18) { Text(RDLocalization.string("localizable.notebook.destination.guncel.sunucu.checklist.i.f6e5b3eb", table: .localizable, fallback: "Güncel sunucu checklist'i") + text).textSelection(.enabled) } }
             NovaCard(padding: 18) {
                 VStack(spacing: 12) {
@@ -253,8 +611,28 @@ private struct NotebookContent: View {
                     snapshot = try repository.snapshot(identity); organization = nil; message = RDLocalization.string("localizable.notebook.destination.checklist.taslagi.kaydedildi.esitle.ile.gonderin.69a4d941", table: .localizable, fallback: "Checklist taslağı kaydedildi. Eşitle ile gönderin.")
                 } catch { message = RDLocalization.string("localizable.notebook.destination.checklist.kaydedilemedi.bos.tekrar.eden.alanlari.fc47d00d", table: .localizable, fallback: "Checklist kaydedilemedi. Boş/tekrar eden alanları ve uzunluk sınırlarını kontrol edin.") }
             }
-            NovaButton(label: RDLocalization.string("localizable.notebook.destination.listeye.don.fdea1f52", table: .localizable, fallback: "Listeye dön"), symbol: "chevron.left", variant: .surface) { closeAfterExit = false; confirmExit = true }
+        }.padding(18) }.scrollDismissesKeyboard(.interactively)
+    }
+    private func openNewNote() {
+        editor = .init(note: UUID(), version: 0, title: "", body: "", originalTitle: "", originalBody: "")
+        message = nil
+        Task { @MainActor in editorFocus = .title }
+    }
+    private func finishEditor(closeDestination: Bool) async {
+        guard let edit = editor else { if closeDestination { onClose() }; return }
+        let title = edit.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let body = edit.body.trimmingCharacters(in: .whitespacesAndNewlines)
+        if edit.version == 0 && title.isEmpty && body.isEmpty {
+            editor = nil
+            if closeDestination { onClose() }
+            return
         }
+        if edit.pending == nil && edit.originalTitle == edit.title && edit.originalBody == edit.body {
+            editor = nil
+            if closeDestination { onClose() }
+            return
+        }
+        await save(closeDestination: closeDestination)
     }
     private func openOrganization(_ note: UUID, pending: NotebookPending? = nil) async {
         guard !busy else { return }; busy = true; defer { busy = false }
@@ -277,7 +655,7 @@ private struct NotebookContent: View {
             message = nil
         } catch { message = RDLocalization.string("localizable.notebook.destination.esitleme.kullanilamiyor.bu.cihazdaki.kaydedilmis.bc0dfda7", table: .localizable, fallback: "Eşitleme kullanılamıyor. Bu cihazdaki kaydedilmiş taslaklarınız korunuyor.") }
     }
-    private func save(delete: Bool = false) async {
+    private func save(delete: Bool = false, closeDestination: Bool = false) async {
         guard !busy, let edit = editor else { return }
         do {
             let intent = NotebookMutation(mutation: UUID(), note: edit.note, action: delete ? "delete" : edit.pending == nil ? "sync" : "resolve",
@@ -285,6 +663,8 @@ private struct NotebookContent: View {
             if let pending = edit.pending { try repository.queue.resolveBlocked(pending.intent.mutation, with: intent, identity: identity) }
             else { try repository.queue.stage(intent, identity: identity) }
             snapshot = try repository.snapshot(identity); editor = nil; message = RDLocalization.string("localizable.notebook.destination.taslak.bu.cihazda.kaydedildi.esitle.ile.sunucuya.564ba03c", table: .localizable, fallback: "Taslak bu cihazda kaydedildi. Eşitle ile sunucuya gönderebilirsiniz.")
+            if NetworkMonitor.shared.isOnline { await sync() }
+            if closeDestination { onClose() }
         } catch { message = RDLocalization.string("localizable.notebook.destination.kaydedilemedi.metni.kapatmadan.uzunlugu.oturumu..8cd64c3f", table: .localizable, fallback: "Kaydedilemedi. Metni kapatmadan uzunluğu, oturumu ve cihaz erişimini kontrol edin.") }
     }
     private func sync() async {
@@ -312,7 +692,7 @@ private struct NotebookContent: View {
         busy = true; defer { busy = false }
         do {
             _ = try await repository.createReminder(title: value.title, recurrence: value.recurrence,
-                dueAt: value.dueAt, identity: identity)
+                dueAt: value.dueAt, note: value.note, identity: identity)
             reminders = try await repository.reminders(identity)
             reminderEditor = nil
             message = RDLocalization.string("localizable.notebook.destination.hatirlatici.bu.cihazin.sunucu.bildirimi.kaydina..4ea41591", table: .localizable, fallback: "Hatırlatıcı bu cihazın sunucu bildirimi kaydına bağlandı.")

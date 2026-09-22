@@ -590,6 +590,9 @@ struct NovaAnalysisFileSheet: View {
     /// The method the expert is reading the analysis with. The band that
     /// travels with a scored item is that method's band, never the other's.
     let method: NovaRiskMethod
+    /// Full-screen filing already has its own task header. Keep the sheet
+    /// heading only for the compact/popup callers that still need it.
+    var showsHeading = true
     var targetCompany: UUID? = nil
     let loadWorkplaces: () async throws -> [NovaNonconformityWorkplace]
     let file: (NovaAnalysisFileRequest) async -> NovaFindingOutcome
@@ -619,7 +622,9 @@ struct NovaAnalysisFileSheet: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 11) {
-                NovaText(text: RDLocalization.string("localizable.nova.analysis.file.title", table: .localizable, fallback: "Firmaya aktar"), style: .sheetTitle)
+                if showsHeading {
+                    NovaText(text: RDLocalization.string("localizable.nova.analysis.file.title", table: .localizable, fallback: "Firmaya aktar"), style: .sheetTitle)
+                }
                 NovaHelpHint(text: RDLocalization.string("localizable.nova.analysis.file.hint", table: .localizable,
                     fallback: "Analiz kaydı olduğu gibi kalır. Seçtikleriniz için firmada ayrı kayıt açılır."))
                 if !section.isScored { kindPicker }
@@ -635,13 +640,6 @@ struct NovaAnalysisFileSheet: View {
                 let loaded = try await loadWorkplaces()
                 workplaces = loaded
                 workplace = loaded.count == 1 ? loaded.first?.id : nil
-                // "Firmaya Aktar" plus one company and one workplace is a
-                // complete instruction. Do not make the user discover and tap
-                // a second confirmation for an already-scored finding.
-                if let only = loaded.first, loaded.count == 1,
-                   !items.isEmpty, ready.count == items.count {
-                    await run(target: only.id)
-                }
             }
             catch {
                 self.error = RDLocalization.string("localizable.nova.nonconformity.error.workplaces", table: .localizable,
@@ -744,15 +742,18 @@ struct NovaAnalysisFileSheet: View {
                     .accessibilityIdentifier("analysis.file.done")
             }
         } else {
-            NovaButton(label: RDLocalization.string("localizable.nova.analysis.file.run", table: .localizable, fallback: "Seçilenleri aç"),
-                symbol: "checkmark", isEnabled: !running && workplace != nil && !ready.isEmpty, isLoading: running) {
+            NovaButton(label: items.count == 1
+                ? RDLocalization.string("localizable.nova.analysis.finding.file", table: .localizable, fallback: "Uygunsuzluk oluştur")
+                : RDLocalization.string("localizable.nova.analysis.file.run", table: .localizable, fallback: "Seçilenleri aç"),
+                symbol: "checkmark", isEnabled: !running && workplace != nil && !items.isEmpty && ready.count == items.count,
+                isLoading: running) {
                 Task { await run() }
             }.accessibilityIdentifier("analysis.file.run")
         }
     }
 
-    private func run(target explicitTarget: UUID? = nil) async {
-        guard !running, let target = explicitTarget ?? workplace else { return }
+    private func run() async {
+        guard !running, let target = workplace, !items.isEmpty, ready.count == items.count else { return }
         running = true
         var failed = false
         var succeeded = false
@@ -785,10 +786,9 @@ struct NovaAnalysisReportSheet: View {
     let data: NovaAnalysisDetailData
     /// The method the detail screen is being read with; the report opens on it.
     var method: NovaRiskMethod = .fineKinney
-    var selectedCount = 0
     let generate: (NovaAnalysisReportRequest) async throws -> Void
     @Environment(\.colorScheme) private var scheme
-    @State private var format: NovaAnalysisReportFormat?
+    @State private var format: NovaAnalysisReportFormat? = .pdf
     @State private var chosenMethod: NovaRiskMethod = .fineKinney
     @State private var attach = true
     @State private var running = false
@@ -830,11 +830,6 @@ struct NovaAnalysisReportSheet: View {
                 NovaText(text: RDLocalization.string("localizable.nova.analysis.report.hint", table: .localizable,
                     fallback: "Rapor arşivinize kaydedilir. Firma seçiliyse Analiz Raporu olarak o firmaya işlenir."),
                     style: .metaQuiet)
-                if selectedCount > 0 {
-                    NovaText(text: String(format: RDLocalization.string("localizable.nova.analysis.report.selected", table: .localizable,
-                        fallback: "%d kayıt seçili"), selectedCount), style: .micro,
-                        color: NovaColorToken.textTertiary.color(in: scheme))
-                }
             }
             Spacer(minLength: 0)
         }

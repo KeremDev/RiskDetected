@@ -38,10 +38,30 @@ struct NovaNonconformityRow: Equatable, Identifiable, Codable {
     var evidence_downloads: [NovaEvidenceDownload]? = nil
     /// A record that came from a photo analysis keeps pointing at that finding;
     /// the finding itself is never rewritten.
-    var camefromFinding: Bool { source_kind == "legacy_finding" }
+    var camefromFinding: Bool { source_kind == "legacy_finding" || source_kind == "analysis_finding" }
     /// An expert-opinion item arrives unscored, so a record born from one never
     /// claims a band it was not given.
-    var camefromExpertItem: Bool { source_kind == "legacy_expert_item" }
+    var camefromExpertItem: Bool { source_kind == "legacy_expert_item" || source_kind == "analysis_expert_item" }
+    var cameFromChecklist: Bool { source_kind == "checklist" }
+    var sourceTitle: String {
+        switch source_kind {
+        case "checklist": return RDLocalization.string("localizable.nova.nonconformity.source.checklist", table: .localizable, fallback: "Kontrol listesinden")
+        case "legacy_finding", "analysis_finding": return RDLocalization.string("localizable.nova.nonconformity.source.analysis", table: .localizable, fallback: "Analizden")
+        case "legacy_expert_item", "analysis_expert_item": return RDLocalization.string("localizable.nova.nonconformity.source.expert", table: .localizable, fallback: "Uzman görüşünden")
+        case "risk_version": return RDLocalization.string("localizable.nova.nonconformity.source.risk", table: .localizable, fallback: "Risk analizinden")
+        case "manual": return RDLocalization.string("localizable.nova.nonconformity.source.manual", table: .localizable, fallback: "Elle eklendi")
+        default: return RDLocalization.string("localizable.nova.nonconformity.source.system", table: .localizable, fallback: "Sistem kaydı")
+        }
+    }
+    var sourceSymbol: String {
+        switch source_kind {
+        case "checklist": return "checklist"
+        case "legacy_finding", "analysis_finding": return "sparkles"
+        case "legacy_expert_item", "analysis_expert_item": return "person.text.rectangle"
+        case "risk_version": return "exclamationmark.shield"
+        default: return "square.and.pencil"
+        }
+    }
     var kind: NovaNonconformityRecordKind {
         NovaNonconformityRecordKind(rawValue: record_kind ?? "") ?? .nonconformity
     }

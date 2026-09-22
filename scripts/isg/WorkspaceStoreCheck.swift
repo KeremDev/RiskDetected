@@ -75,6 +75,15 @@ extension IsgWorkspaceAPI {
         }
         store.adopt(.init(userID: user, sessionID: UUID()))
         await waitUntil { store.phase == .ready }
+        let routingContext = store.selection
+        store.refresh()
+        precondition(store.phase == .loading && store.selection == routingContext,
+                     "Refresh briefly changed OSGB routing to personal")
+        precondition(store.companies.isEmpty && store.dashboard == nil,
+                     "Refresh retained stale workspace data")
+        await waitUntil { store.phase == .ready }
+        precondition(store.selection == routingContext && store.companies.count == 2,
+                     "Refresh failed to recover the same workspace")
         store.selectCompany(companyA)
         await waitUntil { store.phase == .ready }
         try await mutate(companyB)
