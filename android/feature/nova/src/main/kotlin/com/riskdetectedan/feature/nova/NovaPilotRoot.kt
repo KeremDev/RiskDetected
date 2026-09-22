@@ -73,6 +73,8 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                 onBack = { navigate(NovaDestination.home) }, onRetry = viewModel::reload)
             NovaDestination.riskAssessments -> NovaRiskScreen(services.riskClient(identity), state.writable,
                 onBack = { navigate(NovaDestination.home) })
+            NovaDestination.periodicChecks -> NovaEquipmentScreen(services.equipmentClient(identity), state.writable,
+                onBack = { navigate(NovaDestination.home) })
             else -> NovaModulePending(destination, state, onWorkspaceSwitch) { navigate(NovaDestination.home) }
         }
     }
@@ -193,11 +195,13 @@ class NovaRootServices @javax.inject.Inject constructor(
     private val findings: NovaNonconformityService,
     private val files: NovaFileLibraryService,
     private val risk: NovaRiskService,
+    private val equipment: NovaEquipmentService,
     val events: NovaRecordEvents,
 ) : androidx.lifecycle.ViewModel() {
     private fun companies(identity: IsgWorkspaceIdentity): suspend () -> List<NovaCompanyOption> =
         { runCatching { findings.companyOptions(identity) }.getOrDefault(emptyList()) }
     fun fileClient(identity: IsgWorkspaceIdentity) = NovaFileClient(files, identity)
+    fun equipmentClient(identity: IsgWorkspaceIdentity) = NovaServiceEquipmentClient(equipment, identity, companies(identity), fileClient(identity))
     fun riskClient(identity: IsgWorkspaceIdentity) = NovaServiceRiskClient(risk, identity, companies(identity), fileClient(identity))
 
     fun noticeClient(identity: IsgWorkspaceIdentity) = NovaNoticeClient(

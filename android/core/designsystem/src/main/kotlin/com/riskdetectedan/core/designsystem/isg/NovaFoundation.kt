@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.*
+import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.Icon
@@ -149,6 +151,11 @@ object NovaSymbols {
             "checkmark.seal" to Icons.Outlined.Verified,
             "checkmark.shield" to Icons.Outlined.VerifiedUser,
             "chevron.down" to Icons.Outlined.KeyboardArrowDown,
+            "chevron.up" to Icons.Outlined.KeyboardArrowUp,
+            "checkmark.square.fill" to Icons.Filled.CheckBox,
+            "circle" to Icons.Outlined.RadioButtonUnchecked,
+            "largecircle.fill.circle" to Icons.Filled.RadioButtonChecked,
+            "square" to Icons.Outlined.CheckBoxOutlineBlank,
             "chevron.left" to Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
             "chevron.right" to Icons.AutoMirrored.Outlined.KeyboardArrowRight,
             "chevron.up.chevron.down" to Icons.Outlined.UnfoldMore,
