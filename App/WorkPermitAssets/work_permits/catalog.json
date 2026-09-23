@@ -1,0 +1,817 @@
+[
+  {
+    "code": "PTW-001",
+    "title": "Genel Çalışma İzni",
+    "usage": "Tüm sektörler",
+    "jobs": [
+      "Genel"
+    ],
+    "sectors": [
+      "Tüm sektörler"
+    ],
+    "filename": "PTW-001_Genel_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-002",
+    "title": "Sıcak Çalışma İzni",
+    "usage": "Üretim, inşaat, enerji",
+    "jobs": [
+      "Sıcak çalışma"
+    ],
+    "sectors": [
+      "İnşaat ve altyapı",
+      "Sanayi ve bakım",
+      "Enerji"
+    ],
+    "filename": "PTW-002_Sicak_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-003",
+    "title": "Kapalı Alan Giriş İzni",
+    "usage": "Endüstri, su ve atıksu",
+    "jobs": [
+      "Kapalı alan",
+      "EKED / LOTO"
+    ],
+    "sectors": [
+      "Sanayi ve bakım",
+      "Su ve atıksu"
+    ],
+    "filename": "PTW-003_Kapali_Alan_Giris_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-004",
+    "title": "EKED LOTO Bireysel Enerji İzolasyon İzni",
+    "usage": "Tüm sektörler",
+    "jobs": [
+      "EKED / LOTO"
+    ],
+    "sectors": [
+      "Tüm sektörler"
+    ],
+    "filename": "PTW-004_EKED_LOTO_Bireysel_Enerji_Izolasyon_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-005",
+    "title": "Grup EKED LOTO Kilit Kutusu İzni",
+    "usage": "Büyük bakım, duruş, çok ekipli işler",
+    "jobs": [
+      "EKED / LOTO",
+      "Grup EKED"
+    ],
+    "sectors": [
+      "Sanayi ve bakım"
+    ],
+    "filename": "PTW-005_Grup_EKED_LOTO_Kilit_Kutusu_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-006",
+    "title": "Enerjisiz Elektrik Çalışma İzni",
+    "usage": "Elektrik bakım, altyapı",
+    "jobs": [
+      "Elektrik",
+      "EKED / LOTO"
+    ],
+    "sectors": [
+      "İnşaat ve altyapı",
+      "Sanayi ve bakım",
+      "Enerji"
+    ],
+    "filename": "PTW-006_Enerjisiz_Elektrik_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-007",
+    "title": "Enerjili veya Gerilim Yakınında Elektrik Çalışma İzni",
+    "usage": "İstisnai elektrik işleri",
+    "jobs": [
+      "Elektrik",
+      "Enerjili çalışma"
+    ],
+    "sectors": [
+      "Enerji"
+    ],
+    "filename": "PTW-007_Enerjili_veya_Gerilim_Yakininda_Elektrik_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-008",
+    "title": "Hat Açma Line Breaking İzni",
+    "usage": "Kimya, proses, petrokimya",
+    "jobs": [
+      "Basınç",
+      "Kimyasal",
+      "EKED / LOTO"
+    ],
+    "sectors": [
+      "Sanayi ve bakım",
+      "Kimya ve petrokimya"
+    ],
+    "filename": "PTW-008_Hat_Acma_Line_Breaking_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-009",
+    "title": "Kazı ve Hendek Çalışma İzni",
+    "usage": "İnşaat, altyapı",
+    "jobs": [
+      "Kazı"
+    ],
+    "sectors": [
+      "İnşaat ve altyapı"
+    ],
+    "filename": "PTW-009_Kazi_ve_Hendek_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-010",
+    "title": "Yüksekte Çalışma İzni",
+    "usage": "Tüm sektörler",
+    "jobs": [
+      "Yüksekte çalışma"
+    ],
+    "sectors": [
+      "Tüm sektörler"
+    ],
+    "filename": "PTW-010_Yuksekte_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-011",
+    "title": "İskele Kurma Sökme ve Değiştirme İzni",
+    "usage": "İnşaat, bakım",
+    "jobs": [
+      "Yüksekte çalışma",
+      "İskele"
+    ],
+    "sectors": [
+      "İnşaat ve altyapı",
+      "Sanayi ve bakım"
+    ],
+    "filename": "PTW-011_Iskele_Kurma_Sokme_ve_Degistirme_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-012",
+    "title": "Mobil Yükseltilebilir İş Platformu İzni",
+    "usage": "Depo, inşaat, bakım",
+    "jobs": [
+      "Yüksekte çalışma",
+      "MEWP"
+    ],
+    "sectors": [
+      "İnşaat ve altyapı",
+      "Sanayi ve bakım",
+      "Lojistik ve ulaşım"
+    ],
+    "filename": "PTW-012_Mobil_Yukseltilebilir_Is_Platformu_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-013",
+    "title": "Çatı Çalışma İzni",
+    "usage": "Tesis, inşaat",
+    "jobs": [
+      "Yüksekte çalışma",
+      "Çatı"
+    ],
+    "sectors": [
+      "İnşaat ve altyapı"
+    ],
+    "filename": "PTW-013_Cati_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-014",
+    "title": "Kırılgan Yüzey Yakınında Çalışma İzni",
+    "usage": "Çatı, depo, sanayi",
+    "jobs": [
+      "Yüksekte çalışma",
+      "Çatı"
+    ],
+    "sectors": [
+      "İnşaat ve altyapı",
+      "Sanayi ve bakım",
+      "Lojistik ve ulaşım"
+    ],
+    "filename": "PTW-014_Kirilgan_Yuzey_Yakininda_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-015",
+    "title": "Endüstriyel İple Erişim İzni",
+    "usage": "Cephe, endüstriyel tesis",
+    "jobs": [
+      "Yüksekte çalışma",
+      "İple erişim"
+    ],
+    "sectors": [
+      "İnşaat ve altyapı",
+      "Sanayi ve bakım"
+    ],
+    "filename": "PTW-015_Endustriyel_Iple_Erisim_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-016",
+    "title": "Standart Kaldırma Operasyonu İzni",
+    "usage": "Tüm sektörler",
+    "jobs": [
+      "Kaldırma"
+    ],
+    "sectors": [
+      "Tüm sektörler"
+    ],
+    "filename": "PTW-016_Standart_Kaldirma_Operasyonu_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-017",
+    "title": "Kritik Kaldırma İzni",
+    "usage": "Tandem, ağır ve karmaşık kaldırma",
+    "jobs": [
+      "Kaldırma",
+      "Kritik kaldırma"
+    ],
+    "sectors": [
+      "Tüm sektörler"
+    ],
+    "filename": "PTW-017_Kritik_Kaldirma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-018",
+    "title": "Mobil Vinç Kurulum ve Kaldırma İzni",
+    "usage": "Şantiye, liman, bakım",
+    "jobs": [
+      "Kaldırma",
+      "Kritik kaldırma"
+    ],
+    "sectors": [
+      "İnşaat ve altyapı",
+      "Sanayi ve bakım",
+      "Lojistik ve ulaşım"
+    ],
+    "filename": "PTW-018_Mobil_Vinc_Kurulum_ve_Kaldirma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-019",
+    "title": "Forklift Ataşmanlı Özel Kaldırma İzni",
+    "usage": "Lojistik, depo",
+    "jobs": [
+      "Kaldırma",
+      "Trafik"
+    ],
+    "sectors": [
+      "Lojistik ve ulaşım"
+    ],
+    "filename": "PTW-019_Forklift_Atasmanli_Ozel_Kaldirma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-020",
+    "title": "Hidrostatik Basınç Testi İzni",
+    "usage": "Boru, kap, proses",
+    "jobs": [
+      "Basınç"
+    ],
+    "sectors": [
+      "Sanayi ve bakım"
+    ],
+    "filename": "PTW-020_Hidrostatik_Basinc_Testi_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-021",
+    "title": "Pnömatik Basınç Testi İzni",
+    "usage": "Proses, imalat",
+    "jobs": [
+      "Basınç",
+      "Yüksek enerji"
+    ],
+    "sectors": [
+      "Sanayi ve bakım"
+    ],
+    "filename": "PTW-021_Pnomatik_Basinc_Testi_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-022",
+    "title": "Tank Kap Vessel Açma İzni",
+    "usage": "Kimya, üretim",
+    "jobs": [
+      "Basınç",
+      "Kimyasal",
+      "Kapalı alan"
+    ],
+    "sectors": [
+      "Sanayi ve bakım",
+      "Kimya ve petrokimya"
+    ],
+    "filename": "PTW-022_Tank_Kap_Vessel_Acma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-023",
+    "title": "Tehlikeli Kimyasal Transfer ve Dolum İzni",
+    "usage": "Kimya, lojistik",
+    "jobs": [
+      "Kimyasal",
+      "Trafik"
+    ],
+    "sectors": [
+      "Kimya ve petrokimya",
+      "Lojistik ve ulaşım"
+    ],
+    "filename": "PTW-023_Tehlikeli_Kimyasal_Transfer_ve_Dolum_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-024",
+    "title": "Kimyasal Hat ve Ekipman Dekontaminasyon İzni",
+    "usage": "Kimya, petrokimya",
+    "jobs": [
+      "Kimyasal",
+      "Basınç",
+      "EKED / LOTO"
+    ],
+    "sectors": [
+      "Kimya ve petrokimya"
+    ],
+    "filename": "PTW-024_Kimyasal_Hat_ve_Ekipman_Dekontaminasyon_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-025",
+    "title": "ATEX Patlayıcı Ortam Çalışma İzni",
+    "usage": "Ex sahalar",
+    "jobs": [
+      "ATEX",
+      "Sıcak çalışma"
+    ],
+    "sectors": [
+      "Kimya ve petrokimya"
+    ],
+    "filename": "PTW-025_ATEX_Patlayici_Ortam_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-026",
+    "title": "Gaz Purj İnertleme ve Gazdan Arındırma İzni",
+    "usage": "Proses, tank, terminal",
+    "jobs": [
+      "Kimyasal",
+      "Basınç",
+      "ATEX"
+    ],
+    "sectors": [
+      "Sanayi ve bakım",
+      "Kimya ve petrokimya"
+    ],
+    "filename": "PTW-026_Gaz_Purj_Inertleme_ve_Gazdan_Arindirma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-027",
+    "title": "Yangın Algılama veya Söndürme Sistemi Devre Dışı Bırakma İzni",
+    "usage": "Tüm sektörler",
+    "jobs": [
+      "Koruma devre dışı",
+      "Sıcak çalışma"
+    ],
+    "sectors": [
+      "Tüm sektörler"
+    ],
+    "filename": "PTW-027_Yangin_Algilama_veya_Sondurme_Sistemi_Devre_Disi_Birakma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-028",
+    "title": "Emniyet Kritik Sistem Bypass Interlock Inhibit İzni",
+    "usage": "Proses, enerji",
+    "jobs": [
+      "Koruma devre dışı"
+    ],
+    "sectors": [
+      "Sanayi ve bakım",
+      "Enerji"
+    ],
+    "filename": "PTW-028_Emniyet_Kritik_Sistem_Bypass_Interlock_Inhibit_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-029",
+    "title": "SIMOPS Eşzamanlı Operasyonlar İzni",
+    "usage": "Çok ekipli saha, duruş",
+    "jobs": [
+      "Eşzamanlı işler"
+    ],
+    "sectors": [
+      "Sanayi ve bakım"
+    ],
+    "filename": "PTW-029_SIMOPS_Eszamanli_Operasyonlar_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-030",
+    "title": "Yol ve Trafik Altında Saha Çalışma İzni",
+    "usage": "Şantiye, lojistik",
+    "jobs": [
+      "Trafik"
+    ],
+    "sectors": [
+      "İnşaat ve altyapı",
+      "Lojistik ve ulaşım"
+    ],
+    "filename": "PTW-030_Yol_ve_Trafik_Altinda_Saha_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-031",
+    "title": "Demiryolu Hattı Yakınında Çalışma İzni",
+    "usage": "Demiryolu, lojistik",
+    "jobs": [
+      "Trafik",
+      "Demiryolu"
+    ],
+    "sectors": [
+      "Lojistik ve ulaşım"
+    ],
+    "filename": "PTW-031_Demiryolu_Hatti_Yakininda_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-032",
+    "title": "Yeraltı Hatları Yakınında Zemin Müdahalesi İzni",
+    "usage": "İnşaat, enerji",
+    "jobs": [
+      "Kazı"
+    ],
+    "sectors": [
+      "İnşaat ve altyapı",
+      "Enerji"
+    ],
+    "filename": "PTW-032_Yeralti_Hatlari_Yakininda_Zemin_Mudahalesi_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-033",
+    "title": "Beton Kesme Karot ve Delme İzni",
+    "usage": "İnşaat, retrofit",
+    "jobs": [
+      "Kazı",
+      "Sıcak çalışma"
+    ],
+    "sectors": [
+      "İnşaat ve altyapı"
+    ],
+    "filename": "PTW-033_Beton_Kesme_Karot_ve_Delme_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-034",
+    "title": "Yıkım ve Söküm Çalışma İzni",
+    "usage": "İnşaat, sanayi",
+    "jobs": [
+      "Yıkım",
+      "Kazı"
+    ],
+    "sectors": [
+      "İnşaat ve altyapı",
+      "Sanayi ve bakım"
+    ],
+    "filename": "PTW-034_Yikim_ve_Sokum_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-035",
+    "title": "Asbestli Malzeme ile Çalışma İzni",
+    "usage": "Yapı, endüstri",
+    "jobs": [
+      "Tehlikeli madde"
+    ],
+    "sectors": [
+      "İnşaat ve altyapı",
+      "Sanayi ve bakım"
+    ],
+    "filename": "PTW-035_Asbestli_Malzeme_ile_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-036",
+    "title": "Kristal Silika veya Yüksek Tozlu Çalışma İzni",
+    "usage": "İnşaat, taş, madencilik",
+    "jobs": [
+      "Tehlikeli madde"
+    ],
+    "sectors": [
+      "İnşaat ve altyapı",
+      "Madencilik"
+    ],
+    "filename": "PTW-036_Kristal_Silika_veya_Yuksek_Tozlu_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-037",
+    "title": "Endüstriyel Radyografi İzni",
+    "usage": "NDT, üretim",
+    "jobs": [
+      "Radyografi"
+    ],
+    "sectors": [
+      "Sanayi ve bakım"
+    ],
+    "filename": "PTW-037_Endustriyel_Radyografi_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-038",
+    "title": "Boya Solvent ve Kaplama Çalışma İzni",
+    "usage": "Üretim, yapı",
+    "jobs": [
+      "Kimyasal",
+      "ATEX"
+    ],
+    "sectors": [
+      "İnşaat ve altyapı",
+      "Sanayi ve bakım"
+    ],
+    "filename": "PTW-038_Boya_Solvent_ve_Kaplama_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-039",
+    "title": "Akü Odası ve BESS Bakım İzni",
+    "usage": "Enerji, veri merkezi",
+    "jobs": [
+      "Elektrik",
+      "Kimyasal"
+    ],
+    "sectors": [
+      "Enerji",
+      "Veri merkezi"
+    ],
+    "filename": "PTW-039_Aku_Odasi_ve_BESS_Bakim_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-040",
+    "title": "GES DC Tarafı ve Panel Çalışma İzni",
+    "usage": "Güneş enerjisi",
+    "jobs": [
+      "Elektrik",
+      "Yüksekte çalışma",
+      "GES"
+    ],
+    "sectors": [
+      "Enerji"
+    ],
+    "filename": "PTW-040_GES_DC_Tarafi_ve_Panel_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-041",
+    "title": "RES Türbin Bakım ve Nasel Erişim İzni",
+    "usage": "Rüzgar enerjisi",
+    "jobs": [
+      "Elektrik",
+      "Yüksekte çalışma",
+      "RES"
+    ],
+    "sectors": [
+      "Enerji"
+    ],
+    "filename": "PTW-041_RES_Turbin_Bakim_ve_Nasel_Erisim_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-042",
+    "title": "Akaryakıt İstasyonu veya Terminal Bakım İzni",
+    "usage": "Akaryakıt",
+    "jobs": [
+      "ATEX",
+      "Kimyasal",
+      "Trafik"
+    ],
+    "sectors": [
+      "Enerji",
+      "Kimya ve petrokimya"
+    ],
+    "filename": "PTW-042_Akaryakit_Istasyonu_veya_Terminal_Bakim_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-043",
+    "title": "Doğalgaz veya LPG Hat Çalışma İzni",
+    "usage": "Gaz dağıtım, tesis",
+    "jobs": [
+      "Basınç",
+      "ATEX",
+      "Kimyasal"
+    ],
+    "sectors": [
+      "Enerji"
+    ],
+    "filename": "PTW-043_Dogalgaz_veya_LPG_Hat_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-044",
+    "title": "Petrokimya veya Rafineri Proses Bakım İzni",
+    "usage": "Petrokimya, rafineri",
+    "jobs": [
+      "Kimyasal",
+      "Basınç",
+      "ATEX",
+      "Eşzamanlı işler"
+    ],
+    "sectors": [
+      "Kimya ve petrokimya"
+    ],
+    "filename": "PTW-044_Petrokimya_veya_Rafineri_Proses_Bakim_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-045",
+    "title": "Yeraltı Madeninde Bakım ve Müdahale İzni",
+    "usage": "Yeraltı madenciliği",
+    "jobs": [
+      "Maden",
+      "EKED / LOTO",
+      "Kapalı alan"
+    ],
+    "sectors": [
+      "Madencilik"
+    ],
+    "filename": "PTW-045_Yeralti_Madeninde_Bakim_ve_Mudahale_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-046",
+    "title": "Liman veya İskele Üzerinde Çalışma İzni",
+    "usage": "Liman, denizcilik",
+    "jobs": [
+      "Denizcilik",
+      "Yüksekte çalışma",
+      "Kaldırma"
+    ],
+    "sectors": [
+      "Lojistik ve ulaşım"
+    ],
+    "filename": "PTW-046_Liman_veya_Iskele_Uzerinde_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-047",
+    "title": "Gemi Üzerinde Sıcak Çalışma İzni",
+    "usage": "Denizcilik, tersane",
+    "jobs": [
+      "Denizcilik",
+      "Sıcak çalışma",
+      "Kapalı alan"
+    ],
+    "sectors": [
+      "Lojistik ve ulaşım"
+    ],
+    "filename": "PTW-047_Gemi_Uzerinde_Sicak_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-048",
+    "title": "Gemi Tankı veya Bölmesinde Kapalı Alan Giriş İzni",
+    "usage": "Denizcilik, tersane",
+    "jobs": [
+      "Denizcilik",
+      "Kapalı alan",
+      "EKED / LOTO"
+    ],
+    "sectors": [
+      "Lojistik ve ulaşım"
+    ],
+    "filename": "PTW-048_Gemi_Tanki_veya_Bolmesinde_Kapali_Alan_Giris_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-049",
+    "title": "Su veya Atıksu Tesisi Proses İzni",
+    "usage": "Su ve atıksu",
+    "jobs": [
+      "Kapalı alan",
+      "Kimyasal",
+      "EKED / LOTO"
+    ],
+    "sectors": [
+      "Su ve atıksu"
+    ],
+    "filename": "PTW-049_Su_veya_Atiksu_Tesisi_Proses_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-050",
+    "title": "Kanalizasyon veya Menhol Giriş İzni",
+    "usage": "Altyapı, belediye",
+    "jobs": [
+      "Kapalı alan",
+      "Trafik"
+    ],
+    "sectors": [
+      "İnşaat ve altyapı",
+      "Su ve atıksu"
+    ],
+    "filename": "PTW-050_Kanalizasyon_veya_Menhol_Giris_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-051",
+    "title": "Gıda Üretim Alanında Bakım İzni",
+    "usage": "Gıda sanayi",
+    "jobs": [
+      "EKED / LOTO",
+      "Gıda"
+    ],
+    "sectors": [
+      "Sanayi ve bakım",
+      "Gıda"
+    ],
+    "filename": "PTW-051_Gida_Uretim_Alaninda_Bakim_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-052",
+    "title": "Farmasötik veya Temiz Oda Bakım İzni",
+    "usage": "İlaç, temiz oda",
+    "jobs": [
+      "EKED / LOTO",
+      "Temiz oda"
+    ],
+    "sectors": [
+      "Sağlık ve ilaç"
+    ],
+    "filename": "PTW-052_Farmasotik_veya_Temiz_Oda_Bakim_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-053",
+    "title": "Laboratuvar Yüksek Riskli Bakım İzni",
+    "usage": "Laboratuvar",
+    "jobs": [
+      "Kimyasal",
+      "Tehlikeli madde"
+    ],
+    "sectors": [
+      "Sağlık ve ilaç"
+    ],
+    "filename": "PTW-053_Laboratuvar_Yuksek_Riskli_Bakim_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-054",
+    "title": "Hastane Tıbbi Gaz Sistemi Çalışma İzni",
+    "usage": "Sağlık tesisleri",
+    "jobs": [
+      "Basınç",
+      "Tıbbi gaz"
+    ],
+    "sectors": [
+      "Sağlık ve ilaç"
+    ],
+    "filename": "PTW-054_Hastane_Tibbi_Gaz_Sistemi_Calisma_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-055",
+    "title": "Veri Merkezi UPS Jeneratör Enerji Altyapısı İzni",
+    "usage": "Veri merkezleri",
+    "jobs": [
+      "Elektrik",
+      "EKED / LOTO",
+      "Kritik kaldırma"
+    ],
+    "sectors": [
+      "Veri merkezi"
+    ],
+    "filename": "PTW-055_Veri_Merkezi_UPS_Jenerator_Enerji_Altyapisi_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  },
+  {
+    "code": "PTW-056",
+    "title": "Amonyak veya Soğutucu Akışkan Sistem Müdahale İzni",
+    "usage": "Soğuk zincir, endüstri",
+    "jobs": [
+      "Basınç",
+      "Kimyasal",
+      "Kapalı alan"
+    ],
+    "sectors": [
+      "Sanayi ve bakım"
+    ],
+    "filename": "PTW-056_Amonyak_veya_Sogutucu_Akiskan_Sistem_Mudahale_Izni.docx",
+    "note": "Örnek şablon; saha ve kurum prosedürüne uyarlanmalı"
+  }
+]

@@ -63,6 +63,10 @@ private val longTaskKinds = setOf("site_visit", "annual_work_plan", "board", "co
 @Composable
 fun NovaProcessGate(client: NovaProcessClient, kind: String, canWrite: Boolean, onBack: () -> Unit, initialCompany: String? = null,
                     parent: String? = null, startInAddMode: Boolean = false) {
+    if (kind == "work_permit") {
+        NovaWorkPermitLibraryScreen(onBack)
+        return
+    }
     val spec = remember(kind) { NovaProcessKind.get(kind) }
     val coroutines = rememberCoroutineScope()
     var company by remember { mutableStateOf(initialCompany) }

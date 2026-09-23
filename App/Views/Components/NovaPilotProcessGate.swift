@@ -37,10 +37,10 @@ struct NovaPilotProcessGate: View {
             download: { bucket, path in try await fileService.download(identity, bucket: bucket, path: path) })
     }
     var body: some View {
-        // Opened straight into "add": the editor alone (already NovaPopup)
-        // is the entire cover, so it blurs the real company page instead of
-        // an empty intermediate list screen. See NovaPopup's own doc comment.
-        if startInAddMode, let initialCompany {
+        if kind == "work_permit" {
+            NovaWorkPermitLibraryScreen(onBack: onBack)
+        } else if startInAddMode, let initialCompany {
+            // The existing editor still handles other process kinds.
             NovaProcessEditor(identity: identity, kind: kind, company: initialCompany, parent: parent, canWrite: canWrite, fileClient: fileClient)
         } else {
         NovaPageSurface(onEdgeBack: onBack) {

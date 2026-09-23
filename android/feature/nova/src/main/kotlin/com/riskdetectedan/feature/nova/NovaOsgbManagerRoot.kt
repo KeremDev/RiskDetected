@@ -788,8 +788,13 @@ private fun NovaOsgbCompanyOverview(context: IsgWorkspaceContext, company: NovaW
                         .forEach { DomainRow(it, snapshots, ::subtitle, onDomain) }
                 }
                 Category("Diğer kayıtlar") {
-                    listOf(IsgWorkspaceDomain.ANNUAL_PLAN, IsgWorkspaceDomain.WORK_PERMIT, IsgWorkspaceDomain.VISIT, IsgWorkspaceDomain.PPE)
+                    listOf(IsgWorkspaceDomain.ANNUAL_PLAN, IsgWorkspaceDomain.VISIT, IsgWorkspaceDomain.PPE)
                         .forEach { DomainRow(it, snapshots, ::subtitle, onDomain) }
+                }
+                Category("Örnek formlar") {
+                    CategoryRow(NovaDestination.workPermits.title, "56 indirilebilir Word örneği", NovaDestination.workPermits.symbol, null) {
+                        onDomain(IsgWorkspaceDomain.WORK_PERMIT)
+                    }
                 }
             }
             error?.let {

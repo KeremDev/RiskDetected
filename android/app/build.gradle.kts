@@ -387,6 +387,8 @@ android {
     // Reuse the counsel-approved English legal set that iOS ships. Android keeps its own
     // Turkish bundle under app/src/main/assets/legal and reads this shared set under /en.
     sourceSets.getByName("main").assets.srcDir(rootProject.file("../App/LegalDocuments"))
+    // Bundle the shared, read-only Work Permit Word catalog.
+    sourceSets.getByName("main").assets.srcDir(rootProject.file("../App/WorkPermitAssets"))
 
     defaultConfig {
         applicationId = "com.riskdetectedan.app"

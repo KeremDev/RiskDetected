@@ -977,9 +977,12 @@ private struct IsgOSGBWorkspaceRoot: View {
             }
             companyCategory("Diğer kayıtlar") {
                 companyDomainRow(.annualPlan)
-                companyDomainRow(.workPermit)
                 companyDomainRow(.visit)
                 companyDomainRow(.ppe)
+            }
+            companyCategory("Örnek formlar") {
+                companyPlainRow(title: IsgWorkspaceDomain.workPermit.title, subtitle: "56 indirilebilir Word örneği",
+                    symbol: IsgWorkspaceDomain.workPermit.symbol, status: nil) { companyWorkspaceDomain = .workPermit }
             }
         }
     }
@@ -1277,7 +1280,9 @@ private struct IsgOSGBWorkspaceRoot: View {
 
     @ViewBuilder private func domain(_ value: IsgWorkspaceDomain, startInAddMode: Bool = false,
                                      onBack: (() -> Void)? = nil) -> some View {
-        if let company = selectedCompany {
+        if value == .workPermit {
+            NovaWorkPermitLibraryScreen(onBack: onBack ?? { navigate(.home) })
+        } else if let company = selectedCompany {
             if value == .personnel {
                 personnelScreen(onBack: onBack)
             } else {
