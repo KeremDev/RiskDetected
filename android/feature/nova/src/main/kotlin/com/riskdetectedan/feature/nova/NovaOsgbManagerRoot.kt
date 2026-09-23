@@ -73,6 +73,7 @@ class NovaOsgbManagerViewModel @Inject constructor(
     private val transport: NovaExpertTransport,
     val repository: IsgWorkspaceRepository,
     val events: NovaRecordEvents,
+    val analyses: com.riskdetectedan.core.data.nova.NovaAnalysisService,
     private val profiles: ProfileRepository,
     private val auth: AuthRepository,
 ) : ViewModel() {
@@ -183,6 +184,7 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
     var dashboardDomain by remember { mutableStateOf<IsgWorkspaceDomain?>(null) }
     var companyPage by remember { mutableStateOf<String?>(null) }
     var companyDomain by remember { mutableStateOf<IsgWorkspaceDomain?>(null) }
+    var companyAnalyses by remember { mutableStateOf(false) }
     var editor by remember { mutableStateOf<ManagerEditor?>(null) }
     var showingMembers by remember { mutableStateOf(false) }
     var showingAssignments by remember { mutableStateOf(false) }
@@ -204,8 +206,17 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
         }
     }
 
+    @Composable fun analyses(onBack: () -> Unit, create: Boolean = false) {
+        if (selected == null) CompanyRequired(NovaDestination.analyses.title, onBack)
+        else key(selected.id, create) {
+            NovaOsgbAnalysisScreen(remember(context, selected) { NovaOsgbScope(context, viewModel.repository, selected.id, selected.name,
+                selected.hazardClass) }, stats = { viewModel.analyses.stats(identity, null, selected.id) }, onBack = onBack, startInCreateMode = create)
+        }
+    }
+
     @Composable fun domain(value: IsgWorkspaceDomain, onBack: () -> Unit = { navigate(NovaDestination.home) }, startInAddMode: Boolean = false) {
-        if (selected == null || domainClient == null) CompanyRequired(value.title, onBack)
+        if (value == IsgWorkspaceDomain.WORK_PERMIT) NovaWorkPermitLibraryScreen(onBack)
+        else if (selected == null || domainClient == null) CompanyRequired(value.title, onBack)
         else if (value == IsgWorkspaceDomain.PERSONNEL) personnel(onBack)
         else key(selected.id, value, startInAddMode) {
             val scope = remember(context, selected) { NovaOsgbScope(context, viewModel.repository, selected.id, selected.name, selected.hazardClass) }
@@ -249,7 +260,7 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
                 if (selected != null) showingAssignments = true else navigate(NovaDestination.companies)
             }) else null,
             onInvite = { navigate(NovaDestination.profile) },
-            onDestination = { if (it == NovaDestination.companies) { companyPage = null; companyDomain = null } },
+            onDestination = { if (it == NovaDestination.companies) { companyPage = null; companyDomain = null; companyAnalyses = false } },
             onLogout = viewModel::signOut,
         )) { destination ->
         when (destination) {
@@ -279,10 +290,11 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
                 when {
                     open != null && showingSearch -> search { showingSearch = false }
                     open != null && companyDomain != null -> domain(companyDomain!!, onBack = { companyDomain = null })
+                    open != null && companyAnalyses -> analyses({ companyAnalyses = false })
                     open != null -> NovaOsgbCompanyOverview(context, open, workspace, viewModel.repository,
                         onEdit = if (canManage) ({ editor = ManagerEditor(open) }) else null,
                         onBack = { companyPage = null; companyDomain = null }, onDomain = { companyDomain = it },
-                        onAnalyses = { navigate(NovaDestination.analyses) }, onSearch = { showingSearch = true })
+                        onAnalyses = { companyAnalyses = true }, onSearch = { showingSearch = true })
                     else -> NovaCompaniesScreen(workspace.companies.map { NovaCompanyItem(it.id, it.name, companySummary(it), it.profileCompletionCount, 8) },
                         isLoading = workspace.phase == NovaWorkspacePhase.loading && workspace.companies.isEmpty(),
                         onSelect = { id ->
@@ -314,6 +326,7 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
             NovaDestination.periodicChecks -> domain(IsgWorkspaceDomain.EQUIPMENT)
             NovaDestination.documentChecklist, NovaDestination.documents -> domain(IsgWorkspaceDomain.FILES)
             NovaDestination.newDocument -> domain(IsgWorkspaceDomain.FILES, startInAddMode = true)
+            NovaDestination.analyses, NovaDestination.newAnalysis -> analyses({ navigate(NovaDestination.findings) }, destination == NovaDestination.newAnalysis)
             NovaDestination.contractors -> personnel({ navigate(NovaDestination.home) }, NovaOsgbPersonnelSection.contractor)
             NovaDestination.memory, NovaDestination.notifications -> NovaOsgbChangeScreen({
                 viewModel.repository.changes(context, selected?.id)["rows"]?.jsonArray.orEmpty().mapNotNull { item ->
@@ -326,9 +339,6 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
                 NovaPageHeading("Profil", modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) { navigate(NovaDestination.home) }
                 Box(Modifier.weight(1f)) { slots.profile { navigate(NovaDestination.home) } }
             }
-            else -> CompanyRequired(destination.title, onBack = { navigate(NovaDestination.home) },
-                message = "Bu sayfa OSGB çalışma alanında henüz açılmadı. Ana sayfadaki firma operasyonlarını kullanabilirsiniz.",
-                title = "Sayfa hazırlanıyor")
         }
     }
 }

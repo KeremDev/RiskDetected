@@ -128,9 +128,9 @@ class IsgWorkspaceRepository @Inject constructor(private val client: SupabaseCli
             context.membership.permissionRevision, companyId, kind)
     }
 
-    suspend fun analyses(context: IsgWorkspaceContext, companyId: String): JsonObject = inScope(context, companyId) {
+    suspend fun analyses(context: IsgWorkspaceContext, companyId: String, offset: Int = 0, limit: Int = 30): JsonObject = inScope(context, companyId) {
         gateway.analyses(context.workspaceId, context.membership.membershipId,
-            context.membership.permissionRevision, companyId)
+            context.membership.permissionRevision, companyId, offset, limit)
     }
 
     suspend fun analysis(context: IsgWorkspaceContext, companyId: String, analysisId: String): JsonObject =
@@ -139,12 +139,27 @@ class IsgWorkspaceRepository @Inject constructor(private val client: SupabaseCli
                 context.membership.permissionRevision, companyId, analysisId)
         }
 
-    suspend fun createExport(context: IsgWorkspaceContext, companyId: String, analysisId: String,
-                             format: String): JsonObject = inScope(context, companyId) {
-        gateway.createExport(context.workspaceId, context.membership.membershipId,
-            context.membership.permissionRevision, context.canOperate, UUID.randomUUID().toString(),
-            companyId, analysisId, format, emptyList(), emptyList(), emptyList())
+    suspend fun createExport(context: IsgWorkspaceContext, companyId: String, analysisId: String, format: String,
+                             mutationId: String = UUID.randomUUID().toString(), findingIds: List<String> = emptyList(),
+                             expertItemIds: List<String> = emptyList(), trainingItemIds: List<String> = emptyList()): JsonObject =
+        inScope(context, companyId) {
+            gateway.createExport(context.workspaceId, context.membership.membershipId,
+                context.membership.permissionRevision, context.canOperate, mutationId,
+                companyId, analysisId, format, findingIds, expertItemIds, trainingItemIds)
+        }
+
+    /** Files one workspace analysis item as a nonconformity; returns whether a new record was created. */
+    suspend fun fileAnalysisItem(context: IsgWorkspaceContext, mutationId: String, companyId: String, workplaceId: String, analysisId: String,
+                                 itemKind: String, itemId: String, severity: String?, openedOn: String): Boolean = inScope(context, companyId) {
+        gateway.fileAnalysisItem(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision, context.canOperate,
+            mutationId, companyId, workplaceId, "workspace", analysisId, itemKind, itemId, severity, openedOn, null)["created"]!!.jsonPrimitive.boolean
     }
+
+    suspend fun submitPhotoAnalysis(context: IsgWorkspaceContext, mutationId: String, companyId: String, assetId: String): String =
+        inScope(context, companyId) {
+            gateway.submitPhotoAnalysis(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision,
+                context.canOperate, mutationId, companyId, assetId)
+        }
 
     /** One domain's rows with its counters; a domain without counters shows its rows alone. */
     suspend fun snapshot(context: IsgWorkspaceContext, companyId: String, domain: IsgWorkspaceDomain): IsgWorkspaceSnapshot {

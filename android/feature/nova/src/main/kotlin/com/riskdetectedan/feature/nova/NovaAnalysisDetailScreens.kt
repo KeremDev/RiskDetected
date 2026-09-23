@@ -98,7 +98,9 @@ private fun OutcomeLine(outcome: NovaFindingOutcome) = when (outcome) {
  * the finding pages with editing, feedback, filing and the report.
  */
 @Composable
-fun NovaAnalysisDetailScreen(client: NovaAnalysisDetailClient, onBack: () -> Unit, canWrite: Boolean = true) {
+fun NovaAnalysisDetailScreen(client: NovaAnalysisDetailClient, onBack: () -> Unit, canWrite: Boolean = true, canEdit: Boolean = true,
+                             canReact: Boolean = true, canFileTraining: Boolean = true, canReport: Boolean = true,
+                             reportResultIsArchiveName: Boolean = true) {
     val coroutines = rememberCoroutineScope()
     val celebrate = rememberNovaCelebrate()
     var data by remember { mutableStateOf<NovaAnalysisDetailData?>(null) }
@@ -135,6 +137,7 @@ fun NovaAnalysisDetailScreen(client: NovaAnalysisDetailClient, onBack: () -> Uni
     val current = data
     if (inspected != null && current != null) {
         NovaAnalysisItemDetailScreen(inspected, section, method, photoFor(inspected), current, reactions[inspected.id] ?: inspected.reaction, canWrite,
+            canEdit, canReact, section != NovaAnalysisSectionKind.trainingRecommendations || canFileTraining,
             react = { value -> client.react(inspected, section, value); reactions[inspected.id] = value },
             filing = { onDone -> NovaAnalysisFilingScreen(current, inspected, section, method, client, { id, outcome -> outcomes[id] = outcome }, onDone) },
             onBack = { inspecting = null }, onEdit = { inspecting = null; editing = inspected }, onDelete = { inspecting = null; deleting = inspected })
@@ -222,7 +225,7 @@ fun NovaAnalysisDetailScreen(client: NovaAnalysisDetailClient, onBack: () -> Uni
                 NovaIcon("chevron.left", 13.dp)
                 NovaText("Geri Dön", style = NovaTypeToken.badge)
             }
-            if (canWrite) Row(Modifier.weight(1f).height(54.dp).clip(RoundedCornerShape(18.dp)).background(NovaColorToken.inverse.color())
+            if (canWrite && canReport) Row(Modifier.weight(1f).height(54.dp).clip(RoundedCornerShape(18.dp)).background(NovaColorToken.inverse.color())
                 .novaRowPress { reporting = true }.padding(start = 16.dp, end = 8.dp).testTag("analysis.detail.report"),
                 verticalAlignment = Alignment.CenterVertically) {
                 NovaIcon("doc.text", 15.dp, tint = NovaColorToken.onInverse.color())
@@ -254,7 +257,7 @@ fun NovaAnalysisDetailScreen(client: NovaAnalysisDetailClient, onBack: () -> Uni
         if (reporting && current != null) NovaAnalysisReportSheet(current, method) { request ->
             val name = client.report(request)
             reporting = false
-            notice = "Rapor arşive kaydedildi: $name"
+            notice = if (reportResultIsArchiveName) "Rapor arşive kaydedildi: $name" else name
         }
     }
     NovaPopup(assigning, { assigning = false }, identifier = "analysis.assign") {
@@ -397,7 +400,8 @@ private fun AdviceCard(item: NovaAnalysisItem, kind: NovaAnalysisSectionKind, on
 /** A finding is a destination (iOS `NovaAnalysisItemDetailScreen`): photo, title, the full fields, score and feedback. */
 @Composable
 private fun NovaAnalysisItemDetailScreen(item: NovaAnalysisItem, section: NovaAnalysisSectionKind, method: NovaRiskMethod, photo: Bitmap?,
-                                         data: NovaAnalysisDetailData, reaction: NovaAnalysisReaction, canWrite: Boolean,
+                                         data: NovaAnalysisDetailData, reaction: NovaAnalysisReaction, canWrite: Boolean, canEdit: Boolean,
+                                         canReact: Boolean, canFile: Boolean,
                                          react: suspend (NovaAnalysisReaction) -> Unit, filing: @Composable (onDone: () -> Unit) -> Unit,
                                          onBack: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit) {
     val coroutines = rememberCoroutineScope()
@@ -426,7 +430,7 @@ private fun NovaAnalysisItemDetailScreen(item: NovaAnalysisItem, section: NovaAn
             verticalAlignment = Alignment.CenterVertically) {
             NovaBackButton(Modifier.testTag("analysis.finding.detail.back"), onClick = onBack)
             NovaText("Bulgu Detayı", Modifier.weight(1f), NovaTypeToken.screenTitle)
-            if (canWrite && section.isScored) Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp))
+            if (canWrite && canEdit && section.isScored) Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp))
                 .border(1.dp, NovaColorToken.border.color(), RoundedCornerShape(14.dp)).novaRowPress { menu = true }
                 .semantics { contentDescription = "Bulgu işlemleri" }, contentAlignment = Alignment.Center) { NovaIcon("ellipsis", 15.dp) }
         }
@@ -476,7 +480,7 @@ private fun NovaAnalysisItemDetailScreen(item: NovaAnalysisItem, section: NovaAn
                     if (score.factors.isNotEmpty()) NovaText("= ${NovaNonconformityWords.score(value)}", style = NovaTypeToken.meta)
                 }
             }
-            if (canWrite) Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            if (canWrite && canReact) Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 NovaDivider(Modifier.padding(top = 16.dp))
                 NovaText("Bu bulgu faydalı mıydı?", style = NovaTypeToken.label)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -506,7 +510,7 @@ private fun NovaAnalysisItemDetailScreen(item: NovaAnalysisItem, section: NovaAn
                 feedbackError?.let { NovaText(it, style = NovaTypeToken.metaQuiet, color = NovaColorToken.statusDangerInk.color()) }
             }
         }
-        if (canWrite && section.isFileable) Box(Modifier.fillMaxWidth().background(NovaColorToken.canvas.color().copy(alpha = 0.98f))
+        if (canWrite && canFile && section.isFileable) Box(Modifier.fillMaxWidth().background(NovaColorToken.canvas.color().copy(alpha = 0.98f))
             .padding(horizontal = 16.dp, vertical = 8.dp)) {
             NovaButton("Uygunsuzluk oluştur", { filingOpen = true }, Modifier.testTag("analysis.finding.file"), symbol = "plus.circle")
         }

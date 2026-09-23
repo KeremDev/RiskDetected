@@ -437,6 +437,19 @@ class IsgWorkspaceGateway(
         return result
     }
 
+    /** Starts a photo analysis on one filed company photo (`isg_workspace_photo_analysis_submit_v1`); returns the job id. */
+    suspend fun submitPhotoAnalysis(workspaceId: String, membershipId: String, permissionRevision: Long, canOperate: Boolean, mutationId: String,
+                                    companyId: String, assetId: String): String {
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        if (!UUID.matches(assetId)) validation()
+        val result = invoke("isg_workspace_photo_analysis_submit_v1", buildJsonObject {
+            put("p_workspace", workspaceId); put("p_company", companyId); put("p_idempotency", mutationId); put("p_source_asset", assetId)
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        if (result.text("workspace_id") != workspaceId || result.text("company_id") != companyId) fail()
+        return result.text("job_id")?.takeIf(UUID::matches) ?: fail()
+    }
+
     private fun validMember(row: JsonObject): Boolean {
         val role = row.text("role"); val status = row.text("status"); val practicing = row.bool("is_practicing_expert")
         return row.text("membership_id")?.let(UUID::matches) == true && role in setOf("owner", "admin", "expert") &&
