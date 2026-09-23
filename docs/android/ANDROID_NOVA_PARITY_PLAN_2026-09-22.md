@@ -123,6 +123,7 @@ sırası, aynı durum geçişleri, aynı boş/hata/yükleniyor durumları, aynı
 | Ana sayfa yeni görünüm, firma satırlarında logo + profil ilerlemesi | Tamam | `46177c05`, `ed7856c8`, `994057b2` |
 | Eğitim editörü 7 adım (firma → tür → konu → gün → eğitici → katılımcı → kontrol) + sertifika ekranı yeni akış | Tamam | `fa006e03` |
 | Profil "Arkadaşını davet et" (referral kodu, paylaşım, ödül başlatma, kod kullanma, davet bağlantısı) | Tamam | `025d7e95` |
+| Eğitim kaydetme kuralları (seçilen firma listesi + kaldır, eğitici kaldırma, sunucu sınırları, arka planda sertifika) | Tamam | `96bad3f7` |
 
 iOS'ta erişilemeyen (ölü) olduğu için taşınmayanlar: `NovaPPEFormPDF` (KKD form PDF'i),
 `IsgWorkspaceTrainingAdvancedScreen`, analiz bölüm başlığı/risk özet kartı/madde çubuğu/defter paneli,
@@ -137,8 +138,6 @@ Bilinçli olarak açık bırakılanlar:
 - Üretim profilindeki not defteri kapısı (`NotebookUIRelease.enabled=false`) değiştirilmedi; iOS sunucu rollout'u okuyor.
 - iOS'ta başka oturumda süren işler (KKD örnek formu, iş izni kütüphanesi, firma sayfası "Örnek formlar")
   Android'de de o oturum tarafından taşınıyor.
-- Eğitim editörünün işyerisiz firma ve tek tehlike sınıfı kuralları `supabase/pilot-release/candidates` altındaki
-  henüz dağıtılmamış backend adaylarına dayanıyor; iOS ile aynı durumda.
 
 Doğrulama önizleme uygulamasında ve birim testlerle yapıldı; canlı staging doğrulaması kullanıcı girişini bekliyor.
 
