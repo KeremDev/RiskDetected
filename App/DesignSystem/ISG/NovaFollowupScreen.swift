@@ -11,12 +11,12 @@ struct NovaFollowupPage: Decodable {
         var id: String { kind + record_id.uuidString }
         var typeTitle: String {
             switch kind {
-            case "training": return "Eğitim"
-            case "equipment": return "Periyodik kontrol"
-            case "risk_assessment": return "Risk değerlendirmesi"
-            case "emergency_plan": return "Acil durum planı"
+            case "training": return RDLocalization.string("localizable.nova.followup.screen.egitim.e2f9f769", table: .localizable, fallback: "Eğitim")
+            case "equipment": return RDLocalization.string("localizable.nova.followup.screen.periyodik.kontrol.b45bd52d", table: .localizable, fallback: "Periyodik kontrol")
+            case "risk_assessment": return RDLocalization.string("localizable.nova.followup.screen.risk.degerlendirmesi.06153955", table: .localizable, fallback: "Risk değerlendirmesi")
+            case "emergency_plan": return RDLocalization.string("localizable.nova.followup.screen.acil.durum.plani.6be8ff28", table: .localizable, fallback: "Acil durum planı")
             case "appointment": return "Atama"
-            case "document": return "Önceki evrak kaydı"
+            case "document": return RDLocalization.string("localizable.nova.followup.screen.onceki.evrak.kaydi.698b873e", table: .localizable, fallback: "Önceki evrak kaydı")
             case "file": return "Dosya"
             default: return NovaProcessKind.get(kind).title
             }
@@ -61,22 +61,22 @@ struct NovaFollowupScreen: View {
         NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    NovaPageHeading(title: "Evrak Takibi", onBack: onBack)
-                    NovaHelpHint(text: "Süreler ilgili modüldeki kayıttan otomatik gelir. Bir kaydı açarak kaynağındaki bilgileri düzenleyebilirsiniz.")
+                    NovaPageHeading(title: RDLocalization.string("localizable.nova.followup.screen.evrak.takibi.72eac10a", table: .localizable, fallback: "Evrak Takibi"), onBack: onBack)
+                    NovaHelpHint(text: RDLocalization.string("localizable.nova.followup.screen.sureler.ilgili.moduldeki.kayittan.otomatik.gelir.a1f6f95e", table: .localizable, fallback: "Süreler ilgili modüldeki kayıttan otomatik gelir. Bir kaydı açarak kaynağındaki bilgileri düzenleyebilirsiniz."))
                     if initialCompany == nil {
-                        NovaFilterField(label: "Firma", options: [.init(id: nil, title: "Tüm firmalar")] + companies.map { .init(id: $0.id.uuidString, title: $0.name) },
+                        NovaFilterField(label: "Firma", options: [.init(id: nil, title: RDLocalization.string("localizable.nova.followup.screen.tum.firmalar.d30c0cdf", table: .localizable, fallback: "Tüm firmalar"))] + companies.map { .init(id: $0.id.uuidString, title: $0.name) },
                             selected: company?.uuidString, identifier: "followup.company") { company = $0.flatMap(UUID.init(uuidString:)) }
                     }
                     if let page { summary(page) }
-                    HStack { Image(systemName: "magnifyingglass"); TextField("Evrak veya firma ara", text: $query).onSubmit { revision += 1 }; Button("Ara") { revision += 1 } }
+                    HStack { Image(systemName: "magnifyingglass"); TextField(RDLocalization.string("localizable.nova.followup.screen.evrak.veya.firma.ara.7a66a46d", table: .localizable, fallback: "Evrak veya firma ara"), text: $query).onSubmit { revision += 1 }; Button("Ara") { revision += 1 } }
                         .padding(12).background(.white, in: RoundedRectangle(cornerRadius: 14))
-                    NovaFilterField(label: "Durum", options: [.init(id: nil, title: "Tüm durumlar")] + ["current", "soon", "expired", "undated"].map { .init(id: $0, title: NovaFollowupPage.statusTitle($0)) },
+                    NovaFilterField(label: "Durum", options: [.init(id: nil, title: RDLocalization.string("localizable.nova.followup.screen.tum.durumlar.ce052560", table: .localizable, fallback: "Tüm durumlar"))] + ["current", "soon", "expired", "undated"].map { .init(id: $0, title: NovaFollowupPage.statusTitle($0)) },
                         selected: status.isEmpty ? nil : status, identifier: "followup.status") { status = $0 ?? "" }
                     if busy && rows.isEmpty { ProgressView("Evraklar yükleniyor…").frame(maxWidth: .infinity) }
-                    if failure { NovaText(text: "Evrak takibi alınamadı.", style: .meta); Button("Yeniden dene") { revision += 1 } }
+                    if failure { NovaText(text: RDLocalization.string("localizable.nova.followup.screen.evrak.takibi.alinamadi.8599ee59", table: .localizable, fallback: "Evrak takibi alınamadı."), style: .meta); Button(RDLocalization.string("localizable.nova.followup.screen.yeniden.dene.c5c2272a", table: .localizable, fallback: "Yeniden dene")) { revision += 1 } }
                     if !busy && !failure && rows.isEmpty {
-                        NovaEmptyState(title: "Bu filtrede kayıt yok",
-                            message: "Süreli kayıtlar ilgili modüllere eklendiğinde yaklaşan ve geciken işler burada tek listede görünür.")
+                        NovaEmptyState(title: RDLocalization.string("localizable.nova.followup.screen.bu.filtrede.kayit.yok.8bbe2f66", table: .localizable, fallback: "Bu filtrede kayıt yok"),
+                            message: RDLocalization.string("localizable.nova.followup.screen.sureli.kayitlar.ilgili.modullere.eklendiginde.ya.6d924927", table: .localizable, fallback: "Süreli kayıtlar ilgili modüllere eklendiğinde yaklaşan ve geciken işler burada tek listede görünür."))
                     }
                     ForEach(rows) { row in
                         Button { if row.kind == "training" { trainingSource = row } else { selected = row } } label: {
@@ -89,7 +89,7 @@ struct NovaFollowupScreen: View {
                             }
                         }.buttonStyle(NovaRowPressStyle())
                     }
-                    if page?.has_more == true { Button("Daha fazla") { Task { await load(more: true) } }.disabled(busy) }
+                    if page?.has_more == true { Button(RDLocalization.string("localizable.nova.followup.screen.daha.fazla.c93627b1", table: .localizable, fallback: "Daha fazla")) { Task { await load(more: true) } }.disabled(busy) }
                 }.padding(16)
             }
         }.task { company = initialCompany; companies = (try? await NovaAnalysisWorkspace.companyOptions(identity: identity)) ?? [] }
@@ -102,9 +102,9 @@ struct NovaFollowupScreen: View {
     }
     private func summary(_ page: NovaFollowupPage) -> some View {
         HStack(spacing: 8) {
-            NovaListStat(title: "Güncel", symbol: "checkmark.circle", value: page.current)
-            NovaListStat(title: "Yaklaşıyor", symbol: "clock", value: page.soon)
-            NovaListStat(title: "Süresi doldu", symbol: "exclamationmark.triangle", value: page.expired)
+            NovaListStat(title: RDLocalization.string("localizable.nova.followup.screen.guncel.56e5ec8b", table: .localizable, fallback: "Güncel"), symbol: "checkmark.circle", value: page.current)
+            NovaListStat(title: RDLocalization.string("localizable.nova.followup.screen.yaklasiyor.89e7eb9b", table: .localizable, fallback: "Yaklaşıyor"), symbol: "clock", value: page.soon)
+            NovaListStat(title: RDLocalization.string("localizable.nova.followup.screen.suresi.doldu.fe9be698", table: .localizable, fallback: "Süresi doldu"), symbol: "exclamationmark.triangle", value: page.expired)
         }
     }
     private func destination(_ row: NovaFollowupPage.Row) -> some View {
@@ -133,9 +133,9 @@ struct NovaFollowupSummaryCard: View {
         Button { show = true } label: {
             NovaCard(padding: 14) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Label("Evrak süreleri", systemImage: "doc.badge.clock").font(NovaFont.font(.cardTitle))
-                    if let page { NovaText(text: "\(page.current) güncel · \(page.soon) yaklaşıyor · \(page.expired) süresi doldu", style: .meta) }
-                    else { NovaText(text: "Evrak ve belge sürelerini aç", style: .meta) }
+                    Label(RDLocalization.string("localizable.nova.followup.screen.evrak.sureleri.e6000ce2", table: .localizable, fallback: "Evrak süreleri"), systemImage: "doc.badge.clock").font(NovaFont.font(.cardTitle))
+                    if let page { NovaText(text: RDLocalization.format("localizable.nova.followup.screen.1.guncel.2.yaklasiyor.3.suresi.doldu.b67ab0f7", table: .localizable, fallback: "%1$@ güncel · %2$@ yaklaşıyor · %3$@ süresi doldu", arguments: [String(describing: page.current), String(describing: page.soon), String(describing: page.expired)]), style: .meta) }
+                    else { NovaText(text: RDLocalization.string("localizable.nova.followup.screen.evrak.ve.belge.surelerini.ac.f9a1029d", table: .localizable, fallback: "Evrak ve belge sürelerini aç"), style: .meta) }
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
         }.buttonStyle(NovaRowPressStyle())
@@ -164,7 +164,7 @@ private struct NovaFollowupEducation: View {
                     writableCompanies: writableCompanies,
                     onSaved: { savedCertificate = $0 })
             }
-            else if failed { NovaText(text: "Eğitim açılamadı. Eğitimler listesinden yeniden deneyin.") }
+            else if failed { NovaText(text: RDLocalization.string("localizable.nova.followup.screen.egitim.acilamadi.egitimler.listesinden.yeniden.d.c7e512d9", table: .localizable, fallback: "Eğitim açılamadı. Eğitimler listesinden yeniden deneyin.")) }
             else { ProgressView("Eğitim yükleniyor…") }
         }.task {
             do {
@@ -192,7 +192,7 @@ struct NovaFollowupDestination: View {
         case "emergency_plan": NovaPilotEmergencyGate(identity: identity, canWrite: canWrite, initialCompany: row.company_id, onBack: { onBack() })
         case "appointment": NovaPilotAppointmentGate(identity: identity, canWrite: canWrite, initialCompany: row.company_id, onBack: { onBack() })
         case "training": NovaFollowupEducation(identity: identity, session: row.source_id, company: row.company_id, canWrite: canWrite)
-        case "document": if let legacy { legacy(row.company_id) } else { NovaText(text: "Önceki evrak kaydı · " + row.title) }
+        case "document": if let legacy { legacy(row.company_id) } else { NovaText(text: RDLocalization.string("localizable.nova.followup.screen.onceki.evrak.kaydi.4d8cf101", table: .localizable, fallback: "Önceki evrak kaydı · ") + row.title) }
         default: NovaPilotFileGate(identity: identity, canWrite: canWrite, initialCompany: row.company_id, onBack: { onBack() })
         }
     }

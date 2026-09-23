@@ -544,7 +544,7 @@ struct NovaShellPanel: View {
                         .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 13))
                 }
                 .buttonStyle(NovaRowPressStyle())
-                .accessibilityLabel("Ayarlar")
+                .accessibilityLabel(RDLocalization.string("localizable.nova.expert.shell.ayarlar.348af126", table: .localizable, fallback: "Ayarlar"))
                 .accessibilityIdentifier("nova.settings")
 
                 Button { onLogout?() } label: {
@@ -611,7 +611,7 @@ struct NovaShellPanel: View {
                         .frame(width: 26, height: 26)
                         .background(NovaColorToken.accent.color(in: scheme).opacity(0.16), in: Circle())
                     VStack(alignment: .leading, spacing: 2) {
-                        NovaText(text: "Sıradaki işin", style: .micro, color: NovaColorToken.textMuted.color(in: scheme))
+                        NovaText(text: RDLocalization.string("localizable.nova.expert.shell.siradaki.isin.60ec8bac", table: .localizable, fallback: "Sıradaki işin"), style: .micro, color: NovaColorToken.textMuted.color(in: scheme))
                         NovaText(text: action.title, style: .body)
                     }
                     Spacer(minLength: 4)
@@ -642,8 +642,8 @@ struct NovaShellPanel: View {
                     .frame(width: 34, height: 34)
                     .background(NovaColorToken.accent.color(in: scheme).opacity(0.16), in: Circle())
                 VStack(alignment: .leading, spacing: 2) {
-                    NovaText(text: "Arkadaşını Davet Et", style: .buttonSm)
-                    NovaText(text: "7 Günlük Plus kazan", style: .metaQuiet, color: NovaColorToken.textMuted.color(in: scheme))
+                    NovaText(text: RDLocalization.string("localizable.nova.expert.shell.arkadasini.davet.et.eec1e7c5", table: .localizable, fallback: "Arkadaşını Davet Et"), style: .buttonSm)
+                    NovaText(text: RDLocalization.string("localizable.nova.expert.shell.7.gunluk.plus.kazan.3174fe0c", table: .localizable, fallback: "7 Günlük Plus kazan"), style: .metaQuiet, color: NovaColorToken.textMuted.color(in: scheme))
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
@@ -679,9 +679,9 @@ struct NovaShellPanel: View {
         NovaText(text: RDLocalization.string("localizable.nova.manager.section", table: .localizable,
             fallback: "Yönetim"), style: .meta, color: NovaColorToken.textMuted.color(in: scheme))
             .padding(.horizontal, 8).padding(.bottom, 3)
-        drawerAction(title: "Firma ekle", symbol: "building.2.crop.circle", identifier: "nova.manager.add-company",
+        drawerAction(title: RDLocalization.string("localizable.nova.expert.shell.firma.ekle.7fbb1c5c", table: .localizable, fallback: "Firma ekle"), symbol: "building.2.crop.circle", identifier: "nova.manager.add-company",
                      action: onCompanyCreate)
-        drawerAction(title: "Uzman ekle", symbol: "person.badge.plus", identifier: "nova.manager.add-expert",
+        drawerAction(title: RDLocalization.string("localizable.nova.expert.shell.uzman.ekle.2e55bc0b", table: .localizable, fallback: "Uzman ekle"), symbol: "person.badge.plus", identifier: "nova.manager.add-expert",
                      action: onExpertCreate)
         drawerAction(title: RDLocalization.string("localizable.nova.manager.assignment", table: .localizable,
             fallback: "Atama yap / değiştir"), symbol: "person.2.badge.gearshape", identifier: "nova.manager.assign-expert",
@@ -814,9 +814,9 @@ struct NovaShellPanel: View {
         VStack(alignment: .leading, spacing: 8) {
             NovaText(text: RDLocalization.string("localizable.nova.expert.shell.ne.eklemek.istiyorsun.ee07893e", table: .localizable, fallback: "Ne eklemek istiyorsun?"), style: .sectionTitle).padding(.horizontal, 4).padding(.bottom, 4)
             if isManager {
-                managerQuickAction(title: "Firma ekle", detail: RDLocalization.string("localizable.nova.manager.company.add.detail", table: .localizable,
+                managerQuickAction(title: RDLocalization.string("localizable.nova.expert.shell.firma.ekle.05a3b909", table: .localizable, fallback: "Firma ekle"), detail: RDLocalization.string("localizable.nova.manager.company.add.detail", table: .localizable,
                     fallback: "Yeni firmayı OSGB çalışma alanına ekleyin."), symbol: "building.2.crop.circle", action: onCompanyCreate)
-                managerQuickAction(title: "Uzman ekle", detail: RDLocalization.string("localizable.nova.manager.expert.add.detail", table: .localizable,
+                managerQuickAction(title: RDLocalization.string("localizable.nova.expert.shell.uzman.ekle.370913e3", table: .localizable, fallback: "Uzman ekle"), detail: RDLocalization.string("localizable.nova.manager.expert.add.detail", table: .localizable,
                     fallback: "Ekibinize yeni bir İSG uzmanı davet edin."), symbol: "person.badge.plus", action: onExpertCreate)
                 managerQuickAction(title: RDLocalization.string("localizable.nova.manager.assignment", table: .localizable,
                     fallback: "Atama yap / değiştir"), detail: RDLocalization.string("localizable.nova.manager.assignment.detail", table: .localizable,
@@ -1183,7 +1183,7 @@ struct NovaDashboardScreen: View {
                 }
                 HStack(spacing: 10) {
                     Image(systemName: "line.3.horizontal.decrease").foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
-                    NovaText(text: "Son Analizler", style: .screenTitle)
+                    NovaText(text: RDLocalization.string("localizable.nova.expert.shell.son.analizler.fb74753a", table: .localizable, fallback: "Son Analizler"), style: .screenTitle)
                     Spacer(minLength: 0)
                     Button { onNavigate(.analyses) } label: { NovaText(text: RDLocalization.string("localizable.nova.expert.shell.tumu.e4457af3", table: .localizable, fallback: "Tümü"), style: .meta, color: muted) }
                 }.padding(.horizontal, 20)
@@ -1192,7 +1192,7 @@ struct NovaDashboardScreen: View {
                         HStack(spacing: 10) {
                             NovaIcon(symbol: "photo.on.rectangle.angled", size: 20)
                                 .foregroundStyle(NovaColorToken.accentInk.color(in: scheme))
-                            NovaText(text: "Henüz analiz yok · İlk analizi oluştur", style: .meta)
+                            NovaText(text: RDLocalization.string("localizable.nova.expert.shell.henuz.analiz.yok.ilk.analizi.olustur.7d49b2fb", table: .localizable, fallback: "Henüz analiz yok · İlk analizi oluştur"), style: .meta)
                             Spacer(minLength: 0)
                             Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
                         }
@@ -1298,7 +1298,7 @@ struct NovaDashboardScreen: View {
                 Spacer()
                 HStack(spacing: 5) {
                     Image(systemName: "arrow.left.and.right")
-                    Text("Kaydır")
+                    Text(RDLocalization.string("localizable.nova.expert.shell.kaydir.15c5d22a", table: .localizable, fallback: "Kaydır"))
                 }
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(NovaColorToken.textMuted.color(in: scheme))
@@ -1714,7 +1714,7 @@ struct NovaCompaniesScreen: View {
                                                 }
                                         }
                                         .frame(height: 5)
-                                        NovaText(text: "\(min(max(company.progressCompleted, 0), max(company.progressTotal, 1)))/\(max(company.progressTotal, 1))", style: .micro,
+                                        NovaText(text: String(min(max(company.progressCompleted, 0), max(company.progressTotal, 1))) + "/" + String(max(company.progressTotal, 1)), style: .micro,
                                                  color: NovaColorToken.textMuted.color(in: scheme))
                                             .fixedSize()
                                     }

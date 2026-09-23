@@ -540,7 +540,7 @@ struct NovaCompanyWorkspace: View {
                     NovaText(text: appointment.employeeName ?? "Personel", style: .bodyStrong)
                     NovaText(text: "Atanma: " + NovaStatisticsSnapshot.dayLabel(appointment.startsOn), style: .micro)
                     if appointment.assetDownload != nil {
-                        NovaText(text: "Evrak eklendi", style: .micro)
+                        NovaText(text: RDLocalization.string("localizable.nova.company.management.gate.evrak.eklendi.66ae2df6", table: .localizable, fallback: "Evrak eklendi"), style: .micro)
                     }
                 }
                 Spacer(minLength: 0)
@@ -565,12 +565,12 @@ struct NovaCompanyWorkspace: View {
             HStack(alignment: .top, spacing: 10) {
                 VStack(alignment: .leading, spacing: 2) {
                     if let assetID = row.currentFileAssetID {
-                        NovaText(text: "Risk Analizi - " + assetID.uuidString, style: .bodyStrong)
+                        NovaText(text: RDLocalization.string("localizable.nova.company.management.gate.risk.analizi.ed63765d", table: .localizable, fallback: "Risk Analizi - ") + assetID.uuidString, style: .bodyStrong)
                     } else if let assessedOn = row.currentAssessmentOn {
                         NovaText(text: RDLocalization.string("localizable.nova.company.risk.assessment.prefix", table: .localizable,
                             fallback: "Değerlendirme: ") + NovaStatisticsSnapshot.dayLabel(assessedOn), style: .bodyStrong)
                     } else {
-                        NovaText(text: "Risk analizi eklendi", style: .bodyStrong)
+                        NovaText(text: RDLocalization.string("localizable.nova.company.management.gate.risk.analizi.eklendi.0cfdb401", table: .localizable, fallback: "Risk analizi eklendi"), style: .bodyStrong)
                     }
                     if let validUntil = row.validUntil {
                         NovaText(text: RDLocalization.string("localizable.nova.company.risk.validity.prefix", table: .localizable,
@@ -596,7 +596,7 @@ struct NovaCompanyWorkspace: View {
         statStrip([
             ("Aktif", "checkmark.circle", board.count(.active)),
             (RDLocalization.string("localizable.nova.document.status.due.soon", table: .localizable, fallback: "Yaklaşıyor"), "clock", board.count(.upcoming)),
-            ("Sona eren", "calendar.badge.exclamationmark", board.count(.ended))
+            (RDLocalization.string("localizable.nova.company.management.gate.sona.eren.a7e10bf2", table: .localizable, fallback: "Sona eren"), "calendar.badge.exclamationmark", board.count(.ended))
         ], identifier: "company.section.appointment.stats")
     }
     private func riskStats(_ board: NovaRiskBoard) -> some View {
@@ -715,12 +715,12 @@ struct NovaCompanyWorkspace: View {
     private var personnelSection: some View {
         VStack(alignment: .leading, spacing: 9) {
             statStrip([
-                ("Toplam personel", "person.2", summary?.personnel_count ?? personnelRows.count),
-                (personnelQuery.isEmpty ? "Listelenen" : "Arama sonucu", "magnifyingglass", personnelRows.count)
+                (RDLocalization.string("localizable.nova.company.management.gate.toplam.personel.14303ddb", table: .localizable, fallback: "Toplam personel"), "person.2", summary?.personnel_count ?? personnelRows.count),
+                (personnelQuery.isEmpty ? "Listelenen" : RDLocalization.string("localizable.nova.company.management.gate.arama.sonucu.e0cda94f", table: .localizable, fallback: "Arama sonucu"), "magnifyingglass", personnelRows.count)
             ], identifier: "company.section.personnel.stats")
             HStack(spacing: 9) {
                 Image(systemName: "magnifyingglass").font(.system(size: 15))
-                TextField("Personel ara…", text: $personnelQuery)
+                TextField(RDLocalization.string("localizable.nova.company.management.gate.personel.ara.949c12c1", table: .localizable, fallback: "Personel ara…"), text: $personnelQuery)
                     .font(NovaFont.font(.body))
                     .textInputAutocapitalization(.words)
                     .submitLabel(.search)
@@ -777,7 +777,7 @@ struct NovaCompanyWorkspace: View {
             HStack(spacing: 8) {
                 NovaCompactActionButton(title: RDLocalization.string("localizable.nova.company.personnel.all", table: .localizable,
                     fallback: "Tüm personel"), symbol: "person.2") { sheet = .personnel }
-                NovaCompactActionButton(title: "Personel ekle", symbol: "plus", prominent: true,
+                NovaCompactActionButton(title: RDLocalization.string("localizable.nova.company.management.gate.personel.ekle.edbe3465", table: .localizable, fallback: "Personel ekle"), symbol: "plus", prominent: true,
                     enabled: canWritePersonnel) { sheet = .addPersonnel }
                     .accessibilityIdentifier("company.personnel.add")
             }
@@ -855,7 +855,7 @@ struct NovaCompanyWorkspace: View {
                 .frame(width: 42, height: 42)
                 .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 11))
                 .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
-                .accessibilityLabel("Firma logosu")
+                .accessibilityLabel(RDLocalization.string("localizable.nova.company.management.gate.firma.logosu.f2f6be8c", table: .localizable, fallback: "Firma logosu"))
         } else {
             NovaIcon(symbol: "building.2", size: 22).foregroundStyle(Color.black)
                 .frame(width: 42, height: 42)
@@ -868,7 +868,7 @@ struct NovaCompanyWorkspace: View {
                 HStack(spacing: 11) {
                     companyMark
                     VStack(alignment: .leading, spacing: 2) {
-                        NovaText(text: companyRecord?.logoPath?.isEmpty == false ? "Firma logosu" : "Logo ekleyin", style: .bodyStrong)
+                        NovaText(text: companyRecord?.logoPath?.isEmpty == false ? RDLocalization.string("localizable.nova.company.management.gate.firma.logosu.8c59cfb1", table: .localizable, fallback: "Firma logosu") : RDLocalization.string("localizable.nova.company.management.gate.logo.ekleyin.1583d76c", table: .localizable, fallback: "Logo ekleyin"), style: .bodyStrong)
                         NovaText(text: companyLogoSaving
                             ? RDLocalization.string("localizable.nova.company.logo.loading", table: .localizable, fallback: "Logo yükleniyor…")
                             : RDLocalization.string("localizable.nova.company.logo.usage", table: .localizable, fallback: "Firma kartında ve raporlarda kullanılır."), style: .micro,
@@ -1067,7 +1067,7 @@ struct NovaCompanyWorkspace: View {
         if let summary, summary.personnel_count == 0 {
             values.append(.init(id: "personnel", title: RDLocalization.string("localizable.nova.company.next.personnel.title", table: .localizable,
                     fallback: "İlk personeli ekle"),
-                detail: "Firma personeli bulunmuyor", symbol: "person.badge.plus", status: .warning, route: .personnel))
+                detail: RDLocalization.string("localizable.nova.company.management.gate.firma.personeli.bulunmuyor.87a3a055", table: .localizable, fallback: "Firma personeli bulunmuyor"), symbol: "person.badge.plus", status: .warning, route: .personnel))
         }
         if let completedTrainings, completedTrainings == 0 {
             values.append(.init(id: "training", title: RDLocalization.string("localizable.nova.company.next.training.title", table: .localizable,
@@ -1091,8 +1091,8 @@ struct NovaCompanyWorkspace: View {
 
     private var companyCategorySections: some View {
         VStack(alignment: .leading, spacing: 22) {
-            simpleCategory("Firma ve kadro") {
-                simpleRow(title: "Firma bilgileri", detail: summary?.sector ?? "Profil bilgileri",
+            simpleCategory(RDLocalization.string("localizable.nova.company.management.gate.firma.ve.kadro.13e68bfd", table: .localizable, fallback: "Firma ve kadro")) {
+                simpleRow(title: RDLocalization.string("localizable.nova.company.management.gate.firma.bilgileri.9ca2b0c3", table: .localizable, fallback: "Firma bilgileri"), detail: summary?.sector ?? RDLocalization.string("localizable.nova.company.management.gate.profil.bilgileri.7dc425da", table: .localizable, fallback: "Profil bilgileri"),
                     symbol: "building.2", status: companyRecordLoaded ? (RDLocalization.string(
                         "localizable.nova.dashboard.current", table: .localizable, fallback: "Güncel"), .success) : nil,
                     identifier: "company.section.info", action: canManageCompany ? { sheet = .editCompany } : nil)
@@ -1108,15 +1108,15 @@ struct NovaCompanyWorkspace: View {
                 simpleRow(title: NovaCompanySection.support.title, detail: appointmentDetail(supportAppointment),
                     symbol: NovaCompanySection.support.symbol, status: simpleStatus(.support)) { processKind = "appointment" }
             }
-            simpleCategory("Risk ve acil durum") {
+            simpleCategory(RDLocalization.string("localizable.nova.company.management.gate.risk.ve.acil.durum.30c1b9ec", table: .localizable, fallback: "Risk ve acil durum")) {
                 sectionRow(.risk)
                 sectionRow(.emergency)
             }
-            simpleCategory("Kontrol ve olaylar") {
+            simpleCategory(RDLocalization.string("localizable.nova.company.management.gate.kontrol.ve.olaylar.c41e0d8c", table: .localizable, fallback: "Kontrol ve olaylar")) {
                 sectionRow(.inspections)
                 simpleRow(title: "Uygunsuzluklar", detail: String(format: RDLocalization.string(
                     "localizable.nova.company.record.count", table: .localizable, fallback: "%d kayıt"), nonconformityCount ?? 0),
-                    symbol: "exclamationmark.triangle", status: openNonconformityCount > 0 ? ("Takip gerekli", .warning) :
+                    symbol: "exclamationmark.triangle", status: openNonconformityCount > 0 ? (RDLocalization.string("localizable.nova.company.management.gate.takip.gerekli.f721eeb4", table: .localizable, fallback: "Takip gerekli"), .warning) :
                         (RDLocalization.string("localizable.nova.dashboard.current", table: .localizable, fallback: "Güncel"), .success),
                     identifier: "company.section.nonconformities", action: onOpenNonconformities)
                 sectionRow(.accidents)
@@ -1176,7 +1176,7 @@ struct NovaCompanyWorkspace: View {
         if let kind = moduleKind(section), let row = processTracking?.summaries.first(where: { $0.id == kind }) {
             if row.overdue > 0 { return ("Dikkat", .danger) }
             if row.upcoming > 0 { return (RDLocalization.string("localizable.nova.document.status.due.soon", table: .localizable, fallback: "Yaklaşıyor"), .warning) }
-            if row.pending > 0 || row.review > 0 { return ("Takip gerekli", .warning) }
+            if row.pending > 0 || row.review > 0 { return (RDLocalization.string("localizable.nova.company.management.gate.takip.gerekli.d7be9b18", table: .localizable, fallback: "Takip gerekli"), .warning) }
             return row.total > 0
                 ? (RDLocalization.string("localizable.nova.dashboard.current", table: .localizable, fallback: "Güncel"), .success)
                 : (RDLocalization.string("localizable.nova.company.status.not.started", table: .localizable, fallback: "Başlanmadı"), .warning)
@@ -1184,7 +1184,7 @@ struct NovaCompanyWorkspace: View {
         if section == .risk, let riskBoard {
             if riskBoard.count(.expired) > 0 { return ("Dikkat", .danger) }
             if riskBoard.count(.dueSoon) > 0 { return (RDLocalization.string("localizable.nova.document.status.due.soon", table: .localizable, fallback: "Yaklaşıyor"), .warning) }
-            if riskBoard.count(.untracked) > 0 { return ("Takip gerekli", .warning) }
+            if riskBoard.count(.untracked) > 0 { return (RDLocalization.string("localizable.nova.company.management.gate.takip.gerekli.d70a65a5", table: .localizable, fallback: "Takip gerekli"), .warning) }
             return riskBoard.total > 0
                 ? (RDLocalization.string("localizable.nova.dashboard.current", table: .localizable, fallback: "Güncel"), .success)
                 : (RDLocalization.string("localizable.nova.company.status.not.started", table: .localizable, fallback: "Başlanmadı"), .warning)
@@ -1192,7 +1192,7 @@ struct NovaCompanyWorkspace: View {
         if section == .inspections, let equipment {
             if (equipment.counts[.overdue] ?? 0) + (equipment.counts[.failed] ?? 0) > 0 { return ("Dikkat", .danger) }
             if (equipment.counts[.dueSoon] ?? 0) > 0 { return (RDLocalization.string("localizable.nova.document.status.due.soon", table: .localizable, fallback: "Yaklaşıyor"), .warning) }
-            if (equipment.counts[.neverInspected] ?? 0) + (equipment.counts[.periodUnknown] ?? 0) > 0 { return ("Takip gerekli", .warning) }
+            if (equipment.counts[.neverInspected] ?? 0) + (equipment.counts[.periodUnknown] ?? 0) > 0 { return (RDLocalization.string("localizable.nova.company.management.gate.takip.gerekli.368bcb14", table: .localizable, fallback: "Takip gerekli"), .warning) }
             return equipment.total > 0
                 ? (RDLocalization.string("localizable.nova.dashboard.current", table: .localizable, fallback: "Güncel"), .success)
                 : (RDLocalization.string("localizable.nova.company.status.not.started", table: .localizable, fallback: "Başlanmadı"), .warning)
@@ -1205,7 +1205,7 @@ struct NovaCompanyWorkspace: View {
         switch progress[section] {
         case .complete: return (RDLocalization.string("localizable.nova.dashboard.current", table: .localizable, fallback: "Güncel"), .success)
         case .missing: return (RDLocalization.string("localizable.nova.company.status.not.started", table: .localizable, fallback: "Başlanmadı"), .warning)
-        case .needsReview: return ("Takip gerekli", .warning)
+        case .needsReview: return (RDLocalization.string("localizable.nova.company.management.gate.takip.gerekli.81bad132", table: .localizable, fallback: "Takip gerekli"), .warning)
         case .unknown: return nil
         }
     }
@@ -1222,7 +1222,7 @@ struct NovaCompanyWorkspace: View {
             return String(format: RDLocalization.string("localizable.nova.company.record.count", table: .localizable,
                 fallback: "%d kayıt"), row.total)
         }
-        if section == .accidents, let files { return "\(files.counts(forCategories: accidentCategories).values.reduce(0, +)) dosya" }
+        if section == .accidents, let files { return RDLocalization.format("localizable.nova.company.management.gate.1.dosya.f6a43761", table: .localizable, fallback: "%1$@ dosya", arguments: [String(describing: files.counts(forCategories: accidentCategories).values.reduce(0, +))]) }
         return RDLocalization.string("localizable.nova.company.records.view", table: .localizable, fallback: "Kayıtları görüntüle")
     }
 

@@ -401,13 +401,13 @@ struct ProfileView: View {
                 .padding(.bottom, 6)
 
             pilotGroup {
-                pilotAction("Profil bilgileri", icon: "person.crop.circle", tint: .gray,
+                pilotAction(RDLocalization.string("localizable.profile.view.profil.bilgileri.90dd690a", table: .localizable, fallback: "Profil bilgileri"), icon: "person.crop.circle", tint: .gray,
                     id: "profile.row.info") { pilotPath.append(.details) }
                 pilotSeparator
                 pilotAction("Bildirimler", icon: "bell", tint: .gray,
                     id: "profile.row.notifications") { pilotPath.append(.notifications) }
                 pilotSeparator
-                pilotAction("Firmalarım", icon: "building.2", tint: .gray,
+                pilotAction(RDLocalization.string("localizable.profile.view.firmalarim.fe23820a", table: .localizable, fallback: "Firmalarım"), icon: "building.2", tint: .gray,
                     id: "profile.row.companies") { showCompanyPicker = true }
             }
 
@@ -444,7 +444,7 @@ struct ProfileView: View {
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) { showMoreProfileActions.toggle() }
                 } label: {
-                    PilotProfileRow(icon: "ellipsis", title: "Diğer hesap seçenekleri",
+                    PilotProfileRow(icon: "ellipsis", title: RDLocalization.string("localizable.profile.view.diger.hesap.secenekleri.04e0e30e", table: .localizable, fallback: "Diğer hesap seçenekleri"),
                         tint: Color(hex: "#73777D"), trailingSymbol: showMoreProfileActions ? "chevron.up" : "chevron.down")
                 }
                 .buttonStyle(.plain)
@@ -483,7 +483,7 @@ struct ProfileView: View {
             Button {
                 pendingDataAction = .requestAccountDeletion
             } label: {
-                PilotProfileRow(icon: "trash", title: "Hesabımı sil", tint: Color(hex: "#D64B4B"),
+                PilotProfileRow(icon: "trash", title: RDLocalization.string("localizable.profile.view.hesabimi.sil.08c8388b", table: .localizable, fallback: "Hesabımı sil"), tint: Color(hex: "#D64B4B"),
                     titleColor: Color(hex: "#C9393B"))
                     .background(profileCardFill, in: RoundedRectangle(cornerRadius: 20))
                     .overlay(RoundedRectangle(cornerRadius: 20).stroke(profileLine, lineWidth: 1))
@@ -492,7 +492,7 @@ struct ProfileView: View {
             .accessibilityIdentifier("profile.row.delete_account")
 
             Button { app.signOut() } label: {
-                Text("Çıkış yap")
+                Text(RDLocalization.string("localizable.profile.view.cikis.yap.180fbb8a", table: .localizable, fallback: "Çıkış yap"))
                     .font(NovaFont.font(.bodyStrong))
                     .foregroundStyle(Color(hex: "#C9393B"))
                     .frame(maxWidth: .infinity, minHeight: 54)
@@ -533,7 +533,7 @@ struct ProfileView: View {
             }
             .buttonStyle(.plain)
             .disabled(isUpdatingProfileAvatar)
-            .accessibilityLabel("Profil fotoğrafını değiştir")
+            .accessibilityLabel(RDLocalization.string("localizable.profile.view.profil.fotografini.degistir.5b2a1775", table: .localizable, fallback: "Profil fotoğrafını değiştir"))
 
             Text(profileDisplayName)
                 .font(NovaFont.font(.screenTitle))
@@ -1782,7 +1782,7 @@ private struct PilotProfilePopupHeader: View {
                     .background(Color.rdFog, in: Circle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Kapat")
+            .accessibilityLabel(RDLocalization.string("localizable.profile.view.kapat.8b22f657", table: .localizable, fallback: "Kapat"))
         }
         .padding(.horizontal, 20)
         .padding(.top, 20)
@@ -1817,7 +1817,7 @@ private struct ProfileEditSheet: View {
         Group {
             if pilot {
                 VStack(spacing: 0) {
-                    PilotProfilePageHeader(title: "Profil bilgilerim", onBack: onClose)
+                    PilotProfilePageHeader(title: RDLocalization.string("localizable.profile.view.profil.bilgilerim.46d1a628", table: .localizable, fallback: "Profil bilgilerim"), onBack: onClose)
                     editorContent
                 }
                 .background(canvasStyle.color(in: colorScheme).ignoresSafeArea())
@@ -2774,7 +2774,7 @@ private struct ProfilePreferencesSheet: View {
         Group {
             if pilot {
                 VStack(spacing: 0) {
-                    PilotProfilePopupHeader(title: "Görünüm ve tercihler", onClose: { dismiss() })
+                    PilotProfilePopupHeader(title: RDLocalization.string("localizable.profile.view.gorunum.ve.tercihler.b48198c0", table: .localizable, fallback: "Görünüm ve tercihler"), onClose: { dismiss() })
                     preferencesContent
                 }
                 .background(NovaPopupStyle.background(in: colorScheme).ignoresSafeArea())
@@ -2820,7 +2820,7 @@ private struct ProfilePreferencesSheet: View {
                     preferenceSection(
                         title: RDLocalization.string("localizable.profile.view.dil.5398169b", table: .localizable, fallback: "Dil"),
                         subtitle: pilot
-                            ? "Uygulama dilini iPhone Ayarları'ndaki İSGADA bölümünden değiştirebilirsiniz."
+                            ? RDLocalization.string("localizable.profile.view.uygulama.dilini.iphone.ayarlari.ndaki.isgada.bol.f9926b74", table: .localizable, fallback: "Uygulama dilini iPhone Ayarları'ndaki İSGADA bölümünden değiştirebilirsiniz.")
                             : RDLocalization.string("localizable.profile.view.uygulama.dili.ios.ayarlari.ndaki.riskdetected.bo.0f4db4b6", table: .localizable, fallback: "Uygulama dili iOS Ayarları'ndaki RiskDetected bölümünden değiştirilir.")
                     ) {
                         PreferenceOptionRow(

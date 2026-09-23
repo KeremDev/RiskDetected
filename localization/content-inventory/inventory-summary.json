@@ -1,13 +1,12 @@
 {
   "schema_version": 1,
   "scanner": "scripts/localization_inventory.mjs",
-  "entry_count": 2872,
+  "entry_count": 2401,
   "by_surface": {
     "asc_metadata": 5,
     "asc_subscription": 9,
     "backend": 271,
     "email": 27,
-    "ios_ui": 471,
     "legal": 1606,
     "notification": 34,
     "pdf": 212,
@@ -16,31 +15,31 @@
     "xlsx": 225
   },
   "by_priority": {
-    "P0": 2467,
-    "P1": 405
+    "P0": 2353,
+    "P1": 48
   },
   "by_owner": {
     "aso": 5,
     "backend": 271,
-    "ios": 475,
+    "ios": 4,
     "legal": 1606,
     "lifecycle": 69,
     "monetization": 9,
     "reporting": 437
   },
   "review_status": {
-    "extracted": 2872
+    "extracted": 2401
   },
   "human_review_state": {
     "language_review": {
-      "not_started": 2872
+      "not_started": 2401
     },
     "safety_review": {
-      "not_required": 2568,
-      "not_started": 304
+      "not_required": 2126,
+      "not_started": 275
     },
     "product_approval": {
-      "not_started": 2872
+      "not_started": 2401
     }
   },
   "unowned_p0_p1_count": 0

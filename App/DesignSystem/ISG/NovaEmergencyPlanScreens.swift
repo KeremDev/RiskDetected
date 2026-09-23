@@ -139,7 +139,7 @@ struct NovaEmergencyPlanScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
-                    NovaHelpHint(text: "Firmanın acil durum planını ve dosyasını ekleyin; geçerlilik tarihini buradan takip edin.")
+                    NovaHelpHint(text: RDLocalization.string("localizable.nova.emergency.plan.screens.firmanin.acil.durum.planini.ve.dosyasini.ekleyin.69acbe04", table: .localizable, fallback: "Firmanın acil durum planını ve dosyasını ekleyin; geçerlilik tarihini buradan takip edin."))
                     if let board { counters(board) }
                     filters
                     if loading && board == nil {
@@ -192,7 +192,7 @@ struct NovaEmergencyPlanScreen: View {
         }
     }
     private func addFlow(_ draft: NovaEmergencyPlanDraft) -> some View {
-        NovaCompanyCreateFlow(title: "Acil durum planı ekle", companies: client.companies,
+        NovaCompanyCreateFlow(title: RDLocalization.string("localizable.nova.emergency.plan.screens.acil.durum.plani.ekle.6345682f", table: .localizable, fallback: "Acil durum planı ekle"), companies: client.companies,
             catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany,
             fullScreenTask: true, onClose: { if startInAddMode { onBack() } else { drafting = nil } }) { selectedCatalogue, selectedCompany in
             NovaEmergencyPlanSheet(draft: draft, catalogue: selectedCatalogue,
@@ -208,7 +208,7 @@ struct NovaEmergencyPlanScreen: View {
     private var header: some View {
         NovaListHeading(title: headingOverride ?? NovaDestination.emergencyPlans.title, onBack: onBack) {
             if canWrite {
-                NovaButton(label: "Plan Ekle", symbol: "plus", compact: true) { startCreate() }
+                NovaButton(label: RDLocalization.string("localizable.nova.emergency.plan.screens.plan.ekle.c35e3b6a", table: .localizable, fallback: "Plan Ekle"), symbol: "plus", compact: true) { startCreate() }
             }
         }
     }
@@ -292,7 +292,7 @@ struct NovaEmergencyPlanScreen: View {
         if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.emergency.empty.title",
                 table: .localizable, fallback: "Plan yok"),
-                message: "Plan ekleyerek ekibi, dosyayı ve geçerlilik tarihini dijital ortamda takip edebilirsiniz.")
+                message: RDLocalization.string("localizable.nova.emergency.plan.screens.plan.ekleyerek.ekibi.dosyayi.ve.gecerlilik.tarih.58b42265", table: .localizable, fallback: "Plan ekleyerek ekibi, dosyayı ve geçerlilik tarihini dijital ortamda takip edebilirsiniz."))
         } else {
             VStack(spacing: 10) {
                 ForEach(board.rows) { plan in

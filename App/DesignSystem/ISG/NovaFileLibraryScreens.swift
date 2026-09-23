@@ -120,11 +120,11 @@ struct NovaFileChooserPanel: View {
                 TextField("Ara…", text: $search)
                     .font(.custom("PlusJakartaSans-Regular", size: 13, relativeTo: .body))
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
-                    .accessibilityLabel("Seçeneklerde ara")
+                    .accessibilityLabel(RDLocalization.string("localizable.nova.file.library.screens.seceneklerde.ara.5f9e18f3", table: .localizable, fallback: "Seçeneklerde ara"))
                     .accessibilityIdentifier("\(identifier).search")
                 if !search.isEmpty {
                     Button { search = "" } label: { Image(systemName: "xmark").frame(width: 32, height: 36) }
-                        .accessibilityLabel("Aramayı temizle")
+                        .accessibilityLabel(RDLocalization.string("localizable.nova.file.library.screens.aramayi.temizle.7e5db71a", table: .localizable, fallback: "Aramayı temizle"))
                 }
             }
             .foregroundStyle(NovaColorToken.text.color(in: scheme))
@@ -133,7 +133,7 @@ struct NovaFileChooserPanel: View {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     if matches.isEmpty {
-                        NovaText(text: "Sonuç bulunamadı", style: .metaQuiet)
+                        NovaText(text: RDLocalization.string("localizable.nova.file.library.screens.sonuc.bulunamadi.42ce3aa2", table: .localizable, fallback: "Sonuç bulunamadı"), style: .metaQuiet)
                             .frame(maxWidth: .infinity, minHeight: rowHeight)
                     }
                     ForEach(matches, id: \.identity) { option in cell(option) }
@@ -258,7 +258,7 @@ struct NovaFileLibraryScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 11) {
                     header
-                    NovaHelpHint(text: "Modüllerdeki ve ayrıca yüklediğiniz dosyaları firma ve başlığa göre bulun.")
+                    NovaHelpHint(text: RDLocalization.string("localizable.nova.file.library.screens.modullerdeki.ve.ayrica.yuklediginiz.dosyalari.fi.7357f36b", table: .localizable, fallback: "Modüllerdeki ve ayrıca yüklediğiniz dosyaları firma ve başlığa göre bulun."))
                     archive
                 }.padding(.horizontal, 16).padding(.top, 4).padding(.bottom, novaTabBarInset)
             }
@@ -277,8 +277,8 @@ struct NovaFileLibraryScreen: View {
         .novaPopup(isPresented: $choosingCompanyFilter) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    NovaText(text: "Firma filtresi", style: .sheetTitle)
-                    NovaButton(label: "Tüm dosyalar", symbol: "folder", variant: .surface) {
+                    NovaText(text: RDLocalization.string("localizable.nova.file.library.screens.firma.filtresi.024c118b", table: .localizable, fallback: "Firma filtresi"), style: .sheetTitle)
+                    NovaButton(label: RDLocalization.string("localizable.nova.file.library.screens.tum.dosyalar.97fcc025", table: .localizable, fallback: "Tüm dosyalar"), symbol: "folder", variant: .surface) {
                         company = nil; choosingCompanyFilter = false
                     }
                     picker
@@ -441,7 +441,7 @@ struct NovaFileLibraryScreen: View {
     }
 
     private var chosenCompany: some View {
-        NovaFilterField(label: "Firma", options: [.init(id: nil, title: "Tüm firmalar")] + companies.map { .init(id: $0.id.uuidString, title: $0.name) },
+        NovaFilterField(label: "Firma", options: [.init(id: nil, title: RDLocalization.string("localizable.nova.file.library.screens.tum.firmalar.623eb3ca", table: .localizable, fallback: "Tüm firmalar"))] + companies.map { .init(id: $0.id.uuidString, title: $0.name) },
             selected: company?.uuidString, identifier: "file.company.filter") { company = $0.flatMap(UUID.init(uuidString:)) }
     }
 
@@ -674,8 +674,8 @@ struct NovaFileSectionStrip: View {
                 NovaText(text: RDLocalization.string("localizable.nova.file.loading", table: .localizable,
                     fallback: "Dosyalar yükleniyor…"), style: .metaQuiet)
             } else if total == 0 {
-                NovaEmptyState(title: "Henüz dosya yok",
-                    message: "Bu başlığa dosya ekleyerek kayıtları tek yerde saklayabilir ve gerektiğinde hızlıca açabilirsiniz.")
+                NovaEmptyState(title: RDLocalization.string("localizable.nova.file.library.screens.henuz.dosya.yok.a8671016", table: .localizable, fallback: "Henüz dosya yok"),
+                    message: RDLocalization.string("localizable.nova.file.library.screens.bu.basliga.dosya.ekleyerek.kayitlari.tek.yerde.s.bf382c86", table: .localizable, fallback: "Bu başlığa dosya ekleyerek kayıtları tek yerde saklayabilir ve gerektiğinde hızlıca açabilirsiniz."))
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {

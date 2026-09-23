@@ -151,14 +151,14 @@ struct IsgWorkspaceAnalysisScreen: View {
                     factors: [
                         value.fkProbability.map { .init(label: "O", value: $0) },
                         value.fkFrequency.map { .init(label: "F", value: $0) },
-                        value.fkSeverity.map { .init(label: "Ş", value: $0) }
+                        value.fkSeverity.map { .init(label: RDLocalization.string("analysis.isg.workspace.analysis.screen.s.99bfeb94", table: .analysis, fallback: "Ş"), value: $0) }
                     ].compactMap { $0 })
             }
             let matrix = value.m5Score.map { score in
                 NovaAnalysisScore(band: value.m5Band, value: Double(score),
                     factors: [
                         value.m5Probability.map { .init(label: "O", value: Double($0)) },
-                        value.m5Severity.map { .init(label: "Ş", value: Double($0)) }
+                        value.m5Severity.map { .init(label: RDLocalization.string("analysis.isg.workspace.analysis.screen.s.c4f0e3a9", table: .analysis, fallback: "Ş"), value: Double($0)) }
                     ].compactMap { $0 })
             }
             return .init(id: value.id, ordinal: value.ordinal ?? value.displayOrder ?? index + 1,
@@ -262,21 +262,21 @@ private struct IsgWorkspacePhotoAnalysisProgressScreen: View {
 
         var title: String {
             switch self {
-            case .preparing: return "Fotoğraf hazırlanıyor"
-            case .uploading: return "Fotoğraf firmaya kaydediliyor"
-            case .queued: return "Analiz sırası hazırlanıyor"
-            case .analyzing: return "İSG analizi yapılıyor"
-            case .finalizing: return "Sonuçlar kaydediliyor"
+            case .preparing: return RDLocalization.string("analysis.isg.workspace.analysis.screen.fotograf.hazirlaniyor.1736bf19", table: .analysis, fallback: "Fotoğraf hazırlanıyor")
+            case .uploading: return RDLocalization.string("analysis.isg.workspace.analysis.screen.fotograf.firmaya.kaydediliyor.f3c872dc", table: .analysis, fallback: "Fotoğraf firmaya kaydediliyor")
+            case .queued: return RDLocalization.string("analysis.isg.workspace.analysis.screen.analiz.sirasi.hazirlaniyor.0eb73d38", table: .analysis, fallback: "Analiz sırası hazırlanıyor")
+            case .analyzing: return RDLocalization.string("analysis.isg.workspace.analysis.screen.isg.analizi.yapiliyor.a160b8cc", table: .analysis, fallback: "İSG analizi yapılıyor")
+            case .finalizing: return RDLocalization.string("analysis.isg.workspace.analysis.screen.sonuclar.kaydediliyor.4e61c0eb", table: .analysis, fallback: "Sonuçlar kaydediliyor")
             }
         }
 
         var detail: String {
             switch self {
-            case .preparing: return "Görüntü güvenli yükleme için düzenleniyor."
-            case .uploading: return "Kaynak fotoğraf firma dosyalarına bağlanıyor."
-            case .queued: return "İşlem OSGB analiz hizmetine iletildi."
-            case .analyzing: return "Riskler, öneriler ve eğitim ihtiyaçları değerlendiriliyor."
-            case .finalizing: return "Analiz kaydı ve bulgular son kez doğrulanıyor."
+            case .preparing: return RDLocalization.string("analysis.isg.workspace.analysis.screen.goruntu.guvenli.yukleme.icin.duzenleniyor.7d324ddf", table: .analysis, fallback: "Görüntü güvenli yükleme için düzenleniyor.")
+            case .uploading: return RDLocalization.string("analysis.isg.workspace.analysis.screen.kaynak.fotograf.firma.dosyalarina.baglaniyor.c91d96c2", table: .analysis, fallback: "Kaynak fotoğraf firma dosyalarına bağlanıyor.")
+            case .queued: return RDLocalization.string("analysis.isg.workspace.analysis.screen.islem.osgb.analiz.hizmetine.iletildi.cfe50c2c", table: .analysis, fallback: "İşlem OSGB analiz hizmetine iletildi.")
+            case .analyzing: return RDLocalization.string("analysis.isg.workspace.analysis.screen.riskler.oneriler.ve.egitim.ihtiyaclari.degerlend.c3a8fab4", table: .analysis, fallback: "Riskler, öneriler ve eğitim ihtiyaçları değerlendiriliyor.")
+            case .finalizing: return RDLocalization.string("analysis.isg.workspace.analysis.screen.analiz.kaydi.ve.bulgular.son.kez.dogrulaniyor.03be624c", table: .analysis, fallback: "Analiz kaydı ve bulgular son kez doğrulanıyor.")
             }
         }
     }
@@ -295,7 +295,7 @@ private struct IsgWorkspacePhotoAnalysisProgressScreen: View {
         NovaPageSurface {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    NovaText(text: "Fotoğraf Analizi", style: .screenTitle)
+                    NovaText(text: RDLocalization.string("analysis.isg.workspace.analysis.screen.fotograf.analizi.836fd616", table: .analysis, fallback: "Fotoğraf Analizi"), style: .screenTitle)
                     Image(uiImage: run.image)
                         .resizable().scaledToFill()
                         .frame(maxWidth: .infinity).frame(height: 260)
@@ -317,7 +317,7 @@ private struct IsgWorkspacePhotoAnalysisProgressScreen: View {
                             .foregroundStyle(NovaColorToken.textSecondary.color(in: scheme))
                         }.frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    NovaHelpHint(text: "Bu ekran açıkken işlem tamamlandığında analiz otomatik olarak açılır.")
+                    NovaHelpHint(text: RDLocalization.string("analysis.isg.workspace.analysis.screen.bu.ekran.acikken.islem.tamamlandiginda.analiz.ot.cdb427a9", table: .analysis, fallback: "Bu ekran açıkken işlem tamamlandığında analiz otomatik olarak açılır."))
                 }.padding(20).padding(.bottom, novaTabBarInset)
             }
         }
@@ -337,7 +337,7 @@ private struct IsgWorkspacePhotoAnalysisProgressScreen: View {
             }
             phase = .uploading
             let upload = try await store.uploadFile(mutationID: run.fileMutationID,
-                title: "Analiz kaynak fotoğrafı",
+                title: RDLocalization.string("analysis.isg.workspace.analysis.screen.analiz.kaynak.fotografi.ecbe6618", table: .analysis, fallback: "Analiz kaynak fotoğrafı"),
                 filename: "analiz-\(run.id.uuidString.lowercased()).jpg",
                 category: "inspection_report", data: data, companyID: companyID)
             phase = .queued
@@ -398,15 +398,15 @@ private struct IsgWorkspacePhotoAnalysisProgressScreen: View {
         if let failure = error as? PhotoAnalysisFailure { return failure.errorDescription }
         let raw = String(describing: error)
         if raw.contains("INSUFFICIENT_CREDITS") {
-            return "OSGB analiz kredisi yetersiz. Yetkili hesaptan kredi durumunu kontrol edin."
+            return RDLocalization.string("analysis.isg.workspace.analysis.screen.osgb.analiz.kredisi.yetersiz.yetkili.hesaptan.kr.480881ce", table: .analysis, fallback: "OSGB analiz kredisi yetersiz. Yetkili hesaptan kredi durumunu kontrol edin.")
         }
         if raw.contains("PRICING_NOT_AVAILABLE") {
-            return "Fotoğraf analizi şu anda kullanılamıyor. Biraz sonra tekrar deneyin."
+            return RDLocalization.string("analysis.isg.workspace.analysis.screen.fotograf.analizi.su.anda.kullanilamiyor.biraz.so.82ca72c0", table: .analysis, fallback: "Fotoğraf analizi şu anda kullanılamıyor. Biraz sonra tekrar deneyin.")
         }
         if raw.contains("SOURCE_NOT_FOUND") {
-            return "Fotoğraf güvenli biçimde kaydedilemedi. Fotoğrafı yeniden seçip tekrar deneyin."
+            return RDLocalization.string("analysis.isg.workspace.analysis.screen.fotograf.guvenli.bicimde.kaydedilemedi.fotografi.7d609992", table: .analysis, fallback: "Fotoğraf güvenli biçimde kaydedilemedi. Fotoğrafı yeniden seçip tekrar deneyin.")
         }
-        return "Analiz başlatılamadı. Bağlantınızı kontrol edip aynı fotoğrafla tekrar deneyin."
+        return RDLocalization.string("analysis.isg.workspace.analysis.screen.analiz.baslatilamadi.baglantinizi.kontrol.edip.a.295337eb", table: .analysis, fallback: "Analiz başlatılamadı. Bağlantınızı kontrol edip aynı fotoğrafla tekrar deneyin.")
     }
 }
 
@@ -419,22 +419,22 @@ private enum PhotoAnalysisFailure: Error {
     var errorDescription: String {
         switch self {
         case .invalidImage:
-            return "Fotoğraf hazırlanamadı. Başka bir fotoğraf seçip tekrar deneyin."
+            return RDLocalization.string("analysis.isg.workspace.analysis.screen.fotograf.hazirlanamadi.baska.bir.fotograf.secip..b5c321a0", table: .analysis, fallback: "Fotoğraf hazırlanamadı. Başka bir fotoğraf seçip tekrar deneyin.")
         case .invalidResult:
-            return "Analiz tamamlandı ancak sonuç kaydı doğrulanamadı. Analizlerim ekranını yenileyin."
+            return RDLocalization.string("analysis.isg.workspace.analysis.screen.analiz.tamamlandi.ancak.sonuc.kaydi.dogrulanamad.f764e43b", table: .analysis, fallback: "Analiz tamamlandı ancak sonuç kaydı doğrulanamadı. Analizlerim ekranını yenileyin.")
         case .jobFailed(let code):
             switch code {
             case "SOURCE_NOT_FOUND":
-                return "Kaynak fotoğraf bulunamadı. Fotoğrafı yeniden seçip tekrar deneyin."
+                return RDLocalization.string("analysis.isg.workspace.analysis.screen.kaynak.fotograf.bulunamadi.fotografi.yeniden.sec.5e0be326", table: .analysis, fallback: "Kaynak fotoğraf bulunamadı. Fotoğrafı yeniden seçip tekrar deneyin.")
             case "AUTHORITY_REVOKED", "ASSIGNMENT_REVOKED":
-                return "Bu firma için analiz yetkiniz değişti. Firma atamanızı kontrol edin."
+                return RDLocalization.string("analysis.isg.workspace.analysis.screen.bu.firma.icin.analiz.yetkiniz.degisti.firma.atam.dd10d711", table: .analysis, fallback: "Bu firma için analiz yetkiniz değişti. Firma atamanızı kontrol edin.")
             case "PROVIDER_SCHEMA_INVALID":
-                return "Analiz sonucu doğrulanamadı. Aynı fotoğrafla tekrar deneyin."
+                return RDLocalization.string("analysis.isg.workspace.analysis.screen.analiz.sonucu.dogrulanamadi.ayni.fotografla.tekr.28457300", table: .analysis, fallback: "Analiz sonucu doğrulanamadı. Aynı fotoğrafla tekrar deneyin.")
             default:
-                return "Fotoğraf analizi tamamlanamadı. Biraz sonra tekrar deneyin."
+                return RDLocalization.string("analysis.isg.workspace.analysis.screen.fotograf.analizi.tamamlanamadi.biraz.sonra.tekra.cccb3dbd", table: .analysis, fallback: "Fotoğraf analizi tamamlanamadı. Biraz sonra tekrar deneyin.")
             }
         case .timedOut:
-            return "Analiz beklenenden uzun sürüyor. İşlem arka planda devam edebilir; Analizlerim listesini biraz sonra yenileyin."
+            return RDLocalization.string("analysis.isg.workspace.analysis.screen.analiz.beklenenden.uzun.suruyor.islem.arka.pland.2e730352", table: .analysis, fallback: "Analiz beklenenden uzun sürüyor. İşlem arka planda devam edebilir; Analizlerim listesini biraz sonra yenileyin.")
         }
     }
 }

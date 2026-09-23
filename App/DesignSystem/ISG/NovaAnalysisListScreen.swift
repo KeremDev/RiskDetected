@@ -380,7 +380,7 @@ struct NovaAnalysisListScreen: View {
                 VStack(alignment: .leading, spacing: 10) {
                     NovaText(text: error, style: .metaQuiet)
                     Button { reload = UUID() } label: {
-                        Label("Tekrar dene", systemImage: "arrow.clockwise")
+                        Label(RDLocalization.string("analysis.nova.analysis.list.screen.tekrar.dene.e6915e8e", table: .analysis, fallback: "Tekrar dene"), systemImage: "arrow.clockwise")
                             .font(.system(size: 13, weight: .semibold))
                     }
                     .buttonStyle(NovaRowPressStyle())

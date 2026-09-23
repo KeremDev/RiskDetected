@@ -166,7 +166,7 @@ struct NovaRiskScreen: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
                         header
-                        NovaHelpHint(text: "Firmanın risk analizini, kapsamını ve dosyasını kaydedin; güncel sürümünü takip edin. \(NovaRiskWords.periodAttribution)")
+                        NovaHelpHint(text: RDLocalization.format("localizable.nova.risk.screens.firmanin.risk.analizini.kapsamini.ve.dosyasini.k.6fbda573", table: .localizable, fallback: "Firmanın risk analizini, kapsamını ve dosyasını kaydedin; güncel sürümünü takip edin. %1$@", arguments: [String(describing: NovaRiskWords.periodAttribution)]))
                         if let board { counters(board) }
                         filters
                         if loading && board == nil {
@@ -224,7 +224,7 @@ struct NovaRiskScreen: View {
         }
     }
     private var addFlow: some View {
-        NovaCompanyCreateFlow(title: "Risk değerlendirmesi ekle", companies: client.companies, catalogue: { co in try await client.catalogue(co) }, onSelect: { _ in }, fixedCompany: initialCompany, fullScreenTask: true,
+        NovaCompanyCreateFlow(title: RDLocalization.string("localizable.nova.risk.screens.risk.degerlendirmesi.ekle.828b54b4", table: .localizable, fallback: "Risk değerlendirmesi ekle"), companies: client.companies, catalogue: { co in try await client.catalogue(co) }, onSelect: { _ in }, fixedCompany: initialCompany, fullScreenTask: true,
             onClose: { if startInAddMode { onBack() } else { creating = false } }) { catalogue, co in
             NovaRiskQuickCreateSheet(client: client, company: co, catalogue: catalogue) {
                 if startInAddMode { onBack() } else { creating = false }
@@ -235,7 +235,7 @@ struct NovaRiskScreen: View {
     private var header: some View {
         NovaListHeading(title: headingOverride ?? NovaDestination.riskAssessments.title, onBack: onBack) {
             if canWrite {
-                NovaButton(label: "Kayıt Ekle", symbol: "plus", compact: true) { creating = true }
+                NovaButton(label: RDLocalization.string("localizable.nova.risk.screens.kayit.ekle.b9721dfb", table: .localizable, fallback: "Kayıt Ekle"), symbol: "plus", compact: true) { creating = true }
             }
         }
     }
@@ -321,7 +321,7 @@ struct NovaRiskScreen: View {
         if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.risk.empty.title", table: .localizable,
                 fallback: "Kayıt yok"),
-                message: "Risk değerlendirmesi ekleyerek sürümleri, geçerlilik tarihini ve bağlı dosyayı tek yerden takip edebilirsiniz.")
+                message: RDLocalization.string("localizable.nova.risk.screens.risk.degerlendirmesi.ekleyerek.surumleri.gecerli.61dc9388", table: .localizable, fallback: "Risk değerlendirmesi ekleyerek sürümleri, geçerlilik tarihini ve bağlı dosyayı tek yerden takip edebilirsiniz."))
         } else {
             VStack(spacing: 10) {
                 ForEach(board.rows) { row in
@@ -478,21 +478,21 @@ private struct NovaRiskQuickCreateSheet: View {
     var body: some View {
         Group {
             if didSave {
-                NovaTaskSuccessView(title: "Risk değerlendirmesi kaydedildi",
+                NovaTaskSuccessView(title: RDLocalization.string("localizable.nova.risk.screens.risk.degerlendirmesi.kaydedildi.a123914b", table: .localizable, fallback: "Risk değerlendirmesi kaydedildi"),
                     message: savedMessage,
                     doneTitle: "Risk değerlendirmelerine dön", onDone: onClose)
             } else {
                 NovaPageSurface(onEdgeBack: onClose) {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 18) {
-                            NovaTaskHeader(title: "Risk değerlendirmesi ekle", step: stepNumber,
+                            NovaTaskHeader(title: RDLocalization.string("localizable.nova.risk.screens.risk.degerlendirmesi.ekle.51b7f9e1", table: .localizable, fallback: "Risk değerlendirmesi ekle"), step: stepNumber,
                                 total: Step.allCases.count, stepTitle: stepTitle(currentStep), onClose: { confirmingExit = true })
                             if let openError { NovaTaskErrorSummary(message: openError) }
                             if let saveError { NovaTaskErrorSummary(message: saveError) }
                             if workplaces.isEmpty {
-                                NovaEmptyState(title: "İşyeri bulunamadı", message: "Önce firma bilgilerinden işyeri ekleyin.")
+                                NovaEmptyState(title: RDLocalization.string("localizable.nova.risk.screens.isyeri.bulunamadi.40699456", table: .localizable, fallback: "İşyeri bulunamadı"), message: RDLocalization.string("localizable.nova.risk.screens.once.firma.bilgilerinden.isyeri.ekleyin.5424d52f", table: .localizable, fallback: "Önce firma bilgilerinden işyeri ekleyin."))
                             } else if opening || row == nil {
-                                NovaLoadingView(message: "İşyeri ve risk sürümü hazırlanıyor…")
+                                NovaLoadingView(message: RDLocalization.string("localizable.nova.risk.screens.isyeri.ve.risk.surumu.hazirlaniyor.10b0fcd8", table: .localizable, fallback: "İşyeri ve risk sürümü hazırlanıyor…"))
                             } else {
                                 stepContent(currentStep)
                             }
@@ -513,11 +513,11 @@ private struct NovaRiskQuickCreateSheet: View {
             if workplaces.count == 1 { workplaceID = workplaces[0].id }
         }
         .onChange(of: workplaceID) { _ in Task { await open() } }
-        .confirmationDialog("Risk değerlendirmesi akışından çıkılsın mı?", isPresented: $confirmingExit,
+        .confirmationDialog(RDLocalization.string("localizable.nova.risk.screens.risk.degerlendirmesi.akisindan.cikilsin.mi.55a3824f", table: .localizable, fallback: "Risk değerlendirmesi akışından çıkılsın mı?"), isPresented: $confirmingExit,
             titleVisibility: .visible) {
-                Button("Çık", role: .destructive, action: onClose)
-                Button("Devam et", role: .cancel) {}
-            } message: { Text("Henüz kaydedilmemiş bilgiler silinir.") }
+                Button(RDLocalization.string("localizable.nova.risk.screens.cik.ddcc09c9", table: .localizable, fallback: "Çık"), role: .destructive, action: onClose)
+                Button(RDLocalization.string("localizable.nova.risk.screens.devam.et.ec818065", table: .localizable, fallback: "Devam et"), role: .cancel) {}
+            } message: { Text(RDLocalization.string("localizable.nova.risk.screens.henuz.kaydedilmemis.bilgiler.silinir.53b38f32", table: .localizable, fallback: "Henüz kaydedilmemiş bilgiler silinir.")) }
     }
 
     @ViewBuilder private func stepContent(_ step: Step) -> some View {
@@ -541,11 +541,11 @@ private struct NovaRiskQuickCreateSheet: View {
 
     private var kindChooser: some View {
         VStack(alignment: .leading, spacing: 10) {
-            NovaText(text: "Bu işyerinde kayıtlı bir değerlendirme var.", style: .metaQuiet)
-            NovaPopupOption(title: "Yeni değerlendirme", symbol: "doc.badge.plus", subtitle: "Yeni dönem için kayıt oluşturun.") {
+            NovaText(text: RDLocalization.string("localizable.nova.risk.screens.bu.isyerinde.kayitli.bir.degerlendirme.var.211bf54f", table: .localizable, fallback: "Bu işyerinde kayıtlı bir değerlendirme var."), style: .metaQuiet)
+            NovaPopupOption(title: RDLocalization.string("localizable.nova.risk.screens.yeni.degerlendirme.e93fcbe2", table: .localizable, fallback: "Yeni değerlendirme"), symbol: "doc.badge.plus", subtitle: RDLocalization.string("localizable.nova.risk.screens.yeni.donem.icin.kayit.olusturun.7800be04", table: .localizable, fallback: "Yeni dönem için kayıt oluşturun.")) {
                 kind = .full; primeSuggestedPeriod(); kindChosen = true
             }.accessibilityIdentifier("risk.quick.kind.new")
-            NovaPopupOption(title: "Revize et", symbol: "square.and.pencil", subtitle: "Mevcut değerlendirmeyi güncelleyin.") {
+            NovaPopupOption(title: RDLocalization.string("localizable.nova.risk.screens.revize.et.dab3a1ef", table: .localizable, fallback: "Revize et"), symbol: "square.and.pencil", subtitle: RDLocalization.string("localizable.nova.risk.screens.mevcut.degerlendirmeyi.guncelleyin.4ffbb308", table: .localizable, fallback: "Mevcut değerlendirmeyi güncelleyin.")) {
                 kind = .partial; kindChosen = true
             }.accessibilityIdentifier("risk.quick.kind.revise")
         }
@@ -559,36 +559,36 @@ private struct NovaRiskQuickCreateSheet: View {
                 kindChooser
             } else {
                 if kind.carriesAssessmentDate {
-                    NovaDayField(label: "Değerlendirme tarihi", value: $assessmentOn, identifier: "risk.quick.date")
+                    NovaDayField(label: RDLocalization.string("localizable.nova.risk.screens.degerlendirme.tarihi.a9067828", table: .localizable, fallback: "Değerlendirme tarihi"), value: $assessmentOn, identifier: "risk.quick.date")
                 } else {
-                    NovaFormValueRow(label: "Değerlendirme tarihi", symbol: "calendar") {
-                        NovaText(text: "İlk değerlendirme tarihi korunur", style: .bodyStrong)
+                    NovaFormValueRow(label: RDLocalization.string("localizable.nova.risk.screens.degerlendirme.tarihi.d2d6c150", table: .localizable, fallback: "Değerlendirme tarihi"), symbol: "calendar") {
+                        NovaText(text: RDLocalization.string("localizable.nova.risk.screens.ilk.degerlendirme.tarihi.korunur.e7200e93", table: .localizable, fallback: "İlk değerlendirme tarihi korunur"), style: .bodyStrong)
                     }
                 }
                 if kind == .full {
-                    NovaFormValueRow(label: "Geçerlilik süresi", symbol: "calendar.badge.clock") {
+                    NovaFormValueRow(label: RDLocalization.string("localizable.nova.risk.screens.gecerlilik.suresi.0743adc7", table: .localizable, fallback: "Geçerlilik süresi"), symbol: "calendar.badge.clock") {
                         HStack(spacing: 6) {
                             TextField("", text: $periodYears)
                                 .keyboardType(.numberPad)
                                 .font(NovaFont.font(.body))
                                 .multilineTextAlignment(.trailing)
                                 .frame(width: 46).frame(minHeight: 36)
-                                .accessibilityLabel("Geçerlilik süresi, yıl")
+                                .accessibilityLabel(RDLocalization.string("localizable.nova.risk.screens.gecerlilik.suresi.yil.769919bb", table: .localizable, fallback: "Geçerlilik süresi, yıl"))
                                 .accessibilityIdentifier("risk.quick.years")
-                            NovaText(text: "yıl", style: .meta)
+                            NovaText(text: RDLocalization.string("localizable.nova.risk.screens.yil.6cbc727b", table: .localizable, fallback: "yıl"), style: .meta)
                         }
                     }
-                    NovaHelpHint(text: "İşyerinin tehlike sınıfına göre otomatik dolduruldu. Gerekirse değiştirebilirsiniz. Geçerlilik: \(validityText)")
+                    NovaHelpHint(text: RDLocalization.format("localizable.nova.risk.screens.isyerinin.tehlike.sinifina.gore.otomatik.dolduru.ae52625c", table: .localizable, fallback: "İşyerinin tehlike sınıfına göre otomatik dolduruldu. Gerekirse değiştirebilirsiniz. Geçerlilik: %1$@", arguments: [String(describing: validityText)]))
                 }
                 if kind.needsScope { scopeField }
                 if kind.needsReason {
                     VStack(alignment: .leading, spacing: 4) {
-                        NovaText(text: "Değişiklik gerekçesi", style: .label)
+                        NovaText(text: RDLocalization.string("localizable.nova.risk.screens.degisiklik.gerekcesi.c8cc0fb9", table: .localizable, fallback: "Değişiklik gerekçesi"), style: .label)
                         TextEditor(text: $reason).frame(minHeight: 70).accessibilityIdentifier("risk.quick.reason")
                     }.padding(12).novaControlBackground(cornerRadius: 14)
                 }
                 if hasOpenDraft {
-                    NovaHelpHint(text: "Bu işyerinde açık bir taslak var. Bilgileri kontrol ederek tamamlayabilirsiniz.")
+                    NovaHelpHint(text: RDLocalization.string("localizable.nova.risk.screens.bu.isyerinde.acik.bir.taslak.var.bilgileri.kontr.d092514d", table: .localizable, fallback: "Bu işyerinde açık bir taslak var. Bilgileri kontrol ederek tamamlayabilirsiniz."))
                 }
             }
         }
@@ -599,13 +599,13 @@ private struct NovaRiskQuickCreateSheet: View {
             NovaText(text: "Dosya", style: .sectionTitle)
             NovaInlineFileField(category: "risk_assessment", company: company,
                 fileClient: client.fileClient, assetID: $assetID)
-            NovaHelpHint(text: "Dosya eklemek zorunlu değil; değerlendirmeyi şimdi kaydedip belgeyi daha sonra bağlayabilirsiniz.")
+            NovaHelpHint(text: RDLocalization.string("localizable.nova.risk.screens.dosya.eklemek.zorunlu.degil.degerlendirmeyi.simd.1440bf6c", table: .localizable, fallback: "Dosya eklemek zorunlu değil; değerlendirmeyi şimdi kaydedip belgeyi daha sonra bağlayabilirsiniz."))
         }
     }
 
     private var reviewStep: some View {
         VStack(alignment: .leading, spacing: 14) {
-            NovaText(text: "Kontrol et", style: .sectionTitle)
+            NovaText(text: RDLocalization.string("localizable.nova.risk.screens.kontrol.et.dc39e8df", table: .localizable, fallback: "Kontrol et"), style: .sectionTitle)
             NovaCard(padding: 14) {
                 VStack(alignment: .leading, spacing: 12) {
                     reviewRow("İşyeri", workplaces.first(where: { $0.id == workplaceID })?.name ?? "Belirtilmedi")
@@ -627,9 +627,9 @@ private struct NovaRiskQuickCreateSheet: View {
 
     private func stepTitle(_ step: Step) -> String {
         switch step {
-        case .details: return "Tarih ve geçerlilik"
+        case .details: return RDLocalization.string("localizable.nova.risk.screens.tarih.ve.gecerlilik.ed8c47e1", table: .localizable, fallback: "Tarih ve geçerlilik")
         case .file: return "Dosya"
-        case .review: return "Kontrol ve kaydet"
+        case .review: return RDLocalization.string("localizable.nova.risk.screens.kontrol.ve.kaydet.768f2931", table: .localizable, fallback: "Kontrol ve kaydet")
         }
     }
 
@@ -674,13 +674,13 @@ private struct NovaRiskQuickCreateSheet: View {
                     }
                 }
                 if kind == .full {
-                    NovaFormValueRow(label: "Geçerlilik süresi", symbol: "clock") {
+                    NovaFormValueRow(label: RDLocalization.string("localizable.nova.risk.screens.gecerlilik.suresi.76b1b51a", table: .localizable, fallback: "Geçerlilik süresi"), symbol: "clock") {
                         HStack(spacing: 6) {
                             TextField("", text: $periodYears).keyboardType(.numberPad)
                                 .font(NovaFont.font(.body)).multilineTextAlignment(.trailing).frame(width: 46).frame(minHeight: 36)
-                                .accessibilityLabel("Geçerlilik süresi, yıl")
+                                .accessibilityLabel(RDLocalization.string("localizable.nova.risk.screens.gecerlilik.suresi.yil.457154e1", table: .localizable, fallback: "Geçerlilik süresi, yıl"))
                                 .accessibilityIdentifier("risk.quick.years")
-                            NovaText(text: "yıl", style: .meta)
+                            NovaText(text: RDLocalization.string("localizable.nova.risk.screens.yil.f63159d4", table: .localizable, fallback: "yıl"), style: .meta)
                         }
                     }
                     if let years = suggestedYears {

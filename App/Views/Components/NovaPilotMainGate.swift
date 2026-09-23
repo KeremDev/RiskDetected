@@ -57,7 +57,7 @@ struct NovaIntegratedWorkspaceGate: View {
         Group {
             if store.selection == nil && (store.phase == .signedOut || store.phase == .loading) {
                 NovaPageSurface {
-                    NovaLoadingView(message: "Çalışma alanı yükleniyor…")
+                    NovaLoadingView(message: RDLocalization.string("localizable.nova.pilot.main.gate.calisma.alani.yukleniyor.607c1b16", table: .localizable, fallback: "Çalışma alanı yükleniyor…"))
                 }
             } else if choosing || store.phase == .choosing || (store.phase == .failed && !store.contexts.isEmpty) {
                 IsgWorkspaceChooser(identity: identity, store: store, canCancel: store.selection != nil) { choosing = false }
@@ -333,28 +333,28 @@ private struct IsgOSGBWorkspaceRoot: View {
     private var menuStats: [NovaMenuStat] {
         let board = menuBoard
         return [
-            .init(id: "upcoming", title: "Yaklaşan İşler",
+            .init(id: "upcoming", title: RDLocalization.string("localizable.nova.pilot.main.gate.yaklasan.isler.12d5c423", table: .localizable, fallback: "Yaklaşan İşler"),
                   value: board.map { String(($0.deadlines.first ?? 0) + ($0.deadlines.second ?? 0)) } ?? "—",
                   symbol: "calendar.badge.clock", destination: .periodicChecks),
-            .init(id: "overdue", title: "Süresi biten",
+            .init(id: "overdue", title: RDLocalization.string("localizable.nova.pilot.main.gate.suresi.biten.d128a794", table: .localizable, fallback: "Süresi biten"),
                   value: board?.nonconformities.second.map(String.init) ?? "—",
                   symbol: "exclamationmark.triangle", destination: .findings),
-            .init(id: "analyses", title: "Analiz",
+            .init(id: "analyses", title: RDLocalization.string("localizable.nova.pilot.main.gate.analiz.4ab6e7dc", table: .localizable, fallback: "Analiz"),
                   value: board?.nonconformities.first.map(String.init) ?? "—",
                   symbol: "photo.on.rectangle.angled", destination: .analyses)
         ]
     }
     private var menuNextAction: NovaMenuNextAction? {
         if store.companies.isEmpty {
-            return .init(title: "Firma ekle", symbol: "building.2.crop.circle",
+            return .init(title: RDLocalization.string("localizable.nova.pilot.main.gate.firma.ekle.9daff75e", table: .localizable, fallback: "Firma ekle"), symbol: "building.2.crop.circle",
                 destination: canManageCompanies ? .newCompany : .companies, completed: 0, total: 1)
         }
         let analysisCount = Int(menuBoard?.nonconformities.first ?? 0)
         if analysisCount == 0 {
-            return .init(title: "Fotoğraf analiz et", symbol: "camera", destination: .newAnalysis,
+            return .init(title: RDLocalization.string("localizable.nova.pilot.main.gate.fotograf.analiz.et.d7c977fc", table: .localizable, fallback: "Fotoğraf analiz et"), symbol: "camera", destination: .newAnalysis,
                 completed: 0, total: 8)
         }
-        return .init(title: "Risk analizi ekle", symbol: "shield.lefthalf.filled", destination: .riskAssessments,
+        return .init(title: RDLocalization.string("localizable.nova.pilot.main.gate.risk.analizi.ekle.3b56b93c", table: .localizable, fallback: "Risk analizi ekle"), symbol: "shield.lefthalf.filled", destination: .riskAssessments,
             completed: menuProgressCompleted, total: 8)
     }
     private struct CompanyNextAction: Identifiable {
@@ -369,7 +369,7 @@ private struct IsgOSGBWorkspaceRoot: View {
     var body: some View {
         NovaExpertShell(navigation: $navigation, userName: app.profile?.fullName ?? "",
             profileAvatar: profileAvatarImage,
-            menuRoleTitle: canManageCompanies ? "OSGB Yetkilisi" : "İSG Uzmanı",
+            menuRoleTitle: canManageCompanies ? RDLocalization.string("localizable.nova.pilot.main.gate.osgb.yetkilisi.9bc4f19d", table: .localizable, fallback: "OSGB Yetkilisi") : RDLocalization.string("localizable.nova.pilot.main.gate.isg.uzmani.b416a08b", table: .localizable, fallback: "İSG Uzmanı"),
             menuStats: menuStats, menuNextAction: menuNextAction,
             onInvite: { app.requestProfileDestination(.referral); navigate(.profile) },
             connectionLabel: context.map { "\($0.name) · \(role($0.membership.role))" } ?? "",
@@ -484,7 +484,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                                 _ = try await store.mutateAssignment(mutationID: assignmentMutationID,
                                     companyID: created.id, action: "create", membershipID: membershipID,
                                     role: assignmentRole, startsAt: starts,
-                                    reason: "Firma ekleme sırasında hızlı atama")
+                                    reason: RDLocalization.string("localizable.nova.pilot.main.gate.firma.ekleme.sirasinda.hizli.atama.bc82db86", table: .localizable, fallback: "Firma ekleme sırasında hızlı atama"))
                             }
                         }
                     },
@@ -549,42 +549,42 @@ private struct IsgOSGBWorkspaceRoot: View {
     /// Only the data adapter and the tenant-scoped footer differ by role.
     private var osgbDashboardData: NovaDashboardData {
         let board = isExpert ? expertDashboard : store.dashboard
-        let firstName = app.profile?.fullName?.split(separator: " ").first.map(String.init) ?? "İSGADA"
+        let firstName = app.profile?.fullName?.split(separator: " ").first.map(String.init) ?? RDLocalization.string("localizable.nova.pilot.main.gate.isgada.d0ff6c47", table: .localizable, fallback: "İSGADA")
         let metrics: [NovaMetricItem]
         if isExpert {
             metrics = [
-                .init(id: "companies", value: board?.companies.first.map(String.init) ?? "—", label: "Firmalar", footer: "Atanmış", symbol: "building.2", tone: .accent, destination: .companies),
+                .init(id: "companies", value: board?.companies.first.map(String.init) ?? "—", label: "Firmalar", footer: RDLocalization.string("localizable.nova.pilot.main.gate.atanmis.abb9325c", table: .localizable, fallback: "Atanmış"), symbol: "building.2", tone: .accent, destination: .companies),
                 .init(id: "personnel", value: personnel.map { String($0.employees.active) } ?? "—", label: "Personel", footer: "Toplam", symbol: "person.2", tone: .accent, destination: .companies),
-                .init(id: "open", value: board?.nonconformities.first.map(String.init) ?? "—", label: "Açık uygunsuzluk", footer: "Tüm firmalar", symbol: "checklist", tone: .accent, destination: .findings),
-                .init(id: "overdue", value: board?.nonconformities.second.map(String.init) ?? "—", label: "Süresi geçen", footer: "Tüm firmalar", symbol: "exclamationmark.triangle", tone: .accent, destination: .findings),
-                .init(id: "training", value: board?.training.second.map(String.init) ?? "—", label: "Tamamlanan eğitim", footer: "Toplam", symbol: "graduationcap", tone: .accent, destination: .training),
-                .init(id: "deadlines", value: board.map { String(($0.deadlines.first ?? 0) + ($0.deadlines.second ?? 0)) } ?? "—", label: "Yaklaşan kontroller", footer: "Tüm firmalar", symbol: "calendar.badge.clock", tone: .accent, destination: .periodicChecks)
+                .init(id: "open", value: board?.nonconformities.first.map(String.init) ?? "—", label: RDLocalization.string("localizable.nova.pilot.main.gate.acik.uygunsuzluk.301ff521", table: .localizable, fallback: "Açık uygunsuzluk"), footer: RDLocalization.string("localizable.nova.pilot.main.gate.tum.firmalar.325ca86b", table: .localizable, fallback: "Tüm firmalar"), symbol: "checklist", tone: .accent, destination: .findings),
+                .init(id: "overdue", value: board?.nonconformities.second.map(String.init) ?? "—", label: RDLocalization.string("localizable.nova.pilot.main.gate.suresi.gecen.ba7909b2", table: .localizable, fallback: "Süresi geçen"), footer: RDLocalization.string("localizable.nova.pilot.main.gate.tum.firmalar.5738858a", table: .localizable, fallback: "Tüm firmalar"), symbol: "exclamationmark.triangle", tone: .accent, destination: .findings),
+                .init(id: "training", value: board?.training.second.map(String.init) ?? "—", label: RDLocalization.string("localizable.nova.pilot.main.gate.tamamlanan.egitim.21cc77a1", table: .localizable, fallback: "Tamamlanan eğitim"), footer: "Toplam", symbol: "graduationcap", tone: .accent, destination: .training),
+                .init(id: "deadlines", value: board.map { String(($0.deadlines.first ?? 0) + ($0.deadlines.second ?? 0)) } ?? "—", label: RDLocalization.string("localizable.nova.pilot.main.gate.yaklasan.kontroller.5964e331", table: .localizable, fallback: "Yaklaşan kontroller"), footer: RDLocalization.string("localizable.nova.pilot.main.gate.tum.firmalar.5ceb1844", table: .localizable, fallback: "Tüm firmalar"), symbol: "calendar.badge.clock", tone: .accent, destination: .periodicChecks)
             ]
         } else {
             metrics = [
                 .init(id: "companies", value: board?.companies.first.map(String.init) ?? "—", label: "Firmalar", footer: "Aktif", symbol: "building.2", tone: .accent, destination: .companies),
                 .init(id: "experts", value: board?.experts.map(String.init) ?? "—", label: "Uzmanlar", footer: "Aktif", symbol: "person.badge.shield.checkmark", tone: .accent, destination: .companies),
-                .init(id: "open", value: board?.nonconformities.first.map(String.init) ?? "—", label: "Açık uygunsuzluk", footer: "Takipte", symbol: "checklist", tone: .accent, destination: .findings),
-                .init(id: "overdue", value: board?.nonconformities.second.map(String.init) ?? "—", label: "Süresi geçen", footer: "Kontrol", symbol: "exclamationmark.triangle", tone: .accent, destination: .findings),
-                .init(id: "training", value: board?.training.second.map(String.init) ?? "—", label: "Tamamlanan eğitim", footer: "Kayıt", symbol: "graduationcap", tone: .accent, destination: .training),
-                .init(id: "deadlines", value: board.map { String(($0.deadlines.first ?? 0) + ($0.deadlines.second ?? 0)) } ?? "—", label: "Yaklaşan kontroller", footer: "Takvim", symbol: "calendar.badge.clock", tone: .accent, destination: .periodicChecks)
+                .init(id: "open", value: board?.nonconformities.first.map(String.init) ?? "—", label: RDLocalization.string("localizable.nova.pilot.main.gate.acik.uygunsuzluk.796d7a81", table: .localizable, fallback: "Açık uygunsuzluk"), footer: "Takipte", symbol: "checklist", tone: .accent, destination: .findings),
+                .init(id: "overdue", value: board?.nonconformities.second.map(String.init) ?? "—", label: RDLocalization.string("localizable.nova.pilot.main.gate.suresi.gecen.dae53b69", table: .localizable, fallback: "Süresi geçen"), footer: "Kontrol", symbol: "exclamationmark.triangle", tone: .accent, destination: .findings),
+                .init(id: "training", value: board?.training.second.map(String.init) ?? "—", label: RDLocalization.string("localizable.nova.pilot.main.gate.tamamlanan.egitim.542c69fa", table: .localizable, fallback: "Tamamlanan eğitim"), footer: RDLocalization.string("localizable.nova.pilot.main.gate.kayit.370d9761", table: .localizable, fallback: "Kayıt"), symbol: "graduationcap", tone: .accent, destination: .training),
+                .init(id: "deadlines", value: board.map { String(($0.deadlines.first ?? 0) + ($0.deadlines.second ?? 0)) } ?? "—", label: RDLocalization.string("localizable.nova.pilot.main.gate.yaklasan.kontroller.27835c4d", table: .localizable, fallback: "Yaklaşan kontroller"), footer: "Takvim", symbol: "calendar.badge.clock", tone: .accent, destination: .periodicChecks)
             ]
         }
         return .init(firstName: firstName,
             openCount: board?.nonconformities.first.map(Int.init),
             metrics: metrics,
-            activity: isExpert ? nil : selectedCompany.map { "\($0.name) firması için güncel kayıtlar" },
-            trainingMessage: "Gerçekleşen eğitimler ve katılımcı kayıtları",
+            activity: isExpert ? nil : selectedCompany.map { RDLocalization.format("localizable.nova.pilot.main.gate.1.firmasi.icin.guncel.kayitlar.51958e78", table: .localizable, fallback: "%1$@ firması için güncel kayıtlar", arguments: [String(describing: $0.name)]) },
+            trainingMessage: RDLocalization.string("localizable.nova.pilot.main.gate.gerceklesen.egitimler.ve.katilimci.kayitlari.e7e10207", table: .localizable, fallback: "Gerçekleşen eğitimler ve katılımcı kayıtları"),
             recentAnalyses: recentAnalyses.map { analysis in
                 NovaRecentAnalysis(id: analysis.id.uuidString.lowercased(),
                     title: NovaAnalysisPresentation.title(analysis.title),
-                    companyName: analysis.companyName ?? "Firmasız",
+                    companyName: analysis.companyName ?? RDLocalization.string("localizable.nova.pilot.main.gate.firmasiz.24436b45", table: .localizable, fallback: "Firmasız"),
                     createdOn: NovaAnalysisPresentation.dateOnly(analysis.createdOn))
             },
             summaryMessage: context.map { isExpert
-                ? "Atandığınız firmalardaki toplam güncel kayıtlar."
-                : "\($0.name) için güncel kayıtlar."
-            } ?? "Özet yükleniyor…")
+                ? RDLocalization.string("localizable.nova.pilot.main.gate.atandiginiz.firmalardaki.toplam.guncel.kayitlar.f86c4298", table: .localizable, fallback: "Atandığınız firmalardaki toplam güncel kayıtlar.")
+                : RDLocalization.format("localizable.nova.pilot.main.gate.1.icin.guncel.kayitlar.5bbf95e2", table: .localizable, fallback: "%1$@ için güncel kayıtlar.", arguments: [String(describing: $0.name)])
+            } ?? RDLocalization.string("localizable.nova.pilot.main.gate.ozet.yukleniyor.a2b2d449", table: .localizable, fallback: "Özet yükleniyor…"))
     }
 
     private var osgbHomeFooter: some View {
@@ -633,7 +633,8 @@ private struct IsgOSGBWorkspaceRoot: View {
             VStack(alignment: .leading, spacing: 11) {
                 HStack(alignment: .top, spacing: 10) {
                     VStack(alignment: .leading, spacing: 3) {
-                        NovaText(text: "Merhaba, \(app.profile?.fullName?.split(separator: " ").first.map(String.init) ?? "İSGADA")", style: .cardTitle)
+                        NovaText(text: RDLocalization.format("localizable.nova.shell.greeting", table: .localizable, fallback: "Merhaba, %@",
+                            arguments: [app.profile?.fullName?.split(separator: " ").first.map(String.init) ?? "İSGADA"]), style: .cardTitle)
                     }
                     Spacer(minLength: 0)
                     NovaIcon(symbol: "hand.wave", size: 20)
@@ -641,8 +642,8 @@ private struct IsgOSGBWorkspaceRoot: View {
                 }
                 if canManageCompanies {
                     HStack(spacing: 8) {
-                        NovaCompactActionButton(title: "Firma ekle", symbol: "building.2.crop.circle", prominent: true) { editor = .create }
-                        NovaCompactActionButton(title: "Uzman ekle", symbol: "person.badge.plus") { showingMembers = true }
+                        NovaCompactActionButton(title: RDLocalization.string("localizable.nova.pilot.main.gate.firma.ekle.f1bfec23", table: .localizable, fallback: "Firma ekle"), symbol: "building.2.crop.circle", prominent: true) { editor = .create }
+                        NovaCompactActionButton(title: RDLocalization.string("localizable.nova.pilot.main.gate.uzman.ekle.c3f9c59d", table: .localizable, fallback: "Uzman ekle"), symbol: "person.badge.plus") { showingMembers = true }
                         NovaCompactActionButton(title: "Atama", symbol: "person.2.badge.gearshape") { openAssignments() }
                     }
                 }
@@ -658,15 +659,15 @@ private struct IsgOSGBWorkspaceRoot: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 NovaPageHeading(title: NovaDestination.statistics.title, onBack: { navigate(.home) })
-                NovaHelpHint(text: "Firma, uzman ve operasyon göstergeleri.")
+                NovaHelpHint(text: RDLocalization.string("localizable.nova.pilot.main.gate.firma.uzman.ve.operasyon.gostergeleri.7dafb15e", table: .localizable, fallback: "Firma, uzman ve operasyon göstergeleri."))
                 if let board = isExpert ? expertDashboard : store.dashboard {
                     statGrid(board)
                     if let personnel { personnelGrid(personnel) }
                 } else if store.phase == .loading {
-                    NovaLoadingView(message: "İstatistikler yükleniyor…")
+                    NovaLoadingView(message: RDLocalization.string("localizable.nova.pilot.main.gate.istatistikler.yukleniyor.43424ea7", table: .localizable, fallback: "İstatistikler yükleniyor…"))
                 } else {
-                    NovaEmptyState(title: "İstatistikler alınamadı", message: "Bağlantınızı kontrol edip tekrar deneyin.")
-                    NovaCompactActionButton(title: "Tekrar dene", symbol: "arrow.clockwise") { store.refresh() }
+                    NovaEmptyState(title: RDLocalization.string("localizable.nova.pilot.main.gate.istatistikler.alinamadi.95f55764", table: .localizable, fallback: "İstatistikler alınamadı"), message: RDLocalization.string("localizable.nova.pilot.main.gate.baglantinizi.kontrol.edip.tekrar.deneyin.d30cdc53", table: .localizable, fallback: "Bağlantınızı kontrol edip tekrar deneyin."))
+                    NovaCompactActionButton(title: RDLocalization.string("localizable.nova.pilot.main.gate.tekrar.dene.ed3adbfa", table: .localizable, fallback: "Tekrar dene"), symbol: "arrow.clockwise") { store.refresh() }
                 }
                 ForEach(IsgWorkspaceDomain.allCases, id: \.self) { item in
                     Button { navigate(destination(for: item)) } label: {
@@ -773,7 +774,7 @@ private struct IsgOSGBWorkspaceRoot: View {
     private func companyOverview(_ company: IsgWorkspaceCompany) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                NovaPageHeading(title: "Firma Detayı", onBack: {
+                NovaPageHeading(title: RDLocalization.string("localizable.nova.pilot.main.gate.firma.detayi.06ad5df2", table: .localizable, fallback: "Firma Detayı"), onBack: {
                     companyWorkspaceID = nil
                     companyWorkspaceDomain = nil
                     companyWorkspaceAnalyses = false
@@ -782,10 +783,10 @@ private struct IsgOSGBWorkspaceRoot: View {
                 NovaCompanyReadinessCard(items: companyReadinessItems(company))
                 companyLogoRow(company)
                 if store.phase == .loading || store.selectedCompanyID != company.id {
-                    NovaLoadingView(message: "Firma çalışma alanı hazırlanıyor…")
+                    NovaLoadingView(message: RDLocalization.string("localizable.nova.pilot.main.gate.firma.calisma.alani.hazirlaniyor.d75d6370", table: .localizable, fallback: "Firma çalışma alanı hazırlanıyor…"))
                 } else {
                     if companyOverviewLoading && companyDomainSnapshots.isEmpty {
-                        NovaLoadingView(message: "Sıradaki işler hazırlanıyor…")
+                        NovaLoadingView(message: RDLocalization.string("localizable.nova.pilot.main.gate.siradaki.isler.hazirlaniyor.65b30ffb", table: .localizable, fallback: "Sıradaki işler hazırlanıyor…"))
                     } else {
                         nextActionsSection
                         companySearchRow
@@ -793,7 +794,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                     }
                     if let companyOverviewError {
                         NovaTaskErrorSummary(message: companyOverviewError)
-                        NovaCompactActionButton(title: "Firma özetini yeniden yükle", symbol: "arrow.clockwise") {
+                        NovaCompactActionButton(title: RDLocalization.string("localizable.nova.pilot.main.gate.firma.ozetini.yeniden.yukle.f11f5f33", table: .localizable, fallback: "Firma özetini yeniden yükle"), symbol: "arrow.clockwise") {
                             Task { await loadCompanyOverview(company.id) }
                         }
                     }
@@ -818,15 +819,15 @@ private struct IsgOSGBWorkspaceRoot: View {
                     if canManageCompanies {
                         Button { editor = .edit(company) } label: {
                             Image(systemName: "pencil").frame(width: 44, height: 44)
-                        }.buttonStyle(NovaRowPressStyle()).accessibilityLabel("Firmayı düzenle")
+                        }.buttonStyle(NovaRowPressStyle()).accessibilityLabel(RDLocalization.string("localizable.nova.pilot.main.gate.firmayi.duzenle.d8a1ba5f", table: .localizable, fallback: "Firmayı düzenle"))
                     }
                 }
                 NovaMetricStrip(items: [
                     .init(id: "open-findings", value: String(openCompanyNonconformityCount),
-                          label: "açık uygunsuzluk", symbol: "exclamationmark.triangle",
+                          label: RDLocalization.string("localizable.nova.pilot.main.gate.acik.uygunsuzluk.7d1f0c13", table: .localizable, fallback: "açık uygunsuzluk"), symbol: "exclamationmark.triangle",
                           status: openCompanyNonconformityCount > 0 ? .danger : .success),
                     .init(id: "actions", value: String(companyNextActions.count),
-                          label: "işlem gerekli", symbol: "checklist",
+                          label: RDLocalization.string("localizable.nova.pilot.main.gate.islem.gerekli.042ec5ee", table: .localizable, fallback: "işlem gerekli"), symbol: "checklist",
                           status: companyNextActions.isEmpty ? .success : .warning)
                 ])
             }
@@ -840,7 +841,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                 .background(NovaColorToken.surfaceMuted.color(in: scheme), in: RoundedRectangle(cornerRadius: 13))
                 .overlay(RoundedRectangle(cornerRadius: 13)
                     .strokeBorder(NovaColorToken.border.color(in: scheme), lineWidth: 1))
-                .accessibilityLabel("Firma logosu")
+                .accessibilityLabel(RDLocalization.string("localizable.nova.pilot.main.gate.firma.logosu.55df4ac4", table: .localizable, fallback: "Firma logosu"))
         } else {
             NovaIcon(symbol: "building.2", size: 22)
                 .frame(width: 44, height: 44)
@@ -854,8 +855,8 @@ private struct IsgOSGBWorkspaceRoot: View {
                 HStack(spacing: 11) {
                     companyLogoMark
                     VStack(alignment: .leading, spacing: 2) {
-                        NovaText(text: companyLogo == nil ? "Firma logosu ekleyin" : "Firma logosu", style: .bodyStrong)
-                        NovaText(text: companyLogoSaving ? "Logo yükleniyor…" : "Firma kartında ve oluşturulan raporlarda kullanılır.",
+                        NovaText(text: companyLogo == nil ? RDLocalization.string("localizable.nova.pilot.main.gate.firma.logosu.ekleyin.1609c516", table: .localizable, fallback: "Firma logosu ekleyin") : RDLocalization.string("localizable.nova.pilot.main.gate.firma.logosu.38051508", table: .localizable, fallback: "Firma logosu"), style: .bodyStrong)
+                        NovaText(text: companyLogoSaving ? RDLocalization.string("localizable.nova.pilot.main.gate.logo.yukleniyor.be85573e", table: .localizable, fallback: "Logo yükleniyor…") : RDLocalization.string("localizable.nova.pilot.main.gate.firma.kartinda.ve.olusturulan.raporlarda.kullani.0d72d6c5", table: .localizable, fallback: "Firma kartında ve oluşturulan raporlarda kullanılır."),
                                  style: .micro, color: NovaColorToken.textMuted.color(in: scheme))
                     }
                     Spacer(minLength: 0)
@@ -865,7 +866,7 @@ private struct IsgOSGBWorkspaceRoot: View {
                         PhotosPicker(selection: $companyLogoPicker, matching: .images) {
                             HStack(spacing: 5) {
                                 Image(systemName: companyLogo == nil ? "plus" : "arrow.triangle.2.circlepath")
-                                Text(companyLogo == nil ? "Logo seç" : "Değiştir")
+                                Text(companyLogo == nil ? RDLocalization.string("localizable.nova.pilot.main.gate.logo.sec.95cdb3a2", table: .localizable, fallback: "Logo seç") : RDLocalization.string("localizable.nova.pilot.main.gate.degistir.b78f48e3", table: .localizable, fallback: "Değiştir"))
                             }
                             .font(.custom("PlusJakartaSans-SemiBold", size: 10))
                             .foregroundStyle(Color.black)
@@ -884,13 +885,13 @@ private struct IsgOSGBWorkspaceRoot: View {
             }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("\(company.name) firma logosu")
+        .accessibilityLabel(RDLocalization.format("localizable.nova.pilot.main.gate.1.firma.logosu.aeaafe9a", table: .localizable, fallback: "%1$@ firma logosu", arguments: [String(describing: company.name)]))
     }
 
     private var nextActionsSection: some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack {
-                NovaText(text: "Sıradaki işler", style: .sectionTitle)
+                NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.siradaki.isler.4e01b5f6", table: .localizable, fallback: "Sıradaki işler"), style: .sectionTitle)
                 Spacer(minLength: 0)
                 if companyOverviewLoading { ProgressView().controlSize(.small) }
             }
@@ -899,8 +900,8 @@ private struct IsgOSGBWorkspaceRoot: View {
                     HStack(spacing: 10) {
                         Image(systemName: "checkmark.circle.fill")
                         VStack(alignment: .leading, spacing: 2) {
-                            NovaText(text: "Şu anda kritik iş görünmüyor", style: .bodyStrong)
-                            NovaText(text: "Kayıt kategorilerinden ayrıntıları inceleyebilirsiniz.", style: .metaQuiet)
+                            NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.su.anda.kritik.is.gorunmuyor.8788a40d", table: .localizable, fallback: "Şu anda kritik iş görünmüyor"), style: .bodyStrong)
+                            NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.kayit.kategorilerinden.ayrintilari.inceleyebilir.a446b915", table: .localizable, fallback: "Kayıt kategorilerinden ayrıntıları inceleyebilirsiniz."), style: .metaQuiet)
                         }
                     }
                 }
@@ -932,7 +933,7 @@ private struct IsgOSGBWorkspaceRoot: View {
         Button { showingSearch = true } label: {
             HStack(spacing: 10) {
                 NovaIcon(symbol: "magnifyingglass", size: 18)
-                NovaText(text: "Firma kayıtlarında ara", style: .bodyStrong)
+                NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.firma.kayitlarinda.ara.f659fcbb", table: .localizable, fallback: "Firma kayıtlarında ara"), style: .bodyStrong)
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold))
             }.padding(.horizontal, 12).frame(maxWidth: .infinity, minHeight: 50)
@@ -942,42 +943,42 @@ private struct IsgOSGBWorkspaceRoot: View {
 
     private func companyCategorySections(_ company: IsgWorkspaceCompany) -> some View {
         VStack(alignment: .leading, spacing: 22) {
-            companyCategory("Firma ve kadro") {
-                companyPlainRow(title: "Firma bilgileri", subtitle: company.sector?.isEmpty == false ? company.sector! : "Profil bilgileri",
-                    symbol: "building.2", status: company.sector?.isEmpty == false ? ("Güncel", .success) : ("Takip gerekli", .warning),
+            companyCategory(RDLocalization.string("localizable.nova.pilot.main.gate.firma.ve.kadro.17c9296c", table: .localizable, fallback: "Firma ve kadro")) {
+                companyPlainRow(title: RDLocalization.string("localizable.nova.pilot.main.gate.firma.bilgileri.d5719760", table: .localizable, fallback: "Firma bilgileri"), subtitle: company.sector?.isEmpty == false ? company.sector! : RDLocalization.string("localizable.nova.pilot.main.gate.profil.bilgileri.9fac4a56", table: .localizable, fallback: "Profil bilgileri"),
+                    symbol: "building.2", status: company.sector?.isEmpty == false ? (RDLocalization.string("localizable.nova.pilot.main.gate.guncel.e3045156", table: .localizable, fallback: "Güncel"), .success) : (RDLocalization.string("localizable.nova.pilot.main.gate.takip.gerekli.6587f16e", table: .localizable, fallback: "Takip gerekli"), .warning),
                     action: canManageCompanies ? { editor = .edit(company) } : nil)
-                companyPlainRow(title: "Personel", subtitle: companyPersonnel.map { "\($0.employees.active) kişi" } ?? "Yükleniyor",
+                companyPlainRow(title: "Personel", subtitle: companyPersonnel.map { RDLocalization.format("localizable.nova.pilot.main.gate.1.kisi.046d5085", table: .localizable, fallback: "%1$@ kişi", arguments: [String(describing: $0.employees.active)]) } ?? RDLocalization.string("localizable.nova.pilot.main.gate.yukleniyor.7d048802", table: .localizable, fallback: "Yükleniyor"),
                     symbol: IsgWorkspaceDomain.personnel.symbol,
-                    status: (companyPersonnel?.employees.active ?? 0) > 0 ? ("Güncel", .success) : ("Başlanmadı", .warning)) {
+                    status: (companyPersonnel?.employees.active ?? 0) > 0 ? (RDLocalization.string("localizable.nova.pilot.main.gate.guncel.088420d1", table: .localizable, fallback: "Güncel"), .success) : (RDLocalization.string("localizable.nova.pilot.main.gate.baslanmadi.25870373", table: .localizable, fallback: "Başlanmadı"), .warning)) {
                         companyWorkspaceDomain = .personnel
                     }
                 companyDomainRow(.appointment)
             }
-            companyCategory("Risk ve acil durum") {
+            companyCategory(RDLocalization.string("localizable.nova.pilot.main.gate.risk.ve.acil.durum.581a2352", table: .localizable, fallback: "Risk ve acil durum")) {
                 companyDomainRow(.risk)
                 companyDomainRow(.emergencyPlan)
                 companyDomainRow(.drill)
             }
-            companyCategory("Kontrol ve kayıtlar") {
+            companyCategory(RDLocalization.string("localizable.nova.pilot.main.gate.kontrol.ve.kayitlar.adca7cec", table: .localizable, fallback: "Kontrol ve kayıtlar")) {
                 companyDomainRow(.equipment)
                 companyDomainRow(.nonconformity)
                 companyDomainRow(.checklist)
                 companyDomainRow(.files)
-                companyPlainRow(title: NovaDestination.analyses.title, subtitle: "Fotoğraflı saha analizleri",
+                companyPlainRow(title: NovaDestination.analyses.title, subtitle: RDLocalization.string("localizable.nova.pilot.main.gate.fotografli.saha.analizleri.05e73e41", table: .localizable, fallback: "Fotoğraflı saha analizleri"),
                     symbol: NovaDestination.analyses.symbol, status: nil) { companyWorkspaceAnalyses = true }
             }
-            companyCategory("Eğitim ve organizasyon") {
+            companyCategory(RDLocalization.string("localizable.nova.pilot.main.gate.egitim.ve.organizasyon.85e256ab", table: .localizable, fallback: "Eğitim ve organizasyon")) {
                 companyDomainRow(.training)
                 companyDomainRow(.board)
                 companyDomainRow(.katip)
             }
-            companyCategory("Diğer kayıtlar") {
+            companyCategory(RDLocalization.string("localizable.nova.pilot.main.gate.diger.kayitlar.069ffbb5", table: .localizable, fallback: "Diğer kayıtlar")) {
                 companyDomainRow(.annualPlan)
                 companyDomainRow(.visit)
                 companyDomainRow(.ppe)
             }
-            companyCategory("Örnek formlar") {
-                companyPlainRow(title: IsgWorkspaceDomain.workPermit.title, subtitle: "56 indirilebilir Word örneği",
+            companyCategory(RDLocalization.string("localizable.nova.pilot.main.gate.ornek.formlar.04277afc", table: .localizable, fallback: "Örnek formlar")) {
+                companyPlainRow(title: IsgWorkspaceDomain.workPermit.title, subtitle: RDLocalization.string("localizable.nova.pilot.main.gate.56.indirilebilir.word.ornegi.69a20f3d", table: .localizable, fallback: "56 indirilebilir Word örneği"),
                     symbol: IsgWorkspaceDomain.workPermit.symbol, status: nil) { companyWorkspaceDomain = .workPermit }
             }
         }
@@ -1017,14 +1018,14 @@ private struct IsgOSGBWorkspaceRoot: View {
 
     private func companyModuleSubtitle(_ domain: IsgWorkspaceDomain) -> String {
         guard let snapshot = companyDomainSnapshots[domain.rawValue] else {
-            return companyOverviewLoading ? "Yükleniyor…" : "Kayıtları görüntüle"
+            return companyOverviewLoading ? RDLocalization.string("localizable.nova.pilot.main.gate.yukleniyor.e7f2ae46", table: .localizable, fallback: "Yükleniyor…") : RDLocalization.string("localizable.nova.pilot.main.gate.kayitlari.goruntule.1aafa821", table: .localizable, fallback: "Kayıtları görüntüle")
         }
-        return snapshot.rows.isEmpty ? "Henüz kayıt yok" : "\(snapshot.rows.count) kayıt"
+        return snapshot.rows.isEmpty ? RDLocalization.string("localizable.nova.pilot.main.gate.henuz.kayit.yok.24d5d229", table: .localizable, fallback: "Henüz kayıt yok") : RDLocalization.format("localizable.nova.pilot.main.gate.1.kayit.3e2f0f9c", table: .localizable, fallback: "%1$@ kayıt", arguments: [String(describing: snapshot.rows.count)])
     }
 
     private func companyModuleStatus(_ domain: IsgWorkspaceDomain) -> (String, NovaStatus)? {
         guard let snapshot = companyDomainSnapshots[domain.rawValue] else { return nil }
-        guard !snapshot.rows.isEmpty else { return ("Başlanmadı", .warning) }
+        guard !snapshot.rows.isEmpty else { return (RDLocalization.string("localizable.nova.pilot.main.gate.baslanmadi.fab01e6d", table: .localizable, fallback: "Başlanmadı"), .warning) }
         let statuses = snapshot.rows.compactMap(\.status)
         let metric = snapshot.metrics.filter { $0.value > 0 }.map(\.id)
         if statuses.contains(where: { ["overdue", "expired", "failed", "critical"].contains($0) }) ||
@@ -1033,14 +1034,14 @@ private struct IsgOSGBWorkspaceRoot: View {
         }
         if statuses.contains(where: { ["due_soon", "upcoming"].contains($0) }) ||
             metric.contains(where: { $0.contains("due_soon") || $0.contains("upcoming") }) {
-            return ("Yaklaşıyor", .warning)
+            return (RDLocalization.string("localizable.nova.pilot.main.gate.yaklasiyor.c37ec08d", table: .localizable, fallback: "Yaklaşıyor"), .warning)
         }
         if statuses.contains(where: { ["open", "assigned", "in_progress", "pending_verification", "untracked", "never_inspected", "period_unknown"].contains($0) }) ||
             metric.contains(where: { $0.contains("untracked") || $0.contains("open") }) {
-            return ("Takip gerekli", .warning)
+            return (RDLocalization.string("localizable.nova.pilot.main.gate.takip.gerekli.9c5165d4", table: .localizable, fallback: "Takip gerekli"), .warning)
         }
         if statuses.contains(where: { ["draft", "planned"].contains($0) }) { return ("Devam ediyor", .info) }
-        return ("Güncel", .success)
+        return (RDLocalization.string("localizable.nova.pilot.main.gate.guncel.60824e00", table: .localizable, fallback: "Güncel"), .success)
     }
 
     private func companyReadinessItems(_ company: IsgWorkspaceCompany) -> [NovaCompanyReadinessItem] {
@@ -1055,22 +1056,22 @@ private struct IsgOSGBWorkspaceRoot: View {
         let responsible = company.responsibleName?.trimmingCharacters(in: .whitespacesAndNewlines)
 
         return [
-            .init(id: "company", title: "Firma Bilgileri",
-                detail: hasCompanyInfo ? "Temel firma bilgileri güncel." : "Sektör veya adres bilgisi eksik.",
+            .init(id: "company", title: RDLocalization.string("localizable.nova.pilot.main.gate.firma.bilgileri.1b3c3cf9", table: .localizable, fallback: "Firma Bilgileri"),
+                detail: hasCompanyInfo ? RDLocalization.string("localizable.nova.pilot.main.gate.temel.firma.bilgileri.guncel.85e426d4", table: .localizable, fallback: "Temel firma bilgileri güncel.") : RDLocalization.string("localizable.nova.pilot.main.gate.sektor.veya.adres.bilgisi.eksik.75ede063", table: .localizable, fallback: "Sektör veya adres bilgisi eksik."),
                 status: hasCompanyInfo ? .complete : .missing),
-            readinessItem(id: "risk", title: "Risk Analizi", domain: .risk),
-            readinessItem(id: "emergency", title: "Acil Durum Planı", domain: .emergencyPlan),
-            readinessItem(id: "training", title: "Eğitim", domain: .training),
+            readinessItem(id: "risk", title: RDLocalization.string("localizable.nova.pilot.main.gate.risk.analizi.716e5645", table: .localizable, fallback: "Risk Analizi"), domain: .risk),
+            readinessItem(id: "emergency", title: RDLocalization.string("localizable.nova.pilot.main.gate.acil.durum.plani.47eb0428", table: .localizable, fallback: "Acil Durum Planı"), domain: .emergencyPlan),
+            readinessItem(id: "training", title: RDLocalization.string("localizable.nova.pilot.main.gate.egitim.b22f48b9", table: .localizable, fallback: "Eğitim"), domain: .training),
             .init(id: "personnel", title: "Personel",
-                detail: companyPersonnel.map { "\($0.employees.active) aktif personel kayıtlı." } ?? "Personel verisi yükleniyor.",
+                detail: companyPersonnel.map { RDLocalization.format("localizable.nova.pilot.main.gate.1.aktif.personel.kayitli.28ba68da", table: .localizable, fallback: "%1$@ aktif personel kayıtlı.", arguments: [String(describing: $0.employees.active)]) } ?? RDLocalization.string("localizable.nova.pilot.main.gate.personel.verisi.yukleniyor.30a7ab33", table: .localizable, fallback: "Personel verisi yükleniyor."),
                 status: personnelStatus),
             readinessItem(id: "nonconformity", title: "Uygunsuzluk", domain: .nonconformity),
-            readinessItem(id: "equipment", title: "Periyodik Kontrol", domain: .equipment),
-            .init(id: "logo", title: "Logo",
-                detail: companyLogo == nil ? "Firma logosu eklenmemiş." : "Firma logosu kayıtlı.",
+            readinessItem(id: "equipment", title: RDLocalization.string("localizable.nova.pilot.main.gate.periyodik.kontrol.c9490387", table: .localizable, fallback: "Periyodik Kontrol"), domain: .equipment),
+            .init(id: "logo", title: RDLocalization.string("localizable.nova.pilot.main.gate.logo.e7f8ba9b", table: .localizable, fallback: "Logo"),
+                detail: companyLogo == nil ? RDLocalization.string("localizable.nova.pilot.main.gate.firma.logosu.eklenmemis.56a77a95", table: .localizable, fallback: "Firma logosu eklenmemiş.") : RDLocalization.string("localizable.nova.pilot.main.gate.firma.logosu.kayitli.6ccebb7a", table: .localizable, fallback: "Firma logosu kayıtlı."),
                 status: logoStatus),
-            .init(id: "responsible", title: "Sorumlu Kişi",
-                detail: responsible?.isEmpty == false ? responsible! : "Sorumlu kişi tanımlanmamış.",
+            .init(id: "responsible", title: RDLocalization.string("localizable.nova.pilot.main.gate.sorumlu.kisi.75c750eb", table: .localizable, fallback: "Sorumlu Kişi"),
+                detail: responsible?.isEmpty == false ? responsible! : RDLocalization.string("localizable.nova.pilot.main.gate.sorumlu.kisi.tanimlanmamis.46ddd1f9", table: .localizable, fallback: "Sorumlu kişi tanımlanmamış."),
                 status: responsible?.isEmpty == false ? .complete : .missing),
             readinessItem(id: "visits", title: "Ziyaretler", domain: .visit)
         ]
@@ -1080,10 +1081,10 @@ private struct IsgOSGBWorkspaceRoot: View {
                                domain: IsgWorkspaceDomain) -> NovaCompanyReadinessItem {
         guard let snapshot = companyDomainSnapshots[domain.rawValue] else {
             return .init(id: id, title: title,
-                detail: companyOverviewLoading ? "Durum yükleniyor." : "Durum bilgisi alınamadı.", status: .unknown)
+                detail: companyOverviewLoading ? RDLocalization.string("localizable.nova.pilot.main.gate.durum.yukleniyor.5bd54e6d", table: .localizable, fallback: "Durum yükleniyor.") : RDLocalization.string("localizable.nova.pilot.main.gate.durum.bilgisi.alinamadi.cfd51d19", table: .localizable, fallback: "Durum bilgisi alınamadı."), status: .unknown)
         }
         guard !snapshot.rows.isEmpty else {
-            return .init(id: id, title: title, detail: "Henüz kayıt yok.", status: .missing)
+            return .init(id: id, title: title, detail: RDLocalization.string("localizable.nova.pilot.main.gate.henuz.kayit.yok.4bddba8b", table: .localizable, fallback: "Henüz kayıt yok."), status: .missing)
         }
         let status: NovaCompanyReadinessStatus
         switch companyModuleStatus(domain)?.1 {
@@ -1091,8 +1092,8 @@ private struct IsgOSGBWorkspaceRoot: View {
         case .warning, .danger, .info: status = .needsReview
         case .neutral, .none: status = .unknown
         }
-        let detail = companyModuleStatus(domain).map { "\(snapshot.rows.count) kayıt · \($0.0)" }
-            ?? "\(snapshot.rows.count) kayıt bulundu."
+        let detail = companyModuleStatus(domain).map { RDLocalization.format("localizable.nova.pilot.main.gate.1.kayit.2.d53eedd3", table: .localizable, fallback: "%1$@ kayıt · %2$@", arguments: [String(describing: snapshot.rows.count), String(describing: $0.0)]) }
+            ?? RDLocalization.format("localizable.nova.pilot.main.gate.1.kayit.bulundu.920cb40b", table: .localizable, fallback: "%1$@ kayıt bulundu.", arguments: [String(describing: snapshot.rows.count)])
         return .init(id: id, title: title, detail: detail, status: status)
     }
 
@@ -1111,16 +1112,16 @@ private struct IsgOSGBWorkspaceRoot: View {
     private var companyNextActions: [CompanyNextAction] {
         var result: [CompanyNextAction] = []
         if openCompanyNonconformityCount > 0 {
-            result.append(.init(id: "nonconformity", title: "Açık uygunsuzlukları incele",
-                detail: "\(openCompanyNonconformityCount) kayıt takip bekliyor", symbol: "exclamationmark.triangle",
+            result.append(.init(id: "nonconformity", title: RDLocalization.string("localizable.nova.pilot.main.gate.acik.uygunsuzluklari.incele.3d5b2c75", table: .localizable, fallback: "Açık uygunsuzlukları incele"),
+                detail: RDLocalization.format("localizable.nova.pilot.main.gate.1.kayit.takip.bekliyor.049a85da", table: .localizable, fallback: "%1$@ kayıt takip bekliyor", arguments: [String(describing: openCompanyNonconformityCount)]), symbol: "exclamationmark.triangle",
                 status: .danger, domain: .nonconformity))
         }
         for (domain, title, detail, symbol) in [
-            (IsgWorkspaceDomain.risk, "Risk değerlendirmesi oluştur", "Henüz değerlendirme kaydı yok", "checkmark.shield"),
-            (.emergencyPlan, "Acil durum planı oluştur", "Henüz yürürlükte bir plan yok", "light.beacon.max"),
-            (.equipment, "Ekipman ve kontrol takibini başlat", "Henüz ekipman kaydı yok", "wrench.and.screwdriver"),
-            (.appointment, "Çalışan görevlerini tanımla", "Henüz atama kaydı yok", "person.badge.shield.checkmark"),
-            (.training, "İlk eğitim kaydını oluştur", "Henüz gerçekleşen eğitim yok", "graduationcap")
+            (IsgWorkspaceDomain.risk, RDLocalization.string("localizable.nova.pilot.main.gate.risk.degerlendirmesi.olustur.5b53898f", table: .localizable, fallback: "Risk değerlendirmesi oluştur"), RDLocalization.string("localizable.nova.pilot.main.gate.henuz.degerlendirme.kaydi.yok.07590961", table: .localizable, fallback: "Henüz değerlendirme kaydı yok"), "checkmark.shield"),
+            (.emergencyPlan, RDLocalization.string("localizable.nova.pilot.main.gate.acil.durum.plani.olustur.a3009772", table: .localizable, fallback: "Acil durum planı oluştur"), RDLocalization.string("localizable.nova.pilot.main.gate.henuz.yururlukte.bir.plan.yok.63360314", table: .localizable, fallback: "Henüz yürürlükte bir plan yok"), "light.beacon.max"),
+            (.equipment, RDLocalization.string("localizable.nova.pilot.main.gate.ekipman.ve.kontrol.takibini.baslat.794e1a44", table: .localizable, fallback: "Ekipman ve kontrol takibini başlat"), RDLocalization.string("localizable.nova.pilot.main.gate.henuz.ekipman.kaydi.yok.2517bb8f", table: .localizable, fallback: "Henüz ekipman kaydı yok"), "wrench.and.screwdriver"),
+            (.appointment, RDLocalization.string("localizable.nova.pilot.main.gate.calisan.gorevlerini.tanimla.72938870", table: .localizable, fallback: "Çalışan görevlerini tanımla"), RDLocalization.string("localizable.nova.pilot.main.gate.henuz.atama.kaydi.yok.5692f4d1", table: .localizable, fallback: "Henüz atama kaydı yok"), "person.badge.shield.checkmark"),
+            (.training, RDLocalization.string("localizable.nova.pilot.main.gate.ilk.egitim.kaydini.olustur.3a2ab728", table: .localizable, fallback: "İlk eğitim kaydını oluştur"), RDLocalization.string("localizable.nova.pilot.main.gate.henuz.gerceklesen.egitim.yok.1408bb20", table: .localizable, fallback: "Henüz gerçekleşen eğitim yok"), "graduationcap")
         ] {
             if let snapshot = companyDomainSnapshots[domain.rawValue], snapshot.rows.isEmpty {
                 result.append(.init(id: domain.rawValue, title: title, detail: detail,
@@ -1154,7 +1155,7 @@ private struct IsgOSGBWorkspaceRoot: View {
         companyDomainSnapshots = Dictionary(uniqueKeysWithValues: snapshots.map { ($0.domain.rawValue, $0) })
         await loadCompanyLogo(from: values.11, companyID: companyID)
         if companyPersonnel == nil || snapshots.count < monitoredCompanyDomains.count {
-            companyOverviewError = "Bazı firma durumları alınamadı. Görünen kayıtları kullanabilir veya özeti yenileyebilirsiniz."
+            companyOverviewError = RDLocalization.string("localizable.nova.pilot.main.gate.bazi.firma.durumlari.alinamadi.gorunen.kayitlari.29856061", table: .localizable, fallback: "Bazı firma durumları alınamadı. Görünen kayıtları kullanabilir veya özeti yenileyebilirsiniz.")
         }
         companyOverviewLoading = false
     }
@@ -1191,7 +1192,7 @@ private struct IsgOSGBWorkspaceRoot: View {
             let digest = IsgWorkspaceMutationAttempt.digest(data)
             let uploadMutationID = companyLogoUploadAttempt.id(namespace: "company.logo.upload",
                 components: [companyID.uuidString.lowercased(), digest])
-            let upload = try await store.uploadFile(mutationID: uploadMutationID, title: "Firma logosu",
+            let upload = try await store.uploadFile(mutationID: uploadMutationID, title: RDLocalization.string("localizable.nova.pilot.main.gate.firma.logosu.09c20022", table: .localizable, fallback: "Firma logosu"),
                 filename: "firma-logo.jpg", category: "company_logo", data: data, companyID: companyID)
             let linkMutationID = companyLogoLinkAttempt.id(namespace: "company.logo.link",
                 components: [companyID.uuidString.lowercased(), upload.entryID.uuidString.lowercased()])
@@ -1202,7 +1203,7 @@ private struct IsgOSGBWorkspaceRoot: View {
             companyLogo = image; companyLogoEntryID = upload.entryID
             celebrate(NovaSuccessMessage.companyLogoAdded)
         } catch {
-            companyLogoError = "Logo eklenemedi. JPG veya PNG görseliyle yeniden deneyin."
+            companyLogoError = RDLocalization.string("localizable.nova.pilot.main.gate.logo.eklenemedi.jpg.veya.png.gorseliyle.yeniden..cf74aaaf", table: .localizable, fallback: "Logo eklenemedi. JPG veya PNG görseliyle yeniden deneyin.")
         }
     }
 
@@ -1314,8 +1315,8 @@ private struct IsgOSGBWorkspaceRoot: View {
                 VStack(alignment: .leading, spacing: 12) {
                     NovaPageHeading(title: IsgWorkspaceDomain.personnel.title,
                                     onBack: onBack ?? { navigate(.home) })
-                    NovaEmptyState(title: "Önce firma seçin",
-                                   message: "Personel ve organizasyon kayıtları firma kapsamında tutulur.")
+                    NovaEmptyState(title: RDLocalization.string("localizable.nova.pilot.main.gate.once.firma.secin.b12e5f05", table: .localizable, fallback: "Önce firma seçin"),
+                                   message: RDLocalization.string("localizable.nova.pilot.main.gate.personel.ve.organizasyon.kayitlari.firma.kapsami.53ba6d25", table: .localizable, fallback: "Personel ve organizasyon kayıtları firma kapsamında tutulur."))
                 }.padding(16)
             }
         }
@@ -1456,7 +1457,7 @@ private struct IsgOSGBWorkspaceRoot: View {
     private func companySummary(_ company: IsgWorkspaceCompany) -> String {
         var parts = [hazard(company.hazardClass)]
         if let sector = company.sector, !sector.isEmpty { parts.append(sector) }
-        if let count = company.declaredEmployeeCount { parts.append("\(count) çalışan") }
+        if let count = company.declaredEmployeeCount { parts.append(RDLocalization.format("localizable.nova.pilot.main.gate.1.calisan.b8421177", table: .localizable, fallback: "%1$@ çalışan", arguments: [String(describing: count)])) }
         return parts.joined(separator: " · ")
     }
     private func companyProfileProgress(_ company: IsgWorkspaceCompany) -> Int {
@@ -1581,7 +1582,7 @@ private struct IsgWorkspaceMemberManagement: View {
                         VStack(alignment: .leading, spacing: 3) {
                             NovaText(text: role(member.role), style: .bodyStrong)
                             NovaText(text: String((member.userID ?? member.id).uuidString.prefix(8)) + " · " + status(member.status), style: .metaQuiet)
-                            Text("Kullanım ve işlem geçmişi").font(NovaFont.font(.metaQuiet)).foregroundStyle(.secondary)
+                            Text(RDLocalization.string("localizable.nova.pilot.main.gate.kullanim.ve.islem.gecmisi.105bd675", table: .localizable, fallback: "Kullanım ve işlem geçmişi")).font(NovaFont.font(.metaQuiet)).foregroundStyle(.secondary)
                         }
                         Spacer(minLength: 0)
                         if member.role != "owner" {
@@ -1844,13 +1845,13 @@ private struct IsgWorkspaceCompanyEditor: View {
     var body: some View {
         Group {
             if saved {
-                NovaTaskSuccessView(title: company == nil ? "Firma oluşturuldu" : "Firma güncellendi",
-                    message: "Firma bilgileri kaydedildi ve sonraki modül işlemlerinde otomatik kullanılacak.",
-                    doneTitle: "Firmalara dön", onDone: onClose)
+                NovaTaskSuccessView(title: company == nil ? RDLocalization.string("localizable.nova.pilot.main.gate.firma.olusturuldu.19d310f1", table: .localizable, fallback: "Firma oluşturuldu") : RDLocalization.string("localizable.nova.pilot.main.gate.firma.guncellendi.a4aa1c3f", table: .localizable, fallback: "Firma güncellendi"),
+                    message: RDLocalization.string("localizable.nova.pilot.main.gate.firma.bilgileri.kaydedildi.ve.sonraki.modul.isle.1795116a", table: .localizable, fallback: "Firma bilgileri kaydedildi ve sonraki modül işlemlerinde otomatik kullanılacak."),
+                    doneTitle: RDLocalization.string("localizable.nova.pilot.main.gate.firmalara.don.2f24cb0f", table: .localizable, fallback: "Firmalara dön"), onDone: onClose)
             } else {
                 NovaPageSurface(onEdgeBack: goBack) {
                     VStack(spacing: 0) {
-                        NovaTaskHeader(title: company == nil ? "Firma ekle" : "Firmayı düzenle",
+                        NovaTaskHeader(title: company == nil ? RDLocalization.string("localizable.nova.pilot.main.gate.firma.ekle.c8ac90b3", table: .localizable, fallback: "Firma ekle") : RDLocalization.string("localizable.nova.pilot.main.gate.firmayi.duzenle.ca5eb8e3", table: .localizable, fallback: "Firmayı düzenle"),
                             step: step + 1, total: totalSteps, stepTitle: stepTitle, onClose: goBack)
                             .padding(.horizontal, 18).padding(.top, 10)
                         ScrollView {
@@ -1862,7 +1863,7 @@ private struct IsgWorkspaceCompanyEditor: View {
                         .scrollDismissesKeyboard(.interactively)
                         .safeAreaInset(edge: .bottom, spacing: 0) {
                             NovaTaskStickyActions(primaryTitle: step == totalSteps - 1
-                                ? (company == nil ? "Firmayı kaydet" : "Değişiklikleri kaydet") : "Devam",
+                                ? (company == nil ? RDLocalization.string("localizable.nova.pilot.main.gate.firmayi.kaydet.a519e1f9", table: .localizable, fallback: "Firmayı kaydet") : RDLocalization.string("localizable.nova.pilot.main.gate.degisiklikleri.kaydet.6eff69a4", table: .localizable, fallback: "Değişiklikleri kaydet")) : RDLocalization.string("localizable.nova.pilot.main.gate.devam.e128f2c2", table: .localizable, fallback: "Devam"),
                                 primarySymbol: step == totalSteps - 1 ? "checkmark" : "arrow.right",
                                 isWorking: saving, canGoBack: true, onBack: goBack, onPrimary: advance)
                         }
@@ -1884,10 +1885,10 @@ private struct IsgWorkspaceCompanyEditor: View {
 
     private var totalSteps: Int { company == nil ? 4 : 3 }
     private var stepTitle: String {
-        if step == 0 { return "Temel bilgiler" }
-        if step == 1 { return "İletişim ve kapasite" }
-        if company == nil && step == 2 { return "Uzman ataması" }
-        return "Kontrol ve kaydet"
+        if step == 0 { return RDLocalization.string("localizable.nova.pilot.main.gate.temel.bilgiler.93b17190", table: .localizable, fallback: "Temel bilgiler") }
+        if step == 1 { return RDLocalization.string("localizable.nova.pilot.main.gate.iletisim.ve.kapasite.d3f64049", table: .localizable, fallback: "İletişim ve kapasite") }
+        if company == nil && step == 2 { return RDLocalization.string("localizable.nova.pilot.main.gate.uzman.atamasi.3c33188e", table: .localizable, fallback: "Uzman ataması") }
+        return RDLocalization.string("localizable.nova.pilot.main.gate.kontrol.ve.kaydet.ca2ccb7b", table: .localizable, fallback: "Kontrol ve kaydet")
     }
 
     @ViewBuilder private var stepContent: some View {
@@ -1899,14 +1900,14 @@ private struct IsgWorkspaceCompanyEditor: View {
 
     private var basicStep: some View {
         VStack(alignment: .leading, spacing: 12) {
-            NovaHelpHint(text: "Firma ve sektör bilgisi bir kez kaydedilir; işyeri ve modül akışlarında yeniden kullanılır.")
+            NovaHelpHint(text: RDLocalization.string("localizable.nova.pilot.main.gate.firma.ve.sektor.bilgisi.bir.kez.kaydedilir.isyer.061624b0", table: .localizable, fallback: "Firma ve sektör bilgisi bir kez kaydedilir; işyeri ve modül akışlarında yeniden kullanılır."))
             NovaCard(padding: 14) {
                 VStack(alignment: .leading, spacing: 10) {
-                    field("Firma adı *", symbol: "building.2", text: $name)
+                    field(RDLocalization.string("localizable.nova.pilot.main.gate.firma.adi.454d4558", table: .localizable, fallback: "Firma adı *"), symbol: "building.2", text: $name)
                     Divider()
                     hazardMenu
                     Divider()
-                    field("Sektör *", symbol: "square.grid.2x2", text: $sector)
+                    field(RDLocalization.string("localizable.nova.pilot.main.gate.sektor.3879ccf6", table: .localizable, fallback: "Sektör *"), symbol: "square.grid.2x2", text: $sector)
                 }
             }
         }
@@ -1915,16 +1916,16 @@ private struct IsgWorkspaceCompanyEditor: View {
     private var contactStep: some View {
         NovaCard(padding: 14) {
             VStack(alignment: .leading, spacing: 10) {
-                field("Firma e-posta", symbol: "envelope", text: $email)
-                Divider(); field("Çalışan sayısı", symbol: "person.2", text: $employeeCount)
-                Divider(); field("Adres", symbol: "mappin.and.ellipse", text: $address)
-                Divider(); Toggle("Sorumlu personel ekle", isOn: $addResponsible)
+                field(RDLocalization.string("localizable.nova.pilot.main.gate.firma.e.posta.61a8ebb0", table: .localizable, fallback: "Firma e-posta"), symbol: "envelope", text: $email)
+                Divider(); field(RDLocalization.string("localizable.nova.pilot.main.gate.calisan.sayisi.094c21c2", table: .localizable, fallback: "Çalışan sayısı"), symbol: "person.2", text: $employeeCount)
+                Divider(); field(RDLocalization.string("localizable.nova.pilot.main.gate.adres.44850ab8", table: .localizable, fallback: "Adres"), symbol: "mappin.and.ellipse", text: $address)
+                Divider(); Toggle(RDLocalization.string("localizable.nova.pilot.main.gate.sorumlu.personel.ekle.c100d0e9", table: .localizable, fallback: "Sorumlu personel ekle"), isOn: $addResponsible)
                 if addResponsible {
-                    field("Ad soyad *", symbol: "person", text: $responsibleName)
-                    field("Telefon *", symbol: "phone", text: $responsiblePhone)
-                    field("E-posta *", symbol: "envelope", text: $responsibleEmail)
+                    field(RDLocalization.string("localizable.nova.pilot.main.gate.ad.soyad.17714251", table: .localizable, fallback: "Ad soyad *"), symbol: "person", text: $responsibleName)
+                    field(RDLocalization.string("localizable.nova.pilot.main.gate.telefon.bfdcf2da", table: .localizable, fallback: "Telefon *"), symbol: "phone", text: $responsiblePhone)
+                    field(RDLocalization.string("localizable.nova.pilot.main.gate.e.posta.a8483f8a", table: .localizable, fallback: "E-posta *"), symbol: "envelope", text: $responsibleEmail)
                     NovaWhyDisclosure {
-                        NovaText(text: "Sorumlu kişi firma iletişim bilgisinde gösterilir. Personel kaydı ayrı personel ekranından oluşturulur.", style: .metaQuiet)
+                        NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.sorumlu.kisi.firma.iletisim.bilgisinde.gosterili.3d2b4300", table: .localizable, fallback: "Sorumlu kişi firma iletişim bilgisinde gösterilir. Personel kaydı ayrı personel ekranından oluşturulur."), style: .metaQuiet)
                     }
                 }
             }
@@ -1933,14 +1934,14 @@ private struct IsgWorkspaceCompanyEditor: View {
 
     private var expertStep: some View {
         VStack(alignment: .leading, spacing: 12) {
-            NovaHelpHint(text: "Uzman ataması isteğe bağlıdır; firmayı şimdi kaydedip atamayı daha sonra da yapabilirsiniz.")
-            if membersLoading { NovaLoadingView(message: "Uzmanlar yükleniyor…") }
-            else if experts.isEmpty { NovaEmptyState(title: "Atanabilir uzman yok", message: "Ekip yönetiminden uzman davet ettikten sonra atama yapabilirsiniz.") }
+            NovaHelpHint(text: RDLocalization.string("localizable.nova.pilot.main.gate.uzman.atamasi.istege.baglidir.firmayi.simdi.kayd.68431523", table: .localizable, fallback: "Uzman ataması isteğe bağlıdır; firmayı şimdi kaydedip atamayı daha sonra da yapabilirsiniz."))
+            if membersLoading { NovaLoadingView(message: RDLocalization.string("localizable.nova.pilot.main.gate.uzmanlar.yukleniyor.4a87b30f", table: .localizable, fallback: "Uzmanlar yükleniyor…")) }
+            else if experts.isEmpty { NovaEmptyState(title: RDLocalization.string("localizable.nova.pilot.main.gate.atanabilir.uzman.yok.97d93e93", table: .localizable, fallback: "Atanabilir uzman yok"), message: RDLocalization.string("localizable.nova.pilot.main.gate.ekip.yonetiminden.uzman.davet.ettikten.sonra.ata.a4b27071", table: .localizable, fallback: "Ekip yönetiminden uzman davet ettikten sonra atama yapabilirsiniz.")) }
             else {
                 NovaCard(padding: 14) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Picker("Atama rolü", selection: $assignmentRole) {
-                            Text("Destek uzmanı").tag("support"); Text("Birincil uzman").tag("primary")
+                        Picker(RDLocalization.string("localizable.nova.pilot.main.gate.atama.rolu.85f04e72", table: .localizable, fallback: "Atama rolü"), selection: $assignmentRole) {
+                            Text(RDLocalization.string("localizable.nova.pilot.main.gate.destek.uzmani.f5579f6c", table: .localizable, fallback: "Destek uzmanı")).tag("support"); Text(RDLocalization.string("localizable.nova.pilot.main.gate.birincil.uzman.a779ad92", table: .localizable, fallback: "Birincil uzman")).tag("primary")
                         }.pickerStyle(.segmented)
                         ForEach(experts, id: \.id) { member in
                             Button { toggleExpert(member.id) } label: {
@@ -1961,15 +1962,15 @@ private struct IsgWorkspaceCompanyEditor: View {
         VStack(alignment: .leading, spacing: 12) {
             NovaCard(padding: 15) {
                 VStack(alignment: .leading, spacing: 7) {
-                    NovaText(text: "Firma özeti", style: .bodyStrong)
+                    NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.firma.ozeti.ea85367e", table: .localizable, fallback: "Firma özeti"), style: .bodyStrong)
                     NovaText(text: name, style: .cardTitle)
                     NovaText(text: "\(hazardTitle) · \(sector)", style: .metaQuiet)
                     if !address.isEmpty { NovaText(text: address, style: .metaQuiet) }
-                    if company == nil { NovaText(text: "\(selectedExpertIDs.count) uzman seçildi", style: .metaQuiet) }
+                    if company == nil { NovaText(text: RDLocalization.format("localizable.nova.pilot.main.gate.1.uzman.secildi.3e5e5c4a", table: .localizable, fallback: "%1$@ uzman seçildi", arguments: [String(describing: selectedExpertIDs.count)]), style: .metaQuiet) }
                 }.frame(maxWidth: .infinity, alignment: .leading)
             }
             if let onArchive {
-                NovaWhyDisclosure(label: "Arşivleme") {
+                NovaWhyDisclosure(label: RDLocalization.string("localizable.nova.pilot.main.gate.arsivleme.e985300a", table: .localizable, fallback: "Arşivleme")) {
                     VStack(alignment: .leading, spacing: 10) {
                         TextField(RDLocalization.string("localizable.nova.workspace.archive.reason", table: .localizable,
                             fallback: "Arşivleme gerekçesi"), text: $reason).font(NovaFont.font(.body))
@@ -1986,9 +1987,9 @@ private struct IsgWorkspaceCompanyEditor: View {
     private func advance() {
         error = nil
         if step == 0 && (name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || sector.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
-            error = "Firma adı ve sektör zorunludur."; return
+            error = RDLocalization.string("localizable.nova.pilot.main.gate.firma.adi.ve.sektor.zorunludur.def00a19", table: .localizable, fallback: "Firma adı ve sektör zorunludur."); return
         }
-        if step == 1 && !canSave { error = "Çalışan sayısı ve sorumlu personel bilgilerini kontrol edin."; return }
+        if step == 1 && !canSave { error = RDLocalization.string("localizable.nova.pilot.main.gate.calisan.sayisi.ve.sorumlu.personel.bilgilerini.k.43a3c753", table: .localizable, fallback: "Çalışan sayısı ve sorumlu personel bilgilerini kontrol edin."); return }
         if step < totalSteps - 1 { step += 1 } else { save() }
     }
 
@@ -2003,8 +2004,8 @@ private struct IsgWorkspaceCompanyEditor: View {
     private func field(_ title: String, symbol: String, text: Binding<String>) -> some View {
         HStack(spacing: 10) {
             NovaIcon(symbol: symbol, size: 17).frame(width: 22)
-            TextField(title, text: text, axis: title == "Adres" ? .vertical : .horizontal)
-                .lineLimit(title == "Adres" ? 1...3 : 1...1).font(NovaFont.font(.body))
+            TextField(title, text: text, axis: title == RDLocalization.string("localizable.nova.pilot.main.gate.adres.ebe988a0", table: .localizable, fallback: "Adres") ? .vertical : .horizontal)
+                .lineLimit(title == RDLocalization.string("localizable.nova.pilot.main.gate.adres.38444998", table: .localizable, fallback: "Adres") ? 1...3 : 1...1).font(NovaFont.font(.body))
                 .keyboardType(title.contains("e-posta") || title.contains("E-posta") ? .emailAddress :
                               title.contains("Telefon") ? .phonePad : title.contains("sayısı") ? .numberPad : .default)
                 .textInputAutocapitalization(title.contains("posta") ? .never : .words)
@@ -2013,14 +2014,14 @@ private struct IsgWorkspaceCompanyEditor: View {
 
     private var hazardMenu: some View {
         Menu {
-            Button("Az Tehlikeli") { hazard = "low" }
+            Button(RDLocalization.string("localizable.nova.pilot.main.gate.az.tehlikeli.45c980ac", table: .localizable, fallback: "Az Tehlikeli")) { hazard = "low" }
             Button("Tehlikeli") { hazard = "medium" }
-            Button("Çok Tehlikeli") { hazard = "high" }
+            Button(RDLocalization.string("localizable.nova.pilot.main.gate.cok.tehlikeli.02387e1f", table: .localizable, fallback: "Çok Tehlikeli")) { hazard = "high" }
         } label: {
             HStack(spacing: 8) {
                 NovaIcon(symbol: "exclamationmark.triangle", size: 16)
                 VStack(alignment: .leading, spacing: 2) {
-                    NovaText(text: "Tehlike sınıfı", style: .metaQuiet)
+                    NovaText(text: RDLocalization.string("localizable.nova.pilot.main.gate.tehlike.sinifi.7e862337", table: .localizable, fallback: "Tehlike sınıfı"), style: .metaQuiet)
                     NovaText(text: hazardTitle, style: .body)
                 }
                 Spacer(minLength: 0)
@@ -2028,13 +2029,13 @@ private struct IsgWorkspaceCompanyEditor: View {
             }.padding(.horizontal, 10).frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
                 .novaControlBackground(cornerRadius: 14)
         }.buttonStyle(NovaRowPressStyle()).frame(maxWidth: .infinity)
-            .accessibilityLabel("Tehlike sınıfı, \(hazardTitle)")
+            .accessibilityLabel(RDLocalization.format("localizable.nova.pilot.main.gate.tehlike.sinifi.1.3dca03c6", table: .localizable, fallback: "Tehlike sınıfı, %1$@", arguments: [String(describing: hazardTitle)]))
     }
 
     private var hazardTitle: String {
         switch hazard {
-        case "low": return "Az Tehlikeli"
-        case "high": return "Çok Tehlikeli"
+        case "low": return RDLocalization.string("localizable.nova.pilot.main.gate.az.tehlikeli.3cb47e99", table: .localizable, fallback: "Az Tehlikeli")
+        case "high": return RDLocalization.string("localizable.nova.pilot.main.gate.cok.tehlikeli.d9fa82cc", table: .localizable, fallback: "Çok Tehlikeli")
         default: return "Tehlikeli"
         }
     }
@@ -2076,7 +2077,7 @@ private struct IsgWorkspaceCompanyEditor: View {
 
     private func expertLabel(_ member: IsgWorkspaceMember) -> String {
         let identity = member.userID ?? member.id
-        return "İSG uzmanı · \(identity.uuidString.prefix(8))"
+        return RDLocalization.format("localizable.nova.pilot.main.gate.isg.uzmani.1.a3ed4be4", table: .localizable, fallback: "İSG uzmanı · %1$@", arguments: [String(describing: identity.uuidString.prefix(8))])
     }
 
     private func save() {
@@ -2208,25 +2209,25 @@ struct NovaPilotRoot: View {
         let overdue = menuOverdueCount.map { String($0) } ?? "—"
         let analyses = menuAnalysisCount.map { String($0) } ?? "—"
         return [
-            .init(id: "upcoming", title: "Yaklaşan İşler", value: upcoming,
+            .init(id: "upcoming", title: RDLocalization.string("localizable.nova.pilot.main.gate.yaklasan.isler.c1f8f0c6", table: .localizable, fallback: "Yaklaşan İşler"), value: upcoming,
                   symbol: "calendar.badge.clock", destination: .periodicChecks),
-            .init(id: "overdue", title: "Süresi biten", value: overdue,
+            .init(id: "overdue", title: RDLocalization.string("localizable.nova.pilot.main.gate.suresi.biten.b6063502", table: .localizable, fallback: "Süresi biten"), value: overdue,
                   symbol: "exclamationmark.triangle", destination: .findings),
-            .init(id: "analyses", title: "Analiz", value: analyses,
+            .init(id: "analyses", title: RDLocalization.string("localizable.nova.pilot.main.gate.analiz.ca7ba633", table: .localizable, fallback: "Analiz"), value: analyses,
                   symbol: "photo.on.rectangle.angled", destination: .analyses)
         ]
     }
     private var menuNextAction: NovaMenuNextAction? {
         guard let companies = activeCompanies else { return nil }
         if companies.isEmpty {
-            return .init(title: "Firma ekle", symbol: "building.2.crop.circle",
+            return .init(title: RDLocalization.string("localizable.nova.pilot.main.gate.firma.ekle.468e3f2a", table: .localizable, fallback: "Firma ekle"), symbol: "building.2.crop.circle",
                 destination: isWorkspaceExpert ? .companies : .newCompany, completed: 0, total: 1)
         }
         if (menuAnalysisCount ?? 0) == 0 {
-            return .init(title: "Fotoğraf analiz et", symbol: "camera", destination: .newAnalysis,
+            return .init(title: RDLocalization.string("localizable.nova.pilot.main.gate.fotograf.analiz.et.3c42a9f8", table: .localizable, fallback: "Fotoğraf analiz et"), symbol: "camera", destination: .newAnalysis,
                 completed: 0, total: 8)
         }
-        return .init(title: "Risk analizi ekle", symbol: "shield.lefthalf.filled", destination: .riskAssessments,
+        return .init(title: RDLocalization.string("localizable.nova.pilot.main.gate.risk.analizi.ekle.eb81fbaf", table: .localizable, fallback: "Risk analizi ekle"), symbol: "shield.lefthalf.filled", destination: .riskAssessments,
             completed: menuProgressCompleted, total: 8)
     }
     private var metrics: [NovaMetricItem] {
@@ -2254,7 +2255,7 @@ struct NovaPilotRoot: View {
         if previewOnly { return RDLocalization.string("localizable.nova.pilot.main.gate.tasarim.kontrolu.canli.veri.kullanilmiyor.d6b551c8", table: .localizable, fallback: "Tasarım kontrolü · canlı veri kullanılmıyor") }
         if !isWorkspaceExpert && controller.resolving { return RDLocalization.string("localizable.nova.pilot.main.gate.pilot.erisimi.kontrol.ediliyor.6a965311", table: .localizable, fallback: "Pilot erişimi kontrol ediliyor…") }
         if ready, isWorkspaceExpert {
-            return workspaceLabel.map { "\($0) · İSG uzmanı" } ?? "OSGB · İSG uzmanı"
+            return workspaceLabel.map { RDLocalization.format("localizable.nova.pilot.main.gate.1.isg.uzmani.4d52db02", table: .localizable, fallback: "%1$@ · İSG uzmanı", arguments: [String(describing: $0)]) } ?? RDLocalization.string("localizable.nova.pilot.main.gate.osgb.isg.uzmani.19eba85b", table: .localizable, fallback: "OSGB · İSG uzmanı")
         }
         return ready ? RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.yalnizca.pilot.firmalar.eac5bab4", table: .localizable, fallback: "Canlı pilot · yalnızca pilot firmalar") : RDLocalization.string("localizable.nova.pilot.main.gate.canli.pilot.erisimi.henuz.kullanilamiyor.dad36f07", table: .localizable, fallback: "Canlı pilot erişimi henüz kullanılamıyor")
     }
@@ -2262,7 +2263,7 @@ struct NovaPilotRoot: View {
     var body: some View {
         NovaExpertShell(notebookAvailable: notebookRelease.enabled, navigation: $navigation, userName: name,
             profileAvatar: profileAvatarImage,
-            menuRoleTitle: "İSG Uzmanı",
+            menuRoleTitle: RDLocalization.string("localizable.nova.pilot.main.gate.isg.uzmani.62ea3bf4", table: .localizable, fallback: "İSG Uzmanı"),
             menuStats: menuStats, menuNextAction: menuNextAction,
             onInvite: { app.requestProfileDestination(.referral); navigate(.profile) },
             hasUnread: notices.unread > 0, unreadCount: notices.unread,
@@ -2290,15 +2291,15 @@ struct NovaPilotRoot: View {
                 VStack(spacing: 0) {
                     NovaDashboardScreen(data: .init(firstName: name.split(separator: " ").first.map(String.init) ?? "",
                         openCount: nil, metrics: metrics, activity: nil,
-                        trainingMessage: "Gerçekleşen eğitimler ve katılımcı kayıtları",
+                        trainingMessage: RDLocalization.string("localizable.nova.pilot.main.gate.gerceklesen.egitimler.ve.katilimci.kayitlari.48805280", table: .localizable, fallback: "Gerçekleşen eğitimler ve katılımcı kayıtları"),
                         recentAnalyses: recentAnalyses.map { analysis in
                             NovaRecentAnalysis(id: analysis.id.uuidString.lowercased(),
                                 title: NovaAnalysisPresentation.title(analysis.title),
-                                companyName: analysis.companyName ?? "Firmasız",
+                                companyName: analysis.companyName ?? RDLocalization.string("localizable.nova.pilot.main.gate.firmasiz.10e154a3", table: .localizable, fallback: "Firmasız"),
                                 createdOn: NovaAnalysisPresentation.dateOnly(analysis.createdOn))
                         },
                         summaryMessage: isWorkspaceExpert
-                            ? "Atandığınız firmalardaki toplam güncel kayıtlar."
+                            ? RDLocalization.string("localizable.nova.pilot.main.gate.atandiginiz.firmalardaki.toplam.guncel.kayitlar.ab9e9ae8", table: .localizable, fallback: "Atandığınız firmalardaki toplam güncel kayıtlar.")
                             : activeCompanies != nil ? RDLocalization.string("localizable.nova.pilot.main.gate.pilot.firmalarinizin.guncel.kayitlari.01d48da7", table: .localizable, fallback: "Pilot firmalarınızın güncel kayıtları.") : overviewFailed ? RDLocalization.string("localizable.nova.pilot.main.gate.ozet.alinamadi.yenileyerek.tekrar.deneyin.9b6a6077", table: .localizable, fallback: "Özet alınamadı. Yenileyerek tekrar deneyin.") : RDLocalization.string("localizable.nova.pilot.main.gate.ozet.verileri.henuz.bagli.degil.4508136e", table: .localizable, fallback: "Özet verileri henüz bağlı değil.")),
                         onNavigate: navigate,
                         onPhoto: { navigate(.newAnalysis) }, onAssistant: unavailable,
@@ -2391,7 +2392,7 @@ struct NovaPilotRoot: View {
             if controller.resolving && !previewOnly {
                 ZStack {
                     NovaColorToken.canvas.color(in: .light).opacity(0.96).ignoresSafeArea()
-                    NovaLoadingView(message: "Verileriniz güncelleniyor…")
+                    NovaLoadingView(message: RDLocalization.string("localizable.nova.pilot.main.gate.verileriniz.guncelleniyor.7fe059b5", table: .localizable, fallback: "Verileriniz güncelleniyor…"))
                 }
                 .transition(.opacity)
                 .zIndex(500)
@@ -2678,7 +2679,7 @@ struct NovaPilotRoot: View {
                     },
                     isLoading: workspaceStore.phase == .loading && workspaceStore.companies.isEmpty,
                     error: workspaceStore.phase == .failed
-                        ? "Atanmış firmalar yenilenemedi. Bağlantınızı kontrol edip tekrar deneyin."
+                        ? RDLocalization.string("localizable.nova.pilot.main.gate.atanmis.firmalar.yenilenemedi.baglantinizi.kontr.2b2439b6", table: .localizable, fallback: "Atanmış firmalar yenilenemedi. Bağlantınızı kontrol edip tekrar deneyin.")
                         : nil,
                     isOwnedList: false,
                     onSelect: { raw in
@@ -2733,7 +2734,7 @@ struct NovaPilotRoot: View {
                 guard ready, identity == owner else { return }
                 if let source = page.rows.first(where: { $0.record_id == record }) { trainingNoticeSource = source }
                 else { navigate(entry.destination) }
-            } catch { if identity == owner { notice = "Bildirim kaydı açılamadı. Yeniden deneyin." } }
+            } catch { if identity == owner { notice = RDLocalization.string("localizable.nova.pilot.main.gate.bildirim.kaydi.acilamadi.yeniden.deneyin.6cd7681a", table: .localizable, fallback: "Bildirim kaydı açılamadı. Yeniden deneyin.") } }
         } else {
             noticeSource = .init(kind: entry.kind == .drill ? "completed_drill" : entry.kind.rawValue, company_id: company,
                 company_name: entry.companyName ?? "", record_id: record, source_id: record, title: entry.title,
@@ -2744,7 +2745,7 @@ struct NovaPilotRoot: View {
     private func openActivityRecord(_ detail: BusinessActivityDetail, companyOnly: Bool) {
         guard let company = detail.link_company_id else { return }
         guard detail.link_workspace_id == workspaceStore?.selection?.workspaceID else {
-            notice = "Bu kayıt başka bir çalışma alanına ait. Önce ilgili çalışma alanına geçin."
+            notice = RDLocalization.string("localizable.nova.pilot.main.gate.bu.kayit.baska.bir.calisma.alanina.ait.once.ilgi.1cf6f4dd", table: .localizable, fallback: "Bu kayıt başka bir çalışma alanına ait. Önce ilgili çalışma alanına geçin.")
             return
         }
         if !companyOnly, let record = detail.entity_id,

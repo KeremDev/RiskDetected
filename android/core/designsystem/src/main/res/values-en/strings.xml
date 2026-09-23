@@ -373,7 +373,7 @@
     <string name="rd_henuz_tamamlanmis_analiz_yok">No analysis completed yet</string>
     <string name="rd_ilk_tarama_listelenecek">Once the initial scan is complete it will be listed here.</string>
     <string name="rd_olusturulan_raporlar">Generated reports</string>
-    <string name="rd_dosya_sayisi_format">%1$d file</string>
+    <string name="rd_dosya_sayisi_format">%1$d files</string>
     <string name="rd_henuz_rapor_olusturulmadi">No report has been created yet</string>
     <string name="rd_rapor_ciktilari_burada">PDF or Excel outputs will appear here.</string>
     <string name="rd_ucretsiz_analiz_hakki">Free analysis allowance</string>

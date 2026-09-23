@@ -643,8 +643,8 @@ struct NovaEquipmentSectionStrip: View {
                 }.accessibilityIdentifier("company.section.equipment.stats")
 
                 if total == 0 {
-                    NovaEmptyState(title: "Henüz ekipman kaydı yok",
-                        message: "Ekipmanı ekleyip ilk kontrolünü kaydederek tarih ve rapor takibini başlatabilirsiniz.")
+                    NovaEmptyState(title: RDLocalization.string("localizable.nova.equipment.check.screens.henuz.ekipman.kaydi.yok.1264d341", table: .localizable, fallback: "Henüz ekipman kaydı yok"),
+                        message: RDLocalization.string("localizable.nova.equipment.check.screens.ekipmani.ekleyip.ilk.kontrolunu.kaydederek.tarih.fae62f89", table: .localizable, fallback: "Ekipmanı ekleyip ilk kontrolünü kaydederek tarih ve rapor takibini başlatabilirsiniz."))
                 } else {
                     ForEach(rows.prefix(3)) { row in
                         HStack(spacing: 9) {
@@ -676,7 +676,7 @@ struct NovaEquipmentSectionStrip: View {
                         symbol: "plus", prominent: true, action: onAdd)
                         .accessibilityIdentifier("company.section.equipment.add")
                 }
-                NovaCompactActionButton(title: "Ekipmanları yönet", symbol: "shippingbox", action: onOpen)
+                NovaCompactActionButton(title: RDLocalization.string("localizable.nova.equipment.check.screens.ekipmanlari.yonet.fa441050", table: .localizable, fallback: "Ekipmanları yönet"), symbol: "shippingbox", action: onOpen)
                     .accessibilityIdentifier("company.section.equipment.open")
             }
         }.frame(maxWidth: .infinity, alignment: .leading)

@@ -40,7 +40,7 @@ enum NovaDestination: String, CaseIterable, Hashable {
         switch self {
         case .activity: return "Aktivitem"
         case .notebook: return RDLocalization.string("localizable.nova.navigation.notebook", table: .localizable, fallback: "Kişisel Not Defteri")
-        case .newNote: return "Not ekle"
+        case .newNote: return RDLocalization.string("localizable.nova.navigation.not.ekle.404f9b06", table: .localizable, fallback: "Not ekle")
         case .newCompany: return RDLocalization.string("localizable.nova.navigation.firma.ekle.b4073323", table: .localizable, fallback: "Firma Ekle")
         case .periodicChecks: return RDLocalization.string("localizable.nova.navigation.periodic.checks", table: .localizable, fallback: "Periyodik Kontroller")
         case .riskAssessments: return RDLocalization.string("localizable.nova.navigation.risk.assessments", table: .localizable, fallback: "Risk Değerlendirmesi")
@@ -66,7 +66,7 @@ enum NovaDestination: String, CaseIterable, Hashable {
         case .visits: return "Ziyaretler"
         case .statistics: return RDLocalization.string("localizable.nova.navigation.istatistikler.da698529", table: .localizable, fallback: "İstatistikler")
         case .training: return RDLocalization.string("localizable.nova.navigation.egitim.ve.takip.59c46410", table: .localizable, fallback: "Eğitim ve Takip")
-        case .reports: return "Rapor Merkezi"
+        case .reports: return RDLocalization.string("localizable.nova.navigation.rapor.merkezi.883944ff", table: .localizable, fallback: "Rapor Merkezi")
         case .reportArchive: return RDLocalization.string("localizable.nova.navigation.rapor.arsivi.67865663", table: .localizable, fallback: "Rapor Arşivi")
         case .notifications: return RDLocalization.string("localizable.nova.navigation.bildirim.merkezi.e5d0ac4c", table: .localizable, fallback: "Bildirim Merkezi")
         case .profile: return "Profil"

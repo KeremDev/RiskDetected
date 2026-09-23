@@ -40,7 +40,7 @@ struct SupportContactSheet: View {
         Group {
             if pilot {
                 VStack(spacing: 0) {
-                    PilotProfilePageHeader(title: "Yardım ve destek", onBack: onClose)
+                    PilotProfilePageHeader(title: RDLocalization.string("localizable.support.contact.sheet.yardim.ve.destek.75b4abab", table: .localizable, fallback: "Yardım ve destek"), onBack: onClose)
                     supportContent
                 }
                 .background(canvasStyle.color(in: colorScheme).ignoresSafeArea())
@@ -118,7 +118,7 @@ struct SupportContactSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14))
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(pilot ? "İSGADA destek" : RDLocalization.string("localizable.support.contact.sheet.riskdetected.destek.e11a7270", table: .localizable, fallback: "RiskDetected destek"))
+                    Text(pilot ? RDLocalization.string("localizable.support.contact.sheet.isgada.destek.680b5679", table: .localizable, fallback: "İSGADA destek") : RDLocalization.string("localizable.support.contact.sheet.riskdetected.destek.e11a7270", table: .localizable, fallback: "RiskDetected destek"))
                         .font(NovaFont.font(.screenTitle))
                         .foregroundStyle(Color.rdBlack)
                     Text(RDLocalization.string("localizable.support.contact.sheet.konu.mesaj.ve.gerekirse.ekran.goruntusu.ekleyere.4dd76367", table: .localizable, fallback: "Konu, mesaj ve gerekirse ekran görüntüsü ekleyerek bize ulaş."))

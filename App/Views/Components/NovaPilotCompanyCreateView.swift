@@ -34,9 +34,9 @@ struct NovaPilotCompanyCreateView: View {
     @State private var step = 0
     @State private var saved = false
 
-    private let roles = ["Firma Sahibi", "Firma Müdürü", "Bölüm Sorumlusu", "İş Güvenliği Uzmanı", "İnsan Kaynakları", "İdari İşler", "Diğer"]
+    private let roles = [RDLocalization.string("localizable.nova.pilot.company.create.view.firma.sahibi.586f27b4", table: .localizable, fallback: "Firma Sahibi"), RDLocalization.string("localizable.nova.pilot.company.create.view.firma.muduru.e25de85f", table: .localizable, fallback: "Firma Müdürü"), RDLocalization.string("localizable.nova.pilot.company.create.view.bolum.sorumlusu.ab7845ff", table: .localizable, fallback: "Bölüm Sorumlusu"), RDLocalization.string("localizable.nova.pilot.company.create.view.is.guvenligi.uzmani.7f2da173", table: .localizable, fallback: "İş Güvenliği Uzmanı"), RDLocalization.string("localizable.nova.pilot.company.create.view.insan.kaynaklari.f5b2ad81", table: .localizable, fallback: "İnsan Kaynakları"), RDLocalization.string("localizable.nova.pilot.company.create.view.idari.isler.a1b7a67c", table: .localizable, fallback: "İdari İşler"), RDLocalization.string("localizable.nova.pilot.company.create.view.diger.491a7bcb", table: .localizable, fallback: "Diğer")]
     private var totalSteps: Int { 5 }
-    private var stepTitles: [String] { ["Firma bilgileri", "İşletme bilgileri", "İşyeri ve departman", "Sorumlu & iletişim", "Firma özeti"] }
+    private var stepTitles: [String] { [RDLocalization.string("localizable.nova.pilot.company.create.view.firma.bilgileri.b86a63f5", table: .localizable, fallback: "Firma bilgileri"), RDLocalization.string("localizable.nova.pilot.company.create.view.isletme.bilgileri.8535ee6d", table: .localizable, fallback: "İşletme bilgileri"), RDLocalization.string("localizable.nova.pilot.company.create.view.isyeri.ve.departman.37216e23", table: .localizable, fallback: "İşyeri ve departman"), RDLocalization.string("localizable.nova.pilot.company.create.view.sorumlu.iletisim.dc37528c", table: .localizable, fallback: "Sorumlu & iletişim"), RDLocalization.string("localizable.nova.pilot.company.create.view.firma.ozeti.f301afc4", table: .localizable, fallback: "Firma özeti")] }
     private var firstContact: CompanyResponsibleContact? { contacts.first }
 
     private var workplaceToggle: Binding<Bool> {
@@ -92,20 +92,20 @@ struct NovaPilotCompanyCreateView: View {
     var body: some View {
         Group {
             if saved {
-                NovaTaskSuccessView(title: "Firma oluşturuldu",
-                    message: "Firma bilgileri kaydedildi ve ilgili modüllerde kullanılmaya hazır.",
-                    doneTitle: "Firmaya git", onDone: { dismiss() })
+                NovaTaskSuccessView(title: RDLocalization.string("localizable.nova.pilot.company.create.view.firma.olusturuldu.18db6902", table: .localizable, fallback: "Firma oluşturuldu"),
+                    message: RDLocalization.string("localizable.nova.pilot.company.create.view.firma.bilgileri.kaydedildi.ve.ilgili.modullerde..ef4b6c3c", table: .localizable, fallback: "Firma bilgileri kaydedildi ve ilgili modüllerde kullanılmaya hazır."),
+                    doneTitle: RDLocalization.string("localizable.nova.pilot.company.create.view.firmaya.git.3269843a", table: .localizable, fallback: "Firmaya git"), onDone: { dismiss() })
             } else {
                 NovaPageSurface(onEdgeBack: goBack) {
                     VStack(spacing: 0) {
-                        NovaTaskHeader(title: "Firma ekle", step: step + 1, total: totalSteps,
+                        NovaTaskHeader(title: RDLocalization.string("localizable.nova.pilot.company.create.view.firma.ekle.3dc49f78", table: .localizable, fallback: "Firma ekle"), step: step + 1, total: totalSteps,
                             stepTitle: stepTitles[step], onClose: goBack)
                             .padding(.horizontal, 18).padding(.top, 8)
                         ScrollView {
                             VStack(alignment: .leading, spacing: 14) {
                                 stepContent
                                 if pending != nil {
-                                    NovaText(text: "Bekleyen işlem bulundu. Aynı kayıt tekrar gönderilebilir; yeni bir firma oluşturulmaz.", style: .metaQuiet)
+                                    NovaText(text: RDLocalization.string("localizable.nova.pilot.company.create.view.bekleyen.islem.bulundu.ayni.kayit.tekrar.gonderi.f54f5523", table: .localizable, fallback: "Bekleyen işlem bulundu. Aynı kayıt tekrar gönderilebilir; yeni bir firma oluşturulmaz."), style: .metaQuiet)
                                 }
                                 if let error { NovaTaskErrorSummary(message: error) }
                             }
@@ -114,7 +114,7 @@ struct NovaPilotCompanyCreateView: View {
                         }
                         .scrollDismissesKeyboard(.interactively)
                         .safeAreaInset(edge: .bottom, spacing: 0) {
-                            NovaTaskStickyActions(primaryTitle: step == totalSteps - 1 ? "Firma Ekle" : "Devam",
+                            NovaTaskStickyActions(primaryTitle: step == totalSteps - 1 ? RDLocalization.string("localizable.nova.pilot.company.create.view.firma.ekle.bc679ac7", table: .localizable, fallback: "Firma Ekle") : RDLocalization.string("localizable.nova.pilot.company.create.view.devam.712f2cec", table: .localizable, fallback: "Devam"),
                                 primarySymbol: step == totalSteps - 1 ? "checkmark" : "arrow.right",
                                 isWorking: submitting, canGoBack: true, onBack: goBack, onPrimary: advance)
                                 .accessibilityIdentifier(step == totalSteps - 1 ? "nova.pilot.company.submit" : "nova.pilot.company.next")
@@ -173,13 +173,13 @@ struct NovaPilotCompanyCreateView: View {
                 email = pending.email ?? ""
                 if let person = pending.responsibleName {
                     addResponsible = true
-                    contacts = [.init(name: person, phone: pending.responsiblePhone ?? "", email: pending.responsibleEmail ?? "", role: "Diğer")]
+                    contacts = [.init(name: person, phone: pending.responsiblePhone ?? "", email: pending.responsibleEmail ?? "", role: RDLocalization.string("localizable.nova.pilot.company.create.view.diger.7734aa7f", table: .localizable, fallback: "Diğer"))]
                 }
             }
             loaded = true
         } catch {
             storageFailed = true
-            self.error = "Bekleyen kayıt güvenle okunamadı. Kaydı çoğaltmamak için işlem durduruldu."
+            self.error = RDLocalization.string("localizable.nova.pilot.company.create.view.bekleyen.kayit.guvenle.okunamadi.kaydi.cogaltmam.0f98e12e", table: .localizable, fallback: "Bekleyen kayıt güvenle okunamadı. Kaydı çoğaltmamak için işlem durduruldu.")
         }
     }
 
@@ -195,13 +195,13 @@ struct NovaPilotCompanyCreateView: View {
 
     private var companyStep: some View {
         VStack(alignment: .leading, spacing: 12) {
-            NovaHelpHint(text: "Firma bilgileri bir kez seçilir; sonraki modül kayıtlarına otomatik taşınır.")
+            NovaHelpHint(text: RDLocalization.string("localizable.nova.pilot.company.create.view.firma.bilgileri.bir.kez.secilir.sonraki.modul.ka.9c299bc6", table: .localizable, fallback: "Firma bilgileri bir kez seçilir; sonraki modül kayıtlarına otomatik taşınır."))
             NovaCard(padding: 16) {
                 VStack(spacing: 10) {
-                    field("Firma adı *", symbol: "building.2", text: $name, id: "name")
-                    Divider(); field("Adres", symbol: "mappin.and.ellipse", text: $address, id: "address")
-                    Divider(); field("Şehir", symbol: "map", text: $city, id: "city")
-                    Divider(); field("Firma telefonu", symbol: "phone", text: $phone, id: "phone", keyboard: .phonePad)
+                    field(RDLocalization.string("localizable.nova.pilot.company.create.view.firma.adi.5ccc5d6e", table: .localizable, fallback: "Firma adı *"), symbol: "building.2", text: $name, id: "name")
+                    Divider(); field(RDLocalization.string("localizable.nova.pilot.company.create.view.adres.734770bb", table: .localizable, fallback: "Adres"), symbol: "mappin.and.ellipse", text: $address, id: "address")
+                    Divider(); field(RDLocalization.string("localizable.nova.pilot.company.create.view.sehir.26ac263b", table: .localizable, fallback: "Şehir"), symbol: "map", text: $city, id: "city")
+                    Divider(); field(RDLocalization.string("localizable.nova.pilot.company.create.view.firma.telefonu.c09d4db9", table: .localizable, fallback: "Firma telefonu"), symbol: "phone", text: $phone, id: "phone", keyboard: .phonePad)
                 }
             }
         }
@@ -211,11 +211,11 @@ struct NovaPilotCompanyCreateView: View {
     private var businessStep: some View {
         NovaCard(padding: 16) {
             VStack(alignment: .leading, spacing: 10) {
-                hazardPicker(title: "Tehlike sınıfı *", selection: $hazard)
-                Divider(); field("Sektör *", symbol: "square.grid.2x2", text: $sector, id: "sector")
-                Divider(); field("Çalışan sayısı *", symbol: "person.2", text: $employeeCount, id: "employeeCount", keyboard: .numberPad)
-                Divider(); field("NACE kodu", symbol: "number", text: $naceCode, id: "nace")
-                Divider(); field("İşyeri sicil no", symbol: "doc.text", text: $workplaceRegistryNo, id: "registry")
+                hazardPicker(title: RDLocalization.string("localizable.nova.pilot.company.create.view.tehlike.sinifi.947b4a96", table: .localizable, fallback: "Tehlike sınıfı *"), selection: $hazard)
+                Divider(); field(RDLocalization.string("localizable.nova.pilot.company.create.view.sektor.61c5178e", table: .localizable, fallback: "Sektör *"), symbol: "square.grid.2x2", text: $sector, id: "sector")
+                Divider(); field(RDLocalization.string("localizable.nova.pilot.company.create.view.calisan.sayisi.6b061e7f", table: .localizable, fallback: "Çalışan sayısı *"), symbol: "person.2", text: $employeeCount, id: "employeeCount", keyboard: .numberPad)
+                Divider(); field(RDLocalization.string("localizable.nova.pilot.company.create.view.nace.kodu.ea82912c", table: .localizable, fallback: "NACE kodu"), symbol: "number", text: $naceCode, id: "nace")
+                Divider(); field(RDLocalization.string("localizable.nova.pilot.company.create.view.isyeri.sicil.no.e9e2e9ee", table: .localizable, fallback: "İşyeri sicil no"), symbol: "doc.text", text: $workplaceRegistryNo, id: "registry")
             }
         }
         .disabled(!loaded || submitting || storageFailed)
@@ -225,12 +225,12 @@ struct NovaPilotCompanyCreateView: View {
         VStack(alignment: .leading, spacing: 12) {
             NovaCard(padding: 16) {
                 VStack(alignment: .leading, spacing: 10) {
-                    Toggle("Aynı firmaya ait farklı işyeri var mı?", isOn: workplaceToggle).tint(NovaColorToken.accent.color(in: scheme))
+                    Toggle(RDLocalization.string("localizable.nova.pilot.company.create.view.ayni.firmaya.ait.farkli.isyeri.var.mi.3455a600", table: .localizable, fallback: "Aynı firmaya ait farklı işyeri var mı?"), isOn: workplaceToggle).tint(NovaColorToken.accent.color(in: scheme))
                     if !workplaces.isEmpty {
                         ForEach(workplaces.indices, id: \.self) { index in
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {
-                                    NovaText(text: "İşyeri \(index + 1)", style: .label)
+                                    NovaText(text: RDLocalization.format("localizable.nova.pilot.company.create.view.isyeri.1.8358bf35", table: .localizable, fallback: "İşyeri %1$@", arguments: [String(describing: index + 1)]), style: .label)
                                     Spacer()
                                     if index > 0 {
                                         Button { workplaces.remove(at: index) } label: {
@@ -240,17 +240,17 @@ struct NovaPilotCompanyCreateView: View {
                                         }.buttonStyle(.plain)
                                     }
                                 }
-                                field("İşyeri adı *", symbol: "building.2", text: $workplaces[index].name, id: "workplace-\(index)-name")
-                                hazardPicker(title: "İşyeri tehlike sınıfı *", selection: $workplaces[index].hazardClass)
-                                field("İşyeri adresi", symbol: "mappin.and.ellipse", text: $workplaces[index].address, id: "workplace-\(index)-address")
-                                field("İşyeri şehri", symbol: "map", text: $workplaces[index].city, id: "workplace-\(index)-city")
+                                field(RDLocalization.string("localizable.nova.pilot.company.create.view.isyeri.adi.f37b0266", table: .localizable, fallback: "İşyeri adı *"), symbol: "building.2", text: $workplaces[index].name, id: "workplace-\(index)-name")
+                                hazardPicker(title: RDLocalization.string("localizable.nova.pilot.company.create.view.isyeri.tehlike.sinifi.5515503a", table: .localizable, fallback: "İşyeri tehlike sınıfı *"), selection: $workplaces[index].hazardClass)
+                                field(RDLocalization.string("localizable.nova.pilot.company.create.view.isyeri.adresi.9516bba5", table: .localizable, fallback: "İşyeri adresi"), symbol: "mappin.and.ellipse", text: $workplaces[index].address, id: "workplace-\(index)-address")
+                                field(RDLocalization.string("localizable.nova.pilot.company.create.view.isyeri.sehri.8120f703", table: .localizable, fallback: "İşyeri şehri"), symbol: "map", text: $workplaces[index].city, id: "workplace-\(index)-city")
                             }
                             if index < workplaces.count - 1 { Divider() }
                         }
                         Button { workplaces.append(.init()) } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: "plus")
-                                Text("Başka işyeri ekle").font(NovaFont.font(.bodyStrong))
+                                Text(RDLocalization.string("localizable.nova.pilot.company.create.view.baska.isyeri.ekle.eda3cf83", table: .localizable, fallback: "Başka işyeri ekle")).font(NovaFont.font(.bodyStrong))
                                 Spacer(); Image(systemName: "chevron.right")
                             }.frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
                         }.buttonStyle(NovaRowPressStyle())
@@ -259,12 +259,12 @@ struct NovaPilotCompanyCreateView: View {
             }
             NovaCard(padding: 16) {
                 VStack(alignment: .leading, spacing: 10) {
-                    Toggle("Firmaya departman eklemek ister misiniz?", isOn: departmentToggle).tint(NovaColorToken.accent.color(in: scheme))
-                    NovaText(text: "Örn. boyahane, imalat", style: .metaQuiet)
+                    Toggle(RDLocalization.string("localizable.nova.pilot.company.create.view.firmaya.departman.eklemek.ister.misiniz.d461a27e", table: .localizable, fallback: "Firmaya departman eklemek ister misiniz?"), isOn: departmentToggle).tint(NovaColorToken.accent.color(in: scheme))
+                    NovaText(text: RDLocalization.string("localizable.nova.pilot.company.create.view.orn.boyahane.imalat.48c8ed81", table: .localizable, fallback: "Örn. boyahane, imalat"), style: .metaQuiet)
                     if !departments.isEmpty {
                         ForEach(departments.indices, id: \.self) { index in
                             HStack(spacing: 8) {
-                                field("Departman adı *", symbol: "square.grid.2x2", text: $departments[index], id: "department-\(index)")
+                                field(RDLocalization.string("localizable.nova.pilot.company.create.view.departman.adi.1effe541", table: .localizable, fallback: "Departman adı *"), symbol: "square.grid.2x2", text: $departments[index], id: "department-\(index)")
                                 if index > 0 {
                                     Button { departments.remove(at: index) } label: {
                                         Image(systemName: "trash")
@@ -277,7 +277,7 @@ struct NovaPilotCompanyCreateView: View {
                         Button { departments.append("") } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: "plus")
-                                Text("Başka departman ekle").font(NovaFont.font(.bodyStrong))
+                                Text(RDLocalization.string("localizable.nova.pilot.company.create.view.baska.departman.ekle.4991f0f8", table: .localizable, fallback: "Başka departman ekle")).font(NovaFont.font(.bodyStrong))
                                 Spacer(); Image(systemName: "chevron.right")
                             }.frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
                         }.buttonStyle(NovaRowPressStyle())
@@ -292,7 +292,7 @@ struct NovaPilotCompanyCreateView: View {
         VStack(alignment: .leading, spacing: 12) {
             NovaCard(padding: 16) {
                 VStack(alignment: .leading, spacing: 10) {
-                    Toggle("Sorumlu & iletişim personeli eklemek ister misiniz?", isOn: $addResponsible).tint(NovaColorToken.accent.color(in: scheme))
+                    Toggle(RDLocalization.string("localizable.nova.pilot.company.create.view.sorumlu.iletisim.personeli.eklemek.ister.misiniz.ae1010f5", table: .localizable, fallback: "Sorumlu & iletişim personeli eklemek ister misiniz?"), isOn: $addResponsible).tint(NovaColorToken.accent.color(in: scheme))
                     if addResponsible {
                         ForEach($contacts) { $contact in
                             VStack(alignment: .leading, spacing: 8) {
@@ -308,11 +308,11 @@ struct NovaPilotCompanyCreateView: View {
                                         }.buttonStyle(.plain)
                                     }
                                 }
-                                field("Ad soyad *", symbol: "person", text: $contact.name, id: "contact-\(contact.id)-name")
-                                field("Telefon *", symbol: "phone", text: $contact.phone, id: "contact-\(contact.id)-phone", keyboard: .phonePad)
-                                field("Mail adresi", symbol: "envelope", text: $contact.email, id: "contact-\(contact.id)-email", keyboard: .emailAddress)
-                                Picker("Görevi *", selection: $contact.role) {
-                                    Text("Görev seçin").tag("")
+                                field(RDLocalization.string("localizable.nova.pilot.company.create.view.ad.soyad.02a69355", table: .localizable, fallback: "Ad soyad *"), symbol: "person", text: $contact.name, id: "contact-\(contact.id)-name")
+                                field(RDLocalization.string("localizable.nova.pilot.company.create.view.telefon.c38a18b2", table: .localizable, fallback: "Telefon *"), symbol: "phone", text: $contact.phone, id: "contact-\(contact.id)-phone", keyboard: .phonePad)
+                                field(RDLocalization.string("localizable.nova.pilot.company.create.view.mail.adresi.9f7bd458", table: .localizable, fallback: "Mail adresi"), symbol: "envelope", text: $contact.email, id: "contact-\(contact.id)-email", keyboard: .emailAddress)
+                                Picker(RDLocalization.string("localizable.nova.pilot.company.create.view.gorevi.e22dc2fb", table: .localizable, fallback: "Görevi *"), selection: $contact.role) {
+                                    Text(RDLocalization.string("localizable.nova.pilot.company.create.view.gorev.secin.8e8d2068", table: .localizable, fallback: "Görev seçin")).tag("")
                                     ForEach(roles, id: \.self) { Text($0).tag($0) }
                                 }.pickerStyle(.menu).frame(maxWidth: .infinity, alignment: .leading)
                             }.padding(.vertical, 4)
@@ -321,7 +321,7 @@ struct NovaPilotCompanyCreateView: View {
                         Button { contacts.append(.init()) } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: "person.badge.plus")
-                                Text("Ek personel ekle").font(NovaFont.font(.bodyStrong))
+                                Text(RDLocalization.string("localizable.nova.pilot.company.create.view.ek.personel.ekle.b20c56fe", table: .localizable, fallback: "Ek personel ekle")).font(NovaFont.font(.bodyStrong))
                                 Spacer(); Image(systemName: "chevron.right")
                             }.frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
                         }.buttonStyle(NovaRowPressStyle())
@@ -338,8 +338,8 @@ struct NovaPilotCompanyCreateView: View {
             NovaCard(padding: 16) {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        NovaText(text: "Firma özeti", style: .bodyStrong); Spacer()
-                        Button("Bilgileri düzenle") { beginEditing() }
+                        NovaText(text: RDLocalization.string("localizable.nova.pilot.company.create.view.firma.ozeti.20f70c2a", table: .localizable, fallback: "Firma özeti"), style: .bodyStrong); Spacer()
+                        Button(RDLocalization.string("localizable.nova.pilot.company.create.view.bilgileri.duzenle.05875265", table: .localizable, fallback: "Bilgileri düzenle")) { beginEditing() }
                             .font(NovaFont.font(.meta)).foregroundStyle(NovaColorToken.accent.color(in: scheme))
                     }
                     summaryRow("Firma", name, "building.2")
@@ -350,7 +350,7 @@ struct NovaPilotCompanyCreateView: View {
                     }
                     ForEach(workplaces.indices, id: \.self) { index in
                         let workplace = workplaces[index]
-                        summaryRow("İşyeri \(index + 1)", [workplace.name, workplace.hazardClass.title, workplace.address, workplace.city]
+                        summaryRow(RDLocalization.format("localizable.nova.pilot.company.create.view.isyeri.1.29e3c974", table: .localizable, fallback: "İşyeri %1$@", arguments: [String(describing: index + 1)]), [workplace.name, workplace.hazardClass.title, workplace.address, workplace.city]
                             .filter { !$0.trimmed.isEmpty }.joined(separator: " · "), "building.2")
                     }
                     ForEach(departments.indices, id: \.self) { index in
@@ -365,7 +365,7 @@ struct NovaPilotCompanyCreateView: View {
                     }
                 }
             }
-            NovaHelpHint(text: "Firma Ekle ile kayıt tamamlanır; bilgiler sonraki modüllerde hazır olur.")
+            NovaHelpHint(text: RDLocalization.string("localizable.nova.pilot.company.create.view.firma.ekle.ile.kayit.tamamlanir.bilgiler.sonraki.2652d9a2", table: .localizable, fallback: "Firma Ekle ile kayıt tamamlanır; bilgiler sonraki modüllerde hazır olur."))
         }
     }
 
@@ -408,9 +408,9 @@ struct NovaPilotCompanyCreateView: View {
 
     private func advance() {
         focusedField = nil; error = nil
-        guard loaded, !storageFailed else { error = "Kayıt durumu doğrulanamadı. Lütfen tekrar deneyin."; return }
+        guard loaded, !storageFailed else { error = RDLocalization.string("localizable.nova.pilot.company.create.view.kayit.durumu.dogrulanamadi.lutfen.tekrar.deneyin.ac119622", table: .localizable, fallback: "Kayıt durumu doğrulanamadı. Lütfen tekrar deneyin."); return }
         guard canAdvance else {
-            error = step == 1 ? "Tehlike sınıfı, sektör ve çalışan sayısı zorunludur." : "Bu adımdaki zorunlu alanları tamamlayın."
+            error = step == 1 ? RDLocalization.string("localizable.nova.pilot.company.create.view.tehlike.sinifi.sektor.ve.calisan.sayisi.zorunlud.e9a54d53", table: .localizable, fallback: "Tehlike sınıfı, sektör ve çalışan sayısı zorunludur.") : RDLocalization.string("localizable.nova.pilot.company.create.view.bu.adimdaki.zorunlu.alanlari.tamamlayin.bfed4d3e", table: .localizable, fallback: "Bu adımdaki zorunlu alanları tamamlayın.")
             return
         }
         if step < totalSteps - 1 { step += 1 } else { submitting = true }
@@ -419,14 +419,14 @@ struct NovaPilotCompanyCreateView: View {
     private static func message(_ error: Error) -> String {
         if let error = error as? PostgrestError {
             switch error.message {
-            case "company_limit_exceeded": return "Firma limitinize ulaştınız."
-            case "PAID_PLAN_REQUIRED": return "Firma oluşturmak için aktif Plus veya Pro aboneliği gerekiyor."
-            case "FEATURE_UNAVAILABLE", "ACCESS_DENIED": return "Pilot yazma erişimi açık değil veya süresi dolmuş."
-            case "IDEMPOTENCY_CONFLICT": return "Bekleyen işlemin içeriği uyuşmuyor. Yeni kayıt açılmadı."
+            case "company_limit_exceeded": return RDLocalization.string("localizable.nova.pilot.company.create.view.firma.limitinize.ulastiniz.5ac4ff54", table: .localizable, fallback: "Firma limitinize ulaştınız.")
+            case "PAID_PLAN_REQUIRED": return RDLocalization.string("localizable.nova.pilot.company.create.view.firma.olusturmak.icin.aktif.plus.veya.pro.abonel.f9d9f9e9", table: .localizable, fallback: "Firma oluşturmak için aktif Plus veya Pro aboneliği gerekiyor.")
+            case "FEATURE_UNAVAILABLE", "ACCESS_DENIED": return RDLocalization.string("localizable.nova.pilot.company.create.view.pilot.yazma.erisimi.acik.degil.veya.suresi.dolmu.69e73a00", table: .localizable, fallback: "Pilot yazma erişimi açık değil veya süresi dolmuş.")
+            case "IDEMPOTENCY_CONFLICT": return RDLocalization.string("localizable.nova.pilot.company.create.view.bekleyen.islemin.icerigi.uyusmuyor.yeni.kayit.ac.2532144b", table: .localizable, fallback: "Bekleyen işlemin içeriği uyuşmuyor. Yeni kayıt açılmadı.")
             default: break
             }
         }
-        return "İşlemin sonucu doğrulanamadı. Bağlantınızı kontrol edip aynı kaydı tekrar deneyin."
+        return RDLocalization.string("localizable.nova.pilot.company.create.view.islemin.sonucu.dogrulanamadi.baglantinizi.kontro.52ae5e3a", table: .localizable, fallback: "İşlemin sonucu doğrulanamadı. Bağlantınızı kontrol edip aynı kaydı tekrar deneyin.")
     }
 }
 

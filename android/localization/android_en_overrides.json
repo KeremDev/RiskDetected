@@ -1,5 +1,6 @@
 {
   "rd_firma_adi": "Company Name",
+  "rd_dosya_sayisi_format": "%1$d files",
   "rd_pdf_method": "METHOD",
   "update_ready_title": "Update ready",
   "update_ready_message": "The new version has been downloaded. Restart the app to finish updating.",

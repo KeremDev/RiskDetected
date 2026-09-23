@@ -139,7 +139,7 @@ struct NovaAppointmentScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     header
-                    NovaHelpHint(text: "Firmayı ve personeli seçerek görevlendirme kaydı oluşturun; belgesini aynı kayda ekleyin. \(NovaAppointmentWords.noQualificationNote) \(NovaAppointmentWords.noRequiredCountNote)")
+                    NovaHelpHint(text: RDLocalization.format("localizable.nova.appointment.screens.firmayi.ve.personeli.secerek.gorevlendirme.kaydi.6dbf8606", table: .localizable, fallback: "Firmayı ve personeli seçerek görevlendirme kaydı oluşturun; belgesini aynı kayda ekleyin. %1$@ %2$@", arguments: [String(describing: NovaAppointmentWords.noQualificationNote), String(describing: NovaAppointmentWords.noRequiredCountNote)]))
                     if let board { counters(board) }
                     filters
                     if loading && board == nil {
@@ -184,7 +184,7 @@ struct NovaAppointmentScreen: View {
         }
     }
     private func addFlow(_ draft: NovaAppointmentDraft) -> some View {
-        NovaCompanyCreateFlow(title: "Görev ver", companies: client.companies,
+        NovaCompanyCreateFlow(title: RDLocalization.string("localizable.nova.appointment.screens.gorev.ver.48c63666", table: .localizable, fallback: "Görev ver"), companies: client.companies,
             catalogue: client.catalogue, onSelect: { draftCompany = $0 }, fixedCompany: initialCompany,
             fullScreenTask: true, onClose: { if startInAddMode { onBack() } else { drafting = nil } }) { selectedCatalogue, selectedCompany in
             NovaAppointmentSheet(draft: draft, catalogue: selectedCatalogue,
@@ -197,7 +197,7 @@ struct NovaAppointmentScreen: View {
     private var header: some View {
         NovaListHeading(title: headingOverride ?? NovaDestination.appointments.title, onBack: onBack) {
             if canWrite {
-                NovaButton(label: "Atama Ekle", symbol: "plus", compact: true) { startCreate() }
+                NovaButton(label: RDLocalization.string("localizable.nova.appointment.screens.atama.ekle.684b4a9e", table: .localizable, fallback: "Atama Ekle"), symbol: "plus", compact: true) { startCreate() }
             }
         }
     }
@@ -277,7 +277,7 @@ struct NovaAppointmentScreen: View {
         if board.rows.isEmpty {
             NovaEmptyState(title: RDLocalization.string("localizable.nova.appointment.empty.title",
                 table: .localizable, fallback: "Atama kaydı yok"),
-                message: "Firma personelinden temsilci, destek elemanı veya ekip üyesi seçerek görev süresini takip edebilirsiniz.")
+                message: RDLocalization.string("localizable.nova.appointment.screens.firma.personelinden.temsilci.destek.elemani.veya.4a1c7448", table: .localizable, fallback: "Firma personelinden temsilci, destek elemanı veya ekip üyesi seçerek görev süresini takip edebilirsiniz."))
         } else {
             VStack(spacing: 10) {
                 ForEach(board.rows) { row in

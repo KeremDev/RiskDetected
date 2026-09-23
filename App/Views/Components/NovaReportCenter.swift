@@ -6,22 +6,22 @@ enum NovaGeneratedReportKind: String, CaseIterable, Identifiable, Codable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .company: return "Firma raporu"
-        case .training: return "Eğitim raporu"
-        case .pending: return "Bekleyen işler"
-        case .completed: return "Tamamlanan işler"
-        case .visits: return "Ziyaret raporu"
-        case .allProcesses: return "Tüm süreçler"
+        case .company: return RDLocalization.string("reports.nova.report.center.firma.raporu.cc00e3ad", table: .reports, fallback: "Firma raporu")
+        case .training: return RDLocalization.string("reports.nova.report.center.egitim.raporu.47633e79", table: .reports, fallback: "Eğitim raporu")
+        case .pending: return RDLocalization.string("reports.nova.report.center.bekleyen.isler.251e5952", table: .reports, fallback: "Bekleyen işler")
+        case .completed: return RDLocalization.string("reports.nova.report.center.tamamlanan.isler.7785d550", table: .reports, fallback: "Tamamlanan işler")
+        case .visits: return RDLocalization.string("reports.nova.report.center.ziyaret.raporu.be3e82d7", table: .reports, fallback: "Ziyaret raporu")
+        case .allProcesses: return RDLocalization.string("reports.nova.report.center.tum.surecler.01b0f1a4", table: .reports, fallback: "Tüm süreçler")
         }
     }
     var detail: String {
         switch self {
-        case .company: return "Firmanın bütün süreç sayılarını tek tabloda gösterir."
-        case .training: return "Gerçekleşen eğitim, süre ve katılımcı kayıtlarını listeler."
-        case .pending: return "Bekleyen, yaklaşan ve geciken işleri bir araya getirir."
-        case .completed: return "Toplam kayıtlardan bekleyenler çıkarılarak tamamlanan işleri gösterir."
-        case .visits: return "Ziyaret tarihi, süre, işyeri ve görüşme kayıtlarını listeler."
-        case .allProcesses: return "Acil durumdan kontrol listelerine kadar tüm takip özetini verir."
+        case .company: return RDLocalization.string("reports.nova.report.center.firmanin.butun.surec.sayilarini.tek.tabloda.gost.3f3bfa02", table: .reports, fallback: "Firmanın bütün süreç sayılarını tek tabloda gösterir.")
+        case .training: return RDLocalization.string("reports.nova.report.center.gerceklesen.egitim.sure.ve.katilimci.kayitlarini.d06c0a45", table: .reports, fallback: "Gerçekleşen eğitim, süre ve katılımcı kayıtlarını listeler.")
+        case .pending: return RDLocalization.string("reports.nova.report.center.bekleyen.yaklasan.ve.geciken.isleri.bir.araya.ge.4ee58834", table: .reports, fallback: "Bekleyen, yaklaşan ve geciken işleri bir araya getirir.")
+        case .completed: return RDLocalization.string("reports.nova.report.center.toplam.kayitlardan.bekleyenler.cikarilarak.tamam.d0b8ee45", table: .reports, fallback: "Toplam kayıtlardan bekleyenler çıkarılarak tamamlanan işleri gösterir.")
+        case .visits: return RDLocalization.string("reports.nova.report.center.ziyaret.tarihi.sure.isyeri.ve.gorusme.kayitlarin.fd7c7d42", table: .reports, fallback: "Ziyaret tarihi, süre, işyeri ve görüşme kayıtlarını listeler.")
+        case .allProcesses: return RDLocalization.string("reports.nova.report.center.acil.durumdan.kontrol.listelerine.kadar.tum.taki.4c16e338", table: .reports, fallback: "Acil durumdan kontrol listelerine kadar tüm takip özetini verir.")
         }
     }
     var symbol: String {
@@ -110,16 +110,16 @@ struct NovaReportCenter: View {
         NovaPageSurface(onEdgeBack: onBack) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    NovaListHeading(title: "Rapor Merkezi", onBack: onBack) {
-                        NovaButton(label: "Arşiv", symbol: "archivebox", variant: .surface, compact: true) {
+                    NovaListHeading(title: RDLocalization.string("reports.nova.report.center.rapor.merkezi.af121a01", table: .reports, fallback: "Rapor Merkezi"), onBack: onBack) {
+                        NovaButton(label: RDLocalization.string("reports.nova.report.center.arsiv.c5b0065b", table: .reports, fallback: "Arşiv"), symbol: "archivebox", variant: .surface, compact: true) {
                             archive = true
                         }.accessibilityIdentifier("report.center.archive")
                     }
-                    NovaHelpHint(text: "Firma, eğitim, bekleyen işler, tamamlanan işler ve ziyaretler için kapsamlı rapor oluşturun; PDF veya Excel çıktısını indirin.")
-                    NovaButton(label: "Yeni rapor oluştur", symbol: "doc.badge.plus", variant: .primary) {
+                    NovaHelpHint(text: RDLocalization.string("reports.nova.report.center.firma.egitim.bekleyen.isler.tamamlanan.isler.ve..6d6b0372", table: .reports, fallback: "Firma, eğitim, bekleyen işler, tamamlanan işler ve ziyaretler için kapsamlı rapor oluşturun; PDF veya Excel çıktısını indirin."))
+                    NovaButton(label: RDLocalization.string("reports.nova.report.center.yeni.rapor.olustur.9bffaeea", table: .reports, fallback: "Yeni rapor oluştur"), symbol: "doc.badge.plus", variant: .primary) {
                         createRoute = .init(kind: .company, skipsTypeSelection: false)
                     }.accessibilityIdentifier("report.center.create")
-                    NovaText(text: "Rapor türleri", style: .sectionTitle)
+                    NovaText(text: RDLocalization.string("reports.nova.report.center.rapor.turleri.ca33c777", table: .reports, fallback: "Rapor türleri"), style: .sectionTitle)
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         ForEach(NovaGeneratedReportKind.allCases) { kind in
                             Button { createRoute = .init(kind: kind, skipsTypeSelection: true) } label: {
@@ -136,7 +136,7 @@ struct NovaReportCenter: View {
                         }
                     }
                     if !recent.isEmpty {
-                        NovaText(text: "Son oluşturulanlar", style: .sectionTitle)
+                        NovaText(text: RDLocalization.string("reports.nova.report.center.son.olusturulanlar.3ee091ac", table: .reports, fallback: "Son oluşturulanlar"), style: .sectionTitle)
                         ForEach(recent.prefix(3)) { report in
                             Button { file = NovaGeneratedReportArchive.url(for: report) } label: {
                                 NovaCard(padding: 13) {
@@ -203,13 +203,13 @@ private struct NovaReportCreateFlow: View {
 
     private var companyName: String? { companies.first { $0.id == company }?.name }
     private var periodTitle: String {
-        switch period { case "30": return "Son 30 gün"; case "90": return "Son 90 gün"; case "365": return "Son 1 yıl"; default: return "Tüm zamanlar" }
+        switch period { case "30": return RDLocalization.string("reports.nova.report.center.son.30.gun.280ea33a", table: .reports, fallback: "Son 30 gün"); case "90": return RDLocalization.string("reports.nova.report.center.son.90.gun.e2c9a4f8", table: .reports, fallback: "Son 90 gün"); case "365": return RDLocalization.string("reports.nova.report.center.son.1.yil.33dc9924", table: .reports, fallback: "Son 1 yıl"); default: return RDLocalization.string("reports.nova.report.center.tum.zamanlar.d42e0115", table: .reports, fallback: "Tüm zamanlar") }
     }
     private var minimumStep: Int { skipsTypeSelection ? 1 : 0 }
     private var visibleStep: Int { skipsTypeSelection ? step : step + 1 }
     private var visibleTotal: Int { skipsTypeSelection ? 4 : 5 }
     private var stepTitle: String {
-        ["Rapor türü", "Kapsam ve dönem", "Rapor içeriği", "Çıktı biçimi", "Kontrol ve oluştur"][step]
+        [RDLocalization.string("reports.nova.report.center.rapor.turu.4d2a8466", table: .reports, fallback: "Rapor türü"), RDLocalization.string("reports.nova.report.center.kapsam.ve.donem.ba95ad7e", table: .reports, fallback: "Kapsam ve dönem"), RDLocalization.string("reports.nova.report.center.rapor.icerigi.2978ebd4", table: .reports, fallback: "Rapor içeriği"), RDLocalization.string("reports.nova.report.center.cikti.bicimi.6a2e1b7a", table: .reports, fallback: "Çıktı biçimi"), RDLocalization.string("reports.nova.report.center.kontrol.ve.olustur.42f6cea8", table: .reports, fallback: "Kontrol ve oluştur")][step]
     }
     private var contentOptions: [NovaReportContentOption] { Self.contentOptions(for: kind) }
     private var selectedContentTitles: [String] {
@@ -218,19 +218,19 @@ private struct NovaReportCreateFlow: View {
 
     var body: some View {
         if let generated {
-            NovaTaskSuccessView(title: "Rapor hazır",
-                message: "\(generated.title) oluşturuldu ve Rapor Arşivi > Özel Raporlar bölümüne kaydedildi.",
-                nextTitle: "Raporu indir", onNext: { file = NovaGeneratedReportArchive.url(for: generated) },
-                doneTitle: "Rapor Merkezine dön", onDone: onClose)
+            NovaTaskSuccessView(title: RDLocalization.string("reports.nova.report.center.rapor.hazir.0ad6f4f3", table: .reports, fallback: "Rapor hazır"),
+                message: RDLocalization.format("reports.nova.report.center.1.olusturuldu.ve.rapor.arsivi.ozel.raporlar.bolu.230c60c9", table: .reports, fallback: "%1$@ oluşturuldu ve Rapor Arşivi > Özel Raporlar bölümüne kaydedildi.", arguments: [String(describing: generated.title)]),
+                nextTitle: RDLocalization.string("reports.nova.report.center.raporu.indir.a77b8e41", table: .reports, fallback: "Raporu indir"), onNext: { file = NovaGeneratedReportArchive.url(for: generated) },
+                doneTitle: RDLocalization.string("reports.nova.report.center.rapor.merkezine.don.efdd2ccd", table: .reports, fallback: "Rapor Merkezine dön"), onDone: onClose)
                 .sheet(item: $file) { NovaFileShareSheet(url: $0) }
         } else {
             NovaPageSurface(onEdgeBack: goBack) {
                 VStack(spacing: 0) {
-                    NovaTaskHeader(title: "Rapor oluştur", step: visibleStep, total: visibleTotal,
+                    NovaTaskHeader(title: RDLocalization.string("reports.nova.report.center.rapor.olustur.7fe5db6d", table: .reports, fallback: "Rapor oluştur"), step: visibleStep, total: visibleTotal,
                         stepTitle: stepTitle, onClose: goBack)
                         .padding(.horizontal, 18).padding(.top, 10)
                     if loading {
-                        NovaLoadingView(message: "Rapor seçenekleri hazırlanıyor…")
+                        NovaLoadingView(message: RDLocalization.string("reports.nova.report.center.rapor.secenekleri.hazirlaniyor.0287cf72", table: .reports, fallback: "Rapor seçenekleri hazırlanıyor…"))
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
                         ScrollView {
@@ -240,7 +240,7 @@ private struct NovaReportCreateFlow: View {
                             }.padding(20).padding(.bottom, 18)
                         }
                         .safeAreaInset(edge: .bottom, spacing: 0) {
-                            NovaTaskStickyActions(primaryTitle: step == 4 ? "Raporu oluştur" : "Devam",
+                            NovaTaskStickyActions(primaryTitle: step == 4 ? RDLocalization.string("reports.nova.report.center.raporu.olustur.ad23d521", table: .reports, fallback: "Raporu oluştur") : RDLocalization.string("reports.nova.report.center.devam.4cf8f0bb", table: .reports, fallback: "Devam"),
                                 primarySymbol: step == 4 ? "doc.badge.plus" : "arrow.right", isWorking: working,
                                 canGoBack: true, onBack: goBack, onPrimary: advance)
                         }
@@ -253,7 +253,7 @@ private struct NovaReportCreateFlow: View {
     @ViewBuilder private var flowStep: some View {
         switch step {
         case 0:
-            NovaText(text: "Neyi raporlamak istiyorsunuz?", style: .sectionTitle)
+            NovaText(text: RDLocalization.string("reports.nova.report.center.neyi.raporlamak.istiyorsunuz.26210e44", table: .reports, fallback: "Neyi raporlamak istiyorsunuz?"), style: .sectionTitle)
             ForEach(NovaGeneratedReportKind.allCases) { item in
                 Button { selectKind(item) } label: {
                     NovaCard(padding: 13, tint: kind == item ? Color.green.opacity(0.10) : nil) {
@@ -269,33 +269,33 @@ private struct NovaReportCreateFlow: View {
                 }.buttonStyle(NovaRowPressStyle())
             }
         case 1:
-            NovaText(text: "Firma ve dönem", style: .sectionTitle)
-            NovaFilterField(label: "Firma", options: [.init(id: nil, title: "Tüm firmalar")] + companies.map {
+            NovaText(text: RDLocalization.string("reports.nova.report.center.firma.ve.donem.ef19139e", table: .reports, fallback: "Firma ve dönem"), style: .sectionTitle)
+            NovaFilterField(label: "Firma", options: [.init(id: nil, title: RDLocalization.string("reports.nova.report.center.tum.firmalar.7e5cae36", table: .reports, fallback: "Tüm firmalar"))] + companies.map {
                 .init(id: $0.id.uuidString, title: $0.name)
             }, selected: company?.uuidString, identifier: "report.create.company") {
                 company = $0.flatMap(UUID.init(uuidString:))
             }
-            Picker("Dönem", selection: $period) {
-                Text("Son 30 gün").tag("30"); Text("Son 90 gün").tag("90")
-                Text("Son 1 yıl").tag("365"); Text("Tüm zamanlar").tag("all")
+            Picker(RDLocalization.string("reports.nova.report.center.donem.69a6690a", table: .reports, fallback: "Dönem"), selection: $period) {
+                Text(RDLocalization.string("reports.nova.report.center.son.30.gun.0c3e510d", table: .reports, fallback: "Son 30 gün")).tag("30"); Text(RDLocalization.string("reports.nova.report.center.son.90.gun.df60a216", table: .reports, fallback: "Son 90 gün")).tag("90")
+                Text(RDLocalization.string("reports.nova.report.center.son.1.yil.48beda4d", table: .reports, fallback: "Son 1 yıl")).tag("365"); Text(RDLocalization.string("reports.nova.report.center.tum.zamanlar.3949f1d7", table: .reports, fallback: "Tüm zamanlar")).tag("all")
             }.pickerStyle(.segmented)
         case 2:
             reportContentStep
         case 3:
-            NovaText(text: "Çıktı biçimi", style: .sectionTitle)
-            Picker("Çıktı", selection: $format) { Text("PDF").tag("PDF"); Text("Excel").tag("Excel") }
+            NovaText(text: RDLocalization.string("reports.nova.report.center.cikti.bicimi.0794bd57", table: .reports, fallback: "Çıktı biçimi"), style: .sectionTitle)
+            Picker(RDLocalization.string("reports.nova.report.center.cikti.b39c791d", table: .reports, fallback: "Çıktı"), selection: $format) { Text("PDF").tag("PDF"); Text("Excel").tag("Excel") }
                 .pickerStyle(.segmented)
             NovaWhyDisclosure {
-                NovaText(text: "PDF paylaşım ve imza süreçleri için; Excel ise filtreleme ve kurum içi çalışma için uygundur.", style: .metaQuiet)
+                NovaText(text: RDLocalization.string("reports.nova.report.center.pdf.paylasim.ve.imza.surecleri.icin.excel.ise.fi.211d8487", table: .reports, fallback: "PDF paylaşım ve imza süreçleri için; Excel ise filtreleme ve kurum içi çalışma için uygundur."), style: .metaQuiet)
             }
         default:
-            NovaText(text: "Rapor özeti", style: .sectionTitle)
+            NovaText(text: RDLocalization.string("reports.nova.report.center.rapor.ozeti.64d076b4", table: .reports, fallback: "Rapor özeti"), style: .sectionTitle)
             NovaCard(padding: 14) {
                 VStack(alignment: .leading, spacing: 9) {
-                    summary("Kapsam", kind.title); summary("Firma", companyName ?? "Tüm firmalar")
-                    summary("Dönem", periodTitle)
-                    summary("İçerik", "\(selectedContentTitles.count) başlık")
-                    summary("Çıktı", format)
+                    summary("Kapsam", kind.title); summary("Firma", companyName ?? RDLocalization.string("reports.nova.report.center.tum.firmalar.c039d79f", table: .reports, fallback: "Tüm firmalar"))
+                    summary(RDLocalization.string("reports.nova.report.center.donem.e51fec96", table: .reports, fallback: "Dönem"), periodTitle)
+                    summary(RDLocalization.string("reports.nova.report.center.icerik.67331564", table: .reports, fallback: "İçerik"), RDLocalization.format("reports.nova.report.center.1.baslik.0a96228b", table: .reports, fallback: "%1$@ başlık", arguments: [String(describing: selectedContentTitles.count)]))
+                    summary(RDLocalization.string("reports.nova.report.center.cikti.0b13d512", table: .reports, fallback: "Çıktı"), format)
                 }
             }
         }
@@ -303,13 +303,13 @@ private struct NovaReportCreateFlow: View {
 
     private var reportContentStep: some View {
         VStack(alignment: .leading, spacing: 12) {
-            NovaText(text: "Raporda neler yer alsın?", style: .sectionTitle)
-            NovaHelpHint(text: "Önerilen başlıkların tamamı seçili gelir. İstemediğiniz başlıkları çıkarabilir veya rapora özel bir alan ekleyebilirsiniz.")
+            NovaText(text: RDLocalization.string("reports.nova.report.center.raporda.neler.yer.alsin.5f78a7cc", table: .reports, fallback: "Raporda neler yer alsın?"), style: .sectionTitle)
+            NovaHelpHint(text: RDLocalization.string("reports.nova.report.center.onerilen.basliklarin.tamami.secili.gelir.istemed.c35a22b5", table: .reports, fallback: "Önerilen başlıkların tamamı seçili gelir. İstemediğiniz başlıkları çıkarabilir veya rapora özel bir alan ekleyebilirsiniz."))
             HStack(spacing: 8) {
-                NovaCompactActionButton(title: "Tümünü seç", symbol: "checkmark.circle") {
+                NovaCompactActionButton(title: RDLocalization.string("reports.nova.report.center.tumunu.sec.edbfe603", table: .reports, fallback: "Tümünü seç"), symbol: "checkmark.circle") {
                     selectedContent = Set(contentOptions.map(\.id))
                 }
-                NovaCompactActionButton(title: "Seçimi temizle", symbol: "xmark.circle") {
+                NovaCompactActionButton(title: RDLocalization.string("reports.nova.report.center.secimi.temizle.3871a9a3", table: .reports, fallback: "Seçimi temizle"), symbol: "xmark.circle") {
                     selectedContent.removeAll()
                 }
             }
@@ -331,14 +331,14 @@ private struct NovaReportCreateFlow: View {
             }
             NovaCard(padding: 13) {
                 VStack(alignment: .leading, spacing: 10) {
-                    NovaText(text: "Özel alan ekle", style: .bodyStrong)
+                    NovaText(text: RDLocalization.string("reports.nova.report.center.ozel.alan.ekle.64bfb309", table: .reports, fallback: "Özel alan ekle"), style: .bodyStrong)
                     HStack(spacing: 8) {
-                        TextField("Örn. Yönetici notu", text: $customFieldDraft)
+                        TextField(RDLocalization.string("reports.nova.report.center.orn.yonetici.notu.6b56c867", table: .reports, fallback: "Örn. Yönetici notu"), text: $customFieldDraft)
                             .font(NovaFont.font(.body)).textInputAutocapitalization(.sentences)
                         Button(action: addCustomField) {
                             Image(systemName: "plus").frame(width: 44, height: 44)
                         }.buttonStyle(NovaRowPressStyle())
-                            .accessibilityLabel("Özel alanı ekle")
+                            .accessibilityLabel(RDLocalization.string("reports.nova.report.center.ozel.alani.ekle.96178def", table: .reports, fallback: "Özel alanı ekle"))
                             .accessibilityIdentifier("report.create.custom.add")
                     }
                     ForEach(customFields, id: \.self) { title in
@@ -348,9 +348,9 @@ private struct NovaReportCreateFlow: View {
                                 Spacer(minLength: 0)
                                 Button(role: .destructive) { removeCustomField(title) } label: {
                                     Image(systemName: "xmark.circle").frame(width: 44, height: 44)
-                                }.buttonStyle(NovaRowPressStyle()).accessibilityLabel("\(title) alanını kaldır")
+                                }.buttonStyle(NovaRowPressStyle()).accessibilityLabel(RDLocalization.format("reports.nova.report.center.1.alanini.kaldir.b5d91269", table: .reports, fallback: "%1$@ alanını kaldır", arguments: [String(describing: title)]))
                             }
-                            TextField("Bu raporda görünecek değer (isteğe bağlı)",
+                            TextField(RDLocalization.string("reports.nova.report.center.bu.raporda.gorunecek.deger.istege.bagli.fa3e0500", table: .reports, fallback: "Bu raporda görünecek değer (isteğe bağlı)"),
                                       text: Binding(get: { customValues[title] ?? "" },
                                                     set: { customValues[title] = $0 }))
                                 .font(NovaFont.font(.body)).padding(11).novaControlBackground(cornerRadius: 12)
@@ -368,7 +368,7 @@ private struct NovaReportCreateFlow: View {
     private func advance() {
         failure = nil
         if step == 2 && selectedContent.isEmpty && customFields.isEmpty {
-            failure = "Rapora en az bir başlık ekleyin."
+            failure = RDLocalization.string("reports.nova.report.center.rapora.en.az.bir.baslik.ekleyin.880be084", table: .reports, fallback: "Rapora en az bir başlık ekleyin.")
         } else if step < 4 { step += 1 }
         else { Task { await generate() } }
     }
@@ -396,7 +396,7 @@ private struct NovaReportCreateFlow: View {
     }
     private func loadCompanies() async {
         do { companies = try await NovaAnalysisWorkspace.companyOptions(identity: identity) }
-        catch { failure = "Firmalar yüklenemedi; tüm firmalar kapsamında devam edebilirsiniz." }
+        catch { failure = RDLocalization.string("reports.nova.report.center.firmalar.yuklenemedi.tum.firmalar.kapsaminda.dev.b1c5b111", table: .reports, fallback: "Firmalar yüklenemedi; tüm firmalar kapsamında devam edebilirsiniz.") }
         loading = false
     }
 
@@ -411,7 +411,7 @@ private struct NovaReportCreateFlow: View {
             generated = try NovaGeneratedReportArchive.store(temporary, title: title, kind: kind,
                 companyName: companyName, period: periodTitle, format: format)
         } catch {
-            failure = "Rapor oluşturulamadı. Bağlantınızı kontrol edip yeniden deneyin."
+            failure = RDLocalization.string("reports.nova.report.center.rapor.olusturulamadi.baglantinizi.kontrol.edip.y.df48526c", table: .reports, fallback: "Rapor oluşturulamadı. Bağlantınızı kontrol edip yeniden deneyin.")
         }
     }
 
@@ -465,12 +465,12 @@ private struct NovaReportCreateFlow: View {
             default: return true
             }
         }
-        return (["Firma", "Süreç", "Toplam", "Tamamlanan", "Bekleyen", "Geciken", "Yaklaşan"] + customFields, rows.map { row in
+        return (["Firma", RDLocalization.string("reports.nova.report.center.surec.f17c3801", table: .reports, fallback: "Süreç"), "Toplam", "Tamamlanan", "Bekleyen", "Geciken", RDLocalization.string("reports.nova.report.center.yaklasan.2253f9c7", table: .reports, fallback: "Yaklaşan")] + customFields, rows.map { row in
             .init(columns: [row.company_name, NovaModuleTrackingSnapshot.Summary(id: row.kind,
                 available: row.available, total: row.total ?? 0, pending: row.pending ?? 0,
                 overdue: row.overdue ?? 0, upcoming: row.upcoming ?? 0, review: row.review ?? 0,
                 nextOn: row.next_on).title, "\(row.total ?? 0)",
-                "\(max(0, (row.total ?? 0) - (row.pending ?? 0)))", "\(row.pending ?? 0)",
+                String(max(0, (row.total ?? 0) - (row.pending ?? 0))), "\(row.pending ?? 0)",
                 "\(row.overdue ?? 0)", "\(row.upcoming ?? 0)"] + customFields.map { customValues[$0] ?? "" })
         })
     }
@@ -479,37 +479,37 @@ private struct NovaReportCreateFlow: View {
         switch kind {
         case .training:
             return [
-                .init(id: "training", title: "Eğitim", symbol: "graduationcap"),
+                .init(id: "training", title: RDLocalization.string("reports.nova.report.center.egitim.128cc7fa", table: .reports, fallback: "Eğitim"), symbol: "graduationcap"),
                 .init(id: "date", title: "Tarih", symbol: "calendar"),
-                .init(id: "trainer", title: "Eğitici", symbol: "person.crop.rectangle"),
+                .init(id: "trainer", title: RDLocalization.string("reports.nova.report.center.egitici.d42e0f3f", table: .reports, fallback: "Eğitici"), symbol: "person.crop.rectangle"),
                 .init(id: "company", title: "Firma", symbol: "building.2"),
-                .init(id: "participants", title: "Katılımcı", symbol: "person.3")
+                .init(id: "participants", title: RDLocalization.string("reports.nova.report.center.katilimci.e7b876c9", table: .reports, fallback: "Katılımcı"), symbol: "person.3")
             ]
         case .visits:
             return [
                 .init(id: "company", title: "Firma", symbol: "building.2"),
-                .init(id: "workplace", title: "İşyeri", symbol: "building"),
+                .init(id: "workplace", title: RDLocalization.string("reports.nova.report.center.isyeri.7af4fd48", table: .reports, fallback: "İşyeri"), symbol: "building"),
                 .init(id: "date", title: "Tarih", symbol: "calendar"),
-                .init(id: "duration", title: "Süre", symbol: "clock"),
-                .init(id: "contact", title: "Görüşülen kişi", symbol: "person"),
+                .init(id: "duration", title: RDLocalization.string("reports.nova.report.center.sure.c1b71093", table: .reports, fallback: "Süre"), symbol: "clock"),
+                .init(id: "contact", title: RDLocalization.string("reports.nova.report.center.gorusulen.kisi.7b54ab80", table: .reports, fallback: "Görüşülen kişi"), symbol: "person"),
                 .init(id: "note", title: "Not", symbol: "text.alignleft")
             ]
         default:
             return [
-                .init(id: "risk_assessment", title: "Risk değerlendirmeleri", symbol: "checkmark.shield"),
-                .init(id: "emergency_plan", title: "Acil durum planları", symbol: "light.beacon.max"),
+                .init(id: "risk_assessment", title: RDLocalization.string("reports.nova.report.center.risk.degerlendirmeleri.15bb5974", table: .reports, fallback: "Risk değerlendirmeleri"), symbol: "checkmark.shield"),
+                .init(id: "emergency_plan", title: RDLocalization.string("reports.nova.report.center.acil.durum.planlari.d90b67a4", table: .reports, fallback: "Acil durum planları"), symbol: "light.beacon.max"),
                 .init(id: "drill", title: "Tatbikatlar", symbol: "figure.run"),
-                .init(id: "appointment", title: "Atama ve temsilciler", symbol: "person.badge.shield.checkmark"),
-                .init(id: "checklist_run", title: "Kontrol listeleri", symbol: "checklist"),
-                .init(id: "equipment", title: "Periyodik kontroller", symbol: "checkmark.shield"),
+                .init(id: "appointment", title: RDLocalization.string("reports.nova.report.center.atama.ve.temsilciler.20437883", table: .reports, fallback: "Atama ve temsilciler"), symbol: "person.badge.shield.checkmark"),
+                .init(id: "checklist_run", title: RDLocalization.string("reports.nova.report.center.kontrol.listeleri.f19ad1a3", table: .reports, fallback: "Kontrol listeleri"), symbol: "checklist"),
+                .init(id: "equipment", title: RDLocalization.string("reports.nova.report.center.periyodik.kontroller.ff270a58", table: .reports, fallback: "Periyodik kontroller"), symbol: "checkmark.shield"),
                 .init(id: "nonconformity", title: "Uygunsuzluklar", symbol: "exclamationmark.triangle"),
-                .init(id: "training", title: "Eğitimler", symbol: "graduationcap"),
+                .init(id: "training", title: RDLocalization.string("reports.nova.report.center.egitimler.0e20cd3d", table: .reports, fallback: "Eğitimler"), symbol: "graduationcap"),
                 .init(id: "site_visit", title: "Ziyaretler", symbol: "figure.walk"),
-                .init(id: "annual_work_plan", title: "Yıllık çalışma planları", symbol: "calendar"),
-                .init(id: "board", title: "Kurul ve toplantılar", symbol: "person.3"),
-                .init(id: "katip_contract", title: "İSG-KATİP sözleşmeleri", symbol: "doc.text"),
-                .init(id: "work_permit", title: "Çalışma izinleri", symbol: "doc.badge.gearshape"),
-                .init(id: "ppe", title: "KKD zimmetleri", symbol: "shield")
+                .init(id: "annual_work_plan", title: RDLocalization.string("reports.nova.report.center.yillik.calisma.planlari.2e90a4ec", table: .reports, fallback: "Yıllık çalışma planları"), symbol: "calendar"),
+                .init(id: "board", title: RDLocalization.string("reports.nova.report.center.kurul.ve.toplantilar.384e377e", table: .reports, fallback: "Kurul ve toplantılar"), symbol: "person.3"),
+                .init(id: "katip_contract", title: RDLocalization.string("reports.nova.report.center.isg.katip.sozlesmeleri.279f78c6", table: .reports, fallback: "İSG-KATİP sözleşmeleri"), symbol: "doc.text"),
+                .init(id: "work_permit", title: RDLocalization.string("reports.nova.report.center.calisma.izinleri.fcc7c02e", table: .reports, fallback: "Çalışma izinleri"), symbol: "doc.badge.gearshape"),
+                .init(id: "ppe", title: RDLocalization.string("reports.nova.report.center.kkd.zimmetleri.fbb5a361", table: .reports, fallback: "KKD zimmetleri"), symbol: "shield")
             ]
         }
     }
@@ -563,7 +563,7 @@ private struct NovaReportCreateFlow: View {
                 if y > 785 { pageHeader() }
             }
             if lines.isEmpty {
-                ("Seçilen kapsamda kayıt bulunamadı." as NSString).draw(at: CGPoint(x: 40, y: y), withAttributes: [.font: UIFont.systemFont(ofSize: 11)])
+                (RDLocalization.string("reports.nova.report.center.secilen.kapsamda.kayit.bulunamadi.7e9fac58", table: .reports, fallback: "Seçilen kapsamda kayıt bulunamadı.") as NSString).draw(at: CGPoint(x: 40, y: y), withAttributes: [.font: UIFont.systemFont(ofSize: 11)])
             }
         }
         return url

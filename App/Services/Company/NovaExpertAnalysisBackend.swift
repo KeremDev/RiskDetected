@@ -51,10 +51,10 @@ import CryptoKit
                     item.fineKinney = .init(band: row.fkBand, value: row.fkScore, factors: [
                         row.fkProbability.map { .init(label: "O", value: $0) },
                         row.fkFrequency.map { .init(label: "F", value: $0) },
-                        row.fkSeverity.map { .init(label: "Ş", value: $0) }].compactMap { $0 })
+                        row.fkSeverity.map { .init(label: RDLocalization.string("analysis.nova.expert.analysis.backend.s.41edf94f", table: .analysis, fallback: "Ş"), value: $0) }].compactMap { $0 })
                     item.matrix = .init(band: row.m5Band, value: row.m5Score.map(Double.init), factors: [
                         row.m5Probability.map { .init(label: "O", value: Double($0)) },
-                        row.m5Severity.map { .init(label: "Ş", value: Double($0)) }].compactMap { $0 })
+                        row.m5Severity.map { .init(label: RDLocalization.string("analysis.nova.expert.analysis.backend.s.5c33fb21", table: .analysis, fallback: "Ş"), value: Double($0)) }].compactMap { $0 })
                 }
                 return item
             }
