@@ -520,6 +520,7 @@ class NovaRootServices @javax.inject.Inject constructor(
     private val process: NovaProcessService,
     private val followups: NovaFollowupService,
     private val documents: NovaDocumentTrackingService,
+    private val moduleEditor: NovaModuleEditorService,
     private val checklists: NovaChecklistService,
     private val checklistQueue: NovaChecklistOfflineQueue,
     private val training: NovaTrainingService,
@@ -578,7 +579,7 @@ class NovaRootServices @javax.inject.Inject constructor(
         rows
     }
     fun emergencyClient(identity: IsgWorkspaceIdentity) =
-        NovaServiceEmergencyClient(emergency, identity, companies(identity), fileClient(identity), people(identity))
+        NovaServiceEmergencyClient(emergency, identity, companies(identity), fileClient(identity), people(identity), moduleManage(identity))
     fun personnelScope(identity: IsgWorkspaceIdentity, company: String) = NovaPersonnelScope(java.util.UUID.fromString(identity.userId),
         java.util.UUID.fromString(identity.sessionId), java.util.UUID.fromString(company), "pilot-$company")
     fun personnelClient(scope: NovaPersonnelScope) = personnel.novaClient { scope }
@@ -629,8 +630,10 @@ class NovaRootServices @javax.inject.Inject constructor(
     fun processClient(identity: IsgWorkspaceIdentity) = NovaServiceProcessClient(process, identity, companies(identity), fileClient(identity))
     fun katipClient(identity: IsgWorkspaceIdentity) = NovaServiceKatipClient(katip, files, identity, companies(identity))
     fun ppeClient(identity: IsgWorkspaceIdentity) = NovaServicePPEClient(ppe, identity, companies(identity))
-    fun appointmentClient(identity: IsgWorkspaceIdentity) = NovaServiceAppointmentClient(appointments, identity, companies(identity), fileClient(identity))
-    fun drillClient(identity: IsgWorkspaceIdentity) = NovaServiceDrillClient(drills, identity, companies(identity))
+    fun appointmentClient(identity: IsgWorkspaceIdentity) =
+        NovaServiceAppointmentClient(appointments, identity, companies(identity), fileClient(identity), moduleManage(identity))
+    fun drillClient(identity: IsgWorkspaceIdentity) = NovaServiceDrillClient(drills, identity, companies(identity), moduleManage(identity))
+    private fun moduleManage(identity: IsgWorkspaceIdentity) = NovaModuleManage(moduleEditor, identity, fileClient(identity))
     fun equipmentClient(identity: IsgWorkspaceIdentity) = NovaServiceEquipmentClient(equipment, identity, companies(identity), fileClient(identity))
     fun riskClient(identity: IsgWorkspaceIdentity) = NovaServiceRiskClient(risk, identity, companies(identity), fileClient(identity))
 

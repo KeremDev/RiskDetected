@@ -29,10 +29,13 @@ interface NovaDrillClient {
     suspend fun plan(company: String, draft: NovaDrillPlanDraft): NovaDrill?
     suspend fun record(company: String, draft: NovaDrillResultDraft): NovaDrill?
     suspend fun cancel(company: String, drill: String, reason: String): NovaDrill?
+    /** Reopens a drill for correction or removal; absent where records are not editable. */
+    val manage: NovaModuleManage? get() = null
 }
 
 class NovaServiceDrillClient(private val service: NovaDrillService, private val identity: IsgWorkspaceIdentity,
-                             override val companies: suspend () -> List<NovaCompanyOption>) : NovaDrillClient {
+                             override val companies: suspend () -> List<NovaCompanyOption>,
+                             override val manage: NovaModuleManage? = null) : NovaDrillClient {
     override suspend fun catalogue(company: String?) = service.catalogue(identity, company)
     override suspend fun board(query: NovaDrillQuery) = service.board(identity, query)
     override suspend fun detail(id: String) = service.detail(identity, id)
@@ -184,12 +187,19 @@ fun NovaDrillScreen(client: NovaDrillClient, canWrite: Boolean, onBack: () -> Un
     }
     val open = detail
     NovaPopup(open != null, { detail = null }, identifier = "nova.drill.detail") {
-        if (open != null) DrillDetail(open, canWrite, onRecord = {
-            detail = null
-            recording = NovaDrillResultDraft(open.id, open.planScope.orEmpty(), NovaDay.today())
-        }) { reason ->
-            val company = open.companyId ?: query.company ?: return@DrillDetail NovaDrillFailure.validation.message
-            try { client.cancel(company, open.id, reason)?.let { detail = it }; load(true); null } catch (error: Exception) { drillMessage(error) }
+        if (open != null) {
+            DrillDetail(open, canWrite, onRecord = {
+                detail = null
+                recording = NovaDrillResultDraft(open.id, open.planScope.orEmpty(), NovaDay.today())
+            }) { reason ->
+                val company = open.companyId ?: query.company ?: return@DrillDetail NovaDrillFailure.validation.message
+                try { client.cancel(company, open.id, reason)?.let { detail = it }; load(true); null } catch (error: Exception) { drillMessage(error) }
+            }
+            val manage = client.manage
+            val company = open.companyId
+            if (canWrite && manage != null && company != null) Box(Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
+                NovaModuleManageAction(manage, "drill", company, open.id) { detail = null; coroutines.launch { load(true) } }
+            }
         }
     }
 }

@@ -40,11 +40,14 @@ interface NovaEmergencyClient {
     suspend fun board(query: NovaEmergencyQuery): NovaEmergencyBoard
     suspend fun detail(id: String): NovaEmergencyPlan
     suspend fun publish(company: String, draft: NovaEmergencyPlanDraft): NovaEmergencyPlan?
+    /** Reopens a published plan for correction or removal; absent where records are not editable. */
+    val manage: NovaModuleManage? get() = null
 }
 
 class NovaServiceEmergencyClient(private val service: NovaEmergencyService, private val identity: IsgWorkspaceIdentity,
                                  override val companies: suspend () -> List<NovaCompanyOption>, override val files: NovaFileClient,
-                                 private val people: suspend (String) -> List<NovaPersonOption>) : NovaEmergencyClient {
+                                 private val people: suspend (String) -> List<NovaPersonOption>,
+                                 override val manage: NovaModuleManage? = null) : NovaEmergencyClient {
     override suspend fun employees(company: String) = people(company)
     override suspend fun catalogue(company: String?) = service.catalogue(identity, company)
     override suspend fun board(query: NovaEmergencyQuery) = service.board(identity, query)
@@ -211,9 +214,16 @@ fun NovaEmergencyScreen(client: NovaEmergencyClient, canWrite: Boolean, onBack: 
     }
     val open = detail
     NovaPopup(open != null, { detail = null }, identifier = "nova.emergency.detail") {
-        if (open != null) EmergencyDetail(open, canWrite, { bucket, path -> client.files.download(bucket, path) }) {
-            detail = null; draftCompany = open.companyId
-            drafting = NovaEmergencyPlanDraft(open.id, open.workplaceId, open.scope, NovaDay.today(), team = open.team, assetId = open.assetId)
+        if (open != null) {
+            EmergencyDetail(open, canWrite, { bucket, path -> client.files.download(bucket, path) }) {
+                detail = null; draftCompany = open.companyId
+                drafting = NovaEmergencyPlanDraft(open.id, open.workplaceId, open.scope, NovaDay.today(), team = open.team, assetId = open.assetId)
+            }
+            val manage = client.manage
+            val company = open.companyId
+            if (canWrite && manage != null && company != null) Box(Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
+                NovaModuleManageAction(manage, "emergency_plan", company, open.id) { detail = null; coroutines.launch { load(true) } }
+            }
         }
     }
 }

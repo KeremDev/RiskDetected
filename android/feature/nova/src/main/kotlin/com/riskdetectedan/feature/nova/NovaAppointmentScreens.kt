@@ -29,10 +29,13 @@ interface NovaAppointmentClient {
     suspend fun detail(id: String): NovaAppointment
     suspend fun record(company: String, draft: NovaAppointmentDraft): NovaAppointment?
     suspend fun end(company: String, draft: NovaAppointmentEndDraft): NovaAppointment?
+    /** Reopens a recorded appointment for correction or removal; absent where records are not editable. */
+    val manage: NovaModuleManage? get() = null
 }
 
 class NovaServiceAppointmentClient(private val service: NovaAppointmentService, private val identity: IsgWorkspaceIdentity,
-                                   override val companies: suspend () -> List<NovaCompanyOption>, override val files: NovaFileClient) : NovaAppointmentClient {
+                                   override val companies: suspend () -> List<NovaCompanyOption>, override val files: NovaFileClient,
+                                   override val manage: NovaModuleManage? = null) : NovaAppointmentClient {
     override suspend fun catalogue(company: String?) = service.catalogue(identity, company)
     override suspend fun board(query: NovaAppointmentQuery) = service.board(identity, query)
     override suspend fun detail(id: String) = service.detail(identity, id)
@@ -171,9 +174,16 @@ fun NovaAppointmentScreen(client: NovaAppointmentClient, canWrite: Boolean, onBa
     }
     val open = detail
     NovaPopup(open != null, { detail = null }, identifier = "nova.appointment.detail") {
-        if (open != null) AppointmentDetail(open, canWrite, { bucket, path -> client.files.download(bucket, path) }) {
-            detail = null
-            ending = NovaAppointmentEndDraft(open.id, open.employeeName.orEmpty(), open.startsOn, open.endsBefore ?: NovaDay.today(), open.endsBefore != null)
+        if (open != null) {
+            AppointmentDetail(open, canWrite, { bucket, path -> client.files.download(bucket, path) }) {
+                detail = null
+                ending = NovaAppointmentEndDraft(open.id, open.employeeName.orEmpty(), open.startsOn, open.endsBefore ?: NovaDay.today(), open.endsBefore != null)
+            }
+            val manage = client.manage
+            val company = open.companyId
+            if (canWrite && manage != null && company != null) Box(Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
+                NovaModuleManageAction(manage, "appointment", company, open.id) { detail = null; coroutines.launch { load(true) } }
+            }
         }
     }
     val end = ending
