@@ -27,6 +27,29 @@ private data class CompanyUpsertPayload(
     @SerialName("default_due_days") val defaultDueDays: Int? = null,
 )
 
+/** One more workplace of a company (iOS `CompanyWorkplaceProfile`; same JSON keys). */
+@Serializable
+data class CompanyWorkplaceProfile(val name: String = "", val hazardClass: String = "medium", val address: String = "", val city: String = "")
+
+/** A responsible or contact person of a company (iOS `CompanyResponsibleContact`; same JSON keys). */
+@Serializable
+data class CompanyResponsibleContact(val id: String = java.util.UUID.randomUUID().toString().uppercase(), val name: String = "",
+                                     val phone: String = "", val email: String = "", val role: String = "")
+
+/** The profile the company wizard collects beyond the secure base row. */
+data class CompanyProfile(val address: String = "", val city: String = "", val phone: String = "", val naceCode: String = "",
+                          val workplaceRegistryNo: String = "", val workplaces: List<CompanyWorkplaceProfile> = emptyList(),
+                          val departments: List<String> = emptyList(), val contacts: List<CompanyResponsibleContact> = emptyList())
+
+@Serializable
+private data class CompanyProfilePayload(
+    val address: String?, val city: String?, val phone: String?, @SerialName("nace_code") val naceCode: String?,
+    @SerialName("workplace_registry_no") val workplaceRegistryNo: String?, @SerialName("workplace_profile") val workplaceProfile: CompanyWorkplaceProfile?,
+    @SerialName("workplace_profiles") val workplaceProfiles: List<CompanyWorkplaceProfile>,
+    @SerialName("responsible_contacts") val responsibleContacts: List<CompanyResponsibleContact>, val departments: List<String>,
+    @SerialName("contact_person") val contactPerson: String?, val department: String?, @SerialName("default_responsible") val defaultResponsible: String?,
+)
+
 /**
  * Mirrors CompanyService.swift's contract exactly: same table, same insert/update payload
  * shape, same DB-error-message-substring-to-user-facing-message normalization (the backend
@@ -104,6 +127,26 @@ class CompanyRepository @Inject constructor(
                 cause = t,
             )
         }
+    }
+
+    /**
+     * Writes the wizard's profile onto a company the secure create RPC already made (iOS saves the same
+     * columns right after `isg_pilot_company_create_v3`). The first contact and department stand in for
+     * the single legacy columns.
+     */
+    suspend fun saveCompanyProfile(companyId: String, profile: CompanyProfile): RdResult<Unit> = try {
+        val departments = profile.departments.map { it.trim() }.filter { it.isNotEmpty() }
+        val contact = profile.contacts.firstOrNull()?.name?.trim()?.ifEmpty { null }
+        client.postgrest.from("companies").update(CompanyProfilePayload(
+            profile.address.trim().ifEmpty { null }, profile.city.trim().ifEmpty { null }, profile.phone.trim().ifEmpty { null },
+            profile.naceCode.trim().ifEmpty { null }, profile.workplaceRegistryNo.trim().ifEmpty { null }, profile.workplaces.firstOrNull(),
+            profile.workplaces, profile.contacts, departments, contact, departments.firstOrNull(), contact,
+        )) { filter { eq("id", companyId) } }
+        RdResult.Success(Unit)
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (t: Throwable) {
+        RdResult.Failure("company_profile_failed", normalizedCompanyErrorMessage(t.message), t)
     }
 
     /** Mirrors CompanyService.swift's `uploadLogo(_:companyID:)` — same bucket ("logos"), same

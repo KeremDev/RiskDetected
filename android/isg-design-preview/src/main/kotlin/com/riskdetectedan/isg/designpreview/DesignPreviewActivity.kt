@@ -77,6 +77,10 @@ class DesignPreviewActivity : ComponentActivity() {
                         NovaDestination.training, NovaDestination.newTraining -> com.riskdetectedan.feature.nova.NovaTrainingScreen(PreviewTrainingClient, true,
                             onBack = { navigate(NovaDestination.home) }, createOnOpen = destination == NovaDestination.newTraining)
                         NovaDestination.companies -> PreviewCompanies(navigate)
+                        NovaDestination.newCompany -> com.riskdetectedan.feature.nova.NovaCompanyCreateScreen(
+                            com.riskdetectedan.feature.nova.NovaCompanyCreateClient("11000000-0000-4000-8000-000000000001", { null },
+                                { throw com.riskdetectedan.core.data.nova.NovaCompanyCreateException("FEATURE_UNAVAILABLE") }, { _, _ -> }),
+                            onClose = { navigate(NovaDestination.companies) }) { navigate(NovaDestination.companies) }
                         else -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             NovaPageTitle(destination)
                             NovaCard(Modifier.fillMaxWidth(), padding = 20) {
@@ -153,5 +157,6 @@ private fun PreviewCompanies(navigate: (NovaDestination) -> Unit) {
         return
     }
     NovaCompaniesScreen(listOf(NovaCompanyItem("fixture", "Koza Altın A.Ş", "Kaymaz Mah. · Maden · Çok tehlikeli")),
-        onSelect = { open = true }, onBack = { navigate(NovaDestination.home) }, onRetry = {})
+        onSelect = { open = true }, onBack = { navigate(NovaDestination.home) }, onRetry = {}, isOwnedList = true,
+        onCreate = { navigate(NovaDestination.newCompany) })
 }

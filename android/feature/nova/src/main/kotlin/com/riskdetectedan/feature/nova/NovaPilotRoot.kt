@@ -87,7 +87,9 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             }
             NovaDestination.findings -> NovaFindingsDestination(identity, NovaFindingsSurface.board, state.writable, navigate)
             NovaDestination.newFinding -> NovaFindingsDestination(identity, NovaFindingsSurface.addFinding, state.writable, navigate)
-            NovaDestination.companies, NovaDestination.newCompany -> CompaniesDestination(services, identity, state, workspace, navigate, viewModel::reload)
+            NovaDestination.companies, NovaDestination.newCompany -> key(destination) {
+                CompaniesDestination(services, identity, state, workspace, navigate, viewModel::reload, startCreating = destination == NovaDestination.newCompany)
+            }
             NovaDestination.riskAssessments -> NovaRiskScreen(services.riskClient(identity), state.writable,
                 onBack = { navigate(NovaDestination.home) })
             NovaDestination.periodicChecks -> NovaEquipmentScreen(services.equipmentClient(identity), state.writable,
@@ -158,8 +160,17 @@ private fun recordOpener(services: NovaRootServices, identity: IsgWorkspaceIdent
 /** Firmalar (iOS `companies`): the list, and once one is chosen its company page over the same identity. */
 @Composable
 private fun CompaniesDestination(services: NovaRootServices, identity: IsgWorkspaceIdentity, state: NovaPilotUiState, workspace: NovaWorkspaceUiState?,
-                                 navigate: (NovaDestination) -> Unit, reload: () -> Unit) {
+                                 navigate: (NovaDestination) -> Unit, reload: () -> Unit, startCreating: Boolean = false) {
     var selected by rememberSaveable { mutableStateOf<String?>(null) }
+    // Only a personal account manages its own companies; an OSGB expert works on assigned ones.
+    val canCreate = workspace == null && state.writable
+    var creating by rememberSaveable { mutableStateOf(startCreating && canCreate) }
+    if (creating) {
+        NovaCompanyCreateScreen(remember(identity) { services.companyCreateClient(identity) }, onClose = { creating = false }) { company ->
+            creating = false; selected = company; reload()
+        }
+        return
+    }
     val items = companyItems(state, workspace)
     val company = selected
     if (company != null) {
@@ -178,7 +189,7 @@ private fun CompaniesDestination(services: NovaRootServices, identity: IsgWorksp
         isLoading = state.overview == null && !state.overviewFailed && workspace == null,
         error = if (state.overviewFailed && workspace == null) "Firmalar yüklenemedi. Lütfen tekrar deneyin." else null,
         isOwnedList = workspace == null, onSelect = { selected = it },
-        onBack = { navigate(NovaDestination.home) }, onRetry = reload)
+        onBack = { navigate(NovaDestination.home) }, onRetry = reload, onCreate = if (canCreate) ({ creating = true }) else null)
 }
 
 /** One module page opened from a company, already narrowed to that company. */
@@ -387,6 +398,7 @@ class NovaRootServices @javax.inject.Inject constructor(
     private val personnel: com.riskdetectedan.core.data.company.PersonnelRepository,
     private val overview: NovaOverviewService,
     private val companyRecords: com.riskdetectedan.core.data.company.CompanyRepository,
+    private val companyCreate: NovaCompanyCreateService,
     val events: NovaRecordEvents,
 ) : androidx.lifecycle.ViewModel() {
     private fun companies(identity: IsgWorkspaceIdentity): suspend () -> List<NovaCompanyOption> =
@@ -416,6 +428,8 @@ class NovaRootServices @javax.inject.Inject constructor(
         is com.riskdetectedan.core.common.RdResult.Success -> value
         is com.riskdetectedan.core.common.RdResult.Failure -> throw IllegalStateException(message)
     }
+    fun companyCreateClient(identity: IsgWorkspaceIdentity) = NovaCompanyCreateClient(identity.userId, { companyCreate.pending(identity) },
+        { intent -> companyCreate.create(identity, intent) }, { company, profile -> companyRecords.saveCompanyProfile(company, profile).value() })
     /** Every read and write the company page needs, bound to one identity and company. */
     fun companyClient(identity: IsgWorkspaceIdentity, company: String) = NovaCompanyWorkspaceClient(
         summary = { overview.overview(identity, company).firstOrNull { it.id.equals(company, true) } },
