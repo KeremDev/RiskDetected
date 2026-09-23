@@ -8,7 +8,12 @@ struct RootView: View {
     @StateObject private var legalDocuments = LegalDocumentService.shared
     @State private var appleSignInService = AppleSignInService()
     @State private var selectedLegalDocument: LegalDocumentKind?
+    @State private var showOfflineBanner = false
     private let googleSignInService = GoogleSignInService()
+
+    private var isActivelyOffline: Bool {
+        scenePhase == .active && !network.isOnline
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -67,7 +72,7 @@ struct RootView: View {
                     .accessibilityIdentifier("root.\(flowIdentifier)")
             }
 
-            if app.flow != .splash && !network.isOnline {
+            if app.flow != .splash && showOfflineBanner {
                 OfflineStatusBanner()
                     .padding(.horizontal, 16)
                     .padding(.top, 10)
@@ -87,7 +92,7 @@ struct RootView: View {
                     }
                 )
                 .padding(.horizontal, 16)
-                .padding(.top, network.isOnline ? 10 : 64)
+                .padding(.top, showOfflineBanner ? 64 : 10)
                 .transition(.move(edge: .top).combined(with: .opacity))
                 .zIndex(210)
                 .task(id: notice.id) {
@@ -121,7 +126,19 @@ struct RootView: View {
                 .zIndex(1000)
             }
         }
-        .modifier(RootFlowAnimationModifier(flow: app.flow, isOnline: network.isOnline))
+        .modifier(RootFlowAnimationModifier(flow: app.flow, isOnline: !showOfflineBanner))
+        .task(id: isActivelyOffline) {
+            guard isActivelyOffline else {
+                showOfflineBanner = false
+                return
+            }
+            // A path can briefly be unsatisfied during Wi-Fi/cellular
+            // handoffs. Keep sync status immediate, but only show the
+            // user-facing warning if the interruption persists.
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            guard !Task.isCancelled, isActivelyOffline else { return }
+            showOfflineBanner = true
+        }
         .task {
             await refreshLegalDocuments()
             await app.refreshReleasePolicy()
