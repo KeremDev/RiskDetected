@@ -4,7 +4,7 @@ import java.util.UUID
 
 data class NovaPersonnelScope(val ownerID: UUID, val sessionID: UUID, val companyID: UUID, val epoch: String)
 data class NovaEmployeeRow(val id: UUID, val ownerID: UUID, val companyID: UUID, val name: String,
-    val departmentID: UUID?, val departmentName: String?, val version: Long, val isArchived: Boolean)
+    val departmentID: UUID?, val departmentName: String?, val version: Long, val isArchived: Boolean, val jobTitle: String? = null)
 data class NovaDepartmentRow(val id: UUID, val ownerID: UUID, val companyID: UUID, val name: String)
 data class NovaEmployeePage(val rows: List<NovaEmployeeRow>, val next: UUID?)
 data class NovaDepartmentPage(val rows: List<NovaDepartmentRow>, val next: UUID?)

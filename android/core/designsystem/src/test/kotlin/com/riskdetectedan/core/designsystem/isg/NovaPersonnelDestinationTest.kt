@@ -107,7 +107,7 @@ class NovaPersonnelDestinationTest {
         compose.onNodeWithTag("personnel.row.$employeeID").performScrollTo().performClick()
         compose.onNodeWithTag("personnel.edit").performClick()
         compose.onNodeWithTag("personnel.archive").performScrollTo().performClick()
-        compose.onNodeWithTag("nova.panel.scroll").assertIsDisplayed()
+        compose.onNodeWithTag("personnel.archive.popup").assertIsDisplayed()
         compose.onNodeWithTag("personnel.archive.cancel").performClick()
         compose.runOnIdle { assertTrue(intents.isEmpty()) }
         compose.onNodeWithTag("personnel.archive").performClick()

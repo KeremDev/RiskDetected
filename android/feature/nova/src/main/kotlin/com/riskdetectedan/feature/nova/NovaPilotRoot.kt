@@ -199,7 +199,13 @@ private fun CompanyPage(services: NovaRootServices, identity: IsgWorkspaceIdenti
     val canWrite = state.writable
     when (page) {
         NovaCompanyPage.Personnel -> NovaPersonnelDestination(scope, name, remember(scope) { services.personnelClient(scope) }, onBack,
-            remember(scope) { services.directoryClient(scope) }, canWrite)
+            remember(scope) { services.directoryClient(scope) }, canWrite) { employee, writable ->
+            key(employee) {
+                NovaEmployeeLearningCard({ services.learning(identity, company, employee.toString()) }, services.changes(identity)) { back ->
+                    NovaProcessGate(services.processClient(identity), "personnel_certificate", writable, back, initialCompany = company, parent = employee.toString())
+                }
+            }
+        }
         is NovaCompanyPage.Directory -> NovaDirectoryDestination(scope, page.kind, client = remember(scope) { services.directoryClient(scope) },
             canWrite = canWrite, onBack = onBack)
         NovaCompanyPage.Training -> NovaTrainingScreen(services.trainingClient(identity, state.userName), canWrite, onBack, initialCompany = company)
@@ -399,6 +405,7 @@ class NovaRootServices @javax.inject.Inject constructor(
     private val overview: NovaOverviewService,
     private val companyRecords: com.riskdetectedan.core.data.company.CompanyRepository,
     private val companyCreate: NovaCompanyCreateService,
+    private val learning: NovaEmployeeLearningService,
     val events: NovaRecordEvents,
 ) : androidx.lifecycle.ViewModel() {
     private fun companies(identity: IsgWorkspaceIdentity): suspend () -> List<NovaCompanyOption> =
@@ -428,6 +435,7 @@ class NovaRootServices @javax.inject.Inject constructor(
         is com.riskdetectedan.core.common.RdResult.Success -> value
         is com.riskdetectedan.core.common.RdResult.Failure -> throw IllegalStateException(message)
     }
+    suspend fun learning(identity: IsgWorkspaceIdentity, company: String, employee: String) = learning.load(identity, company, employee)
     fun companyCreateClient(identity: IsgWorkspaceIdentity) = NovaCompanyCreateClient(identity.userId, { companyCreate.pending(identity) },
         { intent -> companyCreate.create(identity, intent) }, { company, profile -> companyRecords.saveCompanyProfile(company, profile).value() })
     /** Every read and write the company page needs, bound to one identity and company. */

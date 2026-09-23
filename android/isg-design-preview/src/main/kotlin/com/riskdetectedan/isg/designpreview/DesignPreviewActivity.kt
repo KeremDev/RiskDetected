@@ -151,8 +151,10 @@ private fun PreviewCompanies(navigate: (NovaDestination) -> Unit) {
     var open by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     if (open) {
         com.riskdetectedan.feature.nova.NovaCompanyWorkspaceScreen(PreviewCompanyClient, "c1", "Koza Altın A.Ş", true, true, onBack = { open = false },
-            onOpenFindings = { navigate(NovaDestination.findings) }) { _, onBack ->
-            com.riskdetectedan.core.designsystem.isg.NovaPageHeading("Modül", onBack = onBack)
+            onOpenFindings = { navigate(NovaDestination.findings) }) { page, onBack ->
+            if (page == com.riskdetectedan.feature.nova.NovaCompanyPage.Personnel)
+                com.riskdetectedan.core.designsystem.isg.NovaPersonnelDestination(PreviewPersonnel.scope, "Koza Altın A.Ş", PreviewPersonnel.client, onBack)
+            else com.riskdetectedan.core.designsystem.isg.NovaPageHeading("Modül", onBack = onBack)
         }
         return
     }

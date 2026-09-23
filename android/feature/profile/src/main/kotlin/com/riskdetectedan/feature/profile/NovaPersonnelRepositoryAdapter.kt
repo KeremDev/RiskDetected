@@ -103,7 +103,8 @@ private fun JsonObject.checkScope(scope: NovaPersonnelScope) { check(id("owner_i
 private fun JsonObject.employee(scope: NovaPersonnelScope): NovaEmployeeRow {
     checkScope(scope); val dep = optionalID("department_id"); val depName = if (getValue("department_name") == JsonNull) null else string("department_name")
     check((dep == null) == (depName == null))
-    return NovaEmployeeRow(id("id"), scope.ownerID, scope.companyID, string("name"), dep, depName, long("version"), bool("is_archived"))
+    val job = (get("job_title") as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() }
+    return NovaEmployeeRow(id("id"), scope.ownerID, scope.companyID, string("name"), dep, depName, long("version"), bool("is_archived"), job)
 }
 private fun pageCheck(ids: List<UUID>, next: UUID?, after: UUID?) {
     val keys = ids.map { it.toString() }
