@@ -9,6 +9,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.riskdetectedan.core.data.isg.IsgWorkspaceIdentity
 import com.riskdetectedan.core.data.nova.*
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
@@ -90,10 +92,35 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             NovaDestination.workPermits, NovaDestination.contractors, NovaDestination.newVisit -> key(destination) {
                 NovaProcessGate(services.processClient(identity), processKind(destination), state.writable, onBack = { navigate(NovaDestination.home) })
             }
+            NovaDestination.documents, NovaDestination.newDocument -> key(destination) {
+                NovaFileLibraryScreen(services.fileClient(identity), services.companyOptions(identity), state.writable, onBack = { navigate(NovaDestination.home) },
+                    sources = { entry -> services.fileSources(identity, entry) }, openSource = recordOpener(services, identity, state.writable),
+                    startInAddMode = destination == NovaDestination.newDocument)
+            }
+            NovaDestination.documentChecklist -> NovaFollowupScreen({ company, status, query, offset -> services.followup(identity, company, status, query, offset) },
+                services.companyOptions(identity), services.changes(identity), recordOpener(services, identity, state.writable),
+                onBack = { navigate(NovaDestination.home) })
             else -> NovaModulePending(destination, state, onWorkspaceSwitch) { navigate(NovaDestination.home) }
         }
     }
     NovaNoticeDialog(state.message, "İSGADA pilot", viewModel::dismissMessage)
+}
+
+/** Opens the module record a followup row or a file link points at (iOS `NovaFollowupDestination`). */
+private fun recordOpener(services: NovaRootServices, identity: IsgWorkspaceIdentity, canWrite: Boolean): NovaRecordOpener = { row, onBack ->
+    when (row.kind) {
+        "completed_drill", "personnel_certificate", "katip_contract", "approved_notebook", "site_visit", "board", "board_decision", "annual_work_item" ->
+            NovaProcessEditor(services.processClient(identity), row.kind, row.companyId, null, row.recordId, canWrite, onBack)
+        "risk_assessment" -> NovaRiskScreen(services.riskClient(identity), canWrite, onBack, initialCompany = row.companyId)
+        "equipment" -> NovaEquipmentScreen(services.equipmentClient(identity), canWrite, onBack, initialCompany = row.companyId)
+        "emergency_plan" -> NovaEmergencyScreen(services.emergencyClient(identity), canWrite, onBack, initialCompany = row.companyId)
+        "appointment" -> NovaAppointmentScreen(services.appointmentClient(identity), canWrite, onBack, initialCompany = row.companyId)
+        "document" -> Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            NovaPageHeading("Önceki evrak kaydı", onBack = onBack)
+            NovaText("Önceki evrak kaydı · ${row.title}")
+        }
+        else -> NovaFileLibraryScreen(services.fileClient(identity), services.companyOptions(identity), canWrite, onBack, initialCompany = row.companyId)
+    }
 }
 
 private fun processKind(destination: NovaDestination) = when (destination) {
@@ -223,6 +250,7 @@ class NovaRootServices @javax.inject.Inject constructor(
     private val ppe: NovaPPEService,
     private val katip: NovaKatipService,
     private val process: NovaProcessService,
+    private val followups: NovaFollowupService,
     private val personnel: com.riskdetectedan.core.data.company.PersonnelRepository,
     val events: NovaRecordEvents,
 ) : androidx.lifecycle.ViewModel() {
@@ -245,6 +273,12 @@ class NovaRootServices @javax.inject.Inject constructor(
     }
     fun emergencyClient(identity: IsgWorkspaceIdentity) =
         NovaServiceEmergencyClient(emergency, identity, companies(identity), fileClient(identity), people(identity))
+    fun companyOptions(identity: IsgWorkspaceIdentity) = companies(identity)
+    suspend fun followup(identity: IsgWorkspaceIdentity, company: String?, status: String?, query: String, offset: Int) =
+        followups.load(identity, company, status, query, offset)
+    suspend fun fileSources(identity: IsgWorkspaceIdentity, entry: NovaFileEntry) = followups.fileSources(identity, entry)
+    /** This account's record changes, as the iOS `isgada.records.changed` notification. */
+    fun changes(identity: IsgWorkspaceIdentity) = events.changed.filter { it.userId == identity.userId }.map { }
     fun processClient(identity: IsgWorkspaceIdentity) = NovaServiceProcessClient(process, identity, companies(identity), fileClient(identity))
     fun katipClient(identity: IsgWorkspaceIdentity) = NovaServiceKatipClient(katip, files, identity, companies(identity))
     fun ppeClient(identity: IsgWorkspaceIdentity) = NovaServicePPEClient(ppe, identity, companies(identity))
