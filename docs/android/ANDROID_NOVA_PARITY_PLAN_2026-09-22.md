@@ -119,6 +119,9 @@ sırası, aynı durum geçişleri, aynı boş/hata/yükleniyor durumları, aynı
 | Not defteri sunucu rollout'una bağlandı (yalnız pilot kökü) | Tamam | `f8b972ce` |
 | Zil bildirimi kayda açılır; kabukta "Firma ekle" | Tamam | `3ea366e7` |
 | Menü/ana sayfa sayaçları ekipman sayfasından | Tamam | `deaf3b94` |
+| Personel yazma yetkisi + personel detayı yeni düzen + sertifika/belge sayfası | Tamam | `d23d0925`, `760a5117` |
+| Ana sayfa yeni görünüm, firma satırlarında logo + profil ilerlemesi | Tamam | `46177c05`, `ed7856c8`, `994057b2` |
+| Eğitim editörü 7 adım (firma → tür → konu → gün → eğitici → katılımcı → kontrol) + sertifika ekranı yeni akış | Tamam | `fa006e03` |
 
 iOS'ta erişilemeyen (ölü) olduğu için taşınmayanlar: `NovaPPEFormPDF` (KKD form PDF'i),
 `IsgWorkspaceTrainingAdvancedScreen`, analiz bölüm başlığı/risk özet kartı/madde çubuğu/defter paneli,
@@ -132,8 +135,10 @@ Bilinçli olarak açık bırakılanlar:
   açıyor. `feature:nova` → `feature:profile` bağımlılığı yüzünden doğrudan kullanılamıyor ve dal rollout arkasında.
 - Üretim profilindeki not defteri kapısı (`NotebookUIRelease.enabled=false`) değiştirilmedi; iOS sunucu rollout'u okuyor.
 - Profil "Arkadaşını davet et" (iOS `onInvite` → referral) Android'de yok.
-- iOS'ta başka oturumda süren işler (eğitim editörü, KKD örnek formu, iş izni kütüphanesi, firma sayfası "Örnek formlar")
+- iOS'ta başka oturumda süren işler (KKD örnek formu, iş izni kütüphanesi, firma sayfası "Örnek formlar")
   Android'de de o oturum tarafından taşınıyor.
+- Eğitim editörünün işyerisiz firma ve tek tehlike sınıfı kuralları `supabase/pilot-release/candidates` altındaki
+  henüz dağıtılmamış backend adaylarına dayanıyor; iOS ile aynı durumda.
 
 Doğrulama önizleme uygulamasında ve birim testlerle yapıldı; canlı staging doğrulaması kullanıcı girişini bekliyor.
 
