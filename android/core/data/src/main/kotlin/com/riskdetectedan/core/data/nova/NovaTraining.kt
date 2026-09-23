@@ -126,11 +126,21 @@ fun String.sameId(other: String?) = other != null && equals(other, ignoreCase = 
         NovaEducationStep.info -> title.isNotBlank() && providerName.isNotBlank()
         NovaEducationStep.topics -> scopes.isNotEmpty() && scopes.all { it.net > 0 }
         NovaEducationStep.schedule -> scopes.isNotEmpty() && scopes.all { it.lessons.isNotEmpty() }
-        NovaEducationStep.trainers -> trainers.any { it.name.isNotBlank() }
+        NovaEducationStep.trainers -> trainers.isNotEmpty() && trainers.size <= 20 && trainers.all {
+            val name = it.name.trim()
+            name.isNotEmpty() && name.length <= 200 && it.title.length <= 200
+        } && trainers.map { it.id }.toSet().size == trainers.size
         NovaEducationStep.participants -> scopes.isNotEmpty() && scopes.all { it.participants.isNotEmpty() }
         NovaEducationStep.review -> NovaEducationStep.entries.dropLast(1).all(::isComplete)
     }
     val completedCount get() = NovaEducationStep.entries.count(::isComplete)
+
+    /** Empty add rows are form placeholders, not trainers; every remaining trainer covers the shared topics. */
+    fun preparedForSave(): NovaEducationDraft {
+        val kept = trainers.map { it.copy(name = it.name.trim(), title = it.title.trim()) }.filter { it.name.isNotEmpty() || it.title.isNotEmpty() }
+        val ids = kept.map { it.id }
+        return copy(trainers = kept, scopes = scopes.map { scope -> scope.copy(topics = scope.topics.map { it.copy(trainerIds = ids) }) })
+    }
     val progress get() = completedCount.toFloat() / NovaEducationStep.entries.size
 
     companion object {
@@ -157,7 +167,9 @@ enum class NovaEducationStep(val title: String, val symbol: String) {
         val code: String, val label: String, val cycle: String, @SerialName("hazard_class") val hazardClass: String,
         @SerialName("topic_instruction_minutes") val topicInstructionMinutes: Map<String, Int> = emptyMap(), val group4: G4,
         @SerialName("default_instruction_minutes") val defaultInstructionMinutes: Int = 0,
+        @SerialName("common_groups_review_guard") val commonGroupsReviewGuard: CommonGroupsReviewGuard? = null,
     ) {
+        @Serializable data class CommonGroupsReviewGuard(@SerialName("reference_instruction_minutes") val referenceInstructionMinutes: Int)
         @Serializable data class G4(val topics: List<G4Topic> = emptyList(),
                                     @SerialName("budget_instruction_minutes") val budgetInstructionMinutes: Int = 0)
         @Serializable data class G4Topic(@SerialName("local_key") val localKey: String, val title: String,
@@ -302,6 +314,17 @@ object NovaTrainingWords {
         "JOB_TITLE_MISSING" to "Personelin belgeye yazılacak unvanı eksik.", "PROVIDER_MISSING" to "Düzenleyici kişi / kurum eksik.",
         "TRAINER_TITLE_MISSING" to "Eğitici unvanı eksik.",
     )[code] ?: code
+
+    /** A refusal that names one section of the form (iOS `NovaEducationService.correction`). */
+    fun correction(error: Throwable): Pair<NovaEducationStep, String>? = when ((error as? NovaTrainingException)?.code) {
+        "TRAINER_INVALID" -> NovaEducationStep.trainers to "Eğitici adlarını ve konu dağılımını kontrol edin. Boş ek satır kaydedilmez."
+        "TOPIC_INVALID", "TOPIC_HIERARCHY_INVALID" -> NovaEducationStep.topics to "Konu başlıklarını ve dakikalarını kontrol edin."
+        "LESSON_INVALID", "LESSON_ALLOCATION_INVALID", "LESSON_OVERLAP_OR_FUTURE" ->
+            NovaEducationStep.schedule to "Eğitim günlerini, ders sürelerini ve bitiş saatlerini kontrol edin."
+        "SCOPE_INVALID", "TRAINING_HAZARD_MISMATCH", "WORKPLACE_REQUIRED" -> NovaEducationStep.companies to "Firma ve işyeri seçimlerini kontrol edin."
+        "PARTICIPANT_DUPLICATE" -> NovaEducationStep.participants to "Aynı personeli birden fazla kez seçmeyin."
+        else -> null
+    }
 
     /** iOS `NovaEducationService.message` → `NovaTrainingSessionService.message` → `NovaTrainingService.message`, in that order. */
     fun message(error: Throwable): String = when ((error as? NovaTrainingException)?.code) {

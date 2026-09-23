@@ -42,7 +42,7 @@ import java.time.format.DateTimeFormatter
 
 /** The personal education certificate as A4 pages (iOS `NovaEducationCertificatePDF`), padded to an even count for duplex printing. */
 internal object NovaEducationCertificatePDF {
-    private const val RENDERER_VERSION = 2
+    private const val RENDERER_VERSION = 3
     private const val WIDTH = 527
     private const val BLANK = "____________________"
     private data class Block(val text: String, val size: Float = 10f, val bold: Boolean = false, val space: Int = 6, val reserved: Int = 0)
@@ -126,7 +126,6 @@ internal object NovaEducationCertificatePDF {
                 back += Block("${topic.parentCode ?: topic.code}  $label — ${topic.instructionMinutes} dk · ${NovaTrainingWords.method(topic.method)}", 9f, space = 3)
             }
         }
-        back += Block("İşyeri / görev bağlamı: ${scope.contextNote}", 9f, space = 8)
         back += Block("Öğretim: ${scope.instructionMinutes} dk · Ara: ${scope.breakMinutes} dk · Toplam: $total dk", 10f, true)
         // Paragraphs split by measured lines, so a long context never clips or shrinks to illegibility.
         val pages = mutableListOf<List<Placed>>()
