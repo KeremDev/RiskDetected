@@ -122,7 +122,7 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
             NovaDestination.drills -> NovaDrillScreen(services.drillClient(identity), state.writable, onBack = { navigate(NovaDestination.home) })
             NovaDestination.appointments -> NovaAppointmentScreen(services.appointmentClient(identity), state.writable,
                 onBack = { navigate(NovaDestination.home) })
-            NovaDestination.ppeHandovers -> NovaPPEScreen(services.ppeClient(identity), state.writable, onBack = { navigate(NovaDestination.home) })
+            NovaDestination.ppeHandovers -> NovaPPEExampleScreen(onBack = { navigate(NovaDestination.home) })
             // iOS NovaPilotRoot files these through the shared process records.
             NovaDestination.katipContracts, NovaDestination.annualWorkPlans, NovaDestination.boardMeetings, NovaDestination.visits,
             NovaDestination.workPermits, NovaDestination.contractors, NovaDestination.newVisit -> key(destination) {
@@ -267,10 +267,7 @@ private fun recordOpener(services: NovaRootServices, identity: IsgWorkspaceIdent
         "emergency_plan" -> NovaEmergencyScreen(services.emergencyClient(identity), canWrite, onBack, initialCompany = row.companyId)
         "appointment" -> NovaAppointmentScreen(services.appointmentClient(identity), canWrite, onBack, initialCompany = row.companyId)
         "training" -> NovaTrainingRecordScreen(services.trainingClient(identity, userName), row.sourceId, row.companyId, canWrite, onBack)
-        "document" -> Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            NovaPageHeading("Önceki evrak kaydı", onBack = onBack)
-            NovaText("Önceki evrak kaydı · ${row.title}")
-        }
+        "document" -> NovaDocumentTrackingScreen(services.documentClient(identity), row.companyId, "Önceki Evrak Kayıtları", onBack)
         else -> NovaFileLibraryScreen(services.fileClient(identity), services.companyOptions(identity), canWrite, onBack, initialCompany = row.companyId)
     }
 }
@@ -336,7 +333,7 @@ private fun CompanyPage(services: NovaRootServices, identity: IsgWorkspaceIdenti
             "appointment" -> NovaAppointmentScreen(services.appointmentClient(identity), canWrite, onBack, initialCompany = company, startInAddMode = page.adding)
             "emergency_plan" -> NovaEmergencyScreen(services.emergencyClient(identity), canWrite, onBack, initialCompany = company, startInAddMode = page.adding)
             "drill" -> NovaDrillScreen(services.drillClient(identity), canWrite, onBack, initialCompany = company)
-            "ppe" -> NovaPPEScreen(services.ppeClient(identity), canWrite, onBack, initialCompany = company, startInAddMode = page.adding)
+            "ppe" -> NovaPPEExampleScreen(onBack)
             else -> key(page.kind) { NovaProcessGate(services.processClient(identity), page.kind, canWrite, onBack, initialCompany = company,
                 startInAddMode = page.adding) }
         }
@@ -380,7 +377,7 @@ private fun trackedOpener(services: NovaRootServices, identity: IsgWorkspaceIden
         "drill" -> NovaDrillScreen(services.drillClient(identity), canWrite, onBack, initialCompany = company)
         "appointment" -> NovaAppointmentScreen(services.appointmentClient(identity), canWrite, onBack, initialCompany = company)
         "checklist_run" -> NovaChecklistScreen(services.checklistClient(identity), canWrite, onBack, initialCompany = company)
-        "ppe" -> NovaPPEScreen(services.ppeClient(identity), canWrite, onBack, initialCompany = company)
+        "ppe" -> NovaPPEExampleScreen(onBack)
         else -> key(kind) { NovaProcessGate(services.processClient(identity), kind, canWrite, onBack, initialCompany = company) }
     }
 }
@@ -518,6 +515,7 @@ class NovaRootServices @javax.inject.Inject constructor(
     private val katip: NovaKatipService,
     private val process: NovaProcessService,
     private val followups: NovaFollowupService,
+    private val documents: NovaDocumentTrackingService,
     private val checklists: NovaChecklistService,
     private val checklistQueue: NovaChecklistOfflineQueue,
     private val training: NovaTrainingService,
@@ -535,6 +533,8 @@ class NovaRootServices @javax.inject.Inject constructor(
     private fun companies(identity: IsgWorkspaceIdentity): suspend () -> List<NovaCompanyOption> =
         { runCatching { findings.companyOptions(identity) }.getOrDefault(emptyList()) }
     fun fileClient(identity: IsgWorkspaceIdentity) = NovaFileClient(files, identity)
+    fun documentClient(identity: IsgWorkspaceIdentity) =
+        NovaDocumentTrackingClient(portfolio = { documents.portfolio(identity, it) }, companies = companies(identity))
     val analysis: NovaAnalysisService get() = analyses
 
     /** The analysis list over the account's (or organization's) analyses, read under [method]. */
