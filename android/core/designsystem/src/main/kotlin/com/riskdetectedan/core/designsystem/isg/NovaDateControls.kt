@@ -88,3 +88,30 @@ fun NovaTag(symbol: String, text: String, status: NovaStatus = NovaStatus.Neutra
         NovaText(text, style = NovaTypeToken.micro, color = ink)
     }
 }
+
+/** A 24-hour time that opens the Material time picker (iOS `DatePicker(.hourAndMinute)`). */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+fun NovaTimeField(label: String, time: java.time.LocalTime, identifier: String, onChange: (java.time.LocalTime) -> Unit) {
+    var picking by remember { mutableStateOf(false) }
+    NovaFormValueRow(label, "clock") {
+        Box(Modifier.heightIn(min = 36.dp).novaRowPress { picking = true }.testTag(identifier).padding(horizontal = 10.dp),
+            contentAlignment = Alignment.Center) { NovaText(time.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")), style = NovaTypeToken.bodyStrong) }
+    }
+    if (picking) {
+        val state = androidx.compose.material3.rememberTimePickerState(time.hour, time.minute, is24Hour = true)
+        androidx.compose.ui.window.Dialog({ picking = false }) {
+            NovaCard(padding = 16) {
+                androidx.compose.material3.TimePicker(state)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    androidx.compose.material3.TextButton({ picking = false }) {
+                        NovaText("Vazgeç", style = NovaTypeToken.button, color = NovaColorToken.textSecondary.color())
+                    }
+                    androidx.compose.material3.TextButton({ onChange(java.time.LocalTime.of(state.hour, state.minute)); picking = false }) {
+                        NovaText("Tamam", style = NovaTypeToken.button, color = NovaColorToken.accentInk.color())
+                    }
+                }
+            }
+        }
+    }
+}

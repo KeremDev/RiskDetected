@@ -61,7 +61,8 @@ class NotebookRepository @Inject constructor(
         }
         throw NotebookFailure("LIMIT")
     }
-    suspend fun createReminder(title: String, recurrence: String, dueAt: Instant, expected: NotebookIdentity) {
+    /** A reminder, optionally tied to one note, delivered by this installation's server push registration. */
+    suspend fun createReminder(title: String, recurrence: String, dueAt: Instant, expected: NotebookIdentity, note: String? = null) {
         if (identity() != expected || dueAt <= Instant.now() || title.isBlank() ||
             title.codePointCount(0, title.length) > 200 || recurrence !in setOf("once", "daily", "weekly", "monthly")) {
             throw NotebookFailure("INVALID")
@@ -69,7 +70,7 @@ class NotebookRepository @Inject constructor(
         val zoned = dueAt.atZone(ZoneId.systemDefault())
         reminderMutation(buildJsonObject {
             put("p_mutation", UUID.randomUUID().toString()); put("p_action", "create")
-            put("p_reminder", JsonNull); put("p_note", JsonNull); put("p_occurrence", JsonNull); put("p_expected", 0)
+            put("p_reminder", JsonNull); put("p_note", note?.let(::JsonPrimitive) ?: JsonNull); put("p_occurrence", JsonNull); put("p_expected", 0)
             put("p_title", title); put("p_recurrence", recurrence)
             put("p_local_time", zoned.format(DateTimeFormatter.ofPattern("HH:mm:ss")))
             put("p_starts_on", zoned.format(DateTimeFormatter.ISO_LOCAL_DATE)); put("p_timezone", zoned.zone.id)

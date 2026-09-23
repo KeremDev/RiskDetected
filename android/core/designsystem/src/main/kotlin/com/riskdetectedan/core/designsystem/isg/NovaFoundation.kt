@@ -16,6 +16,9 @@ import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.RadioButtonChecked
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.NotificationAdd
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -284,6 +287,14 @@ object NovaSymbols {
             "square.and.arrow.up" to Icons.Outlined.IosShare,
             "square.and.arrow.down" to Icons.Outlined.Download,
             "printer" to Icons.Outlined.Print,
+            "bell.badge" to Icons.Outlined.NotificationAdd,
+            "bell.badge.fill" to Icons.Filled.NotificationAdd,
+            "bell.fill" to Icons.Filled.Notifications,
+            "bell.slash" to Icons.Outlined.NotificationsOff,
+            "icloud" to Icons.Outlined.Cloud,
+            "checkmark.icloud" to Icons.Outlined.CloudDone,
+            "exclamationmark.icloud" to Icons.Outlined.SyncProblem,
+            "info.circle.fill" to Icons.Filled.Info,
             "square.and.pencil" to Icons.Outlined.EditNote,
             "square.dashed" to Icons.Outlined.CropFree,
             "square.grid.2x2" to Icons.Outlined.GridView,

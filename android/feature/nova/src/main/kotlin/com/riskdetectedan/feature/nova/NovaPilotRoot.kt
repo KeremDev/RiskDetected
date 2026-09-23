@@ -110,6 +110,10 @@ fun NovaPilotRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspaceUiStat
                     services.companyOptions(identity), services.changes(identity), recordOpener(services, identity, state.writable, state.userName),
                     onBack = onBack, initialCompany = company)
             }
+            NovaDestination.notebook, NovaDestination.newNote -> key(destination) {
+                com.riskdetectedan.feature.profile.NotebookScreen(onClose = { navigate(NovaDestination.home) },
+                    startWithNewNote = destination == NovaDestination.newNote)
+            }
             NovaDestination.reports -> NovaReportCenter(services.reportClient(identity), slots.analysisReports, onBack = { navigate(NovaDestination.home) })
             NovaDestination.reportArchive -> NovaReportArchive(services.reportClient(identity), slots.analysisReports,
                 onBack = { navigate(NovaDestination.reports) })
