@@ -461,7 +461,8 @@ class NovaRootServices @javax.inject.Inject constructor(
         files = { files.library(identity, NovaFileQuery(company = company, limit = 1)) },
         changes = changes(identity),
     )
-    fun activityClient(identity: IsgWorkspaceIdentity, workspace: String?) = NovaServiceActivityClient(activity, identity, workspace)
+    fun activityClient(identity: IsgWorkspaceIdentity, workspace: String?, member: String? = null) =
+        NovaServiceActivityClient(activity, identity, workspace, member)
     fun reportClient(identity: IsgWorkspaceIdentity) = NovaServiceReportClient(training, process, statistics, identity, companies(identity))
     fun statisticsClient(identity: IsgWorkspaceIdentity) = NovaServiceStatisticsClient(statistics, process, followups, identity, changes(identity))
     fun trainingClient(identity: IsgWorkspaceIdentity, userName: String) =

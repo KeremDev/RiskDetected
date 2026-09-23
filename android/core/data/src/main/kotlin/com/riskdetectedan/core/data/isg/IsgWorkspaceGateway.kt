@@ -141,6 +141,218 @@ class IsgWorkspaceGateway(
         return result
     }
 
+    /** Members of the workspace, id-ordered and cursor-paged (`isg_workspace_member_list_v1`). */
+    suspend fun members(workspaceId: String, membershipId: String, permissionRevision: Long,
+                        status: String = "all", after: String? = null, limit: Int = 100): JsonObject {
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        if (status !in setOf("all", "active", "suspended", "ended")) validation()
+        requireLimit(limit, 100)
+        val result = invoke("isg_workspace_member_list_v1", buildJsonObject {
+            put("p_workspace", workspaceId); put("p_status", status)
+            put("p_after", after?.let(::JsonPrimitive) ?: JsonNull); put("p_limit", limit)
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        requireEnvelope(result, workspaceId, checkCompany = false)
+        val rows = result["rows"] as? JsonArray ?: fail()
+        if (rows.size > limit || rows.any { (it as? JsonObject)?.let(::validMember) != true }) fail()
+        return result
+    }
+
+    suspend fun invitations(workspaceId: String, membershipId: String, permissionRevision: Long,
+                            status: String = "all", after: String? = null, limit: Int = 100): JsonObject {
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        if (status !in setOf("all", "pending", "accepted", "revoked", "expired")) validation()
+        requireLimit(limit, 100)
+        val result = invoke("isg_workspace_invitation_list_v1", buildJsonObject {
+            put("p_workspace", workspaceId); put("p_status", status)
+            put("p_after", after?.let(::JsonPrimitive) ?: JsonNull); put("p_limit", limit)
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        requireEnvelope(result, workspaceId, checkCompany = false)
+        val rows = result["rows"] as? JsonArray ?: fail()
+        if (rows.size > limit || rows.any { row -> (row as? JsonObject)?.let {
+                it.text("invitation_id")?.let(UUID::matches) == true && it.text("email")?.contains('@') == true &&
+                    it.text("role") in setOf("admin", "expert") && it.text("status") in setOf("pending", "accepted", "revoked", "expired") &&
+                    !it.text("expires_at").isNullOrEmpty() && (it.safeLong("version") ?: -1) >= 0
+            } != true }) fail()
+        return result
+    }
+
+    /** Creates an invitation; the one-time code comes back only in this response. */
+    suspend fun invite(workspaceId: String, membershipId: String, permissionRevision: Long, mutationId: String,
+                       email: String, role: String, expiresAt: String): JsonObject {
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        val clean = email.trim().lowercase()
+        if (!Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$").matches(clean) || role !in setOf("admin", "expert") || expiresAt.isEmpty()) validation()
+        val result = invoke("isg_workspace_invite_v1", buildJsonObject {
+            put("p_mutation", mutationId); put("p_workspace", workspaceId); put("p_email", clean); put("p_role", role)
+            put("p_expires_at", expiresAt)
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        return invitationToken(result, workspaceId, null)
+    }
+
+    suspend fun resendInvitation(workspaceId: String, membershipId: String, permissionRevision: Long, mutationId: String,
+                                 invitationId: String, expectedVersion: Long, expiresAt: String): JsonObject {
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        if (expectedVersion < 0 || expiresAt.isEmpty()) validation()
+        val result = invoke("isg_workspace_invitation_resend_v1", buildJsonObject {
+            put("p_mutation", mutationId); put("p_workspace", workspaceId); put("p_invitation", invitationId)
+            put("p_expected", expectedVersion); put("p_expires_at", expiresAt)
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        return invitationToken(result, workspaceId, invitationId)
+    }
+
+    suspend fun revokeInvitation(workspaceId: String, membershipId: String, permissionRevision: Long, mutationId: String,
+                                 invitationId: String, expectedVersion: Long) {
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        if (expectedVersion < 0) validation()
+        val result = invoke("isg_workspace_invitation_mutate_v1", buildJsonObject {
+            put("p_mutation", mutationId); put("p_workspace", workspaceId); put("p_invitation", invitationId)
+            put("p_expected_version", expectedVersion); put("p_action", "revoke")
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        requireEnvelope(result, workspaceId, checkCompany = false)
+        if (result.text("invitation_id") != invitationId || result.text("status") != "revoked" ||
+            (result.safeLong("version") ?: -1) <= expectedVersion) fail()
+    }
+
+    suspend fun mutateMember(workspaceId: String, membershipId: String, permissionRevision: Long, mutationId: String,
+                             targetMembershipId: String, expectedVersion: Long, action: String, value: String? = null,
+                             reason: String? = null): JsonObject {
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        if (expectedVersion < 0 || action !in setOf("suspend", "reactivate", "end", "change_role", "set_practicing", "transfer_owner") ||
+            (reason?.toByteArray()?.size ?: 0) > 500) validation()
+        val result = invoke("isg_workspace_member_mutate_v1", buildJsonObject {
+            put("p_mutation", mutationId); put("p_workspace", workspaceId); put("p_membership", targetMembershipId)
+            put("p_expected_version", expectedVersion); put("p_action", action)
+            put("p_value", value?.let(::JsonPrimitive) ?: JsonNull); put("p_reason", reason?.let(::JsonPrimitive) ?: JsonNull)
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        requireEnvelope(result, workspaceId, checkCompany = false)
+        val member = result["membership"] as? JsonObject ?: fail()
+        if (!validMember(member) || member.text("membership_id") != targetMembershipId) fail()
+        return member
+    }
+
+    /** Creates (no [companyId]) or renames/reclassifies a company; the profile is a separate mutation. */
+    suspend fun saveCompany(workspaceId: String, membershipId: String, permissionRevision: Long, canOperate: Boolean,
+                            mutationId: String, companyId: String?, expectedVersion: Long, name: String, hazard: String): JsonObject {
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        val clean = name.trim()
+        if (clean.isEmpty() || clean.toByteArray().size > 200 || hazard !in setOf("low", "medium", "high") || expectedVersion < 0) validation()
+        val result = invoke(if (companyId == null) "isg_workspace_company_create_v1" else "isg_workspace_company_update_v1", buildJsonObject {
+            put("p_mutation", mutationId); put("p_workspace", workspaceId)
+            if (companyId != null) { put("p_company", companyId); put("p_expected", expectedVersion) }
+            put("p_name", clean); put("p_hazard", hazard)
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        requireEnvelope(result, workspaceId, checkCompany = false)
+        if (result.text("company_id")?.let(UUID::matches) != true || (companyId != null && result.text("company_id") != companyId) ||
+            result.text("name").isNullOrBlank() || result.text("hazard_class") !in setOf("low", "medium", "high") ||
+            (result.safeLong("version") ?: -1) < 0) fail()
+        return result
+    }
+
+    suspend fun mutateCompanyProfile(workspaceId: String, membershipId: String, permissionRevision: Long, canOperate: Boolean,
+                                     mutationId: String, companyId: String, expectedVersion: Long, sector: String, email: String,
+                                     employeeCount: Int?, address: String, responsibleName: String, responsiblePhone: String,
+                                     responsibleEmail: String): JsonObject {
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        val values = listOf(sector, email, address, responsibleName, responsiblePhone, responsibleEmail).map { it.trim() }
+        val responsible = values.subList(3, 6)
+        if (expectedVersion < 0 || values[0].isEmpty() || values[0].toByteArray().size > 160 || values[1].toByteArray().size > 320 ||
+            values[2].toByteArray().size > 1_000 || values[3].toByteArray().size > 160 || values[4].toByteArray().size > 80 ||
+            values[5].toByteArray().size > 320 || (responsible.any { it.isEmpty() } && responsible.any { it.isNotEmpty() })) validation()
+        fun optional(value: String) = if (value.isEmpty()) JsonNull else JsonPrimitive(value)
+        val result = invoke("isg_workspace_company_profile_mutate_v1", buildJsonObject {
+            put("p_mutation", mutationId); put("p_workspace", workspaceId); put("p_company", companyId); put("p_expected", expectedVersion)
+            put("p_sector", values[0]); put("p_email", optional(values[1])); put("p_employee_count", employeeCount?.let(::JsonPrimitive) ?: JsonNull)
+            put("p_address", optional(values[2])); put("p_responsible_name", optional(values[3]))
+            put("p_responsible_phone", optional(values[4])); put("p_responsible_email", optional(values[5]))
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        requireEnvelope(result, workspaceId, checkCompany = false)
+        if (result.text("company_id") != companyId || result.text("sector").isNullOrEmpty()) fail()
+        return result
+    }
+
+    suspend fun archiveCompany(workspaceId: String, membershipId: String, permissionRevision: Long, canOperate: Boolean,
+                               mutationId: String, companyId: String, expectedVersion: Long, reason: String) {
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        val clean = reason.trim()
+        if (expectedVersion < 0 || clean.isEmpty() || clean.toByteArray().size > 500) validation()
+        val result = invoke("isg_workspace_company_archive_v1", buildJsonObject {
+            put("p_mutation", mutationId); put("p_workspace", workspaceId); put("p_company", companyId)
+            put("p_expected", expectedVersion); put("p_reason", clean)
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        requireEnvelope(result, workspaceId, checkCompany = false)
+        if (result.text("company_id") != companyId || result.text("status") != "archived" ||
+            (result.safeLong("version") ?: -1) <= expectedVersion || result.bool("data_deleted") != false) fail()
+    }
+
+    /** Whether a file create mutation already landed, so a retry never uploads twice. */
+    suspend fun fileCreateReceipt(workspaceId: String, membershipId: String, permissionRevision: Long, canOperate: Boolean,
+                                  companyId: String, mutationId: String): JsonObject {
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        val result = invoke("isg_workspace_file_create_receipt_v1", buildJsonObject {
+            put("p_workspace", workspaceId); put("p_company", companyId); put("p_mutation", mutationId)
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        requireEnvelope(result, workspaceId, companyId)
+        if (result.bool("found") == null) fail()
+        return result
+    }
+
+    /** Opens a server-scoped upload intent for one private object path. */
+    suspend fun uploadOpen(workspaceId: String, membershipId: String, permissionRevision: Long, canOperate: Boolean, companyId: String,
+                           idempotency: String, sha256: String, mediaType: String, extension: String, bytes: Int, expiresAt: String): JsonObject {
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        if (bytes !in 1..52_428_800 || !Regex("^[0-9a-f]{64}$").matches(sha256)) validation()
+        val result = invoke("isg_workspace_upload_open_v1", buildJsonObject {
+            put("p_workspace", workspaceId); put("p_company", companyId); put("p_idempotency", idempotency)
+            put("p_request_hash", "\\x$sha256"); put("p_purpose", "workspace_file"); put("p_media_type", mediaType)
+            put("p_extension", extension); put("p_expected_bytes", bytes); put("p_expires_at", expiresAt)
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        requireEnvelope(result, workspaceId, checkCompany = false)
+        if (result.text("status") != "open" || result.text("bucket") != "isg-workspace-private" ||
+            result.text("object_path")?.startsWith("$workspaceId/") != true || result.bool("credential_returned") != true ||
+            result.bool("replayed") != false || result.text("upload_token")?.let { Regex("^[0-9a-f]{64}$").matches(it) } != true) fail()
+        return result
+    }
+
+    /** Opens a short-lived download of one asset of the workspace. */
+    suspend fun downloadOpen(workspaceId: String, membershipId: String, permissionRevision: Long, assetId: String, expiresAt: String): String {
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        if (!UUID.matches(assetId)) validation()
+        val result = invoke("isg_workspace_download_open_v1", buildJsonObject {
+            put("p_workspace", workspaceId); put("p_asset", assetId); put("p_purpose", "workspace_file_preview"); put("p_expires_at", expiresAt)
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision)
+        requireEnvelope(result, workspaceId, checkCompany = false)
+        return result.text("download_token")?.takeIf { Regex("^[0-9a-f]{64}$").matches(it) } ?: fail()
+    }
+
+    private fun validMember(row: JsonObject): Boolean {
+        val role = row.text("role"); val status = row.text("status"); val practicing = row.bool("is_practicing_expert")
+        return row.text("membership_id")?.let(UUID::matches) == true && role in setOf("owner", "admin", "expert") &&
+            status in setOf("active", "suspended", "ended") && practicing != null &&
+            (!practicing || (role == "expert" && status == "active")) && (row.safeLong("version") ?: -1) >= 0 &&
+            (row.safeLong("permission_revision") ?: -1) >= 0
+    }
+
+    private fun invitationToken(result: JsonObject, workspaceId: String, invitationId: String?): JsonObject {
+        requireEnvelope(result, workspaceId, checkCompany = false)
+        if ((invitationId != null && result.text("invitation_id") != invitationId) || result.text("invitation_id")?.let(UUID::matches) != true ||
+            result.text("status") != "pending" || result.text("role") !in setOf("admin", "expert") ||
+            (result.bool("token_persisted") != false && result.bool("token_returned") == false) ||
+            result.text("invitation_token")?.let { Regex("^[0-9a-f]{64}$").matches(it) } != true) fail()
+        return result
+    }
+
     suspend fun personnelMetrics(workspaceId: String, membershipId: String, permissionRevision: Long,
                                  companyId: String?): JsonObject {
         checkWorkspace(workspaceId, membershipId, permissionRevision)

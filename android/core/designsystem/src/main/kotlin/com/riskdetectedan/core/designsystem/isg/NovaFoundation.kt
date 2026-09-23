@@ -256,6 +256,7 @@ object NovaSymbols {
             "person.badge.plus" to Icons.Outlined.PersonAdd,
             "person.badge.shield.checkmark" to Icons.Outlined.AdminPanelSettings,
             "person.crop.circle" to Icons.Outlined.AccountCircle,
+            "person.crop.circle.badge.checkmark" to Icons.Outlined.HowToReg,
             "person.crop.circle.badge.exclamationmark" to Icons.Outlined.PersonOff,
             "person.crop.circle.badge.xmark" to Icons.Outlined.PersonOff,
             "person.crop.rectangle" to Icons.Outlined.Badge,

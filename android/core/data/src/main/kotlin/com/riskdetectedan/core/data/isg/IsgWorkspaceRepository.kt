@@ -9,7 +9,10 @@ import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
-import kotlinx.serialization.json.Json
+import io.github.jan.supabase.functions.functions
+import io.github.jan.supabase.storage.storage
+import io.ktor.client.statement.readRawBytes
+import kotlinx.serialization.json.*
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
@@ -180,6 +183,143 @@ class IsgWorkspaceRepository @Inject constructor(private val client: SupabaseCli
             rows
         }
 
+    private suspend fun <T> pages(read: suspend (String?) -> JsonObject, parse: (JsonObject) -> T, id: (T) -> String): List<T> {
+        val rows = mutableListOf<T>()
+        var cursor: String? = null
+        var pages = 0
+        do {
+            if (++pages > 100) throw IsgWorkspaceGatewayFailure("INVALID_RESPONSE")
+            val page = read(cursor)
+            val values = page["rows"]!!.jsonArray.map { parse(it.jsonObject) }
+            rows += values
+            val next = (page["next"] as? JsonPrimitive)?.contentOrNull
+            if (next != null && (next == cursor || next != values.lastOrNull()?.let(id))) throw IsgWorkspaceGatewayFailure("INVALID_RESPONSE")
+            cursor = next
+        } while (cursor != null)
+        return rows
+    }
+
+    suspend fun members(context: IsgWorkspaceContext, status: String = "all"): List<IsgWorkspaceMember> = inScope(context) {
+        pages({ gateway.members(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision, status, it) },
+            IsgWorkspaceMember::parse) { it.id }
+    }
+
+    suspend fun invitations(context: IsgWorkspaceContext, status: String = "all"): List<IsgWorkspaceInvitation> = inScope(context) {
+        pages({ gateway.invitations(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision, status, it) },
+            IsgWorkspaceInvitation::parse) { it.id }
+    }
+
+    suspend fun invite(context: IsgWorkspaceContext, mutationId: String, email: String, role: String, expiresAt: String) = inScope(context) {
+        IsgWorkspaceInvitationToken.parse(gateway.invite(context.workspaceId, context.membership.membershipId,
+            context.membership.permissionRevision, mutationId, email, role, expiresAt))
+    }
+
+    suspend fun resendInvitation(context: IsgWorkspaceContext, mutationId: String, invitation: IsgWorkspaceInvitation, expiresAt: String) =
+        inScope(context) {
+            IsgWorkspaceInvitationToken.parse(gateway.resendInvitation(context.workspaceId, context.membership.membershipId,
+                context.membership.permissionRevision, mutationId, invitation.id, invitation.version, expiresAt))
+        }
+
+    suspend fun revokeInvitation(context: IsgWorkspaceContext, mutationId: String, invitation: IsgWorkspaceInvitation) = inScope(context) {
+        gateway.revokeInvitation(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision,
+            mutationId, invitation.id, invitation.version)
+    }
+
+    suspend fun mutateMember(context: IsgWorkspaceContext, mutationId: String, member: IsgWorkspaceMember, action: String,
+                             value: String? = null, reason: String? = null) = inScope(context) {
+        IsgWorkspaceMember.parse(gateway.mutateMember(context.workspaceId, context.membership.membershipId,
+            context.membership.permissionRevision, mutationId, member.id, member.version, action, value, reason))
+    }
+
+    suspend fun assignments(context: IsgWorkspaceContext, companyId: String): List<IsgWorkspaceAssignment> = inScope(context, companyId) {
+        pages({ gateway.assignments(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision, companyId, after = it) },
+            IsgWorkspaceAssignment::parse) { it.id }
+    }
+
+    suspend fun mutateAssignment(context: IsgWorkspaceContext, mutationId: String, companyId: String, action: String,
+                                 assignmentId: String? = null, membershipId: String? = null, expectedVersion: Long = 0,
+                                 role: String? = null, startsAt: String? = null, endsAt: String? = null, reason: String) =
+        inScope(context, companyId) {
+            IsgWorkspaceAssignment.parse(gateway.mutateAssignment(context.workspaceId, context.membership.membershipId,
+                context.membership.permissionRevision, context.canOperate, mutationId, companyId, action, assignmentId, membershipId,
+                expectedVersion, role, startsAt, endsAt, reason))
+        }
+
+    /**
+     * Creates or updates a company, then its profile, as two replay-safe mutations (iOS `createCompany` /
+     * `updateCompany`). Returns the company id.
+     */
+    suspend fun saveCompany(context: IsgWorkspaceContext, mutationId: String, profileMutationId: String, companyId: String?,
+                            expectedVersion: Long, expectedProfileVersion: Long, draft: IsgWorkspaceCompanyDraft): String = inScope(context) {
+        val company = gateway.saveCompany(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision,
+            context.canOperate, mutationId, companyId, expectedVersion, draft.name, draft.hazardClass)["company_id"]!!.jsonPrimitive.content
+        gateway.mutateCompanyProfile(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision,
+            context.canOperate, profileMutationId, company, if (companyId == null) 0 else expectedProfileVersion, draft.sector, draft.email,
+            draft.employeeCount, draft.address, draft.responsibleName, draft.responsiblePhone, draft.responsibleEmail)
+        company
+    }
+
+    suspend fun archiveCompany(context: IsgWorkspaceContext, mutationId: String, companyId: String, expectedVersion: Long, reason: String) =
+        inScope(context) {
+            gateway.archiveCompany(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision,
+                context.canOperate, mutationId, companyId, expectedVersion, reason)
+        }
+
+    suspend fun mutateDomain(context: IsgWorkspaceContext, mutationId: String, companyId: String, domain: IsgWorkspaceDomain,
+                             payload: JsonObject): JsonObject = inScope(context, companyId) {
+        gateway.mutateDomain(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision,
+            context.canOperate, mutationId, companyId, domain, payload)
+    }
+
+    /**
+     * Uploads one file into the company archive (iOS `uploadFile`): a replayed mutation returns its existing entry,
+     * otherwise the bytes go to the exact private path the server opened, are finalized by the inspection worker,
+     * and only then become a file entry. Returns the entry and asset ids.
+     */
+    suspend fun uploadFile(context: IsgWorkspaceContext, mutationId: String, companyId: String, title: String, filename: String,
+                           category: String, data: ByteArray): Pair<String, String> = inScope(context, companyId) {
+        val cleanTitle = title.trim(); val cleanName = filename.trim()
+        val extension = cleanName.substringAfterLast('.', "").lowercase()
+        if (cleanTitle.isEmpty() || cleanTitle.toByteArray().size > 320 || cleanName.isEmpty() || cleanName.toByteArray().size > 400 ||
+            extension !in FILE_TYPES || category !in FILE_CATEGORIES || data.size !in 1..52_428_800)
+            throw IsgWorkspaceGatewayFailure("VALIDATION_ERROR")
+        val ids = Triple(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision)
+        val receipt = gateway.fileCreateReceipt(ids.first, ids.second, ids.third, context.canOperate, companyId, mutationId)
+        if (receipt["found"]?.jsonPrimitive?.booleanOrNull == true) {
+            val entry = receipt["entry_id"]?.jsonPrimitive?.contentOrNull; val asset = receipt["asset_id"]?.jsonPrimitive?.contentOrNull
+            if (entry == null || asset == null || receipt["byte_size"]?.jsonPrimitive?.longOrNull != data.size.toLong())
+                throw IsgWorkspaceGatewayFailure("INVALID_RESPONSE")
+            return@inScope entry to asset
+        }
+        val digest = java.security.MessageDigest.getInstance("SHA-256").digest(data).joinToString("") { "%02x".format(it) }
+        val mediaType = FILE_TYPES.getValue(extension)
+        val opened = gateway.uploadOpen(ids.first, ids.second, ids.third, context.canOperate, companyId, UUID.randomUUID().toString(), digest,
+            mediaType, extension, data.size, java.time.Instant.now().plusSeconds(600).truncatedTo(java.time.temporal.ChronoUnit.SECONDS).toString())
+        client.storage.from(opened["bucket"]!!.jsonPrimitive.content).upload(opened["object_path"]!!.jsonPrimitive.content, data) {
+            upsert = false; contentType = io.ktor.http.ContentType.parse(mediaType)
+        }
+        val finalized = json.parseToJsonElement(client.functions.invoke("isg-workspace-file-finalize",
+            body = buildJsonObject { put("upload_token", opened["upload_token"]!!.jsonPrimitive.content) }).bodyAsText()).jsonObject
+        val asset = finalized["asset_id"]?.jsonPrimitive?.contentOrNull
+        if (finalized["schema_version"]?.jsonPrimitive?.intOrNull != 1 || finalized["workspace_id"]?.jsonPrimitive?.contentOrNull != context.workspaceId ||
+            finalized["byte_size"]?.jsonPrimitive?.longOrNull != data.size.toLong() || asset == null) throw IsgWorkspaceGatewayFailure("INVALID_RESPONSE")
+        val entry = gateway.mutateDomain(ids.first, ids.second, ids.third, context.canOperate, mutationId, companyId, IsgWorkspaceDomain.FILES,
+            buildJsonObject {
+                put("action", "create"); put("asset_id", asset); put("category", category); put("visibility", "company_team")
+                put("title", cleanTitle); put("original_filename", cleanName); put("note", ""); put("tags", JsonArray(emptyList()))
+            })
+        (IsgWorkspaceMutations.recordId(entry) ?: throw IsgWorkspaceGatewayFailure("INVALID_RESPONSE")) to asset
+    }
+
+    /** The bytes of one workspace asset, through a short-lived download grant. */
+    suspend fun downloadAsset(context: IsgWorkspaceContext, assetId: String): ByteArray = inScope(context) {
+        val token = gateway.downloadOpen(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision, assetId,
+            java.time.Instant.now().plusSeconds(120).truncatedTo(java.time.temporal.ChronoUnit.SECONDS).toString())
+        val bytes = client.functions.invoke("isg-workspace-file-download", body = buildJsonObject { put("download_token", token) }).readRawBytes()
+        if (bytes.isEmpty() || bytes.size > 52_428_800) throw IsgWorkspaceGatewayFailure("INVALID_RESPONSE")
+        bytes
+    }
+
     suspend fun search(context: IsgWorkspaceContext, companyId: String, query: String): JsonObject = inScope(context, companyId) {
         gateway.search(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision, companyId, query)
     }
@@ -216,8 +356,15 @@ class IsgWorkspaceRepository @Inject constructor(private val client: SupabaseCli
         throw IsgWorkspaceGatewayFailure(safe ?: "UNAVAILABLE")
     }
 
-    private companion object {
-        val SAFE_ERRORS = setOf(
+    companion object {
+        val FILE_TYPES = mapOf("pdf" to "application/pdf", "doc" to "application/msword",
+            "docx" to "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "xls" to "application/vnd.ms-excel",
+            "xlsx" to "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "csv" to "text/csv", "jpg" to "image/jpeg",
+            "jpeg" to "image/jpeg", "png" to "image/png", "webp" to "image/webp", "avif" to "image/avif", "heic" to "image/heic", "heif" to "image/heic")
+        val FILE_CATEGORIES = setOf("company_logo", "risk_assessment", "emergency_plan", "training_material", "inspection_report",
+            "measurement_report", "accident_record", "board_document", "handover_form", "personnel_document", "contract", "permit_form",
+            "visit_evidence", "notebook_archive", "other")
+        private val SAFE_ERRORS = setOf(
             "AUTH_REQUIRED", "ACCESS_DENIED", "FEATURE_UNAVAILABLE", "DOMAIN_UNAVAILABLE",
             "WORKSPACE_INACTIVE", "ASSIGNMENT_REQUIRED", "VALIDATION_ERROR", "VERSION_CONFLICT",
             "SEAT_LIMIT_REACHED", "INSUFFICIENT_CREDITS", "QUOTA_EXCEEDED", "PURCHASE_PENDING",

@@ -1,6 +1,10 @@
 package com.riskdetectedan.feature.nova
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -14,7 +18,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -27,6 +34,8 @@ import com.riskdetectedan.core.data.profile.ProfileRepository
 import com.riskdetectedan.core.designsystem.isg.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -174,6 +183,9 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
     var dashboardDomain by remember { mutableStateOf<IsgWorkspaceDomain?>(null) }
     var companyPage by remember { mutableStateOf<String?>(null) }
     var companyDomain by remember { mutableStateOf<IsgWorkspaceDomain?>(null) }
+    var editor by remember { mutableStateOf<ManagerEditor?>(null) }
+    var showingMembers by remember { mutableStateOf(false) }
+    var showingAssignments by remember { mutableStateOf(false) }
     val domainClient = remember(context, selected?.id) {
         selected?.let { company ->
             NovaOsgbDomainClient(snapshot = { viewModel.repository.snapshot(context, company.id, it) },
@@ -191,11 +203,34 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
         NovaOsgbSearchScreen(selected?.name, { query -> viewModel.repository.search(context, selected!!.id, query) }, onBack)
     }
 
+    editor?.let { route ->
+        key(route) {
+            NovaOsgbCompanyEditor(context, viewModel.repository, route.company, onClose = { editor = null },
+                onSaved = { editor = null; store.refresh() }, onArchived = { editor = null; companyPage = null; store.refresh() })
+        }
+        return
+    }
+    if (showingMembers) {
+        NovaOsgbMemberManagement(context, viewModel.repository, onBack = { showingMembers = false }) { member, onClose ->
+            NovaActivityScreen(remember(member) { services.activityClient(identity, context.workspaceId, member) }, onClose = onClose, member = true)
+        }
+        return
+    }
+    if (showingAssignments && selected != null) {
+        NovaOsgbAssignmentManagement(context, viewModel.repository, selected) { showingAssignments = false }
+        return
+    }
+    val createCompany: (() -> Unit)? = if (canManage) ({ editor = ManagerEditor(null) }) else null
     NovaExpertShell(state.navigation, state.userName, viewModel::apply, profileAvatar = state.avatar,
         menuRoleTitle = if (canManage) "OSGB Yetkilisi" else "İSG Uzmanı",
         menuStats = managerMenuStats(board), menuNextAction = managerNextAction(workspace, board, state.personnel, canManage),
         connectionLabel = "${context.name} · ${managerRole(context.membership.role)}", isManager = canManage,
         actions = NovaShellActions(
+            onCompanyCreate = createCompany,
+            onExpertCreate = if (canManage) ({ showingMembers = true }) else null,
+            onAssignmentOpen = if (canManage) ({
+                if (selected != null) showingAssignments = true else navigate(NovaDestination.companies)
+            }) else null,
             onInvite = { navigate(NovaDestination.profile) },
             onDestination = { if (it == NovaDestination.companies) { companyPage = null; companyDomain = null } },
             onLogout = viewModel::signOut,
@@ -206,7 +241,8 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
                 dashboardDomain != null -> domain(dashboardDomain!!) { dashboardDomain = null }
                 else -> NovaDashboardScreen(managerDashboardData(state.userName, context, selected, board), onNavigate = navigate,
                     onPhoto = { navigate(NovaDestination.newAnalysis) }, onAssistant = {}, showsAssistant = false) {
-                    ManagerHomeFooter(workspace, selected, canManage, store, onSearch = { showingSearch = true },
+                    ManagerHomeFooter(workspace, selected, canManage, context.canManageMembers, store, onSearch = { showingSearch = true },
+                        onEdit = { editor = ManagerEditor(it) }, onMembers = { showingMembers = true },
                         onDomain = { dashboardDomain = it }, onAnalyses = { navigate(NovaDestination.analyses) })
                 }
             }
@@ -219,11 +255,15 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
             NovaDestination.statistics -> ManagerStatistics(workspace, board, state.personnel, isExpert = !canManage && workspace.isExpert,
                 onRetry = store::refresh, onDomain = { navigate(it.destination) }) { navigate(NovaDestination.home) }
             NovaDestination.companies, NovaDestination.newCompany -> {
+                if (destination == NovaDestination.newCompany && canManage) LaunchedEffect(Unit) {
+                    editor = ManagerEditor(null); navigate(NovaDestination.companies)
+                }
                 val open = workspace.companies.firstOrNull { it.id == companyPage }
                 when {
                     open != null && showingSearch -> search { showingSearch = false }
                     open != null && companyDomain != null -> domain(companyDomain!!) { companyDomain = null }
-                    open != null -> NovaOsgbCompanyOverview(context, open, workspace, viewModel.repository, canManage,
+                    open != null -> NovaOsgbCompanyOverview(context, open, workspace, viewModel.repository,
+                        onEdit = if (canManage) ({ editor = ManagerEditor(open) }) else null,
                         onBack = { companyPage = null; companyDomain = null }, onDomain = { companyDomain = it },
                         onAnalyses = { navigate(NovaDestination.analyses) }, onSearch = { showingSearch = true })
                     else -> NovaCompaniesScreen(workspace.companies.map { NovaCompanyItem(it.id, it.name, companySummary(it), it.profileCompletionCount, 8) },
@@ -231,7 +271,7 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
                         onSelect = { id ->
                             companyPage = id; companyDomain = null
                             if (workspace.selectedCompanyId != id) store.selectCompany(id)
-                        }, onBack = { navigate(NovaDestination.home) }, onRetry = store::refresh, isOwnedList = true)
+                        }, onBack = { navigate(NovaDestination.home) }, onRetry = store::refresh, isOwnedList = true, onCreate = createCompany)
                 }
             }
             NovaDestination.reports -> NovaReportCenter(remember(identity) { services.reportClient(identity) }, slots.analysisReports,
@@ -313,8 +353,8 @@ private fun managerDashboardData(userName: String, context: IsgWorkspaceContext,
 
 /** The tenant-scoped part of the manager home (iOS `osgbHomeFooter`). */
 @Composable
-private fun ManagerHomeFooter(workspace: NovaWorkspaceUiState, selected: NovaWorkspaceCompany?, canManage: Boolean, store: NovaWorkspaceStore,
-                              onSearch: () -> Unit, onDomain: (IsgWorkspaceDomain) -> Unit, onAnalyses: () -> Unit) {
+private fun ManagerHomeFooter(workspace: NovaWorkspaceUiState, selected: NovaWorkspaceCompany?, canManage: Boolean, canManageMembers: Boolean,
+                              store: NovaWorkspaceStore, onSearch: () -> Unit, onEdit: (NovaWorkspaceCompany) -> Unit, onMembers: () -> Unit, onDomain: (IsgWorkspaceDomain) -> Unit, onAnalyses: () -> Unit) {
     Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         selected?.let { NovaHelpHint("${it.name} firması için yetkili kayıtları görüntülüyorsunuz.") }
         NovaText("Firma seçimi", style = NovaTypeToken.sectionTitle)
@@ -328,11 +368,15 @@ private fun ManagerHomeFooter(workspace: NovaWorkspaceUiState, selected: NovaWor
                         NovaText(companySummary(company), style = NovaTypeToken.metaQuiet)
                     }
                     if (workspace.selectedCompanyId == company.id) NovaIcon("checkmark.circle.fill", 18.dp)
+                    if (canManage) Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).novaRowPress { onEdit(company) }
+                        .semantics { contentDescription = "Firmayı düzenle" }, contentAlignment = Alignment.Center) { NovaIcon("pencil", 17.dp) }
                 }
             }
         }
         if (selected != null) FooterLink("magnifyingglass", "Firma Kayıtlarında Ara", "Personel, uygunsuzluk, ekipman ve dosyalarda arayın.",
             "osgb.search.open", onSearch)
+        if (canManageMembers) FooterLink("person.2.badge.gearshape", "Uzman ve yönetici ekibi", "Davetleri, rolleri ve erişim durumlarını yönetin.",
+            "osgb.members.open", onMembers)
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             NovaText("Firma operasyonları", style = NovaTypeToken.sectionTitle)
             val tiles = IsgWorkspaceDomain.entries.map { Triple(it.symbol, it.title) { onDomain(it) } } +
@@ -502,7 +546,7 @@ private fun NovaOsgbSearchScreen(companyName: String?, search: suspend (String) 
  */
 @Composable
 private fun NovaOsgbCompanyOverview(context: IsgWorkspaceContext, company: NovaWorkspaceCompany, workspace: NovaWorkspaceUiState,
-                                    repository: IsgWorkspaceRepository, canManage: Boolean, onBack: () -> Unit,
+                                    repository: IsgWorkspaceRepository, onEdit: (() -> Unit)?, onBack: () -> Unit,
                                     onDomain: (IsgWorkspaceDomain) -> Unit, onAnalyses: () -> Unit, onSearch: () -> Unit) {
     BackHandler(onBack = onBack)
     var snapshots by remember(company.id) { mutableStateOf<Map<IsgWorkspaceDomain, IsgWorkspaceSnapshot>>(emptyMap()) }
@@ -537,7 +581,48 @@ private fun NovaOsgbCompanyOverview(context: IsgWorkspaceContext, company: NovaW
             if (snapshots[item.first]?.rows?.isEmpty() == true) add(CompanyAction(item.second, item.third, symbol, NovaStatus.Warning, item.first))
         }
     }
-    val hasLogo = snapshots[IsgWorkspaceDomain.FILES]?.rows?.any { row -> row.fact("category") == "company_logo" } == true
+    val android = LocalContext.current
+    val coroutines = rememberCoroutineScope()
+    val celebrate = rememberNovaCelebrate()
+    var logo by remember(company.id) { mutableStateOf<Bitmap?>(null) }
+    var logoEntry by remember(company.id) { mutableStateOf<String?>(null) }
+    var logoSaving by remember { mutableStateOf(false) }
+    var logoError by remember { mutableStateOf<String?>(null) }
+    val uploadAttempt = remember { IsgWorkspaceMutationAttempt() }
+    val linkAttempt = remember { IsgWorkspaceMutationAttempt() }
+    val logoRow = snapshots[IsgWorkspaceDomain.FILES]?.rows?.firstOrNull { row -> row.fact("category") == "company_logo" }
+    LaunchedEffect(logoRow?.id) {
+        val row = logoRow ?: return@LaunchedEffect
+        val asset = row.assetId ?: return@LaunchedEffect
+        if (row.id == logoEntry && logo != null) return@LaunchedEffect
+        val bytes = runCatching { repository.downloadAsset(context, asset) }.getOrNull() ?: return@LaunchedEffect
+        logo = withContext(Dispatchers.Default) { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) } ?: return@LaunchedEffect
+        logoEntry = row.id
+    }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null || !context.canOperate) return@rememberLauncherForActivityResult
+        coroutines.launch {
+            logoSaving = true; logoError = null
+            try {
+                val (jpeg, image) = withContext(Dispatchers.IO) {
+                    val source = android.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: error("empty")
+                    val decoded = BitmapFactory.decodeByteArray(source, 0, source.size) ?: error("image")
+                    (normalizedLogo(decoded) ?: error("size")) to decoded
+                }
+                val digest = java.security.MessageDigest.getInstance("SHA-256").digest(jpeg).joinToString("") { "%02x".format(it) }
+                val (entry, _) = repository.uploadFile(context, uploadAttempt.id("company.logo.upload", company.id.lowercase(), digest), company.id,
+                    "Firma logosu", "firma-logo.jpg", "company_logo", jpeg)
+                repository.mutateDomain(context, linkAttempt.id("company.logo.link", company.id.lowercase(), entry.lowercase()), company.id,
+                    IsgWorkspaceDomain.FILES, buildJsonObject { put("action", "set_company_logo"); put("entry_id", entry) })
+                logo = image; logoEntry = entry
+                celebrate("Firma logosu başarıyla eklendi!")
+            } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) {
+                logoError = "Logo eklenemedi. JPG veya PNG görseliyle yeniden deneyin."
+            }
+            logoSaving = false
+        }
+    }
+    val hasLogo = logo != null || logoRow != null
     fun readiness(id: String, title: String, domain: IsgWorkspaceDomain): NovaCompanyReadinessItem {
         val snapshot = snapshots[domain] ?: return NovaCompanyReadinessItem(id, title,
             if (loading) "Durum yükleniyor." else "Durum bilgisi alınamadı.", NovaCompanyReadinessStatus.unknown)
@@ -576,12 +661,15 @@ private fun NovaOsgbCompanyOverview(context: IsgWorkspaceContext, company: NovaW
         NovaCard(Modifier.fillMaxWidth(), padding = 16) {
             Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Box(Modifier.size(44.dp).background(NovaColorToken.surfaceMuted.color(), RoundedCornerShape(13.dp)),
-                        contentAlignment = Alignment.Center) { NovaIcon("building.2", 22.dp) }
+                    NovaCompanyMark(logo)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         NovaText(company.name, style = NovaTypeToken.cardTitle)
                         NovaText(listOfNotNull(IsgWorkspaceDisplayText.value(company.hazardClass), personnel?.let { "${it.employees} personel" })
                             .joinToString(" · "), style = NovaTypeToken.metaQuiet)
+                    }
+                    if (onEdit != null) Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).novaRowPress(onClick = onEdit)
+                        .semantics { contentDescription = "Firmayı düzenle" }.testTag("osgb.company.edit"), contentAlignment = Alignment.Center) {
+                        NovaIcon("pencil", 17.dp)
                     }
                 }
                 NovaMetricStrip(listOf(
@@ -592,6 +680,24 @@ private fun NovaOsgbCompanyOverview(context: IsgWorkspaceContext, company: NovaW
             }
         }
         NovaCompanyReadinessCard(readinessItems)
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            NovaCard(Modifier.fillMaxWidth(), padding = 11) {
+                Row(Modifier.heightIn(min = 54.dp), horizontalArrangement = Arrangement.spacedBy(11.dp), verticalAlignment = Alignment.CenterVertically) {
+                    NovaCompanyMark(logo)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        NovaText(if (logo == null) "Firma logosu ekleyin" else "Firma logosu", style = NovaTypeToken.bodyStrong)
+                        NovaText(if (logoSaving) "Logo yükleniyor…" else "Firma kartında ve oluşturulan raporlarda kullanılır.", style = NovaTypeToken.micro,
+                            color = NovaColorToken.textMuted.color())
+                    }
+                    if (logoSaving) NovaSpinner(NovaColorToken.text.color(), size = 18.dp)
+                    else if (context.canOperate) NovaCompactActionButton(if (logo == null) "Logo seç" else "Değiştir",
+                        if (logo == null) "plus" else "arrow.triangle.2.circlepath", Modifier.width(IntrinsicSize.Max), identifier = "company.logo.picker") {
+                        picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    }
+                }
+            }
+            logoError?.let { NovaText(it, style = NovaTypeToken.micro, color = NovaColorToken.statusDangerInk.color()) }
+        }
         if (!active) NovaLoadingView("Firma çalışma alanı hazırlanıyor…")
         else {
             if (loading && snapshots.isEmpty()) NovaLoadingView("Sıradaki işler hazırlanıyor…")
@@ -630,7 +736,7 @@ private fun NovaOsgbCompanyOverview(context: IsgWorkspaceContext, company: NovaW
                 }
                 Category("Firma ve kadro") {
                     CategoryRow("Firma bilgileri", company.sector?.takeIf { it.isNotEmpty() } ?: "Profil bilgileri", "building.2",
-                        if (company.sector.isNullOrEmpty()) "Takip gerekli" to NovaStatus.Warning else "Güncel" to NovaStatus.Success, null)
+                        if (company.sector.isNullOrEmpty()) "Takip gerekli" to NovaStatus.Warning else "Güncel" to NovaStatus.Success, onEdit)
                     CategoryRow("Personel", personnel?.let { "${it.employees} kişi" } ?: "Yükleniyor", IsgWorkspaceDomain.PERSONNEL.symbol,
                         if ((personnel?.employees ?: 0) > 0) "Güncel" to NovaStatus.Success else "Başlanmadı" to NovaStatus.Warning) {
                         onDomain(IsgWorkspaceDomain.PERSONNEL)
@@ -662,6 +768,26 @@ private fun NovaOsgbCompanyOverview(context: IsgWorkspaceContext, company: NovaW
         }
     }
 }
+
+/** A white-backed JPEG of at most 5 MB, stepping down in size and quality (iOS `normalizedCompanyLogo`). */
+private fun normalizedLogo(image: Bitmap): ByteArray? {
+    for ((maximum, quality) in listOf(1_600 to 84, 1_200 to 72, 900 to 60)) {
+        val longest = maxOf(image.width, image.height).takeIf { it > 0 } ?: return null
+        val scale = minOf(1f, maximum.toFloat() / longest)
+        val width = maxOf(1, (image.width * scale).toInt()); val height = maxOf(1, (image.height * scale).toInt())
+        val canvas = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        android.graphics.Canvas(canvas).apply {
+            drawColor(android.graphics.Color.WHITE)
+            drawBitmap(image, null, android.graphics.Rect(0, 0, width, height), android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG))
+        }
+        val data = java.io.ByteArrayOutputStream().also { canvas.compress(Bitmap.CompressFormat.JPEG, quality, it) }.toByteArray()
+        if (data.size <= 5 * 1_024 * 1_024) return data
+    }
+    return null
+}
+
+/** A new company (null) or the one being edited; a fresh route restarts the editor. */
+private class ManagerEditor(val company: NovaWorkspaceCompany?)
 
 private data class CompanyAction(val title: String, val detail: String, val symbol: String, val status: NovaStatus, val domain: IsgWorkspaceDomain)
 

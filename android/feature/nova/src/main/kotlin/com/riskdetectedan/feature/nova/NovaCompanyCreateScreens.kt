@@ -131,26 +131,26 @@ fun NovaCompanyCreateScreen(client: NovaCompanyCreateClient, onClose: () -> Unit
                 NovaHelpHint("Firma bilgileri bir kez seçilir; sonraki modül kayıtlarına otomatik taşınır.")
                 NovaCard(Modifier.fillMaxWidth(), padding = 16) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        IconField("Firma adı *", "building.2", name, "name", editable) { name = it }
-                        NovaDivider(); IconField("Adres", "mappin.and.ellipse", address, "address", editable, multiline = true) { address = it }
-                        NovaDivider(); IconField("Şehir", "map", city, "city", editable) { city = it }
-                        NovaDivider(); IconField("Firma telefonu", "phone", phone, "phone", editable, KeyboardType.Phone) { phone = it }
+                        NovaCompanyIconField("Firma adı *", "building.2", name, "name", editable) { name = it }
+                        NovaDivider(); NovaCompanyIconField("Adres", "mappin.and.ellipse", address, "address", editable, multiline = true) { address = it }
+                        NovaDivider(); NovaCompanyIconField("Şehir", "map", city, "city", editable) { city = it }
+                        NovaDivider(); NovaCompanyIconField("Firma telefonu", "phone", phone, "phone", editable, KeyboardType.Phone) { phone = it }
                     }
                 }
             }
             1 -> NovaCard(Modifier.fillMaxWidth(), padding = 16) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    HazardField("Tehlike sınıfı *", hazard, editable) { hazard = it }
-                    NovaDivider(); IconField("Sektör *", "square.grid.2x2", sector, "sector", editable) { sector = it }
-                    NovaDivider(); IconField("Çalışan sayısı *", "person.2", employees, "employeeCount", editable, KeyboardType.Number) { employees = it }
-                    NovaDivider(); IconField("NACE kodu", "number", nace, "nace", editable) { nace = it }
-                    NovaDivider(); IconField("İşyeri sicil no", "doc.text", registry, "registry", editable) { registry = it }
+                    NovaCompanyHazardField("Tehlike sınıfı *", hazard, editable) { hazard = it }
+                    NovaDivider(); NovaCompanyIconField("Sektör *", "square.grid.2x2", sector, "sector", editable) { sector = it }
+                    NovaDivider(); NovaCompanyIconField("Çalışan sayısı *", "person.2", employees, "employeeCount", editable, KeyboardType.Number) { employees = it }
+                    NovaDivider(); NovaCompanyIconField("NACE kodu", "number", nace, "nace", editable) { nace = it }
+                    NovaDivider(); NovaCompanyIconField("İşyeri sicil no", "doc.text", registry, "registry", editable) { registry = it }
                 }
             }
             2 -> {
                 NovaCard(Modifier.fillMaxWidth(), padding = 16) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        ToggleRow("Aynı firmaya ait farklı işyeri var mı?", workplaces.isNotEmpty(), editable) { on ->
+                        NovaCompanyToggleRow("Aynı firmaya ait farklı işyeri var mı?", workplaces.isNotEmpty(), editable) { on ->
                             workplaces = if (on) workplaces.ifEmpty { listOf(CompanyWorkplaceProfile()) } else emptyList()
                         }
                         workplaces.forEachIndexed { index, workplace ->
@@ -160,12 +160,12 @@ fun NovaCompanyCreateScreen(client: NovaCompanyCreateClient, onClose: () -> Unit
                                     NovaText("İşyeri ${index + 1}", Modifier.weight(1f), NovaTypeToken.label)
                                     if (index > 0) RemoveButton("İşyeri ${index + 1} kaldır") { workplaces = workplaces.filterIndexed { i, _ -> i != index } }
                                 }
-                                IconField("İşyeri adı *", "building.2", workplace.name, "workplace-$index-name", editable) { update(workplace.copy(name = it)) }
-                                HazardField("İşyeri tehlike sınıfı *", workplace.hazardClass, editable) { update(workplace.copy(hazardClass = it)) }
-                                IconField("İşyeri adresi", "mappin.and.ellipse", workplace.address, "workplace-$index-address", editable, multiline = true) {
+                                NovaCompanyIconField("İşyeri adı *", "building.2", workplace.name, "workplace-$index-name", editable) { update(workplace.copy(name = it)) }
+                                NovaCompanyHazardField("İşyeri tehlike sınıfı *", workplace.hazardClass, editable) { update(workplace.copy(hazardClass = it)) }
+                                NovaCompanyIconField("İşyeri adresi", "mappin.and.ellipse", workplace.address, "workplace-$index-address", editable, multiline = true) {
                                     update(workplace.copy(address = it))
                                 }
-                                IconField("İşyeri şehri", "map", workplace.city, "workplace-$index-city", editable) { update(workplace.copy(city = it)) }
+                                NovaCompanyIconField("İşyeri şehri", "map", workplace.city, "workplace-$index-city", editable) { update(workplace.copy(city = it)) }
                             }
                             if (index < workplaces.lastIndex) NovaDivider()
                         }
@@ -174,14 +174,14 @@ fun NovaCompanyCreateScreen(client: NovaCompanyCreateClient, onClose: () -> Unit
                 }
                 NovaCard(Modifier.fillMaxWidth(), padding = 16) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        ToggleRow("Firmaya departman eklemek ister misiniz?", departments.isNotEmpty(), editable) { on ->
+                        NovaCompanyToggleRow("Firmaya departman eklemek ister misiniz?", departments.isNotEmpty(), editable) { on ->
                             departments = if (on) departments.ifEmpty { listOf("") } else emptyList()
                         }
                         NovaText("Örn. boyahane, imalat", style = NovaTypeToken.metaQuiet)
                         departments.forEachIndexed { index, department ->
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Box(Modifier.weight(1f)) {
-                                    IconField("Departman adı *", "square.grid.2x2", department, "department-$index", editable) { value ->
+                                    NovaCompanyIconField("Departman adı *", "square.grid.2x2", department, "department-$index", editable) { value ->
                                         departments = departments.toMutableList().also { it[index] = value }
                                     }
                                 }
@@ -194,7 +194,7 @@ fun NovaCompanyCreateScreen(client: NovaCompanyCreateClient, onClose: () -> Unit
             }
             3 -> NovaCard(Modifier.fillMaxWidth(), padding = 16) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ToggleRow("Sorumlu & iletişim personeli eklemek ister misiniz?", addResponsible, editable) { on ->
+                    NovaCompanyToggleRow("Sorumlu & iletişim personeli eklemek ister misiniz?", addResponsible, editable) { on ->
                         addResponsible = on
                         if (on && contacts.isEmpty()) contacts = listOf(CompanyResponsibleContact())
                     }
@@ -206,9 +206,9 @@ fun NovaCompanyCreateScreen(client: NovaCompanyCreateClient, onClose: () -> Unit
                                     NovaText("Sorumlu ${index + 1}", Modifier.weight(1f), NovaTypeToken.label)
                                     if (index > 0) RemoveButton("Sorumlu ${index + 1} kaldır") { contacts = contacts.filterIndexed { i, _ -> i != index } }
                                 }
-                                IconField("Ad soyad *", "person", contact.name, "contact-$index-name", editable) { update(contact.copy(name = it)) }
-                                IconField("Telefon *", "phone", contact.phone, "contact-$index-phone", editable, KeyboardType.Phone) { update(contact.copy(phone = it)) }
-                                IconField("Mail adresi", "envelope", contact.email, "contact-$index-email", editable, KeyboardType.Email) { update(contact.copy(email = it)) }
+                                NovaCompanyIconField("Ad soyad *", "person", contact.name, "contact-$index-name", editable) { update(contact.copy(name = it)) }
+                                NovaCompanyIconField("Telefon *", "phone", contact.phone, "contact-$index-phone", editable, KeyboardType.Phone) { update(contact.copy(phone = it)) }
+                                NovaCompanyIconField("Mail adresi", "envelope", contact.email, "contact-$index-email", editable, KeyboardType.Email) { update(contact.copy(email = it)) }
                                 val key = "role-$index"
                                 NovaChooserButton("Görevi *", contact.role.ifEmpty { "Görev seçin" }, "nova.pilot.company.contact-$index-role",
                                     open = rolePanel == key) { if (editable) rolePanel = if (rolePanel == key) null else key }
@@ -253,7 +253,7 @@ fun NovaCompanyCreateScreen(client: NovaCompanyCreateClient, onClose: () -> Unit
 }
 
 @Composable
-private fun IconField(title: String, symbol: String, value: String, id: String, enabled: Boolean, keyboard: KeyboardType = KeyboardType.Text,
+internal fun NovaCompanyIconField(title: String, symbol: String, value: String, id: String, enabled: Boolean, keyboard: KeyboardType = KeyboardType.Text,
                       multiline: Boolean = false, onChange: (String) -> Unit) {
     val ink = NovaColorToken.text.color()
     Row(Modifier.fillMaxWidth().heightIn(min = 40.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -270,7 +270,7 @@ private fun IconField(title: String, symbol: String, value: String, id: String, 
 }
 
 @Composable
-private fun HazardField(title: String, value: String, enabled: Boolean, onChange: (String) -> Unit) {
+internal fun NovaCompanyHazardField(title: String, value: String, enabled: Boolean, onChange: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             NovaIcon("exclamationmark.triangle", 17.dp, Modifier.width(22.dp))
@@ -281,7 +281,7 @@ private fun HazardField(title: String, value: String, enabled: Boolean, onChange
 }
 
 @Composable
-private fun ToggleRow(title: String, on: Boolean, enabled: Boolean, onChange: (Boolean) -> Unit) {
+internal fun NovaCompanyToggleRow(title: String, on: Boolean, enabled: Boolean, onChange: (Boolean) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         NovaText(title, Modifier.weight(1f), NovaTypeToken.body)
         Switch(on, onChange, enabled = enabled, colors = SwitchDefaults.colors(checkedTrackColor = NovaColorToken.accent.color()))

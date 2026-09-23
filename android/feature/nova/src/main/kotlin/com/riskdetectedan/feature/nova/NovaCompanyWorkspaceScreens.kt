@@ -195,7 +195,7 @@ fun NovaCompanyWorkspaceScreen(client: NovaCompanyWorkspaceClient, companyId: St
         NovaCard(Modifier.fillMaxWidth(), padding = 16) {
             Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    CompanyMark(logo)
+                    NovaCompanyMark(logo)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         NovaText(summary?.name ?: companyName, style = NovaTypeToken.cardTitle)
                         NovaText(listOfNotNull(summary?.hazardClass?.let(::companyHazardTitle),
@@ -220,7 +220,7 @@ fun NovaCompanyWorkspaceScreen(client: NovaCompanyWorkspaceClient, companyId: St
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             NovaCard(Modifier.fillMaxWidth(), padding = 10) {
                 Row(Modifier.heightIn(min = 52.dp), horizontalArrangement = Arrangement.spacedBy(11.dp), verticalAlignment = Alignment.CenterVertically) {
-                    CompanyMark(logo)
+                    NovaCompanyMark(logo)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         NovaText(if (!record?.logoPath.isNullOrEmpty()) "Firma logosu" else "Logo ekleyin", style = NovaTypeToken.bodyStrong)
                         NovaText(if (logoSaving) "Logo yükleniyor…" else "Firma kartında ve raporlarda kullanılır.", style = NovaTypeToken.micro,
@@ -407,7 +407,7 @@ private fun readiness(summary: NovaCompanySummary?, record: Company?, recordLoad
 }
 
 @Composable
-private fun CompanyMark(logo: Bitmap?) {
+internal fun NovaCompanyMark(logo: Bitmap?) {
     Box(Modifier.size(42.dp).clip(RoundedCornerShape(11.dp)).background(NovaColorToken.surfaceMuted.color())
         .border(if (logo != null) 1.dp else 0.dp, NovaColorToken.border.color(), RoundedCornerShape(11.dp)), contentAlignment = Alignment.Center) {
         if (logo != null) Image(logo.asImageBitmap(), "Firma logosu", Modifier.fillMaxSize().padding(5.dp), contentScale = ContentScale.Fit)
