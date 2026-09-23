@@ -440,7 +440,7 @@ private fun EmergencyPlanSheet(initial: NovaEmergencyPlanDraft, catalogue: NovaE
                             NovaCard(Modifier.fillMaxWidth(), padding = 12) {
                                 FieldIcon("person.2") {
                                     NovaText("Ekip", style = NovaTypeToken.label)
-                                    if (draft.team.isEmpty()) NovaText("En az bir kişi gerekli.", style = NovaTypeToken.meta, color = NovaColorToken.textSecondary.color())
+                                    if (draft.team.isEmpty()) NovaText("Ekip henüz boş; kişileri daha sonra da ekleyebilirsiniz.", style = NovaTypeToken.meta, color = NovaColorToken.textSecondary.color())
                                     NovaChooserButton("Firma personeli", selectedPerson?.name ?: "Personel seçin", "nova.emergency.form.employee",
                                         symbol = "person", open = choosingPerson) { choosingPerson = !choosingPerson }
                                     if (choosingPerson) NovaChooserPanel(personnel.filter { person -> draft.team.none { it.fullName == person.name } }

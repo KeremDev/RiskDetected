@@ -488,12 +488,13 @@ private fun RiskQuickCreate(client: NovaRiskClient, company: String, catalogue: 
     val detailsReady = workplaceId != null && row != null && kindChosen &&
         !(kind == NovaRiskKind.full && (periodYears.toIntOrNull() ?: 0) <= 0) &&
         !(kind.needsScope && scope.isEmpty()) && !(kind.needsReason && reason.isBlank())
-    val validity = run {
+    val validUntil = run {
         val years = periodYears.toIntOrNull()
         val date = NovaDay.parse(assessmentOn)
         if (kind == NovaRiskKind.full && years != null && years > 0 && date != null) NovaDay.label(date.plusYears(years.toLong()).toString())
-        else "Geçerlilik bilgisi daha sonra kesinleştirilecek"
+        else null
     }
+    val validity = validUntil ?: "Geçerlilik bilgisi daha sonra kesinleştirilecek"
     LaunchedEffect(workplaceId) {
         val place = workplaceId ?: return@LaunchedEffect
         opening = true; openError = null
@@ -526,7 +527,8 @@ private fun RiskQuickCreate(client: NovaRiskClient, company: String, catalogue: 
     }
     if (didSave) {
         NovaTaskSuccessView("Risk değerlendirmesi kaydedildi",
-            "$validity geçerlilik bilgisiyle kayıt oluşturuldu. Firma detayından sürümleri ve dosyayı takip edebilirsiniz.",
+            if (validUntil != null) "Kayıt $validUntil tarihine kadar geçerli olarak oluşturuldu. Firma detayından sürümleri ve dosyayı takip edebilirsiniz."
+            else "Kayıt oluşturuldu. Geçerlilik tarihi daha sonra kesinleşecek; firma detayından sürümleri ve dosyayı takip edebilirsiniz.",
             "Risk değerlendirmelerine dön", onClose)
         return
     }

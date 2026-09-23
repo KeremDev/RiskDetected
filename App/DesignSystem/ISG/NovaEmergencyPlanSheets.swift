@@ -542,7 +542,7 @@ struct NovaEmergencyPlanSheet: View {
                 table: .localizable, fallback: "Ekip"), style: .label)
             if draft.team.isEmpty {
                 NovaText(text: RDLocalization.string("localizable.nova.emergency.form.teamempty",
-                    table: .localizable, fallback: "En az bir kişi gerekli."), style: .meta,
+                    table: .localizable, fallback: "Ekip henüz boş; kişileri daha sonra da ekleyebilirsiniz."), style: .meta,
                     color: NovaColorToken.textSecondary.color(in: scheme))
             }
             NovaFileChooserButton(label: RDLocalization.string("localizable.nova.emergency.plan.sheets.firma.personeli.a5cb6b09", table: .localizable, fallback: "Firma personeli"),

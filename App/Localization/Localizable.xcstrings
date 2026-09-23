@@ -18598,13 +18598,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "At least one person is required."
+            "value": "The team is empty for now; you can add people later too."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "En az bir kişi gerekli."
+            "value": "Ekip henüz boş; kişileri daha sonra da ekleyebilirsiniz."
           }
         }
       }
@@ -33334,6 +33334,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "Fotoğraf analizi kaynak olarak kullanılabilir; tek başına risk değerlendirmesi sayılmaz."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.saved.novalidity": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: saved-version success message; placeholders: none; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record was created. The validity date will be set later; you can follow its versions and file from the company details."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt oluşturuldu. Geçerlilik tarihi daha sonra kesinleşecek; firma detayından sürümleri ve dosyayı takip edebilirsiniz."
+          }
+        }
+      }
+    },
+    "localizable.nova.risk.saved.validuntil": {
+      "comment": "isg_risk_versions; Risk Değerlendirmesi: saved-version success message; placeholders: %1$@; review: human_draft",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The record was created, valid until %1$@. You can follow its versions and file from the company details."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt %1$@ tarihine kadar geçerli olarak oluşturuldu. Firma detayından sürümleri ve dosyayı takip edebilirsiniz."
           }
         }
       }

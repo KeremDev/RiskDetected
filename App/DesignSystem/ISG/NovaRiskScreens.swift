@@ -458,20 +458,28 @@ private struct NovaRiskQuickCreateSheet: View {
     // Kept for the legacy form helper below; the guided flow uses detailsReady
     // and the sticky action instead.
     private var canSave: Bool { detailsReady && !saving }
-    private var validityText: String {
+    private var validUntil: String? {
         guard kind == .full, let years = Int(periodYears), years > 0,
               let date = NovaDayField.date(assessmentOn),
-              let until = Calendar.current.date(byAdding: .year, value: years, to: date) else {
-            return "Geçerlilik bilgisi daha sonra kesinleştirilecek"
-        }
+              let until = Calendar.current.date(byAdding: .year, value: years, to: date) else { return nil }
         return NovaDayField.text(until)
+    }
+    private var validityText: String { validUntil ?? "Geçerlilik bilgisi daha sonra kesinleştirilecek" }
+    private var savedMessage: String {
+        guard let validUntil else {
+            return RDLocalization.string("localizable.nova.risk.saved.novalidity", table: .localizable,
+                fallback: "Kayıt oluşturuldu. Geçerlilik tarihi daha sonra kesinleşecek; firma detayından sürümleri ve dosyayı takip edebilirsiniz.")
+        }
+        return RDLocalization.format("localizable.nova.risk.saved.validuntil", table: .localizable,
+            fallback: "Kayıt %1$@ tarihine kadar geçerli olarak oluşturuldu. Firma detayından sürümleri ve dosyayı takip edebilirsiniz.",
+            arguments: [validUntil])
     }
 
     var body: some View {
         Group {
             if didSave {
                 NovaTaskSuccessView(title: "Risk değerlendirmesi kaydedildi",
-                    message: "(validityText) geçerlilik bilgisiyle kayıt oluşturuldu. Firma detayından sürümleri ve dosyayı takip edebilirsiniz.",
+                    message: savedMessage,
                     doneTitle: "Risk değerlendirmelerine dön", onDone: onClose)
             } else {
                 NovaPageSurface(onEdgeBack: onClose) {
