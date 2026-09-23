@@ -379,6 +379,51 @@ class IsgWorkspaceGateway(
         if (result.text("workplace_id") == null) fail()
     }
 
+    /** Creates, edits or archives a workplace or department (`isg_workspace_directory_mutate_v1`). */
+    suspend fun mutateDirectory(workspaceId: String, membershipId: String, permissionRevision: Long, canOperate: Boolean, mutationId: String,
+                                companyId: String, entity: String, action: String, entryId: String?, expectedVersion: Long,
+                                workplaceId: String?, code: String?, name: String?): JsonObject {
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        if (entity !in setOf("workplace", "department") || action !in setOf("create", "edit", "archive") || expectedVersion < 0 ||
+            (action == "create") != (entryId == null) || (action != "archive" && !validDirectoryText(code, name))) validation()
+        val result = invoke("isg_workspace_directory_mutate_v1", buildJsonObject {
+            put("p_mutation", mutationId); put("p_workspace", workspaceId); put("p_company", companyId); put("p_entity", entity)
+            put("p_action", action); put("p_id", entryId?.let(::JsonPrimitive) ?: JsonNull); put("p_expected", expectedVersion)
+            put("p_workplace", workplaceId?.let(::JsonPrimitive) ?: JsonNull)
+            put("p_code", code?.let(::JsonPrimitive) ?: JsonNull); put("p_name", name?.let(::JsonPrimitive) ?: JsonNull)
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        requireEnvelope(result, workspaceId, companyId)
+        if (result["action"] != null && result.text("action") != action) fail()
+        return result
+    }
+
+    /** Creates, edits or archives a company employee (`isg_workspace_employee_mutate_v1`). */
+    suspend fun mutateEmployee(workspaceId: String, membershipId: String, permissionRevision: Long, canOperate: Boolean, mutationId: String,
+                               companyId: String, action: String, employeeId: String?, expectedVersion: Long, code: String?, name: String?,
+                               departmentId: String?, hiredOn: String?, endsBefore: String?): JsonObject {
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        if (action !in setOf("create", "edit", "archive") || expectedVersion < 0 || (action == "create") != (employeeId == null) ||
+            (action != "archive" && !validDirectoryText(code, name)) || hiredOn?.let(::validDay) == false || endsBefore?.let(::validDay) == false ||
+            (hiredOn != null && endsBefore != null && hiredOn >= endsBefore)) validation()
+        val result = invoke("isg_workspace_employee_mutate_v1", buildJsonObject {
+            put("p_mutation", mutationId); put("p_workspace", workspaceId); put("p_company", companyId); put("p_action", action)
+            put("p_employee", employeeId?.let(::JsonPrimitive) ?: JsonNull); put("p_expected", expectedVersion)
+            put("p_code", code?.let(::JsonPrimitive) ?: JsonNull); put("p_name", name?.let(::JsonPrimitive) ?: JsonNull)
+            put("p_department", departmentId?.let(::JsonPrimitive) ?: JsonNull)
+            put("p_hired_on", hiredOn?.let(::JsonPrimitive) ?: JsonNull); put("p_ends_before", endsBefore?.let(::JsonPrimitive) ?: JsonNull)
+        })
+        checkWorkspace(workspaceId, membershipId, permissionRevision, canOperate)
+        requireEnvelope(result, workspaceId, companyId)
+        if (result["action"] != null && result.text("action") != action) fail()
+        return result
+    }
+
+    private fun validDirectoryText(code: String?, name: String?): Boolean {
+        val cleanCode = code?.trim() ?: return false; val cleanName = name?.trim() ?: return false
+        return cleanCode.isNotEmpty() && cleanCode.toByteArray().size <= 80 && cleanName.isNotEmpty() && cleanName.toByteArray().size <= 200
+    }
+
     private fun validMember(row: JsonObject): Boolean {
         val role = row.text("role"); val status = row.text("status"); val practicing = row.bool("is_practicing_expert")
         return row.text("membership_id")?.let(UUID::matches) == true && role in setOf("owner", "admin", "expert") &&

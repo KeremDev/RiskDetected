@@ -162,9 +162,13 @@ class IsgWorkspaceRepository @Inject constructor(private val client: SupabaseCli
      * reading until the cursor ends; ids are lowercased so facts in either case resolve.
      */
     suspend fun directory(context: IsgWorkspaceContext, companyId: String, kind: String, archived: Boolean = false): List<Pair<String, String>> =
+        directoryEntries(context, companyId, kind, archived).map { it.id to it.name }
+
+    /** Every workplace, department or employee of a company, reading until the cursor ends. */
+    suspend fun directoryEntries(context: IsgWorkspaceContext, companyId: String, kind: String, archived: Boolean = false): List<IsgWorkspaceDirectoryEntry> =
         inScope(context, companyId) {
             val key = when (kind) { "workplaces" -> "workplace_id"; "departments" -> "department_id"; else -> "employee_id" }
-            val rows = mutableListOf<Pair<String, String>>()
+            val rows = mutableListOf<IsgWorkspaceDirectoryEntry>()
             var cursor: String? = null
             var pages = 0
             do {
@@ -173,8 +177,8 @@ class IsgWorkspaceRepository @Inject constructor(private val client: SupabaseCli
                     context.membership.permissionRevision, companyId, kind, archived = archived, after = cursor)
                 page["rows"]!!.jsonArray.forEach { item ->
                     val row = item.jsonObject
-                    val id = row[key]?.jsonPrimitive?.contentOrNull ?: throw IsgWorkspaceGatewayFailure("INVALID_RESPONSE")
-                    rows += id.lowercase() to (row["name"]?.jsonPrimitive?.contentOrNull ?: "")
+                    if (row[key]?.jsonPrimitive?.contentOrNull == null) throw IsgWorkspaceGatewayFailure("INVALID_RESPONSE")
+                    rows += IsgWorkspaceDirectoryEntry.parse(row, key)
                 }
                 val next = (page["next"] as? JsonPrimitive)?.contentOrNull
                 if (next != null && next == cursor) throw IsgWorkspaceGatewayFailure("INVALID_RESPONSE")
@@ -182,6 +186,29 @@ class IsgWorkspaceRepository @Inject constructor(private val client: SupabaseCli
             } while (cursor != null)
             rows
         }
+
+    suspend fun mutateDirectory(context: IsgWorkspaceContext, mutationId: String, companyId: String, entity: String, action: String,
+                                entry: IsgWorkspaceDirectoryEntry?, workplaceId: String?, code: String?, name: String?) = inScope(context, companyId) {
+        gateway.mutateDirectory(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision, context.canOperate,
+            mutationId, companyId, entity, action, entry?.id, entry?.version ?: 0, workplaceId, code, name)
+    }
+
+    /** Returns the saved employee's id (null after an archive). */
+    suspend fun mutateEmployee(context: IsgWorkspaceContext, mutationId: String, companyId: String, action: String, entry: IsgWorkspaceDirectoryEntry?,
+                               code: String?, name: String?, departmentId: String?, hiredOn: String?, endsBefore: String?): String? =
+        inScope(context, companyId) {
+            val result = gateway.mutateEmployee(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision,
+                context.canOperate, mutationId, companyId, action, entry?.id, entry?.version ?: 0, code, name, departmentId, hiredOn, endsBefore)
+            if (action == "archive") null else result["employee_id"]?.jsonPrimitive?.contentOrNull ?: entry?.id
+        }
+
+    suspend fun personnelCounts(context: IsgWorkspaceContext, companyId: String): Map<String, Long> = inScope(context, companyId) {
+        val root = gateway.personnelMetrics(context.workspaceId, context.membership.membershipId, context.membership.permissionRevision, companyId)
+        fun count(key: String, field: String) = root[key]?.jsonObject?.get(field)?.jsonPrimitive?.longOrNull ?: 0
+        mapOf("employees" to count("employees", "active"), "workplaces" to count("workplaces", "active"),
+            "departments" to count("departments", "active"), "job_roles" to count("job_roles", "active"),
+            "contractors" to count("contractors", "active"), "assignments" to count("assignments", "current"))
+    }
 
     private suspend fun <T> pages(read: suspend (String?) -> JsonObject, parse: (JsonObject) -> T, id: (T) -> String): List<T> {
         val rows = mutableListOf<T>()

@@ -85,6 +85,16 @@ data class IsgWorkspaceAdvancedRecord(val id: String, val kind: String, val titl
     }
 }
 
+/** A workplace, department or employee of a company (iOS `IsgWorkspaceDirectoryEntry` / `IsgWorkspaceEmployeeEntry`). */
+data class IsgWorkspaceDirectoryEntry(val id: String, val code: String, val name: String, val workplaceId: String?, val departmentId: String?,
+                                      val hiredOn: String?, val endsBefore: String?, val version: Long) {
+    companion object {
+        fun parse(row: JsonObject, key: String) = IsgWorkspaceDirectoryEntry(row.text(key)!!.lowercase(), row.text("code").orEmpty(),
+            row.text("name").orEmpty(), row.text("parent_workplace_id")?.lowercase(), row.text("department_id")?.lowercase(),
+            row.text("hired_on"), row.text("employment_ends_before"), row.long("version"))
+    }
+}
+
 /** The company fields the manager editor saves (iOS `IsgWorkspaceCompanyDraft`). */
 data class IsgWorkspaceCompanyDraft(val name: String, val hazardClass: String, val sector: String, val email: String, val employeeCount: Int?,
                                     val address: String, val responsibleName: String, val responsiblePhone: String, val responsibleEmail: String)

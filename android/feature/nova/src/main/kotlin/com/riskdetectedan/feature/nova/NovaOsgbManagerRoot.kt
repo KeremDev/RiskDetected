@@ -195,8 +195,18 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
         }
     }
 
+    @Composable fun personnel(onBack: () -> Unit, section: NovaOsgbPersonnelSection = NovaOsgbPersonnelSection.employee) {
+        if (selected == null) CompanyRequired(IsgWorkspaceDomain.PERSONNEL.title, onBack,
+            message = "Personel ve organizasyon kayıtları firma kapsamında tutulur.")
+        else key(selected.id, section) {
+            NovaOsgbPersonnelScreen(remember(context, selected) { NovaOsgbScope(context, viewModel.repository, selected.id, selected.name,
+                selected.hazardClass) }, canManageDirectory = canManage, onBack = onBack, initialSection = section)
+        }
+    }
+
     @Composable fun domain(value: IsgWorkspaceDomain, onBack: () -> Unit = { navigate(NovaDestination.home) }, startInAddMode: Boolean = false) {
         if (selected == null || domainClient == null) CompanyRequired(value.title, onBack)
+        else if (value == IsgWorkspaceDomain.PERSONNEL) personnel(onBack)
         else key(selected.id, value, startInAddMode) {
             val scope = remember(context, selected) { NovaOsgbScope(context, viewModel.repository, selected.id, selected.name, selected.hazardClass) }
             NovaOsgbDomainScreen(domainClient, value, selected.name, onBack, startInAddMode = startInAddMode,
@@ -304,7 +314,7 @@ fun NovaOsgbManagerRoot(identity: IsgWorkspaceIdentity, workspace: NovaWorkspace
             NovaDestination.periodicChecks -> domain(IsgWorkspaceDomain.EQUIPMENT)
             NovaDestination.documentChecklist, NovaDestination.documents -> domain(IsgWorkspaceDomain.FILES)
             NovaDestination.newDocument -> domain(IsgWorkspaceDomain.FILES, startInAddMode = true)
-            NovaDestination.contractors -> domain(IsgWorkspaceDomain.PERSONNEL)
+            NovaDestination.contractors -> personnel({ navigate(NovaDestination.home) }, NovaOsgbPersonnelSection.contractor)
             NovaDestination.memory, NovaDestination.notifications -> NovaOsgbChangeScreen({
                 viewModel.repository.changes(context, selected?.id)["rows"]?.jsonArray.orEmpty().mapNotNull { item ->
                     val row = item as? JsonObject ?: return@mapNotNull null
